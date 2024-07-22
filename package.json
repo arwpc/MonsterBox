@@ -1,0 +1,20 @@
+{
+  "name": "monsterbox",
+  "version": "1.0.0",
+  "description": "Halloween animatronic control system",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "ejs": "^3.1.6",
+    "rpi-gpio": "^2.1.7",
+    "node-cron": "^3.0.0",
+    "play-sound": "^1.1.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/arwpc/MonsterBox.git"
+  }
+}
