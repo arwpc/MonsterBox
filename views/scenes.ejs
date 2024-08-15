@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <h1><%= title %></h1>
+    <a href="/scenes/new" class="button">Add New Scene</a>
+    <table>
+        <thead>
+            <tr>
+                <th>Scene Name</th>
+                <th>Character</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% scenes.forEach(function(scene) { %>
+                <tr>
+                    <td><%= scene.scene_name %></td>
+                    <td>
+                        <% const character = characters.find(c => c.id === scene.character_id); %>
+                        <%= character ? character.char_name : 'Unknown' %>
+                    </td>
+                    <td>
+                        <a href="/scenes/<%= scene.id %>/edit" class="button">Edit</a>
+                    </td>
+                </tr>
+            <% }); %>
+        </tbody>
+    </table>
+    <a href="/" class="button">Back to Main Menu</a>
+</body>
+</html>

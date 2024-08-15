@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <h1><%= title %></h1>
+    <form action="<%= action %>" method="POST" enctype="multipart/form-data">
+        <% if (character.id) { %>
+            <input type="hidden" name="id" value="<%= character.id %>">
+        <% } %>
+        <div>
+            <label for="char_name">Name:</label>
+            <input type="text" id="char_name" name="char_name" value="<%= character.char_name || '' %>" required>
+        </div>
+        <div>
+            <label for="char_description">Description:</label>
+            <textarea id="char_description" name="char_description" required><%= character.char_description || '' %></textarea>
+        </div>
+        <div>
+            <label for="character_image">Character Image:</label>
+            <input type="file" id="character_image" name="character_image" accept="image/*">
+            <% if (character.image) { %>
+                <img src="/images/characters/<%= character.image %>" alt="<%= character.char_name %>" style="max-width: 200px;">
+            <% } %>
+        </div>
+        <div>
+            <label>Parts:</label>
+            <div id="parts-container">
+                <div id="available-parts">
+                    <h4>Available Parts:</h4>
+                    <select id="available-parts-select" multiple>
+                        <% parts.forEach(function(part) { %>
+                            <option value="<%= part.id %>" <%= character.parts && character.parts.includes(part.id) ? 'disabled' : '' %>>
+                                <%= part.name %>
+                            </option>
+                        <% }); %>
+                    </select>
+                </div>
+                <div>
+                    <button type="button" onclick="addPart()">Add &gt;</button>
+                    <button type="button" onclick="removePart()">&lt; Remove</button>
+                </div>
+                <div id="selected-parts">
+                    <h4>Selected Parts:</h4>
+                    <select id="selected-parts-select" name="parts" multiple>
+                        <% if (character.parts) { %>
+                            <% character.parts.forEach(function(partId) { %>
+                                <% const part = parts.find(p => p.id === partId); %>
+                                <% if (part) { %>
+                                    <option value="<%= part.id %>"><%= part.name %></option>
+                                <% } %>
+                            <% }); %>
+                        <% } %>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div>
+            <label>Sounds:</label>
+            <div id="sounds-container">
+                <div id="available-sounds">
+                    <h4>Available Sounds:</h4>
+                    <select id="available-sounds-select" multiple>
+                        <% sounds.forEach(function(sound) { %>
+                            <option value="<%= sound.id %>" <%= character.sounds && character.sounds.includes(sound.id) ? 'disabled' : '' %>>
+                                <%= sound.name %>
+                            </option>
+                        <% }); %>
+                    </select>
+                </div>
+                <div>
+                    <button type="button" onclick="addSound()">Add &gt;</button>
+                    <button type="button" onclick="removeSound()">&lt; Remove</button>
+                </div>
+                <div id="selected-sounds">
+                    <h4>Selected Sounds:</h4>
+                    <select id="selected-sounds-select" name="sounds" multiple>
+                        <% if (character.sounds) { %>
+                            <% character.sounds.forEach(function(soundId) { %>
+                                <% const sound = sounds.find(s => s.id === soundId); %>
+                                <% if (sound) { %>
+                                    <option value="<%= sound.id %>"><%= sound.name %></option>
+                                <% } %>
+                            <% }); %>
+                        <% } %>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <button type="submit">Save Character</button>
+    </form>
+    <a href="/characters" class="button">Back to Characters</a>
+
+    <script>
+        function addPart() {
+            moveOptions('available-parts-select', 'selected-parts-select');
+        }
+
+        function removePart() {
+            moveOptions('selected-parts-select', 'available-parts-select');
+        }
+
+        function addSound() {
+            moveOptions('available-sounds-select', 'selected-sounds-select');
+        }
+
+        function removeSound() {
+            moveOptions('selected-sounds-select', 'available-sounds-select');
+        }
+
+        function moveOptions(fromId, toId) {
+            const fromSelect = document.getElementById(fromId);
+            const toSelect = document.getElementById(toId);
+            
+            for (let option of Array.from(fromSelect.selectedOptions)) {
+                toSelect.add(option);
+                option.selected = false;
+            }
+            updateAvailableOptions();
+        }
+
+        function updateAvailableOptions() {
+            const availableParts = document.getElementById('available-parts-select');
+            const selectedParts = document.getElementById('selected-parts-select');
+            const availableSounds = document.getElementById('available-sounds-select');
+            const selectedSounds = document.getElementById('selected-sounds-select');
+
+            for (let option of availableParts.options) {
+                option.disabled = Array.from(selectedParts.options).some(o => o.value === option.value);
+            }
+
+            for (let option of availableSounds.options) {
+                option.disabled = Array.from(selectedSounds.options).some(o => o.value === option.value);
+            }
+        }
+
+        // Ensure all options are selected before form submission
+        document.querySelector('form').onsubmit = function() {
+            const selectedParts = document.getElementById('selected-parts-select');
+            const selectedSounds = document.getElementById('selected-sounds-select');
+            
+            for (let option of selectedParts.options) {
+                option.selected = true;
+            }
+            
+            for (let option of selectedSounds.options) {
+                option.selected = true;
+            }
+            
+            return true;
+        };
+
+        // Initialize available options
+        updateAvailableOptions();
+    </script>
+</body>
+</html>

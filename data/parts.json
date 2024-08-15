@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "name": "Right Arm",
+    "type": "motor",
+    "pin": 17
+  },
+  {
+    "id": 2,
+    "name": "Left Arm",
+    "type": "motor",
+    "pin": 18
+  },
+  {
+    "id": 3,
+    "name": "Right Leg",
+    "type": "motor",
+    "pin": 19
+  },
+  {
+    "id": 4,
+    "name": "Left Leg",
+    "type": "motor",
+    "pin": 21
+  },
+  {
+    "id": 5,
+    "name": "Eyes",
+    "type": "light",
+    "pin": 20
+  }
+]

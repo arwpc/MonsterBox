@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+</head>
+<body>
+    <h1><%= title %></h1>
+    <form action="<%= action %>" method="POST">
+        <% if (scene.id) { %>
+            <input type="hidden" name="id" value="<%= scene.id %>">
+        <% } %>
+        <div>
+            <label for="scene_name">Scene Name:</label>
+            <input type="text" id="scene_name" name="scene_name" value="<%= scene.scene_name || '' %>" required>
+        </div>
+        <div>
+            <label for="character_id">Character:</label>
+            <select id="character_id" name="character_id" required onchange="updateCharacterParts()">
+                <% characters.forEach(function(character) { %>
+                    <option value="<%= character.id %>" <%= (scene.character_id === character.id) ? 'selected' : '' %>>
+                        <%= character.char_name %>
+                    </option>
+                <% }); %>
+            </select>
+        </div>
+        <div id="steps">
+            <h3>Steps</h3>
+            <button type="button" onclick="addStep()">Add Step</button>
+            <div id="step-list" class="sortable"></div>
+        </div>
+        <input type="hidden" id="steps_json" name="steps" value="<%= JSON.stringify(scene.steps || []) %>">
+        <button type="submit">Save Scene</button>
+    </form>
+    <a href="/scenes" class="button">Back to Scenes</a>
+
+    <script>
+        let stepCount = 0;
+        const characterParts = {};
+        const characterSounds = {};
+
+        <% characters.forEach(function(character) { %>
+            characterParts[<%= character.id %>] = [
+                <% character.parts.forEach(function(partId) { %>
+                    <% const part = parts.find(p => p.id === partId); %>
+                    <% if (part) { %>
+                        { id: <%= part.id %>, name: "<%= part.name %>", type: "<%= part.type %>" },
+                    <% } %>
+                <% }); %>
+            ];
+            characterSounds[<%= character.id %>] = [
+                <% character.sounds.forEach(function(soundId) { %>
+                    <% const sound = sounds.find(s => s.id === soundId); %>
+                    <% if (sound) { %>
+                        { id: <%= sound.id %>, name: "<%= sound.name %>" },
+                    <% } %>
+                <% }); %>
+            ];
+        <% }); %>
+
+        function addStep() {
+            const stepList = document.getElementById('step-list');
+            const stepDiv = document.createElement('div');
+            stepDiv.className = 'step';
+            stepDiv.innerHTML = `
+                <h4>Step ${++stepCount}</h4>
+                <input type="text" class="step-name" placeholder="Step Name" onchange="updateStepsJson()">
+                <label>
+                    Concurrent:
+                    <input type="checkbox" class="concurrent" onchange="updateStepsJson()">
+                </label>
+                <select class="action-type" onchange="updateActionFields(this)">
+                    <option value="">Select Action</option>
+                    <option value="sound">Play Sound</option>
+                    <option value="motor">Move Motor</option>
+                    <option value="servo">Move Servo</option>
+                    <option value="light">Control Light</option>
+                </select>
+                <div class="action-fields"></div>
+                <button type="button" onclick="removeStep(this)">Remove Step</button>
+            `;
+            stepList.appendChild(stepDiv);
+            updateStepsJson();
+        }
+
+        function removeStep(button) {
+            button.closest('.step').remove();
+            updateStepsJson();
+        }
+
+        function updateActionFields(select) {
+            const actionFields = select.nextElementSibling;
+            const characterId = document.getElementById('character_id').value;
+            const actionType = select.value;
+
+            actionFields.innerHTML = '';
+
+            if (actionType === 'sound') {
+                const sounds = characterSounds[characterId];
+                actionFields.innerHTML += `
+                    <select class="sound-id" onchange="updateStepsJson()">
+                        ${sounds.map(sound => `<option value="${sound.id}">${sound.name}</option>`).join('')}
+                    </select>
+                `;
+            } else if (['motor', 'servo', 'light'].includes(actionType)) {
+                const parts = characterParts[characterId].filter(part => part.type === actionType);
+                actionFields.innerHTML += `
+                    <select class="part-id" onchange="updateStepsJson()">
+                        ${parts.map(part => `<option value="${part.id}">${part.name}</option>`).join('')}
+                    </select>
+                `;
+
+                if (actionType === 'motor') {
+                    actionFields.innerHTML += `
+                        <input type="number" class="duration" placeholder="Duration (ms)" onchange="updateStepsJson()">
+                        <select class="direction" onchange="updateStepsJson()">
+                            <option value="F">Forward</option>
+                            <option value="R">Reverse</option>
+                        </select>
+                        <input type="number" class="speed" placeholder="Speed (0-100)" min="0" max="100" onchange="updateStepsJson()">
+                    `;
+                } else if (actionType === 'servo') {
+                    actionFields.innerHTML += `
+                        <input type="number" class="duration" placeholder="Duration (ms)" onchange="updateStepsJson()">
+                        <input type="number" class="angle" placeholder="Angle (0-180)" min="0" max="180" onchange="updateStepsJson()">
+                    `;
+                } else if (actionType === 'light') {
+                    actionFields.innerHTML += `
+                        <input type="number" class="duration" placeholder="Duration (ms)" onchange="updateStepsJson()">
+                        <select class="state" onchange="updateStepsJson()">
+                            <option value="On">On</option>
+                            <option value="Off">Off</option>
+                        </select>
+                        <input type="number" class="level" placeholder="Level (0-100)" min="0" max="100" onchange="updateStepsJson()">
+                    `;
+                }
+            }
+
+            updateStepsJson();
+        }
+
+        function updateStepsJson() {
+            const steps = [];
+            document.querySelectorAll('.step').forEach((stepDiv, index) => {
+                const step = {
+                    name: stepDiv.querySelector('.step-name').value,
+                    concurrent: stepDiv.querySelector('.concurrent').checked,
+                    type: stepDiv.querySelector('.action-type').value
+                };
+
+                if (step.type === 'sound') {
+                    step.sound_id = stepDiv.querySelector('.sound-id').value;
+                } else if (['motor', 'servo', 'light'].includes(step.type)) {
+                    step.part_id = parseInt(stepDiv.querySelector('.part-id').value);
+                    step.duration = parseInt(stepDiv.querySelector('.duration').value);
+
+                    if (step.type === 'motor') {
+                        step.direction = stepDiv.querySelector('.direction').value;
+                        step.speed = parseInt(stepDiv.querySelector('.speed').value);
+                    } else if (step.type === 'servo') {
+                        step.angle = parseInt(stepDiv.querySelector('.angle').value);
+                    } else if (step.type === 'light') {
+                        step.state = stepDiv.querySelector('.state').value;
+                        step.level = parseInt(stepDiv.querySelector('.level').value);
+                    }
+                }
+
+                steps.push(step);
+            });
+
+            document.getElementById('steps_json').value = JSON.stringify(steps);
+        }
+
+        function updateCharacterParts() {
+            const characterId = document.getElementById('character_id').value;
+            document.querySelectorAll('.step').forEach(stepDiv => {
+                const actionType = stepDiv.querySelector('.action-type').value;
+                if (actionType) {
+                    updateActionFields(stepDiv.querySelector('.action-type'));
+                }
+            });
+        }
+
+        // Load existing steps if editing a scene
+        const existingSteps = <%= JSON.stringify(scene.steps || []) %>;
+        existingSteps.forEach(step => {
+            addStep();
+            const stepDiv = document.querySelector('.step:last-of-type');
+            stepDiv.querySelector('.step-name').value = step.name || '';
+            stepDiv.querySelector('.concurrent').checked = step.concurrent;
+            stepDiv.querySelector('.action-type').value = step.type;
+            updateActionFields(stepDiv.querySelector('.action-type'));
+            
+            if (step.type === 'sound') {
+                stepDiv.querySelector('.sound-id').value = step.sound_id;
+            } else if (['motor', 'servo', 'light'].includes(step.type)) {
+                stepDiv.querySelector('.part-id').value = step.part_id;
+                stepDiv.querySelector('.duration').value = step.duration;
+
+                if (step.type === 'motor') {
+                    stepDiv.querySelector('.direction').value = step.direction;
+                    stepDiv.querySelector('.speed').value = step.speed;
+                } else if (step.type === 'servo') {
+                    stepDiv.querySelector('.angle').value = step.angle;
+                } else if (step.type === 'light') {
+                    stepDiv.querySelector('.state').value = step.state;
+                    stepDiv.querySelector('.level').value = step.level;
+                }
+            }
+        });
+
+        updateStepsJson();
+
+        // Make steps sortable
+        $(function() {
+            $("#step-list").sortable({
+                update: function(event, ui) {
+                    updateStepsJson();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

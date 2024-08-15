@@ -1,0 +1,158 @@
+body {
+    font-family: 'Courier New', Courier, monospace;
+    line-height: 1.6;
+    margin: 0;
+    padding: 20px;
+    background-color: #000000;
+    color: #00ff00;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: #00ff00;
+    text-shadow: 0 0 5px #00ff00;
+}
+
+a {
+    color: #00ffff;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+    text-shadow: 0 0 5px #00ffff;
+}
+
+.button {
+    display: inline-block;
+    background-color: #003300;
+    color: #00ff00;
+    padding: 10px 15px;
+    border: 1px solid #00ff00;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+    margin: 10px 0;
+}
+
+.button:hover {
+    background-color: #004400;
+    text-decoration: none;
+    box-shadow: 0 0 10px #00ff00;
+}
+
+form {
+    background-color: #001100;
+    padding: 20px;
+    border-radius: 5px;
+    border: 1px solid #00ff00;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.1);
+}
+
+form div {
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+input[type="text"],
+input[type="number"],
+textarea,
+select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #00ff00;
+    border-radius: 4px;
+    background-color: #000000;
+    color: #00ff00;
+    box-sizing: border-box;
+}
+
+button {
+    background-color: #003300;
+    color: #00ff00;
+    padding: 10px 15px;
+    border: 1px solid #00ff00;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #004400;
+    box-shadow: 0 0 10px #00ff00;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: #001100;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.1);
+}
+
+table, th, td {
+    border: 1px solid #00ff00;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+}
+
+th {
+    background-color: #002200;
+    font-weight: bold;
+}
+
+tr:nth-child(even) {
+    background-color: #001800;
+}
+
+#parts-container, #sounds-container {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+#available-parts, #selected-parts, #available-sounds, #selected-sounds {
+    width: 40%;
+}
+
+#available-parts select, #selected-parts select, #available-sounds select, #selected-sounds select {
+    width: 100%;
+    height: 200px;
+    background-color: #001100;
+    color: #00ff00;
+    border: 1px solid #00ff00;
+}
+
+#parts-container > div:nth-child(2), #sounds-container > div:nth-child(2) {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+#parts-container button, #sounds-container button {
+    margin: 5px;
+}
+
+input[type="file"] {
+    background-color: #001100;
+    color: #00ff00;
+    border: 1px solid #00ff00;
+    padding: 5px;
+    border-radius: 4px;
+}
+
+option {
+    background-color: #001100;
+    color: #00ff00;
+}
+
+input:focus, textarea:focus, select:focus {
+    outline: none;
+    box-shadow: 0 0 5px #00ff00;
+}

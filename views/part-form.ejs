@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <h1><%= title %></h1>
+    <form action="<%= action %>" method="POST">
+        <% if (part.id) { %>
+            <input type="hidden" name="id" value="<%= part.id %>">
+        <% } %>
+        <div>
+            <label for="name">Part Name:</label>
+            <input type="text" id="name" name="name" value="<%= part.name || '' %>" required>
+        </div>
+        <div>
+            <label for="type">Type:</label>
+            <select id="type" name="type" required>
+                <option value="motor" <%= part.type === 'motor' ? 'selected' : '' %>>Motor</option>
+                <option value="servo" <%= part.type === 'servo' ? 'selected' : '' %>>Servo</option>
+                <option value="light" <%= part.type === 'light' ? 'selected' : '' %>>Light</option>
+            </select>
+        </div>
+        <div>
+            <label for="pin">GPIO Pin:</label>
+            <input type="number" id="pin" name="pin" value="<%= part.pin || '' %>" required min="0" max="40">
+        </div>
+        <button type="submit">Save Part</button>
+    </form>
+    <a href="/parts" class="button">Back to Parts</a>
+</body>
+</html>

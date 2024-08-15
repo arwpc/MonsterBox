@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <h1><%= title %></h1>
+    <a href="/characters/new" class="button">Add New Character</a>
+    <table>
+        <thead>
+            <tr>
+                <th>Image</th>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Parts</th>
+                <th>Sounds</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% characters.forEach(function(character) { %>
+                <tr>
+                    <td>
+                        <% if (character.image) { %>
+                            <img src="/images/characters/<%= character.image %>" alt="<%= character.char_name %>" style="max-width: 100px;">
+                        <% } else { %>
+                            No Image
+                        <% } %>
+                    </td>
+                    <td><%= character.char_name %></td>
+                    <td><%= character.char_description %></td>
+                    <td>
+                        <% character.parts.forEach(function(partId) { %>
+                            <% const part = parts.find(p => p.id === partId); %>
+                            <% if (part) { %>
+                                <%= part.name %><br>
+                            <% } %>
+                        <% }); %>
+                    </td>
+                    <td>
+                        <% character.sounds.forEach(function(soundId) { %>
+                            <% const sound = sounds.find(s => s.id === soundId); %>
+                            <% if (sound) { %>
+                                <%= sound.name %><br>
+                            <% } %>
+                        <% }); %>
+                    </td>
+                    <td>
+                        <a href="/characters/<%= character.id %>/edit" class="button">Edit</a>
+                    </td>
+                </tr>
+            <% }); %>
+        </tbody>
+    </table>
+    <a href="/" class="button">Back to Main Menu</a>
+</body>
+</html>

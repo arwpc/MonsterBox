@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <h1><%= title %></h1>
+    <a href="/sounds/new" class="button">Add New Sound</a>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Filename</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% sounds.forEach(function(sound) { %>
+                <tr>
+                    <td><%= sound.name %></td>
+                    <td><%= sound.filename %></td>
+                    <td>
+                        <a href="/sounds/<%= sound.id %>/edit" class="button">Edit</a>
+                        <audio controls>
+                            <source src="/sounds/<%= sound.filename %>" type="audio/mpeg">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                </tr>
+            <% }); %>
+        </tbody>
+    </table>
+    <a href="/" class="button">Back to Main Menu</a>
+</body>
+</html>

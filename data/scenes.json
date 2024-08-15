@@ -1,0 +1,30 @@
+[
+  {
+    "id": 1,
+    "scene_name": "Jump out and spaz",
+    "character_id": 1,
+    "steps": [
+      {
+        "name": "Raise head",
+        "concurrent": false,
+        "type": "motor",
+        "part_id": 2,
+        "duration": 10,
+        "direction": "F",
+        "speed": 100
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "scene_name": "asdasd",
+    "character_id": 1,
+    "steps": [
+      {
+        "name": "asdasd",
+        "concurrent": false,
+        "type": ""
+      }
+    ]
+  }
+]
