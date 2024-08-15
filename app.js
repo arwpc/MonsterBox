@@ -267,6 +267,12 @@ app.post('/sounds/:id', upload.single('sound_file'), async (req, res) => {
     }
 });
 
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).send('Something broke!');
+});
+
 // Start the server
 app.listen(port, () => {
     console.log(`MonsterBox server running at http://localhost:${port}`);
