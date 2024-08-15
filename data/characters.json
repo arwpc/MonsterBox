@@ -6,9 +6,21 @@
     "parts": [
       1,
       2,
-      4
+      4,
+      5
     ],
     "sounds": [],
     "image": "1723741424106.jpg"
+  },
+  {
+    "id": 2,
+    "char_name": "Arnold",
+    "char_description": "Not much there",
+    "parts": [
+      1,
+      2
+    ],
+    "sounds": [],
+    "image": "1723757152586.jpg"
   }
 ]
