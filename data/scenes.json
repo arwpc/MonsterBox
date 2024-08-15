@@ -24,6 +24,40 @@
         "name": "asdasd",
         "concurrent": false,
         "type": ""
+      },
+      {
+        "name": "nut smack",
+        "concurrent": false,
+        "type": "motor",
+        "part_id": 4,
+        "duration": 12,
+        "direction": "R",
+        "speed": 12
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "scene_name": "Chest lift",
+    "character_id": 2,
+    "steps": [
+      {
+        "name": "Lift Left Arm",
+        "concurrent": true,
+        "type": "motor",
+        "part_id": 2,
+        "duration": 20,
+        "direction": "F",
+        "speed": 100
+      },
+      {
+        "name": "Lift Right Arm",
+        "concurrent": true,
+        "type": "motor",
+        "part_id": 1,
+        "duration": 20,
+        "direction": "F",
+        "speed": 100
       }
     ]
   }
