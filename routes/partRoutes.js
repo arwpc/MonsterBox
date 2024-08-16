@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const dataManager = require('../dataManager');
+const { exec } = require('child_process');
+const path = require('path');
 
 router.get('/', async (req, res) => {
     const parts = await dataManager.getParts();
@@ -26,9 +28,17 @@ router.post('/', async (req, res) => {
     const newPart = {
         id: dataManager.getNextId(parts),
         name: req.body.name,
-        type: req.body.type,
-        pin: parseInt(req.body.pin)
+        type: req.body.type
     };
+
+    if (req.body.type === 'motor') {
+        newPart.directionPin = parseInt(req.body.directionPin);
+        newPart.pwmPin = parseInt(req.body.pwmPin);
+        newPart.frequency = parseInt(req.body.frequency);
+    } else {
+        newPart.pin = parseInt(req.body.pin);
+    }
+
     parts.push(newPart);
     await dataManager.saveParts(parts);
     res.redirect('/parts');
@@ -42,9 +52,17 @@ router.post('/:id', async (req, res) => {
         parts[index] = {
             id: id,
             name: req.body.name,
-            type: req.body.type,
-            pin: parseInt(req.body.pin)
+            type: req.body.type
         };
+
+        if (req.body.type === 'motor') {
+            parts[index].directionPin = parseInt(req.body.directionPin);
+            parts[index].pwmPin = parseInt(req.body.pwmPin);
+            parts[index].frequency = parseInt(req.body.frequency);
+        } else {
+            parts[index].pin = parseInt(req.body.pin);
+        }
+
         await dataManager.saveParts(parts);
         res.redirect('/parts');
     } else {
@@ -63,6 +81,30 @@ router.post('/:id/delete', async (req, res) => {
     } else {
         res.status(404).send('Part not found');
     }
+});
+
+router.post('/test-motor', (req, res) => {
+    console.log('Test motor route hit');
+    console.log('Request body:', req.body);
+    
+    const { direction, speed, duration } = req.body;
+    const pythonScript = path.join(__dirname, '..', 'motor_control.py');
+    const command = `sudo python3 ${pythonScript} ${direction} ${speed} ${duration}`;
+    
+    console.log('Command to be executed:', command);
+
+    exec(command, (error, stdout, stderr) => {
+        if (error) {
+            console.error(`Exec error: ${error.message}`);
+            return res.status(500).send(`Error executing command: ${error.message}`);
+        }
+        if (stderr) {
+            console.error(`stderr: ${stderr}`);
+            return res.status(500).send(`Error from Python script: ${stderr}`);
+        }
+        console.log(`stdout: ${stdout}`);
+        res.status(200).send('Motor test successful');
+    });
 });
 
 module.exports = router;

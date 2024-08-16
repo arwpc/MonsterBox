@@ -1,0 +1,63 @@
+2024-08-16 00:31:49,623 - INFO - Controlling motor: direction=forward, speed=100, duration=1000
+2024-08-16 00:31:50,624 - INFO - GPIO cleanup completed
+2024-08-16 00:31:56,758 - INFO - Controlling motor: direction=forward, speed=100, duration=2138
+2024-08-16 00:31:58,896 - INFO - GPIO cleanup completed
+2024-08-16 00:32:03,251 - INFO - Controlling motor: direction=backward, speed=100, duration=2138
+2024-08-16 00:32:05,390 - INFO - GPIO cleanup completed
+2024-08-16 00:41:22,916 - ERROR - Incorrect number of arguments
+2024-08-16 00:41:35,404 - ERROR - Incorrect number of arguments
+2024-08-16 00:41:36,527 - ERROR - Incorrect number of arguments
+2024-08-16 00:41:37,385 - ERROR - Incorrect number of arguments
+2024-08-16 00:41:41,472 - ERROR - Incorrect number of arguments
+2024-08-16 00:41:43,752 - ERROR - Incorrect number of arguments
+2024-08-16 00:42:11,737 - ERROR - Incorrect number of arguments
+2024-08-16 00:42:13,978 - ERROR - Incorrect number of arguments
+2024-08-16 00:42:15,206 - ERROR - Incorrect number of arguments
+2024-08-16 00:42:15,985 - ERROR - Incorrect number of arguments
+2024-08-16 00:42:16,791 - ERROR - Incorrect number of arguments
+2024-08-16 00:42:17,491 - ERROR - Incorrect number of arguments
+2024-08-16 00:42:18,156 - ERROR - Incorrect number of arguments
+2024-08-16 00:42:18,721 - ERROR - Incorrect number of arguments
+2024-08-16 00:42:23,699 - ERROR - Incorrect number of arguments
+2024-08-16 00:42:47,376 - ERROR - Incorrect number of arguments
+2024-08-16 00:43:14,433 - ERROR - Incorrect number of arguments
+2024-08-16 00:43:15,881 - ERROR - Incorrect number of arguments
+2024-08-16 00:47:15,341 - ERROR - Incorrect number of arguments
+2024-08-16 00:47:19,659 - ERROR - Incorrect number of arguments
+2024-08-16 00:47:20,630 - ERROR - Incorrect number of arguments
+2024-08-16 00:47:22,650 - ERROR - Incorrect number of arguments
+2024-08-16 00:47:28,500 - ERROR - Incorrect number of arguments
+2024-08-16 00:48:48,292 - ERROR - Incorrect number of arguments
+2024-08-16 00:48:50,105 - ERROR - Incorrect number of arguments
+2024-08-16 00:48:54,216 - ERROR - Incorrect number of arguments
+2024-08-16 00:48:55,972 - ERROR - Incorrect number of arguments
+2024-08-16 00:52:16,149 - INFO - Controlling motor: direction=forward, speed=50, duration=1000
+2024-08-16 00:52:17,150 - INFO - GPIO cleanup completed
+2024-08-16 00:52:24,929 - INFO - Controlling motor: direction=backward, speed=50, duration=1000
+2024-08-16 00:52:25,930 - INFO - GPIO cleanup completed
+2024-08-16 00:52:30,907 - INFO - Controlling motor: direction=backward, speed=50, duration=1000
+2024-08-16 00:52:31,908 - INFO - GPIO cleanup completed
+2024-08-16 00:52:36,216 - INFO - Controlling motor: direction=forward, speed=50, duration=1000
+2024-08-16 00:52:37,217 - INFO - GPIO cleanup completed
+2024-08-16 00:52:41,179 - INFO - Controlling motor: direction=forward, speed=95, duration=1000
+2024-08-16 00:52:42,181 - INFO - GPIO cleanup completed
+2024-08-16 00:52:44,455 - INFO - Controlling motor: direction=forward, speed=95, duration=1000
+2024-08-16 00:52:44,808 - INFO - Controlling motor: direction=forward, speed=95, duration=1000
+2024-08-16 00:52:45,456 - INFO - GPIO cleanup completed
+2024-08-16 00:52:45,809 - INFO - GPIO cleanup completed
+2024-08-16 00:52:46,960 - INFO - Controlling motor: direction=forward, speed=95, duration=1000
+2024-08-16 00:52:47,962 - INFO - GPIO cleanup completed
+2024-08-16 00:53:00,925 - INFO - Controlling motor: direction=forward, speed=95, duration=1000
+2024-08-16 00:53:01,926 - INFO - GPIO cleanup completed
+2024-08-16 00:54:46,450 - INFO - Controlling motor: direction=forward, speed=50, duration=1000
+2024-08-16 00:54:47,451 - INFO - GPIO cleanup completed
+2024-08-16 00:59:29,246 - INFO - Controlling motor: direction=forward, speed=50, duration=1000
+2024-08-16 00:59:30,247 - INFO - GPIO cleanup completed
+2024-08-16 01:02:48,133 - INFO - Controlling motor: direction=forward, speed=50, duration=1000
+2024-08-16 01:02:49,135 - INFO - GPIO cleanup completed
+2024-08-16 01:05:11,826 - INFO - Controlling motor: direction=forward, speed=50, duration=1000
+2024-08-16 01:05:12,220 - INFO - Controlling motor: direction=forward, speed=50, duration=1000
+2024-08-16 01:05:12,827 - INFO - GPIO cleanup completed
+2024-08-16 01:05:13,222 - INFO - GPIO cleanup completed
+2024-08-16 01:14:51,340 - INFO - Controlling motor: direction=forward, speed=50, duration=1000
+2024-08-16 01:14:52,342 - INFO - GPIO cleanup completed

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <h1><%= title %></h1>
+    
+    <h2>Motor Settings</h2>
+    <form id="settingsForm" action="/motor/save-settings" method="POST">
+        <label for="dirPin">Direction Pin:</label>
+        <input type="number" id="dirPin" name="dirPin" value="<%= settings.dirPin %>" required>
+        
+        <label for="pwmPin">PWM Pin:</label>
+        <input type="number" id="pwmPin" name="pwmPin" value="<%= settings.pwmPin %>" required>
+        
+        <button type="submit">Save Settings</button>
+    </form>
+
+    <h2>Motor Control</h2>
+    <div id="controlPanel">
+        <div class="direction-control">
+            <label>Direction:</label>
+            <div class="radio-group">
+                <input type="radio" id="forward" name="direction" value="forward" checked>
+                <label for="forward">Forward</label>
+                <input type="radio" id="backward" name="direction" value="backward">
+                <label for="backward">Backward</label>
+            </div>
+        </div>
+        
+        <label for="speed">Speed:</label>
+        <input type="range" id="speed" min="0" max="100" value="50">
+        <span id="speedValue">50</span>
+        
+        <label for="duration">Duration (ms):</label>
+        <input type="range" id="duration" min="100" max="5000" value="1000">
+        <span id="durationValue">1000</span>
+        
+        <button id="runMotor">Run Motor</button>
+    </div>
+
+    <a href="/" class="button">Back to Main Menu</a>
+
+    <script>
+        const speedSlider = document.getElementById('speed');
+        const speedValue = document.getElementById('speedValue');
+        const durationSlider = document.getElementById('duration');
+        const durationValue = document.getElementById('durationValue');
+        const runMotorButton = document.getElementById('runMotor');
+
+        speedSlider.oninput = function() {
+            speedValue.textContent = this.value;
+        }
+
+        durationSlider.oninput = function() {
+            durationValue.textContent = this.value;
+        }
+
+        runMotorButton.onclick = function() {
+            const direction = document.querySelector('input[name="direction"]:checked').value;
+            const speed = speedSlider.value;
+            const duration = durationSlider.value;
+
+            axios.post('/motor/control-motor', {
+                direction: direction,
+                speed: speed,
+                duration: duration
+            })
+            .then(function (response) {
+                console.log('Motor controlled successfully');
+            })
+            .catch(function (error) {
+                console.error('Error controlling motor:', error);
+            });
+        }
+    </script>
+</body>
+</html>

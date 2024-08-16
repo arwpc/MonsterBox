@@ -1,4 +1,3 @@
-// app.js
 const express = require('express');
 const path = require('path');
 const app = express();
@@ -8,6 +7,7 @@ const characterRoutes = require('./routes/characterRoutes');
 const sceneRoutes = require('./routes/sceneRoutes');
 const partRoutes = require('./routes/partRoutes');
 const soundRoutes = require('./routes/soundRoutes');
+const motorRoutes = require('./routes/motorRoutes');
 
 // Middleware setup
 app.use(express.json());
@@ -25,6 +25,7 @@ app.use('/characters', characterRoutes);
 app.use('/scenes', sceneRoutes);
 app.use('/parts', partRoutes);
 app.use('/sounds', soundRoutes);
+app.use('/motor', motorRoutes);
 
 // Handle 404 errors
 app.use((req, res, next) => {

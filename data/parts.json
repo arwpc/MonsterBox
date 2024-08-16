@@ -1,29 +1,5 @@
 [
   {
-    "id": 1,
-    "name": "Right Arm",
-    "type": "motor",
-    "pin": 17
-  },
-  {
-    "id": 2,
-    "name": "Left Arm",
-    "type": "motor",
-    "pin": 18
-  },
-  {
-    "id": 3,
-    "name": "Right Leg",
-    "type": "motor",
-    "pin": 19
-  },
-  {
-    "id": 4,
-    "name": "Left Leg",
-    "type": "motor",
-    "pin": 21
-  },
-  {
     "id": 5,
     "name": "Eyes",
     "type": "light",
@@ -31,8 +7,26 @@
   },
   {
     "id": 6,
-    "name": "Spotlight",
-    "type": "light",
-    "pin": 33
+    "name": "Right Arm",
+    "type": "motor",
+    "directionPin": 18,
+    "pwmPin": 24,
+    "frequency": 100
+  },
+  {
+    "id": 7,
+    "name": "Aaron Ray Warner",
+    "type": "motor",
+    "directionPin": 18,
+    "pwmPin": 24,
+    "frequency": 100
+  },
+  {
+    "id": 8,
+    "name": "asasdasd",
+    "type": "motor",
+    "directionPin": 24,
+    "pwmPin": 18,
+    "frequency": 100
   }
 ]

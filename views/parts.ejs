@@ -15,7 +15,7 @@
             <tr>
                 <th>Name</th>
                 <th>Type</th>
-                <th>Pin</th>
+                <th>Pin Details</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -24,7 +24,15 @@
                 <tr>
                     <td><%= part.name %></td>
                     <td><%= part.type %></td>
-                    <td><%= part.pin %></td>
+                    <td>
+                        <% if (part.type === 'motor') { %>
+                            Dir Pin: <%= part.directionPin %><br>
+                            PWM Pin: <%= part.pwmPin %><br>
+                            Frequency: <%= part.frequency %> Hz
+                        <% } else { %>
+                            Pin: <%= part.pin %>
+                        <% } %>
+                    </td>
                     <td>
                         <a href="/parts/<%= part.id %>/edit" class="button">Edit</a>
                         <button onclick="deletePart(<%= part.id %>)" class="button">Delete</button>

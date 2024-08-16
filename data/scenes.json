@@ -1,82 +1,26 @@
 [
   {
-    "id": 2,
-    "scene_name": "asdasd",
-    "character_id": 2,
+    "id": 5,
+    "scene_name": "Baphomet Awakens",
+    "character_id": 3,
     "steps": [
       {
-        "name": "asdasd",
-        "concurrent": false,
-        "type": "sound",
-        "sound_id": 1
-      },
-      {
-        "name": "nut smack",
+        "name": "Raise Right Arm",
         "concurrent": false,
         "type": "motor",
         "part_id": 1,
-        "duration": 12,
-        "direction": "R",
-        "speed": 12
-      }
-    ]
-  },
-  {
-    "id": 3,
-    "scene_name": "Chest lift",
-    "character_id": 2,
-    "steps": [
-      {
-        "name": "Lift Left Arm",
-        "concurrent": true,
-        "type": "motor",
-        "part_id": 2,
-        "duration": 20,
-        "direction": "F",
-        "speed": 100
-      },
-      {
-        "name": "Lift Right Arm",
-        "concurrent": true,
-        "type": "motor",
-        "part_id": 1,
-        "duration": 20,
-        "direction": "F",
-        "speed": 100
-      },
-      {
-        "name": "sound3333",
-        "concurrent": false,
-        "type": "sound",
-        "sound_id": 1
-      }
-    ]
-  },
-  {
-    "id": 4,
-    "scene_name": "arnold eyes me",
-    "character_id": 2,
-    "steps": [
-      {
-        "name": "scare me",
-        "concurrent": false,
-        "type": "sound",
-        "sound_id": 1
-      },
-      {
-        "name": "Turn on eyes",
-        "concurrent": false,
-        "type": "light",
-        "part_id": 5,
         "duration": 5,
-        "state": "On",
-        "level": 100
+        "direction": "F",
+        "speed": 100
       },
       {
-        "name": "smnokey the bear",
+        "name": "Light up hand",
         "concurrent": false,
-        "type": "sound",
-        "sound_id": 3
+        "type": "motor",
+        "part_id": 7,
+        "duration": 200,
+        "direction": "R",
+        "speed": 50
       }
     ]
   }
