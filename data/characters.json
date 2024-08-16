@@ -1,15 +1,16 @@
 [
   {
-    "id": 3,
-    "char_name": "Baphomet",
-    "char_description": "The dark lord of the underworld",
+    "id": 1,
+    "char_name": "Scary Pete",
+    "char_description": "Someone with buttholes for eyes",
     "parts": [
-      7,
-      1
+      1,
+      4,
+      5
     ],
     "sounds": [
-      1
+      2
     ],
-    "image": "1723770781607.jpg"
+    "image": "1723741424106.jpg"
   }
 ]

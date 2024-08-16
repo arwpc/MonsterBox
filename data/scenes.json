@@ -23,5 +23,47 @@
         "speed": 50
       }
     ]
+  },
+  {
+    "id": 3,
+    "scene_name": "test",
+    "character_id": 1,
+    "steps": [
+      {
+        "name": "test1",
+        "concurrent": false,
+        "type": "sound",
+        "sound_id": "2"
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "scene_name": "flying ass",
+    "character_id": 1,
+    "steps": [
+      {
+        "name": "Jump Up",
+        "concurrent": false,
+        "type": "motor",
+        "part_id": 4,
+        "duration": 2,
+        "direction": "R",
+        "speed": 100
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "scene_name": "asd",
+    "character_id": 1,
+    "steps": [
+      {
+        "name": "asd",
+        "concurrent": true,
+        "type": "sound",
+        "sound_id": "2"
+      }
+    ]
   }
 ]
