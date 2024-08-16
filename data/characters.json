@@ -9,7 +9,11 @@
       4,
       5
     ],
-    "sounds": [],
+    "sounds": [
+      1,
+      2,
+      3
+    ],
     "image": "1723741424106.jpg"
   },
   {
@@ -18,9 +22,13 @@
     "char_description": "Not much there",
     "parts": [
       1,
+      2,
+      5
+    ],
+    "sounds": [
+      1,
       2
     ],
-    "sounds": [],
     "image": "1723757152586.jpg"
   }
 ]

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
     <link rel="stylesheet" href="/css/style.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
     <h1><%= title %></h1>
@@ -50,11 +51,24 @@
                     </td>
                     <td>
                         <a href="/characters/<%= character.id %>/edit" class="button">Edit</a>
+                        <button onclick="deleteCharacter(<%= character.id %>)" class="button">Delete</button>
                     </td>
                 </tr>
             <% }); %>
         </tbody>
     </table>
     <a href="/" class="button">Back to Main Menu</a>
+
+    <script>
+        function deleteCharacter(id) {
+            if (confirm('Are you sure you want to delete this character?')) {
+                $.post('/characters/' + id + '/delete', function() {
+                    location.reload();
+                }).fail(function() {
+                    alert('Error deleting character');
+                });
+            }
+        }
+    </script>
 </body>
 </html>
