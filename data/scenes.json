@@ -1,35 +1,20 @@
 [
   {
-    "id": 1,
-    "scene_name": "Jump out and spaz",
-    "character_id": 1,
-    "steps": [
-      {
-        "name": "Raise head",
-        "concurrent": false,
-        "type": "motor",
-        "part_id": 2,
-        "duration": 10,
-        "direction": "F",
-        "speed": 100
-      }
-    ]
-  },
-  {
     "id": 2,
     "scene_name": "asdasd",
-    "character_id": 1,
+    "character_id": 2,
     "steps": [
       {
         "name": "asdasd",
         "concurrent": false,
-        "type": ""
+        "type": "sound",
+        "sound_id": 1
       },
       {
         "name": "nut smack",
         "concurrent": false,
         "type": "motor",
-        "part_id": 4,
+        "part_id": 1,
         "duration": 12,
         "direction": "R",
         "speed": 12
@@ -58,6 +43,12 @@
         "duration": 20,
         "direction": "F",
         "speed": 100
+      },
+      {
+        "name": "sound3333",
+        "concurrent": false,
+        "type": "sound",
+        "sound_id": 1
       }
     ]
   },
@@ -66,6 +57,12 @@
     "scene_name": "arnold eyes me",
     "character_id": 2,
     "steps": [
+      {
+        "name": "scare me",
+        "concurrent": false,
+        "type": "sound",
+        "sound_id": 1
+      },
       {
         "name": "Turn on eyes",
         "concurrent": false,
@@ -76,10 +73,10 @@
         "level": 100
       },
       {
-        "name": "scare me",
+        "name": "smnokey the bear",
         "concurrent": false,
         "type": "sound",
-        "sound_id": 2
+        "sound_id": 3
       }
     ]
   }
