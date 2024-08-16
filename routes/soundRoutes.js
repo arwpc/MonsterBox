@@ -1,9 +1,7 @@
-// routes/soundRoutes.js
-
 const express = require('express');
 const path = require('path');
 const { exec } = require('child_process');
-const fs = require('fs').promises;  // Import the fs module for file operations
+const fs = require('fs').promises;
 const dataManager = require('../dataManager');
 const router = express.Router();
 
@@ -19,7 +17,6 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// GET /sounds - Display all sounds
 router.get('/', async (req, res) => {
     try {
         const sounds = await dataManager.getSounds();
@@ -30,12 +27,10 @@ router.get('/', async (req, res) => {
     }
 });
 
-// GET /sounds/new - Display form to add a new sound
 router.get('/new', (req, res) => {
     res.render('sound-form', { title: 'Add New Sound', action: '/sounds', sound: {} });
 });
 
-// POST /sounds - Add a new sound
 router.post('/', upload.single('sound_file'), async (req, res) => {
     try {
         const sounds = await dataManager.getSounds();
@@ -53,7 +48,6 @@ router.post('/', upload.single('sound_file'), async (req, res) => {
     }
 });
 
-// POST /sounds/play - Play sound on the animatronic
 router.post('/play', async (req, res) => {
     try {
         const { soundId } = req.body;
@@ -89,10 +83,8 @@ router.post('/play', async (req, res) => {
     }
 });
 
-// POST /sounds/stop - Stop all sounds on the character
 router.post('/stop', (req, res) => {
     try {
-        // Command to stop all sounds (kill mpg123 or aplay processes)
         exec('pkill -f mpg123', () => {});
         exec('pkill -f aplay', () => {});
 
@@ -104,8 +96,8 @@ router.post('/stop', (req, res) => {
     }
 });
 
-// POST /sounds/delete/:id - Delete a sound
-router.post('/delete/:id', async (req, res) => {
+router.post('/:id/delete', async (req, res) => {
+    console.log('DELETE /sounds/:id route hit. ID:', req.params.id);
     try {
         const soundId = parseInt(req.params.id);
         const sounds = await dataManager.getSounds();
@@ -113,9 +105,16 @@ router.post('/delete/:id', async (req, res) => {
         if (index !== -1) {
             const [deletedSound] = sounds.splice(index, 1);
             await dataManager.saveSounds(sounds);
-            // Delete the sound file from the public directory
-            await fs.unlink(path.join('public/sounds', deletedSound.filename));
-            res.redirect('/sounds');
+            
+            // Attempt to delete the file, but don't fail if it doesn't exist
+            try {
+                await fs.unlink(path.join('public/sounds', deletedSound.filename));
+            } catch (error) {
+                console.error('Error deleting sound file:', error);
+                // Continue even if file deletion fails
+            }
+            
+            res.sendStatus(200);
         } else {
             res.status(404).send('Sound not found');
         }

@@ -1,4 +1,3 @@
-<!-- views/sounds.ejs -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,54 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
     <link rel="stylesheet" href="/css/style.css">
-    <script>
-        // Function to play sound locally in the browser
-        function playLocal(filename) {
-            const audio = new Audio(`/sounds/${filename}`);
-            audio.play();
-        }
-
-        // Function to send an AJAX POST request to the server to play the sound on character
-        function playOnCharacter(soundId) {
-            fetch('/sounds/play', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ soundId }),
-            }).then(response => {
-                if (!response.ok) {
-                    alert('Error playing sound on character');
-                }
-            });
-        }
-
-        // Function to stop all sounds on the character
-        function stopSounds() {
-            fetch('/sounds/stop', {
-                method: 'POST',
-            }).then(response => {
-                if (!response.ok) {
-                    alert('Error stopping sounds');
-                }
-            });
-        }
-
-        // Function to delete a sound
-        function deleteSound(soundId) {
-            if (confirm('Are you sure you want to delete this sound?')) {
-                fetch(`/sounds/delete/${soundId}`, {
-                    method: 'POST',
-                }).then(response => {
-                    if (response.ok) {
-                        location.reload();
-                    } else {
-                        alert('Error deleting sound');
-                    }
-                });
-            }
-        }
-    </script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
     <h1><%= title %></h1>
@@ -82,5 +34,49 @@
     </table>
     <button onclick="stopSounds()">Stop All Sounds</button>
     <a href="/" class="button">Back to Main Menu</a>
+
+    <script>
+        function playLocal(filename) {
+            const audio = new Audio(`/sounds/${filename}`);
+            audio.play();
+        }
+
+        function playOnCharacter(soundId) {
+            fetch('/sounds/play', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ soundId }),
+            }).then(response => {
+                if (!response.ok) {
+                    alert('Error playing sound on character');
+                }
+            });
+        }
+
+        function stopSounds() {
+            fetch('/sounds/stop', {
+                method: 'POST',
+            }).then(response => {
+                if (!response.ok) {
+                    alert('Error stopping sounds');
+                }
+            });
+        }
+
+        function deleteSound(id) {
+            if (confirm('Are you sure you want to delete this sound?')) {
+                $.post('/sounds/' + id + '/delete')
+                    .done(function() {
+                        location.reload();
+                    })
+                    .fail(function(xhr, status, error) {
+                        console.error('Error details:', xhr.responseText);
+                        alert('Error deleting sound: ' + xhr.status + ' ' + xhr.statusText);
+                    });
+            }
+        }
+    </script>
 </body>
 </html>

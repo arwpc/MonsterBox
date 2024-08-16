@@ -65,17 +65,23 @@
             const direction = document.querySelector('input[name="direction"]:checked').value;
             const speed = speedSlider.value;
             const duration = durationSlider.value;
+            const directionPin = document.getElementById('dirPin').value;
+            const pwmPin = document.getElementById('pwmPin').value;
 
             axios.post('/motor/control-motor', {
                 direction: direction,
                 speed: speed,
-                duration: duration
+                duration: duration,
+                directionPin: directionPin,
+                pwmPin: pwmPin
             })
             .then(function (response) {
                 console.log('Motor controlled successfully');
+                alert('Motor control successful!');
             })
             .catch(function (error) {
                 console.error('Error controlling motor:', error);
+                alert('Error controlling motor: ' + (error.response ? error.response.data : error.message));
             });
         }
     </script>
