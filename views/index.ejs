@@ -1,20 +1,33 @@
+<!-- views/index.ejs -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title %></title>
+    <title>MonsterBox Control Panel</title>
     <link rel="stylesheet" href="/css/style.css">
+    <!-- Link to a scary font, using Google Fonts as an example -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
 </head>
 <body>
-    <h1><%= title %></h1>
+    <header>
+
+        <h1>MonsterBox(tm)</h1>
+    </header>
+<main>
+        <h2>Welcome to the MonsterBox Control Panel</h2>
+        <p>Choose an option from the menu to get started.</p>
+    </main>
+
     <nav>
         <ul>
-            <li><a href="/characters">Manage Characters</a></li>
-            <li><a href="/scenes">Manage Scenes</a></li>
-            <li><a href="/parts">Manage Parts</a></li>
-            <li><a href="/sounds">Manage Sounds</a></li>
+            <li><a href="/scenes">Scenes</a></li>
+            <li><a href="/characters">Characters</a></li>
+            <li><a href="/parts">Parts</a></li>
+            <li><a href="/sounds">Sounds</a></li>
+
         </ul>
     </nav>
+            <p>An animatronic automation package by ARW 8.15.2024.</p>
 </body>
 </html>
