@@ -1,4 +1,3 @@
-// routes/motorRoutes.js
 const express = require('express');
 const router = express.Router();
 const fs = require('fs').promises;
@@ -25,10 +24,10 @@ async function saveSettings(settings) {
     await fs.writeFile(settingsFile, JSON.stringify(settings, null, 2));
 }
 
-function controlMotor(direction, speed, duration) {
+function controlMotor(direction, speed, duration, dirPin, pwmPin) {
     return new Promise((resolve, reject) => {
         const pythonScript = path.join(__dirname, '..', 'motor_control.py');
-        const command = `sudo python3 ${pythonScript} ${direction} ${speed} ${duration}`;
+        const command = `sudo python3 ${pythonScript} ${direction} ${speed} ${duration} ${dirPin} ${pwmPin}`;
 
         exec(command, (error, stdout, stderr) => {
             if (error) {
@@ -57,9 +56,9 @@ router.post('/save-settings', async (req, res) => {
 });
 
 router.post('/control-motor', async (req, res) => {
-    const { direction, speed, duration } = req.body;
+    const { direction, speed, duration, directionPin, pwmPin } = req.body;
     try {
-        await controlMotor(direction, parseInt(speed), parseInt(duration));
+        await controlMotor(direction, parseInt(speed), parseInt(duration), parseInt(directionPin), parseInt(pwmPin));
         res.sendStatus(200);
     } catch (error) {
         res.status(500).send(`Error controlling motor: ${error.message}`);

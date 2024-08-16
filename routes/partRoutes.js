@@ -34,7 +34,6 @@ router.post('/', async (req, res) => {
     if (req.body.type === 'motor') {
         newPart.directionPin = parseInt(req.body.directionPin);
         newPart.pwmPin = parseInt(req.body.pwmPin);
-        newPart.frequency = parseInt(req.body.frequency);
     } else {
         newPart.pin = parseInt(req.body.pin);
     }
@@ -58,7 +57,6 @@ router.post('/:id', async (req, res) => {
         if (req.body.type === 'motor') {
             parts[index].directionPin = parseInt(req.body.directionPin);
             parts[index].pwmPin = parseInt(req.body.pwmPin);
-            parts[index].frequency = parseInt(req.body.frequency);
         } else {
             parts[index].pin = parseInt(req.body.pin);
         }
@@ -71,6 +69,7 @@ router.post('/:id', async (req, res) => {
 });
 
 router.post('/:id/delete', async (req, res) => {
+    console.log('DELETE /parts/:id route hit. ID:', req.params.id);
     const id = parseInt(req.params.id);
     const parts = await dataManager.getParts();
     const index = parts.findIndex(p => p.id === id);
@@ -87,9 +86,9 @@ router.post('/test-motor', (req, res) => {
     console.log('Test motor route hit');
     console.log('Request body:', req.body);
     
-    const { direction, speed, duration } = req.body;
+    const { direction, speed, duration, directionPin, pwmPin } = req.body;
     const pythonScript = path.join(__dirname, '..', 'motor_control.py');
-    const command = `sudo python3 ${pythonScript} ${direction} ${speed} ${duration}`;
+    const command = `sudo python3 ${pythonScript} ${direction} ${speed} ${duration} ${directionPin} ${pwmPin}`;
     
     console.log('Command to be executed:', command);
 

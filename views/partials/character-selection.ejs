@@ -1,0 +1,14 @@
+<div>
+    <label for="scene_name">Scene Name:</label>
+    <input type="text" id="scene_name" name="scene_name" value="<%= scene.scene_name || '' %>" required>
+</div>
+<div>
+    <label for="character_id">Character:</label>
+    <select id="character_id" name="character_id" required onchange="updateCharacterParts()">
+        <% characters.forEach(function(character) { %>
+            <option value="<%= character.id %>" <%= (scene.character_id === character.id) ? 'selected' : '' %>>
+                <%= character.char_name %>
+            </option>
+        <% }); %>
+    </select>
+</div>

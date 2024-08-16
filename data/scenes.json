@@ -1,69 +1,32 @@
 [
   {
-    "id": 5,
-    "scene_name": "Baphomet Awakens",
+    "id": 1,
+    "scene_name": "asdasdasd",
     "character_id": 3,
     "steps": [
       {
-        "name": "Raise Right Arm",
-        "concurrent": false,
-        "type": "motor",
-        "part_id": 1,
-        "duration": 5,
-        "direction": "F",
-        "speed": 100
-      },
-      {
-        "name": "Light up hand",
-        "concurrent": false,
-        "type": "motor",
-        "part_id": 7,
-        "duration": 200,
-        "direction": "R",
-        "speed": 50
-      }
-    ]
-  },
-  {
-    "id": 3,
-    "scene_name": "test",
-    "character_id": 1,
-    "steps": [
-      {
-        "name": "test1",
-        "concurrent": false,
-        "type": "sound",
-        "sound_id": "2"
-      }
-    ]
-  },
-  {
-    "id": 4,
-    "scene_name": "flying ass",
-    "character_id": 1,
-    "steps": [
-      {
-        "name": "Jump Up",
-        "concurrent": false,
-        "type": "motor",
-        "part_id": 4,
-        "duration": 2,
-        "direction": "R",
-        "speed": 100
-      }
-    ]
-  },
-  {
-    "id": 5,
-    "scene_name": "asd",
-    "character_id": 1,
-    "steps": [
-      {
-        "name": "asd",
+        "name": "asdasd",
         "concurrent": true,
         "type": "sound",
         "sound_id": "2"
+      },
+      {
+        "name": "asdasdasdasd",
+        "concurrent": false,
+        "type": "motor",
+        "part_id": 1,
+        "duration": 1000,
+        "direction": "R",
+        "speed": 100
       }
     ]
+  },
+  {
+    "id": 2,
+    "scene_name": "Axe Guy Awakens"
+  },
+  {
+    "id": "3",
+    "scene_name": "tgest"
   }
 ]

@@ -1,32 +1,16 @@
 [
   {
-    "id": 5,
-    "name": "Eyes",
-    "type": "light",
-    "pin": 20
-  },
-  {
-    "id": 6,
+    "id": 1,
     "name": "Right Arm",
     "type": "motor",
     "directionPin": 18,
-    "pwmPin": 24,
-    "frequency": 100
+    "pwmPin": 24
   },
   {
-    "id": 7,
-    "name": "Aaron Ray Warner",
+    "id": 2,
+    "name": "Left Arm",
     "type": "motor",
-    "directionPin": 18,
-    "pwmPin": 24,
-    "frequency": 100
-  },
-  {
-    "id": 8,
-    "name": "asasdasd",
-    "type": "motor",
-    "directionPin": 24,
-    "pwmPin": 18,
-    "frequency": 100
+    "directionPin": 20,
+    "pwmPin": 22
   }
 ]

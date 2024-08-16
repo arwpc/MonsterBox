@@ -17,91 +17,146 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 router.get('/', async (req, res) => {
-    const characters = await dataManager.getCharacters();
-    const parts = await dataManager.getParts();
-    const sounds = await dataManager.getSounds();
-    res.render('characters', { title: 'Characters', characters, parts, sounds });
+    try {
+        console.log('GET /characters route hit');
+        console.log('Fetching characters...');
+        const characters = await dataManager.getCharacters();
+        console.log(`Retrieved ${characters.length} characters`);
+
+        console.log('Fetching parts...');
+        const parts = await dataManager.getParts();
+        console.log(`Retrieved ${parts.length} parts`);
+
+        console.log('Fetching sounds...');
+        const sounds = await dataManager.getSounds();
+        console.log(`Retrieved ${sounds.length} sounds`);
+
+        console.log('Preparing to render characters page...');
+        console.log('Characters:', JSON.stringify(characters));
+        console.log('Parts:', JSON.stringify(parts));
+        console.log('Sounds:', JSON.stringify(sounds));
+
+        res.render('characters', { title: 'Characters', characters, parts, sounds }, (err, html) => {
+            if (err) {
+                console.error('Error rendering characters template:', err);
+                res.status(500).send('An error occurred while rendering the characters page: ' + err.message);
+            } else {
+                console.log('Characters page rendered successfully');
+                res.send(html);
+            }
+        });
+    } catch (error) {
+        console.error('Error in GET /characters route:', error);
+        res.status(500).send('An error occurred while loading the characters page: ' + error.message);
+    }
 });
 
+
 router.get('/new', async (req, res) => {
-    const parts = await dataManager.getParts();
-    const sounds = await dataManager.getSounds();
-    res.render('character-form', { title: 'Add New Character', action: '/characters', character: {}, parts, sounds });
+    try {
+        const parts = await dataManager.getParts();
+        const sounds = await dataManager.getSounds();
+        res.render('character-form', { title: 'Add New Character', action: '/characters', character: {}, parts, sounds });
+    } catch (error) {
+        console.error('Error in GET /characters/new route:', error);
+        res.status(500).send('An error occurred while loading the new character form: ' + error.message);
+    }
 });
 
 router.get('/:id/edit', async (req, res) => {
-    const characters = await dataManager.getCharacters();
-    const parts = await dataManager.getParts();
-    const sounds = await dataManager.getSounds();
-    const character = characters.find(c => c.id === parseInt(req.params.id));
-    if (character) {
-        res.render('character-form', { title: 'Edit Character', action: '/characters/' + character.id, character, parts, sounds });
-    } else {
-        res.status(404).send('Character not found');
+    try {
+        const characters = await dataManager.getCharacters();
+        const parts = await dataManager.getParts();
+        const sounds = await dataManager.getSounds();
+        const character = characters.find(c => c.id === parseInt(req.params.id));
+        if (character) {
+            res.render('character-form', { title: 'Edit Character', action: '/characters/' + character.id, character, parts, sounds });
+        } else {
+            res.status(404).send('Character not found');
+        }
+    } catch (error) {
+        console.error('Error in GET /characters/:id/edit route:', error);
+        res.status(500).send('An error occurred while loading the edit character form: ' + error.message);
     }
 });
 
 router.post('/', upload.single('character_image'), async (req, res) => {
-    const characters = await dataManager.getCharacters();
-    const newCharacter = {
-        id: dataManager.getNextId(characters),
-        char_name: req.body.char_name,
-        char_description: req.body.char_description,
-        parts: Array.isArray(req.body.parts) ? req.body.parts.map(Number) : req.body.parts ? [Number(req.body.parts)] : [],
-        sounds: Array.isArray(req.body.sounds) ? req.body.sounds.map(Number) : req.body.sounds ? [Number(req.body.sounds)] : [],
-        image: req.file ? req.file.filename : null
-    };
-    characters.push(newCharacter);
-    await dataManager.saveCharacters(characters);
-    res.redirect('/characters');
-});
-
-router.post('/:id', upload.single('character_image'), async (req, res) => {
-    const id = parseInt(req.params.id);
-    const characters = await dataManager.getCharacters();
-    const index = characters.findIndex(c => c.id === id);
-    if (index !== -1) {
-        const oldImage = characters[index].image;
-        characters[index] = {
-            id: id,
+    try {
+        const characters = await dataManager.getCharacters();
+        const newCharacter = {
+            id: dataManager.getNextId(characters),
             char_name: req.body.char_name,
             char_description: req.body.char_description,
             parts: Array.isArray(req.body.parts) ? req.body.parts.map(Number) : req.body.parts ? [Number(req.body.parts)] : [],
             sounds: Array.isArray(req.body.sounds) ? req.body.sounds.map(Number) : req.body.sounds ? [Number(req.body.sounds)] : [],
-            image: req.file ? req.file.filename : oldImage
+            image: req.file ? req.file.filename : null
         };
-        if (req.file && oldImage) {
-            try {
-                await fs.unlink(path.join('public', 'images', 'characters', oldImage));
-            } catch (error) {
-                console.error('Error deleting old image:', error);
-            }
-        }
+        characters.push(newCharacter);
         await dataManager.saveCharacters(characters);
         res.redirect('/characters');
-    } else {
-        res.status(404).send('Character not found');
+    } catch (error) {
+        console.error('Error in POST /characters route:', error);
+        res.status(500).send('An error occurred while creating the character: ' + error.message);
+    }
+});
+
+router.post('/:id', upload.single('character_image'), async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const characters = await dataManager.getCharacters();
+        const index = characters.findIndex(c => c.id === id);
+        if (index !== -1) {
+            const oldImage = characters[index].image;
+            characters[index] = {
+                id: id,
+                char_name: req.body.char_name,
+                char_description: req.body.char_description,
+                parts: Array.isArray(req.body.parts) ? req.body.parts.map(Number) : req.body.parts ? [Number(req.body.parts)] : [],
+                sounds: Array.isArray(req.body.sounds) ? req.body.sounds.map(Number) : req.body.sounds ? [Number(req.body.sounds)] : [],
+                image: req.file ? req.file.filename : oldImage
+            };
+            if (req.file && oldImage) {
+                try {
+                    await fs.unlink(path.join('public', 'images', 'characters', oldImage));
+                } catch (error) {
+                    console.error('Error deleting old image:', error);
+                }
+            }
+            await dataManager.saveCharacters(characters);
+            res.redirect('/characters');
+        } else {
+            res.status(404).send('Character not found');
+        }
+    } catch (error) {
+        console.error('Error in POST /characters/:id route:', error);
+        res.status(500).send('An error occurred while updating the character: ' + error.message);
     }
 });
 
 router.post('/:id/delete', async (req, res) => {
-    const id = parseInt(req.params.id);
-    const characters = await dataManager.getCharacters();
-    const index = characters.findIndex(c => c.id === id);
-    if (index !== -1) {
-        const character = characters[index];
-        if (character.image) {
-            try {
-                await fs.unlink(path.join('public', 'images', 'characters', character.image));
-            } catch (error) {
-                console.error('Error deleting character image:', error);
+    try {
+        console.log('DELETE /characters/:id route hit. ID:', req.params.id);
+        const id = parseInt(req.params.id);
+        const characters = await dataManager.getCharacters();
+        const index = characters.findIndex(c => c.id === id);
+        if (index !== -1) {
+            const character = characters[index];
+            if (character.image) {
+                try {
+                    await fs.unlink(path.join('public', 'images', 'characters', character.image));
+                } catch (error) {
+                    console.error('Error deleting character image:', error);
+                }
             }
+            characters.splice(index, 1);
+            await dataManager.saveCharacters(characters);
+            res.sendStatus(200);
+        } else {
+            res.status(404).send('Character not found');
         }
-        characters.splice(index, 1);
-        await dataManager.saveCharacters(characters);
-        res.sendStatus(200);
-    } else {
-        res.status(404).send('Character not found');
+    } catch (error) {
+        console.error('Error in POST /characters/:id/delete route:', error);
+        res.status(500).send('An error occurred while deleting the character: ' + error.message);
     }
 });
 

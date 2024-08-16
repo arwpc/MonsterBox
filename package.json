@@ -1,16 +1,39 @@
 {
-  "name": "monsterbox",
+  "name": "scene-builder-app",
   "version": "1.0.0",
-  "description": "MonsterBox Animatronic Control System",
-  "main": "app.js",
+  "description": "A refactored scene builder application for managing scenes and steps.",
+  "main": "server.js",
   "scripts": {
-    "start": "node app.js"
+    "start": "node server.js",
+    "test": "mocha --recursive"
   },
   "dependencies": {
-    "axios": "^0.21.1",
-    "ejs": "^3.1.10",
-    "express": "^4.19.2",
-    "gpio": "^0.2.10",
-    "multer": "^1.4.5-lts.1"
-  }
+    "body-parser": "^1.19.0",
+    "express": "^4.17.1"
+  },
+  "devDependencies": {
+    "chai": "^4.3.4",
+    "mocha": "^9.1.3",
+    "supertest": "^6.1.6"
+  },
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/your-repo/scene-builder-app.git"
+  },
+  "keywords": [
+    "scene",
+    "builder",
+    "express",
+    "ejs",
+    "nodejs"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/your-repo/scene-builder-app/issues"
+  },
+  "homepage": "https://github.com/your-repo/scene-builder-app#readme"
 }

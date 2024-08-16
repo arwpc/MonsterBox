@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
     <link rel="stylesheet" href="/css/style.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 <body>
     <h1><%= title %></h1>
@@ -28,30 +28,30 @@
         <div id="motorInputs" style="display: none;">
             <div>
                 <label for="directionPin">Direction Pin:</label>
-                <input type="number" id="directionPin" name="directionPin" value="<%= part.directionPin || '' %>" min="0" max="40">
+                <input type="number" id="directionPin" name="directionPin" value="<%= part.directionPin || '' %>" min="0" max="40" required>
             </div>
             <div>
                 <label for="pwmPin">PWM Pin:</label>
-                <input type="number" id="pwmPin" name="pwmPin" value="<%= part.pwmPin || '' %>" min="0" max="40">
+                <input type="number" id="pwmPin" name="pwmPin" value="<%= part.pwmPin || '' %>" min="0" max="40" required>
+            </div>
+            <div class="direction-control">
+                <label>Direction:</label>
+                <div class="radio-group">
+                    <input type="radio" id="forward" name="direction" value="forward" checked>
+                    <label for="forward">Forward</label>
+                    <input type="radio" id="backward" name="direction" value="backward">
+                    <label for="backward">Backward</label>
+                </div>
             </div>
             <div>
-                <label for="frequency">Frequency:</label>
-                <input type="number" id="frequency" name="frequency" value="<%= part.frequency || 100 %>" min="1" max="1000">
+                <label for="speed">Speed:</label>
+                <input type="range" id="speed" min="0" max="100" value="50">
+                <span id="speedValue">50</span>
             </div>
             <div>
-                <label for="testDirection">Test Direction:</label>
-                <select id="testDirection">
-                    <option value="forward">Forward</option>
-                    <option value="backward">Backward</option>
-                </select>
-            </div>
-            <div>
-                <label for="testSpeed">Test Speed (0-100):</label>
-                <input type="number" id="testSpeed" value="50" min="0" max="100">
-            </div>
-            <div>
-                <label for="testDuration">Test Duration (ms):</label>
-                <input type="number" id="testDuration" value="1000" min="100" max="5000">
+                <label for="duration">Duration (ms):</label>
+                <input type="range" id="duration" min="100" max="5000" value="1000">
+                <span id="durationValue">1000</span>
             </div>
             <button type="button" id="testMotor">Test Motor</button>
         </div>
@@ -81,33 +81,48 @@
         // Call the function on page load to set the initial state
         togglePinInputs();
 
-        // Test Motor functionality
-        $('#testMotor').on('click', function(e) {
-            e.preventDefault();
-            const direction = $('#testDirection').val();
-            const speed = $('#testSpeed').val();
-            const duration = $('#testDuration').val();
+        const speedSlider = document.getElementById('speed');
+        const speedValue = document.getElementById('speedValue');
+        const durationSlider = document.getElementById('duration');
+        const durationValue = document.getElementById('durationValue');
+        const testMotorButton = document.getElementById('testMotor');
 
-            console.log('Sending test motor request:', { direction, speed, duration });
+        speedSlider.oninput = function() {
+            speedValue.textContent = this.value;
+        }
 
-            $.ajax({
-                url: '/parts/test-motor',
-                method: 'POST',
-                data: {
-                    direction: direction,
-                    speed: speed,
-                    duration: duration
-                },
-                success: function(response) {
-                    console.log('Motor test success:', response);
-                    alert('Motor test successful!');
-                },
-                error: function(xhr, status, error) {
-                    console.error('Motor test error:', xhr.responseText);
-                    alert('Error testing motor: ' + xhr.responseText);
-                }
+        durationSlider.oninput = function() {
+            durationValue.textContent = this.value;
+        }
+
+        testMotorButton.onclick = function() {
+            const direction = document.querySelector('input[name="direction"]:checked').value;
+            const speed = speedSlider.value;
+            const duration = durationSlider.value;
+            const directionPin = document.getElementById('directionPin').value;
+            const pwmPin = document.getElementById('pwmPin').value;
+
+            if (!directionPin || !pwmPin) {
+                alert('Please enter both Direction Pin and PWM Pin before testing.');
+                return;
+            }
+
+            axios.post('/motor/control-motor', {
+                direction: direction,
+                speed: speed,
+                duration: duration,
+                directionPin: parseInt(directionPin),
+                pwmPin: parseInt(pwmPin)
+            })
+            .then(function (response) {
+                console.log('Motor controlled successfully');
+                alert('Motor test successful!');
+            })
+            .catch(function (error) {
+                console.error('Error controlling motor:', error);
+                alert('Error testing motor: ' + (error.response ? error.response.data : error.message));
             });
-        });
+        }
     </script>
 </body>
 </html>

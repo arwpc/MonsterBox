@@ -46,11 +46,14 @@
     <script>
         function deletePart(id) {
             if (confirm('Are you sure you want to delete this part?')) {
-                $.post('/parts/' + id + '/delete', function() {
-                    location.reload();
-                }).fail(function() {
-                    alert('Error deleting part');
-                });
+                $.post('/parts/' + id + '/delete')
+                    .done(function() {
+                        location.reload();
+                    })
+                    .fail(function(xhr, status, error) {
+                        console.error('Error details:', xhr.responseText);
+                        alert('Error deleting part: ' + xhr.status + ' ' + xhr.statusText);
+                    });
             }
         }
     </script>
