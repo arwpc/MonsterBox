@@ -60,5 +60,27 @@
         "speed": 100
       }
     ]
+  },
+  {
+    "id": 4,
+    "scene_name": "arnold eyes me",
+    "character_id": 2,
+    "steps": [
+      {
+        "name": "Turn on eyes",
+        "concurrent": false,
+        "type": "light",
+        "part_id": 5,
+        "duration": 5,
+        "state": "On",
+        "level": 100
+      },
+      {
+        "name": "scare me",
+        "concurrent": false,
+        "type": "sound",
+        "sound_id": 2
+      }
+    ]
   }
 ]

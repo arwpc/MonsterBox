@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
     <link rel="stylesheet" href="/css/style.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
     <h1><%= title %></h1>
@@ -17,20 +18,36 @@
             <input type="text" id="name" name="name" value="<%= sound.name || '' %>" required>
         </div>
         <div>
-            <label for="sound_file">Sound File (MP3):</label>
-            <input type="file" id="sound_file" name="sound_file" accept=".mp3" <%= sound.id ? '' : 'required' %>>
+            <label for="sound_file">Sound File (MP3 or WAV):</label>
+            <input type="file" id="sound_file" name="sound_file" accept=".mp3,.wav" <%= sound.id ? '' : 'required' %>>
         </div>
         <% if (sound.id && sound.filename) { %>
             <div>
                 <p>Current file: <%= sound.filename %></p>
-                <audio controls>
-                    <source src="/sounds/<%= sound.filename %>" type="audio/mpeg">
-                    Your browser does not support the audio element.
-                </audio>
+                <button type="button" onclick="playSound(<%= sound.id %>)">Play</button>
+                <button type="button" onclick="stopSound()">Stop</button>
             </div>
         <% } %>
         <button type="submit">Save Sound</button>
     </form>
     <a href="/sounds" class="button">Back to Sounds</a>
+
+    <script>
+        function playSound(soundId) {
+            $.get('/play-sound/' + soundId, function(data) {
+                alert(data);
+            }).fail(function() {
+                alert('Error playing sound');
+            });
+        }
+
+        function stopSound() {
+            $.get('/stop-sound', function(data) {
+                alert(data);
+            }).fail(function() {
+                alert('Error stopping sound');
+            });
+        }
+    </script>
 </body>
 </html>

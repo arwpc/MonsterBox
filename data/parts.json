@@ -28,5 +28,11 @@
     "name": "Eyes",
     "type": "light",
     "pin": 20
+  },
+  {
+    "id": 6,
+    "name": "Spotlight",
+    "type": "light",
+    "pin": 33
   }
 ]
