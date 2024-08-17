@@ -6,18 +6,21 @@ const path = require('path');
 
 router.get('/', async (req, res) => {
     const parts = await dataManager.getParts();
-    res.render('parts', { title: 'Parts', parts });
+    const characters = await dataManager.getCharacters();
+    res.render('parts', { title: 'Parts', parts, characters });
 });
 
-router.get('/new', (req, res) => {
-    res.render('part-form', { title: 'Add New Part', action: '/parts', part: {} });
+router.get('/new', async (req, res) => {
+    const characters = await dataManager.getCharacters();
+    res.render('part-form', { title: 'Add New Part', action: '/parts', part: {}, characters });
 });
 
 router.get('/:id/edit', async (req, res) => {
     const parts = await dataManager.getParts();
+    const characters = await dataManager.getCharacters();
     const part = parts.find(p => p.id === parseInt(req.params.id));
     if (part) {
-        res.render('part-form', { title: 'Edit Part', action: '/parts/' + part.id, part });
+        res.render('part-form', { title: 'Edit Part', action: '/parts/' + part.id, part, characters });
     } else {
         res.status(404).send('Part not found');
     }
@@ -28,7 +31,8 @@ router.post('/', async (req, res) => {
     const newPart = {
         id: dataManager.getNextId(parts),
         name: req.body.name,
-        type: req.body.type
+        type: req.body.type,
+        characterId: parseInt(req.body.characterId)
     };
 
     if (req.body.type === 'motor') {
@@ -51,7 +55,8 @@ router.post('/:id', async (req, res) => {
         parts[index] = {
             id: id,
             name: req.body.name,
-            type: req.body.type
+            type: req.body.type,
+            characterId: parseInt(req.body.characterId)
         };
 
         if (req.body.type === 'motor') {

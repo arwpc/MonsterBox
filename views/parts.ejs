@@ -15,6 +15,7 @@
             <tr>
                 <th>Name</th>
                 <th>Type</th>
+                <th>Character</th>
                 <th>Pin Details</th>
                 <th>Actions</th>
             </tr>
@@ -24,11 +25,11 @@
                 <tr>
                     <td><%= part.name %></td>
                     <td><%= part.type %></td>
+                    <td><%= characters.find(c => c.id === part.characterId)?.char_name || 'N/A' %></td>
                     <td>
                         <% if (part.type === 'motor') { %>
                             Dir Pin: <%= part.directionPin %><br>
-                            PWM Pin: <%= part.pwmPin %><br>
-                            Frequency: <%= part.frequency %> Hz
+                            PWM Pin: <%= part.pwmPin %>
                         <% } else { %>
                             Pin: <%= part.pin %>
                         <% } %>

@@ -25,6 +25,16 @@
                 <option value="light" <%= part.type === 'light' ? 'selected' : '' %>>Light</option>
             </select>
         </div>
+        <div>
+            <label for="characterId">Character:</label>
+            <select id="characterId" name="characterId" required>
+                <% characters.forEach(function(character) { %>
+                    <option value="<%= character.id %>" <%= (part.characterId === character.id) ? 'selected' : '' %>>
+                        <%= character.char_name %>
+                    </option>
+                <% }); %>
+            </select>
+        </div>
         <div id="motorInputs" style="display: none;">
             <div>
                 <label for="directionPin">Direction Pin:</label>
@@ -109,8 +119,8 @@
 
             axios.post('/motor/control-motor', {
                 direction: direction,
-                speed: speed,
-                duration: duration,
+                speed: parseInt(speed),
+                duration: parseInt(duration),
                 directionPin: parseInt(directionPin),
                 pwmPin: parseInt(pwmPin)
             })
