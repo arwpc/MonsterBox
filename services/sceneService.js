@@ -2,16 +2,40 @@ const fs = require('fs').promises;
 const path = require('path');
 
 const dataPath = path.join(__dirname, '../data/scenes.json');
-const charactersPath = path.join(__dirname, '../data/characters.json');  // Assuming characters are stored in this file
+const charactersPath = path.join(__dirname, '../data/characters.json');
+const partsPath = path.join(__dirname, '../data/parts.json');
+const soundsPath = path.join(__dirname, '../data/sounds.json');
+
+const readJsonFile = async (filePath) => {
+    try {
+        const data = await fs.readFile(filePath, 'utf8');
+        return JSON.parse(data);
+    } catch (error) {
+        if (error.code === 'ENOENT') {
+            return [];
+        }
+        throw error;
+    }
+};
+
+const writeJsonFile = async (filePath, data) => {
+    await fs.writeFile(filePath, JSON.stringify(data, null, 2));
+};
 
 const getAllScenes = async () => {
-    const data = await fs.readFile(dataPath, 'utf8');
-    return JSON.parse(data);
+    return readJsonFile(dataPath);
 };
 
 const getAllCharacters = async () => {
-    const data = await fs.readFile(charactersPath, 'utf8');
-    return JSON.parse(data).filter(character => character.active);  // Filter for active characters
+    return readJsonFile(charactersPath);
+};
+
+const getAllParts = async () => {
+    return readJsonFile(partsPath);
+};
+
+const getAllSounds = async () => {
+    return readJsonFile(soundsPath);
 };
 
 const getScene = async (id) => {
@@ -20,59 +44,61 @@ const getScene = async (id) => {
 };
 
 const saveScene = async (sceneData, id = null) => {
-    const scenes = await getAllScenes();
+    let scenes = await getAllScenes();
     if (id) {
         const index = scenes.findIndex(scene => scene.id === parseInt(id));
         if (index !== -1) {
-            scenes[index] = { ...scenes[index], ...sceneData };
+            scenes[index] = { ...scenes[index], ...sceneData, id: parseInt(id) };
+        } else {
+            throw new Error('Scene not found');
         }
     } else {
-        sceneData.id = getNextId(scenes);
-        scenes.push(sceneData);
+        const newId = Math.max(...scenes.map(s => s.id), 0) + 1;
+        scenes.push({ ...sceneData, id: newId });
     }
-    await fs.writeFile(dataPath, JSON.stringify(scenes, null, 2));
-    return sceneData;
+    await writeJsonFile(dataPath, scenes);
+    return id ? scenes.find(scene => scene.id === parseInt(id)) : scenes[scenes.length - 1];
 };
 
 const removeScene = async (id) => {
     let scenes = await getAllScenes();
     scenes = scenes.filter(scene => scene.id !== parseInt(id));
-    await fs.writeFile(dataPath, JSON.stringify(scenes, null, 2));
+    await writeJsonFile(dataPath, scenes);
 };
 
 const addStepToScene = async (sceneId, stepData) => {
     const scene = await getScene(sceneId);
-    stepData.id = getNextId(scene.steps || []);
+    if (!scene) {
+        throw new Error('Scene not found');
+    }
     scene.steps = scene.steps || [];
     scene.steps.push(stepData);
-    await saveScene(scene, sceneId);
-    return scene;
+    return saveScene(scene, sceneId);
 };
 
-const updateStepInScene = async (sceneId, stepId, stepData) => {
+const updateStepInScene = async (sceneId, stepIndex, stepData) => {
     const scene = await getScene(sceneId);
-    const stepIndex = scene.steps.findIndex(step => step.id === parseInt(stepId));
-    if (stepIndex !== -1) {
-        scene.steps[stepIndex] = { ...scene.steps[stepIndex], ...stepData };
-        await saveScene(scene, sceneId);
+    if (!scene || !scene.steps || stepIndex >= scene.steps.length) {
+        throw new Error('Scene or step not found');
     }
-    return scene;
+    scene.steps[stepIndex] = { ...scene.steps[stepIndex], ...stepData };
+    return saveScene(scene, sceneId);
 };
 
-const removeStepFromScene = async (sceneId, stepId) => {
+const removeStepFromScene = async (sceneId, stepIndex) => {
     const scene = await getScene(sceneId);
-    scene.steps = scene.steps.filter(step => step.id !== parseInt(stepId));
-    await saveScene(scene, sceneId);
-    return scene;
-};
-
-const getNextId = (items) => {
-    return items.length > 0 ? Math.max(...items.map(item => item.id)) + 1 : 1;
+    if (!scene || !scene.steps || stepIndex >= scene.steps.length) {
+        throw new Error('Scene or step not found');
+    }
+    scene.steps.splice(stepIndex, 1);
+    return saveScene(scene, sceneId);
 };
 
 module.exports = {
     getAllScenes,
-    getAllCharacters,  // Export the new function
+    getAllCharacters,
+    getAllParts,
+    getAllSounds,
     getScene,
     saveScene,
     removeScene,

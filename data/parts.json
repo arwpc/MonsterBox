@@ -10,7 +10,7 @@
     "id": 2,
     "name": "Left Arm",
     "type": "motor",
-    "directionPin": 20,
-    "pwmPin": 22
+    "directionPin": 18,
+    "pwmPin": 24
   }
 ]

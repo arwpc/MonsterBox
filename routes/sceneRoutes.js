@@ -6,23 +6,20 @@ const {
     createScene,
     updateScene,
     deleteScene,
+    newScene,
     addStep,
     updateStep,
-    deleteStep,
-    newScene  // Ensure this is imported
+    deleteStep
 } = require('../controllers/sceneController');
 
-// Scene routes
 router.get('/', getScenes);
-router.get('/new', newScene);  // Updated to use the newScene method
+router.get('/new', newScene);
 router.get('/:id/edit', getSceneById);
 router.post('/', createScene);
 router.post('/:id', updateScene);
 router.post('/:id/delete', deleteScene);
-
-// Step routes
 router.post('/:id/steps', addStep);
-router.post('/:sceneId/steps/:stepId', updateStep);
-router.post('/:sceneId/steps/:stepId/delete', deleteStep);
+router.put('/:sceneId/steps/:stepIndex', updateStep);
+router.delete('/:sceneId/steps/:stepIndex', deleteStep);
 
 module.exports = router;
