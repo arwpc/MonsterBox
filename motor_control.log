@@ -216,3 +216,15 @@
 2024-08-16 21:52:42,991 - INFO - GPIO cleanup completed
 2024-08-16 21:52:51,922 - INFO - Controlling motor: direction=backward, speed=50, duration=1000, dir_pin=18, pwm_pin=24
 2024-08-16 21:52:52,924 - INFO - GPIO cleanup completed
+2024-08-16 22:09:53,845 - INFO - Controlling motor: direction=forward, speed=50, duration=1000, dir_pin=18, pwm_pin=24
+2024-08-16 22:09:54,846 - INFO - GPIO cleanup completed
+2024-08-16 22:10:47,990 - INFO - Controlling motor: direction=forward, speed=50, duration=1000, dir_pin=18, pwm_pin=24
+2024-08-16 22:10:48,992 - INFO - GPIO cleanup completed
+2024-08-17 14:26:31,778 - INFO - Controlling motor: direction=forward, speed=50, duration=1000, dir_pin=18, pwm_pin=24
+2024-08-17 14:26:32,779 - INFO - GPIO cleanup completed
+2024-08-17 15:00:30,511 - INFO - Controlling motor: direction=forward, speed=50, duration=1000, dir_pin=18, pwm_pin=24
+2024-08-17 15:00:31,513 - INFO - GPIO cleanup completed
+2024-08-17 15:04:04,556 - INFO - Controlling motor: direction=forward, speed=50, duration=1000, dir_pin=18, pwm_pin=24
+2024-08-17 15:04:05,557 - INFO - GPIO cleanup completed
+2024-08-17 15:04:08,882 - INFO - Controlling motor: direction=forward, speed=50, duration=1000, dir_pin=18, pwm_pin=24
+2024-08-17 15:04:09,884 - INFO - GPIO cleanup completed

@@ -4,10 +4,11 @@
     "char_name": "Axe Dude Again",
     "char_description": "asdasdasd",
     "parts": [
+      1,
       2
     ],
     "sounds": [
-      2
+      4
     ],
     "image": "1723849608558.jpg"
   },

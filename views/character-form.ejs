@@ -33,7 +33,7 @@
                 <div id="available-parts">
                     <h4>Available Parts:</h4>
                     <select id="available-parts-select" multiple>
-                        <% parts.forEach(function(part) { %>
+                        <% parts.filter(part => part.characterId === character.id).forEach(function(part) { %>
                             <option value="<%= part.id %>" <%= character.parts && character.parts.includes(part.id) ? 'disabled' : '' %>>
                                 <%= part.name %>
                             </option>
@@ -49,7 +49,7 @@
                     <select id="selected-parts-select" name="parts" multiple>
                         <% if (character.parts) { %>
                             <% character.parts.forEach(function(partId) { %>
-                                <% const part = parts.find(p => p.id === partId); %>
+                                <% const part = parts.find(p => p.id === partId && p.characterId === character.id); %>
                                 <% if (part) { %>
                                     <option value="<%= part.id %>"><%= part.name %></option>
                                 <% } %>

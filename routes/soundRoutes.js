@@ -3,6 +3,7 @@ const path = require('path');
 const { exec } = require('child_process');
 const dataManager = require('../dataManager');
 const multer = require('multer');
+const fs = require('fs').promises;
 const router = express.Router();
 
 // Multer setup for file uploads
@@ -80,6 +81,55 @@ router.post('/play', async (req, res) => {
         console.error('Error in /play route:', error);
         res.status(500).send('Internal Server Error');
     }
+});
+
+router.post('/:id/delete', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const sounds = await dataManager.getSounds();
+        const soundIndex = sounds.findIndex(s => s.id === id);
+        
+        if (soundIndex === -1) {
+            return res.status(404).send('Sound not found');
+        }
+
+        const soundToDelete = sounds[soundIndex];
+        const filePath = path.join(__dirname, '../public/sounds', soundToDelete.filename);
+
+        // Delete the file
+        try {
+            await fs.unlink(filePath);
+        } catch (error) {
+            console.error('Error deleting sound file:', error);
+            // If file doesn't exist, continue with deleting from the data
+            if (error.code !== 'ENOENT') {
+                return res.status(500).send('Error deleting sound file');
+            }
+        }
+
+        // Remove the sound from the data array
+        sounds.splice(soundIndex, 1);
+        await dataManager.saveSounds(sounds);
+
+        res.sendStatus(200);
+    } catch (error) {
+        console.error('Error deleting sound:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+router.post('/stop', (req, res) => {
+    exec('sudo killall -9 python3', (error, stdout, stderr) => {
+        if (error) {
+            console.error(`Error stopping sounds: ${error.message}`);
+            return res.status(500).send('Error stopping sounds');
+        }
+        if (stderr) {
+            console.error(`Error from killall: ${stderr}`);
+            return res.status(500).send('Error stopping sounds');
+        }
+        res.status(200).send('All sounds stopped');
+    });
 });
 
 module.exports = router;

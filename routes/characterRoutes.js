@@ -19,31 +19,15 @@ const upload = multer({ storage: storage });
 router.get('/', async (req, res) => {
     try {
         console.log('GET /characters route hit');
-        console.log('Fetching characters...');
         const characters = await dataManager.getCharacters();
-        console.log(`Retrieved ${characters.length} characters`);
-
-        console.log('Fetching parts...');
         const parts = await dataManager.getParts();
-        console.log(`Retrieved ${parts.length} parts`);
-
-        console.log('Fetching sounds...');
         const sounds = await dataManager.getSounds();
-        console.log(`Retrieved ${sounds.length} sounds`);
-
         console.log('Preparing to render characters page...');
-        console.log('Characters:', JSON.stringify(characters));
-        console.log('Parts:', JSON.stringify(parts));
-        console.log('Sounds:', JSON.stringify(sounds));
-
-        res.render('characters', { title: 'Characters', characters, parts, sounds }, (err, html) => {
-            if (err) {
-                console.error('Error rendering characters template:', err);
-                res.status(500).send('An error occurred while rendering the characters page: ' + err.message);
-            } else {
-                console.log('Characters page rendered successfully');
-                res.send(html);
-            }
+        res.render('characters', { 
+            title: 'Characters', 
+            characters, 
+            parts, 
+            sounds
         });
     } catch (error) {
         console.error('Error in GET /characters route:', error);
@@ -51,12 +35,17 @@ router.get('/', async (req, res) => {
     }
 });
 
-
 router.get('/new', async (req, res) => {
     try {
         const parts = await dataManager.getParts();
         const sounds = await dataManager.getSounds();
-        res.render('character-form', { title: 'Add New Character', action: '/characters', character: {}, parts, sounds });
+        res.render('character-form', { 
+            title: 'Add New Character', 
+            action: '/characters', 
+            character: {}, 
+            parts, 
+            sounds 
+        });
     } catch (error) {
         console.error('Error in GET /characters/new route:', error);
         res.status(500).send('An error occurred while loading the new character form: ' + error.message);
@@ -70,7 +59,13 @@ router.get('/:id/edit', async (req, res) => {
         const sounds = await dataManager.getSounds();
         const character = characters.find(c => c.id === parseInt(req.params.id));
         if (character) {
-            res.render('character-form', { title: 'Edit Character', action: '/characters/' + character.id, character, parts, sounds });
+            res.render('character-form', { 
+                title: 'Edit Character', 
+                action: '/characters/' + character.id, 
+                character, 
+                parts, 
+                sounds 
+            });
         } else {
             res.status(404).send('Character not found');
         }
