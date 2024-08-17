@@ -1,4 +1,3 @@
-<!-- views/sound-form.ejs -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,27 +9,15 @@
 <body>
     <h1><%= title %></h1>
     <form action="<%= action %>" method="POST" enctype="multipart/form-data">
-        <% if (sound.id) { %>
-            <input type="hidden" name="id" value="<%= sound.id %>">
-        <% } %>
         <div>
             <label for="name">Sound Name:</label>
-            <input type="text" id="name" name="name" value="<%= sound.name || '' %>" required>
+            <input type="text" id="name" name="name" required>
         </div>
         <div>
-            <label for="sound_file">Sound File (MP3 or WAV):</label>
-            <input type="file" id="sound_file" name="sound_file" accept=".mp3,.wav" <%= sound.id ? '' : 'required' %>>
+            <label for="sound_file">Sound File:</label>
+            <input type="file" id="sound_file" name="sound_file" accept=".mp3,.wav" required>
         </div>
-        <% if (sound.id && sound.filename) { %>
-            <div>
-                <p>Current file: <%= sound.filename %></p>
-                <audio controls>
-                    <source src="/sounds/<%= sound.filename %>" type="audio/mpeg">
-                    Your browser does not support the audio element.
-                </audio>
-            </div>
-        <% } %>
-        <button type="submit">Save Sound</button>
+        <button type="submit">Add Sound</button>
     </form>
     <a href="/sounds" class="button">Back to Sounds</a>
 </body>

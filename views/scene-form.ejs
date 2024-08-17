@@ -6,47 +6,90 @@
     <title><%= title %></title>
     <link rel="stylesheet" href="/css/style.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
 </head>
 <body>
     <h1><%= title %></h1>
     <form id="sceneForm" action="<%= action %>" method="POST">
         <input type="hidden" name="id" value="<%= scene.id %>">
-        <label>Scene Name:</label>
-        <input type="text" name="scene_name" value="<%= scene.scene_name %>">
-        
-        <label>Character:</label>
-        <select name="character_id">
-            <% characters.forEach(character => { %>
-                <option value="<%= character.id %>" <%= character.id == scene.character_id ? 'selected' : '' %>><%= character.name %></option>
-            <% }); %>
-        </select>
+        <div>
+            <label for="scene_name">Scene Name:</label>
+            <input type="text" id="scene_name" name="scene_name" value="<%= scene.scene_name || '' %>" required>
+        </div>
+        <div>
+            <label for="character_id">Character:</label>
+            <select id="character_id" name="character_id" required>
+                <% characters.forEach(function(character) { %>
+                    <option value="<%= character.id %>" <%= (scene.character_id === character.id) ? 'selected' : '' %>>
+                        <%= character.char_name %>
+                    </option>
+                <% }); %>
+            </select>
+        </div>
 
+        <h2>Steps</h2>
         <div id="steps">
-            <h2>Steps</h2>
             <div id="step-list">
-                <% (scene.steps || []).forEach(step => { %>
-                    <%- include('partials/step-form', { step: step, parts: parts, sounds: sounds }) %>
+                <% (scene.steps || []).forEach(function(step, index) { %>
+                    <div class="step" data-step-id="<%= index %>">
+                        <h3>Step <%= index + 1 %></h3>
+                        <input type="text" name="steps[<%= index %>][name]" value="<%= step.name %>" placeholder="Step Name" required>
+                        <select name="steps[<%= index %>][type]" required>
+                            <option value="sound" <%= step.type === 'sound' ? 'selected' : '' %>>Play Sound</option>
+                            <option value="motor" <%= step.type === 'motor' ? 'selected' : '' %>>Move Motor</option>
+                            <option value="light" <%= step.type === 'light' ? 'selected' : '' %>>Control Light</option>
+                        </select>
+                        <!-- Add more fields based on the step type -->
+                        <button type="button" onclick="removeStep(this)">Remove Step</button>
+                    </div>
                 <% }); %>
             </div>
-            <button type="button" id="addStepButton">Add Step</button>
+            <button type="button" onclick="addStep()">Add Step</button>
         </div>
 
         <button type="submit">Save Scene</button>
     </form>
+    <a href="/scenes" class="button">Back to Scenes</a>
 
     <script>
-        $(document).ready(function() {
-            $('#addStepButton').click(function() {
-                $.get('/scenes/new-step', function(data) {
-                    $('#step-list').append(data);
+        function addStep() {
+            const stepList = document.getElementById('step-list');
+            const stepCount = stepList.children.length;
+            const newStep = document.createElement('div');
+            newStep.className = 'step';
+            newStep.dataset.stepId = stepCount;
+            newStep.innerHTML = `
+                <h3>Step ${stepCount + 1}</h3>
+                <input type="text" name="steps[${stepCount}][name]" placeholder="Step Name" required>
+                <select name="steps[${stepCount}][type]" required>
+                    <option value="sound">Play Sound</option>
+                    <option value="motor">Move Motor</option>
+                    <option value="light">Control Light</option>
+                </select>
+                <button type="button" onclick="removeStep(this)">Remove Step</button>
+            `;
+            stepList.appendChild(newStep);
+        }
+
+        function removeStep(button) {
+            button.closest('.step').remove();
+            updateStepNumbers();
+        }
+
+        function updateStepNumbers() {
+            const steps = document.querySelectorAll('.step');
+            steps.forEach((step, index) => {
+                step.querySelector('h3').textContent = `Step ${index + 1}`;
+                step.dataset.stepId = index;
+                step.querySelectorAll('input, select').forEach(input => {
+                    input.name = input.name.replace(/\d+/, index);
                 });
             });
+        }
 
-            $('#sceneForm').on('click', '.saveStepButton', function() {
-                const stepForm = $(this).closest('.stepForm');
-                $.post(`/scenes/${stepForm.data('scene-id')}/steps`, stepForm.serialize(), function(data) {
-                    alert('Step saved!');
-                });
+        $(function() {
+            $("#step-list").sortable({
+                update: updateStepNumbers
             });
         });
     </script>

@@ -1,36 +1,13 @@
 [
   {
     "id": 1,
-    "scene_name": "asdasdasd",
-    "character_id": 3,
+    "scene_name": "Bear Attack",
+    "character_id": "2",
     "steps": [
       {
-        "name": "asdasd",
-        "concurrent": true,
-        "type": "sound",
-        "sound_id": "2"
-      },
-      {
-        "name": "asdasdasdasd",
-        "concurrent": false,
-        "type": "motor",
-        "part_id": 1,
-        "duration": 1000,
-        "direction": "R",
-        "speed": 100
+        "name": "Roar!!!",
+        "type": "sound"
       }
     ]
-  },
-  {
-    "id": "2",
-    "scene_name": "Axe Guy Awakens"
-  },
-  {
-    "id": "3",
-    "scene_name": "tgest"
-  },
-  {
-    "id": 4,
-    "scene_name": "asdasdasdas"
   }
 ]
