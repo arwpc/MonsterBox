@@ -8,17 +8,55 @@
 </head>
 <body>
     <h1><%= title %></h1>
-    <form action="<%= action %>" method="POST" enctype="multipart/form-data">
+    <form action="<%= action %>" method="POST">
+        <% if (sensor.id) { %>
+            <input type="hidden" name="id" value="<%= sensor.id %>">
+        <% } %>
         <div>
-            <label for="name">Sound Name:</label>
-            <input type="text" id="name" name="name" required>
+            <label for="name">Sensor Name:</label>
+            <input type="text" id="name" name="name" value="<%= sensor.name || '' %>" required>
         </div>
         <div>
-            <label for="sound_file">Sound File:</label>
-            <input type="file" id="sound_file" name="sound_file" accept=".mp3,.wav" required>
+            <label for="type">Sensor Type:</label>
+            <select id="type" name="type" required>
+                <option value="motion" <%= sensor.type === 'motion' ? 'selected' : '' %>>Motion</option>
+                <option value="sound" <%= sensor.type === 'sound' ? 'selected' : '' %>>Sound</option>
+            </select>
         </div>
-        <button type="submit">Add Sound</button>
+        <div id="motionSettings" style="display: <%= sensor.type === 'motion' ? 'block' : 'none' %>;">
+            <label for="gpioPin">GPIO Pin:</label>
+            <input type="number" id="gpioPin" name="gpioPin" value="<%= sensor.gpioPin || '' %>">
+        </div>
+        <div id="soundSettings" style="display: <%= sensor.type === 'sound' ? 'block' : 'none' %>;">
+            <label for="audioDeviceIndex">Audio Device:</label>
+            <select id="audioDeviceIndex" name="audioDeviceIndex">
+                <% audioDevices.forEach(function(device) { %>
+                    <option value="<%= device.index %>" <%= sensor.audioDeviceIndex === device.index ? 'selected' : '' %>><%= device.name %></option>
+                <% }); %>
+            </select>
+            <label for="threshold">Threshold:</label>
+            <input type="number" id="threshold" name="threshold" value="<%= sensor.threshold || 50 %>">
+            <label for="sensitivity">Sensitivity:</label>
+            <input type="number" id="sensitivity" name="sensitivity" value="<%= sensor.sensitivity || 50 %>">
+        </div>
+        <button type="submit">Save Sensor</button>
     </form>
-    <a href="/sounds" class="button">Back to Sounds</a>
+    <a href="/sensors" class="button">Back to Sensors</a>
+
+    <script>
+        const typeSelect = document.getElementById('type');
+        const motionSettings = document.getElementById('motionSettings');
+        const soundSettings = document.getElementById('soundSettings');
+
+        typeSelect.addEventListener('change', function() {
+            if (this.value === 'motion') {
+                motionSettings.style.display = 'block';
+                soundSettings.style.display = 'none';
+            } else if (this.value === 'sound') {
+                motionSettings.style.display = 'none';
+                soundSettings.style.display = 'block';
+            }
+        });
+    </script>
 </body>
 </html>

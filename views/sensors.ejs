@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1><%= title %></h1>
+    <a href="/sensors/new" class="button">Add New Sensor</a>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Character</th>
+                <th>GPIO Pin</th>
+                <th>Active</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% sensors.forEach(function(sensor) { %>
+                <tr>
+                    <td><%= sensor.name %></td>
+                    <td><%= sensor.type %></td>
+                    <td><%= characters.find(c => c.id === sensor.characterId)?.char_name || 'N/A' %></td>
+                    <td><%= sensor.gpioPin %></td>
+                    <td><%= sensor.active ? 'Yes' : 'No' %></td>
+                    <td>
+                        <a href="/sensors/<%= sensor.id %>/edit" class="button">Edit</a>
+                        <button onclick="deleteSensor(<%= sensor.id %>)" class="button">Delete</button>
+                        <a href="/sensors/<%= sensor.id %>/test" class="button">Test</a>
+                    </td>
+                </tr>
+            <% }); %>
+        </tbody>
+    </table>
+    <a href="/" class="button">Back to Main Menu</a>
+
+    <script>
+        function deleteSensor(id) {
+            if (confirm('Are you sure you want to delete this sensor?')) {
+                $.post('/sensors/' + id + '/delete')
+                    .done(function() {
+                        location.reload();
+                    })
+                    .fail(function(xhr, status, error) {
+                        console.error('Error details:', xhr.responseText);
+                        alert('Error deleting sensor: ' + xhr.status + ' ' + xhr.statusText);
+                    });
+            }
+        }
+    </script>
+</body>
+</html>
