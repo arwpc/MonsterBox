@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        .sensor-indicator {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        .sensor-indicator.inactive {
+            background-color: red;
+        }
+        .sensor-indicator.active {
+            background-color: green;
+        }
+    </style>
+</head>
+<body>
+    <h1><%= title %></h1>
+    
+    <div id="character-selection">
+        <label for="character-select">Select Character:</label>
+        <select id="character-select">
+            <option value="">Select a character</option>
+            <% characters.forEach(function(character) { %>
+                <option value="<%= character.id %>"><%= character.char_name %></option>
+            <% }); %>
+        </select>
+    </div>
+
+    <div id="sensor-list" style="display: none;">
+        <h2>Available Sensors</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Sensor Name</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Sensors will be populated here -->
+            </tbody>
+        </table>
+    </div>
+
+    <div id="scene-selection" style="display: none;">
+        <h2>Pair Sensor with Scene</h2>
+        <select id="sensor-select">
+            <!-- Sensors will be populated here -->
+        </select>
+        <select id="scene-select">
+            <!-- Scenes will be populated here -->
+        </select>
+        <button id="pair-button">Pair Sensor with Scene</button>
+    </div>
+
+    <div id="armed-sensors">
+        <h2>Armed Sensors</h2>
+        <ul id="armed-sensors-list">
+            <!-- Armed sensors will be populated here -->
+        </ul>
+    </div>
+
+    <button id="start-active-mode">Start Active Mode</button>
+    <button id="stop-active-mode" disabled>Stop Active Mode</button>
+
+    <a href="/" class="button">Back to Main Menu</a>
+
+    <script>
+        $(document).ready(function() {
+            let selectedCharacterId = null;
+            let activeModeRunning = false;
+
+            $('#character-select').change(function() {
+                selectedCharacterId = $(this).val();
+                if (selectedCharacterId) {
+                    loadSensors(selectedCharacterId);
+                    loadScenes(selectedCharacterId);
+                    $('#sensor-list, #scene-selection').show();
+                } else {
+                    $('#sensor-list, #scene-selection').hide();
+                }
+            });
+
+            function loadSensors(characterId) {
+                const sensorTableBody = $('#sensor-list tbody');
+                const sensorSelect = $('#sensor-select');
+                sensorTableBody.empty();
+                sensorSelect.empty();
+
+                <% sensors.forEach(function(sensor) { %>
+                    if (<%= sensor.characterId %> == characterId) {
+                        sensorTableBody.append(`
+                            <tr>
+                                <td><%= sensor.name %></td>
+                                <td><%= sensor.type %></td>
+                                <td>
+                                    <input type="radio" name="sensor-<%= sensor.id %>" value="active" ${<%= sensor.active %> ? 'checked' : ''} class="sensor-status"> Active
+                                    <input type="radio" name="sensor-<%= sensor.id %>" value="inactive" ${!<%= sensor.active %> ? 'checked' : ''} class="sensor-status"> Inactive
+                                </td>
+                                <td>
+                                    <div class="sensor-indicator ${<%= sensor.active %> ? 'active' : 'inactive'}" data-sensor-id="<%= sensor.id %>"></div>
+                                </td>
+                            </tr>
+                        `);
+                        sensorSelect.append(`<option value="<%= sensor.id %>"><%= sensor.name %></option>`);
+                    }
+                <% }); %>
+
+                $('.sensor-status').change(function() {
+                    const sensorId = $(this).attr('name').split('-')[1];
+                    const active = $(this).val() === 'active';
+                    toggleSensor(sensorId, active);
+                });
+            }
+
+            function loadScenes(characterId) {
+                const sceneSelect = $('#scene-select');
+                sceneSelect.empty();
+
+                <% scenes.forEach(function(scene) { %>
+                    if (<%= scene.character_id %> == characterId) {
+                        sceneSelect.append(`<option value="<%= scene.id %>"><%= scene.scene_name %></option>`);
+                    }
+                <% }); %>
+            }
+
+            function toggleSensor(sensorId, active) {
+                $.post('/active-mode/toggle-sensor', { sensorId, active })
+                    .done(function() {
+                        const indicator = $(`.sensor-indicator[data-sensor-id="${sensorId}"]`);
+                        indicator.toggleClass('active', active).toggleClass('inactive', !active);
+                    })
+                    .fail(function(xhr, status, error) {
+                        console.error('Error toggling sensor:', error);
+                        alert('Error toggling sensor: ' + xhr.responseText);
+                    });
+            }
+
+            $('#pair-button').click(function() {
+                const sensorId = $('#sensor-select').val();
+                const sceneId = $('#scene-select').val();
+                if (sensorId && sceneId) {
+                    $.post('/active-mode/arm-sensor', { sensorId, sceneId })
+                        .done(function() {
+                            updateArmedSensors();
+                        })
+                        .fail(function(xhr, status, error) {
+                            console.error('Error arming sensor:', error);
+                            alert('Error arming sensor: ' + xhr.responseText);
+                        });
+                } else {
+                    alert('Please select both a sensor and a scene.');
+                }
+            });
+
+            function updateArmedSensors() {
+                $.get('/active-mode/armed-sensors')
+                    .done(function(armedSensors) {
+                        const armedSensorsList = $('#armed-sensors-list');
+                        armedSensorsList.empty();
+                        armedSensors.forEach(function(armedSensor) {
+                            const sensorName = $(`#sensor-select option[value="${armedSensor.sensorId}"]`).text();
+                            const sceneName = $(`#scene-select option[value="${armedSensor.sceneId}"]`).text();
+                            armedSensorsList.append(`
+                                <li>
+                                    <div class="sensor-indicator inactive" data-sensor-id="${armedSensor.sensorId}"></div>
+                                    ${sensorName} - ${sceneName}
+                                </li>
+                            `);
+                        });
+                    })
+                    .fail(function(xhr, status, error) {
+                        console.error('Error updating armed sensors:', error);
+                    });
+            }
+
+            $('#start-active-mode').click(function() {
+                $.post('/active-mode/start')
+                    .done(function() {
+                        activeModeRunning = true;
+                        $('#start-active-mode').prop('disabled', true);
+                        $('#stop-active-mode').prop('disabled', false);
+                        alert('Active Mode started');
+                        startSensorSimulation();
+                    })
+                    .fail(function(xhr, status, error) {
+                        console.error('Error starting Active Mode:', error);
+                        alert('Error starting Active Mode: ' + xhr.responseText);
+                    });
+            });
+
+            $('#stop-active-mode').click(function() {
+                $.post('/active-mode/stop')
+                    .done(function() {
+                        activeModeRunning = false;
+                        $('#start-active-mode').prop('disabled', false);
+                        $('#stop-active-mode').prop('disabled', true);
+                        alert('Active Mode stopped');
+                        stopSensorSimulation();
+                    })
+                    .fail(function(xhr, status, error) {
+                        console.error('Error stopping Active Mode:', error);
+                        alert('Error stopping Active Mode: ' + xhr.responseText);
+                    });
+            });
+
+            function startSensorSimulation() {
+                sensorSimulationInterval = setInterval(function() {
+                    $('.sensor-indicator').each(function() {
+                        const shouldActivate = Math.random() < 0.3; // 30% chance of activation
+                        $(this).toggleClass('active', shouldActivate).toggleClass('inactive', !shouldActivate);
+                        
+                        if (shouldActivate) {
+                            const sensorId = $(this).data('sensor-id');
+                            const sensorName = $(`#sensor-select option[value="${sensorId}"]`).text();
+                            const sceneName = $('#armed-sensors-list').find(`[data-sensor-id="${sensorId}"]`).closest('li').text().split('-')[1].trim();
+                            alert(`Sensor "${sensorName}" activated! Triggering scene "${sceneName}"`);
+                        }
+                    });
+                }, 5000);
+            }
+
+            function stopSensorSimulation() {
+                clearInterval(sensorSimulationInterval);
+                $('.sensor-indicator').removeClass('active').addClass('inactive');
+            }
+
+            // Initial update of armed sensors
+            updateArmedSensors();
+        });
+    </script>
+</body>
+</html>

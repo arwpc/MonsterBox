@@ -1,13 +1,31 @@
 [
   {
-    "id": 1,
-    "scene_name": "Bear Attack",
-    "character_id": "2",
+    "scene_name": "Christian Bale Attacker",
+    "character_id": 1,
     "steps": [
       {
-        "name": "Roar!!!",
-        "type": "sound"
+        "name": "Raise Right Arm slowly",
+        "type": "motor",
+        "part_id": 2,
+        "duration": 2000,
+        "direction": "forward",
+        "speed": 25
+      },
+      {
+        "name": "Hey Asshole!",
+        "type": "sound",
+        "sound_id": 4,
+        "concurrent": true
+      },
+      {
+        "name": "Swing Axe Down",
+        "type": "motor",
+        "part_id": 2,
+        "duration": 500,
+        "direction": "backward",
+        "speed": 100
       }
-    ]
+    ],
+    "id": 2
   }
 ]

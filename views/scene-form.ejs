@@ -6,7 +6,6 @@
     <title><%= title %></title>
     <link rel="stylesheet" href="/css/style.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
 </head>
 <body>
     <h1><%= title %></h1>
@@ -18,7 +17,7 @@
         </div>
         <div>
             <label for="character_id">Character:</label>
-            <select id="character_id" name="character_id" required onchange="updateAvailableParts()">
+            <select id="character_id" name="character_id" required>
                 <% characters.forEach(function(character) { %>
                     <option value="<%= character.id %>" <%= (scene.character_id === character.id) ? 'selected' : '' %>>
                         <%= character.char_name %>
@@ -34,34 +33,41 @@
                     <div class="step" data-step-id="<%= index %>">
                         <h3>Step <%= index + 1 %></h3>
                         <input type="text" name="steps[<%= index %>][name]" value="<%= step.name %>" placeholder="Step Name" required>
-                        <select name="steps[<%= index %>][type]" class="step-type" required onchange="toggleStepOptions(this)">
-                            <option value="sound" <%= step.type === 'sound' ? 'selected' : '' %>>Play Sound</option>
-                            <option value="motor" <%= step.type === 'motor' ? 'selected' : '' %>>Move Motor</option>
-                            <option value="light" <%= step.type === 'light' ? 'selected' : '' %>>Control Light</option>
-                        </select>
-                        <div class="step-options sound-options" style="display: <%= step.type === 'sound' ? 'block' : 'none' %>;">
+                        <% if (step.type === 'sound') { %>
                             <select name="steps[<%= index %>][sound_id]" required>
                                 <% sounds.forEach(function(sound) { %>
-                                    <option value="<%= sound.id %>" <%= (step.sound_id === sound.id) ? 'selected' : '' %>>
-                                        <%= sound.name %>
-                                    </option>
+                                    <option value="<%= sound.id %>" <%= (step.sound_id === sound.id) ? 'selected' : '' %>><%= sound.name %></option>
                                 <% }); %>
                             </select>
                             <label>
                                 <input type="checkbox" name="steps[<%= index %>][concurrent]" <%= step.concurrent ? 'checked' : '' %>>
-                                Play concurrently with next step
+                                Play concurrently
                             </label>
-                        </div>
-                        <div class="step-options part-options" style="display: <%= step.type === 'motor' || step.type === 'light' ? 'block' : 'none' %>;">
-                            <select name="steps[<%= index %>][part_id]" required class="part-select">
-                                <!-- Parts will be populated dynamically -->
+                        <% } else { %>
+                            <select name="steps[<%= index %>][type]" required>
+                                <option value="motor" <%= step.type === 'motor' ? 'selected' : '' %>>Move Motor</option>
+                                <option value="light" <%= step.type === 'light' ? 'selected' : '' %>>Control Light</option>
                             </select>
-                        </div>
+                            <select name="steps[<%= index %>][part_id]" required>
+                                <% parts.forEach(function(part) { %>
+                                    <option value="<%= part.id %>" <%= (step.part_id === part.id) ? 'selected' : '' %>><%= part.name %></option>
+                                <% }); %>
+                            </select>
+                            <input type="number" name="steps[<%= index %>][duration]" value="<%= step.duration || '' %>" placeholder="Duration (ms)" required>
+                            <% if (step.type === 'motor') { %>
+                                <select name="steps[<%= index %>][direction]" required>
+                                    <option value="forward" <%= step.direction === 'forward' ? 'selected' : '' %>>Forward</option>
+                                    <option value="backward" <%= step.direction === 'backward' ? 'selected' : '' %>>Backward</option>
+                                </select>
+                                <input type="number" name="steps[<%= index %>][speed]" value="<%= step.speed || '' %>" placeholder="Speed (0-100)" min="0" max="100" required>
+                            <% } %>
+                        <% } %>
                         <button type="button" onclick="removeStep(this)">Remove Step</button>
                     </div>
                 <% }); %>
             </div>
             <button type="button" onclick="addStep()">Add Step</button>
+            <button type="button" onclick="addSound()">Add Sound</button>
         </div>
 
         <button type="submit">Save Scene</button>
@@ -69,67 +75,55 @@
     <a href="/scenes" class="button">Back to Scenes</a>
 
     <script>
-        const characterParts = {
-            <% characters.forEach(function(character) { %>
-                <%= character.id %>: [
-                    <% parts.filter(part => part.characterId === character.id).forEach(function(part) { %>
-                        { id: <%= part.id %>, name: "<%= part.name %>", type: "<%= part.type %>" },
-                    <% }); %>
-                ],
-            <% }); %>
-        };
-
-        function updateAvailableParts() {
-            const characterId = document.getElementById('character_id').value;
-            const availableParts = characterParts[characterId] || [];
-            
-            document.querySelectorAll('.part-select').forEach(select => {
-                const currentValue = select.value;
-                select.innerHTML = '';
-                availableParts.forEach(part => {
-                    const option = document.createElement('option');
-                    option.value = part.id;
-                    option.textContent = part.name;
-                    select.appendChild(option);
-                });
-                select.value = currentValue;
-            });
-        }
-
         function addStep() {
             const stepList = document.getElementById('step-list');
             const stepCount = stepList.children.length;
             const newStep = document.createElement('div');
             newStep.className = 'step';
-            newStep.dataset.stepId = stepCount;
             newStep.innerHTML = `
                 <h3>Step ${stepCount + 1}</h3>
                 <input type="text" name="steps[${stepCount}][name]" placeholder="Step Name" required>
-                <select name="steps[${stepCount}][type]" class="step-type" required onchange="toggleStepOptions(this)">
-                    <option value="sound">Play Sound</option>
+                <select name="steps[${stepCount}][type]" required>
                     <option value="motor">Move Motor</option>
                     <option value="light">Control Light</option>
                 </select>
-                <div class="step-options sound-options" style="display: none;">
-                    <select name="steps[${stepCount}][sound_id]" required>
-                        <% sounds.forEach(function(sound) { %>
-                            <option value="<%= sound.id %>"><%= sound.name %></option>
-                        <% }); %>
-                    </select>
-                    <label>
-                        <input type="checkbox" name="steps[${stepCount}][concurrent]">
-                        Play concurrently with next step
-                    </label>
-                </div>
-                <div class="step-options part-options" style="display: none;">
-                    <select name="steps[${stepCount}][part_id]" required class="part-select">
-                        <!-- Parts will be populated dynamically -->
-                    </select>
-                </div>
+                <select name="steps[${stepCount}][part_id]" required>
+                    <% parts.forEach(function(part) { %>
+                        <option value="<%= part.id %>"><%= part.name %></option>
+                    <% }); %>
+                </select>
+                <input type="number" name="steps[${stepCount}][duration]" placeholder="Duration (ms)" required>
+                <select name="steps[${stepCount}][direction]" required>
+                    <option value="forward">Forward</option>
+                    <option value="backward">Backward</option>
+                </select>
+                <input type="number" name="steps[${stepCount}][speed]" placeholder="Speed (0-100)" min="0" max="100" required>
                 <button type="button" onclick="removeStep(this)">Remove Step</button>
             `;
             stepList.appendChild(newStep);
-            updateAvailableParts();
+        }
+
+        function addSound() {
+            const stepList = document.getElementById('step-list');
+            const stepCount = stepList.children.length;
+            const newStep = document.createElement('div');
+            newStep.className = 'step';
+            newStep.innerHTML = `
+                <h3>Step ${stepCount + 1} (Sound)</h3>
+                <input type="text" name="steps[${stepCount}][name]" placeholder="Sound Name" required>
+                <input type="hidden" name="steps[${stepCount}][type]" value="sound">
+                <select name="steps[${stepCount}][sound_id]" required>
+                    <% sounds.forEach(function(sound) { %>
+                        <option value="<%= sound.id %>"><%= sound.name %></option>
+                    <% }); %>
+                </select>
+                <label>
+                    <input type="checkbox" name="steps[${stepCount}][concurrent]">
+                    Play concurrently
+                </label>
+                <button type="button" onclick="removeStep(this)">Remove Step</button>
+            `;
+            stepList.appendChild(newStep);
         }
 
         function removeStep(button) {
@@ -140,39 +134,9 @@
         function updateStepNumbers() {
             const steps = document.querySelectorAll('.step');
             steps.forEach((step, index) => {
-                step.querySelector('h3').textContent = `Step ${index + 1}`;
-                step.dataset.stepId = index;
-                step.querySelectorAll('input, select').forEach(input => {
-                    input.name = input.name.replace(/\d+/, index);
-                });
+                step.querySelector('h3').textContent = `Step ${index + 1}${step.querySelector('input[type="hidden"][value="sound"]') ? ' (Sound)' : ''}`;
             });
         }
-
-        function toggleStepOptions(select) {
-            const stepDiv = select.closest('.step');
-            const soundOptions = stepDiv.querySelector('.sound-options');
-            const partOptions = stepDiv.querySelector('.part-options');
-            
-            if (select.value === 'sound') {
-                soundOptions.style.display = 'block';
-                partOptions.style.display = 'none';
-            } else {
-                soundOptions.style.display = 'none';
-                partOptions.style.display = 'block';
-            }
-        }
-
-        $(function() {
-            $("#step-list").sortable({
-                update: updateStepNumbers
-            });
-
-            // Initialize step options visibility and available parts
-            $('.step-type').each(function() {
-                toggleStepOptions(this);
-            });
-            updateAvailableParts();
-        });
     </script>
 </body>
 </html>
