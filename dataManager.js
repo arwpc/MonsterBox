@@ -51,9 +51,11 @@ module.exports = {
     getScenes: () => readData('scenes'),
     getParts: () => readData('parts'),
     getSounds: () => readData('sounds'),
+    getSensors: () => readData('sensors'),
     saveCharacters: (data) => writeData('characters', data),
     saveScenes: (data) => writeData('scenes', data),
     saveParts: (data) => writeData('parts', data),
     saveSounds: (data) => writeData('sounds', data),
+    saveSensors: (data) => writeData('sensors', data),
     getNextId
 };

@@ -38,6 +38,9 @@ router.post('/', async (req, res) => {
     if (req.body.type === 'motor') {
         newPart.directionPin = parseInt(req.body.directionPin);
         newPart.pwmPin = parseInt(req.body.pwmPin);
+    } else if (req.body.type === 'sensor') {
+        newPart.sensorType = req.body.sensorType;
+        newPart.gpioPin = parseInt(req.body.gpioPin);
     } else {
         newPart.pin = parseInt(req.body.pin);
     }
@@ -62,6 +65,9 @@ router.post('/:id', async (req, res) => {
         if (req.body.type === 'motor') {
             parts[index].directionPin = parseInt(req.body.directionPin);
             parts[index].pwmPin = parseInt(req.body.pwmPin);
+        } else if (req.body.type === 'sensor') {
+            parts[index].sensorType = req.body.sensorType;
+            parts[index].gpioPin = parseInt(req.body.gpioPin);
         } else {
             parts[index].pin = parseInt(req.body.pin);
         }
@@ -87,13 +93,13 @@ router.post('/:id/delete', async (req, res) => {
     }
 });
 
-router.post('/test-motor', (req, res) => {
-    console.log('Test motor route hit');
+router.post('/test-sensor', (req, res) => {
+    console.log('Test sensor route hit');
     console.log('Request body:', req.body);
     
-    const { direction, speed, duration, directionPin, pwmPin } = req.body;
-    const pythonScript = path.join(__dirname, '..', 'motor_control.py');
-    const command = `sudo python3 ${pythonScript} ${direction} ${speed} ${duration} ${directionPin} ${pwmPin}`;
+    const { gpioPin } = req.body;
+    const scriptPath = path.join(__dirname, '..', 'scripts', 'test_sensor.py');
+    const command = `sudo python3 ${scriptPath} ${gpioPin}`;
     
     console.log('Command to be executed:', command);
 
@@ -107,7 +113,7 @@ router.post('/test-motor', (req, res) => {
             return res.status(500).send(`Error from Python script: ${stderr}`);
         }
         console.log(`stdout: ${stdout}`);
-        res.status(200).send('Motor test successful');
+        res.status(200).send('Sensor test successful');
     });
 });
 

@@ -12,6 +12,7 @@ const sceneRoutes = require('./routes/sceneRoutes');
 const characterRoutes = require('./routes/characterRoutes');
 const partRoutes = require('./routes/partRoutes');
 const soundRoutes = require('./routes/soundRoutes');
+const sensorRoutes = require('./routes/sensorRoutes');
 
 // Multer setup for file uploads
 const storage = multer.diskStorage({
@@ -40,6 +41,7 @@ app.use('/scenes', sceneRoutes);
 app.use('/characters', characterRoutes);
 app.use('/parts', partRoutes);
 app.use('/sounds', soundRoutes);
+app.use('/sensors', sensorRoutes);
 
 // Main menu route
 app.get('/', (req, res) => {
@@ -55,4 +57,10 @@ app.use((err, req, res, next) => {
 // Start the server
 app.listen(port, () => {
     console.log(`MonsterBox server running at http://localhost:${port}`);
+});
+
+// Graceful shutdown
+process.on('SIGINT', () => {
+    console.log('Shutting down gracefully...');
+    process.exit();
 });
