@@ -1,39 +1,12 @@
 [
   {
     "id": 1,
-    "char_name": "Axe Dude Again",
-    "char_description": "asdasdasd",
-    "parts": [
-      1,
-      2
-    ],
+    "char_name": "Lord Satan Production",
+    "char_description": "The big guy himself, ready for action",
+    "parts": [],
     "sounds": [
       4
     ],
-    "image": "1723849608558.jpg"
-  },
-  {
-    "id": 2,
-    "char_name": "Cocaine Bear",
-    "char_description": "scary coke bear that loves soda",
-    "parts": [
-      2
-    ],
-    "sounds": [
-      5
-    ],
-    "image": "1723849989190.jpg"
-  },
-  {
-    "id": 3,
-    "char_name": "Baphomet",
-    "char_description": "Devil of underlord",
-    "parts": [
-      1
-    ],
-    "sounds": [
-      2
-    ],
-    "image": "1723850012183.jpg"
+    "image": "1724005675894.jpg"
   }
 ]

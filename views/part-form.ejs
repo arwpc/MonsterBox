@@ -5,11 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
     <link rel="stylesheet" href="/css/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 <body>
     <h1><%= title %></h1>
-    <form action="<%= action %>" method="POST" id="partForm">
+    <form action="<%= action %>" method="POST">
         <% if (part.id) { %>
             <input type="hidden" name="id" value="<%= part.id %>">
         <% } %>
@@ -21,8 +20,10 @@
             <label for="type">Type:</label>
             <select id="type" name="type" required onchange="toggleInputs()">
                 <option value="motor" <%= part.type === 'motor' ? 'selected' : '' %>>Motor</option>
-                <option value="sensor" <%= part.type === 'sensor' ? 'selected' : '' %>>Sensor</option>
                 <option value="light" <%= part.type === 'light' ? 'selected' : '' %>>Light</option>
+                <option value="led" <%= part.type === 'led' ? 'selected' : '' %>>LED</option>
+                <option value="servo" <%= part.type === 'servo' ? 'selected' : '' %>>Servo</option>
+                <option value="sensor" <%= part.type === 'sensor' ? 'selected' : '' %>>Sensor</option>
             </select>
         </div>
         <div>
@@ -38,11 +39,17 @@
         <div id="motorInputs" style="display: none;">
             <div>
                 <label for="directionPin">Direction Pin:</label>
-                <input type="number" id="directionPin" name="directionPin" value="<%= part.directionPin || '' %>" min="0" max="40">
+                <input type="number" id="directionPin" name="directionPin" value="<%= part.directionPin || '' %>">
             </div>
             <div>
                 <label for="pwmPin">PWM Pin:</label>
-                <input type="number" id="pwmPin" name="pwmPin" value="<%= part.pwmPin || '' %>" min="0" max="40">
+                <input type="number" id="pwmPin" name="pwmPin" value="<%= part.pwmPin || '' %>">
+            </div>
+        </div>
+        <div id="singlePinInputs" style="display: none;">
+            <div>
+                <label for="pin">GPIO Pin:</label>
+                <input type="number" id="pin" name="pin" value="<%= part.pin || '' %>">
             </div>
         </div>
         <div id="sensorInputs" style="display: none;">
@@ -53,73 +60,21 @@
                     <option value="sound" <%= part.sensorType === 'sound' ? 'selected' : '' %>>Sound</option>
                 </select>
             </div>
-            <div>
-                <label for="gpioPin">GPIO Pin:</label>
-                <input type="number" id="gpioPin" name="gpioPin" value="<%= part.gpioPin || '' %>" min="0" max="40">
-            </div>
-        </div>
-        <div id="lightInputs" style="display: none;">
-            <div>
-                <label for="pin">GPIO Pin:</label>
-                <input type="number" id="pin" name="pin" value="<%= part.pin || '' %>" min="0" max="40">
-            </div>
         </div>
         <button type="submit">Save Part</button>
     </form>
-    <div id="testArea" style="display: none;">
-        <h2>Test Sensor</h2>
-        <p id="sensorStatus">Sensor status: Not testing</p>
-        <button id="startTest">Start Test</button>
-        <button id="stopTest" disabled>Stop Test</button>
-    </div>
     <a href="/parts" class="button">Back to Parts</a>
 
     <script>
         function toggleInputs() {
             const type = document.getElementById('type').value;
             document.getElementById('motorInputs').style.display = type === 'motor' ? 'block' : 'none';
+            document.getElementById('singlePinInputs').style.display = ['light', 'led', 'servo', 'sensor'].includes(type) ? 'block' : 'none';
             document.getElementById('sensorInputs').style.display = type === 'sensor' ? 'block' : 'none';
-            document.getElementById('lightInputs').style.display = type === 'light' ? 'block' : 'none';
-            document.getElementById('testArea').style.display = type === 'sensor' ? 'block' : 'none';
         }
 
         // Call toggleInputs on page load to set initial state
         toggleInputs();
-
-        let testInterval;
-
-        function startTest() {
-            const gpioPin = document.getElementById('gpioPin').value;
-            if (!gpioPin) {
-                alert('Please enter a GPIO pin number before testing.');
-                return;
-            }
-
-            document.getElementById('startTest').disabled = true;
-            document.getElementById('stopTest').disabled = false;
-
-            testInterval = setInterval(() => {
-                axios.post('/parts/test-sensor', { gpioPin })
-                    .then(response => {
-                        document.getElementById('sensorStatus').textContent = 'Sensor status: ' + response.data;
-                    })
-                    .catch(error => {
-                        console.error('Error testing sensor:', error);
-                        document.getElementById('sensorStatus').textContent = 'Sensor status: Error';
-                        stopTest();
-                    });
-            }, 1000);
-        }
-
-        function stopTest() {
-            clearInterval(testInterval);
-            document.getElementById('startTest').disabled = false;
-            document.getElementById('stopTest').disabled = true;
-            document.getElementById('sensorStatus').textContent = 'Sensor status: Not testing';
-        }
-
-        document.getElementById('startTest').addEventListener('click', startTest);
-        document.getElementById('stopTest').addEventListener('click', stopTest);
     </script>
 </body>
 </html>

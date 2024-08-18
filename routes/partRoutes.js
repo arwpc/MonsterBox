@@ -1,120 +1,104 @@
 const express = require('express');
 const router = express.Router();
-const dataManager = require('../dataManager');
-const { exec } = require('child_process');
-const path = require('path');
+const partService = require('../services/partService');
 
 router.get('/', async (req, res) => {
-    const parts = await dataManager.getParts();
-    const characters = await dataManager.getCharacters();
-    res.render('parts', { title: 'Parts', parts, characters });
+    try {
+        const parts = await partService.getAllParts();
+        const characters = await partService.getAllCharacters();
+        res.render('parts', { title: 'Parts', parts, characters });
+    } catch (error) {
+        console.error('Error fetching parts:', error);
+        res.status(500).send('An error occurred while fetching parts');
+    }
 });
 
 router.get('/new', async (req, res) => {
-    const characters = await dataManager.getCharacters();
-    res.render('part-form', { title: 'Add New Part', action: '/parts', part: {}, characters });
+    try {
+        const characters = await partService.getAllCharacters();
+        res.render('part-form', { title: 'Add New Part', action: '/parts', part: {}, characters });
+    } catch (error) {
+        console.error('Error rendering new part form:', error);
+        res.status(500).send('An error occurred while loading the new part form');
+    }
 });
 
 router.get('/:id/edit', async (req, res) => {
-    const parts = await dataManager.getParts();
-    const characters = await dataManager.getCharacters();
-    const part = parts.find(p => p.id === parseInt(req.params.id));
-    if (part) {
-        res.render('part-form', { title: 'Edit Part', action: '/parts/' + part.id, part, characters });
-    } else {
-        res.status(404).send('Part not found');
+    try {
+        const part = await partService.getPartById(req.params.id);
+        const characters = await partService.getAllCharacters();
+        if (part) {
+            res.render('part-form', { title: 'Edit Part', action: `/parts/${part.id}`, part, characters });
+        } else {
+            res.status(404).send('Part not found');
+        }
+    } catch (error) {
+        console.error('Error fetching part:', error);
+        res.status(500).send('An error occurred while fetching the part');
     }
 });
 
 router.post('/', async (req, res) => {
-    const parts = await dataManager.getParts();
-    const newPart = {
-        id: dataManager.getNextId(parts),
-        name: req.body.name,
-        type: req.body.type,
-        characterId: parseInt(req.body.characterId)
-    };
-
-    if (req.body.type === 'motor') {
-        newPart.directionPin = parseInt(req.body.directionPin);
-        newPart.pwmPin = parseInt(req.body.pwmPin);
-    } else if (req.body.type === 'sensor') {
-        newPart.sensorType = req.body.sensorType;
-        newPart.gpioPin = parseInt(req.body.gpioPin);
-    } else {
-        newPart.pin = parseInt(req.body.pin);
+    try {
+        const newPart = await partService.createPart(req.body);
+        res.redirect('/parts');
+    } catch (error) {
+        console.error('Error creating part:', error);
+        res.status(500).send('An error occurred while creating the part');
     }
-
-    parts.push(newPart);
-    await dataManager.saveParts(parts);
-    res.redirect('/parts');
 });
 
 router.post('/:id', async (req, res) => {
-    const id = parseInt(req.params.id);
-    const parts = await dataManager.getParts();
-    const index = parts.findIndex(p => p.id === id);
-    if (index !== -1) {
-        parts[index] = {
-            id: id,
-            name: req.body.name,
-            type: req.body.type,
-            characterId: parseInt(req.body.characterId)
-        };
-
-        if (req.body.type === 'motor') {
-            parts[index].directionPin = parseInt(req.body.directionPin);
-            parts[index].pwmPin = parseInt(req.body.pwmPin);
-        } else if (req.body.type === 'sensor') {
-            parts[index].sensorType = req.body.sensorType;
-            parts[index].gpioPin = parseInt(req.body.gpioPin);
-        } else {
-            parts[index].pin = parseInt(req.body.pin);
-        }
-
-        await dataManager.saveParts(parts);
+    try {
+        const updatedPart = await partService.updatePart(req.params.id, req.body);
         res.redirect('/parts');
-    } else {
-        res.status(404).send('Part not found');
+    } catch (error) {
+        if (error.message === 'Part not found') {
+            res.status(404).send('Part not found');
+        } else {
+            console.error('Error updating part:', error);
+            res.status(500).send('An error occurred while updating the part');
+        }
     }
 });
 
 router.post('/:id/delete', async (req, res) => {
-    console.log('DELETE /parts/:id route hit. ID:', req.params.id);
-    const id = parseInt(req.params.id);
-    const parts = await dataManager.getParts();
-    const index = parts.findIndex(p => p.id === id);
-    if (index !== -1) {
-        parts.splice(index, 1);
-        await dataManager.saveParts(parts);
+    try {
+        await partService.deletePart(req.params.id);
         res.sendStatus(200);
-    } else {
-        res.status(404).send('Part not found');
+    } catch (error) {
+        console.error('Error deleting part:', error);
+        res.status(500).send('An error occurred while deleting the part');
     }
 });
 
-router.post('/test-sensor', (req, res) => {
-    console.log('Test sensor route hit');
-    console.log('Request body:', req.body);
-    
-    const { gpioPin } = req.body;
-    const scriptPath = path.join(__dirname, '..', 'scripts', 'test_sensor.py');
-    const command = `sudo python3 ${scriptPath} ${gpioPin}`;
-    
-    console.log('Command to be executed:', command);
+router.post('/test', async (req, res) => {
+    try {
+        const { part_id, type, ...testParams } = req.body;
+        let result;
 
-    exec(command, (error, stdout, stderr) => {
-        if (error) {
-            console.error(`Exec error: ${error.message}`);
-            return res.status(500).send(`Error executing command: ${error.message}`);
+        switch (type) {
+            case 'motor':
+                result = await partService.testMotor(part_id, testParams.direction, testParams.speed, testParams.duration);
+                break;
+            case 'light':
+                result = await partService.testLight(part_id, testParams.state, testParams.duration);
+                break;
+            case 'led':
+                result = await partService.testLED(part_id, testParams.brightness, testParams.duration);
+                break;
+            case 'servo':
+                result = await partService.testServo(part_id, testParams.angle, testParams.speed, testParams.duration);
+                break;
+            default:
+                throw new Error('Invalid part type');
         }
-        if (stderr) {
-            console.error(`stderr: ${stderr}`);
-            return res.status(500).send(`Error from Python script: ${stderr}`);
-        }
-        console.log(`stdout: ${stdout}`);
-        res.status(200).send('Sensor test successful');
-    });
+
+        res.json({ success: true, message: 'Part tested successfully', result });
+    } catch (error) {
+        console.error('Error testing part:', error);
+        res.status(500).json({ success: false, message: 'An error occurred while testing the part', error: error.message });
+    }
 });
 
 module.exports = router;

@@ -33,10 +33,8 @@
                 <div id="available-parts">
                     <h4>Available Parts:</h4>
                     <select id="available-parts-select" multiple>
-                        <% parts.filter(part => part.characterId === character.id).forEach(function(part) { %>
-                            <option value="<%= part.id %>" <%= character.parts && character.parts.includes(part.id) ? 'disabled' : '' %>>
-                                <%= part.name %>
-                            </option>
+                        <% parts.filter(part => !character.parts || !character.parts.includes(part.id)).forEach(function(part) { %>
+                            <option value="<%= part.id %>"><%= part.name %> (<%= part.type %>)</option>
                         <% }); %>
                     </select>
                 </div>
@@ -49,9 +47,9 @@
                     <select id="selected-parts-select" name="parts" multiple>
                         <% if (character.parts) { %>
                             <% character.parts.forEach(function(partId) { %>
-                                <% const part = parts.find(p => p.id === partId && p.characterId === character.id); %>
+                                <% const part = parts.find(p => p.id === partId); %>
                                 <% if (part) { %>
-                                    <option value="<%= part.id %>"><%= part.name %></option>
+                                    <option value="<%= part.id %>"><%= part.name %> (<%= part.type %>)</option>
                                 <% } %>
                             <% }); %>
                         <% } %>
@@ -65,10 +63,8 @@
                 <div id="available-sounds">
                     <h4>Available Sounds:</h4>
                     <select id="available-sounds-select" multiple>
-                        <% sounds.forEach(function(sound) { %>
-                            <option value="<%= sound.id %>" <%= character.sounds && character.sounds.includes(sound.id) ? 'disabled' : '' %>>
-                                <%= sound.name %>
-                            </option>
+                        <% sounds.filter(sound => !character.sounds || !character.sounds.includes(sound.id)).forEach(function(sound) { %>
+                            <option value="<%= sound.id %>"><%= sound.name %></option>
                         <% }); %>
                     </select>
                 </div>

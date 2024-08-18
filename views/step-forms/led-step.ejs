@@ -1,0 +1,51 @@
+<form id="ledStepForm" onsubmit="event.preventDefault(); saveStep(new FormData(this));">
+    <input type="hidden" name="type" value="led">
+    <input type="hidden" name="stepIndex" value="<%= stepIndex %>">
+    
+    <div>
+        <label for="part_id">LED:</label>
+        <select name="part_id" required>
+            <% ledParts.forEach(function(part) { %>
+                <option value="<%= part.id %>"><%= part.name %></option>
+            <% }); %>
+        </select>
+    </div>
+    
+    <div>
+        <label for="brightness">Brightness (0-100):</label>
+        <input type="number" name="brightness" min="0" max="100" required>
+    </div>
+    
+    <div>
+        <label for="duration">Duration (ms):</label>
+        <input type="number" name="duration" min="0" required>
+    </div>
+    
+    <div>
+        <label for="concurrent">Concurrent:</label>
+        <input type="checkbox" name="concurrent">
+    </div>
+    
+    <div>
+        <label for="description">Description:</label>
+        <input type="text" name="description" required>
+    </div>
+    
+    <button type="submit">Save Step</button>
+    <button type="button" onclick="$('#stepFormContainer').hide();">Cancel</button>
+</form>
+
+<button type="button" onclick="testLED()">Test LED</button>
+
+<script>
+    function testLED() {
+        const formData = new FormData(document.getElementById('ledStepForm'));
+        $.post('/parts/test-led', formData)
+            .done(function(response) {
+                alert('LED test successful');
+            })
+            .fail(function(xhr, status, error) {
+                alert('Error testing LED: ' + error);
+            });
+    }
+</script>

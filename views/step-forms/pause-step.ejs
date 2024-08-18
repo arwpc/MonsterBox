@@ -1,0 +1,17 @@
+<form id="pauseStepForm" onsubmit="event.preventDefault(); saveStep(new FormData(this));">
+    <input type="hidden" name="type" value="pause">
+    <input type="hidden" name="stepIndex" value="<%= stepIndex %>">
+    
+    <div>
+        <label for="duration">Duration (ms):</label>
+        <input type="number" name="duration" min="0" required>
+    </div>
+    
+    <div>
+        <label for="description">Description:</label>
+        <input type="text" name="description" required>
+    </div>
+    
+    <button type="submit">Save Step</button>
+    <button type="button" onclick="$('#stepFormContainer').hide();">Cancel</button>
+</form>
