@@ -1,6 +1,4 @@
 const express = require('express');
-const dataManager = require('./dataManager');
-const multer = require('multer');
 const path = require('path');
 const fs = require('fs').promises;
 const app = express();
@@ -13,21 +11,6 @@ const characterRoutes = require('./routes/characterRoutes');
 const partRoutes = require('./routes/partRoutes');
 const soundRoutes = require('./routes/soundRoutes');
 const sensorRoutes = require('./routes/sensorRoutes');
-
-// Multer setup for file uploads
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        if (file.fieldname === "sound_file") {
-            cb(null, 'public/sounds/');
-        } else if (file.fieldname === "character_image") {
-            cb(null, 'public/images/characters/');
-        }
-    },
-    filename: function (req, file, cb) {
-        cb(null, Date.now() + path.extname(file.originalname));
-    }
-});
-const upload = multer({ storage: storage });
 
 // Basic Express setup
 app.use(express.json());
@@ -46,6 +29,13 @@ app.use('/sensors', sensorRoutes);
 // Main menu route
 app.get('/', (req, res) => {
     res.render('index', { title: 'MonsterBox Control Panel' });
+});
+
+// Step form route
+app.get('/scenes/step-form/:type', (req, res) => {
+    const stepType = req.params.type;
+    const stepIndex = req.query.stepIndex;
+    res.render(`step-forms/${stepType}-step`, { stepIndex });
 });
 
 // Error handling middleware

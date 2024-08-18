@@ -1,13 +1,1 @@
-[
-  {
-    "id": 1,
-    "scene_name": "Bear Attack",
-    "character_id": "2",
-    "steps": [
-      {
-        "name": "Roar!!!",
-        "type": "sound"
-      }
-    ]
-  }
-]
+[]

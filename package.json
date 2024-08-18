@@ -1,10 +1,10 @@
 {
-  "name": "scene-builder-app",
+  "name": "monsterbox",
   "version": "1.0.0",
   "description": "A refactored scene builder application for managing scenes and steps.",
-  "main": "server.js",
+  "main": "app.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node app.js",
     "test": "mocha --recursive"
   },
   "dependencies": {
@@ -14,6 +14,8 @@
     "multer": "^1.4.5-lts.1",
     "node-aplay": "^1.0.3",
     "node-mpg123": "^1.0.2-0023",
+    "node-schedule": "^2.1.0",
+    "onoff": "^6.0.3",
     "play-sound": "^1.1.6",
     "replit-auth": "^5.0.3"
   },
@@ -27,7 +29,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/your-repo/scene-builder-app.git"
+    "url": "git+https://github.com/your-repo/monsterbox.git"
   },
   "keywords": [
     "scene",
@@ -39,7 +41,7 @@
   "author": "Your Name",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/your-repo/scene-builder-app/issues"
+    "url": "https://github.com/your-repo/monsterbox/issues"
   },
-  "homepage": "https://github.com/your-repo/scene-builder-app#readme"
+  "homepage": "https://github.com/your-repo/monsterbox#readme"
 }
