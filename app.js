@@ -13,6 +13,7 @@ const characterRoutes = require('./routes/characterRoutes');
 const partRoutes = require('./routes/partRoutes');
 const soundRoutes = require('./routes/soundRoutes');
 const sensorRoutes = require('./routes/sensorRoutes');
+const activeModeRoutes = require('./routes/activeModeRoutes');
 
 // Multer setup for file uploads
 const storage = multer.diskStorage({
@@ -42,6 +43,7 @@ app.use('/characters', characterRoutes);
 app.use('/parts', partRoutes);
 app.use('/sounds', soundRoutes);
 app.use('/sensors', sensorRoutes);
+app.use('/active-mode', activeModeRoutes);
 
 // Main menu route
 app.get('/', (req, res) => {

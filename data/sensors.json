@@ -4,7 +4,7 @@
     "name": "PIR Sensor",
     "type": "motion",
     "characterId": 2,
-    "active": true,
+    "active": "true",
     "gpioPin": 16
   },
   {
@@ -12,7 +12,7 @@
     "name": "motion",
     "type": "motion",
     "characterId": 1,
-    "active": false,
+    "active": "true",
     "gpioPin": 16
   },
   {
@@ -20,7 +20,7 @@
     "name": "moving ",
     "type": "motion",
     "characterId": 1,
-    "active": true,
+    "active": "true",
     "gpioPin": 16
   },
   {

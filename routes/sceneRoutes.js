@@ -1,27 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const {
-    getAllScenes,
-    getScene,
-    saveScene,
-    removeScene,
-    addStepToScene,
-    updateStepInScene,
-    removeStepFromScene,
-    getAllCharacters,
-    getAllParts,
-    getAllSounds
-} = require('../services/sceneService');
+const dataManager = require('../dataManager');
 
 router.get('/', async (req, res) => {
     try {
-        const scenes = await getAllScenes();
-        const characters = await getAllCharacters();
-        res.render('scenes', { 
-            title: 'Scenes',
-            scenes,
-            characters
-        });
+        const scenes = await dataManager.getScenes();
+        const characters = await dataManager.getCharacters();
+        res.render('scenes', { title: 'Scenes', scenes, characters });
     } catch (error) {
         console.error('Error fetching scenes:', error);
         res.status(500).send('Something broke!');
@@ -30,9 +15,9 @@ router.get('/', async (req, res) => {
 
 router.get('/new', async (req, res) => {
     try {
-        const characters = await getAllCharacters();
-        const parts = await getAllParts();
-        const sounds = await getAllSounds();
+        const characters = await dataManager.getCharacters();
+        const parts = await dataManager.getParts();
+        const sounds = await dataManager.getSounds();
         res.render('scene-form', { 
             title: 'New Scene',
             scene: { steps: [] },
@@ -49,10 +34,10 @@ router.get('/new', async (req, res) => {
 
 router.get('/:id/edit', async (req, res) => {
     try {
-        const scene = await getScene(req.params.id);
-        const characters = await getAllCharacters();
-        const parts = await getAllParts();
-        const sounds = await getAllSounds();
+        const scene = await dataManager.getScene(req.params.id);
+        const characters = await dataManager.getCharacters();
+        const parts = await dataManager.getParts();
+        const sounds = await dataManager.getSounds();
         if (scene) {
             res.render('scene-form', { 
                 title: 'Edit Scene',
@@ -73,7 +58,12 @@ router.get('/:id/edit', async (req, res) => {
 
 router.post('/', async (req, res) => {
     try {
-        const scene = await saveScene(req.body);
+        const sceneData = {
+            scene_name: req.body.scene_name,
+            character_id: parseInt(req.body.character_id),
+            steps: parseSteps(req.body.steps)
+        };
+        await dataManager.saveScene(sceneData);
         res.redirect('/scenes');
     } catch (error) {
         console.error('Error creating scene:', error);
@@ -83,7 +73,13 @@ router.post('/', async (req, res) => {
 
 router.post('/:id', async (req, res) => {
     try {
-        const scene = await saveScene(req.body, req.params.id);
+        const sceneData = {
+            id: parseInt(req.params.id),
+            scene_name: req.body.scene_name,
+            character_id: parseInt(req.body.character_id),
+            steps: parseSteps(req.body.steps)
+        };
+        await dataManager.saveScene(sceneData);
         res.redirect('/scenes');
     } catch (error) {
         console.error('Error updating scene:', error);
@@ -93,12 +89,33 @@ router.post('/:id', async (req, res) => {
 
 router.post('/:id/delete', async (req, res) => {
     try {
-        await removeScene(req.params.id);
+        await dataManager.removeScene(req.params.id);
         res.sendStatus(200);
     } catch (error) {
         console.error('Error deleting scene:', error);
         res.status(500).send('Something broke!');
     }
 });
+
+function parseSteps(steps) {
+    if (!Array.isArray(steps)) {
+        steps = [steps];
+    }
+    return steps.map(step => ({
+        name: step.name,
+        type: step.type,
+        ...(step.type === 'sound' ? {
+            sound_id: parseInt(step.sound_id),
+            concurrent: step.concurrent === 'on'
+        } : {
+            part_id: parseInt(step.part_id),
+            duration: parseInt(step.duration),
+            ...(step.type === 'motor' ? {
+                direction: step.direction,
+                speed: parseInt(step.speed)
+            } : {})
+        })
+    }));
+}
 
 module.exports = router;

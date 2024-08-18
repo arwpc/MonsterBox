@@ -1,14 +1,14 @@
 const fs = require('fs').promises;
 const path = require('path');
 
-const dataDir = path.join(__dirname, 'data');
+const dataDir = '/home/remote/monsterbox/MonsterBox/data';
 
 const ensureDataDirExists = async () => {
     try {
         await fs.access(dataDir);
     } catch (error) {
         if (error.code === 'ENOENT') {
-            await fs.mkdir(dataDir);
+            await fs.mkdir(dataDir, { recursive: true });
         } else {
             throw error;
         }
@@ -46,16 +46,51 @@ const getNextId = (items) => {
     return items.length > 0 ? Math.max(...items.map(item => item.id)) + 1 : 1;
 };
 
+const getScene = async (id) => {
+    const scenes = await readData('scenes');
+    return scenes.find(scene => scene.id === parseInt(id));
+};
+
+const saveScene = async (sceneData) => {
+    const scenes = await readData('scenes');
+    let scene;
+    if (sceneData.id) {
+        const index = scenes.findIndex(s => s.id === sceneData.id);
+        if (index !== -1) {
+            scenes[index] = { ...scenes[index], ...sceneData };
+            scene = scenes[index];
+        } else {
+            throw new Error('Scene not found');
+        }
+    } else {
+        scene = { ...sceneData, id: getNextId(scenes) };
+        scenes.push(scene);
+    }
+    await writeData('scenes', scenes);
+    return scene;
+};
+
+const removeScene = async (id) => {
+    const scenes = await readData('scenes');
+    const updatedScenes = scenes.filter(scene => scene.id !== parseInt(id));
+    await writeData('scenes', updatedScenes);
+};
+
 module.exports = {
     getCharacters: () => readData('characters'),
     getScenes: () => readData('scenes'),
     getParts: () => readData('parts'),
     getSounds: () => readData('sounds'),
     getSensors: () => readData('sensors'),
+    getArmedSensors: () => readData('armedSensors'),
     saveCharacters: (data) => writeData('characters', data),
     saveScenes: (data) => writeData('scenes', data),
     saveParts: (data) => writeData('parts', data),
     saveSounds: (data) => writeData('sounds', data),
     saveSensors: (data) => writeData('sensors', data),
-    getNextId
+    saveArmedSensors: (data) => writeData('armedSensors', data),
+    getNextId,
+    getScene,
+    saveScene,
+    removeScene
 };
