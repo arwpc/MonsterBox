@@ -28,7 +28,22 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/new', (req, res) => {
-    res.render('sound-form', { title: 'Add New Sound', action: '/sounds' });
+    res.render('sound-form', { title: 'Add New Sound', action: '/sounds', sound: null });
+});
+
+router.get('/:id/edit', async (req, res) => {
+    try {
+        const sounds = await dataManager.getSounds();
+        const sound = sounds.find(s => s.id === parseInt(req.params.id));
+        if (sound) {
+            res.render('sound-form', { title: 'Edit Sound', action: `/sounds/${sound.id}`, sound });
+        } else {
+            res.status(404).send('Sound not found');
+        }
+    } catch (error) {
+        console.error('Error fetching sound:', error);
+        res.status(500).send('Internal Server Error');
+    }
 });
 
 router.post('/', upload.single('sound_file'), async (req, res) => {
@@ -44,6 +59,35 @@ router.post('/', upload.single('sound_file'), async (req, res) => {
         res.redirect('/sounds');
     } catch (error) {
         console.error('Error adding sound:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+router.post('/:id', upload.single('sound_file'), async (req, res) => {
+    try {
+        const sounds = await dataManager.getSounds();
+        const soundIndex = sounds.findIndex(s => s.id === parseInt(req.params.id));
+        
+        if (soundIndex === -1) {
+            return res.status(404).send('Sound not found');
+        }
+
+        const updatedSound = sounds[soundIndex];
+        updatedSound.name = req.body.name;
+
+        if (req.file) {
+            // Delete old file if it exists
+            if (updatedSound.filename) {
+                const oldFilePath = path.join(__dirname, '../public/sounds', updatedSound.filename);
+                await fs.unlink(oldFilePath).catch(console.error);
+            }
+            updatedSound.filename = req.file.filename;
+        }
+
+        await dataManager.saveSounds(sounds);
+        res.redirect('/sounds');
+    } catch (error) {
+        console.error('Error updating sound:', error);
         res.status(500).send('Internal Server Error');
     }
 });

@@ -1,1 +1,35 @@
+<<<<<<< HEAD
 []
+=======
+[
+  {
+    "scene_name": "Baphomet Arises",
+    "character_id": 1,
+    "steps": [
+      {
+        "name": "Arm Up",
+        "type": "motor",
+        "part_id": 1,
+        "duration": 2000,
+        "direction": "forward",
+        "speed": 25
+      },
+      {
+        "name": "Say Hello!",
+        "type": "sound",
+        "sound_id": 4,
+        "concurrent": true
+      },
+      {
+        "name": "Arm Down Faster",
+        "type": "motor",
+        "part_id": 1,
+        "duration": 500,
+        "direction": "backward",
+        "speed": 100
+      }
+    ],
+    "id": 1
+  }
+]
+>>>>>>> 387cb6549c010999d14e6d2f242cbd00056c8251

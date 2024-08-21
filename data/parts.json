@@ -1,5 +1,6 @@
 [
   {
+<<<<<<< HEAD
     "id": 2,
     "name": "arm",
     "type": "motor",
@@ -20,5 +21,21 @@
     "type": "led",
     "characterId": 1,
     "pin": 17
+=======
+    "id": 1,
+    "name": "Right Arm",
+    "type": "motor",
+    "characterId": 1,
+    "directionPin": 18,
+    "pwmPin": 24
+  },
+  {
+    "id": 2,
+    "name": "Left Arm",
+    "type": "sensor",
+    "characterId": 1,
+    "sensorType": "motion",
+    "gpioPin": 16
+>>>>>>> 387cb6549c010999d14e6d2f242cbd00056c8251
   }
 ]
