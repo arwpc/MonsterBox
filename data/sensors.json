@@ -1,1 +1,10 @@
-[]
+[
+  {
+    "id": 1,
+    "name": "Satans Eye Sensor",
+    "type": "motion",
+    "characterId": 1,
+    "active": true,
+    "gpioPin": 16
+  }
+]
