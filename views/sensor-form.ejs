@@ -1,16 +1,68 @@
-<script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1><%= title %></h1>
+    <form action="<%= action %>" method="POST">
+        <% if (sensor.id) { %>
+            <input type="hidden" name="id" value="<%= sensor.id %>">
+        <% } %>
+        <div>
+            <label for="name">Sensor Name:</label>
+            <input type="text" id="name" name="name" value="<%= sensor.name || '' %>" required>
+        </div>
+        <div>
+            <label for="type">Type:</label>
+            <select id="type" name="type" required>
+                <option value="motion" <%= sensor.type === 'motion' ? 'selected' : '' %>>Motion</option>
+                <option value="sound" <%= sensor.type === 'sound' ? 'selected' : '' %>>Sound</option>
+            </select>
+        </div>
+        <div>
+            <label for="characterId">Character:</label>
+            <select id="characterId" name="characterId" required>
+                <% characters.forEach(function(character) { %>
+                    <option value="<%= character.id %>" <%= (sensor.characterId === character.id) ? 'selected' : '' %>>
+                        <%= character.char_name %>
+                    </option>
+                <% }); %>
+            </select>
+        </div>
+        <div>
+            <label for="gpioPin">GPIO Pin:</label>
+            <input type="number" id="gpioPin" name="gpioPin" value="<%= sensor.gpioPin || '' %>" required>
+        </div>
+        <div>
+            <label for="active">
+                <input type="checkbox" id="active" name="active" <%= sensor.active ? 'checked' : '' %>>
+                Active
+            </label>
+        </div>
+        <button type="submit">Save Sensor</button>
+    </form>
+    <a href="/sensors" class="button">Back to Sensors</a>
+
+    <script>
         const characterParts = {
-            <% characters.forEach(function(character) { %>
-                <%= character.id %>: [
-                    <% parts.filter(part => part.characterId === character.id).forEach(function(part) { %>
-                        { id: <%= part.id %>, name: "<%= part.name %>", type: "<%= part.type %>" },
-                    <% }); %>
-                ],
-            <% }); %>
+            <% if (typeof parts !== 'undefined') { %>
+                <% characters.forEach(function(character) { %>
+                    <%= character.id %>: [
+                        <% parts.filter(part => part.characterId === character.id).forEach(function(part) { %>
+                            { id: <%= part.id %>, name: "<%= part.name %>", type: "<%= part.type %>" },
+                        <% }); %>
+                    ],
+                <% }); %>
+            <% } %>
         };
 
         function updateAvailableParts() {
-            const characterId = document.getElementById('character_id').value;
+            const characterId = document.getElementById('characterId').value;
             const availableParts = characterParts[characterId] || [];
             
             document.querySelectorAll('.part-select').forEach(select => {
@@ -26,130 +78,8 @@
             });
         }
 
-        function addStep() {
-            const stepList = document.getElementById('step-list');
-            const stepCount = stepList.children.length;
-            const newStep = document.createElement('div');
-            newStep.className = 'step';
-            newStep.dataset.stepId = stepCount;
-            newStep.innerHTML = `
-                <h3>Step ${stepCount + 1}</h3>
-                <input type="text" name="steps[${stepCount}][name]" placeholder="Step Name" required>
-                <select name="steps[${stepCount}][type]" class="step-type" required onchange="toggleStepOptions(this)">
-                    <option value="sound">Play Sound</option>
-                    <option value="motor">Move Motor</option>
-                    <option value="light">Control Light</option>
-                </select>
-                <div class="step-options sound-options" style="display: none;">
-                    <select name="steps[${stepCount}][sound_id]" required>
-                        <% sounds.forEach(function(sound) { %>
-                            <option value="<%= sound.id %>"><%= sound.name %></option>
-                        <% }); %>
-                    </select>
-                    <label>
-                        <input type="checkbox" name="steps[${stepCount}][concurrent]">
-                        Play concurrently with next step
-                    </label>
-                </div>
-                <div class="step-options part-options" style="display: none;">
-                    <select name="steps[${stepCount}][part_id]" required class="part-select">
-                        <!-- Parts will be populated dynamically -->
-                    </select>
-                    <input type="number" name="steps[${stepCount}][duration]" placeholder="Duration (ms)" required>
-                    <select name="steps[${stepCount}][direction]" required>
-                        <option value="forward">Forward</option>
-                        <option value="backward">Backward</option>
-                    </select>
-                    <input type="number" name="steps[${stepCount}][speed]" placeholder="Speed (0-100)" min="0" max="100" required>
-                </div>
-                <button type="button" onclick="removeStep(this)">Remove Step</button>
-            `;
-            stepList.appendChild(newStep);
-            updateAvailableParts();
-        }
-
-        function removeStep(button) {
-            button.closest('.step').remove();
-            updateStepNumbers();
-        }
-
-        function updateStepNumbers() {
-            const steps = document.querySelectorAll('.step');
-            steps.forEach((step, index) => {
-                step.querySelector('h3').textContent = `Step ${index + 1}`;
-                step.dataset.stepId = index;
-                step.querySelectorAll('input, select').forEach(input => {
-                    input.name = input.name.replace(/\d+/, index);
-                });
-            });
-        }
-
-        function toggleStepOptions(select) {
-            const stepDiv = select.closest('.step');
-            const soundOptions = stepDiv.querySelector('.sound-options');
-            const partOptions = stepDiv.querySelector('.part-options');
-            
-            if (select.value === 'sound') {
-                soundOptions.style.display = 'block';
-                partOptions.style.display = 'none';
-            } else {
-                soundOptions.style.display = 'none';
-                partOptions.style.display = 'block';
-            }
-        }
-
-        function updateStepsJson() {
-            const steps = [];
-            document.querySelectorAll('.step').forEach((stepElement) => {
-                const step = {
-                    name: stepElement.querySelector('input[name$="[name]"]').value,
-                    type: stepElement.querySelector('select[name$="[type]"]').value
-                };
-
-                if (step.type === 'sound') {
-                    step.sound_id = parseInt(stepElement.querySelector('select[name$="[sound_id]"]').value);
-                    step.concurrent = stepElement.querySelector('input[name$="[concurrent]"]').checked;
-                } else {
-                    step.part_id = parseInt(stepElement.querySelector('select[name$="[part_id]"]').value);
-                    step.duration = parseInt(stepElement.querySelector('input[name$="[duration]"]').value);
-                    if (step.type === 'motor') {
-                        step.direction = stepElement.querySelector('select[name$="[direction]"]').value;
-                        step.speed = parseInt(stepElement.querySelector('input[name$="[speed]"]').value);
-                    }
-                }
-
-                steps.push(step);
-            });
-
-            document.getElementById('steps_json').value = JSON.stringify(steps);
-        }
-
-        $(function() {
-            $("#step-list").sortable({
-                update: function(event, ui) {
-                    updateStepNumbers();
-                    updateStepsJson();
-                }
-            });
-
-            // Initialize step options visibility and available parts
-            $('.step-type').each(function() {
-                toggleStepOptions(this);
-            });
-            updateAvailableParts();
-
-            // Update steps_json before form submission
-            $('#sceneForm').submit(function() {
-                updateStepsJson();
-                return true;
-            });
-        });
-
-        // Call updateStepsJson whenever a form field changes
-        $('#sceneForm').on('change', 'input, select', updateStepsJson);
-
-        // Initial call to updateStepsJson
-        updateStepsJson();
+        document.getElementById('characterId').addEventListener('change', updateAvailableParts);
+        updateAvailableParts();
     </script>
 </body>
 </html>
