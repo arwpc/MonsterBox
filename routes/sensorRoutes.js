@@ -18,7 +18,8 @@ router.get('/', async (req, res) => {
 router.get('/new', async (req, res) => {
     try {
         const characters = await dataManager.getCharacters();
-        res.render('sensor-form', { title: 'Add New Sensor', action: '/sensors', sensor: {}, characters });
+        const parts = await dataManager.getParts();
+        res.render('sensor-form', { title: 'Add New Sensor', action: '/sensors', sensor: {}, characters, parts });
     } catch (error) {
         console.error('Error rendering new sensor form:', error);
         res.status(500).send('Internal Server Error');
@@ -29,9 +30,10 @@ router.get('/:id/edit', async (req, res) => {
     try {
         const sensors = await dataManager.getSensors();
         const characters = await dataManager.getCharacters();
+        const parts = await dataManager.getParts();
         const sensor = sensors.find(s => s.id === parseInt(req.params.id));
         if (sensor) {
-            res.render('sensor-form', { title: 'Edit Sensor', action: '/sensors/' + sensor.id, sensor, characters });
+            res.render('sensor-form', { title: 'Edit Sensor', action: '/sensors/' + sensor.id, sensor, characters, parts });
         } else {
             res.status(404).send('Sensor not found');
         }
