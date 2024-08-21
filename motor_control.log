@@ -234,3 +234,5 @@
 2024-08-18 00:09:53,394 - INFO - GPIO cleanup completed
 2024-08-18 00:16:10,310 - INFO - Controlling motor: direction=forward, speed=50, duration=1000, dir_pin=18, pwm_pin=24
 2024-08-18 00:16:11,312 - INFO - GPIO cleanup completed
+2024-08-18 17:33:46,827 - INFO - Controlling motor: direction=forward, speed=50, duration=1000, dir_pin=18, pwm_pin=24
+2024-08-18 17:33:47,828 - INFO - GPIO cleanup completed

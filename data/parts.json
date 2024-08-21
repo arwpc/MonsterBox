@@ -1,18 +1,18 @@
 [
   {
     "id": 1,
-    "name": "Bear Arm Right",
+    "name": "Right Arm",
     "type": "motor",
-    "characterId": 2,
+    "characterId": 1,
     "directionPin": 18,
     "pwmPin": 24
   },
   {
     "id": 2,
-    "name": "Axe Guy Arm Right",
-    "type": "motor",
+    "name": "Left Arm",
+    "type": "sensor",
     "characterId": 1,
-    "directionPin": 18,
-    "pwmPin": 24
+    "sensorType": "motion",
+    "gpioPin": 16
   }
 ]
