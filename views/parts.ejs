@@ -30,6 +30,9 @@
                         <% if (part.type === 'motor') { %>
                             Dir Pin: <%= part.directionPin %><br>
                             PWM Pin: <%= part.pwmPin %>
+                        <% } else if (part.type === 'led') { %>
+                            LED Pin: <%= part.ledPin %><br>
+                            Duration: <%= part.duration %> ms
                         <% } else { %>
                             Pin: <%= part.pin %>
                         <% } %>
