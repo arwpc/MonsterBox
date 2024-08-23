@@ -3,6 +3,7 @@ const router = express.Router();
 const dataManager = require('../dataManager');
 const { exec } = require('child_process');
 const path = require('path');
+const { spawn } = require('child_process');
 
 router.get('/', async (req, res) => {
     const parts = await dataManager.getParts();
@@ -41,6 +42,9 @@ router.post('/', async (req, res) => {
     } else if (req.body.type === 'sensor') {
         newPart.sensorType = req.body.sensorType;
         newPart.gpioPin = parseInt(req.body.gpioPin);
+    } else if (req.body.type === 'led') {
+        newPart.ledPin = parseInt(req.body.ledPin);
+        newPart.duration = parseInt(req.body.duration);
     } else {
         newPart.pin = parseInt(req.body.pin);
     }
@@ -68,6 +72,9 @@ router.post('/:id', async (req, res) => {
         } else if (req.body.type === 'sensor') {
             parts[index].sensorType = req.body.sensorType;
             parts[index].gpioPin = parseInt(req.body.gpioPin);
+        } else if (req.body.type === 'led') {
+            parts[index].ledPin = parseInt(req.body.ledPin);
+            parts[index].duration = parseInt(req.body.duration);
         } else {
             parts[index].pin = parseInt(req.body.pin);
         }
@@ -93,14 +100,53 @@ router.post('/:id/delete', async (req, res) => {
     }
 });
 
-router.post('/test-sensor', (req, res) => {
+router.get('/test-sensor', (req, res) => {
     console.log('Test sensor route hit');
+    console.log('Request query:', req.query);
+    
+    const { gpioPin } = req.query;
+    const scriptPath = path.join(__dirname, '..', 'scripts', 'test_sensor.py');
+    const pythonProcess = spawn('sudo', ['python3', scriptPath, gpioPin]);
+    
+    console.log('Command to be executed:', `sudo python3 ${scriptPath} ${gpioPin}`);
+
+    res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive'
+    });
+
+    pythonProcess.stdout.on('data', (data) => {
+        res.write(`data: ${data}\n\n`);
+    });
+
+    pythonProcess.stderr.on('data', (data) => {
+        console.error(`stderr: ${data}`);
+        res.write(`data: ${JSON.stringify({ error: data.toString() })}\n\n`);
+    });
+
+    pythonProcess.on('close', (code) => {
+        console.log(`Python script exited with code ${code}`);
+        res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+        res.end();
+    });
+
+    req.on('close', () => {
+        pythonProcess.kill();
+    });
+});
+
+router.post('/test-led', (req, res) => {
+    console.log('Test LED route hit');
     console.log('Request body:', req.body);
     
-    const { gpioPin } = req.body;
-    const scriptPath = path.join(__dirname, '..', 'scripts', 'test_sensor.py');
-    const command = `sudo python3 ${scriptPath} ${gpioPin}`;
-    
+    const { command } = req.body;
+
+    if (!command) {
+        console.error('Command not specified');
+        return res.status(400).send('Command not specified');
+    }
+
     console.log('Command to be executed:', command);
 
     exec(command, (error, stdout, stderr) => {
@@ -113,7 +159,7 @@ router.post('/test-sensor', (req, res) => {
             return res.status(500).send(`Error from Python script: ${stderr}`);
         }
         console.log(`stdout: ${stdout}`);
-        res.status(200).send('Sensor test successful');
+        res.status(200).send(stdout || 'LED test successful (no output)');
     });
 });
 

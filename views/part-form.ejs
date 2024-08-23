@@ -23,6 +23,7 @@
                 <option value="motor" <%= part.type === 'motor' ? 'selected' : '' %>>Motor</option>
                 <option value="sensor" <%= part.type === 'sensor' ? 'selected' : '' %>>Sensor</option>
                 <option value="light" <%= part.type === 'light' ? 'selected' : '' %>>Light</option>
+                <option value="led" <%= part.type === 'led' ? 'selected' : '' %>>LED</option>
             </select>
         </div>
         <div>
@@ -64,13 +65,22 @@
                 <input type="number" id="pin" name="pin" value="<%= part.pin || '' %>" min="0" max="40">
             </div>
         </div>
+        <div id="ledInputs" style="display: none;">
+            <div>
+                <label for="ledPin">GPIO Pin:</label>
+                <input type="number" id="ledPin" name="ledPin" value="<%= part.ledPin || '' %>" min="0" max="40">
+            </div>
+            <div>
+                <label for="duration">Duration (ms):</label>
+                <input type="number" id="duration" name="duration" value="<%= part.duration || '' %>" min="0">
+            </div>
+        </div>
         <button type="submit">Save Part</button>
+        <button type="button" id="testPartButton" onclick="testPart()">Test Part</button>
     </form>
     <div id="testArea" style="display: none;">
-        <h2>Test Sensor</h2>
-        <p id="sensorStatus">Sensor status: Not testing</p>
-        <button id="startTest">Start Test</button>
-        <button id="stopTest" disabled>Stop Test</button>
+        <h2>Test Results</h2>
+        <p id="testStatus">Not testing</p>
     </div>
     <a href="/parts" class="button">Back to Parts</a>
 
@@ -80,46 +90,77 @@
             document.getElementById('motorInputs').style.display = type === 'motor' ? 'block' : 'none';
             document.getElementById('sensorInputs').style.display = type === 'sensor' ? 'block' : 'none';
             document.getElementById('lightInputs').style.display = type === 'light' ? 'block' : 'none';
-            document.getElementById('testArea').style.display = type === 'sensor' ? 'block' : 'none';
+            document.getElementById('ledInputs').style.display = type === 'led' ? 'block' : 'none';
+            document.getElementById('testArea').style.display = ['sensor', 'led'].includes(type) ? 'block' : 'none';
         }
 
         // Call toggleInputs on page load to set initial state
         toggleInputs();
 
-        let testInterval;
+        function testPart() {
+            const type = document.getElementById('type').value;
+            const testStatus = document.getElementById('testStatus');
+            testStatus.textContent = 'Testing...';
 
-        function startTest() {
+            if (type === 'sensor') {
+                testSensor();
+            } else if (type === 'led') {
+                testLED();
+            }
+        }
+
+        function testSensor() {
             const gpioPin = document.getElementById('gpioPin').value;
             if (!gpioPin) {
                 alert('Please enter a GPIO pin number before testing.');
                 return;
             }
 
-            document.getElementById('startTest').disabled = true;
-            document.getElementById('stopTest').disabled = false;
+            const eventSource = new EventSource(`/parts/test-sensor?gpioPin=${gpioPin}`);
 
-            testInterval = setInterval(() => {
-                axios.post('/parts/test-sensor', { gpioPin })
-                    .then(response => {
-                        document.getElementById('sensorStatus').textContent = 'Sensor status: ' + response.data;
+            eventSource.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                if (data.status) {
+                    document.getElementById('testStatus').textContent = 'Sensor status: ' + data.status;
+                } else if (data.error) {
+                    console.error('Error:', data.error);
+                    document.getElementById('testStatus').textContent = 'Error: ' + data.error;
+                    eventSource.close();
+                } else if (data.done) {
+                    eventSource.close();
+                }
+            };
+
+            eventSource.onerror = function(event) {
+                console.error('EventSource failed:', event);
+                document.getElementById('testStatus').textContent = 'Error: Test failed';
+                eventSource.close();
+            };
+        }
+
+        function testLED() {
+            const ledPin = document.getElementById('ledPin').value;
+            if (!ledPin) {
+                alert('Please enter a GPIO pin number for the LED before testing.');
+                return;
+            }
+
+            let defaultCommand = `sudo python3 /home/remote/monsterbox/MonsterBox/scripts/test_led.py ${ledPin}`;
+            let command = prompt("Edit the command if needed:", defaultCommand);
+            
+            if (command) {
+                axios.post('/parts/test-led', { command: command })
+                    .then(function (response) {
+                        document.getElementById('testStatus').textContent = 'LED test completed successfully: ' + response.data;
                     })
-                    .catch(error => {
-                        console.error('Error testing sensor:', error);
-                        document.getElementById('sensorStatus').textContent = 'Sensor status: Error';
-                        stopTest();
+                    .catch(function (error) {
+                        console.error('Error testing LED:', error);
+                        document.getElementById('testStatus').textContent = 'Error testing LED: ' + (error.response ? error.response.data : error.message);
                     });
-            }, 1000);
+            } else {
+                document.getElementById('testStatus').textContent = 'LED test cancelled';
+            }
         }
-
-        function stopTest() {
-            clearInterval(testInterval);
-            document.getElementById('startTest').disabled = false;
-            document.getElementById('stopTest').disabled = true;
-            document.getElementById('sensorStatus').textContent = 'Sensor status: Not testing';
-        }
-
-        document.getElementById('startTest').addEventListener('click', startTest);
-        document.getElementById('stopTest').addEventListener('click', stopTest);
     </script>
 </body>
 </html>
