@@ -1,6 +1,13 @@
 const express = require('express');
 const router = express.Router();
+<<<<<<< HEAD
 const partService = require('../services/partService');
+=======
+const dataManager = require('../dataManager');
+const { exec } = require('child_process');
+const path = require('path');
+const { spawn } = require('child_process');
+>>>>>>> 9b19dce4561b7ae51f3595b34732dfc153b51479
 
 router.get('/', async (req, res) => {
     try {
@@ -39,18 +46,68 @@ router.get('/:id/edit', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
+<<<<<<< HEAD
     try {
         const newPart = await partService.createPart(req.body);
         res.redirect('/parts');
     } catch (error) {
         console.error('Error creating part:', error);
         res.status(500).send('An error occurred while creating the part');
+=======
+    const parts = await dataManager.getParts();
+    const newPart = {
+        id: dataManager.getNextId(parts),
+        name: req.body.name,
+        type: req.body.type,
+        characterId: parseInt(req.body.characterId)
+    };
+
+    if (req.body.type === 'motor') {
+        newPart.directionPin = parseInt(req.body.directionPin);
+        newPart.pwmPin = parseInt(req.body.pwmPin);
+    } else if (req.body.type === 'sensor') {
+        newPart.sensorType = req.body.sensorType;
+        newPart.gpioPin = parseInt(req.body.gpioPin);
+    } else if (req.body.type === 'led') {
+        newPart.ledPin = parseInt(req.body.ledPin);
+        newPart.duration = parseInt(req.body.duration);
+    } else {
+        newPart.pin = parseInt(req.body.pin);
+>>>>>>> 9b19dce4561b7ae51f3595b34732dfc153b51479
     }
 });
 
 router.post('/:id', async (req, res) => {
+<<<<<<< HEAD
     try {
         const updatedPart = await partService.updatePart(req.params.id, req.body);
+=======
+    const id = parseInt(req.params.id);
+    const parts = await dataManager.getParts();
+    const index = parts.findIndex(p => p.id === id);
+    if (index !== -1) {
+        parts[index] = {
+            id: id,
+            name: req.body.name,
+            type: req.body.type,
+            characterId: parseInt(req.body.characterId)
+        };
+
+        if (req.body.type === 'motor') {
+            parts[index].directionPin = parseInt(req.body.directionPin);
+            parts[index].pwmPin = parseInt(req.body.pwmPin);
+        } else if (req.body.type === 'sensor') {
+            parts[index].sensorType = req.body.sensorType;
+            parts[index].gpioPin = parseInt(req.body.gpioPin);
+        } else if (req.body.type === 'led') {
+            parts[index].ledPin = parseInt(req.body.ledPin);
+            parts[index].duration = parseInt(req.body.duration);
+        } else {
+            parts[index].pin = parseInt(req.body.pin);
+        }
+
+        await dataManager.saveParts(parts);
+>>>>>>> 9b19dce4561b7ae51f3595b34732dfc153b51479
         res.redirect('/parts');
     } catch (error) {
         if (error.message === 'Part not found') {
@@ -72,10 +129,61 @@ router.post('/:id/delete', async (req, res) => {
     }
 });
 
+<<<<<<< HEAD
 router.post('/test', async (req, res) => {
     try {
         const { part_id, type, ...testParams } = req.body;
         let result;
+=======
+router.get('/test-sensor', (req, res) => {
+    console.log('Test sensor route hit');
+    console.log('Request query:', req.query);
+    
+    const { gpioPin } = req.query;
+    const scriptPath = path.join(__dirname, '..', 'scripts', 'test_sensor.py');
+    const pythonProcess = spawn('sudo', ['python3', scriptPath, gpioPin]);
+    
+    console.log('Command to be executed:', `sudo python3 ${scriptPath} ${gpioPin}`);
+
+    res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive'
+    });
+
+    pythonProcess.stdout.on('data', (data) => {
+        res.write(`data: ${data}\n\n`);
+    });
+
+    pythonProcess.stderr.on('data', (data) => {
+        console.error(`stderr: ${data}`);
+        res.write(`data: ${JSON.stringify({ error: data.toString() })}\n\n`);
+    });
+
+    pythonProcess.on('close', (code) => {
+        console.log(`Python script exited with code ${code}`);
+        res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+        res.end();
+    });
+
+    req.on('close', () => {
+        pythonProcess.kill();
+    });
+});
+
+router.post('/test-led', (req, res) => {
+    console.log('Test LED route hit');
+    console.log('Request body:', req.body);
+    
+    const { command } = req.body;
+
+    if (!command) {
+        console.error('Command not specified');
+        return res.status(400).send('Command not specified');
+    }
+
+    console.log('Command to be executed:', command);
+>>>>>>> 9b19dce4561b7ae51f3595b34732dfc153b51479
 
         switch (type) {
             case 'motor':
@@ -93,12 +201,22 @@ router.post('/test', async (req, res) => {
             default:
                 throw new Error('Invalid part type');
         }
+<<<<<<< HEAD
 
         res.json({ success: true, message: 'Part tested successfully', result });
     } catch (error) {
         console.error('Error testing part:', error);
         res.status(500).json({ success: false, message: 'An error occurred while testing the part', error: error.message });
     }
+=======
+        if (stderr) {
+            console.error(`stderr: ${stderr}`);
+            return res.status(500).send(`Error from Python script: ${stderr}`);
+        }
+        console.log(`stdout: ${stdout}`);
+        res.status(200).send(stdout || 'LED test successful (no output)');
+    });
+>>>>>>> 9b19dce4561b7ae51f3595b34732dfc153b51479
 });
 
 module.exports = router;

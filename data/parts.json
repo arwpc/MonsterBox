@@ -36,6 +36,25 @@
     "characterId": 1,
     "sensorType": "motion",
     "gpioPin": 16
+<<<<<<< HEAD
 >>>>>>> 387cb6549c010999d14e6d2f242cbd00056c8251
+=======
+  },
+  {
+    "id": 3,
+    "name": "Satans Eyes Sensor",
+    "type": "sensor",
+    "characterId": 1,
+    "sensorType": "motion",
+    "gpioPin": 16
+  },
+  {
+    "id": 4,
+    "name": "Satans Left Eye LED",
+    "type": "led",
+    "characterId": 1,
+    "ledPin": 17,
+    "duration": 1000
+>>>>>>> 9b19dce4561b7ae51f3595b34732dfc153b51479
   }
 ]

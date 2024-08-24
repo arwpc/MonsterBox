@@ -22,8 +22,11 @@
                 <option value="motor" <%= part.type === 'motor' ? 'selected' : '' %>>Motor</option>
                 <option value="light" <%= part.type === 'light' ? 'selected' : '' %>>Light</option>
                 <option value="led" <%= part.type === 'led' ? 'selected' : '' %>>LED</option>
+<<<<<<< HEAD
                 <option value="servo" <%= part.type === 'servo' ? 'selected' : '' %>>Servo</option>
                 <option value="sensor" <%= part.type === 'sensor' ? 'selected' : '' %>>Sensor</option>
+=======
+>>>>>>> 9b19dce4561b7ae51f3595b34732dfc153b51479
             </select>
         </div>
         <div>
@@ -61,8 +64,26 @@
                 </select>
             </div>
         </div>
+        <div id="ledInputs" style="display: none;">
+            <div>
+                <label for="ledPin">GPIO Pin:</label>
+                <input type="number" id="ledPin" name="ledPin" value="<%= part.ledPin || '' %>" min="0" max="40">
+            </div>
+            <div>
+                <label for="duration">Duration (ms):</label>
+                <input type="number" id="duration" name="duration" value="<%= part.duration || '' %>" min="0">
+            </div>
+        </div>
         <button type="submit">Save Part</button>
+        <button type="button" id="testPartButton" onclick="testPart()">Test Part</button>
     </form>
+<<<<<<< HEAD
+=======
+    <div id="testArea" style="display: none;">
+        <h2>Test Results</h2>
+        <p id="testStatus">Not testing</p>
+    </div>
+>>>>>>> 9b19dce4561b7ae51f3595b34732dfc153b51479
     <a href="/parts" class="button">Back to Parts</a>
 
     <script>
@@ -71,10 +92,84 @@
             document.getElementById('motorInputs').style.display = type === 'motor' ? 'block' : 'none';
             document.getElementById('singlePinInputs').style.display = ['light', 'led', 'servo', 'sensor'].includes(type) ? 'block' : 'none';
             document.getElementById('sensorInputs').style.display = type === 'sensor' ? 'block' : 'none';
+<<<<<<< HEAD
+=======
+            document.getElementById('lightInputs').style.display = type === 'light' ? 'block' : 'none';
+            document.getElementById('ledInputs').style.display = type === 'led' ? 'block' : 'none';
+            document.getElementById('testArea').style.display = ['sensor', 'led'].includes(type) ? 'block' : 'none';
+>>>>>>> 9b19dce4561b7ae51f3595b34732dfc153b51479
         }
 
         // Call toggleInputs on page load to set initial state
         toggleInputs();
+<<<<<<< HEAD
+=======
+
+        function testPart() {
+            const type = document.getElementById('type').value;
+            const testStatus = document.getElementById('testStatus');
+            testStatus.textContent = 'Testing...';
+
+            if (type === 'sensor') {
+                testSensor();
+            } else if (type === 'led') {
+                testLED();
+            }
+        }
+
+        function testSensor() {
+            const gpioPin = document.getElementById('gpioPin').value;
+            if (!gpioPin) {
+                alert('Please enter a GPIO pin number before testing.');
+                return;
+            }
+
+            const eventSource = new EventSource(`/parts/test-sensor?gpioPin=${gpioPin}`);
+
+            eventSource.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                if (data.status) {
+                    document.getElementById('testStatus').textContent = 'Sensor status: ' + data.status;
+                } else if (data.error) {
+                    console.error('Error:', data.error);
+                    document.getElementById('testStatus').textContent = 'Error: ' + data.error;
+                    eventSource.close();
+                } else if (data.done) {
+                    eventSource.close();
+                }
+            };
+
+            eventSource.onerror = function(event) {
+                console.error('EventSource failed:', event);
+                document.getElementById('testStatus').textContent = 'Error: Test failed';
+                eventSource.close();
+            };
+        }
+
+        function testLED() {
+            const ledPin = document.getElementById('ledPin').value;
+            if (!ledPin) {
+                alert('Please enter a GPIO pin number for the LED before testing.');
+                return;
+            }
+
+            let defaultCommand = `sudo python3 /home/remote/monsterbox/MonsterBox/scripts/test_led.py ${ledPin}`;
+            let command = prompt("Edit the command if needed:", defaultCommand);
+            
+            if (command) {
+                axios.post('/parts/test-led', { command: command })
+                    .then(function (response) {
+                        document.getElementById('testStatus').textContent = 'LED test completed successfully: ' + response.data;
+                    })
+                    .catch(function (error) {
+                        console.error('Error testing LED:', error);
+                        document.getElementById('testStatus').textContent = 'Error testing LED: ' + (error.response ? error.response.data : error.message);
+                    });
+            } else {
+                document.getElementById('testStatus').textContent = 'LED test cancelled';
+            }
+        }
+>>>>>>> 9b19dce4561b7ae51f3595b34732dfc153b51479
     </script>
 </body>
 </html>

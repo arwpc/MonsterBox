@@ -36,64 +36,115 @@
     <button onclick="stopSounds()">Stop All Sounds</button>
     <a href="/" class="button">Back to Main Menu</a>
 
+    <div id="soundInfo"></div>
+    <div id="errorInfo" style="color: red;"></div>
+
     <script>
         function playLocal(filename) {
             const audio = new Audio(`/sounds/${filename}`);
             audio.play().catch(error => {
                 console.error('Error playing sound locally:', error);
-                alert('Error playing sound locally');
+                displayError('Error playing sound locally: ' + error.message);
             });
         }
 
         function playOnCharacter(soundId) {
-            fetch('/sounds/play', {
+            console.log('Attempting to play sound with ID:', soundId);
+            fetch(`/sounds/${soundId}/play`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ soundId }),
-            }).then(response => {
+            })
+            .then(response => {
                 if (!response.ok) {
-                    return response.text().then(text => {
-                        throw new Error(text);
-                    });
+                    return response.json().then(err => { throw err; });
                 }
-                return response.text();
-            }).then(text => {
-                console.log(text);
-            }).catch(error => {
+                return response.json();
+            })
+            .then(data => {
+                console.log('Server response:', data);
+                const soundInfo = `
+                    <h3>Sound Details:</h3>
+                    <p>Message: ${data.message}</p>
+                    <p>Python Output: ${data.pythonOutput}</p>
+                    <p>Executed Command: ${data.command}</p>
+                `;
+                document.getElementById('soundInfo').innerHTML = soundInfo;
+                document.getElementById('errorInfo').innerHTML = '';
+            })
+            .catch(error => {
                 console.error('Error playing sound on character:', error);
-                alert('Error playing sound on character: ' + error.message);
+                let errorMessage = 'Error playing sound on character: ';
+                if (error.error) {
+                    errorMessage += error.error;
+                    if (error.details) errorMessage += ' - ' + error.details;
+                    if (error.output) errorMessage += ' (Output: ' + error.output + ')';
+                    if (error.errorOutput) errorMessage += ' (Error Output: ' + error.errorOutput + ')';
+                    if (error.command) errorMessage += ' (Command: ' + error.command + ')';
+                } else {
+                    errorMessage += error.toString();
+                }
+                displayError(errorMessage);
             });
         }
 
         function stopSounds() {
-            fetch('/sounds/stop', {
-                method: 'POST',
-            }).then(response => {
+            fetch('/sounds/stop', { method: 'POST' })
+            .then(response => {
                 if (!response.ok) {
-                    throw new Error('Failed to stop sounds');
+                    return response.json().then(err => { throw err; });
                 }
-                return response.text();
-            }).then(text => {
-                console.log(text);
-            }).catch(error => {
+                return response.json();
+            })
+            .then(data => {
+                console.log('Stop sounds response:', data);
+                document.getElementById('errorInfo').innerHTML = '';
+                alert(data.message);
+            })
+            .catch(error => {
                 console.error('Error stopping sounds:', error);
-                alert('Error stopping sounds: ' + error.message);
+                let errorMessage = 'Error stopping sounds: ';
+                if (error.error) {
+                    errorMessage += error.error;
+                    if (error.details) errorMessage += ' - ' + error.details;
+                } else {
+                    errorMessage += error.toString();
+                }
+                displayError(errorMessage);
             });
         }
 
         function deleteSound(id) {
             if (confirm('Are you sure you want to delete this sound?')) {
-                $.post('/sounds/' + id + '/delete')
-                    .done(function() {
-                        location.reload();
-                    })
-                    .fail(function(xhr, status, error) {
-                        console.error('Error details:', xhr.responseText);
-                        alert('Error deleting sound: ' + xhr.status + ' ' + xhr.statusText);
-                    });
+                fetch('/sounds/' + id + '/delete', { method: 'POST' })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => { throw err; });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Delete sound response:', data);
+                    location.reload();
+                })
+                .catch(error => {
+                    console.error('Error deleting sound:', error);
+                    let errorMessage = 'Error deleting sound: ';
+                    if (error.error) {
+                        errorMessage += error.error;
+                        if (error.details) errorMessage += ' - ' + error.details;
+                    } else {
+                        errorMessage += error.toString();
+                    }
+                    displayError(errorMessage);
+                });
             }
+        }
+
+        function displayError(message) {
+            document.getElementById('errorInfo').innerHTML = message;
+            document.getElementById('soundInfo').innerHTML = '';
         }
     </script>
 </body>
