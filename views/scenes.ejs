@@ -30,88 +30,61 @@
                         <% if (scene.steps) { %>
                             <ul>
                                 <% scene.steps.forEach(function(step) { %>
-                                    <li><%= step.description %></li>
+                                    <li><%= step.name %></li>
                                 <% }); %>
                             </ul>
                         <% } %>
                     </td>
                     <td>
-                        <a href="/scenes/<%= scene.id %>" class="button">Edit</a>
-                        <button onclick="deleteScene(<%= scene.id %>)" class="button">Delete</button>
-                        <button onclick="triggerScene(<%= scene.id %>)" class="button">Trigger</button>
-                        <button onclick="scheduleScene(<%= scene.id %>)" class="button">Schedule</button>
+                        <a href="/scenes/<%= scene.id %>/edit" class="button edit-scene" data-id="<%= scene.id %>">Edit</a>
+                        <button onclick="deleteScene('<%= scene.id %>')" class="button">Delete</button>
+                        <a href="/scenes/<%= scene.id %>/play" class="button play-scene" data-id="<%= scene.id %>">Run</a>
                     </td>
                 </tr>
             <% }); %>
         </tbody>
     </table>
-    <button onclick="startScheduler()" class="button">Start Scheduler</button>
-    <button onclick="stopScheduler()" class="button">Stop Scheduler</button>
     <a href="/" class="button">Back to Main Menu</a>
 
     <script>
         function deleteScene(id) {
+            console.log('Attempting to delete scene:', id);
             if (confirm('Are you sure you want to delete this scene?')) {
                 $.ajax({
                     url: '/scenes/' + id,
                     type: 'DELETE',
-                    success: function() {
+                    success: function(result) {
+                        console.log('Scene deleted successfully');
                         location.reload();
                     },
                     error: function(xhr, status, error) {
                         console.error('Error deleting scene:', error);
+                        console.error('Server response:', xhr.responseText);
                         alert('Error deleting scene: ' + error);
                     }
                 });
             }
         }
 
-        function triggerScene(id) {
-            $.post('/scenes/' + id + '/trigger')
-                .done(function() {
-                    alert('Scene triggered successfully');
-                })
-                .fail(function(xhr, status, error) {
-                    console.error('Error triggering scene:', error);
-                    alert('Error triggering scene: ' + error);
-                });
-        }
+        $(document).ready(function() {
+            $('.edit-scene').on('click', function(e) {
+                e.preventDefault();
+                var id = $(this).data('id');
+                var url = '/scenes/' + id + '/edit';
+                console.log('Attempting to edit scene:', id);
+                console.log('Edit URL:', url);
+                window.location.href = url;
+            });
 
-        function scheduleScene(id) {
-            const schedule = prompt('Enter schedule (cron format):');
-            if (schedule) {
-                $.post('/scenes/' + id + '/schedule', { schedule: schedule })
-                    .done(function() {
-                        alert('Scene scheduled successfully');
-                    })
-                    .fail(function(xhr, status, error) {
-                        console.error('Error scheduling scene:', error);
-                        alert('Error scheduling scene: ' + error);
-                    });
-            }
-        }
-
-        function startScheduler() {
-            $.post('/scenes/schedule/start')
-                .done(function() {
-                    alert('Scheduler started successfully');
-                })
-                .fail(function(xhr, status, error) {
-                    console.error('Error starting scheduler:', error);
-                    alert('Error starting scheduler: ' + error);
-                });
-        }
-
-        function stopScheduler() {
-            $.post('/scenes/schedule/stop')
-                .done(function() {
-                    alert('Scheduler stopped successfully');
-                })
-                .fail(function(xhr, status, error) {
-                    console.error('Error stopping scheduler:', error);
-                    alert('Error stopping scheduler: ' + error);
-                });
-        }
+            $('.play-scene').on('click', function(e) {
+                e.preventDefault();
+                var id = $(this).data('id');
+                var url = '/scenes/' + id + '/play';
+                console.log('Attempting to play scene:', id);
+                console.log('Play URL:', url);
+                window.location.href = url;
+            });
+        });
     </script>
 </body>
 </html>
