@@ -33,7 +33,6 @@
             <% }); %>
         </tbody>
     </table>
-    <button onclick="stopSounds()">Stop All Sounds</button>
     <a href="/" class="button">Back to Main Menu</a>
 
     <div id="soundInfo"></div>
@@ -82,32 +81,6 @@
                     if (error.output) errorMessage += ' (Output: ' + error.output + ')';
                     if (error.errorOutput) errorMessage += ' (Error Output: ' + error.errorOutput + ')';
                     if (error.command) errorMessage += ' (Command: ' + error.command + ')';
-                } else {
-                    errorMessage += error.toString();
-                }
-                displayError(errorMessage);
-            });
-        }
-
-        function stopSounds() {
-            fetch('/sounds/stop', { method: 'POST' })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(err => { throw err; });
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Stop sounds response:', data);
-                document.getElementById('errorInfo').innerHTML = '';
-                alert(data.message);
-            })
-            .catch(error => {
-                console.error('Error stopping sounds:', error);
-                let errorMessage = 'Error stopping sounds: ';
-                if (error.error) {
-                    errorMessage += error.error;
-                    if (error.details) errorMessage += ' - ' + error.details;
                 } else {
                     errorMessage += error.toString();
                 }
