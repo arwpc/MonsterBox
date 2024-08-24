@@ -165,8 +165,6 @@ const testLED = async (partId, brightness, duration) => {
     });
 };
 
-partService.js
-
 const testServo = async (partId, angle, speed, duration) => {
     const part = await getPartById(partId);
     if (!part || part.type !== 'servo') {
