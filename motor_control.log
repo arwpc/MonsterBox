@@ -270,3 +270,5 @@
 >>>>>>> 7cf6b8b (Baseline from Pi)
 2024-08-24 11:52:10,198 - INFO - Controlling motor: direction=forward, speed=50, duration=1000, dir_pin=18, pwm_pin=24
 2024-08-24 11:52:11,200 - INFO - GPIO cleanup completed
+2024-08-24 12:46:34,335 - INFO - Controlling motor: direction=forward, speed=50, duration=1000, dir_pin=18, pwm_pin=24
+2024-08-24 12:46:35,336 - INFO - GPIO cleanup completed
