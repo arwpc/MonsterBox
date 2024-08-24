@@ -1,27 +1,5 @@
 [
   {
-<<<<<<< HEAD
-    "id": 2,
-    "name": "arm",
-    "type": "motor",
-    "characterId": "1",
-    "directionPin": "18",
-    "pwmPin": "24",
-    "pin": [
-      "",
-      "",
-      "",
-      ""
-    ],
-    "sensorType": "motion"
-  },
-  {
-    "id": 3,
-    "name": "testss",
-    "type": "led",
-    "characterId": 1,
-    "pin": 17
-=======
     "id": 1,
     "name": "Right Arm",
     "type": "motor",
@@ -36,9 +14,6 @@
     "characterId": 1,
     "sensorType": "motion",
     "gpioPin": 16
-<<<<<<< HEAD
->>>>>>> 387cb6549c010999d14e6d2f242cbd00056c8251
-=======
   },
   {
     "id": 3,
@@ -55,6 +30,5 @@
     "characterId": 1,
     "ledPin": 17,
     "duration": 1000
->>>>>>> 9b19dce4561b7ae51f3595b34732dfc153b51479
   }
 ]

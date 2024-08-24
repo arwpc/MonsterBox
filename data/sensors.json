@@ -1,11 +1,7 @@
 [
   {
     "id": 1,
-<<<<<<< HEAD
-    "name": "Satans Sensor",
-=======
     "name": "Satans Eye Sensor",
->>>>>>> 387cb6549c010999d14e6d2f242cbd00056c8251
     "type": "motion",
     "characterId": 1,
     "active": true,
