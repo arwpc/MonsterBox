@@ -26,25 +26,6 @@
         </div>
         <button type="submit">Save Sound</button>
     </form>
-    <button id="stopAllSounds" class="button">Stop All Sounds</button>
     <a href="/sounds" class="button">Back to Sounds</a>
-
-    <script>
-        document.getElementById('stopAllSounds').addEventListener('click', function() {
-            fetch('/sounds/stop', { method: 'POST' })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.message) {
-                        alert(data.message);
-                    } else if (data.error) {
-                        alert('Error: ' + data.error);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred while stopping sounds');
-                });
-        });
-    </script>
 </body>
 </html>
