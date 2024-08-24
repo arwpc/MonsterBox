@@ -1,8 +1,8 @@
 [
   {
     "id": 1,
-    "character_id": 1,
-    "scene_name": "Arise",
+    "character_id": null,
+    "scene_name": "Updated Test Scene",
     "steps": [
       {
         "type": "sound",
