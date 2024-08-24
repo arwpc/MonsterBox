@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
-<<<<<<< HEAD
 const sceneController = require('../controllers/sceneController');
+const dataManager = require('../dataManager');
 
+// Routes from the first version
 router.get('/', sceneController.getAllScenes);
 router.get('/new', sceneController.newScene);
 router.get('/:id', sceneController.getSceneById);
@@ -15,20 +16,8 @@ router.post('/:id/schedule', sceneController.scheduleScene);
 router.post('/:id/trigger', sceneController.triggerScene);
 router.post('/schedule/start', sceneController.startScheduler);
 router.post('/schedule/stop', sceneController.stopScheduler);
-=======
-const dataManager = require('../dataManager');
 
-router.get('/', async (req, res) => {
-    try {
-        const scenes = await dataManager.getScenes();
-        const characters = await dataManager.getCharacters();
-        res.render('scenes', { title: 'Scenes', scenes, characters });
-    } catch (error) {
-        console.error('Error fetching scenes:', error);
-        res.status(500).send('Something broke!');
-    }
-});
-
+// Routes from the second version
 router.get('/new', async (req, res) => {
     try {
         const characters = await dataManager.getCharacters();
@@ -72,21 +61,6 @@ router.get('/:id/edit', async (req, res) => {
     }
 });
 
-router.post('/', async (req, res) => {
-    try {
-        const sceneData = {
-            scene_name: req.body.scene_name,
-            character_id: parseInt(req.body.character_id),
-            steps: parseSteps(req.body.steps)
-        };
-        await dataManager.saveScene(sceneData);
-        res.redirect('/scenes');
-    } catch (error) {
-        console.error('Error creating scene:', error);
-        res.status(500).send('Something broke!');
-    }
-});
-
 router.post('/:id', async (req, res) => {
     try {
         const sceneData = {
@@ -112,7 +86,6 @@ router.post('/:id/delete', async (req, res) => {
         res.status(500).send('Something broke!');
     }
 });
->>>>>>> 387cb6549c010999d14e6d2f242cbd00056c8251
 
 function parseSteps(steps) {
     if (!Array.isArray(steps)) {
