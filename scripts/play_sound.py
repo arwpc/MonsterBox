@@ -3,12 +3,12 @@ import pygame
 
 def play_sound(file_path):
     try:
-        pygame.mixer.init()  # Initialize the mixer with the default audio device
+        pygame.mixer.init()
         print(f"Playing sound from file: {file_path}")
         pygame.mixer.music.load(file_path)
         pygame.mixer.music.play()
 
-        while pygame.mixer.music.get_busy():  # Wait until the sound has finished playing
+        while pygame.mixer.music.get_busy():
             pygame.time.Clock().tick(10)
 
         print("Sound playback finished.")

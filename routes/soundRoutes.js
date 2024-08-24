@@ -1,6 +1,6 @@
 const express = require('express');
 const path = require('path');
-const { exec } = require('child_process');
+const { spawn } = require('child_process');
 const dataManager = require('../dataManager');
 const multer = require('multer');
 const fs = require('fs').promises;
@@ -23,7 +23,7 @@ router.get('/', async (req, res) => {
         res.render('sounds', { title: 'Sounds', sounds });
     } catch (error) {
         console.error('Error fetching sounds:', error);
-        res.status(500).send('Internal Server Error');
+        res.status(500).json({ error: 'Internal Server Error', details: error.message });
     }
 });
 
@@ -38,11 +38,11 @@ router.get('/:id/edit', async (req, res) => {
         if (sound) {
             res.render('sound-form', { title: 'Edit Sound', action: `/sounds/${sound.id}`, sound });
         } else {
-            res.status(404).send('Sound not found');
+            res.status(404).json({ error: 'Sound not found', details: `No sound with id ${req.params.id}` });
         }
     } catch (error) {
         console.error('Error fetching sound:', error);
-        res.status(500).send('Internal Server Error');
+        res.status(500).json({ error: 'Internal Server Error', details: error.message });
     }
 });
 
@@ -59,7 +59,7 @@ router.post('/', upload.single('sound_file'), async (req, res) => {
         res.redirect('/sounds');
     } catch (error) {
         console.error('Error adding sound:', error);
-        res.status(500).send('Internal Server Error');
+        res.status(500).json({ error: 'Internal Server Error', details: error.message });
     }
 });
 
@@ -69,14 +69,13 @@ router.post('/:id', upload.single('sound_file'), async (req, res) => {
         const soundIndex = sounds.findIndex(s => s.id === parseInt(req.params.id));
         
         if (soundIndex === -1) {
-            return res.status(404).send('Sound not found');
+            return res.status(404).json({ error: 'Sound not found', details: `No sound with id ${req.params.id}` });
         }
 
         const updatedSound = sounds[soundIndex];
         updatedSound.name = req.body.name;
 
         if (req.file) {
-            // Delete old file if it exists
             if (updatedSound.filename) {
                 const oldFilePath = path.join(__dirname, '../public/sounds', updatedSound.filename);
                 await fs.unlink(oldFilePath).catch(console.error);
@@ -88,42 +87,78 @@ router.post('/:id', upload.single('sound_file'), async (req, res) => {
         res.redirect('/sounds');
     } catch (error) {
         console.error('Error updating sound:', error);
-        res.status(500).send('Internal Server Error');
+        res.status(500).json({ error: 'Internal Server Error', details: error.message });
     }
 });
 
-router.post('/play', async (req, res) => {
+router.post('/:id/play', async (req, res) => {
     try {
-        const { soundId } = req.body;
+        const soundId = parseInt(req.params.id);
+        console.log('Received request to play sound with ID:', soundId);
+
         const sounds = await dataManager.getSounds();
-        const sound = sounds.find(s => s.id === parseInt(soundId));
-
-        if (sound) {
-            const filePath = path.join(__dirname, '../public/sounds', sound.filename);
-            const pythonScriptPath = path.join(__dirname, '../scripts/play_sound.py');
-
-            console.log(`Attempting to play sound: ${filePath}`);
-
-            // Call the Python script to play the sound
-            exec(`python3 ${pythonScriptPath} "${filePath}"`, (error, stdout, stderr) => {
-                if (error) {
-                    console.error(`Error executing Python script: ${error.message}`);
-                    console.error(`stderr: ${stderr}`);
-                    return res.status(500).send(`Error playing sound: ${error.message}`);
-                }
-                if (stderr) {
-                    console.error(`Error from Python script: ${stderr}`);
-                    return res.status(500).send(`Error playing sound: ${stderr}`);
-                }
-                console.log(`Python script output: ${stdout}`);
-                res.status(200).send('Playing sound on character');
-            });
-        } else {
-            res.status(404).send('Sound not found');
+        const sound = sounds.find(s => s.id === soundId);
+        
+        if (!sound) {
+            console.error('Sound not found for ID:', soundId);
+            return res.status(404).json({ error: 'Sound not found', details: `No sound with id ${soundId}`, soundId });
         }
+
+        console.log('Found sound:', sound);
+
+        const filePath = path.resolve(__dirname, '..', 'public', 'sounds', sound.filename);
+        console.log('Absolute file path:', filePath);
+
+        try {
+            await fs.access(filePath, fs.constants.R_OK);
+            console.log('File exists and is readable:', filePath);
+        } catch (error) {
+            console.error('File access error:', error);
+            return res.status(404).json({ error: 'Sound file not accessible', details: error.message, filePath });
+        }
+
+        const pythonScriptPath = path.resolve(__dirname, '..', 'scripts', 'play_sound.py');
+        console.log('Python script path:', pythonScriptPath);
+
+        const command = `python3 "${pythonScriptPath}" "${filePath}"`;
+        console.log('Executing command:', command);
+
+        const childProcess = spawn(command, { shell: true });
+
+        let pythonOutput = '';
+        let pythonError = '';
+
+        childProcess.stdout.on('data', (data) => {
+            pythonOutput += data.toString();
+            console.log(`Python script output: ${data}`);
+        });
+
+        childProcess.stderr.on('data', (data) => {
+            pythonError += data.toString();
+            console.error(`Python script error: ${data}`);
+        });
+
+        childProcess.on('close', (code) => {
+            console.log(`Python script exited with code ${code}`);
+            if (code !== 0) {
+                return res.status(500).json({ 
+                    error: 'Error playing sound', 
+                    details: `Python script exited with code ${code}`,
+                    output: pythonOutput,
+                    errorOutput: pythonError,
+                    command: command
+                });
+            }
+            res.status(200).json({ 
+                message: 'Playing sound on character',
+                pythonOutput,
+                command: command
+            });
+        });
+
     } catch (error) {
         console.error('Error in /play route:', error);
-        res.status(500).send('Internal Server Error');
+        res.status(500).json({ error: 'Internal Server Error', details: error.message });
     }
 });
 
@@ -134,45 +169,45 @@ router.post('/:id/delete', async (req, res) => {
         const soundIndex = sounds.findIndex(s => s.id === id);
         
         if (soundIndex === -1) {
-            return res.status(404).send('Sound not found');
+            return res.status(404).json({ error: 'Sound not found', details: `No sound with id ${id}` });
         }
 
         const soundToDelete = sounds[soundIndex];
         const filePath = path.join(__dirname, '../public/sounds', soundToDelete.filename);
 
-        // Delete the file
         try {
             await fs.unlink(filePath);
         } catch (error) {
             console.error('Error deleting sound file:', error);
-            // If file doesn't exist, continue with deleting from the data
             if (error.code !== 'ENOENT') {
-                return res.status(500).send('Error deleting sound file');
+                return res.status(500).json({ error: 'Error deleting sound file', details: error.message });
             }
         }
 
-        // Remove the sound from the data array
         sounds.splice(soundIndex, 1);
         await dataManager.saveSounds(sounds);
 
-        res.sendStatus(200);
+        res.status(200).json({ message: 'Sound deleted successfully' });
     } catch (error) {
         console.error('Error deleting sound:', error);
-        res.status(500).send('Internal Server Error');
+        res.status(500).json({ error: 'Internal Server Error', details: error.message });
     }
 });
 
 router.post('/stop', (req, res) => {
-    exec('sudo killall -9 python3', (error, stdout, stderr) => {
-        if (error) {
-            console.error(`Error stopping sounds: ${error.message}`);
-            return res.status(500).send('Error stopping sounds');
+    const pythonProcess = spawn('sudo', ['killall', '-9', 'python3']);
+
+    pythonProcess.on('close', (code) => {
+        if (code === 0) {
+            res.status(200).json({ message: 'All sounds stopped' });
+        } else {
+            res.status(500).json({ error: 'Error stopping sounds', details: `Process exited with code ${code}` });
         }
-        if (stderr) {
-            console.error(`Error from killall: ${stderr}`);
-            return res.status(500).send('Error stopping sounds');
-        }
-        res.status(200).send('All sounds stopped');
+    });
+
+    pythonProcess.on('error', (err) => {
+        console.error('Failed to start subprocess.', err);
+        res.status(500).json({ error: 'Error stopping sounds', details: err.message });
     });
 });
 
