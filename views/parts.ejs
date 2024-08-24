@@ -30,21 +30,16 @@
                         <% if (part.type === 'motor') { %>
                             Dir Pin: <%= part.directionPin %><br>
                             PWM Pin: <%= part.pwmPin %>
-<<<<<<< HEAD
-                        <% } else if (['light', 'led', 'servo', 'sensor'].includes(part.type)) { %>
-=======
                         <% } else if (part.type === 'led') { %>
                             LED Pin: <%= part.ledPin %><br>
                             Duration: <%= part.duration %> ms
-                        <% } else { %>
->>>>>>> 9b19dce4561b7ae51f3595b34732dfc153b51479
+                        <% } else if (['light', 'servo', 'sensor'].includes(part.type)) { %>
                             Pin: <%= part.pin %>
                         <% } %>
                     </td>
                     <td>
                         <a href="/parts/<%= part.id %>/edit" class="button">Edit</a>
                         <button onclick="deletePart(<%= part.id %>)" class="button">Delete</button>
-                        <button onclick="testPart(<%= part.id %>, '<%= part.type %>')" class="button">Test</button>
                     </td>
                 </tr>
             <% }); %>
@@ -64,47 +59,6 @@
                         alert('Error deleting part: ' + xhr.status + ' ' + xhr.statusText);
                     });
             }
-        }
-
-        function testPart(id, type) {
-            let testData = { part_id: id, type: type };
-
-            switch (type) {
-                case 'motor':
-                    testData.direction = 'forward';
-                    testData.speed = 50;
-                    testData.duration = 1000;
-                    break;
-                case 'light':
-                    testData.state = 'on';
-                    testData.duration = 1000;
-                    break;
-                case 'led':
-                    testData.brightness = 50;
-                    testData.duration = 1000;
-                    break;
-                case 'servo':
-                    testData.angle = 90;
-                    testData.speed = 50;
-                    testData.duration = 1000;
-                    break;
-                default:
-                    alert('Testing not implemented for this part type');
-                    return;
-            }
-
-            $.post('/parts/test', testData)
-                .done(function(response) {
-                    if (response.success) {
-                        alert('Test successful: ' + response.message);
-                    } else {
-                        alert('Test failed: ' + response.message);
-                    }
-                })
-                .fail(function(xhr, status, error) {
-                    console.error('Error details:', xhr.responseText);
-                    alert('Error testing part: ' + xhr.status + ' ' + xhr.statusText);
-                });
         }
     </script>
 </body>
