@@ -1,15 +1,6 @@
 [
   {
     "id": 1,
-<<<<<<< HEAD
-    "char_name": "Lord Satan Production",
-    "char_description": "The big guy himself, ready for action",
-    "parts": [],
-    "sounds": [
-      4
-    ],
-    "image": "1724005675894.jpg"
-=======
     "char_name": "Satan Himself",
     "char_description": "Baphomet Findel Version - Sunday",
     "parts": [
@@ -19,6 +10,5 @@
       4
     ],
     "image": "1724021922597.jpg"
->>>>>>> 387cb6549c010999d14e6d2f242cbd00056c8251
   }
 ]
