@@ -195,11 +195,11 @@ router.post('/:id/delete', async (req, res) => {
 });
 
 router.post('/stop', (req, res) => {
-    const pythonProcess = spawn('sudo', ['killall', '-9', 'python3']);
+    const pythonProcess = spawn('pkill', ['-f', 'play_sound.py']);
 
     pythonProcess.on('close', (code) => {
         if (code === 0) {
-            res.status(200).json({ message: 'All sounds stopped' });
+            res.status(200).json({ message: 'All sounds stopped successfully' });
         } else {
             res.status(500).json({ error: 'Error stopping sounds', details: `Process exited with code ${code}` });
         }
