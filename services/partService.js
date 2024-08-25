@@ -1,5 +1,6 @@
 const fs = require('fs').promises;
 const path = require('path');
+const { spawn } = require('child_process');
 
 const dataPath = path.join(__dirname, '../data/parts.json');
 
@@ -55,10 +56,86 @@ const deletePart = async (id) => {
     await fs.writeFile(dataPath, JSON.stringify(filteredParts, null, 2));
 };
 
+const testMotor = async (partId, direction, speed, duration) => {
+    const part = await getPartById(partId);
+    if (!part || part.type !== 'motor') {
+        throw new Error('Invalid motor part');
+    }
+
+    const scriptPath = path.join(__dirname, '..', 'scripts', 'motor_control.py');
+    return new Promise((resolve, reject) => {
+        const process = spawn('python3', [
+            scriptPath,
+            direction,
+            speed.toString(),
+            duration.toString(),
+            part.directionPin.toString(),
+            part.pwmPin.toString()
+        ]);
+        
+        let stdout = '';
+        let stderr = '';
+
+        process.stdout.on('data', (data) => {
+            stdout += data.toString();
+        });
+
+        process.stderr.on('data', (data) => {
+            stderr += data.toString();
+        });
+
+        process.on('close', (code) => {
+            if (code === 0) {
+                resolve({ success: true, message: 'Motor test completed', output: stdout });
+            } else {
+                reject(new Error(`Motor test failed with code ${code}: ${stderr}`));
+            }
+        });
+    });
+};
+
+const testLight = async (partId, state, duration) => {
+    const part = await getPartById(partId);
+    if (!part || (part.type !== 'light' && part.type !== 'led')) {
+        throw new Error('Invalid light/LED part');
+    }
+
+    const scriptPath = path.join(__dirname, '..', 'scripts', 'light_control.py');
+    return new Promise((resolve, reject) => {
+        const process = spawn('python3', [
+            scriptPath,
+            part.gpioPin.toString(),
+            state,
+            duration.toString()
+        ]);
+        
+        let stdout = '';
+        let stderr = '';
+
+        process.stdout.on('data', (data) => {
+            stdout += data.toString();
+        });
+
+        process.stderr.on('data', (data) => {
+            stderr += data.toString();
+        });
+
+        process.on('close', (code) => {
+            if (code === 0) {
+                resolve({ success: true, message: 'Light/LED test completed', output: stdout });
+            } else {
+                reject(new Error(`Light/LED test failed with code ${code}: ${stderr}`));
+            }
+        });
+    });
+};
+
 module.exports = {
     getAllParts,
     getPartById,
     createPart,
     updatePart,
-    deletePart
+    deletePart,
+    testMotor,
+    testLight
 };

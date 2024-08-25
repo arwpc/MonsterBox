@@ -33,13 +33,6 @@ app.get('/', (req, res) => {
     res.render('index', { title: 'MonsterBox Control Panel' });
 });
 
-// Step form route
-app.get('/scenes/step-form/:type', (req, res) => {
-    const stepType = req.params.type;
-    const stepIndex = req.query.stepIndex;
-    res.render(`step-forms/${stepType}-step`, { stepIndex });
-});
-
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
@@ -51,8 +44,4 @@ app.listen(port, () => {
     console.log(`MonsterBox server running at http://localhost:${port}`);
 });
 
-// Graceful shutdown
-process.on('SIGINT', () => {
-    console.log('Shutting down gracefully...');
-    process.exit();
-});
+module.exports = app;

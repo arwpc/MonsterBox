@@ -7,11 +7,10 @@ const getAllScenes = async () => {
     try {
         const data = await fs.readFile(dataPath, 'utf8');
         let scenes = JSON.parse(data);
-        scenes = scenes.map((scene, index) => ({
+        scenes = scenes.map(scene => ({
             ...scene,
-            id: parseInt(scene.id) || getNextId(scenes.slice(0, index))
+            id: parseInt(scene.id)
         }));
-        await fs.writeFile(dataPath, JSON.stringify(scenes, null, 2));
         return scenes;
     } catch (error) {
         if (error.code === 'ENOENT') {

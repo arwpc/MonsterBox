@@ -312,3 +312,23 @@
 2024-08-24 16:41:39,640 - INFO - GPIO cleanup completed
 2024-08-24 16:41:54,750 - INFO - Controlling motor: direction=forward, speed=50, duration=1000, dir_pin=18, pwm_pin=24
 2024-08-24 16:41:55,751 - INFO - GPIO cleanup completed
+2024-08-24 18:17:58,257 - INFO - Controlling motor: direction=forward, speed=50, duration=1000, dir_pin=18, pwm_pin=24
+2024-08-24 18:17:59,258 - INFO - GPIO cleanup completed
+2024-08-24 18:27:41,091 - INFO - Controlling motor: direction=forward, speed=50, duration=1000, dir_pin=18, pwm_pin=24
+2024-08-24 18:27:42,093 - INFO - GPIO cleanup completed
+2024-08-24 18:31:00,973 - INFO - Controlling motor: direction=forward, speed=50, duration=1000, dir_pin=18, pwm_pin=24
+2024-08-24 18:31:01,974 - INFO - GPIO cleanup completed
+2024-08-24 18:50:13,958 - INFO - Controlling motor: direction=forward, speed=50, duration=1000, dir_pin=18, pwm_pin=24
+2024-08-24 18:50:14,959 - INFO - GPIO cleanup completed
+2024-08-24 18:52:54,578 - INFO - Motor settings loaded successfully: {'dirPin': 18, 'pwmPin': 24}
+2024-08-24 18:52:54,578 - ERROR - Incorrect number of arguments
+2024-08-24 18:53:11,029 - INFO - Motor settings loaded successfully: {'dirPin': 18, 'pwmPin': 24}
+2024-08-24 18:53:11,029 - ERROR - Incorrect number of arguments
+2024-08-24 18:53:31,712 - INFO - Motor settings loaded successfully: {'dirPin': 18, 'pwmPin': 24}
+2024-08-24 18:53:31,712 - ERROR - Incorrect number of arguments
+2024-08-24 18:53:48,046 - INFO - Motor settings loaded successfully: {'dirPin': 18, 'pwmPin': 24}
+2024-08-24 18:53:48,047 - ERROR - Incorrect number of arguments
+2024-08-24 19:14:42,078 - INFO - Controlling motor: direction=forward, speed=50, duration=1000, dir_pin=18, pwm_pin=24
+2024-08-24 19:14:43,079 - INFO - GPIO cleanup completed
+2024-08-24 19:14:51,086 - INFO - Controlling motor: direction=forward, speed=50, duration=1000, dir_pin=18, pwm_pin=24
+2024-08-24 19:14:52,088 - INFO - GPIO cleanup completed
