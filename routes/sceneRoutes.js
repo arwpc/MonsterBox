@@ -11,5 +11,6 @@ router.delete('/:id', sceneController.deleteScene);
 router.get('/:id/play', sceneController.playScene);
 router.post('/:id/execute-step', sceneController.executeStep);
 router.post('/:id/execute', sceneController.executeScene);
+router.get('/light-parts/:characterId', sceneController.getLightParts);
 
 module.exports = router;
