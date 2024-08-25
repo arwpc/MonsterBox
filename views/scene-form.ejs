@@ -71,6 +71,11 @@
                             <input type="number" name="steps[<%= index %>][brightness]" value="<%= step.brightness || '' %>" placeholder="Brightness (0-100)" min="0" max="100" required>
                         <% } %>
                     <% } else if (step.type === 'sensor') { %>
+                        <select name="steps[<%= index %>][part_id]" required>
+                            <% parts.filter(part => part.type === 'sensor').forEach(function(part) { %>
+                                <option value="<%= part.id %>" <%= (step.part_id === part.id) ? 'selected' : '' %>><%= part.name %></option>
+                            <% }); %>
+                        </select>
                         <input type="number" name="steps[<%= index %>][timeout]" value="<%= step.timeout || 30 %>" placeholder="Timeout (seconds)" required>
                     <% } %>
                     <button type="button" onclick="removeStep(<%= index %>)">Remove Step</button>
@@ -91,20 +96,42 @@
     <script>
         $(document).ready(function() {
             $('#character_id').change(function() {
-                fetchLightParts();
+                updatePartOptions();
             });
+
+            // Initial update of part options
+            updatePartOptions();
         });
 
-        function fetchLightParts() {
+        function updatePartOptions() {
             const characterId = $('#character_id').val();
             $.ajax({
-                url: '/api/character/' + characterId + '/light-parts',
+                url: '/characters/' + characterId + '/parts',
                 method: 'GET',
-                success: function(lightParts) {
-                    window.availableLightParts = lightParts;
+                success: function(parts) {
+                    window.availableParts = parts;
+                    updateStepPartOptions();
                 },
                 error: function(error) {
-                    console.error('Error fetching light parts:', error);
+                    console.error('Error fetching parts:', error);
+                }
+            });
+        }
+
+        function updateStepPartOptions() {
+            $('.step').each(function() {
+                const stepType = $(this).find('input[name$="[type]"]').val();
+                const partSelect = $(this).find('select[name$="[part_id]"]');
+                if (partSelect.length) {
+                    const currentValue = partSelect.val();
+                    partSelect.empty();
+                    window.availableParts.filter(part => part.type === stepType).forEach(part => {
+                        partSelect.append($('<option>', {
+                            value: part.id,
+                            text: part.name,
+                            selected: part.id == currentValue
+                        }));
+                    });
                 }
             });
         }
@@ -137,9 +164,7 @@
             } else if (type === 'motor') {
                 stepContent += `
                     <select name="steps[${stepCount}][part_id]" required>
-                        <% parts.filter(part => part.type === 'motor').forEach(function(part) { %>
-                            <option value="<%= part.id %>"><%= part.name %></option>
-                        <% }); %>
+                        ${getPartOptions('motor')}
                     </select>
                     <input type="number" name="steps[${stepCount}][duration]" placeholder="Duration (ms)" required>
                     <select name="steps[${stepCount}][direction]" required>
@@ -151,7 +176,7 @@
             } else if (type === 'led' || type === 'light') {
                 stepContent += `
                     <select name="steps[${stepCount}][part_id]" required>
-                        ${getLightPartOptions(type)}
+                        ${getPartOptions(type)}
                     </select>
                     <input type="number" name="steps[${stepCount}][duration]" placeholder="Duration (ms)" required>
                     <select name="steps[${stepCount}][state]" required>
@@ -166,6 +191,9 @@
                 }
             } else if (type === 'sensor') {
                 stepContent += `
+                    <select name="steps[${stepCount}][part_id]" required>
+                        ${getPartOptions('sensor')}
+                    </select>
                     <input type="number" name="steps[${stepCount}][timeout]" placeholder="Timeout (seconds)" value="30" required>
                 `;
             }
@@ -176,11 +204,11 @@
             steps.appendChild(newStep);
         }
 
-        function getLightPartOptions(type) {
-            if (!window.availableLightParts) {
+        function getPartOptions(type) {
+            if (!window.availableParts) {
                 return '<option value="">Please select a character first</option>';
             }
-            return window.availableLightParts
+            return window.availableParts
                 .filter(part => part.type === type)
                 .map(part => `<option value="${part.id}">${part.name}</option>`)
                 .join('');
@@ -210,9 +238,6 @@
                 }
             });
         }
-
-        // Initial fetch of light parts
-        fetchLightParts();
     </script>
 </body>
 </html>

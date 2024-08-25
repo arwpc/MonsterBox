@@ -28,11 +28,7 @@ router.get('/:id/edit', async (req, res) => {
     try {
         const part = await partService.getPartById(req.params.id);
         const characters = await characterService.getAllCharacters();
-        if (part) {
-            res.render('part-form', { title: 'Edit Part', action: `/parts/${part.id}`, part, characters });
-        } else {
-            res.status(404).send('Part not found');
-        }
+        res.render('part-form', { title: 'Edit Part', action: `/parts/${part.id}`, part, characters });
     } catch (error) {
         console.error('Error fetching part:', error);
         res.status(500).send('An error occurred while fetching the part');
@@ -47,27 +43,36 @@ router.post('/', async (req, res) => {
             characterId: parseInt(req.body.characterId)
         };
 
-        if (req.body.type === 'motor') {
-            newPart.directionPin = parseInt(req.body.directionPin);
-            newPart.pwmPin = parseInt(req.body.pwmPin);
-        } else if (req.body.type === 'sensor') {
-            newPart.sensorType = req.body.sensorType;
-            newPart.gpioPin = parseInt(req.body.gpioPin);
-        } else if (req.body.type === 'led' || req.body.type === 'light') {
-            newPart.gpioPin = parseInt(req.body.gpioPin);
+        switch (req.body.type) {
+            case 'motor':
+                newPart.directionPin = req.body.directionPin ? parseInt(req.body.directionPin) : null;
+                newPart.pwmPin = req.body.pwmPin ? parseInt(req.body.pwmPin) : null;
+                break;
+            case 'sensor':
+                newPart.sensorType = req.body.sensorType;
+                newPart.gpioPin = req.body.gpioPin ? parseInt(req.body.gpioPin) : null;
+                break;
+            case 'led':
+            case 'light':
+                newPart.gpioPin = req.body.gpioPin ? parseInt(req.body.gpioPin) : null;
+                break;
         }
 
         await partService.createPart(newPart);
         res.redirect('/parts');
     } catch (error) {
         console.error('Error creating part:', error);
-        res.status(500).send('An error occurred while creating the part');
+        res.status(500).send('An error occurred while creating the part: ' + error.message);
     }
 });
 
 router.post('/:id', async (req, res) => {
     try {
         const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            throw new Error('Invalid part ID');
+        }
+
         const updatedPart = {
             id: id,
             name: req.body.name,
@@ -75,21 +80,26 @@ router.post('/:id', async (req, res) => {
             characterId: parseInt(req.body.characterId)
         };
 
-        if (req.body.type === 'motor') {
-            updatedPart.directionPin = parseInt(req.body.directionPin);
-            updatedPart.pwmPin = parseInt(req.body.pwmPin);
-        } else if (req.body.type === 'sensor') {
-            updatedPart.sensorType = req.body.sensorType;
-            updatedPart.gpioPin = parseInt(req.body.gpioPin);
-        } else if (req.body.type === 'led' || req.body.type === 'light') {
-            updatedPart.gpioPin = parseInt(req.body.gpioPin);
+        switch (req.body.type) {
+            case 'motor':
+                updatedPart.directionPin = req.body.directionPin ? parseInt(req.body.directionPin) : null;
+                updatedPart.pwmPin = req.body.pwmPin ? parseInt(req.body.pwmPin) : null;
+                break;
+            case 'sensor':
+                updatedPart.sensorType = req.body.sensorType;
+                updatedPart.gpioPin = req.body.gpioPin ? parseInt(req.body.gpioPin) : null;
+                break;
+            case 'led':
+            case 'light':
+                updatedPart.gpioPin = req.body.gpioPin ? parseInt(req.body.gpioPin) : null;
+                break;
         }
 
         await partService.updatePart(id, updatedPart);
         res.redirect('/parts');
     } catch (error) {
         console.error('Error updating part:', error);
-        res.status(500).send('An error occurred while updating the part');
+        res.status(500).send('An error occurred while updating the part: ' + error.message);
     }
 });
 
@@ -110,11 +120,26 @@ router.post('/test', async (req, res) => {
 
         switch (type) {
             case 'motor':
-                result = await partService.testMotor(part_id, testParams.direction, testParams.speed, testParams.duration);
+                result = await partService.testMotor(
+                    parseInt(part_id),
+                    testParams.direction,
+                    parseInt(testParams.speed),
+                    parseInt(testParams.duration)
+                );
                 break;
             case 'light':
             case 'led':
-                result = await partService.testLight(part_id, testParams.state, testParams.duration);
+                result = await partService.testLight(
+                    parseInt(part_id),
+                    testParams.state,
+                    parseInt(testParams.duration)
+                );
+                break;
+            case 'sensor':
+                result = await partService.testSensor(
+                    parseInt(part_id),
+                    parseInt(testParams.timeout)
+                );
                 break;
             default:
                 throw new Error('Invalid part type');

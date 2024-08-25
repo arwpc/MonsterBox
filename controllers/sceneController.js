@@ -28,8 +28,7 @@ const sceneController = {
                 action: '/scenes',
                 characters,
                 parts,
-                sounds,
-                lightParts: parts.filter(part => part.type === 'led' || part.type === 'light')
+                sounds
             });
         } catch (error) {
             console.error('Error rendering new scene form:', error);
@@ -44,15 +43,13 @@ const sceneController = {
                 const characters = await characterService.getAllCharacters();
                 const parts = await partService.getAllParts();
                 const sounds = await soundService.getAllSounds();
-                const lightParts = parts.filter(part => part.type === 'led' || part.type === 'light');
                 res.render('scene-form', { 
                     title: 'Edit Scene', 
                     scene, 
                     action: `/scenes/${scene.id}`,
                     characters,
                     parts,
-                    sounds,
-                    lightParts
+                    sounds
                 });
             } else {
                 res.status(404).send('Scene not found');
@@ -143,7 +140,11 @@ const sceneController = {
                     if (!lightPart) {
                         throw new Error('Light/LED part not found');
                     }
-                    args = [lightPart.gpioPin.toString(), step.state, step.duration.toString()];
+                    args = [
+                        lightPart.gpioPin ? lightPart.gpioPin.toString() : '0',
+                        step.state || 'on',
+                        step.duration ? step.duration.toString() : '1000'
+                    ];
                     if (step.type === 'led') {
                         args.push(step.brightness ? step.brightness.toString() : '100');
                     }
@@ -246,17 +247,6 @@ const sceneController = {
         } catch (error) {
             console.error('Error executing scene:', error);
             res.status(500).json({ success: false, error: error.message });
-        }
-    },
-
-    getLightParts: async (req, res) => {
-        try {
-            const parts = await partService.getAllParts();
-            const lightParts = parts.filter(part => part.type === 'led' || part.type === 'light');
-            res.json(lightParts);
-        } catch (error) {
-            console.error('Error fetching light parts:', error);
-            res.status(500).json({ error: 'An error occurred while fetching light parts' });
         }
     }
 };

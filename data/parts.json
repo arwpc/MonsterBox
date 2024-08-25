@@ -1,41 +1,40 @@
 [
   {
-    "id": 1,
+    "id": 2,
     "name": "Right Arm",
     "type": "motor",
     "characterId": 1,
     "directionPin": 18,
-    "pwmPin": 24
-  },
-  {
-    "id": 2,
-    "name": "Left Arm",
-    "type": "sensor",
-    "characterId": 1,
-    "sensorType": "motion",
-    "gpioPin": 16
+    "pwmPin": 13
   },
   {
     "id": 3,
-    "name": "Satans Eyes Sensor",
-    "type": "sensor",
+    "name": "Left Arm",
+    "type": "motor",
     "characterId": 1,
-    "sensorType": "motion",
-    "gpioPin": 16
+    "directionPin": 23,
+    "pwmPin": 12
   },
   {
     "id": 4,
-    "name": "Satans Left Eye LED",
-    "type": "led",
+    "name": "Sight of Baphomet Sensor",
+    "type": "sensor",
     "characterId": 1,
-    "ledPin": 17,
-    "duration": 1000
+    "sensorType": "motion",
+    "gpioPin": null
   },
   {
     "id": 5,
-    "name": "Aspect of Evil - Hand",
+    "name": "Eye of Baphomet",
+    "type": "led",
+    "characterId": 1,
+    "gpioPin": null
+  },
+  {
+    "id": 6,
+    "name": "Hand of Azura",
     "type": "light",
     "characterId": 1,
-    "pin": 26
+    "gpioPin": null
   }
 ]

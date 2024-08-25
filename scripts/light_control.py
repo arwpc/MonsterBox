@@ -2,8 +2,15 @@ import RPi.GPIO as GPIO
 import time
 import sys
 
-def control_light(gpio_pin, state, duration):
+def setup_gpio():
     GPIO.setmode(GPIO.BCM)
+    GPIO.setwarnings(False)
+
+def cleanup_gpio():
+    GPIO.cleanup()
+
+def control_light(gpio_pin, state, duration):
+    setup_gpio()
     GPIO.setup(gpio_pin, GPIO.OUT)
 
     try:
@@ -19,7 +26,7 @@ def control_light(gpio_pin, state, duration):
 
         time.sleep(float(duration) / 1000)  # Convert duration to seconds
     finally:
-        GPIO.cleanup(gpio_pin)
+        cleanup_gpio()
 
 if __name__ == "__main__":
     if len(sys.argv) != 4:
@@ -30,4 +37,11 @@ if __name__ == "__main__":
     state = sys.argv[2]
     duration = int(sys.argv[3])
 
-    control_light(gpio_pin, state, duration)
+    try:
+        control_light(gpio_pin, state, duration)
+        print("Light control completed successfully")
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        sys.exit(1)
+    finally:
+        cleanup_gpio()

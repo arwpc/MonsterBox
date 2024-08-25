@@ -76,10 +76,57 @@ const removeScene = async (id) => {
     await writeData('scenes', updatedScenes);
 };
 
+const getParts = async () => {
+    const parts = await readData('parts');
+    return parts.map(part => {
+        switch (part.type) {
+            case 'motor':
+                return {
+                    ...part,
+                    directionPin: part.directionPin || null,
+                    pwmPin: part.pwmPin || null
+                };
+            case 'led':
+            case 'light':
+                return {
+                    ...part,
+                    gpioPin: part.gpioPin || null
+                };
+            case 'sensor':
+                return {
+                    ...part,
+                    gpioPin: part.gpioPin || null,
+                    sensorType: part.sensorType || 'motion'
+                };
+            default:
+                return part;
+        }
+    });
+};
+
+const savePart = async (partData) => {
+    const parts = await getParts();
+    let part;
+    if (partData.id) {
+        const index = parts.findIndex(p => p.id === partData.id);
+        if (index !== -1) {
+            parts[index] = { ...parts[index], ...partData };
+            part = parts[index];
+        } else {
+            throw new Error('Part not found');
+        }
+    } else {
+        part = { ...partData, id: getNextId(parts) };
+        parts.push(part);
+    }
+    await writeData('parts', parts);
+    return part;
+};
+
 module.exports = {
     getCharacters: () => readData('characters'),
     getScenes: () => readData('scenes'),
-    getParts: () => readData('parts'),
+    getParts,
     getSounds: () => readData('sounds'),
     getSensors: () => readData('sensors'),
     getArmedSensors: () => readData('armedSensors'),
@@ -92,5 +139,6 @@ module.exports = {
     getNextId,
     getScene,
     saveScene,
-    removeScene
+    removeScene,
+    savePart
 };
