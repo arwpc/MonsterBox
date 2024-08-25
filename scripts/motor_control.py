@@ -7,20 +7,18 @@ import logging
 logging.basicConfig(filename='motor_control.log', level=logging.DEBUG, 
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
-def setup_gpio():
+def setup_gpio(dir_pin, pwm_pin):
     GPIO.setmode(GPIO.BCM)
-    GPIO.setwarnings(False)
+    GPIO.setup(dir_pin, GPIO.OUT)
+    GPIO.setup(pwm_pin, GPIO.OUT)
 
-def cleanup_gpio():
-    GPIO.cleanup()
+def cleanup_gpio(dir_pin, pwm_pin):
+    GPIO.cleanup([dir_pin, pwm_pin])
 
 def control_motor(direction, speed, duration, dir_pin, pwm_pin):
     logging.info(f"Controlling motor: direction={direction}, speed={speed}, duration={duration}, dir_pin={dir_pin}, pwm_pin={pwm_pin}")
     
-    setup_gpio()
-    GPIO.setup(dir_pin, GPIO.OUT)
-    GPIO.setup(pwm_pin, GPIO.OUT)
-
+    setup_gpio(dir_pin, pwm_pin)
     pwm = GPIO.PWM(pwm_pin, 100)  # Use a default frequency of 100 Hz
     pwm.start(0)
 
@@ -34,7 +32,7 @@ def control_motor(direction, speed, duration, dir_pin, pwm_pin):
         raise
     finally:
         pwm.stop()
-        cleanup_gpio()
+        cleanup_gpio(dir_pin, pwm_pin)
 
 if __name__ == "__main__":
     if len(sys.argv) != 6:

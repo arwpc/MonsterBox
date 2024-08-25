@@ -1,4 +1,4 @@
 {
-  "dirPin": 18,
-  "pwmPin": 24
+  "dirPin": 23,
+  "pwmPin": 12
 }

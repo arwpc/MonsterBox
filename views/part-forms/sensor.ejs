@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1><%= title %></h1>
+    <form action="<%= action %>" method="POST">
+        <input type="hidden" name="type" value="sensor">
+        <% if (sensor.id) { %>
+            <input type="hidden" name="id" value="<%= sensor.id %>">
+        <% } %>
+        <div>
+            <label for="name">Sensor Name:</label>
+            <input type="text" id="name" name="name" value="<%= sensor.name || '' %>" required>
+        </div>
+        <div>
+            <label for="sensorType">Type:</label>
+            <select id="sensorType" name="sensorType" required>
+                <option value="motion" <%= sensor.sensorType === 'motion' ? 'selected' : '' %>>Motion</option>
+                <option value="sound" <%= sensor.sensorType === 'sound' ? 'selected' : '' %>>Sound</option>
+            </select>
+        </div>
+        <div>
+            <label for="characterId">Character:</label>
+            <select id="characterId" name="characterId" required>
+                <% characters.forEach(function(character) { %>
+                    <option value="<%= character.id %>" <%= (sensor.characterId === character.id) ? 'selected' : '' %>>
+                        <%= character.char_name %>
+                    </option>
+                <% }); %>
+            </select>
+        </div>
+        <div>
+            <label for="gpioPin">GPIO Pin:</label>
+            <input type="number" id="gpioPin" name="gpioPin" value="<%= sensor.gpioPin || 16 %>" required>
+        </div>
+        <div>
+            <label for="active">
+                <input type="checkbox" id="active" name="active" <%= sensor.active ? 'checked' : '' %>>
+                Active
+            </label>
+        </div>
+        <button type="submit">Save Sensor</button>
+    </form>
+
+    <div id="testArea" style="margin-top: 20px;">
+        <h2>Test Sensor</h2>
+        <button id="startTest">Start Test</button>
+        <button id="stopTest" disabled>Stop Test</button>
+        <div id="testResults" style="margin-top: 10px;"></div>
+    </div>
+
+    <a href="/parts" class="button">Back to Parts</a>
+
+    <script>
+        $(document).ready(function() {
+            let testInterval;
+
+            $('#sensorType').change(function() {
+                if ($(this).val() === 'sound') {
+                    $('#gpioPin').prop('disabled', true);
+                } else {
+                    $('#gpioPin').prop('disabled', false);
+                }
+            });
+
+            $('#startTest').click(function() {
+                const sensorId = $('input[name="id"]').val();
+                const gpioPin = $('#gpioPin').val();
+                
+                $('#startTest').prop('disabled', true);
+                $('#stopTest').prop('disabled', false);
+                $('#testResults').empty();
+
+                testInterval = setInterval(function() {
+                    $.get(`/sensors/test?id=${sensorId}&gpioPin=${gpioPin}`)
+                        .done(function(data) {
+                            $('#testResults').append(`<p>${new Date().toLocaleTimeString()} - ${data.status}</p>`);
+                        })
+                        .fail(function(error) {
+                            console.error('Error testing sensor:', error);
+                            $('#testResults').append(`<p>Error: ${error.responseText}</p>`);
+                        });
+                }, 1000);
+            });
+
+            $('#stopTest').click(function() {
+                clearInterval(testInterval);
+                $('#startTest').prop('disabled', false);
+                $('#stopTest').prop('disabled', true);
+            });
+
+            // Trigger change event on page load
+            $('#sensorType').change();
+        });
+    </script>
+</body>
+</html>

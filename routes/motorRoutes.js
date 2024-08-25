@@ -46,7 +46,7 @@ function controlMotor(direction, speed, duration, dirPin, pwmPin) {
 
 router.get('/', async (req, res) => {
     const settings = await getSettings();
-    res.render('motor-index', { title: 'Motor Control Panel', settings });
+    res.render('part-forms/motor-control', { title: 'Motor Control Panel', settings });
 });
 
 router.post('/save-settings', async (req, res) => {

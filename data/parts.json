@@ -1,6 +1,6 @@
 [
   {
-    "id": 2,
+    "id": 1,
     "name": "Right Arm",
     "type": "motor",
     "characterId": 1,
@@ -9,32 +9,25 @@
   },
   {
     "id": 3,
-    "name": "Left Arm",
-    "type": "motor",
-    "characterId": 1,
-    "directionPin": 23,
-    "pwmPin": 12
-  },
-  {
-    "id": 4,
-    "name": "Sight of Baphomet Sensor",
-    "type": "sensor",
-    "characterId": 1,
-    "sensorType": "motion",
-    "gpioPin": null
-  },
-  {
-    "id": 5,
     "name": "Eye of Baphomet",
     "type": "led",
     "characterId": 1,
-    "gpioPin": null
+    "gpioPin": 17
   },
   {
-    "id": 6,
+    "id": 4,
+    "name": "Baphomet Head Servo",
+    "type": "servo",
+    "characterId": 1,
+    "gpioPin": 19,
+    "pwmFrequency": 50,
+    "dutyCycle": 7.5
+  },
+  {
+    "id": 5,
     "name": "Hand of Azura",
     "type": "light",
     "characterId": 1,
-    "gpioPin": null
+    "gpioPin": 26
   }
 ]

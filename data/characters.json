@@ -7,8 +7,7 @@
       1,
       3,
       2,
-      4,
-      5
+      4
     ],
     "sounds": [
       2,
@@ -16,19 +15,5 @@
       3
     ],
     "image": "1724021922597.jpg"
-  },
-  {
-    "id": 2,
-    "char_name": "test dummy",
-    "char_description": "nothing here",
-    "parts": [
-      4,
-      5,
-      3
-    ],
-    "sounds": [
-      2
-    ],
-    "image": "1724545854596.jpg"
   }
 ]

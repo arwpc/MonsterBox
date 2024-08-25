@@ -14,10 +14,16 @@ router.get('/', async (req, res) => {
     }
 });
 
-router.get('/new', async (req, res) => {
+router.get('/new/:type', async (req, res) => {
     try {
+        const { type } = req.params;
         const characters = await characterService.getAllCharacters();
-        res.render('part-form', { title: 'Add New Part', action: '/parts', part: {}, characters });
+        if (type === 'motor') {
+            const settings = { dirPin: 18, pwmPin: 13 }; // Default values
+            res.render('part-forms/motor-control', { title: 'Add Motor', action: '/parts', part: {}, characters, settings });
+        } else {
+            res.render(`part-forms/${type}`, { title: `Add ${type.charAt(0).toUpperCase() + type.slice(1)}`, action: '/parts', part: {}, characters });
+        }
     } catch (error) {
         console.error('Error rendering new part form:', error);
         res.status(500).send('An error occurred while loading the new part form');
@@ -28,7 +34,12 @@ router.get('/:id/edit', async (req, res) => {
     try {
         const part = await partService.getPartById(req.params.id);
         const characters = await characterService.getAllCharacters();
-        res.render('part-form', { title: 'Edit Part', action: `/parts/${part.id}`, part, characters });
+        if (part.type === 'motor') {
+            const settings = { dirPin: part.directionPin, pwmPin: part.pwmPin };
+            res.render('part-forms/motor-control', { title: 'Edit Motor', action: `/parts/${part.id}`, part, characters, settings });
+        } else {
+            res.render(`part-forms/${part.type}`, { title: `Edit ${part.type.charAt(0).toUpperCase() + part.type.slice(1)}`, action: `/parts/${part.id}`, part, characters });
+        }
     } catch (error) {
         console.error('Error fetching part:', error);
         res.status(500).send('An error occurred while fetching the part');
@@ -45,16 +56,22 @@ router.post('/', async (req, res) => {
 
         switch (req.body.type) {
             case 'motor':
-                newPart.directionPin = req.body.directionPin ? parseInt(req.body.directionPin) : null;
-                newPart.pwmPin = req.body.pwmPin ? parseInt(req.body.pwmPin) : null;
+                newPart.directionPin = parseInt(req.body.directionPin) || 18;
+                newPart.pwmPin = parseInt(req.body.pwmPin) || 13;
+                break;
+            case 'light':
+            case 'led':
+                newPart.gpioPin = parseInt(req.body.gpioPin) || 26;
+                break;
+            case 'servo':
+                newPart.gpioPin = parseInt(req.body.gpioPin);
+                newPart.pwmFrequency = parseInt(req.body.pwmFrequency) || 50;
+                newPart.dutyCycle = parseFloat(req.body.dutyCycle) || 7.5;
                 break;
             case 'sensor':
                 newPart.sensorType = req.body.sensorType;
-                newPart.gpioPin = req.body.gpioPin ? parseInt(req.body.gpioPin) : null;
-                break;
-            case 'led':
-            case 'light':
-                newPart.gpioPin = req.body.gpioPin ? parseInt(req.body.gpioPin) : null;
+                newPart.gpioPin = parseInt(req.body.gpioPin) || 16;
+                newPart.active = req.body.active === 'on';
                 break;
         }
 
@@ -69,10 +86,6 @@ router.post('/', async (req, res) => {
 router.post('/:id', async (req, res) => {
     try {
         const id = parseInt(req.params.id);
-        if (isNaN(id)) {
-            throw new Error('Invalid part ID');
-        }
-
         const updatedPart = {
             id: id,
             name: req.body.name,
@@ -82,16 +95,22 @@ router.post('/:id', async (req, res) => {
 
         switch (req.body.type) {
             case 'motor':
-                updatedPart.directionPin = req.body.directionPin ? parseInt(req.body.directionPin) : null;
-                updatedPart.pwmPin = req.body.pwmPin ? parseInt(req.body.pwmPin) : null;
+                updatedPart.directionPin = parseInt(req.body.directionPin) || 18;
+                updatedPart.pwmPin = parseInt(req.body.pwmPin) || 13;
+                break;
+            case 'light':
+            case 'led':
+                updatedPart.gpioPin = parseInt(req.body.gpioPin) || 26;
+                break;
+            case 'servo':
+                updatedPart.gpioPin = parseInt(req.body.gpioPin);
+                updatedPart.pwmFrequency = parseInt(req.body.pwmFrequency) || 50;
+                updatedPart.dutyCycle = parseFloat(req.body.dutyCycle) || 7.5;
                 break;
             case 'sensor':
                 updatedPart.sensorType = req.body.sensorType;
-                updatedPart.gpioPin = req.body.gpioPin ? parseInt(req.body.gpioPin) : null;
-                break;
-            case 'led':
-            case 'light':
-                updatedPart.gpioPin = req.body.gpioPin ? parseInt(req.body.gpioPin) : null;
+                updatedPart.gpioPin = parseInt(req.body.gpioPin) || 16;
+                updatedPart.active = req.body.active === 'on';
                 break;
         }
 
@@ -121,24 +140,26 @@ router.post('/test', async (req, res) => {
         switch (type) {
             case 'motor':
                 result = await partService.testMotor(
-                    parseInt(part_id),
+                    part_id ? parseInt(part_id) : null,
                     testParams.direction,
                     parseInt(testParams.speed),
-                    parseInt(testParams.duration)
+                    parseInt(testParams.duration),
+                    parseInt(testParams.directionPin),
+                    parseInt(testParams.pwmPin)
                 );
                 break;
             case 'light':
             case 'led':
                 result = await partService.testLight(
-                    parseInt(part_id),
-                    testParams.state,
-                    parseInt(testParams.duration)
+                    part_id ? parseInt(part_id) : null,
+                    parseInt(testParams.brightness)
                 );
                 break;
-            case 'sensor':
-                result = await partService.testSensor(
-                    parseInt(part_id),
-                    parseInt(testParams.timeout)
+            case 'servo':
+                result = await partService.testServo(
+                    part_id ? parseInt(part_id) : null,
+                    parseInt(testParams.angle),
+                    parseInt(testParams.duration)
                 );
                 break;
             default:
