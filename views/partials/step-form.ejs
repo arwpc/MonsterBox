@@ -4,6 +4,8 @@
         <option value="motor" <%= step.type === 'motor' ? 'selected' : '' %>>Motor</option>
         <option value="light" <%= step.type === 'light' ? 'selected' : '' %>>Light</option>
         <option value="sound" <%= step.type === 'sound' ? 'selected' : '' %>>Sound</option>
+        <option value="led" <%= step.type === 'led' ? 'selected' : '' %>>LED</option>
+        <option value="sensor" <%= step.type === 'sensor' ? 'selected' : '' %>>Sensor</option>
     </select>
 
     <% if (step.type === 'motor') { %>
@@ -19,6 +21,14 @@
     <% } else if (step.type === 'sound') { %>
         <label>Sound ID:</label>
         <input type="text" name="sound_id" value="<%= step.sound_id %>">
+    <% } else if (step.type === 'led') { %>
+        <label>Duration:</label>
+        <input type="number" name="duration" value="<%= step.duration %>">
+        <label>Color:</label>
+        <input type="text" name="color" value="<%= step.color %>">
+    <% } else if (step.type === 'sensor') { %>
+        <label>Timeout (seconds):</label>
+        <input type="number" name="timeout" value="<%= step.timeout || 30 %>">
     <% } %>
 
     <button type="button" class="saveStepButton">Save Step</button>

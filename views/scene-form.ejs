@@ -70,16 +70,19 @@
                         <% if (step.type === 'led') { %>
                             <input type="number" name="steps[<%= index %>][brightness]" value="<%= step.brightness || '' %>" placeholder="Brightness (0-100)" min="0" max="100" required>
                         <% } %>
+                    <% } else if (step.type === 'sensor') { %>
+                        <input type="number" name="steps[<%= index %>][timeout]" value="<%= step.timeout || 30 %>" placeholder="Timeout (seconds)" required>
                     <% } %>
                     <button type="button" onclick="removeStep(<%= index %>)">Remove Step</button>
                 </div>
             <% }); %>
         </div>
         
-        <button type="button" onclick="addStep('motor')">Add Motor Step</button>
-        <button type="button" onclick="addStep('sound')">Add Sound Step</button>
-        <button type="button" onclick="addStep('led')">Add LED Step</button>
-        <button type="button" onclick="addStep('light')">Add Light Step</button>
+        <button type="button" onclick="addStep('motor')">Add Motor</button>
+        <button type="button" onclick="addStep('sound')">Add Sound</button>
+        <button type="button" onclick="addStep('led')">Add LED</button>
+        <button type="button" onclick="addStep('light')">Add Light</button>
+        <button type="button" onclick="addStep('sensor')">Add Sensor</button>
         <button type="submit">Save Scene</button>
     </form>
 
@@ -161,6 +164,10 @@
                         <input type="number" name="steps[${stepCount}][brightness]" placeholder="Brightness (0-100)" min="0" max="100" required>
                     `;
                 }
+            } else if (type === 'sensor') {
+                stepContent += `
+                    <input type="number" name="steps[${stepCount}][timeout]" placeholder="Timeout (seconds)" value="30" required>
+                `;
             }
 
             stepContent += `<button type="button" onclick="removeStep(${stepCount})">Remove Step</button>`;
