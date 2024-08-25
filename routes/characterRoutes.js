@@ -155,4 +155,25 @@ router.post('/:id/delete', async (req, res) => {
     }
 });
 
+// New route for fetching light parts
+router.get('/:id/light-parts', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.id);
+        const characters = await dataManager.getCharacters();
+        const character = characters.find(c => c.id === characterId);
+        
+        if (!character) {
+            return res.status(404).json({ error: 'Character not found' });
+        }
+
+        const allParts = await dataManager.getParts();
+        const characterParts = allParts.filter(part => character.parts.includes(part.id) && (part.type === 'led' || part.type === 'light'));
+
+        res.json(characterParts);
+    } catch (error) {
+        console.error('Error in GET /characters/:id/light-parts route:', error);
+        res.status(500).json({ error: 'An error occurred while fetching light parts' });
+    }
+});
+
 module.exports = router;
