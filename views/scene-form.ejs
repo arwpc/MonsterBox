@@ -44,19 +44,31 @@
                             <input type="checkbox" name="steps[<%= index %>][concurrent]" <%= step.concurrent ? 'checked' : '' %>>
                             Play concurrently
                         </label>
-                    <% } else { %>
+                    <% } else if (step.type === 'motor') { %>
                         <select name="steps[<%= index %>][part_id]" required>
-                            <% parts.forEach(function(part) { %>
+                            <% parts.filter(part => part.type === 'motor').forEach(function(part) { %>
                                 <option value="<%= part.id %>" <%= (step.part_id === part.id) ? 'selected' : '' %>><%= part.name %></option>
                             <% }); %>
                         </select>
                         <input type="number" name="steps[<%= index %>][duration]" value="<%= step.duration || '' %>" placeholder="Duration (ms)" required>
-                        <% if (step.type === 'motor') { %>
-                            <select name="steps[<%= index %>][direction]" required>
-                                <option value="forward" <%= step.direction === 'forward' ? 'selected' : '' %>>Forward</option>
-                                <option value="backward" <%= step.direction === 'backward' ? 'selected' : '' %>>Backward</option>
-                            </select>
-                            <input type="number" name="steps[<%= index %>][speed]" value="<%= step.speed || '' %>" placeholder="Speed (0-100)" min="0" max="100" required>
+                        <select name="steps[<%= index %>][direction]" required>
+                            <option value="forward" <%= step.direction === 'forward' ? 'selected' : '' %>>Forward</option>
+                            <option value="backward" <%= step.direction === 'backward' ? 'selected' : '' %>>Backward</option>
+                        </select>
+                        <input type="number" name="steps[<%= index %>][speed]" value="<%= step.speed || '' %>" placeholder="Speed (0-100)" min="0" max="100" required>
+                    <% } else if (step.type === 'led' || step.type === 'light') { %>
+                        <select name="steps[<%= index %>][part_id]" required>
+                            <% parts.filter(part => part.type === step.type).forEach(function(part) { %>
+                                <option value="<%= part.id %>" <%= (step.part_id === part.id) ? 'selected' : '' %>><%= part.name %></option>
+                            <% }); %>
+                        </select>
+                        <input type="number" name="steps[<%= index %>][duration]" value="<%= step.duration || '' %>" placeholder="Duration (ms)" required>
+                        <select name="steps[<%= index %>][state]" required>
+                            <option value="on" <%= step.state === 'on' ? 'selected' : '' %>>On</option>
+                            <option value="off" <%= step.state === 'off' ? 'selected' : '' %>>Off</option>
+                        </select>
+                        <% if (step.type === 'led') { %>
+                            <input type="number" name="steps[<%= index %>][brightness]" value="<%= step.brightness || '' %>" placeholder="Brightness (0-100)" min="0" max="100" required>
                         <% } %>
                     <% } %>
                     <button type="button" onclick="removeStep(<%= index %>)">Remove Step</button>
@@ -66,6 +78,8 @@
         
         <button type="button" onclick="addStep('motor')">Add Motor Step</button>
         <button type="button" onclick="addStep('sound')">Add Sound Step</button>
+        <button type="button" onclick="addStep('led')">Add LED Step</button>
+        <button type="button" onclick="addStep('light')">Add Light Step</button>
         <button type="submit">Save Scene</button>
     </form>
 
@@ -97,23 +111,36 @@
                         Play concurrently
                     </label>
                 `;
-            } else {
+            } else if (type === 'motor') {
                 stepContent += `
                     <select name="steps[${stepCount}][part_id]" required>
-                        <% parts.forEach(function(part) { %>
+                        <% parts.filter(part => part.type === 'motor').forEach(function(part) { %>
                             <option value="<%= part.id %>"><%= part.name %></option>
                         <% }); %>
                     </select>
                     <input type="number" name="steps[${stepCount}][duration]" placeholder="Duration (ms)" required>
+                    <select name="steps[${stepCount}][direction]" required>
+                        <option value="forward">Forward</option>
+                        <option value="backward">Backward</option>
+                    </select>
+                    <input type="number" name="steps[${stepCount}][speed]" placeholder="Speed (0-100)" min="0" max="100" required>
                 `;
-
-                if (type === 'motor') {
+            } else if (type === 'led' || type === 'light') {
+                stepContent += `
+                    <select name="steps[${stepCount}][part_id]" required>
+                        <% parts.filter(part => part.type === '${type}').forEach(function(part) { %>
+                            <option value="<%= part.id %>"><%= part.name %></option>
+                        <% }); %>
+                    </select>
+                    <input type="number" name="steps[${stepCount}][duration]" placeholder="Duration (ms)" required>
+                    <select name="steps[${stepCount}][state]" required>
+                        <option value="on">On</option>
+                        <option value="off">Off</option>
+                    </select>
+                `;
+                if (type === 'led') {
                     stepContent += `
-                        <select name="steps[${stepCount}][direction]" required>
-                            <option value="forward">Forward</option>
-                            <option value="backward">Backward</option>
-                        </select>
-                        <input type="number" name="steps[${stepCount}][speed]" placeholder="Speed (0-100)" min="0" max="100" required>
+                        <input type="number" name="steps[${stepCount}][brightness]" placeholder="Brightness (0-100)" min="0" max="100" required>
                     `;
                 }
             }

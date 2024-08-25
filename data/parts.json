@@ -30,5 +30,12 @@
     "characterId": 1,
     "ledPin": 17,
     "duration": 1000
+  },
+  {
+    "id": 5,
+    "name": "Aspect of Evil - Hand",
+    "type": "light",
+    "characterId": 1,
+    "pin": 26
   }
 ]

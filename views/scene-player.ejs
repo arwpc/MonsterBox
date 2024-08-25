@@ -6,101 +6,116 @@
     <title><%= title %></title>
     <link rel="stylesheet" href="/css/style.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        #log-box {
+            border: 1px solid #00ff00;
+            padding: 10px;
+            height: 200px;
+            overflow-y: scroll;
+            background-color: #001100;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 20px;
+        }
+        #controls {
+            margin-top: 20px;
+        }
+        #controls button {
+            margin-right: 10px;
+        }
+    </style>
 </head>
 <body>
     <h1><%= title %></h1>
     <h2><%= scene.scene_name %></h2>
     
-    <div id="log-box" style="border: 1px solid #ccc; padding: 10px; height: 200px; overflow-y: scroll;"></div>
+    <div id="log-box"></div>
     
     <div id="controls">
-        <button id="backward">Backward</button>
-        <button id="forward">Forward</button>
-        <button id="run">Run</button>
+        <button id="backward-btn">Backward</button>
+        <button id="run-btn">Run</button>
+        <button id="forward-btn">Forward</button>
     </div>
     
     <a href="/scenes" class="button">Back to Scenes</a>
 
     <script>
-        let currentStep = -1;
-        const steps = <%= JSON.stringify(scene.steps) %>;
+        $(document).ready(function() {
+            let currentStep = 0;  // Start at the first step
+            const sceneData = <%- JSON.stringify(scene) %>;
+            const steps = sceneData.steps || [];
 
-        function logMessage(message) {
-            const logBox = document.getElementById('log-box');
-            const logEntry = document.createElement('p');
-            logEntry.textContent = `${new Date().toLocaleTimeString()} - ${message}`;
-            logBox.appendChild(logEntry);
-            logBox.scrollTop = logBox.scrollHeight;
-            console.log(message);
-        }
-
-        function executeStep(step) {
-            return new Promise((resolve, reject) => {
-                logMessage(`Executing step: ${step.name}`);
-                $.ajax({
-                    url: '/scenes/execute-step',
-                    method: 'POST',
-                    data: JSON.stringify(step),
-                    contentType: 'application/json',
-                    success: function(response) {
-                        logMessage(`Step ${step.name} executed successfully`);
-                        resolve(response);
-                    },
-                    error: function(xhr, status, error) {
-                        logMessage(`Error executing step ${step.name}: ${error}`);
-                        reject(error);
-                    }
-                });
-            });
-        }
-
-        document.getElementById('backward').addEventListener('click', function() {
-            if (currentStep > 0) {
-                currentStep--;
-                logMessage(`Moved to step ${currentStep + 1}: ${steps[currentStep].name}`);
-            } else {
-                logMessage("Already at the beginning of the scene");
+            function logMessage(message) {
+                const logBox = $("#log-box");
+                logBox.append(`<p>${new Date().toLocaleTimeString()} - ${message}</p>`);
+                logBox.scrollTop(logBox[0].scrollHeight);
+                console.log(message);
             }
-        });
 
-        document.getElementById('forward').addEventListener('click', function() {
-            if (currentStep < steps.length - 1) {
-                currentStep++;
-                logMessage(`Moved to step ${currentStep + 1}: ${steps[currentStep].name}`);
-                executeStep(steps[currentStep]);
-            } else {
-                logMessage("Reached the end of the scene");
-            }
-        });
-
-        document.getElementById('run').addEventListener('click', function() {
-            logMessage("Running entire scene");
-            currentStep = -1;
-            runNextStep();
-        });
-
-        function runNextStep() {
-            currentStep++;
-            if (currentStep < steps.length) {
-                executeStep(steps[currentStep])
-                    .then(() => {
-                        if (steps[currentStep].concurrent || currentStep === steps.length - 1) {
-                            runNextStep();
-                        } else {
-                            setTimeout(runNextStep, 1000);
+            function executeStep(step) {
+                return new Promise((resolve, reject) => {
+                    logMessage(`Executing step: ${step.name}`);
+                    $.ajax({
+                        url: `/scenes/${sceneData.id}/execute-step`,
+                        method: 'POST',
+                        data: JSON.stringify(step),
+                        contentType: 'application/json',
+                        success: function(response) {
+                            logMessage(`Step ${step.name} executed successfully`);
+                            resolve(response);
+                        },
+                        error: function(xhr, status, error) {
+                            logMessage(`Error executing step ${step.name}: ${error}`);
+                            reject(error);
                         }
-                    })
-                    .catch((error) => {
-                        logMessage(`Error in step execution: ${error}`);
                     });
-            } else {
-                logMessage("Scene execution completed");
+                });
             }
-        }
 
-        // Initial scene overview
-        window.addEventListener('load', function() {
-            logMessage(`Scene Overview: "${scene.scene_name}"`);
+            $("#backward-btn").click(function() {
+                if (currentStep > 0) {
+                    currentStep--;
+                    logMessage(`Moved to step ${currentStep + 1}: ${steps[currentStep].name}`);
+                } else {
+                    logMessage("Already at the beginning of the scene");
+                }
+            });
+
+            $("#forward-btn").click(function() {
+                if (currentStep < steps.length - 1) {
+                    currentStep++;
+                    logMessage(`Moved to step ${currentStep + 1}: ${steps[currentStep].name}`);
+                } else {
+                    logMessage("Reached the end of the scene");
+                }
+            });
+
+            $("#run-btn").click(function() {
+                logMessage(`Running scene from step ${currentStep + 1}`);
+                runFromCurrentStep();
+            });
+
+            function runFromCurrentStep() {
+                if (currentStep < steps.length) {
+                    executeStep(steps[currentStep])
+                        .then(() => {
+                            currentStep++;
+                            if (steps[currentStep - 1].concurrent || currentStep === steps.length) {
+                                runFromCurrentStep();
+                            } else {
+                                setTimeout(runFromCurrentStep, 1000);
+                            }
+                        })
+                        .catch((error) => {
+                            logMessage(`Error in step execution: ${error}`);
+                        });
+                } else {
+                    logMessage("Scene execution completed");
+                }
+            }
+
+            // Initial scene overview
+            logMessage(`Scene Overview: "${sceneData.scene_name}"`);
             logMessage(`Total steps: ${steps.length}`);
             steps.forEach((step, index) => {
                 logMessage(`Step ${index + 1}: ${step.name} (Type: ${step.type})`);
