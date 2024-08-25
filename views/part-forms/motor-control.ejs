@@ -10,15 +10,31 @@
 <body>
     <h1><%= title %></h1>
     
-    <h2>Motor Settings</h2>
-    <form id="settingsForm" action="/motor/save-settings" method="POST">
-        <label for="dirPin">Direction Pin:</label>
-        <input type="number" id="dirPin" name="dirPin" value="<%= settings.dirPin %>" required>
+    <form id="motorForm" action="<%= action %>" method="POST">
+        <input type="hidden" name="type" value="motor">
+        <% if (part.id) { %>
+            <input type="hidden" name="id" value="<%= part.id %>">
+        <% } %>
+        
+        <label for="name">Motor Name:</label>
+        <input type="text" id="name" name="name" value="<%= part.name || '' %>" required>
+
+        <label for="characterId">Character:</label>
+        <select id="characterId" name="characterId" required>
+            <% characters.forEach(function(character) { %>
+                <option value="<%= character.id %>" <%= (part.characterId === character.id) ? 'selected' : '' %>>
+                    <%= character.char_name %>
+                </option>
+            <% }); %>
+        </select>
+        
+        <label for="directionPin">Direction Pin:</label>
+        <input type="number" id="directionPin" name="directionPin" value="<%= part.directionPin || settings.dirPin %>" required>
         
         <label for="pwmPin">PWM Pin:</label>
-        <input type="number" id="pwmPin" name="pwmPin" value="<%= settings.pwmPin %>" required>
+        <input type="number" id="pwmPin" name="pwmPin" value="<%= part.pwmPin || settings.pwmPin %>" required>
         
-        <button type="submit">Save Settings</button>
+        <button type="submit">Save Motor</button>
     </form>
 
     <h2>Motor Control</h2>
@@ -41,10 +57,10 @@
         <input type="range" id="duration" min="100" max="5000" value="1000">
         <span id="durationValue">1000</span>
         
-        <button id="runMotor">Run Motor</button>
+        <button id="runMotor">Test Motor</button>
     </div>
 
-    <a href="/" class="button">Back to Main Menu</a>
+    <a href="/parts" class="button">Back to Parts</a>
 
     <script>
         const speedSlider = document.getElementById('speed');
@@ -65,10 +81,12 @@
             const direction = document.querySelector('input[name="direction"]:checked').value;
             const speed = speedSlider.value;
             const duration = durationSlider.value;
-            const directionPin = document.getElementById('dirPin').value;
+            const directionPin = document.getElementById('directionPin').value;
             const pwmPin = document.getElementById('pwmPin').value;
 
-            axios.post('/motor/control-motor', {
+            axios.post('/parts/test', {
+                part_id: <%= part.id || 'null' %>,
+                type: 'motor',
                 direction: direction,
                 speed: speed,
                 duration: duration,
@@ -76,12 +94,12 @@
                 pwmPin: pwmPin
             })
             .then(function (response) {
-                console.log('Motor controlled successfully');
-                alert('Motor control successful!');
+                console.log('Motor test completed successfully');
+                alert('Motor test successful!');
             })
             .catch(function (error) {
-                console.error('Error controlling motor:', error);
-                alert('Error controlling motor: ' + (error.response ? error.response.data : error.message));
+                console.error('Error testing motor:', error);
+                alert('Error testing motor: ' + (error.response ? error.response.data : error.message));
             });
         }
     </script>

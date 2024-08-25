@@ -47,27 +47,8 @@ const updatePart = async (id, partData) => {
         parts[index] = {
             ...parts[index],
             ...partData,
-            id: parseInt(id),
-            name: partData.name,
-            type: partData.type,
-            characterId: parseInt(partData.characterId)
+            id: parseInt(id)
         };
-
-        switch (parts[index].type) {
-            case 'motor':
-                parts[index].directionPin = partData.directionPin !== undefined ? parseInt(partData.directionPin) : null;
-                parts[index].pwmPin = partData.pwmPin !== undefined ? parseInt(partData.pwmPin) : null;
-                break;
-            case 'sensor':
-                parts[index].sensorType = partData.sensorType;
-                parts[index].gpioPin = partData.gpioPin !== undefined ? parseInt(partData.gpioPin) : null;
-                break;
-            case 'led':
-            case 'light':
-                parts[index].gpioPin = partData.gpioPin !== undefined ? parseInt(partData.gpioPin) : null;
-                break;
-        }
-
         await fs.writeFile(dataPath, JSON.stringify(parts, null, 2));
         return parts[index];
     }
@@ -85,12 +66,8 @@ const deletePart = async (id) => {
 
 const testMotor = async (partId, direction, speed, duration) => {
     const part = await getPartById(partId);
-    if (!part || part.type !== 'motor') {
+    if (part.type !== 'motor') {
         throw new Error('Invalid motor part');
-    }
-
-    if (part.directionPin === null || part.pwmPin === null) {
-        throw new Error('Motor pins are not properly configured');
     }
 
     const scriptPath = path.join(__dirname, '..', 'scripts', 'motor_control.py');
@@ -125,14 +102,10 @@ const testMotor = async (partId, direction, speed, duration) => {
     });
 };
 
-const testLight = async (partId, state, duration) => {
+const testLight = async (partId, brightness) => {
     const part = await getPartById(partId);
-    if (!part || (part.type !== 'light' && part.type !== 'led')) {
+    if (part.type !== 'light' && part.type !== 'led') {
         throw new Error('Invalid light/LED part');
-    }
-
-    if (part.gpioPin === null) {
-        throw new Error('Light/LED pin is not properly configured');
     }
 
     const scriptPath = path.join(__dirname, '..', 'scripts', 'light_control.py');
@@ -140,8 +113,8 @@ const testLight = async (partId, state, duration) => {
         const process = spawn('python3', [
             scriptPath,
             part.gpioPin.toString(),
-            state,
-            duration.toString()
+            brightness.toString(),
+            '5000'  // 5 seconds total duration
         ]);
         
         let stdout = '';
@@ -165,22 +138,21 @@ const testLight = async (partId, state, duration) => {
     });
 };
 
-const testSensor = async (partId, timeout) => {
+const testServo = async (partId, angle, duration) => {
     const part = await getPartById(partId);
-    if (!part || part.type !== 'sensor') {
-        throw new Error('Invalid sensor part');
+    if (part.type !== 'servo') {
+        throw new Error('Invalid servo part');
     }
 
-    if (part.gpioPin === null) {
-        throw new Error('Sensor pin is not properly configured');
-    }
-
-    const scriptPath = path.join(__dirname, '..', 'scripts', 'sensor_control.py');
+    const scriptPath = path.join(__dirname, '..', 'scripts', 'servo_control.py');
     return new Promise((resolve, reject) => {
         const process = spawn('python3', [
             scriptPath,
             part.gpioPin.toString(),
-            timeout.toString()
+            angle.toString(),
+            part.pwmFrequency.toString(),
+            part.dutyCycle.toString(),
+            duration.toString()
         ]);
         
         let stdout = '';
@@ -196,9 +168,9 @@ const testSensor = async (partId, timeout) => {
 
         process.on('close', (code) => {
             if (code === 0) {
-                resolve({ success: true, message: 'Sensor test completed', output: stdout });
+                resolve({ success: true, message: 'Servo test completed', output: stdout });
             } else {
-                reject(new Error(`Sensor test failed with code ${code}: ${stderr}`));
+                reject(new Error(`Servo test failed with code ${code}: ${stderr}`));
             }
         });
     });
@@ -212,5 +184,5 @@ module.exports = {
     deletePart,
     testMotor,
     testLight,
-    testSensor
+    testServo
 };

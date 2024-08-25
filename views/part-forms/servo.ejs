@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <h1><%= title %></h1>
+    <form action="<%= action %>" method="POST">
+        <input type="hidden" name="type" value="servo">
+        <% if (part.id) { %>
+            <input type="hidden" name="id" value="<%= part.id %>">
+        <% } %>
+        <div>
+            <label for="name">Part Name:</label>
+            <input type="text" id="name" name="name" value="<%= part.name || '' %>" required>
+        </div>
+        <div>
+            <label for="characterId">Character:</label>
+            <select id="characterId" name="characterId" required>
+                <% characters.forEach(function(character) { %>
+                    <option value="<%= character.id %>" <%= (part.characterId === character.id) ? 'selected' : '' %>>
+                        <%= character.char_name %>
+                    </option>
+                <% }); %>
+            </select>
+        </div>
+        <div>
+            <label for="gpioPin">GPIO Pin:</label>
+            <input type="number" id="gpioPin" name="gpioPin" value="<%= part.gpioPin || '' %>" required>
+        </div>
+        <div>
+            <label for="pwmFrequency">PWM Frequency (Hz):</label>
+            <input type="number" id="pwmFrequency" name="pwmFrequency" value="<%= part.pwmFrequency || 50 %>" required>
+        </div>
+        <div>
+            <label for="dutyCycle">Duty Cycle (%):</label>
+            <input type="number" id="dutyCycle" name="dutyCycle" value="<%= part.dutyCycle || 7.5 %>" step="0.1" required>
+        </div>
+        <button type="submit">Save Part</button>
+    </form>
+    <button onclick="testPart()">Test Part</button>
+    <a href="/parts" class="button">Back to Parts</a>
+
+    <script>
+        function testPart() {
+            const partData = {
+                part_id: <%= part.id || 'null' %>,
+                type: 'servo',
+                angle: 90,
+                duration: 1000
+            };
+
+            fetch('/parts/test', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(partData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Servo test successful');
+                } else {
+                    alert('Servo test failed: ' + data.message);
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                alert('An error occurred while testing the servo');
+            });
+        }
+    </script>
+</body>
+</html>

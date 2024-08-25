@@ -6,17 +6,41 @@
     <title><%= title %></title>
     <link rel="stylesheet" href="/css/style.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 5px;
+            background-color: #4CAF50;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            width: 100px;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+    </style>
 </head>
 <body>
     <h1><%= title %></h1>
-    <a href="/parts/new" class="button">Add New Part</a>
+    <div>
+        <a href="/parts/new/motor" class="button">Motor</a>
+        <a href="/parts/new/light" class="button">Light</a>
+        <a href="/parts/new/led" class="button">LED</a>
+        <a href="/parts/new/servo" class="button">Servo</a>
+        <a href="/parts/new/sensor" class="button">Sensor</a>
+    </div>
     <table>
         <thead>
             <tr>
                 <th>Name</th>
                 <th>Type</th>
                 <th>Character</th>
-                <th>Pin Details</th>
+                <th>Details</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -28,18 +52,19 @@
                     <td><%= characters.find(c => c.id === parseInt(part.characterId))?.char_name || 'N/A' %></td>
                     <td>
                         <% if (part.type === 'motor') { %>
-                            Dir Pin: <%= part.directionPin %><br>
-                            PWM Pin: <%= part.pwmPin %>
-                        <% } else if (part.type === 'led') { %>
-                            LED Pin: <%= part.ledPin %><br>
-                            Duration: <%= part.duration %> ms
-                        <% } else if (['light', 'servo', 'sensor'].includes(part.type)) { %>
-                            Pin: <%= part.pin %>
+                            Dir Pin: <%= part.directionPin %>, PWM Pin: <%= part.pwmPin %>
+                        <% } else if (part.type === 'light' || part.type === 'led') { %>
+                            GPIO Pin: <%= part.gpioPin %>
+                        <% } else if (part.type === 'servo') { %>
+                            GPIO Pin: <%= part.gpioPin %>, Frequency: <%= part.pwmFrequency %>Hz, Duty Cycle: <%= part.dutyCycle %>%
+                        <% } else if (part.type === 'sensor') { %>
+                            Type: <%= part.sensorType %>, GPIO Pin: <%= part.gpioPin %>, Active: <%= part.active ? 'Yes' : 'No' %>
                         <% } %>
                     </td>
                     <td>
                         <a href="/parts/<%= part.id %>/edit" class="button">Edit</a>
                         <button onclick="deletePart(<%= part.id %>)" class="button">Delete</button>
+                        <button onclick="testPart(<%= part.id %>, '<%= part.type %>')" class="button">Test</button>
                     </td>
                 </tr>
             <% }); %>
@@ -59,6 +84,38 @@
                         alert('Error deleting part: ' + xhr.status + ' ' + xhr.statusText);
                     });
             }
+        }
+
+        function testPart(id, type) {
+            let testData = {
+                part_id: id,
+                type: type
+            };
+
+            switch(type) {
+                case 'motor':
+                    testData.direction = 'forward';
+                    testData.speed = 50;
+                    testData.duration = 1000;
+                    break;
+                case 'light':
+                case 'led':
+                    testData.brightness = 50;
+                    break;
+                case 'servo':
+                    testData.angle = 90;
+                    testData.duration = 1000;
+                    break;
+            }
+
+            $.post('/parts/test', testData)
+                .done(function(response) {
+                    alert('Test completed: ' + response.message);
+                })
+                .fail(function(xhr, status, error) {
+                    console.error('Error details:', xhr.responseText);
+                    alert('Error testing part: ' + xhr.status + ' ' + xhr.statusText);
+                });
         }
     </script>
 </body>

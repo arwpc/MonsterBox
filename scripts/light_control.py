@@ -9,37 +9,33 @@ def setup_gpio():
 def cleanup_gpio():
     GPIO.cleanup()
 
-def control_light(gpio_pin, state, duration):
+def control_light(gpio_pin, brightness, duration):
     setup_gpio()
     GPIO.setup(gpio_pin, GPIO.OUT)
+    pwm = GPIO.PWM(gpio_pin, 100)  # 100 Hz frequency
 
     try:
-        if state.lower() == 'on':
-            GPIO.output(gpio_pin, GPIO.HIGH)
-            print(f"Light on GPIO pin {gpio_pin} is ON")
-        elif state.lower() == 'off':
-            GPIO.output(gpio_pin, GPIO.LOW)
-            print(f"Light on GPIO pin {gpio_pin} is OFF")
-        else:
-            print("Invalid state. Use 'on' or 'off'.")
-            return
-
-        time.sleep(float(duration) / 1000)  # Convert duration to seconds
+        end_time = time.time() + (duration / 1000)
+        while time.time() < end_time:
+            pwm.start(brightness)
+            time.sleep(0.5)
+            pwm.stop()
+            time.sleep(0.5)
+        print(f"Light test on GPIO pin {gpio_pin} completed")
     finally:
         cleanup_gpio()
 
 if __name__ == "__main__":
     if len(sys.argv) != 4:
-        print("Usage: python light_control.py <gpio_pin> <state> <duration>")
+        print("Usage: python light_control.py <gpio_pin> <brightness> <duration>")
         sys.exit(1)
 
     gpio_pin = int(sys.argv[1])
-    state = sys.argv[2]
+    brightness = int(sys.argv[2])
     duration = int(sys.argv[3])
 
     try:
-        control_light(gpio_pin, state, duration)
-        print("Light control completed successfully")
+        control_light(gpio_pin, brightness, duration)
     except Exception as e:
         print(f"Error: {str(e)}")
         sys.exit(1)

@@ -10,29 +10,30 @@ def setup_gpio(pin):
 def angle_to_duty_cycle(angle):
     return 2 + (angle / 18)  # Maps 0-180 degrees to 2-12% duty cycle
 
-def control_servo(pin, angle, speed, duration):
+def control_servo(pin, angle, frequency, duty_cycle, duration):
     pwm = setup_gpio(pin)
     try:
-        pwm.start(0)
-        duty_cycle = angle_to_duty_cycle(angle)
-        pwm.ChangeDutyCycle(duty_cycle)
+        pwm.ChangeFrequency(frequency)
+        pwm.start(duty_cycle)
+        pwm.ChangeDutyCycle(angle_to_duty_cycle(angle))
         time.sleep(duration / 1000)  # Convert duration to seconds
     finally:
         pwm.stop()
         GPIO.cleanup(pin)
 
 if __name__ == "__main__":
-    if len(sys.argv) != 5:
-        print("Usage: python servo_control.py <pin> <angle> <speed> <duration>")
+    if len(sys.argv) != 6:
+        print("Usage: python servo_control.py <pin> <angle> <frequency> <duty_cycle> <duration>")
         sys.exit(1)
 
     pin = int(sys.argv[1])
     angle = float(sys.argv[2])
-    speed = float(sys.argv[3])  # Note: speed is not used in this basic implementation
-    duration = int(sys.argv[4])
+    frequency = float(sys.argv[3])
+    duty_cycle = float(sys.argv[4])
+    duration = int(sys.argv[5])
 
     try:
-        control_servo(pin, angle, speed, duration)
+        control_servo(pin, angle, frequency, duty_cycle, duration)
         print("Servo control successful")
     except Exception as e:
         print(f"Error controlling servo: {str(e)}")

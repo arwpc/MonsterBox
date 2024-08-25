@@ -335,3 +335,23 @@
 2024-08-25 12:52:55,290 - INFO - Controlling motor: direction=forward, speed=50, duration=1000, dir_pin=18, pwm_pin=24
 2024-08-25 12:52:56,293 - INFO - GPIO cleanup completed
 2024-08-25 13:06:53,035 - INFO - Controlling motor: direction=forward, speed=100, duration=1000, dir_pin=18, pwm_pin=24
+2024-08-25 14:13:36,314 - INFO - Controlling motor: direction=forward, speed=50, duration=1000, dir_pin=18, pwm_pin=24
+2024-08-25 14:13:37,315 - INFO - GPIO cleanup completed
+2024-08-25 14:13:45,080 - INFO - Controlling motor: direction=forward, speed=50, duration=1000, dir_pin=18, pwm_pin=24
+2024-08-25 14:13:46,081 - INFO - GPIO cleanup completed
+2024-08-25 14:14:08,015 - INFO - Controlling motor: direction=forward, speed=50, duration=1000, dir_pin=18, pwm_pin=13
+2024-08-25 14:14:09,016 - INFO - GPIO cleanup completed
+2024-08-25 14:14:16,469 - INFO - Controlling motor: direction=forward, speed=50, duration=1000, dir_pin=23, pwm_pin=12
+2024-08-25 14:14:17,470 - INFO - GPIO cleanup completed
+2024-08-25 14:14:21,846 - INFO - Controlling motor: direction=backward, speed=50, duration=1000, dir_pin=23, pwm_pin=12
+2024-08-25 14:14:22,847 - INFO - GPIO cleanup completed
+2024-08-25 14:23:41,335 - INFO - Controlling motor: direction=forward, speed=50, duration=1000, dir_pin=23, pwm_pin=12
+2024-08-25 14:23:42,336 - INFO - GPIO cleanup completed
+2024-08-25 14:31:18,927 - INFO - Controlling motor: direction=forward, speed=50, duration=1000, dir_pin=18, pwm_pin=13
+2024-08-25 14:31:19,928 - INFO - GPIO cleanup completed
+2024-08-25 14:31:26,806 - INFO - Controlling motor: direction=backward, speed=50, duration=1000, dir_pin=18, pwm_pin=13
+2024-08-25 14:31:27,807 - INFO - GPIO cleanup completed
+2024-08-25 14:38:12,092 - INFO - Controlling motor: direction=forward, speed=50, duration=1000, dir_pin=18, pwm_pin=13
+2024-08-25 14:38:13,093 - INFO - GPIO cleanup completed
+2024-08-25 14:48:04,724 - INFO - Controlling motor: direction=forward, speed=100, duration=1000, dir_pin=18, pwm_pin=24
+2024-08-25 14:55:28,630 - INFO - Controlling motor: direction=forward, speed=100, duration=1000, dir_pin=18, pwm_pin=24
