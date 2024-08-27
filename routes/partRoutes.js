@@ -141,34 +141,14 @@ router.post('/test', async (req, res) => {
             throw new Error('Invalid part type');
         }
 
-        let testData;
-
-        if (id) {
-            // If an ID is provided, fetch the part from the database
-            const part = await partService.getPartById(id);
-
-            if (!part) {
-                throw new Error(`Part not found with id: ${id}`);
-            }
-
-            // Use the part's stored pins if not provided in the request
-            testData = {
-                direction,
-                speed,
-                duration,
-                directionPin: directionPin || part.directionPin,
-                pwmPin: pwmPin || part.pwmPin
-            };
-        } else {
-            // If no ID is provided, use the values from the request
-            testData = {
-                direction,
-                speed,
-                duration,
-                directionPin,
-                pwmPin
-            };
-        }
+        // Use the values from the request, regardless of whether an ID is provided
+        const testData = {
+            direction,
+            speed: parseInt(speed),
+            duration: parseInt(duration),
+            directionPin: parseInt(directionPin),
+            pwmPin: parseInt(pwmPin)
+        };
 
         const result = await partService.testMotor(testData);
 
