@@ -86,6 +86,9 @@ router.post('/', async (req, res) => {
 router.post('/:id', async (req, res) => {
     try {
         const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            throw new Error('Invalid part ID');
+        }
         const updatedPart = {
             id: id,
             name: req.body.name,
@@ -135,13 +138,12 @@ router.post('/:id/delete', async (req, res) => {
 router.post('/test', async (req, res) => {
     try {
         console.log('Received test request:', req.body);
-        const { id, type, direction, speed, duration, directionPin, pwmPin } = req.body;
+        const { type, direction, speed, duration, directionPin, pwmPin } = req.body;
         
         if (type !== 'motor') {
             throw new Error('Invalid part type');
         }
 
-        // Use the values from the request, regardless of whether an ID is provided
         const testData = {
             direction,
             speed: parseInt(speed),
