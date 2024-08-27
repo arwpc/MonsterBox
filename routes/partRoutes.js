@@ -134,42 +134,20 @@ router.post('/:id/delete', async (req, res) => {
 
 router.post('/test', async (req, res) => {
     try {
-        const { part_id, type, ...testParams } = req.body;
-        let result;
-
-        switch (type) {
-            case 'motor':
-                result = await partService.testMotor(
-                    part_id ? parseInt(part_id) : null,
-                    testParams.direction,
-                    parseInt(testParams.speed),
-                    parseInt(testParams.duration),
-                    parseInt(testParams.directionPin),
-                    parseInt(testParams.pwmPin)
-                );
-                break;
-            case 'light':
-            case 'led':
-                result = await partService.testLight(
-                    part_id ? parseInt(part_id) : null,
-                    parseInt(testParams.brightness)
-                );
-                break;
-            case 'servo':
-                result = await partService.testServo(
-                    part_id ? parseInt(part_id) : null,
-                    parseInt(testParams.angle),
-                    parseInt(testParams.duration)
-                );
-                break;
-            default:
-                throw new Error('Invalid part type');
+        console.log('Received test request:', req.body);
+        const { type, ...testParams } = req.body;
+        
+        if (type !== 'motor') {
+            throw new Error('Invalid part type');
         }
 
-        res.json({ success: true, message: 'Part tested successfully', result });
+        const result = await partService.testMotor(testParams);
+
+        console.log('Test result:', result);
+        res.json({ success: true, message: 'Motor tested successfully', result });
     } catch (error) {
-        console.error('Error testing part:', error);
-        res.status(500).json({ success: false, message: 'An error occurred while testing the part', error: error.message });
+        console.error('Error testing motor:', error);
+        res.status(500).json({ success: false, message: 'An error occurred while testing the motor', error: error.message });
     }
 });
 
