@@ -32,7 +32,11 @@ router.get('/new/:type', async (req, res) => {
 
 router.get('/:id/edit', async (req, res) => {
     try {
-        const part = await partService.getPartById(req.params.id);
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            throw new Error('Invalid part ID');
+        }
+        const part = await partService.getPartById(id);
         const characters = await characterService.getAllCharacters();
         if (part.type === 'motor') {
             const settings = { dirPin: part.directionPin, pwmPin: part.pwmPin };
@@ -42,7 +46,7 @@ router.get('/:id/edit', async (req, res) => {
         }
     } catch (error) {
         console.error('Error fetching part:', error);
-        res.status(500).send('An error occurred while fetching the part');
+        res.status(500).send('An error occurred while fetching the part: ' + error.message);
     }
 });
 
@@ -73,9 +77,12 @@ router.post('/', async (req, res) => {
                 newPart.gpioPin = parseInt(req.body.gpioPin) || 16;
                 newPart.active = req.body.active === 'on';
                 break;
+            default:
+                throw new Error('Invalid part type');
         }
 
-        await partService.createPart(newPart);
+        const createdPart = await partService.createPart(newPart);
+        console.log('Created part:', createdPart);
         res.redirect('/parts');
     } catch (error) {
         console.error('Error creating part:', error);
@@ -115,9 +122,12 @@ router.post('/:id', async (req, res) => {
                 updatedPart.gpioPin = parseInt(req.body.gpioPin) || 16;
                 updatedPart.active = req.body.active === 'on';
                 break;
+            default:
+                throw new Error('Invalid part type');
         }
 
-        await partService.updatePart(id, updatedPart);
+        const result = await partService.updatePart(id, updatedPart);
+        console.log('Updated part:', result);
         res.redirect('/parts');
     } catch (error) {
         console.error('Error updating part:', error);
@@ -127,11 +137,15 @@ router.post('/:id', async (req, res) => {
 
 router.post('/:id/delete', async (req, res) => {
     try {
-        await partService.deletePart(req.params.id);
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            throw new Error('Invalid part ID');
+        }
+        await partService.deletePart(id);
         res.sendStatus(200);
     } catch (error) {
         console.error('Error deleting part:', error);
-        res.status(500).send('An error occurred while deleting the part');
+        res.status(500).send('An error occurred while deleting the part: ' + error.message);
     }
 });
 

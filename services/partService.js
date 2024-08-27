@@ -18,7 +18,7 @@ const getAllParts = async () => {
 
 const getPartById = async (id) => {
     const parts = await getAllParts();
-    const part = parts.find(part => part.id === parseInt(id));
+    const part = parts.find(part => part.id === id);
     if (!part) {
         throw new Error(`Part not found with id: ${id}`);
     }
@@ -38,18 +38,18 @@ const createPart = async (partData) => {
 
 const updatePart = async (id, partData) => {
     const parts = await getAllParts();
-    const index = parts.findIndex(part => part.id === parseInt(id));
-    if (index !== -1) {
-        parts[index] = { ...parts[index], ...partData, id: parseInt(id) };
-        await fs.writeFile(dataPath, JSON.stringify(parts, null, 2));
-        return parts[index];
+    const index = parts.findIndex(part => part.id === id);
+    if (index === -1) {
+        throw new Error(`Part not found with id: ${id}`);
     }
-    throw new Error(`Part not found with id: ${id}`);
+    parts[index] = { ...parts[index], ...partData, id };
+    await fs.writeFile(dataPath, JSON.stringify(parts, null, 2));
+    return parts[index];
 };
 
 const deletePart = async (id) => {
     const parts = await getAllParts();
-    const filteredParts = parts.filter(part => part.id !== parseInt(id));
+    const filteredParts = parts.filter(part => part.id !== id);
     if (filteredParts.length === parts.length) {
         throw new Error(`Part not found with id: ${id}`);
     }
@@ -60,20 +60,16 @@ const testMotor = async (motorData) => {
     console.log('Testing motor with data:', motorData);
     const { direction, speed, duration, directionPin, pwmPin } = motorData;
     const scriptPath = path.join(__dirname, '..', 'scripts', 'motor_control.py');
-    const command = `sudo python3 ${scriptPath} ${direction} ${speed} ${duration} ${directionPin} ${pwmPin}`;
     
-    console.log('Command to be executed:', command);
-
     return new Promise((resolve, reject) => {
-        const process = spawn('sudo', [
-            'python3',
+        const process = spawn('python3', [
             scriptPath,
             direction,
             speed.toString(),
             duration.toString(),
             directionPin.toString(),
             pwmPin.toString()
-        ]);
+        ], { stdio: 'pipe' });
 
         let stdout = '';
         let stderr = '';
