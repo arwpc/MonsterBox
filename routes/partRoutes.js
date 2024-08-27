@@ -135,13 +135,42 @@ router.post('/:id/delete', async (req, res) => {
 router.post('/test', async (req, res) => {
     try {
         console.log('Received test request:', req.body);
-        const { type, direction, speed, duration, directionPin, pwmPin } = req.body;
+        const { id, type, direction, speed, duration, directionPin, pwmPin } = req.body;
         
         if (type !== 'motor') {
             throw new Error('Invalid part type');
         }
 
-        const result = await partService.testMotor({ direction, speed, duration, directionPin, pwmPin });
+        let testData;
+
+        if (id) {
+            // If an ID is provided, fetch the part from the database
+            const part = await partService.getPartById(id);
+
+            if (!part) {
+                throw new Error(`Part not found with id: ${id}`);
+            }
+
+            // Use the part's stored pins if not provided in the request
+            testData = {
+                direction,
+                speed,
+                duration,
+                directionPin: directionPin || part.directionPin,
+                pwmPin: pwmPin || part.pwmPin
+            };
+        } else {
+            // If no ID is provided, use the values from the request
+            testData = {
+                direction,
+                speed,
+                duration,
+                directionPin,
+                pwmPin
+            };
+        }
+
+        const result = await partService.testMotor(testData);
 
         console.log('Test result:', result);
         res.json({ success: true, message: 'Motor tested successfully', result });

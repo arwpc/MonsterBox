@@ -42,7 +42,9 @@
 
     <script>
         function testPart() {
+            const partId = document.querySelector('input[name="id"]')?.value;
             const partData = {
+                id: partId, // This will be undefined for new parts
                 type: 'motor',
                 direction: 'forward',
                 speed: 50,
