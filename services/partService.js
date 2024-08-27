@@ -60,13 +60,13 @@ const testMotor = async (motorData) => {
     console.log('Testing motor with data:', motorData);
     const { direction, speed, duration, directionPin, pwmPin } = motorData;
     const scriptPath = path.join(__dirname, '..', 'scripts', 'motor_control.py');
-    const command = `python3 ${scriptPath} ${direction} ${speed} ${duration} ${directionPin} ${pwmPin}`;
+    const command = `sudo python3 ${scriptPath} ${direction} ${speed} ${duration} ${directionPin} ${pwmPin}`;
     
     console.log('Command to be executed:', command);
-    // Here you can add a confirmation step if needed
 
     return new Promise((resolve, reject) => {
-        const process = spawn('python3', [
+        const process = spawn('sudo', [
+            'python3',
             scriptPath,
             direction,
             speed.toString(),
