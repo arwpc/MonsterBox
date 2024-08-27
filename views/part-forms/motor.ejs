@@ -37,17 +37,18 @@
         </div>
         <button type="submit">Save Part</button>
     </form>
-    <button onclick="testPart()">Test Part</button>
+    <button onclick="testPart()">Test Motor</button>
     <a href="/parts" class="button">Back to Parts</a>
 
     <script>
         function testPart() {
             const partData = {
-                part_id: <%= part.id || 'null' %>,
                 type: 'motor',
                 direction: 'forward',
                 speed: 50,
-                duration: 1000
+                duration: 1000,
+                directionPin: parseInt(document.getElementById('directionPin').value),
+                pwmPin: parseInt(document.getElementById('pwmPin').value)
             };
 
             fetch('/parts/test', {
@@ -67,7 +68,7 @@
             })
             .catch((error) => {
                 console.error('Error:', error);
-                alert('An error occurred while testing the motor');
+                alert('An error occurred while testing the motor. Check console for details.');
             });
         }
     </script>

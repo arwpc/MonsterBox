@@ -20,7 +20,7 @@ router.get('/new/:type', async (req, res) => {
         const characters = await characterService.getAllCharacters();
         if (type === 'motor') {
             const settings = { dirPin: 18, pwmPin: 13 }; // Default values
-            res.render('part-forms/motor-control', { title: 'Add Motor', action: '/parts', part: {}, characters, settings });
+            res.render('part-forms/motor', { title: 'Add Motor', action: '/parts', part: {}, characters, settings });
         } else {
             res.render(`part-forms/${type}`, { title: `Add ${type.charAt(0).toUpperCase() + type.slice(1)}`, action: '/parts', part: {}, characters });
         }
@@ -36,7 +36,7 @@ router.get('/:id/edit', async (req, res) => {
         const characters = await characterService.getAllCharacters();
         if (part.type === 'motor') {
             const settings = { dirPin: part.directionPin, pwmPin: part.pwmPin };
-            res.render('part-forms/motor-control', { title: 'Edit Motor', action: `/parts/${part.id}`, part, characters, settings });
+            res.render('part-forms/motor', { title: 'Edit Motor', action: `/parts/${part.id}`, part, characters, settings });
         } else {
             res.render(`part-forms/${part.type}`, { title: `Edit ${part.type.charAt(0).toUpperCase() + part.type.slice(1)}`, action: `/parts/${part.id}`, part, characters });
         }
@@ -135,13 +135,13 @@ router.post('/:id/delete', async (req, res) => {
 router.post('/test', async (req, res) => {
     try {
         console.log('Received test request:', req.body);
-        const { type, ...testParams } = req.body;
+        const { type, direction, speed, duration, directionPin, pwmPin } = req.body;
         
         if (type !== 'motor') {
             throw new Error('Invalid part type');
         }
 
-        const result = await partService.testMotor(testParams);
+        const result = await partService.testMotor({ direction, speed, duration, directionPin, pwmPin });
 
         console.log('Test result:', result);
         res.json({ success: true, message: 'Motor tested successfully', result });
