@@ -6,7 +6,137 @@ const { spawn } = require('child_process');
 const path = require('path');
 
 const sceneController = {
-    // ... (previous methods remain unchanged)
+    getAllScenes: async (req, res) => {
+        try {
+            const scenes = await sceneService.getAllScenes();
+            const characters = await characterService.getAllCharacters();
+            res.render('scenes', { title: 'Scenes', scenes, characters });
+        } catch (error) {
+            console.error('Error fetching scenes:', error);
+            res.status(500).send('An error occurred while fetching scenes');
+        }
+    },
+
+    newScene: async (req, res) => {
+        try {
+            const characters = await characterService.getAllCharacters();
+            const parts = await partService.getAllParts();
+            const sounds = await soundService.getAllSounds();
+            res.render('scene-form', { 
+                title: 'New Scene', 
+                scene: { steps: [] }, 
+                action: '/scenes',
+                characters,
+                parts,
+                sounds
+            });
+        } catch (error) {
+            console.error('Error rendering new scene form:', error);
+            res.status(500).send('An error occurred while loading the new scene form');
+        }
+    },
+
+    getSceneById: async (req, res) => {
+        try {
+            const scene = await sceneService.getSceneById(req.params.id);
+            if (scene) {
+                const characters = await characterService.getAllCharacters();
+                const parts = await partService.getAllParts();
+                const sounds = await soundService.getAllSounds();
+                res.render('scene-form', { 
+                    title: 'Edit Scene', 
+                    scene, 
+                    action: `/scenes/${scene.id}`,
+                    characters,
+                    parts,
+                    sounds
+                });
+            } else {
+                res.status(404).send('Scene not found');
+            }
+        } catch (error) {
+            console.error('Error fetching scene:', error);
+            res.status(500).send('An error occurred while fetching the scene');
+        }
+    },
+
+    editScene: async (req, res) => {
+        try {
+            const scene = await sceneService.getSceneById(req.params.id);
+            if (scene) {
+                const characters = await characterService.getAllCharacters();
+                const parts = await partService.getAllParts();
+                const sounds = await soundService.getAllSounds();
+                res.render('scene-form', { 
+                    title: 'Edit Scene', 
+                    scene, 
+                    action: `/scenes/${scene.id}`,
+                    characters,
+                    parts,
+                    sounds
+                });
+            } else {
+                res.status(404).send('Scene not found');
+            }
+        } catch (error) {
+            console.error('Error fetching scene for editing:', error);
+            res.status(500).send('An error occurred while fetching the scene for editing');
+        }
+    },
+
+    createScene: async (req, res) => {
+        try {
+            const sceneData = {
+                character_id: parseInt(req.body.character_id),
+                scene_name: req.body.scene_name,
+                steps: req.body.steps || []
+            };
+            const newScene = await sceneService.createScene(sceneData);
+            res.redirect('/scenes');
+        } catch (error) {
+            console.error('Error creating scene:', error);
+            res.status(500).send('An error occurred while creating the scene');
+        }
+    },
+
+    updateScene: async (req, res) => {
+        try {
+            const sceneData = {
+                character_id: parseInt(req.body.character_id),
+                scene_name: req.body.scene_name,
+                steps: req.body.steps || []
+            };
+            await sceneService.updateScene(req.params.id, sceneData);
+            res.redirect('/scenes');
+        } catch (error) {
+            console.error('Error updating scene:', error);
+            res.status(500).send('An error occurred while updating the scene');
+        }
+    },
+
+    deleteScene: async (req, res) => {
+        try {
+            await sceneService.deleteScene(req.params.id);
+            res.sendStatus(200);
+        } catch (error) {
+            console.error('Error deleting scene:', error);
+            res.status(500).send('An error occurred while deleting the scene');
+        }
+    },
+
+    playScene: async (req, res) => {
+        try {
+            const scene = await sceneService.getSceneById(req.params.id);
+            if (scene) {
+                res.render('scene-player', { title: 'Scene Player', scene });
+            } else {
+                res.status(404).send('Scene not found');
+            }
+        } catch (error) {
+            console.error('Error loading scene player:', error);
+            res.status(500).send('An error occurred while loading the scene player');
+        }
+    },
 
     executeStep: async (req, res) => {
         try {
