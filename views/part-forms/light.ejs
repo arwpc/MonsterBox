@@ -33,7 +33,21 @@
         </div>
         <button type="submit">Save Part</button>
     </form>
-    <button onclick="testPart()">Test Part</button>
+    <div id="lightTest">
+        <h2>Test Light</h2>
+        <div>
+            <label for="state">State:</label>
+            <select id="state">
+                <option value="on">On</option>
+                <option value="off">Off</option>
+            </select>
+        </div>
+        <div>
+            <label for="duration">Duration (ms):</label>
+            <input type="number" id="duration" value="1000" min="100" max="10000">
+        </div>
+        <button onclick="testPart()">Test Light</button>
+    </div>
     <a href="/parts" class="button">Back to Parts</a>
 
     <script>
@@ -41,8 +55,9 @@
             const partData = {
                 part_id: <%= part.id || 'null' %>,
                 type: 'light',
-                state: 'on',
-                duration: 1000
+                state: document.getElementById('state').value,
+                duration: parseInt(document.getElementById('duration').value),
+                gpioPin: parseInt(document.getElementById('gpioPin').value)
             };
 
             fetch('/parts/test', {

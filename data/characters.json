@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "char_name": "Baphomet Lives",
+    "char_description": "the dark lord finally rises",
+    "parts": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "sounds": [
+      1,
+      2,
+      3
+    ],
+    "image": "c56cc12bfac10df2663b4c71ab53a801"
+  }
+]

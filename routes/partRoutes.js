@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const partService = require('../services/partService');
 const characterService = require('../services/characterService');
+const { spawn } = require('child_process');
+const path = require('path');
 
 router.get('/', async (req, res) => {
     try {
@@ -153,26 +155,72 @@ router.post('/test', async (req, res) => {
     try {
         console.log('Received test request:', req.body);
         const { type, direction, speed, duration, directionPin, pwmPin } = req.body;
-        
-        if (type !== 'motor') {
-            throw new Error('Invalid part type');
+
+        if (type === 'motor') {
+            const testData = {
+                direction,
+                speed: parseInt(speed),
+                duration: parseInt(duration),
+                directionPin: parseInt(directionPin),
+                pwmPin: parseInt(pwmPin)
+            };
+            const result = await partService.testMotor(testData);
+            console.log('Test result:', result);
+            res.json({ success: true, message: 'Motor tested successfully', result });
+        } else if (type === 'sensor') {
+            const { gpioPin } = req.body;
+            const result = await partService.testSensor(parseInt(gpioPin));
+            console.log('Sensor test result:', result);
+            res.json({ success: true, message: 'Sensor tested successfully', result });
+        } else {
+            throw new Error('Invalid part type for testing');
+        }
+    } catch (error) {
+        console.error('Error testing part:', error);
+        res.status(500).json({ success: false, message: 'An error occurred while testing the part', error: error.message });
+    }
+});
+
+router.get('/test-sensor', async (req, res) => {
+    try {
+        const sensorId = parseInt(req.query.id);
+        const gpioPin = parseInt(req.query.gpioPin);
+
+        if (isNaN(sensorId) || isNaN(gpioPin)) {
+            throw new Error('Invalid sensor ID or GPIO pin');
         }
 
-        const testData = {
-            direction,
-            speed: parseInt(speed),
-            duration: parseInt(duration),
-            directionPin: parseInt(directionPin),
-            pwmPin: parseInt(pwmPin)
-        };
+        const scriptPath = path.join(__dirname, '..', 'scripts', 'test_sensor.py');
 
-        const result = await partService.testMotor(testData);
+        res.writeHead(200, {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive'
+        });
 
-        console.log('Test result:', result);
-        res.json({ success: true, message: 'Motor tested successfully', result });
+        const python = spawn('sudo', ['python3', scriptPath, gpioPin.toString()]);
+
+        python.stdout.on('data', (data) => {
+            res.write(`data: ${data}\n\n`);
+        });
+
+        python.stderr.on('data', (data) => {
+            console.error(`Python script error: ${data}`);
+            res.write(`data: ${JSON.stringify({ error: data.toString() })}\n\n`);
+        });
+
+        python.on('close', (code) => {
+            console.log(`Python script exited with code ${code}`);
+            res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+            res.end();
+        });
+
+        req.on('close', () => {
+            python.kill();
+        });
     } catch (error) {
-        console.error('Error testing motor:', error);
-        res.status(500).json({ success: false, message: 'An error occurred while testing the motor', error: error.message });
+        console.error('Error testing sensor:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 

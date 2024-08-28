@@ -6,6 +6,16 @@
     <title><%= title %></title>
     <link rel="stylesheet" href="/css/style.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Creepster&display=swap');
+
+        .motion-detected {
+            color: red;
+            font-family: 'Creepster', cursive;
+            font-size: 1.2em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+    </style>
 </head>
 <body>
     <h1><%= title %></h1>
@@ -37,7 +47,7 @@
         </div>
         <div>
             <label for="gpioPin">GPIO Pin:</label>
-            <input type="number" id="gpioPin" name="gpioPin" value="<%= part.gpioPin || 16 %>" required>
+            <input type="number" id="gpioPin" name="gpioPin" value="<%= part.gpioPin || '' %>" required>
         </div>
         <div>
             <label for="active">
@@ -50,6 +60,7 @@
 
     <div id="testArea" style="margin-top: 20px;">
         <h2>Test Sensor</h2>
+        <p id="statusText">Sensor status: Not testing</p>
         <button id="startTest">Start Test</button>
         <button id="stopTest" disabled>Stop Test</button>
         <div id="testResults" style="margin-top: 10px;"></div>
@@ -58,46 +69,69 @@
     <a href="/parts" class="button">Back to Parts</a>
 
     <script>
-        $(document).ready(function() {
-            let testInterval;
+        let eventSource;
 
-            $('#sensorType').change(function() {
-                if ($(this).val() === 'sound') {
-                    $('#gpioPin').prop('disabled', true);
-                } else {
-                    $('#gpioPin').prop('disabled', false);
+        function updateSensorStatus(status) {
+            const statusText = $('#statusText');
+            statusText.text('Sensor status: ' + status);
+
+            if (status === 'Motion Detected') {
+                statusText.addClass('motion-detected');
+            } else {
+                statusText.removeClass('motion-detected');
+            }
+        }
+
+        function startTest() {
+            const sensorId = $('input[name="id"]').val();
+            const gpioPin = $('#gpioPin').val();
+
+            eventSource = new EventSource(`/parts/test-sensor?id=${sensorId}&gpioPin=${gpioPin}`);
+
+            eventSource.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                if (data.status) {
+                    updateSensorStatus(data.status);
+                } else if (data.error) {
+                    console.error('Error:', data.error);
+                    updateSensorStatus('Error: ' + data.error);
+                    stopTest();
+                } else if (data.done) {
+                    stopTest();
                 }
-            });
+            };
 
-            $('#startTest').click(function() {
-                const sensorId = $('input[name="id"]').val();
-                const gpioPin = $('#gpioPin').val();
-                
-                $('#startTest').prop('disabled', true);
-                $('#stopTest').prop('disabled', false);
-                $('#testResults').empty();
+            eventSource.onerror = function(event) {
+                console.error('EventSource failed:', event);
+                stopTest();
+            };
 
-                testInterval = setInterval(function() {
-                    $.get(`/sensors/test?id=${sensorId}&gpioPin=${gpioPin}`)
-                        .done(function(data) {
-                            $('#testResults').append(`<p>${new Date().toLocaleTimeString()} - ${data.status}</p>`);
-                        })
-                        .fail(function(error) {
-                            console.error('Error testing sensor:', error);
-                            $('#testResults').append(`<p>Error: ${error.responseText}</p>`);
-                        });
-                }, 1000);
-            });
+            $('#startTest').prop('disabled', true);
+            $('#stopTest').prop('disabled', false);
+        }
 
-            $('#stopTest').click(function() {
-                clearInterval(testInterval);
-                $('#startTest').prop('disabled', false);
-                $('#stopTest').prop('disabled', true);
-            });
+        function stopTest() {
+            if (eventSource) {
+                eventSource.close();
+            }
+            $('#startTest').prop('disabled', false);
+            $('#stopTest').prop('disabled', true);
+            updateSensorStatus('Not testing');
+        }
 
-            // Trigger change event on page load
-            $('#sensorType').change();
+        $('#startTest').click(startTest);
+        $('#stopTest').click(stopTest);
+
+        $('#sensorType').change(function() {
+            if ($(this).val() === 'sound') {
+                $('#gpioPin').prop('disabled', true);
+            } else {
+                $('#gpioPin').prop('disabled', false);
+            }
         });
+
+        // Trigger change event on page load
+        $('#sensorType').change();
     </script>
 </body>
 </html>

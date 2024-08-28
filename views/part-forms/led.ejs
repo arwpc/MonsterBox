@@ -33,16 +33,33 @@
         </div>
         <button type="submit">Save Part</button>
     </form>
-    <button onclick="testPart()">Test Part</button>
+    <div id="ledTest">
+        <h2>Test LED</h2>
+        <div>
+            <label for="brightness">Brightness:</label>
+            <input type="range" id="brightness" min="0" max="100" value="50">
+            <span id="brightnessValue">50</span>
+        </div>
+        <div>
+            <label for="duration">Duration (ms):</label>
+            <input type="number" id="duration" value="1000" min="100" max="10000">
+        </div>
+        <button onclick="testPart()">Test LED</button>
+    </div>
     <a href="/parts" class="button">Back to Parts</a>
 
     <script>
+        document.getElementById('brightness').addEventListener('input', function() {
+            document.getElementById('brightnessValue').textContent = this.value;
+        });
+
         function testPart() {
             const partData = {
                 part_id: <%= part.id || 'null' %>,
                 type: 'led',
-                state: 'on',
-                duration: 1000
+                brightness: parseInt(document.getElementById('brightness').value),
+                duration: parseInt(document.getElementById('duration').value),
+                gpioPin: parseInt(document.getElementById('gpioPin').value)
             };
 
             fetch('/parts/test', {

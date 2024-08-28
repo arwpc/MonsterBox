@@ -41,16 +41,35 @@
         </div>
         <button type="submit">Save Part</button>
     </form>
-    <button onclick="testPart()">Test Part</button>
+    <div id="servoTest">
+        <h2>Test Servo</h2>
+        <div>
+            <label for="angle">Angle (0-180):</label>
+            <input type="range" id="angle" min="0" max="180" value="90">
+            <span id="angleValue">90</span>
+        </div>
+        <div>
+            <label for="duration">Duration (ms):</label>
+            <input type="number" id="duration" value="1000" min="100" max="10000">
+        </div>
+        <button onclick="testPart()">Test Servo</button>
+    </div>
     <a href="/parts" class="button">Back to Parts</a>
 
     <script>
+        document.getElementById('angle').addEventListener('input', function() {
+            document.getElementById('angleValue').textContent = this.value;
+        });
+
         function testPart() {
             const partData = {
                 part_id: <%= part.id || 'null' %>,
                 type: 'servo',
-                angle: 90,
-                duration: 1000
+                angle: parseInt(document.getElementById('angle').value),
+                duration: parseInt(document.getElementById('duration').value),
+                gpioPin: parseInt(document.getElementById('gpioPin').value),
+                pwmFrequency: parseFloat(document.getElementById('pwmFrequency').value),
+                dutyCycle: parseFloat(document.getElementById('dutyCycle').value)
             };
 
             fetch('/parts/test', {
