@@ -60,6 +60,30 @@ const sceneController = {
         }
     },
 
+    editScene: async (req, res) => {
+        try {
+            const scene = await sceneService.getSceneById(req.params.id);
+            if (scene) {
+                const characters = await characterService.getAllCharacters();
+                const parts = await partService.getAllParts();
+                const sounds = await soundService.getAllSounds();
+                res.render('scene-form', { 
+                    title: 'Edit Scene', 
+                    scene, 
+                    action: `/scenes/${scene.id}`,
+                    characters,
+                    parts,
+                    sounds
+                });
+            } else {
+                res.status(404).send('Scene not found');
+            }
+        } catch (error) {
+            console.error('Error fetching scene for editing:', error);
+            res.status(500).send('An error occurred while fetching the scene for editing');
+        }
+    },
+
     createScene: async (req, res) => {
         try {
             const sceneData = {
