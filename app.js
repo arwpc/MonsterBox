@@ -9,8 +9,6 @@ const sceneRoutes = require('./routes/sceneRoutes');
 const characterRoutes = require('./routes/characterRoutes');
 const partRoutes = require('./routes/partRoutes');
 const soundRoutes = require('./routes/soundRoutes');
-const sensorRoutes = require('./routes/sensorRoutes');
-const activeModeRoutes = require('./routes/activeModeRoutes');
 
 // Basic Express setup
 app.use(express.json());
@@ -24,8 +22,6 @@ app.use('/scenes', sceneRoutes);
 app.use('/characters', characterRoutes);
 app.use('/parts', partRoutes);
 app.use('/sounds', soundRoutes);
-app.use('/sensors', sensorRoutes);
-app.use('/active-mode', activeModeRoutes);
 
 // Main menu route
 app.get('/', (req, res) => {

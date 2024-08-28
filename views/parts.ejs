@@ -64,7 +64,6 @@
                     <td>
                         <a href="/parts/<%= part.id %>/edit" class="button">Edit</a>
                         <button onclick="deletePart(<%= part.id %>)" class="button">Delete</button>
-                        <button onclick="testPart(<%= part.id %>, '<%= part.type %>')" class="button">Test</button>
                     </td>
                 </tr>
             <% }); %>
@@ -84,38 +83,6 @@
                         alert('Error deleting part: ' + xhr.status + ' ' + xhr.statusText);
                     });
             }
-        }
-
-        function testPart(id, type) {
-            let testData = {
-                part_id: id,
-                type: type
-            };
-
-            switch(type) {
-                case 'motor':
-                    testData.direction = 'forward';
-                    testData.speed = 50;
-                    testData.duration = 1000;
-                    break;
-                case 'light':
-                case 'led':
-                    testData.brightness = 50;
-                    break;
-                case 'servo':
-                    testData.angle = 90;
-                    testData.duration = 1000;
-                    break;
-            }
-
-            $.post('/parts/test', testData)
-                .done(function(response) {
-                    alert('Test completed: ' + response.message);
-                })
-                .fail(function(xhr, status, error) {
-                    console.error('Error details:', xhr.responseText);
-                    alert('Error testing part: ' + xhr.status + ' ' + xhr.statusText);
-                });
         }
     </script>
 </body>

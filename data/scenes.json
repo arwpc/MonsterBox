@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "character_id": 1,
+    "scene_name": "Awakens on your approach",
+    "steps": [
+      {
+        "type": "sensor",
+        "name": "Sense Badguy",
+        "part_id": "5",
+        "timeout": "30"
+      },
+      {
+        "type": "sound",
+        "name": "Dantos!",
+        "sound_id": "3"
+      }
+    ]
+  }
+]
