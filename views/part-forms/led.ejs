@@ -55,11 +55,10 @@
 
         function testPart() {
             const partData = {
-                part_id: <%= part.id || 'null' %>,
                 type: 'led',
+                gpioPin: parseInt(document.getElementById('gpioPin').value),
                 brightness: parseInt(document.getElementById('brightness').value),
-                duration: parseInt(document.getElementById('duration').value),
-                gpioPin: parseInt(document.getElementById('gpioPin').value)
+                duration: parseInt(document.getElementById('duration').value)
             };
 
             fetch('/parts/test', {
@@ -72,7 +71,7 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert('LED test successful');
+                    alert('LED test successful: ' + data.message);
                 } else {
                     alert('LED test failed: ' + data.message);
                 }
