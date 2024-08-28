@@ -2,18 +2,19 @@
   {
     "id": 1,
     "character_id": 1,
-    "scene_name": "Awakens on your approach",
+    "scene_name": "Lets make some noise",
     "steps": [
       {
-        "type": "sensor",
-        "name": "Sense Badguy",
-        "part_id": "5",
-        "timeout": "30"
+        "type": "sound",
+        "name": "Santos!",
+        "sound_id": "3",
+        "concurrent": "on"
       },
       {
         "type": "sound",
-        "name": "Dantos!",
-        "sound_id": "3"
+        "name": "good Evening sound",
+        "sound_id": "1",
+        "concurrent": "on"
       }
     ]
   }
