@@ -20,14 +20,10 @@ const getCharacterById = async (id) => {
     return characters.find(character => character.id === parseInt(id));
 };
 
-const getNextId = (characters) => {
-    return characters.length > 0 ? Math.max(...characters.map(c => c.id)) + 1 : 1;
-};
-
 const createCharacter = async (characterData) => {
     const characters = await getAllCharacters();
     const newCharacter = {
-        id: getNextId(characters),
+        id: characters.length > 0 ? Math.max(...characters.map(c => c.id)) + 1 : 1,
         ...characterData
     };
     characters.push(newCharacter);

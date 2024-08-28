@@ -60,7 +60,7 @@ const testMotor = async (motorData) => {
     console.log('Testing motor with data:', motorData);
     const { direction, speed, duration, directionPin, pwmPin } = motorData;
     const scriptPath = path.join(__dirname, '..', 'scripts', 'motor_control.py');
-    
+
     return new Promise((resolve, reject) => {
         const process = spawn('python3', [
             scriptPath,

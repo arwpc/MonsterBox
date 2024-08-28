@@ -159,7 +159,11 @@ const sceneController = {
                     break;
                 case 'sensor':
                     scriptPath = path.join(__dirname, '..', 'scripts', 'sensor_control.py');
-                    args = [step.timeout ? step.timeout.toString() : '30'];
+                    const sensorPart = await partService.getPartById(step.part_id);
+                    if (!sensorPart) {
+                        throw new Error('Sensor part not found');
+                    }
+                    args = [sensorPart.gpioPin.toString(), step.timeout ? step.timeout.toString() : '30'];
                     break;
                 default:
                     throw new Error('Unknown step type');
@@ -205,7 +209,7 @@ const sceneController = {
                 return res.status(404).json({ error: 'Scene not found' });
             }
 
-            const executeStepPromise = (step) => {
+            const executeStep = async (step) => {
                 return new Promise((resolve, reject) => {
                     this.executeStep({ body: step }, {
                         json: (result) => {
@@ -230,7 +234,7 @@ const sceneController = {
 
                 const step = scene.steps[currentIndex];
                 try {
-                    await executeStepPromise(step);
+                    await executeStep(step);
                     currentIndex++;
                     if (step.concurrent && currentIndex < scene.steps.length) {
                         executeNextStep(); // Start next step without waiting

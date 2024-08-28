@@ -14,7 +14,7 @@ def control_sensor(gpio_pin, timeout):
     GPIO.setup(gpio_pin, GPIO.IN)
 
     print(f"Monitoring sensor on GPIO pin {gpio_pin} for {timeout} seconds")
-    
+
     end_time = time.time() + float(timeout)
     while time.time() < end_time:
         if GPIO.input(gpio_pin):

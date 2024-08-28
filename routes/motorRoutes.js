@@ -1,67 +1,79 @@
 const express = require('express');
 const router = express.Router();
-const fs = require('fs').promises;
-const path = require('path');
-const { exec } = require('child_process');
+const partService = require('../services/partService');
+const characterService = require('../services/characterService');
 
-const settingsFile = path.join(__dirname, '..', 'motor_settings.json');
-
-async function getSettings() {
+router.get('/:id/edit', async (req, res) => {
     try {
-        const data = await fs.readFile(settingsFile, 'utf8');
-        return JSON.parse(data);
-    } catch (error) {
-        if (error.code === 'ENOENT') {
-            const defaultSettings = { dirPin: 18, pwmPin: 24 };
-            await saveSettings(defaultSettings);
-            return defaultSettings;
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            throw new Error('Invalid part ID');
         }
-        throw error;
-    }
-}
-
-async function saveSettings(settings) {
-    await fs.writeFile(settingsFile, JSON.stringify(settings, null, 2));
-}
-
-function controlMotor(direction, speed, duration, dirPin, pwmPin) {
-    return new Promise((resolve, reject) => {
-        const pythonScript = path.join(__dirname, '..', 'motor_control.py');
-        const command = `sudo python3 ${pythonScript} ${direction} ${speed} ${duration} ${dirPin} ${pwmPin}`;
-
-        exec(command, (error, stdout, stderr) => {
-            if (error) {
-                console.error(`Error: ${error.message}`);
-                return reject(error);
-            }
-            if (stderr) {
-                console.error(`stderr: ${stderr}`);
-                return reject(new Error(stderr));
-            }
-            console.log(`stdout: ${stdout}`);
-            resolve();
-        });
-    });
-}
-
-router.get('/', async (req, res) => {
-    const settings = await getSettings();
-    res.render('part-forms/motor-control', { title: 'Motor Control Panel', settings });
-});
-
-router.post('/save-settings', async (req, res) => {
-    const { dirPin, pwmPin } = req.body;
-    await saveSettings({ dirPin: parseInt(dirPin), pwmPin: parseInt(pwmPin) });
-    res.redirect('/motor');
-});
-
-router.post('/control-motor', async (req, res) => {
-    const { direction, speed, duration, directionPin, pwmPin } = req.body;
-    try {
-        await controlMotor(direction, parseInt(speed), parseInt(duration), parseInt(directionPin), parseInt(pwmPin));
-        res.sendStatus(200);
+        const part = await partService.getPartById(id);
+        const characters = await characterService.getAllCharacters();
+        const settings = { dirPin: part.directionPin, pwmPin: part.pwmPin };
+        res.render('part-forms/motor', { title: 'Edit Motor', action: `/parts/motor/${part.id}`, part, characters, settings });
     } catch (error) {
-        res.status(500).send(`Error controlling motor: ${error.message}`);
+        console.error('Error fetching motor:', error);
+        res.status(500).send('An error occurred while fetching the motor: ' + error.message);
+    }
+});
+
+router.post('/', async (req, res) => {
+    try {
+        const newMotor = {
+            name: req.body.name,
+            type: 'motor',
+            characterId: parseInt(req.body.characterId),
+            directionPin: parseInt(req.body.directionPin) || 18,
+            pwmPin: parseInt(req.body.pwmPin) || 13
+        };
+        const createdMotor = await partService.createPart(newMotor);
+        console.log('Created motor:', createdMotor);
+        res.redirect('/parts');
+    } catch (error) {
+        console.error('Error creating motor:', error);
+        res.status(500).send('An error occurred while creating the motor: ' + error.message);
+    }
+});
+
+router.post('/:id', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            throw new Error('Invalid part ID');
+        }
+        const updatedMotor = {
+            id: id,
+            name: req.body.name,
+            type: 'motor',
+            characterId: parseInt(req.body.characterId),
+            directionPin: parseInt(req.body.directionPin) || 18,
+            pwmPin: parseInt(req.body.pwmPin) || 13
+        };
+        const result = await partService.updatePart(id, updatedMotor);
+        console.log('Updated motor:', result);
+        res.redirect('/parts');
+    } catch (error) {
+        console.error('Error updating motor:', error);
+        res.status(500).send('An error occurred while updating the motor: ' + error.message);
+    }
+});
+
+router.post('/test', async (req, res) => {
+    try {
+        const { direction, speed, duration, directionPin, pwmPin } = req.body;
+        const result = await partService.testMotor({
+            direction,
+            speed: parseInt(speed),
+            duration: parseInt(duration),
+            directionPin: parseInt(directionPin),
+            pwmPin: parseInt(pwmPin)
+        });
+        res.json({ success: true, message: 'Motor tested successfully', result });
+    } catch (error) {
+        console.error('Error testing motor:', error);
+        res.status(500).json({ success: false, message: 'An error occurred while testing the motor', error: error.message });
     }
 });
 

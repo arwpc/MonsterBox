@@ -15,6 +15,8 @@ def play_sound(file_path):
     except Exception as e:
         print(f"Error during sound playback: {e}")
         sys.exit(1)
+    finally:
+        pygame.mixer.quit()  # Release the audio device
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
