@@ -5,113 +5,155 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
     <link rel="stylesheet" href="/css/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 <body>
     <h1><%= title %></h1>
-
-    <form id="motorForm" action="<%= action %>" method="POST">
+    <form action="<%= action %>" method="POST">
         <input type="hidden" name="type" value="motor">
         <% if (part.id) { %>
             <input type="hidden" name="id" value="<%= part.id %>">
         <% } %>
-
-        <label for="name">Motor Name:</label>
-        <input type="text" id="name" name="name" value="<%= part.name || '' %>" required>
-
-        <label for="characterId">Character:</label>
-        <select id="characterId" name="characterId" required>
-            <% characters.forEach(function(character) { %>
-                <option value="<%= character.id %>" <%= (part.characterId === character.id) ? 'selected' : '' %>>
-                    <%= character.char_name %>
-                </option>
-            <% }); %>
-        </select>
-
-        <label for="directionPin">Direction Pin:</label>
-        <input type="number" id="directionPin" name="directionPin" value="<%= part.directionPin || settings.dirPin %>" required>
-
-        <label for="pwmPin">PWM Pin:</label>
-        <input type="number" id="pwmPin" name="pwmPin" value="<%= part.pwmPin || settings.pwmPin %>" required>
-
-        <button type="submit">Save Motor</button>
+        <div>
+            <label for="name">Part Name:</label>
+            <input type="text" id="name" name="name" value="<%= part.name || '' %>" required>
+        </div>
+        <div>
+            <label for="characterId">Character:</label>
+            <select id="characterId" name="characterId" required>
+                <% characters.forEach(function(character) { %>
+                    <option value="<%= character.id %>" <%= (part.characterId === character.id) ? 'selected' : '' %>>
+                        <%= character.char_name %>
+                    </option>
+                <% }); %>
+            </select>
+        </div>
+        <div>
+            <label for="directionPin">Direction GPIO Pin:</label>
+            <input type="number" id="directionPin" name="directionPin" value="<%= part.directionPin || 18 %>" required>
+        </div>
+        <div>
+            <label for="pwmPin">PWM Pin:</label>
+            <input type="number" id="pwmPin" name="pwmPin" value="<%= part.pwmPin || 13 %>" required>
+        </div>
+        <button type="submit">Save Part</button>
     </form>
 
-    <h2>Motor Control</h2>
-    <div id="controlPanel">
-        <div class="direction-control">
-            <label>Direction:</label>
-            <div class="radio-group">
-                <input type="radio" id="forward" name="direction" value="forward" checked>
-                <label for="forward">Forward</label>
-                <input type="radio" id="backward" name="direction" value="backward">
-                <label for="backward">Backward</label>
-            </div>
+    <div id="motorTest">
+        <h2>Test Motor</h2>
+        <div>
+            <label for="direction">Direction:</label>
+            <select id="direction">
+                <option value="forward">Forward</option>
+                <option value="backward">Backward</option>
+            </select>
         </div>
-
-        <label for="speed">Speed:</label>
-        <input type="range" id="speed" min="0" max="100" value="50">
-        <span id="speedValue">50</span>
-
-        <label for="duration">Duration (ms):</label>
-        <input type="range" id="duration" min="100" max="5000" value="1000">
-        <span id="durationValue">1000</span>
-
-        <button id="runMotor">Test Motor</button>
+        <div>
+            <label for="speed">Speed:</label>
+            <input type="range" id="speed" min="0" max="100" value="50">
+            <span id="speedValue">50</span>
+        </div>
+        <div>
+            <label for="duration">Duration (ms):</label>
+            <input type="range" id="duration" min="100" max="5000" value="1000" step="100">
+            <span id="durationValue">1000</span>
+        </div>
+        <button onclick="testPart()">Test Motor</button>
+        <button onclick="openOSTestForm()">OS Test</button>
     </div>
 
-    <div id="testResult"></div>
+    <div id="osTestForm" style="display: none;">
+        <h2>OS Test</h2>
+        <select id="osTestPart">
+            <!-- Options will be populated dynamically -->
+        </select>
+        <textarea id="osTestCommand" rows="4" cols="50"></textarea>
+        <button onclick="runOSTest()">Run</button>
+        <div id="osTestResult"></div>
+    </div>
 
     <a href="/parts" class="button">Back to Parts</a>
 
     <script>
-        const speedSlider = document.getElementById('speed');
-        const speedValue = document.getElementById('speedValue');
-        const durationSlider = document.getElementById('duration');
-        const durationValue = document.getElementById('durationValue');
-        const runMotorButton = document.getElementById('runMotor');
-        const testResult = document.getElementById('testResult');
+        // Update speed and duration values
+        document.getElementById('speed').addEventListener('input', function() {
+            document.getElementById('speedValue').textContent = this.value;
+        });
+        document.getElementById('duration').addEventListener('input', function() {
+            document.getElementById('durationValue').textContent = this.value;
+        });
 
-        speedSlider.oninput = function() {
-            speedValue.textContent = this.value;
-        }
-
-        durationSlider.oninput = function() {
-            durationValue.textContent = this.value;
-        }
-
-        runMotorButton.onclick = function(e) {
-            e.preventDefault();
-            const direction = document.querySelector('input[name="direction"]:checked').value;
-            const speed = speedSlider.value;
-            const duration = durationSlider.value;
-            const directionPin = document.getElementById('directionPin').value;
-            const pwmPin = document.getElementById('pwmPin').value;
-
-            const testData = {
+        function testPart() {
+            const partId = document.querySelector('input[name="id"]')?.value;
+            const partData = {
+                id: partId,
                 type: 'motor',
-                direction: direction,
-                speed: parseInt(speed),
-                duration: parseInt(duration),
-                directionPin: parseInt(directionPin),
-                pwmPin: parseInt(pwmPin)
+                direction: document.getElementById('direction').value,
+                speed: parseInt(document.getElementById('speed').value),
+                duration: parseInt(document.getElementById('duration').value),
+                directionPin: parseInt(document.getElementById('directionPin').value),
+                pwmPin: parseInt(document.getElementById('pwmPin').value)
             };
 
-            console.log('Sending test data:', testData);
-
-            axios.post('/parts/test', testData)
-            .then(function (response) {
-                console.log('Motor test response:', response.data);
-                testResult.innerHTML = `<p>Test Result: ${response.data.message}</p>`;
-                if (response.data.result && response.data.result.output) {
-                    testResult.innerHTML += `<p>Output: ${response.data.result.output}</p>`;
-                }
-                alert('Motor test successful!');
+            fetch('/parts/test', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(partData)
             })
-            .catch(function (error) {
-                console.error('Error testing motor:', error);
-                testResult.innerHTML = `<p>Error: ${error.response ? error.response.data.error : error.message}</p>`;
-                alert('Error testing motor. Check console for details.');
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Motor test successful');
+                } else {
+                    alert('Motor test failed: ' + data.message);
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                alert('An error occurred while testing the motor. Check console for details.');
+            });
+        }
+
+        function openOSTestForm() {
+            document.getElementById('osTestForm').style.display = 'block';
+            fetchAllParts();
+        }
+
+        function fetchAllParts() {
+            fetch('/parts/all')
+                .then(response => response.json())
+                .then(parts => {
+                    const select = document.getElementById('osTestPart');
+                    select.innerHTML = '';
+                    parts.forEach(part => {
+                        const option = document.createElement('option');
+                        option.value = part.id;
+                        option.textContent = `${part.name} (${part.type})`;
+                        select.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error fetching parts:', error));
+        }
+
+        function runOSTest() {
+            const partId = document.getElementById('osTestPart').value;
+            const command = document.getElementById('osTestCommand').value;
+
+            fetch('/parts/os-test', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ partId, command })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('osTestResult').textContent = data.output;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('osTestResult').textContent = 'An error occurred during the OS test.';
             });
         }
     </script>

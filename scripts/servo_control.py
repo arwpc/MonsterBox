@@ -8,7 +8,7 @@ def setup_gpio(pin):
     return GPIO.PWM(pin, 50)  # 50 Hz PWM frequency
 
 def angle_to_duty_cycle(angle):
-    return 2 + (angle / 18)  # Maps 0-180 degrees to 2-12% duty cycle
+    return 2.5 + (angle / 18)  # Maps 0-180 degrees to 2.5-12.5% duty cycle
 
 def control_servo(pin, angle, frequency, duty_cycle, duration):
     pwm = setup_gpio(pin)
