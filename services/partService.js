@@ -18,7 +18,7 @@ const getAllParts = async () => {
 
 const getPartById = async (id) => {
     const parts = await getAllParts();
-    const part = parts.find(part => part.id === id);
+    const part = parts.find(part => part.id === parseInt(id));
     if (!part) {
         throw new Error(`Part not found with id: ${id}`);
     }

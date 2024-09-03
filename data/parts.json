@@ -37,5 +37,14 @@
     "sensorType": "motion",
     "gpioPin": 16,
     "active": true
+  },
+  {
+    "id": 6,
+    "name": "Head",
+    "type": "servo",
+    "characterId": 1,
+    "gpioPin": 6,
+    "pwmFrequency": 50,
+    "dutyCycle": 7.5
   }
 ]

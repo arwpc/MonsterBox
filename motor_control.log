@@ -1,0 +1,47 @@
+2024-09-03 15:31:10,811 - ERROR - Incorrect number of arguments
+2024-09-03 15:31:41,325 - ERROR - Incorrect number of arguments
+2024-09-03 15:31:47,280 - ERROR - Incorrect number of arguments
+2024-09-03 15:31:47,838 - ERROR - Incorrect number of arguments
+2024-09-03 15:31:48,055 - ERROR - Incorrect number of arguments
+2024-09-03 15:31:48,261 - ERROR - Incorrect number of arguments
+2024-09-03 15:31:48,493 - ERROR - Incorrect number of arguments
+2024-09-03 15:31:52,794 - ERROR - Incorrect number of arguments
+2024-09-03 15:31:54,125 - ERROR - Incorrect number of arguments
+2024-09-03 15:31:54,409 - ERROR - Incorrect number of arguments
+2024-09-03 15:31:54,655 - ERROR - Incorrect number of arguments
+2024-09-03 15:31:55,002 - ERROR - Incorrect number of arguments
+2024-09-03 15:31:57,541 - ERROR - Incorrect number of arguments
+2024-09-03 15:40:01,296 - INFO - Controlling motor: direction=forward, speed=100, duration=1000, dir_pin=18, pwm_pin=13
+2024-09-03 15:40:02,297 - INFO - GPIO cleanup completed
+2024-09-03 15:40:08,625 - INFO - Controlling motor: direction=forward, speed=100, duration=1000, dir_pin=18, pwm_pin=13
+2024-09-03 15:40:09,626 - INFO - GPIO cleanup completed
+2024-09-03 15:40:35,873 - INFO - Controlling motor: direction=forward, speed=100, duration=1000, dir_pin=23, pwm_pin=12
+2024-09-03 15:40:36,874 - INFO - GPIO cleanup completed
+2024-09-03 15:40:44,596 - INFO - Controlling motor: direction=backward, speed=100, duration=1000, dir_pin=23, pwm_pin=12
+2024-09-03 15:40:45,597 - INFO - GPIO cleanup completed
+2024-09-03 15:40:49,790 - INFO - Controlling motor: direction=backward, speed=100, duration=1000, dir_pin=23, pwm_pin=12
+2024-09-03 15:40:50,799 - INFO - GPIO cleanup completed
+2024-09-03 15:50:27,761 - INFO - Controlling motor: direction=foward, speed=100, duration=1000, dir_pin=18, pwm_pin=13
+2024-09-03 15:50:28,762 - INFO - GPIO cleanup completed
+2024-09-03 15:51:06,862 - INFO - Controlling motor: direction=<direction>, speed=<speed>, duration=<duration>, dir_pin=18, pwm_pin=13
+2024-09-03 15:51:06,863 - ERROR - Error controlling motor: invalid literal for int() with base 10: '<speed>'
+2024-09-03 15:51:06,863 - ERROR - Error: invalid literal for int() with base 10: '<speed>'
+2024-09-03 15:51:06,863 - INFO - GPIO cleanup completed
+2024-09-03 15:51:24,270 - INFO - Controlling motor: direction=backward, speed=100, duration=1000, dir_pin=18, pwm_pin=13
+2024-09-03 15:51:25,271 - INFO - GPIO cleanup completed
+2024-09-03 15:59:52,561 - INFO - Controlling motor: direction=foward, speed=100, duration=1000, dir_pin=23, pwm_pin=12
+2024-09-03 15:59:53,562 - INFO - GPIO cleanup completed
+2024-09-03 16:00:03,895 - INFO - Controlling motor: direction=backward, speed=100, duration=1000, dir_pin=23, pwm_pin=12
+2024-09-03 16:00:04,896 - INFO - GPIO cleanup completed
+2024-09-03 16:00:09,116 - INFO - Controlling motor: direction=backward, speed=100, duration=1000, dir_pin=23, pwm_pin=12
+2024-09-03 16:00:10,117 - INFO - GPIO cleanup completed
+2024-09-03 16:00:17,092 - INFO - Controlling motor: direction=forward, speed=100, duration=1000, dir_pin=23, pwm_pin=12
+2024-09-03 16:00:18,093 - INFO - GPIO cleanup completed
+2024-09-03 16:00:29,229 - INFO - Controlling motor: direction=backward, speed=50, duration=3000, dir_pin=23, pwm_pin=12
+2024-09-03 16:00:32,230 - INFO - GPIO cleanup completed
+2024-09-03 16:00:36,097 - INFO - Controlling motor: direction=backward, speed=50, duration=3000, dir_pin=23, pwm_pin=12
+2024-09-03 16:00:39,098 - INFO - GPIO cleanup completed
+2024-09-03 16:00:44,723 - INFO - Controlling motor: direction=backward, speed=50, duration=6000, dir_pin=23, pwm_pin=12
+2024-09-03 16:00:50,724 - INFO - GPIO cleanup completed
+2024-09-03 16:23:30,337 - INFO - Controlling motor: direction=forward, speed=100, duration=4000, dir_pin=18, pwm_pin=13
+2024-09-03 16:23:34,338 - INFO - GPIO cleanup completed
