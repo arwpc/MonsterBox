@@ -17,6 +17,9 @@ const getAllParts = async () => {
 };
 
 const getPartById = async (id) => {
+    if (!id) {
+        throw new Error('Part ID is required');
+    }
     const parts = await getAllParts();
     const part = parts.find(part => part.id === parseInt(id));
     if (!part) {
@@ -38,18 +41,18 @@ const createPart = async (partData) => {
 
 const updatePart = async (id, partData) => {
     const parts = await getAllParts();
-    const index = parts.findIndex(part => part.id === id);
+    const index = parts.findIndex(part => part.id === parseInt(id));
     if (index === -1) {
         throw new Error(`Part not found with id: ${id}`);
     }
-    parts[index] = { ...parts[index], ...partData, id };
+    parts[index] = { ...parts[index], ...partData, id: parseInt(id) };
     await fs.writeFile(dataPath, JSON.stringify(parts, null, 2));
     return parts[index];
 };
 
 const deletePart = async (id) => {
     const parts = await getAllParts();
-    const filteredParts = parts.filter(part => part.id !== id);
+    const filteredParts = parts.filter(part => part.id !== parseInt(id));
     if (filteredParts.length === parts.length) {
         throw new Error(`Part not found with id: ${id}`);
     }

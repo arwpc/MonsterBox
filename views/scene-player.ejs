@@ -41,7 +41,7 @@
 
     <script>
         $(document).ready(function() {
-            let currentStep = 0;  // Start at the first step
+            let currentStep = 0;
             const sceneData = <%- JSON.stringify(scene) %>;
             const steps = sceneData.steps || [];
 
@@ -52,23 +52,31 @@
                 console.log(message);
             }
 
-            function executeStep(step) {
+            async function executeStep(step) {
                 return new Promise((resolve, reject) => {
-                    logMessage(`Executing step: ${step.name}`);
-                    $.ajax({
-                        url: `/scenes/${sceneData.id}/execute-step`,
-                        method: 'POST',
-                        data: JSON.stringify(step),
-                        contentType: 'application/json',
-                        success: function(response) {
-                            logMessage(`Step ${step.name} executed successfully`);
-                            resolve(response);
-                        },
-                        error: function(xhr, status, error) {
-                            logMessage(`Error executing step ${step.name}: ${error}`);
-                            reject(error);
-                        }
-                    });
+                    if (step.type === 'pause') {
+                        logMessage(`Pausing for ${step.duration}ms`);
+                        setTimeout(() => {
+                            logMessage(`Pause complete: ${step.name}`);
+                            resolve({ success: true, message: 'Pause completed' });
+                        }, step.duration);
+                    } else {
+                        logMessage(`Executing step: ${step.name}`);
+                        $.ajax({
+                            url: `/scenes/${sceneData.id}/execute-step`,
+                            method: 'POST',
+                            data: JSON.stringify(step),
+                            contentType: 'application/json',
+                            success: function(response) {
+                                logMessage(`Step ${step.name} executed successfully`);
+                                resolve(response);
+                            },
+                            error: function(xhr, status, error) {
+                                logMessage(`Error executing step ${step.name}: ${error}`);
+                                reject(error);
+                            }
+                        });
+                    }
                 });
             }
 
@@ -95,30 +103,37 @@
                 runFromCurrentStep();
             });
 
-            function runFromCurrentStep() {
-                if (currentStep < steps.length) {
-                    executeStep(steps[currentStep])
-                        .then(() => {
-                            currentStep++;
-                            if (steps[currentStep - 1].concurrent || currentStep === steps.length) {
-                                runFromCurrentStep();
-                            } else {
-                                setTimeout(runFromCurrentStep, 1000);
-                            }
-                        })
-                        .catch((error) => {
-                            logMessage(`Error in step execution: ${error}`);
-                        });
-                } else {
-                    logMessage("Scene execution completed");
+            async function runFromCurrentStep() {
+                const concurrentPromises = [];
+                
+                for (let i = currentStep; i < steps.length; i++) {
+                    const step = steps[i];
+                    
+                    if (step.concurrent) {
+                        concurrentPromises.push(executeStep(step));
+                    } else {
+                        if (concurrentPromises.length > 0) {
+                            await Promise.all(concurrentPromises);
+                            concurrentPromises.length = 0;
+                        }
+                        await executeStep(step);
+                    }
+                    
+                    currentStep = i + 1;
                 }
+
+                if (concurrentPromises.length > 0) {
+                    await Promise.all(concurrentPromises);
+                }
+
+                logMessage("Scene execution completed");
             }
 
             // Initial scene overview
             logMessage(`Scene Overview: "${sceneData.scene_name}"`);
             logMessage(`Total steps: ${steps.length}`);
             steps.forEach((step, index) => {
-                logMessage(`Step ${index + 1}: ${step.name} (Type: ${step.type})`);
+                logMessage(`Step ${index + 1}: ${step.name} (Type: ${step.type}${step.concurrent ? ', Concurrent' : ''})`);
             });
         });
     </script>

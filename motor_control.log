@@ -45,3 +45,29 @@
 2024-09-03 16:00:50,724 - INFO - GPIO cleanup completed
 2024-09-03 16:23:30,337 - INFO - Controlling motor: direction=forward, speed=100, duration=4000, dir_pin=18, pwm_pin=13
 2024-09-03 16:23:34,338 - INFO - GPIO cleanup completed
+2024-09-03 16:29:25,491 - INFO - Controlling motor: direction=forward, speed=50, duration=1000, dir_pin=18, pwm_pin=24
+2024-09-03 16:29:26,492 - INFO - GPIO cleanup completed
+2024-09-03 16:32:03,362 - INFO - Controlling motor: direction=forward, speed=50, duration=1000, dir_pin=18, pwm_pin=24
+2024-09-03 16:32:04,363 - INFO - GPIO cleanup completed
+2024-09-03 16:41:06,305 - INFO - Controlling motor: direction=forward, speed=100, duration=3000, dir_pin=18, pwm_pin=13
+2024-09-03 16:41:09,306 - INFO - GPIO cleanup completed
+2024-09-03 16:46:02,446 - INFO - Controlling motor: direction=forward, speed=50, duration=1000, dir_pin=18, pwm_pin=13
+2024-09-03 16:46:03,447 - INFO - GPIO cleanup completed
+2024-09-03 16:46:11,756 - INFO - Controlling motor: direction=forward, speed=100, duration=500, dir_pin=18, pwm_pin=13
+2024-09-03 16:46:12,257 - INFO - GPIO cleanup completed
+2024-09-03 16:54:18,819 - INFO - Controlling motor: direction=forward, speed=100, duration=4099, dir_pin=18, pwm_pin=13
+2024-09-03 16:54:22,920 - INFO - GPIO cleanup completed
+2024-09-03 17:10:52,620 - INFO - Controlling motor: direction=forward, speed=100, duration=4099, dir_pin=18, pwm_pin=13
+2024-09-03 17:10:56,720 - INFO - GPIO cleanup completed
+2024-09-03 17:29:16,490 - INFO - Controlling motor: direction=forward, speed=100, duration=4099, dir_pin=18, pwm_pin=13
+2024-09-03 17:29:20,591 - INFO - GPIO cleanup completed
+2024-09-03 17:30:09,685 - INFO - Controlling motor: direction=forward, speed=100, duration=4099, dir_pin=18, pwm_pin=13
+2024-09-03 17:30:13,785 - INFO - GPIO cleanup completed
+2024-09-03 17:31:14,450 - INFO - Controlling motor: direction=forward, speed=50, duration=1000, dir_pin=18, pwm_pin=13
+2024-09-03 17:31:15,451 - INFO - GPIO cleanup completed
+2024-09-03 17:36:27,877 - INFO - Controlling motor: direction=forward, speed=50, duration=1000, dir_pin=18, pwm_pin=13
+2024-09-03 17:36:28,878 - INFO - GPIO cleanup completed
+2024-09-03 17:36:59,490 - INFO - Controlling motor: direction=forward, speed=50, duration=1000, dir_pin=18, pwm_pin=13
+2024-09-03 17:37:00,492 - INFO - GPIO cleanup completed
+2024-09-03 17:37:32,541 - INFO - Controlling motor: direction=forward, speed=100, duration=4099, dir_pin=18, pwm_pin=13
+2024-09-03 17:37:36,642 - INFO - GPIO cleanup completed

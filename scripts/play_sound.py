@@ -1,27 +1,46 @@
 import sys
 import pygame
+import threading
+import time
 
-def play_sound(file_path):
+def play_sound(file_path, concurrent=False):
     try:
         pygame.mixer.init()
-        print(f"Playing sound from file: {file_path}")
         pygame.mixer.music.load(file_path)
+        print(f"Playing sound from file: {file_path}")
         pygame.mixer.music.play()
 
-        while pygame.mixer.music.get_busy():
-            pygame.time.Clock().tick(10)
-
-        print("Sound playback finished.")
+        if not concurrent:
+            while pygame.mixer.music.get_busy():
+                pygame.time.Clock().tick(10)
+            print("Sound playback finished.")
+        else:
+            print("Non-blocking sound playback initiated.")
+    except pygame.error as e:
+        print(f"Pygame error during sound playback: {e}")
     except Exception as e:
         print(f"Error during sound playback: {e}")
-        sys.exit(1)
     finally:
-        pygame.mixer.quit()  # Release the audio device
+        if not concurrent:
+            pygame.mixer.quit()
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python play_sound.py <file_path>")
+    if len(sys.argv) < 2 or len(sys.argv) > 3:
+        print("Usage: python play_sound.py <file_path> [concurrent]")
         sys.exit(1)
 
     file_path = sys.argv[1]
-    play_sound(file_path)
+    concurrent = len(sys.argv) == 3 and sys.argv[2].lower() == 'true'
+
+    if concurrent:
+        threading.Thread(target=play_sound, args=(file_path, concurrent), daemon=True).start()
+        time.sleep(1)  # Give the thread a moment to start
+    else:
+        play_sound(file_path, concurrent)
+
+    if concurrent:
+        print("Main thread continuing execution.")
+    else:
+        print("Sound playback script completed.")
+
+    sys.exit(0)
