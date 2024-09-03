@@ -60,30 +60,6 @@ const sceneController = {
         }
     },
 
-    editScene: async (req, res) => {
-        try {
-            const scene = await sceneService.getSceneById(req.params.id);
-            if (scene) {
-                const characters = await characterService.getAllCharacters();
-                const parts = await partService.getAllParts();
-                const sounds = await soundService.getAllSounds();
-                res.render('scene-form', { 
-                    title: 'Edit Scene', 
-                    scene, 
-                    action: `/scenes/${scene.id}`,
-                    characters,
-                    parts,
-                    sounds
-                });
-            } else {
-                res.status(404).send('Scene not found');
-            }
-        } catch (error) {
-            console.error('Error fetching scene for editing:', error);
-            res.status(500).send('An error occurred while fetching the scene for editing');
-        }
-    },
-
     createScene: async (req, res) => {
         try {
             const sceneData = {
@@ -159,25 +135,32 @@ const sceneController = {
             try {
                 switch(step.type) {
                     case 'motor':
-                        scriptPath = path.join(__dirname, '..', 'scripts', 'motor_control.py');
-                        args = [
-                            step.direction || 'forward',
-                            step.speed ? step.speed.toString() : '50',
-                            step.duration ? step.duration.toString() : '1000',
-                            step.directionPin ? step.directionPin.toString() : '18',
-                            step.pwmPin ? step.pwmPin.toString() : '24'
-                        ];
-                        break;
                     case 'light':
                     case 'led':
-                        scriptPath = path.join(__dirname, '..', 'scripts', 'light_control.py');
-                        args = [
-                            step.gpioPin ? step.gpioPin.toString() : '0',
-                            step.state || 'on',
-                            step.duration ? step.duration.toString() : '1000'
-                        ];
-                        if (step.type === 'led') {
-                            args.push(step.brightness ? step.brightness.toString() : '100');
+                    case 'sensor':
+                        const part = await partService.getPartById(step.part_id);
+                        if (step.type === 'motor') {
+                            scriptPath = path.join(__dirname, '..', 'scripts', 'motor_control.py');
+                            args = [
+                                step.direction || 'forward',
+                                step.speed ? step.speed.toString() : '50',
+                                step.duration ? step.duration.toString() : '1000',
+                                part.directionPin.toString(),
+                                part.pwmPin.toString()
+                            ];
+                        } else if (step.type === 'light' || step.type === 'led') {
+                            scriptPath = path.join(__dirname, '..', 'scripts', 'light_control.py');
+                            args = [
+                                part.gpioPin.toString(),
+                                step.state || 'on',
+                                step.duration ? step.duration.toString() : '1000'
+                            ];
+                            if (step.type === 'led') {
+                                args.push(step.brightness ? step.brightness.toString() : '100');
+                            }
+                        } else if (step.type === 'sensor') {
+                            scriptPath = path.join(__dirname, '..', 'scripts', 'sensor_control.py');
+                            args = [part.gpioPin.toString(), step.timeout ? step.timeout.toString() : '30'];
                         }
                         break;
                     case 'sound':
@@ -187,11 +170,14 @@ const sceneController = {
                             throw new Error('Sound file not found');
                         }
                         args = [path.join(__dirname, '..', 'public', 'sounds', sound.filename)];
+                        if (step.concurrent) {
+                            args.push('true');
+                        }
                         break;
-                    case 'sensor':
-                        scriptPath = path.join(__dirname, '..', 'scripts', 'sensor_control.py');
-                        args = [step.gpioPin.toString(), step.timeout ? step.timeout.toString() : '30'];
-                        break;
+                    case 'pause':
+                        await new Promise(resolve => setTimeout(resolve, parseInt(step.duration) || 1000));
+                        resolve({ success: true, message: 'Pause completed' });
+                        return;
                     default:
                         throw new Error('Unknown step type');
                 }
@@ -215,7 +201,11 @@ const sceneController = {
                 process.on('close', (code) => {
                     console.log(`child process exited with code ${code}`);
                     if (code === 0) {
-                        resolve({ success: true, message: 'Step executed successfully', stdout, stderr });
+                        if (step.type === 'sound' && step.concurrent) {
+                            resolve({ success: true, message: 'Concurrent sound playback initiated', stdout, stderr });
+                        } else {
+                            resolve({ success: true, message: 'Step executed successfully', stdout, stderr });
+                        }
                     } else {
                         reject(new Error(`Step execution failed with code ${code}`));
                     }
@@ -240,7 +230,7 @@ const sceneController = {
                 let concurrentPromises = [];
 
                 for (const step of scene.steps) {
-                    if (step.concurrent === 'on') {
+                    if (step.concurrent) {
                         concurrentPromises.push(sceneController._executeStep(step));
                     } else {
                         if (concurrentPromises.length > 0) {

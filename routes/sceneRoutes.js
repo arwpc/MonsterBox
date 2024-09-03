@@ -5,7 +5,7 @@ const sceneController = require('../controllers/sceneController');
 router.get('/', sceneController.getAllScenes);
 router.get('/new', sceneController.newScene);
 router.get('/:id', sceneController.getSceneById);
-router.get('/:id/edit', sceneController.editScene); // Add this line
+router.get('/:id/edit', sceneController.getSceneById); // Using getSceneById for edit as well
 router.post('/', sceneController.createScene);
 router.post('/:id', sceneController.updateScene);
 router.delete('/:id', sceneController.deleteScene);

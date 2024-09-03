@@ -5,6 +5,14 @@
     "scene_name": "Lets make some noise",
     "steps": [
       {
+        "type": "motor",
+        "name": "Arm Up",
+        "part_id": "1",
+        "duration": "1000",
+        "direction": "forward",
+        "speed": "50"
+      },
+      {
         "type": "sound",
         "name": "Santos!",
         "sound_id": "3",
@@ -12,9 +20,58 @@
       },
       {
         "type": "sound",
-        "name": "good Evening sound",
+        "name": "good even",
+        "sound_id": "1"
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "character_id": 1,
+    "scene_name": "Oh damn! Dogs!",
+    "steps": [
+      {
+        "type": "sound",
+        "name": "Its raining again",
         "sound_id": "1",
         "concurrent": "on"
+      },
+      {
+        "type": "led",
+        "name": "Eyes On",
+        "part_id": "4",
+        "duration": "1000",
+        "state": "on",
+        "brightness": "30"
+      },
+      {
+        "type": "led",
+        "name": "E3",
+        "part_id": "4",
+        "duration": "1000",
+        "state": "on",
+        "brightness": "80"
+      },
+      {
+        "type": "led",
+        "name": "e4",
+        "part_id": "4",
+        "duration": "1000",
+        "state": "on",
+        "brightness": "100"
+      },
+      {
+        "type": "motor",
+        "name": "sieg",
+        "part_id": "1",
+        "duration": "4099",
+        "direction": "forward",
+        "speed": "100"
+      },
+      {
+        "type": "sound",
+        "name": "Santos",
+        "sound_id": "3"
       }
     ]
   }
