@@ -1,91 +1,5 @@
 [
   {
-    "id": 1,
-    "character_id": 1,
-    "scene_name": "Lets make some noise",
-    "steps": [
-      {
-        "type": "sound",
-        "name": "Background Sounds",
-        "sound_id": "2",
-        "concurrent": "on"
-      },
-      {
-        "type": "motor",
-        "name": "Arm Up",
-        "part_id": "1",
-        "duration": "1000",
-        "direction": "forward",
-        "speed": "50"
-      },
-      {
-        "type": "sound",
-        "name": "good even",
-        "sound_id": "1"
-      },
-      {
-        "type": "pause",
-        "name": "Pausing",
-        "duration": "5000"
-      },
-      {
-        "type": "sound",
-        "name": "good even 2",
-        "sound_id": "1"
-      }
-    ]
-  },
-  {
-    "id": 2,
-    "character_id": 1,
-    "scene_name": "Oh damn! Dogs!",
-    "steps": [
-      {
-        "type": "sound",
-        "name": "Its raining again",
-        "sound_id": "1",
-        "concurrent": "on"
-      },
-      {
-        "type": "led",
-        "name": "Eyes On",
-        "part_id": "4",
-        "duration": "1000",
-        "state": "on",
-        "brightness": "30"
-      },
-      {
-        "type": "led",
-        "name": "E3",
-        "part_id": "4",
-        "duration": "1000",
-        "state": "on",
-        "brightness": "80"
-      },
-      {
-        "type": "led",
-        "name": "e4",
-        "part_id": "4",
-        "duration": "1000",
-        "state": "on",
-        "brightness": "100"
-      },
-      {
-        "type": "motor",
-        "name": "sieg",
-        "part_id": "1",
-        "duration": "4099",
-        "direction": "forward",
-        "speed": "100"
-      },
-      {
-        "type": "sound",
-        "name": "Santos",
-        "sound_id": "3"
-      }
-    ]
-  },
-  {
     "id": 3,
     "character_id": 1,
     "scene_name": "Just Santos",
@@ -102,6 +16,33 @@
         "duration": "2000",
         "direction": "backward",
         "speed": "50"
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "character_id": 1,
+    "scene_name": "Big Final Test",
+    "steps": [
+      {
+        "type": "sound",
+        "name": "First Backgrouhnd Sound",
+        "sound_id": "2",
+        "concurrent": "on"
+      },
+      {
+        "type": "sound",
+        "name": "santos",
+        "sound_id": "3",
+        "concurrent": "on"
+      },
+      {
+        "type": "led",
+        "name": "Hey Asshole!",
+        "part_id": "4",
+        "duration": "5000",
+        "state": "on",
+        "brightness": "100"
       }
     ]
   }
