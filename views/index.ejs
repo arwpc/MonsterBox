@@ -6,10 +6,66 @@
     <title>MonsterBox Control Panel</title>
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        h1 {
+            font-family: 'Creepster', cursive;
+            font-size: 3em;
+            margin: 0;
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+        }
+        main {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        nav {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .button {
+            display: inline-block;
+            background-color: #003300;
+            color: #00ff00;
+            padding: 10px 15px;
+            margin: 10px;
+            border: 1px solid #00ff00;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 1.2em;
+            width: 200px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .button:hover {
+            background-color: #004400;
+            box-shadow: 0 0 10px #00ff00;
+        }
+        footer {
+            margin-top: 20px;
+            text-align: center;
+            font-style: italic;
+        }
+    </style>
 </head>
 <body>
     <header>
-        <h1>MonsterBox(tm)</h1>
+        <h1>MonsterBox™</h1>
     </header>
     <main>
         <h2>Welcome to the MonsterBox Control Panel</h2>
@@ -17,13 +73,14 @@
     </main>
 
     <nav>
-        <ul>
-            <li><a href="/scenes">Scenes</a></li>
-            <li><a href="/characters">Characters</a></li>
-            <li><a href="/parts">Parts</a></li>
-            <li><a href="/sounds">Sounds</a></li>
-        </ul>
+        <a href="/scenes" class="button">Scenes</a>
+        <a href="/characters" class="button">Characters</a>
+        <a href="/parts" class="button">Parts</a>
+        <a href="/sounds" class="button">Sounds</a>
     </nav>
-    <p>An animatronic automation package by ARW 8.15.2024.</p>
+    
+    <footer>
+        <p>An animatronic automation package by ARW 8.15.2024.</p>
+    </footer>
 </body>
 </html>
