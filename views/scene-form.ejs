@@ -6,6 +6,8 @@
     <title><%= title %></title>
     <link rel="stylesheet" href="/css/style.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 </head>
 <body>
     <h1><%= title %></h1>
@@ -28,7 +30,7 @@
         </div>
 
         <h2>Steps</h2>
-        <div id="steps">
+        <div id="steps" class="sortable">
             <% (scene.steps || []).forEach(function(step, index) { %>
                 <div class="step" data-index="<%= index %>">
                     <h3>Step <%= index + 1 %></h3>
@@ -77,8 +79,11 @@
                             <% }); %>
                         </select>
                         <input type="number" name="steps[<%= index %>][timeout]" value="<%= step.timeout || 30 %>" placeholder="Timeout (seconds)" required>
+                    <% } else if (step.type === 'pause') { %>
+                        <input type="number" name="steps[<%= index %>][duration]" value="<%= step.duration || '' %>" placeholder="Duration (ms)" required>
                     <% } %>
                     <button type="button" onclick="removeStep(<%= index %>)">Remove Step</button>
+                    <button type="button" onclick="copyStep(<%= index %>)">Copy Step</button>
                 </div>
             <% }); %>
         </div>
@@ -88,6 +93,7 @@
         <button type="button" onclick="addStep('led')">Add LED</button>
         <button type="button" onclick="addStep('light')">Add Light</button>
         <button type="button" onclick="addStep('sensor')">Add Sensor</button>
+        <button type="button" onclick="addStep('pause')">Add Pause</button>
         <button type="submit">Save Scene</button>
     </form>
 
@@ -97,6 +103,12 @@
         $(document).ready(function() {
             $('#character_id').change(function() {
                 updatePartOptions();
+            });
+
+            $(".sortable").sortable({
+                update: function(event, ui) {
+                    updateStepNumbers();
+                }
             });
 
             // Initial update of part options
@@ -196,12 +208,20 @@
                     </select>
                     <input type="number" name="steps[${stepCount}][timeout]" placeholder="Timeout (seconds)" value="30" required>
                 `;
+            } else if (type === 'pause') {
+                stepContent += `
+                    <input type="number" name="steps[${stepCount}][duration]" placeholder="Duration (ms)" required>
+                `;
             }
 
-            stepContent += `<button type="button" onclick="removeStep(${stepCount})">Remove Step</button>`;
+            stepContent += `
+                <button type="button" onclick="removeStep(${stepCount})">Remove Step</button>
+                <button type="button" onclick="copyStep(${stepCount})">Copy Step</button>
+            `;
 
             newStep.innerHTML = stepContent;
             steps.appendChild(newStep);
+            updateStepNumbers();
         }
 
         function getPartOptions(type) {
@@ -217,6 +237,39 @@
         function removeStep(index) {
             const steps = document.getElementById('steps');
             steps.removeChild(steps.children[index]);
+            updateStepNumbers();
+        }
+
+        function copyStep(index) {
+            const steps = document.getElementById('steps');
+            const originalStep = steps.children[index];
+            const newStep = originalStep.cloneNode(true);
+            const newIndex = steps.children.length;
+
+            // Update the step number
+            newStep.querySelector('h3').textContent = `Step ${newIndex + 1}`;
+
+            // Update the data-index attribute
+            newStep.dataset.index = newIndex;
+
+            // Update the name attribute of all inputs and selects
+            newStep.querySelectorAll('input, select').forEach(element => {
+                if (element.name) {
+                    element.name = element.name.replace(`steps[${index}]`, `steps[${newIndex}]`);
+                }
+            });
+
+            // Update the onclick attribute of the buttons
+            newStep.querySelector('button[onclick^="removeStep"]').setAttribute('onclick', `removeStep(${newIndex})`);
+            newStep.querySelector('button[onclick^="copyStep"]').setAttribute('onclick', `copyStep(${newIndex})`);
+
+            // Append the new step to the steps container
+            steps.appendChild(newStep);
+
+            // Update the step name to indicate it's a copy
+            const nameInput = newStep.querySelector('input[name$="[name]"]');
+            nameInput.value = nameInput.value + '-copied';
+
             updateStepNumbers();
         }
 
@@ -238,6 +291,12 @@
                 }
             });
         }
+
+        // Ensure all steps are included when submitting the form
+        document.getElementById('sceneForm').onsubmit = function() {
+            updateStepNumbers();
+            return true;
+        };
     </script>
 </body>
 </html>
