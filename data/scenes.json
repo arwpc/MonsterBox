@@ -74,5 +74,25 @@
         "sound_id": "3"
       }
     ]
+  },
+  {
+    "id": 3,
+    "character_id": 1,
+    "scene_name": "Just Santos",
+    "steps": [
+      {
+        "type": "sound",
+        "name": "Santos",
+        "sound_id": "1"
+      },
+      {
+        "type": "motor",
+        "name": "Raise Right Arm",
+        "part_id": "1",
+        "duration": "2000",
+        "direction": "backward",
+        "speed": "50"
+      }
+    ]
   }
 ]
