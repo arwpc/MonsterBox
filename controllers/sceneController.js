@@ -129,6 +129,13 @@ const sceneController = {
         return new Promise(async (resolve, reject) => {
             console.log('Executing step:', step);
 
+            if (step.type === 'pause') {
+                setTimeout(() => {
+                    resolve({ success: true, message: 'Pause completed' });
+                }, parseInt(step.duration));
+                return;
+            }
+
             let scriptPath;
             let args = [];
 
@@ -174,10 +181,6 @@ const sceneController = {
                             args.push('true');
                         }
                         break;
-                    case 'pause':
-                        await new Promise(resolve => setTimeout(resolve, parseInt(step.duration) || 1000));
-                        resolve({ success: true, message: 'Pause completed' });
-                        return;
                     default:
                         throw new Error('Unknown step type');
                 }

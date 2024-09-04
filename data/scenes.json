@@ -5,6 +5,12 @@
     "scene_name": "Lets make some noise",
     "steps": [
       {
+        "type": "sound",
+        "name": "Background Sounds",
+        "sound_id": "2",
+        "concurrent": "on"
+      },
+      {
         "type": "motor",
         "name": "Arm Up",
         "part_id": "1",
@@ -14,13 +20,17 @@
       },
       {
         "type": "sound",
-        "name": "Santos!",
-        "sound_id": "3",
-        "concurrent": "on"
+        "name": "good even",
+        "sound_id": "1"
+      },
+      {
+        "type": "pause",
+        "name": "Pausing",
+        "duration": "5000"
       },
       {
         "type": "sound",
-        "name": "good even",
+        "name": "good even 2",
         "sound_id": "1"
       }
     ]
