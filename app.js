@@ -1,3 +1,5 @@
+// File: app.js
+
 const express = require('express');
 const path = require('path');
 const app = express();
@@ -13,6 +15,7 @@ const partRoutes = require('./routes/partRoutes');
 const sceneRoutes = require('./routes/sceneRoutes');
 const characterRoutes = require('./routes/characterRoutes');
 const soundRoutes = require('./routes/soundRoutes');
+const linearActuatorRoutes = require('./routes/linearActuatorRoutes');
 
 // Basic Express setup
 app.use(express.json());
@@ -26,6 +29,7 @@ app.use('/parts/led', ledRoutes);
 app.use('/parts/light', lightRoutes);
 app.use('/parts/servo', servoRoutes);
 app.use('/parts/sensor', sensorRoutes);
+app.use('/parts/linear-actuator', linearActuatorRoutes);
 app.use('/parts', partRoutes);
 app.use('/scenes', sceneRoutes);
 app.use('/characters', characterRoutes);

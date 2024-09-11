@@ -1,3 +1,5 @@
+// File: controllers/sceneController.js
+
 const sceneService = require('../services/sceneService');
 const characterService = require('../services/characterService');
 const partService = require('../services/partService');
@@ -142,33 +144,34 @@ const sceneController = {
             try {
                 switch(step.type) {
                     case 'motor':
+                    case 'linear-actuator':
+                        const part = await partService.getPartById(step.part_id);
+                        scriptPath = path.join(__dirname, '..', 'scripts', 'linear_actuator_control.py');
+                        args = [
+                            step.direction || 'forward',
+                            step.speed ? step.speed.toString() : '100',
+                            step.duration ? step.duration.toString() : '1000',
+                            part.directionPin.toString(),
+                            part.pwmPin.toString()
+                        ];
+                        break;
                     case 'light':
                     case 'led':
-                    case 'sensor':
-                        const part = await partService.getPartById(step.part_id);
-                        if (step.type === 'motor') {
-                            scriptPath = path.join(__dirname, '..', 'scripts', 'motor_control.py');
-                            args = [
-                                step.direction || 'forward',
-                                step.speed ? step.speed.toString() : '50',
-                                step.duration ? step.duration.toString() : '1000',
-                                part.directionPin.toString(),
-                                part.pwmPin.toString()
-                            ];
-                        } else if (step.type === 'light' || step.type === 'led') {
-                            scriptPath = path.join(__dirname, '..', 'scripts', 'light_control.py');
-                            args = [
-                                part.gpioPin.toString(),
-                                step.state || 'on',
-                                step.duration ? step.duration.toString() : '1000'
-                            ];
-                            if (step.type === 'led') {
-                                args.push(step.brightness ? step.brightness.toString() : '100');
-                            }
-                        } else if (step.type === 'sensor') {
-                            scriptPath = path.join(__dirname, '..', 'scripts', 'sensor_control.py');
-                            args = [part.gpioPin.toString(), step.timeout ? step.timeout.toString() : '30'];
+                        scriptPath = path.join(__dirname, '..', 'scripts', 'light_control.py');
+                        const lightPart = await partService.getPartById(step.part_id);
+                        args = [
+                            lightPart.gpioPin.toString(),
+                            step.state || 'on',
+                            step.duration ? step.duration.toString() : '1000'
+                        ];
+                        if (step.type === 'led') {
+                            args.push(step.brightness ? step.brightness.toString() : '100');
                         }
+                        break;
+                    case 'sensor':
+                        scriptPath = path.join(__dirname, '..', 'scripts', 'sensor_control.py');
+                        const sensorPart = await partService.getPartById(step.part_id);
+                        args = [sensorPart.gpioPin.toString(), step.timeout ? step.timeout.toString() : '30'];
                         break;
                     case 'sound':
                         scriptPath = path.join(__dirname, '..', 'scripts', 'play_sound.py');

@@ -1,3 +1,5 @@
+<!-- File: views/os-test.ejs -->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -139,11 +141,12 @@
             
             if (partSelect.value) {
                 const part = JSON.parse(partSelect.value);
-                let command = `python3 ${part.type}_control.py`;
+                let command = `python3 ${part.type === 'linear-actuator' ? 'linear_actuator_control.py' : part.type + '_control.py'}`;
                 let flagInfoText = '';
                 
                 switch(part.type) {
                     case 'motor':
+                    case 'linear-actuator':
                         command += ` <direction> <speed> <duration> ${part.directionPin} ${part.pwmPin}`;
                         flagInfoText = `direction: forward, backward || speed: 0 - 100 || duration: time in milliseconds || directionPin: ${part.directionPin} (Direction GPIO Pin) || pwmPin: ${part.pwmPin} (PWM Pin) ||`;
                         break;

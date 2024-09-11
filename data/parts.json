@@ -46,5 +46,21 @@
     "gpioPin": 6,
     "pwmFrequency": 50,
     "dutyCycle": 7.5
+  },
+  {
+    "id": 7,
+    "name": "Right Arm Extends",
+    "type": "linear-actuator",
+    "characterId": 1,
+    "directionPin": 18,
+    "pwmPin": 13
+  },
+  {
+    "id": 8,
+    "name": "Right Arm of God",
+    "type": "linear-actuator",
+    "characterId": 1,
+    "directionPin": 18,
+    "pwmPin": 13
   }
 ]

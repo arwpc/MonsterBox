@@ -1,3 +1,5 @@
+// File: services/partService.js
+
 const fs = require('fs').promises;
 const path = require('path');
 const { spawn } = require('child_process');
@@ -59,10 +61,22 @@ const deletePart = async (id) => {
     await fs.writeFile(dataPath, JSON.stringify(filteredParts, null, 2));
 };
 
-const testMotor = async (motorData) => {
-    console.log('Testing motor with data:', motorData);
-    const { direction, speed, duration, directionPin, pwmPin } = motorData;
-    const scriptPath = path.join(__dirname, '..', 'scripts', 'motor_control.py');
+const testPart = async (partData) => {
+    console.log('Testing part with data:', partData);
+    const { type, direction, speed, duration, directionPin, pwmPin } = partData;
+    let scriptPath;
+
+    switch (type) {
+        case 'motor':
+            scriptPath = path.join(__dirname, '..', 'scripts', 'motor_control.py');
+            break;
+        case 'linear-actuator':
+            scriptPath = path.join(__dirname, '..', 'scripts', 'linear_actuator_control.py');
+            break;
+        // Add cases for other part types as needed
+        default:
+            throw new Error(`Unsupported part type: ${type}`);
+    }
 
     return new Promise((resolve, reject) => {
         const process = spawn('python3', [
@@ -90,9 +104,9 @@ const testMotor = async (motorData) => {
         process.on('close', (code) => {
             console.log(`Python script exited with code ${code}`);
             if (code === 0) {
-                resolve({ success: true, message: 'Motor test completed', output: stdout });
+                resolve({ success: true, message: `${type} test completed`, output: stdout });
             } else {
-                reject(new Error(`Motor test failed with code ${code}: ${stderr}`));
+                reject(new Error(`${type} test failed with code ${code}: ${stderr}`));
             }
         });
     });
@@ -104,5 +118,5 @@ module.exports = {
     createPart,
     updatePart,
     deletePart,
-    testMotor
+    testPart
 };

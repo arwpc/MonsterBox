@@ -1,3 +1,5 @@
+<!-- File: views/scene-form.ejs -->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -46,9 +48,9 @@
                             <input type="checkbox" name="steps[<%= index %>][concurrent]" <%= step.concurrent ? 'checked' : '' %>>
                             Play concurrently
                         </label>
-                    <% } else if (step.type === 'motor') { %>
+                    <% } else if (step.type === 'motor' || step.type === 'linear-actuator') { %>
                         <select name="steps[<%= index %>][part_id]" required>
-                            <% parts.filter(part => part.type === 'motor').forEach(function(part) { %>
+                            <% parts.filter(part => part.type === step.type).forEach(function(part) { %>
                                 <option value="<%= part.id %>" <%= (step.part_id === part.id) ? 'selected' : '' %>><%= part.name %></option>
                             <% }); %>
                         </select>
@@ -89,6 +91,7 @@
         </div>
         
         <button type="button" onclick="addStep('motor')">Add Motor</button>
+        <button type="button" onclick="addStep('linear-actuator')">Add Linear Actuator</button>
         <button type="button" onclick="addStep('sound')">Add Sound</button>
         <button type="button" onclick="addStep('led')">Add LED</button>
         <button type="button" onclick="addStep('light')">Add Light</button>
@@ -173,10 +176,10 @@
                         Play concurrently
                     </label>
                 `;
-            } else if (type === 'motor') {
+            } else if (type === 'motor' || type === 'linear-actuator') {
                 stepContent += `
                     <select name="steps[${stepCount}][part_id]" required>
-                        ${getPartOptions('motor')}
+                        ${getPartOptions(type)}
                     </select>
                     <input type="number" name="steps[${stepCount}][duration]" placeholder="Duration (ms)" required>
                     <select name="steps[${stepCount}][direction]" required>
