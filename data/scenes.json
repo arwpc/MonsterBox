@@ -7,15 +7,24 @@
       {
         "type": "sound",
         "name": "Santos",
-        "sound_id": "1"
+        "sound_id": "1",
+        "concurrent": "on"
       },
       {
-        "type": "motor",
-        "name": "Raise Right Arm",
-        "part_id": "1",
-        "duration": "2000",
-        "direction": "backward",
-        "speed": "50"
+        "type": "linear-actuator",
+        "name": "Swing Axe Up",
+        "part_id": "8",
+        "duration": "5000",
+        "direction": "forward",
+        "speed": "100"
+      },
+      {
+        "type": "led",
+        "name": "eyes on",
+        "part_id": "4",
+        "duration": "1000",
+        "state": "on",
+        "brightness": "100"
       }
     ]
   },

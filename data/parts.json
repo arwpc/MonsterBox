@@ -1,13 +1,5 @@
 [
   {
-    "id": 1,
-    "name": "Right Arm",
-    "type": "motor",
-    "characterId": 1,
-    "directionPin": 18,
-    "pwmPin": 13
-  },
-  {
     "id": 2,
     "name": "Left Arm",
     "type": "motor",
@@ -46,14 +38,6 @@
     "gpioPin": 6,
     "pwmFrequency": 50,
     "dutyCycle": 7.5
-  },
-  {
-    "id": 7,
-    "name": "Right Arm Extends",
-    "type": "linear-actuator",
-    "characterId": 1,
-    "directionPin": 18,
-    "pwmPin": 13
   },
   {
     "id": 8,
