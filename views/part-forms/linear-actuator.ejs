@@ -1,0 +1,108 @@
+<!-- File: views/part-forms/linear-actuator.ejs -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <h1><%= title %></h1>
+    <form action="<%= action %>" method="POST">
+        <input type="hidden" name="type" value="linear-actuator">
+        <% if (part.id) { %>
+            <input type="hidden" name="id" value="<%= part.id %>">
+        <% } %>
+        <div>
+            <label for="name">Part Name:</label>
+            <input type="text" id="name" name="name" value="<%= part.name || '' %>" required>
+        </div>
+        <div>
+            <label for="characterId">Character:</label>
+            <select id="characterId" name="characterId" required>
+                <% characters.forEach(function(character) { %>
+                    <option value="<%= character.id %>" <%= (part.characterId === character.id) ? 'selected' : '' %>>
+                        <%= character.char_name %>
+                    </option>
+                <% }); %>
+            </select>
+        </div>
+        <div>
+            <label for="directionPin">Direction GPIO Pin:</label>
+            <input type="number" id="directionPin" name="directionPin" value="<%= part.directionPin || 18 %>" required>
+        </div>
+        <div>
+            <label for="pwmPin">PWM Pin:</label>
+            <input type="number" id="pwmPin" name="pwmPin" value="<%= part.pwmPin || 13 %>" required>
+        </div>
+        <button type="submit">Save Part</button>
+    </form>
+
+    <div id="actuatorTest">
+        <h2>Test Linear Actuator</h2>
+        <div>
+            <label for="direction">Direction:</label>
+            <select id="direction">
+                <option value="extend">Extend</option>
+                <option value="retract">Retract</option>
+            </select>
+        </div>
+        <div>
+            <label for="speed">Speed:</label>
+            <input type="range" id="speed" min="0" max="100" value="50">
+            <span id="speedValue">50</span>
+        </div>
+        <div>
+            <label for="duration">Duration (ms):</label>
+            <input type="range" id="duration" min="100" max="5000" value="1000" step="100">
+            <span id="durationValue">1000</span>
+        </div>
+        <button onclick="testPart()">Test Linear Actuator</button>
+    </div>
+
+    <a href="/parts" class="button">Back to Parts</a>
+
+    <script>
+        // Update speed and duration values
+        document.getElementById('speed').addEventListener('input', function() {
+            document.getElementById('speedValue').textContent = this.value;
+        });
+        document.getElementById('duration').addEventListener('input', function() {
+            document.getElementById('durationValue').textContent = this.value;
+        });
+
+        function testPart() {
+            const partData = {
+                type: 'linear-actuator',
+                direction: document.getElementById('direction').value,
+                speed: parseInt(document.getElementById('speed').value),
+                duration: parseInt(document.getElementById('duration').value),
+                directionPin: parseInt(document.getElementById('directionPin').value),
+                pwmPin: parseInt(document.getElementById('pwmPin').value)
+            };
+
+            fetch('/parts/linear-actuator/test', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(partData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Linear actuator test successful');
+                } else {
+                    alert('Linear actuator test failed: ' + data.message);
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                alert('An error occurred while testing the linear actuator');
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,3 +1,5 @@
+// File: routes/partRoutes.js
+
 const express = require('express');
 const router = express.Router();
 const partService = require('../services/partService');
@@ -68,7 +70,12 @@ router.post('/os-test', async (req, res) => {
 
     try {
         const part = await partService.getPartById(partId);
-        const scriptPath = path.join(__dirname, '..', 'scripts', `${part.type}_control.py`);
+        let scriptPath;
+        if (part.type === 'linear-actuator') {
+            scriptPath = path.join(__dirname, '..', 'scripts', 'linear_actuator_control.py');
+        } else {
+            scriptPath = path.join(__dirname, '..', 'scripts', `${part.type}_control.py`);
+        }
         
         const process = spawn('python3', [scriptPath, ...command.split(' ').slice(2)]);
 

@@ -1,3 +1,5 @@
+<!-- File: views/parts.ejs -->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -18,7 +20,7 @@
             font-size: 16px;
             border: none;
             cursor: pointer;
-            width: 100px;
+            width: 150px;
         }
         .button:hover {
             background-color: #45a049;
@@ -28,11 +30,12 @@
 <body>
     <h1><%= title %></h1>
     <div>
-        <a href="/parts/new/motor" class="button">Motor</a>
-        <a href="/parts/new/light" class="button">Light</a>
-        <a href="/parts/new/led" class="button">LED</a>
-        <a href="/parts/new/servo" class="button">Servo</a>
-        <a href="/parts/new/sensor" class="button">Sensor</a>
+        <a href="/parts/new/motor" class="button">Add Motor</a>
+        <a href="/parts/new/linear-actuator" class="button">Add Linear Actuator</a>
+        <a href="/parts/new/light" class="button">Add Light</a>
+        <a href="/parts/new/led" class="button">Add LED</a>
+        <a href="/parts/new/servo" class="button">Add Servo</a>
+        <a href="/parts/new/sensor" class="button">Add Sensor</a>
         <a href="/parts/os-test" class="button">OS Test</a>
     </div>
     <table>
@@ -52,7 +55,7 @@
                     <td><%= part.type %></td>
                     <td><%= characters.find(c => c.id === parseInt(part.characterId))?.char_name || 'N/A' %></td>
                     <td>
-                        <% if (part.type === 'motor') { %>
+                        <% if (part.type === 'motor' || part.type === 'linear-actuator') { %>
                             Dir Pin: <%= part.directionPin %>, PWM Pin: <%= part.pwmPin %>
                         <% } else if (part.type === 'light' || part.type === 'led') { %>
                             GPIO Pin: <%= part.gpioPin %>
