@@ -45,8 +45,8 @@
         <div>
             <label for="direction">Direction:</label>
             <select id="direction">
-                <option value="extend">Extend</option>
-                <option value="retract">Retract</option>
+                <option value="forward">Forward</option>
+                <option value="backward">Backward</option>
             </select>
         </div>
         <div>
@@ -75,7 +75,6 @@
 
         function testPart() {
             const partData = {
-                type: 'linear-actuator',
                 direction: document.getElementById('direction').value,
                 speed: parseInt(document.getElementById('speed').value),
                 duration: parseInt(document.getElementById('duration').value),
@@ -93,7 +92,7 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert('Linear actuator test successful');
+                    alert('Linear actuator test successful: ' + data.message);
                 } else {
                     alert('Linear actuator test failed: ' + data.message);
                 }

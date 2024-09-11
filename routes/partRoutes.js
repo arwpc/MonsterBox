@@ -124,4 +124,55 @@ router.get('/os-test-stream', (req, res) => {
     });
 });
 
+router.post('/:id/delete', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        await partService.deletePart(id);
+        res.status(200).json({ message: 'Part deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting part:', error);
+        res.status(500).json({ error: 'An error occurred while deleting the part' });
+    }
+});
+
+router.post('/linear-actuator/test', async (req, res) => {
+    try {
+        const { direction, speed, duration, directionPin, pwmPin } = req.body;
+        const scriptPath = path.join(__dirname, '..', 'scripts', 'linear_actuator_control.py');
+        const process = spawn('python3', [
+            scriptPath,
+            direction,
+            speed.toString(),
+            duration.toString(),
+            directionPin.toString(),
+            pwmPin.toString()
+        ]);
+
+        let stdout = '';
+        let stderr = '';
+
+        process.stdout.on('data', (data) => {
+            stdout += data.toString();
+            console.log(`Python script output: ${data}`);
+        });
+
+        process.stderr.on('data', (data) => {
+            stderr += data.toString();
+            console.error(`Python script error: ${data}`);
+        });
+
+        process.on('close', (code) => {
+            console.log(`Python script exited with code ${code}`);
+            if (code === 0) {
+                res.json({ success: true, message: 'Linear actuator test completed successfully', output: stdout });
+            } else {
+                res.status(500).json({ success: false, message: 'Linear actuator test failed', error: stderr });
+            }
+        });
+    } catch (error) {
+        console.error('Error testing linear actuator:', error);
+        res.status(500).json({ success: false, message: 'An error occurred while testing the linear actuator', error: error.message });
+    }
+});
+
 module.exports = router;
