@@ -70,15 +70,15 @@
         </ul>
     </div>
 
-    <button id="start-active-mode">Start Active Mode</button>
-    <button id="stop-active-mode" disabled>Stop Active Mode</button>
+    <button id="start-armed-mode">Start Armed Mode</button>
+    <button id="stop-armed-mode" disabled>Stop Armed Mode</button>
 
     <a href="/" class="button">Back to Main Menu</a>
 
     <script>
         $(document).ready(function() {
             let selectedCharacterId = null;
-            let activeModeRunning = false;
+            let armedModeRunning = false;
 
             $('#character-select').change(function() {
                 selectedCharacterId = $(this).val();
@@ -135,7 +135,7 @@
             }
 
             function toggleSensor(sensorId, active) {
-                $.post('/active-mode/toggle-sensor', { sensorId, active })
+                $.post('/armed-mode/toggle-sensor', { sensorId, active })
                     .done(function() {
                         const indicator = $(`.sensor-indicator[data-sensor-id="${sensorId}"]`);
                         indicator.toggleClass('active', active).toggleClass('inactive', !active);
@@ -150,7 +150,7 @@
                 const sensorId = $('#sensor-select').val();
                 const sceneId = $('#scene-select').val();
                 if (sensorId && sceneId) {
-                    $.post('/active-mode/arm-sensor', { sensorId, sceneId })
+                    $.post('/armed-mode/arm-sensor', { sensorId, sceneId })
                         .done(function() {
                             updateArmedSensors();
                         })
@@ -164,7 +164,7 @@
             });
 
             function updateArmedSensors() {
-                $.get('/active-mode/armed-sensors')
+                $.get('/armed-mode/armed-sensors')
                     .done(function(armedSensors) {
                         const armedSensorsList = $('#armed-sensors-list');
                         armedSensorsList.empty();
@@ -175,42 +175,58 @@
                                 <li>
                                     <div class="sensor-indicator inactive" data-sensor-id="${armedSensor.sensorId}"></div>
                                     ${sensorName} - ${sceneName}
+                                    <button class="disarm-button" data-sensor-id="${armedSensor.sensorId}">Disarm</button>
                                 </li>
                             `);
                         });
+                        attachDisarmHandlers();
                     })
                     .fail(function(xhr, status, error) {
                         console.error('Error updating armed sensors:', error);
                     });
             }
 
-            $('#start-active-mode').click(function() {
-                $.post('/active-mode/start')
+            function attachDisarmHandlers() {
+                $('.disarm-button').click(function() {
+                    const sensorId = $(this).data('sensor-id');
+                    $.post('/armed-mode/disarm-sensor', { sensorId })
+                        .done(function() {
+                            updateArmedSensors();
+                        })
+                        .fail(function(xhr, status, error) {
+                            console.error('Error disarming sensor:', error);
+                            alert('Error disarming sensor: ' + xhr.responseText);
+                        });
+                });
+            }
+
+            $('#start-armed-mode').click(function() {
+                $.post('/armed-mode/start')
                     .done(function() {
-                        activeModeRunning = true;
-                        $('#start-active-mode').prop('disabled', true);
-                        $('#stop-active-mode').prop('disabled', false);
-                        alert('Active Mode started');
+                        armedModeRunning = true;
+                        $('#start-armed-mode').prop('disabled', true);
+                        $('#stop-armed-mode').prop('disabled', false);
+                        alert('Armed Mode started');
                         startSensorSimulation();
                     })
                     .fail(function(xhr, status, error) {
-                        console.error('Error starting Active Mode:', error);
-                        alert('Error starting Active Mode: ' + xhr.responseText);
+                        console.error('Error starting Armed Mode:', error);
+                        alert('Error starting Armed Mode: ' + xhr.responseText);
                     });
             });
 
-            $('#stop-active-mode').click(function() {
-                $.post('/active-mode/stop')
+            $('#stop-armed-mode').click(function() {
+                $.post('/armed-mode/stop')
                     .done(function() {
-                        activeModeRunning = false;
-                        $('#start-active-mode').prop('disabled', false);
-                        $('#stop-active-mode').prop('disabled', true);
-                        alert('Active Mode stopped');
+                        armedModeRunning = false;
+                        $('#start-armed-mode').prop('disabled', false);
+                        $('#stop-armed-mode').prop('disabled', true);
+                        alert('Armed Mode stopped');
                         stopSensorSimulation();
                     })
                     .fail(function(xhr, status, error) {
-                        console.error('Error stopping Active Mode:', error);
-                        alert('Error stopping Active Mode: ' + xhr.responseText);
+                        console.error('Error stopping Armed Mode:', error);
+                        alert('Error stopping Armed Mode: ' + xhr.responseText);
                     });
             });
 

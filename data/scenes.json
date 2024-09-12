@@ -2,20 +2,31 @@
   {
     "id": 3,
     "character_id": 1,
-    "scene_name": "Just Santos",
+    "scene_name": "Scary guy working!!!",
     "steps": [
+      {
+        "type": "sensor",
+        "name": "Hold till motion",
+        "part_id": "5",
+        "timeout": "30"
+      },
       {
         "type": "sound",
         "name": "Santos",
-        "sound_id": "1",
+        "sound_id": "3",
         "concurrent": "on"
+      },
+      {
+        "type": "pause",
+        "name": "hold up",
+        "duration": "5000"
       },
       {
         "type": "linear-actuator",
         "name": "Swing Axe Up",
         "part_id": "8",
         "duration": "5000",
-        "direction": "forward",
+        "direction": "backward",
         "speed": "100"
       },
       {

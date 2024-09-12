@@ -1,5 +1,3 @@
-<!-- File: views/scene-form.ejs -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -35,7 +33,7 @@
         <div id="steps" class="sortable">
             <% (scene.steps || []).forEach(function(step, index) { %>
                 <div class="step" data-index="<%= index %>">
-                    <h3>Step <%= index + 1 %></h3>
+                    <h3>Step <%= index + 1 %>: <%= step.type.charAt(0).toUpperCase() + step.type.slice(1) %></h3>
                     <input type="hidden" name="steps[<%= index %>][type]" value="<%= step.type %>">
                     <input type="text" name="steps[<%= index %>][name]" value="<%= step.name %>" placeholder="Step Name" required>
                     <% if (step.type === 'sound') { %>
@@ -48,31 +46,27 @@
                             <input type="checkbox" name="steps[<%= index %>][concurrent]" <%= step.concurrent ? 'checked' : '' %>>
                             Play concurrently
                         </label>
-                    <% } else if (step.type === 'motor' || step.type === 'linear-actuator') { %>
+                    <% } else if (['motor', 'linear-actuator', 'servo', 'led', 'light'].includes(step.type)) { %>
                         <select name="steps[<%= index %>][part_id]" required>
                             <% parts.filter(part => part.type === step.type).forEach(function(part) { %>
                                 <option value="<%= part.id %>" <%= (step.part_id === part.id) ? 'selected' : '' %>><%= part.name %></option>
                             <% }); %>
                         </select>
                         <input type="number" name="steps[<%= index %>][duration]" value="<%= step.duration || '' %>" placeholder="Duration (ms)" required>
-                        <select name="steps[<%= index %>][direction]" required>
-                            <option value="forward" <%= step.direction === 'forward' ? 'selected' : '' %>>Forward</option>
-                            <option value="backward" <%= step.direction === 'backward' ? 'selected' : '' %>>Backward</option>
-                        </select>
-                        <input type="number" name="steps[<%= index %>][speed]" value="<%= step.speed || '' %>" placeholder="Speed (0-100)" min="0" max="100" required>
-                    <% } else if (step.type === 'led' || step.type === 'light') { %>
-                        <select name="steps[<%= index %>][part_id]" required>
-                            <% parts.filter(part => part.type === step.type).forEach(function(part) { %>
-                                <option value="<%= part.id %>" <%= (step.part_id === part.id) ? 'selected' : '' %>><%= part.name %></option>
-                            <% }); %>
-                        </select>
-                        <input type="number" name="steps[<%= index %>][duration]" value="<%= step.duration || '' %>" placeholder="Duration (ms)" required>
-                        <select name="steps[<%= index %>][state]" required>
-                            <option value="on" <%= step.state === 'on' ? 'selected' : '' %>>On</option>
-                            <option value="off" <%= step.state === 'off' ? 'selected' : '' %>>Off</option>
-                        </select>
-                        <% if (step.type === 'led') { %>
-                            <input type="number" name="steps[<%= index %>][brightness]" value="<%= step.brightness || '' %>" placeholder="Brightness (0-100)" min="0" max="100" required>
+                        <% if (step.type === 'motor' || step.type === 'linear-actuator') { %>
+                            <select name="steps[<%= index %>][direction]" required>
+                                <option value="forward" <%= step.direction === 'forward' ? 'selected' : '' %>>Forward</option>
+                                <option value="backward" <%= step.direction === 'backward' ? 'selected' : '' %>>Backward</option>
+                            </select>
+                            <input type="number" name="steps[<%= index %>][speed]" value="<%= step.speed || '' %>" placeholder="Speed (0-100)" min="0" max="100" required>
+                        <% } else if (step.type === 'led' || step.type === 'light') { %>
+                            <select name="steps[<%= index %>][state]" required>
+                                <option value="on" <%= step.state === 'on' ? 'selected' : '' %>>On</option>
+                                <option value="off" <%= step.state === 'off' ? 'selected' : '' %>>Off</option>
+                            </select>
+                            <% if (step.type === 'led') { %>
+                                <input type="number" name="steps[<%= index %>][brightness]" value="<%= step.brightness || '' %>" placeholder="Brightness (0-100)" min="0" max="100" required>
+                            <% } %>
                         <% } %>
                     <% } else if (step.type === 'sensor') { %>
                         <select name="steps[<%= index %>][part_id]" required>
@@ -92,10 +86,11 @@
         
         <button type="button" onclick="addStep('motor')">Add Motor</button>
         <button type="button" onclick="addStep('linear-actuator')">Add Linear Actuator</button>
-        <button type="button" onclick="addStep('sound')">Add Sound</button>
+        <button type="button" onclick="addStep('servo')">Add Servo</button>
         <button type="button" onclick="addStep('led')">Add LED</button>
         <button type="button" onclick="addStep('light')">Add Light</button>
         <button type="button" onclick="addStep('sensor')">Add Sensor</button>
+        <button type="button" onclick="addStep('sound')">Add Sound</button>
         <button type="button" onclick="addStep('pause')">Add Pause</button>
         <button type="submit">Save Scene</button>
     </form>
@@ -159,7 +154,7 @@
             newStep.dataset.index = stepCount;
 
             let stepContent = `
-                <h3>Step ${stepCount + 1}</h3>
+                <h3>Step ${stepCount + 1}: ${type.charAt(0).toUpperCase() + type.slice(1)}</h3>
                 <input type="hidden" name="steps[${stepCount}][type]" value="${type}">
                 <input type="text" name="steps[${stepCount}][name]" placeholder="Step Name" required>
             `;
@@ -176,33 +171,33 @@
                         Play concurrently
                     </label>
                 `;
-            } else if (type === 'motor' || type === 'linear-actuator') {
+            } else if (['motor', 'linear-actuator', 'servo', 'led', 'light'].includes(type)) {
                 stepContent += `
                     <select name="steps[${stepCount}][part_id]" required>
                         ${getPartOptions(type)}
                     </select>
                     <input type="number" name="steps[${stepCount}][duration]" placeholder="Duration (ms)" required>
-                    <select name="steps[${stepCount}][direction]" required>
-                        <option value="forward">Forward</option>
-                        <option value="backward">Backward</option>
-                    </select>
-                    <input type="number" name="steps[${stepCount}][speed]" placeholder="Speed (0-100)" min="0" max="100" required>
                 `;
-            } else if (type === 'led' || type === 'light') {
-                stepContent += `
-                    <select name="steps[${stepCount}][part_id]" required>
-                        ${getPartOptions(type)}
-                    </select>
-                    <input type="number" name="steps[${stepCount}][duration]" placeholder="Duration (ms)" required>
-                    <select name="steps[${stepCount}][state]" required>
-                        <option value="on">On</option>
-                        <option value="off">Off</option>
-                    </select>
-                `;
-                if (type === 'led') {
+                if (type === 'motor' || type === 'linear-actuator') {
                     stepContent += `
-                        <input type="number" name="steps[${stepCount}][brightness]" placeholder="Brightness (0-100)" min="0" max="100" required>
+                        <select name="steps[${stepCount}][direction]" required>
+                            <option value="forward">Forward</option>
+                            <option value="backward">Backward</option>
+                        </select>
+                        <input type="number" name="steps[${stepCount}][speed]" placeholder="Speed (0-100)" min="0" max="100" required>
                     `;
+                } else if (type === 'led' || type === 'light') {
+                    stepContent += `
+                        <select name="steps[${stepCount}][state]" required>
+                            <option value="on">On</option>
+                            <option value="off">Off</option>
+                        </select>
+                    `;
+                    if (type === 'led') {
+                        stepContent += `
+                            <input type="number" name="steps[${stepCount}][brightness]" placeholder="Brightness (0-100)" min="0" max="100" required>
+                        `;
+                    }
                 }
             } else if (type === 'sensor') {
                 stepContent += `
@@ -249,8 +244,9 @@
             const newStep = originalStep.cloneNode(true);
             const newIndex = steps.children.length;
 
-            // Update the step number
-            newStep.querySelector('h3').textContent = `Step ${newIndex + 1}`;
+            // Update the step number and type
+            const stepType = newStep.querySelector('input[name$="[type]"]').value;
+            newStep.querySelector('h3').textContent = `Step ${newIndex + 1}: ${stepType.charAt(0).toUpperCase() + stepType.slice(1)}`;
 
             // Update the data-index attribute
             newStep.dataset.index = newIndex;
@@ -271,7 +267,7 @@
 
             // Update the step name to indicate it's a copy
             const nameInput = newStep.querySelector('input[name$="[name]"]');
-            nameInput.value = nameInput.value + '-copied';
+            nameInput.value = nameInput.value + ' (Copy)';
 
             updateStepNumbers();
         }
@@ -279,7 +275,8 @@
         function updateStepNumbers() {
             const steps = document.getElementById('steps').children;
             for (let i = 0; i < steps.length; i++) {
-                steps[i].querySelector('h3').textContent = `Step ${i + 1}`;
+                const stepType = steps[i].querySelector('input[name$="[type]"]').value;
+                steps[i].querySelector('h3').textContent = `Step ${i + 1}: ${stepType.charAt(0).toUpperCase() + stepType.slice(1)}`;
                 steps[i].dataset.index = i;
                 updateStepInputNames(steps[i], i);
             }

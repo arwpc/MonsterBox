@@ -19,11 +19,11 @@ def control_sensor(gpio_pin, timeout):
     while time.time() < end_time:
         if GPIO.input(gpio_pin):
             print("Motion detected!")
-        else:
-            print("No motion detected")
-        time.sleep(0.5)
+            return True
+        time.sleep(0.1)
 
-    cleanup_gpio()
+    print("No motion detected within timeout period")
+    return False
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
@@ -34,10 +34,12 @@ if __name__ == "__main__":
     timeout = float(sys.argv[2])
 
     try:
-        control_sensor(gpio_pin, timeout)
-        print("Sensor monitoring completed successfully")
+        motion_detected = control_sensor(gpio_pin, timeout)
+        print(f"Motion detected: {motion_detected}")
     except Exception as e:
         print(f"Error: {str(e)}")
         sys.exit(1)
     finally:
         cleanup_gpio()
+
+    sys.exit(0 if motion_detected else 1)

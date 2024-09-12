@@ -86,7 +86,7 @@
             const sensorId = $('input[name="id"]').val();
             const gpioPin = $('#gpioPin').val();
 
-            eventSource = new EventSource(`/parts/test-sensor?id=${sensorId}&gpioPin=${gpioPin}`);
+            eventSource = new EventSource(`/parts/sensor/test-sensor?id=${sensorId}&gpioPin=${gpioPin}`);
 
             eventSource.onmessage = function(event) {
                 const data = JSON.parse(event.data);
