@@ -46,5 +46,14 @@
     "characterId": 1,
     "directionPin": 18,
     "pwmPin": 13
+  },
+  {
+    "id": 9,
+    "name": "motion sensort bpbobbbb",
+    "type": "sensor",
+    "characterId": 1,
+    "sensorType": "motion",
+    "gpioPin": 16,
+    "active": true
   }
 ]

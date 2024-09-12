@@ -63,46 +63,6 @@ router.post('/:id', async (req, res) => {
     }
 });
 
-router.post('/test', async (req, res) => {
-    try {
-        const { gpioPin, timeout } = req.body;
-        const scriptPath = path.join(__dirname, '..', 'scripts', 'sensor_control.py');
-        const process = spawn('python3', [
-            scriptPath,
-            gpioPin.toString(),
-            timeout.toString()
-        ]);
-
-        res.writeHead(200, {
-            'Content-Type': 'text/event-stream',
-            'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive'
-        });
-
-        process.stdout.on('data', (data) => {
-            res.write(`data: ${data}\n\n`);
-        });
-
-        process.stderr.on('data', (data) => {
-            console.error(`Python script error: ${data}`);
-            res.write(`data: ${JSON.stringify({ error: data.toString() })}\n\n`);
-        });
-
-        process.on('close', (code) => {
-            console.log(`Python script exited with code ${code}`);
-            res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-            res.end();
-        });
-
-        req.on('close', () => {
-            process.kill();
-        });
-    } catch (error) {
-        console.error('Error testing sensor:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
-});
-
 router.get('/test-sensor', async (req, res) => {
     try {
         const sensorId = parseInt(req.query.id);

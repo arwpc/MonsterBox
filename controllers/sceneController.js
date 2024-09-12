@@ -207,7 +207,10 @@ const sceneController = {
                 process.on('close', (code) => {
                     console.log(`child process exited with code ${code}`);
                     if (code === 0) {
-                        if (step.type === 'sound' && step.concurrent) {
+                        if (step.type === 'sensor') {
+                            const motionDetected = stdout.includes('Motion detected');
+                            resolve({ success: true, message: motionDetected ? 'Motion detected' : 'No motion detected', motionDetected });
+                        } else if (step.type === 'sound' && step.concurrent) {
                             resolve({ success: true, message: 'Concurrent sound playback initiated', stdout, stderr });
                         } else {
                             resolve({ success: true, message: 'Step executed successfully', stdout, stderr });
@@ -243,7 +246,11 @@ const sceneController = {
                             results.push(await Promise.all(concurrentPromises));
                             concurrentPromises = [];
                         }
-                        results.push(await sceneController._executeStep(step));
+                        const result = await sceneController._executeStep(step);
+                        results.push(result);
+                        if (step.type === 'sensor' && !result.motionDetected) {
+                            break; // End scene if no motion detected
+                        }
                     }
                 }
 
