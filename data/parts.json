@@ -1,13 +1,5 @@
 [
   {
-    "id": 2,
-    "name": "Left Arm",
-    "type": "motor",
-    "characterId": 1,
-    "directionPin": 23,
-    "pwmPin": 12
-  },
-  {
     "id": 3,
     "name": "Hand of Azura",
     "type": "light",

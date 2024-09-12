@@ -1,7 +1,7 @@
 const express = require('express');
 const path = require('path');
 const { spawn } = require('child_process');
-const dataManager = require('../dataManager');
+const soundService = require('../services/soundService');
 const multer = require('multer');
 const fs = require('fs').promises;
 const router = express.Router();
@@ -19,7 +19,7 @@ const upload = multer({ storage: storage });
 
 router.get('/', async (req, res) => {
     try {
-        const sounds = await dataManager.getSounds();
+        const sounds = await soundService.getAllSounds();
         res.render('sounds', { title: 'Sounds', sounds });
     } catch (error) {
         console.error('Error fetching sounds:', error);
@@ -33,8 +33,7 @@ router.get('/new', (req, res) => {
 
 router.get('/:id/edit', async (req, res) => {
     try {
-        const sounds = await dataManager.getSounds();
-        const sound = sounds.find(s => s.id === parseInt(req.params.id));
+        const sound = await soundService.getSoundById(parseInt(req.params.id));
         if (sound) {
             res.render('sound-form', { title: 'Edit Sound', action: `/sounds/${sound.id}`, sound });
         } else {
@@ -48,14 +47,11 @@ router.get('/:id/edit', async (req, res) => {
 
 router.post('/', upload.single('sound_file'), async (req, res) => {
     try {
-        const sounds = await dataManager.getSounds();
         const newSound = {
-            id: dataManager.getNextId(sounds),
             name: req.body.name,
             filename: req.file.filename
         };
-        sounds.push(newSound);
-        await dataManager.saveSounds(sounds);
+        await soundService.createSound(newSound);
         res.redirect('/sounds');
     } catch (error) {
         console.error('Error adding sound:', error);
@@ -65,25 +61,21 @@ router.post('/', upload.single('sound_file'), async (req, res) => {
 
 router.post('/:id', upload.single('sound_file'), async (req, res) => {
     try {
-        const sounds = await dataManager.getSounds();
-        const soundIndex = sounds.findIndex(s => s.id === parseInt(req.params.id));
+        const id = parseInt(req.params.id);
+        const updatedSound = {
+            name: req.body.name
+        };
         
-        if (soundIndex === -1) {
-            return res.status(404).json({ error: 'Sound not found', details: `No sound with id ${req.params.id}` });
-        }
-
-        const updatedSound = sounds[soundIndex];
-        updatedSound.name = req.body.name;
-
         if (req.file) {
-            if (updatedSound.filename) {
-                const oldFilePath = path.join(__dirname, '../public/sounds', updatedSound.filename);
+            const sound = await soundService.getSoundById(id);
+            if (sound.filename) {
+                const oldFilePath = path.join(__dirname, '../public/sounds', sound.filename);
                 await fs.unlink(oldFilePath).catch(console.error);
             }
             updatedSound.filename = req.file.filename;
         }
 
-        await dataManager.saveSounds(sounds);
+        await soundService.updateSound(id, updatedSound);
         res.redirect('/sounds');
     } catch (error) {
         console.error('Error updating sound:', error);
@@ -96,8 +88,7 @@ router.post('/:id/play', async (req, res) => {
         const soundId = parseInt(req.params.id);
         console.log('Received request to play sound with ID:', soundId);
 
-        const sounds = await dataManager.getSounds();
-        const sound = sounds.find(s => s.id === soundId);
+        const sound = await soundService.getSoundById(soundId);
         
         if (!sound) {
             console.error('Sound not found for ID:', soundId);
@@ -165,28 +156,12 @@ router.post('/:id/play', async (req, res) => {
 router.post('/:id/delete', async (req, res) => {
     try {
         const id = parseInt(req.params.id);
-        const sounds = await dataManager.getSounds();
-        const soundIndex = sounds.findIndex(s => s.id === id);
-        
-        if (soundIndex === -1) {
-            return res.status(404).json({ error: 'Sound not found', details: `No sound with id ${id}` });
+        const sound = await soundService.getSoundById(id);
+        if (sound.filename) {
+            const filePath = path.join(__dirname, '../public/sounds', sound.filename);
+            await fs.unlink(filePath).catch(console.error);
         }
-
-        const soundToDelete = sounds[soundIndex];
-        const filePath = path.join(__dirname, '../public/sounds', soundToDelete.filename);
-
-        try {
-            await fs.unlink(filePath);
-        } catch (error) {
-            console.error('Error deleting sound file:', error);
-            if (error.code !== 'ENOENT') {
-                return res.status(500).json({ error: 'Error deleting sound file', details: error.message });
-            }
-        }
-
-        sounds.splice(soundIndex, 1);
-        await dataManager.saveSounds(sounds);
-
+        await soundService.deleteSound(id);
         res.status(200).json({ message: 'Sound deleted successfully' });
     } catch (error) {
         console.error('Error deleting sound:', error);
