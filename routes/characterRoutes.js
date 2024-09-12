@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const dataManager = require('../dataManager');
+const characterService = require('../services/characterService');
+const partService = require('../services/partService');
+const soundService = require('../services/soundService');
 const fs = require('fs').promises;
 const path = require('path');
 const multer = require('multer');
@@ -11,9 +13,9 @@ const upload = multer({
 
 router.get('/', async (req, res) => {
     try {
-        const characters = await dataManager.getCharacters();
-        const parts = await dataManager.getParts();
-        const sounds = await dataManager.getSounds();
+        const characters = await characterService.getAllCharacters();
+        const parts = await partService.getAllParts();
+        const sounds = await soundService.getAllSounds();
         res.render('characters', { title: 'Characters', characters, parts, sounds });
     } catch (error) {
         console.error('Error fetching characters:', error);
@@ -23,8 +25,8 @@ router.get('/', async (req, res) => {
 
 router.get('/new', async (req, res) => {
     try {
-        const parts = await dataManager.getParts();
-        const sounds = await dataManager.getSounds();
+        const parts = await partService.getAllParts();
+        const sounds = await soundService.getAllSounds();
         res.render('character-form', { title: 'Add New Character', action: '/characters', character: {}, parts, sounds });
     } catch (error) {
         console.error('Error rendering new character form:', error);
@@ -34,10 +36,9 @@ router.get('/new', async (req, res) => {
 
 router.get('/:id/edit', async (req, res) => {
     try {
-        const characters = await dataManager.getCharacters();
-        const character = characters.find(c => c.id === parseInt(req.params.id));
-        const parts = await dataManager.getParts();
-        const sounds = await dataManager.getSounds();
+        const character = await characterService.getCharacterById(parseInt(req.params.id));
+        const parts = await partService.getAllParts();
+        const sounds = await soundService.getAllSounds();
         if (character) {
             res.render('character-form', { title: 'Edit Character', action: `/characters/${character.id}`, character, parts, sounds });
         } else {
@@ -51,17 +52,14 @@ router.get('/:id/edit', async (req, res) => {
 
 router.post('/', upload.single('character_image'), async (req, res) => {
     try {
-        const characters = await dataManager.getCharacters();
         const newCharacter = {
-            id: dataManager.getNextId(characters),
             char_name: req.body.char_name,
             char_description: req.body.char_description,
             parts: req.body.parts ? req.body.parts.map(Number) : [],
             sounds: req.body.sounds ? req.body.sounds.map(Number) : [],
             image: req.file ? req.file.filename : null
         };
-        characters.push(newCharacter);
-        await dataManager.saveCharacters(characters);
+        await characterService.createCharacter(newCharacter);
         res.redirect('/characters');
     } catch (error) {
         console.error('Error creating character:', error);
@@ -72,28 +70,22 @@ router.post('/', upload.single('character_image'), async (req, res) => {
 router.post('/:id', upload.single('character_image'), async (req, res) => {
     try {
         const id = parseInt(req.params.id);
-        const characters = await dataManager.getCharacters();
-        const index = characters.findIndex(c => c.id === id);
-        if (index !== -1) {
-            characters[index] = {
-                ...characters[index],
-                char_name: req.body.char_name,
-                char_description: req.body.char_description,
-                parts: req.body.parts ? req.body.parts.map(Number) : [],
-                sounds: req.body.sounds ? req.body.sounds.map(Number) : []
-            };
-            if (req.file) {
-                if (characters[index].image) {
-                    const oldImagePath = path.join(__dirname, '../public/images/characters', characters[index].image);
-                    await fs.unlink(oldImagePath).catch(console.error);
-                }
-                characters[index].image = req.file.filename;
+        const updatedCharacter = {
+            char_name: req.body.char_name,
+            char_description: req.body.char_description,
+            parts: req.body.parts ? req.body.parts.map(Number) : [],
+            sounds: req.body.sounds ? req.body.sounds.map(Number) : []
+        };
+        if (req.file) {
+            const character = await characterService.getCharacterById(id);
+            if (character.image) {
+                const oldImagePath = path.join(__dirname, '../public/images/characters', character.image);
+                await fs.unlink(oldImagePath).catch(console.error);
             }
-            await dataManager.saveCharacters(characters);
-            res.redirect('/characters');
-        } else {
-            res.status(404).send('Character not found');
+            updatedCharacter.image = req.file.filename;
         }
+        await characterService.updateCharacter(id, updatedCharacter);
+        res.redirect('/characters');
     } catch (error) {
         console.error('Error updating character:', error);
         res.status(500).send('An error occurred while updating the character');
@@ -103,19 +95,13 @@ router.post('/:id', upload.single('character_image'), async (req, res) => {
 router.post('/:id/delete', async (req, res) => {
     try {
         const id = parseInt(req.params.id);
-        const characters = await dataManager.getCharacters();
-        const index = characters.findIndex(c => c.id === id);
-        if (index !== -1) {
-            if (characters[index].image) {
-                const imagePath = path.join(__dirname, '../public/images/characters', characters[index].image);
-                await fs.unlink(imagePath).catch(console.error);
-            }
-            characters.splice(index, 1);
-            await dataManager.saveCharacters(characters);
-            res.sendStatus(200);
-        } else {
-            res.status(404).send('Character not found');
+        const character = await characterService.getCharacterById(id);
+        if (character.image) {
+            const imagePath = path.join(__dirname, '../public/images/characters', character.image);
+            await fs.unlink(imagePath).catch(console.error);
         }
+        await characterService.deleteCharacter(id);
+        res.sendStatus(200);
     } catch (error) {
         console.error('Error deleting character:', error);
         res.status(500).send('An error occurred while deleting the character');
@@ -125,14 +111,13 @@ router.post('/:id/delete', async (req, res) => {
 router.get('/:id/parts', async (req, res) => {
     try {
         const characterId = parseInt(req.params.id);
-        const characters = await dataManager.getCharacters();
-        const character = characters.find(c => c.id === characterId);
+        const character = await characterService.getCharacterById(characterId);
         
         if (!character) {
             return res.status(404).json({ error: 'Character not found' });
         }
 
-        const allParts = await dataManager.getParts();
+        const allParts = await partService.getAllParts();
         const characterParts = allParts.filter(part => character.parts.includes(part.id));
 
         res.json(characterParts);
