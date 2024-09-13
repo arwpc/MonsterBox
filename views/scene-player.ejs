@@ -10,7 +10,7 @@
         #log-box {
             border: 1px solid #00ff00;
             padding: 10px;
-            height: 200px;
+            height: 300px;
             overflow-y: scroll;
             background-color: #001100;
             color: #00ff00;
@@ -23,11 +23,28 @@
         #controls button {
             margin-right: 10px;
         }
+        .step {
+            margin-bottom: 10px;
+            padding: 5px;
+            border: 1px solid #00ff00;
+        }
+        .current-step {
+            background-color: #003300;
+        }
     </style>
 </head>
 <body>
     <h1><%= title %></h1>
     <h2><%= scene.scene_name %></h2>
+    
+    <div id="scene-overview">
+        <h3>Scene Steps:</h3>
+        <% scene.steps.forEach((step, index) => { %>
+            <div class="step" id="step-<%= index %>">
+                <strong>Step <%= index + 1 %>:</strong> <%= step.name %> (<%= step.type %>)
+            </div>
+        <% }); %>
+    </div>
     
     <div id="log-box"></div>
     
@@ -35,114 +52,14 @@
         <button id="backward-btn">Backward</button>
         <button id="run-btn">Run</button>
         <button id="forward-btn">Forward</button>
+        <button id="stop-btn">Stop All Steps</button>
     </div>
     
     <a href="/scenes" class="button">Back to Scenes</a>
 
     <script>
-        $(document).ready(function() {
-            let currentStep = 0;
-            const sceneData = <%- JSON.stringify(scene) %>;
-            const steps = sceneData.steps || [];
-
-            function logMessage(message) {
-                const logBox = $("#log-box");
-                logBox.append(`<p>${new Date().toLocaleTimeString()} - ${message}</p>`);
-                logBox.scrollTop(logBox[0].scrollHeight);
-                console.log(message);
-            }
-
-            async function executeStep(step) {
-                return new Promise((resolve, reject) => {
-                    if (step.type === 'pause') {
-                        logMessage(`Pausing for ${step.duration}ms`);
-                        setTimeout(() => {
-                            logMessage(`Pause complete: ${step.name}`);
-                            resolve({ success: true, message: 'Pause completed' });
-                        }, step.duration);
-                    } else {
-                        logMessage(`Executing step: ${step.name}`);
-                        $.ajax({
-                            url: `/scenes/${sceneData.id}/execute-step`,
-                            method: 'POST',
-                            data: JSON.stringify(step),
-                            contentType: 'application/json',
-                            success: function(response) {
-                                logMessage(`Step ${step.name} executed successfully`);
-                                resolve(response);
-                            },
-                            error: function(xhr, status, error) {
-                                logMessage(`Error executing step ${step.name}: ${error}`);
-                                reject(error);
-                            }
-                        });
-                    }
-                });
-            }
-
-            $("#backward-btn").click(function() {
-                if (currentStep > 0) {
-                    currentStep--;
-                    logMessage(`Moved to step ${currentStep + 1}: ${steps[currentStep].name}`);
-                } else {
-                    logMessage("Already at the beginning of the scene");
-                }
-            });
-
-            $("#forward-btn").click(function() {
-                if (currentStep < steps.length - 1) {
-                    currentStep++;
-                    logMessage(`Moved to step ${currentStep + 1}: ${steps[currentStep].name}`);
-                } else {
-                    logMessage("Reached the end of the scene");
-                }
-            });
-
-            $("#run-btn").click(function() {
-                logMessage(`Running scene from step ${currentStep + 1}`);
-                runFromCurrentStep();
-            });
-
-            async function runFromCurrentStep() {
-                const concurrentPromises = [];
-                
-                for (let i = currentStep; i < steps.length; i++) {
-                    const step = steps[i];
-                    
-                    if (step.concurrent) {
-                        concurrentPromises.push(executeStep(step));
-                    } else {
-                        if (concurrentPromises.length > 0) {
-                            await Promise.all(concurrentPromises);
-                            concurrentPromises.length = 0;
-                        }
-                        const result = await executeStep(step);
-                        
-                        if (step.type === 'sensor') {
-                            if (!result.motionDetected) {
-                                logMessage("No motion detected. Ending scene.");
-                                return;
-                            }
-                        }
-                    }
-                    
-                    currentStep = i + 1;
-                }
-
-                if (concurrentPromises.length > 0) {
-                    await Promise.all(concurrentPromises);
-                }
-
-                logMessage("Scene execution completed");
-            }
-
-            // Initial scene overview
-            logMessage(`Scene Overview: "${sceneData.scene_name}"`);
-            logMessage(`Total steps: ${steps.length}`);
-            steps.forEach((step, index) => {
-                logMessage(`Step ${index + 1}: ${step.name} (Type: ${step.type}${step.concurrent ? ', Concurrent' : ''})`);
-            });
-        });
+        const sceneData = <%- JSON.stringify(scene) %>;
     </script>
+    <script src="/scripts/scene-player.js"></script>
 </body>
 </html>

@@ -38,7 +38,7 @@
                     <td>
                         <a href="/scenes/<%= scene.id %>/edit" class="button edit-scene" data-id="<%= scene.id %>">Edit</a>
                         <button onclick="deleteScene('<%= scene.id %>')" class="button">Delete</button>
-                        <a href="/scenes/<%= scene.id %>/play" class="button play-scene" data-id="<%= scene.id %>">Run</a>
+                        <a href="/scenes/<%= scene.id %>" class="button play-scene" data-id="<%= scene.id %>">Run</a>
                     </td>
                 </tr>
             <% }); %>
@@ -79,7 +79,7 @@
             $('.play-scene').on('click', function(e) {
                 e.preventDefault();
                 var id = $(this).data('id');
-                var url = '/scenes/' + id + '/play';
+                var url = '/scenes/' + id;
                 console.log('Attempting to play scene:', id);
                 console.log('Play URL:', url);
                 window.location.href = url;

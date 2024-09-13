@@ -4,8 +4,6 @@ const sceneService = require('../services/sceneService');
 const characterService = require('../services/characterService');
 const partService = require('../services/partService');
 const soundService = require('../services/soundService');
-const { spawn } = require('child_process');
-const path = require('path');
 
 const sceneController = {
     getAllScenes: async (req, res) => {
@@ -24,8 +22,18 @@ const sceneController = {
         try {
             const sceneId = req.params.id;
             const scene = await sceneService.getSceneById(sceneId);
+            const characters = await characterService.getAllCharacters();
+            const sounds = await soundService.getAllSounds();
+            const parts = await partService.getAllParts();
             if (scene) {
-                res.render('scene-player', { title: 'Scene Player', scene });
+                res.render('scene-form', { 
+                    title: 'Edit Scene', 
+                    scene, 
+                    action: `/scenes/${scene.id}`,
+                    characters,
+                    sounds,
+                    parts
+                });
             } else {
                 res.status(404).render('error', { title: 'Not Found', message: 'Scene not found' });
             }
@@ -83,41 +91,7 @@ const sceneController = {
             console.error('Error deleting scene:', error);
             res.status(500).render('error', { title: 'Error', message: 'Failed to delete scene', error });
         }
-    },
-
-    playScene: async (req, res) => {
-        try {
-            const scene = await sceneService.getSceneById(req.params.id);
-            // Add logic to play the scene
-            res.json({ message: 'Scene played successfully' });
-        } catch (error) {
-            console.error('Error playing scene:', error);
-            res.status(500).json({ error: 'Internal server error' });
-        }
-    },
-
-    executeStep: async (req, res) => {
-        try {
-            const { sceneId, stepIndex } = req.params;
-            // Add logic to execute the specific step
-            res.json({ message: 'Step executed successfully' });
-        } catch (error) {
-            console.error('Error executing step:', error);
-            res.status(500).json({ error: 'Internal server error' });
-        }
-    },
-
-    executeScene: async (req, res) => {
-        try {
-            const scene = await sceneService.getSceneById(req.params.id);
-            // Add logic to execute all steps of the scene
-            res.json({ message: 'Scene executed successfully' });
-        } catch (error) {
-            console.error('Error executing scene:', error);
-            res.status(500).json({ error: 'Internal server error' });
-        }
-    },
-
+    }
 };
 
 module.exports = sceneController;
