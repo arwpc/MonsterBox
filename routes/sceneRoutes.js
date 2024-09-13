@@ -15,4 +15,10 @@ router.get('/:id/play', sceneController.playScene);
 router.post('/:id/execute-step', sceneController.executeStep);
 router.post('/:id/execute', sceneController.executeScene);
 
+// Add this new test route
+router.get('/test', (req, res) => {
+    console.log('Test route hit');
+    res.json({ message: 'Test route successful' });
+});
+
 module.exports = router;
