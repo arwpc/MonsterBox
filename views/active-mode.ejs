@@ -1,0 +1,113 @@
+<!-- File: views/active-mode.ejs -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Active Mode</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .scene-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .scene-box {
+            width: 45%;
+            border: 1px solid #0f0;
+            padding: 10px;
+        }
+        .scene-controls {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        #availableScenes, #activatedScenes {
+            width: 100%;
+            height: 200px;
+            overflow-y: auto;
+            border: 1px solid #0f0;
+            background-color: #001100;
+            color: #0f0;
+            padding: 5px;
+        }
+        #activatedScenes {
+            list-style-type: none;
+            margin: 0;
+            padding: 5px;
+        }
+        .output-section {
+            width: 100%;
+            height: 300px;
+            overflow-y: scroll;
+            border: 1px solid #0f0;
+            padding: 10px;
+            background-color: #001100;
+            margin-bottom: 20px;
+        }
+        #cameraPlaceholder {
+            width: 100%;
+            height: 200px;
+            background-color: #001100;
+            border: 1px solid #0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Active Mode</h1>
+    
+    <div class="character-section">
+        <label for="characterSelect">Character:</label>
+        <select id="characterSelect">
+            <option value="">Select a character</option>
+            <% characters.forEach(function(character) { %>
+                <option value="<%= character.id %>"><%= character.char_name %></option>
+            <% }); %>
+        </select>
+        <div id="characterInfo"></div>
+    </div>
+
+    <div class="scene-container">
+        <div class="scene-box">
+            <h2>Available Scenes</h2>
+            <select id="availableScenes" multiple></select>
+        </div>
+        <div class="scene-controls">
+            <button id="addScenes">&gt;&gt;</button>
+            <button id="removeScenes">&lt;&lt;</button>
+        </div>
+        <div class="scene-box">
+            <h2>ACTIVE Scenes</h2>
+            <ul id="activatedScenes"></ul>
+        </div>
+    </div>
+
+    <div class="monitoring-section">
+        <h2>Monitoring: <span id="armStatus">DISARMED</span></h2>
+        <button id="armButton">Arm</button>
+        <button id="disarmButton" disabled>Disarm</button>
+    </div>
+
+    <div id="armedModeOutput" class="output-section">
+        <h3>Armed Mode Output</h3>
+    </div>
+
+    <div id="sceneDetailsOutput" class="output-section">
+        <h3>Scene Details</h3>
+    </div>
+
+    <div id="cameraPlaceholder">CAMERA STREAM PLACEHOLDER</div>
+
+    <a href="/" class="button">Back to Main Menu</a>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <script src="/js/active-mode.js"></script>
+</body>
+</html>

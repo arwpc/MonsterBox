@@ -17,11 +17,6 @@
         "concurrent": "on"
       },
       {
-        "type": "pause",
-        "name": "hold up",
-        "duration": "5000"
-      },
-      {
         "type": "linear-actuator",
         "name": "Swing Axe Up",
         "part_id": "8",
@@ -33,9 +28,17 @@
         "type": "led",
         "name": "eyes on",
         "part_id": "4",
-        "duration": "1000",
+        "duration": "5000",
         "state": "on",
         "brightness": "100"
+      },
+      {
+        "type": "linear-actuator",
+        "name": "Axe Down",
+        "part_id": "8",
+        "duration": "5000",
+        "direction": "forward",
+        "speed": "100"
       }
     ]
   },
@@ -63,6 +66,26 @@
         "duration": "5000",
         "state": "on",
         "brightness": "100"
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "character_id": 1,
+    "scene_name": "Smiling Loudly",
+    "steps": [
+      {
+        "type": "led",
+        "name": "asd",
+        "part_id": "4",
+        "duration": "7500",
+        "state": "on",
+        "brightness": "100"
+      },
+      {
+        "type": "sound",
+        "name": "asdasdasd",
+        "sound_id": "1"
       }
     ]
   }
