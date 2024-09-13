@@ -15,13 +15,14 @@ const sceneRoutes = require('./routes/sceneRoutes');
 const characterRoutes = require('./routes/characterRoutes');
 const soundRoutes = require('./routes/soundRoutes');
 const linearActuatorRoutes = require('./routes/linearActuatorRoutes');
-const activeModeRoutes = require('./routes/activeModeRoutes'); // Add this line
+const activeModeRoutes = require('./routes/activeModeRoutes');
 
 // Basic Express setup
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
+app.use('/scripts', express.static('scripts')); // Add this line to serve files from the scripts directory
 
 // Routes
 app.use('/parts/led', ledRoutes);
@@ -33,7 +34,7 @@ app.use('/parts', partRoutes);
 app.use('/scenes', sceneRoutes);
 app.use('/characters', characterRoutes);
 app.use('/sounds', soundRoutes);
-app.use('/active-mode', activeModeRoutes); // Add this line
+app.use('/active-mode', activeModeRoutes);
 
 // Main menu route
 app.get('/', (req, res) => {
