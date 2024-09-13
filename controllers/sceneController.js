@@ -11,8 +11,9 @@ const sceneController = {
     getAllScenes: async (req, res) => {
         try {
             const scenes = await sceneService.getAllScenes();
+            const characters = await characterService.getAllCharacters();
             console.log('Retrieved scenes:', scenes);
-            res.render('scenes', { title: 'All Scenes', scenes });
+            res.render('scenes', { title: 'All Scenes', scenes, characters });
         } catch (error) {
             console.error('Error getting all scenes:', error);
             res.status(500).render('error', { title: 'Error', message: 'Failed to retrieve scenes', error });
@@ -117,7 +118,6 @@ const sceneController = {
         }
     },
 
-    // ... (keep all other existing methods unchanged)
 };
 
 module.exports = sceneController;
