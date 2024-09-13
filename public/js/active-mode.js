@@ -85,6 +85,7 @@ $(document).ready(function() {
         $(this).prop('disabled', true);
         $('#disarmButton').prop('disabled', false);
         $('#armStatus').text('ARMED').removeClass('disarmed').addClass('armed');
+        logArmedModeOutput('System armed. Starting Active Mode.');
         startActiveModeLoop();
     }
 
@@ -93,7 +94,7 @@ $(document).ready(function() {
         $(this).prop('disabled', true);
         $('#armButton').prop('disabled', false);
         $('#armStatus').text('DISARMED').removeClass('armed').addClass('disarmed');
-        logArmedModeOutput('Active Mode stopped');
+        logArmedModeOutput('System disarmed. Active Mode stopped.');
     }
 
     function startActiveModeLoop() {
@@ -107,8 +108,13 @@ $(document).ready(function() {
                 index = 0; // Reset to the beginning of the list
             }
             const sceneId = scenes[index];
+            logArmedModeOutput(`Starting execution of scene ${sceneId}`);
             runScene(sceneId).then(() => {
+                logArmedModeOutput(`Completed execution of scene ${sceneId}`);
                 setTimeout(() => runNextScene(index + 1), 5000); // 5 seconds between scenes
+            }).catch((error) => {
+                logArmedModeOutput(`Error executing scene ${sceneId}: ${error.message}`);
+                setTimeout(() => runNextScene(index + 1), 5000); // Continue to next scene even if there's an error
             });
         }
 
@@ -117,50 +123,26 @@ $(document).ready(function() {
 
     function runScene(sceneId) {
         return new Promise((resolve, reject) => {
-            logArmedModeOutput(`Starting execution of scene ${sceneId}`);
-            $.get(`/scenes/${sceneId}`, function(sceneData) {
-                logSceneDetails(sceneData);
-                $.ajax({
-                    url: `/scenes/${sceneId}/execute`,
-                    method: 'POST',
-                    timeout: 60000, // 1 minute timeout
-                    success: function(response) {
-                        logArmedModeOutput(`Scene ${sceneId} execution completed`);
-                        processSceneExecutionResponse(response);
-                        resolve();
-                    },
-                    error: function(jqXHR, textStatus, errorThrown) {
-                        handleSceneExecutionError(sceneId, jqXHR, textStatus, errorThrown);
-                        resolve(); // Resolve even on error to continue with next scene
-                    }
-                });
-            }).fail(function(jqXHR, textStatus, errorThrown) {
-                handleSceneFetchError(sceneId, jqXHR, textStatus, errorThrown);
-                resolve(); // Resolve even on error to continue with next scene
+            $.ajax({
+                url: `/scenes/${sceneId}/execute`,
+                method: 'POST',
+                timeout: 60000, // 1 minute timeout
+                success: function(response) {
+                    processSceneExecutionResponse(response);
+                    resolve();
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    handleSceneExecutionError(sceneId, jqXHR, textStatus, errorThrown);
+                    reject(new Error(`Failed to execute scene ${sceneId}`));
+                }
             });
         });
     }
 
     function handleSceneExecutionError(sceneId, jqXHR, textStatus, errorThrown) {
         console.error(`Scene ${sceneId} execution error:`, jqXHR.responseText);
-        logArmedModeOutput(`Error executing scene ${sceneId}: ${jqXHR.responseJSON ? jqXHR.responseJSON.message : 'Unknown error'}`);
+        logArmedModeOutput(`Error executing scene ${sceneId}: ${jqXHR.responseJSON ? jqXHR.responseJSON.error : 'Unknown error'}`);
         logArmedModeOutput(`Error details: ${textStatus} - ${errorThrown}`);
-    }
-
-    function handleSceneFetchError(sceneId, jqXHR, textStatus, errorThrown) {
-        console.error(`Error fetching scene ${sceneId}:`, jqXHR.responseText);
-        logArmedModeOutput(`Error fetching scene ${sceneId}: ${jqXHR.responseJSON ? jqXHR.responseJSON.message : 'Unknown error'}`);
-        logArmedModeOutput(`Error details: ${textStatus} - ${errorThrown}`);
-    }
-
-    function logSceneDetails(scene) {
-        let output = `${scene.scene_name}\n`;
-        output += `${new Date().toLocaleTimeString()} - Scene Overview: "${scene.scene_name}"\n`;
-        output += `${new Date().toLocaleTimeString()} - Total steps: ${scene.steps.length}\n`;
-        scene.steps.forEach((step, index) => {
-            output += `${new Date().toLocaleTimeString()} - Step ${index + 1}: ${step.name} (Type: ${step.type}${step.concurrent ? ', Concurrent' : ''})\n`;
-        });
-        logSceneDetailsOutput(output);
     }
 
     function processSceneExecutionResponse(response) {
@@ -169,35 +151,44 @@ $(document).ready(function() {
             try {
                 response = JSON.parse(response);
             } catch (e) {
-                logArmedModeOutput(response);
+                logArmedModeOutput(`Error parsing response: ${response}`);
                 return;
             }
         }
 
-        if (response.steps && Array.isArray(response.steps)) {
-            response.steps.forEach((step, index) => {
-                logArmedModeOutput(`Step ${index + 1}: ${step.name} (${step.type})`);
-                if (step.result) logArmedModeOutput(`  Result: ${step.result}`);
-                if (step.output) logArmedModeOutput(`  Output: ${step.output}`);
-                if (step.error) logArmedModeOutput(`  Error: ${step.error}`);
-            });
-        } else if (response.results && Array.isArray(response.results)) {
-            response.results.forEach((result, index) => {
-                logArmedModeOutput(`Step ${index + 1}:`);
-                if (result.success) logArmedModeOutput(`  Success: ${result.message}`);
-                if (result.output) logArmedModeOutput(`  Output: ${result.output}`);
-                if (result.error) logArmedModeOutput(`  Error: ${result.error}`);
-            });
+        if (response.success) {
+            logArmedModeOutput(response.message);
+            if (response.results && Array.isArray(response.results)) {
+                processResults(response.results);
+            } else {
+                logArmedModeOutput('No results returned from scene execution.');
+            }
         } else {
-            logArmedModeOutput('Unexpected response format. Check console for details.');
-            console.log('Unexpected response format:', response);
+            logArmedModeOutput(`Error: ${response.error}`);
         }
+    }
+
+    function processResults(results, stepIndex = 1) {
+        results.forEach((result) => {
+            if (Array.isArray(result)) {
+                // Handle concurrent steps
+                logArmedModeOutput(`Step ${stepIndex} (Concurrent):`);
+                processResults(result, stepIndex);
+            } else {
+                logArmedModeOutput(`Step ${stepIndex}:`);
+                if (result.success) logArmedModeOutput(`  Success: ${result.message}`);
+                if (result.stdout) logArmedModeOutput(`  Output: ${result.stdout}`);
+                if (result.stderr) logArmedModeOutput(`  Error: ${result.stderr}`);
+                stepIndex++;
+            }
+        });
     }
 
     function logArmedModeOutput(message) {
         const timestamp = new Date().toLocaleTimeString();
         $('#armedModeOutput').append(`<p>[${timestamp}] ${message}</p>`);
         $('#armedModeOutput').scrollTop($('#armedModeOutput')[0].scrollHeight);
+        console.log(`[${timestamp}] ${message}`); // Also log to console for debugging
     }
 
     function logSceneDetailsOutput(message) {
