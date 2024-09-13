@@ -12,6 +12,12 @@
       },
       {
         "type": "sound",
+        "name": "othersaound",
+        "sound_id": "2",
+        "concurrent": "on"
+      },
+      {
+        "type": "sound",
         "name": "Santos",
         "sound_id": "3",
         "concurrent": "on"
@@ -50,13 +56,13 @@
       {
         "type": "sound",
         "name": "First Backgrouhnd Sound",
-        "sound_id": "2",
+        "sound_id": "3",
         "concurrent": "on"
       },
       {
         "type": "sound",
         "name": "santos",
-        "sound_id": "3",
+        "sound_id": "1",
         "concurrent": "on"
       },
       {

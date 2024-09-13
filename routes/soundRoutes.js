@@ -1,3 +1,5 @@
+// File: routes/soundRoutes.js
+
 const express = require('express');
 const path = require('path');
 const { spawn } = require('child_process');
@@ -16,6 +18,28 @@ const storage = multer.diskStorage({
     }
 });
 const upload = multer({ storage: storage });
+
+let soundPlayerProcess = null;
+
+function startSoundPlayer() {
+    if (!soundPlayerProcess) {
+        const scriptPath = path.resolve(__dirname, '..', 'scripts', 'sound_player.py');
+        soundPlayerProcess = spawn('python3', [scriptPath]);
+
+        soundPlayerProcess.stdout.on('data', (data) => {
+            console.log(`Sound player output: ${data}`);
+        });
+
+        soundPlayerProcess.stderr.on('data', (data) => {
+            console.error(`Sound player error: ${data}`);
+        });
+
+        soundPlayerProcess.on('close', (code) => {
+            console.log(`Sound player exited with code ${code}`);
+            soundPlayerProcess = null;
+        });
+    }
+}
 
 router.get('/', async (req, res) => {
     try {
@@ -108,43 +132,19 @@ router.post('/:id/play', async (req, res) => {
             return res.status(404).json({ error: 'Sound file not accessible', details: error.message, filePath });
         }
 
-        const pythonScriptPath = path.resolve(__dirname, '..', 'scripts', 'play_sound.py');
-        console.log('Python script path:', pythonScriptPath);
+        startSoundPlayer();
 
-        const command = `python3 "${pythonScriptPath}" "${filePath}"`;
-        console.log('Executing command:', command);
+        if (!soundPlayerProcess) {
+            return res.status(500).json({ error: 'Failed to start sound player' });
+        }
 
-        const childProcess = spawn(command, { shell: true });
+        const command = `PLAY|${sound.id}|${filePath}\n`;
+        soundPlayerProcess.stdin.write(command);
 
-        let pythonOutput = '';
-        let pythonError = '';
-
-        childProcess.stdout.on('data', (data) => {
-            pythonOutput += data.toString();
-            console.log(`Python script output: ${data}`);
-        });
-
-        childProcess.stderr.on('data', (data) => {
-            pythonError += data.toString();
-            console.error(`Python script error: ${data}`);
-        });
-
-        childProcess.on('close', (code) => {
-            console.log(`Python script exited with code ${code}`);
-            if (code !== 0) {
-                return res.status(500).json({ 
-                    error: 'Error playing sound', 
-                    details: `Python script exited with code ${code}`,
-                    output: pythonOutput,
-                    errorOutput: pythonError,
-                    command: command
-                });
-            }
-            res.status(200).json({ 
-                message: 'Playing sound on character',
-                pythonOutput,
-                command: command
-            });
+        res.status(200).json({ 
+            message: 'Playing sound on character',
+            sound: sound.name,
+            file: sound.filename
         });
 
     } catch (error) {

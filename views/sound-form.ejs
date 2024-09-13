@@ -5,27 +5,298 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
     <link rel="stylesheet" href="/css/style.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 </head>
 <body>
     <h1><%= title %></h1>
-    <form action="<%= action %>" method="POST" enctype="multipart/form-data">
-        <% if (sound && sound.id) { %>
-            <input type="hidden" name="id" value="<%= sound.id %>">
-        <% } %>
+    <form id="sceneForm" action="<%= action %>" method="POST">
+        <input type="hidden" name="id" value="<%= scene.id %>">
+        
         <div>
-            <label for="name">Sound Name:</label>
-            <input type="text" id="name" name="name" value="<%= sound ? sound.name : '' %>" required>
+            <label for="character_id">Character:</label>
+            <select id="character_id" name="character_id" required>
+                <% characters.forEach(function(character) { %>
+                    <option value="<%= character.id %>" <%= (scene.character_id === character.id) ? 'selected' : '' %>>
+                        <%= character.char_name %>
+                    </option>
+                <% }); %>
+            </select>
         </div>
         <div>
-            <label for="sound_file">Sound File:</label>
-            <input type="file" id="sound_file" name="sound_file" accept="audio/*" <%= sound && sound.id ? '' : 'required' %>>
-            <% if (sound && sound.filename) { %>
-                <p>Current file: <%= sound.filename %></p>
-                <input type="hidden" name="current_filename" value="<%= sound.filename %>">
-            <% } %>
+            <label for="scene_name">Scene Name:</label>
+            <input type="text" id="scene_name" name="scene_name" value="<%= scene.scene_name || '' %>" required>
         </div>
-        <button type="submit">Save Sound</button>
+
+        <h2>Steps</h2>
+        <div id="steps" class="sortable">
+            <% (scene.steps || []).forEach(function(step, index) { %>
+                <div class="step" data-index="<%= index %>">
+                    <h3>Step <%= index + 1 %>: <%= step.type.charAt(0).toUpperCase() + step.type.slice(1) %></h3>
+                    <input type="hidden" name="steps[<%= index %>][type]" value="<%= step.type %>">
+                    <input type="text" name="steps[<%= index %>][name]" value="<%= step.name %>" placeholder="Step Name" required>
+                    <% if (step.type === 'sound') { %>
+                        <select name="steps[<%= index %>][sound_id]" required>
+                            <% sounds.forEach(function(sound) { %>
+                                <option value="<%= sound.id %>" <%= (step.sound_id == sound.id) ? 'selected' : '' %>><%= sound.name %></option>
+                            <% }); %>
+                        </select>
+                    <% } else if (['motor', 'linear-actuator', 'servo', 'led', 'light'].includes(step.type)) { %>
+                        <select name="steps[<%= index %>][part_id]" required>
+                            <% parts.filter(part => part.type === step.type).forEach(function(part) { %>
+                                <option value="<%= part.id %>" <%= (step.part_id === part.id) ? 'selected' : '' %>><%= part.name %></option>
+                            <% }); %>
+                        </select>
+                        <input type="number" name="steps[<%= index %>][duration]" value="<%= step.duration || '' %>" placeholder="Duration (ms)" required>
+                        <% if (step.type === 'motor' || step.type === 'linear-actuator') { %>
+                            <select name="steps[<%= index %>][direction]" required>
+                                <option value="forward" <%= step.direction === 'forward' ? 'selected' : '' %>>Forward</option>
+                                <option value="backward" <%= step.direction === 'backward' ? 'selected' : '' %>>Backward</option>
+                            </select>
+                            <input type="number" name="steps[<%= index %>][speed]" value="<%= step.speed || '' %>" placeholder="Speed (0-100)" min="0" max="100" required>
+                        <% } else if (step.type === 'led' || step.type === 'light') { %>
+                            <select name="steps[<%= index %>][state]" required>
+                                <option value="on" <%= step.state === 'on' ? 'selected' : '' %>>On</option>
+                                <option value="off" <%= step.state === 'off' ? 'selected' : '' %>>Off</option>
+                            </select>
+                            <% if (step.type === 'led') { %>
+                                <input type="number" name="steps[<%= index %>][brightness]" value="<%= step.brightness || '' %>" placeholder="Brightness (0-100)" min="0" max="100" required>
+                            <% } %>
+                        <% } %>
+                    <% } else if (step.type === 'sensor') { %>
+                        <select name="steps[<%= index %>][part_id]" required>
+                            <% parts.filter(part => part.type === 'sensor').forEach(function(part) { %>
+                                <option value="<%= part.id %>" <%= (step.part_id === part.id) ? 'selected' : '' %>><%= part.name %></option>
+                            <% }); %>
+                        </select>
+                        <input type="number" name="steps[<%= index %>][timeout]" value="<%= step.timeout || 30 %>" placeholder="Timeout (seconds)" required>
+                    <% } else if (step.type === 'pause') { %>
+                        <input type="number" name="steps[<%= index %>][duration]" value="<%= step.duration || '' %>" placeholder="Duration (ms)" required>
+                    <% } %>
+                    <label>
+                        <input type="checkbox" name="steps[<%= index %>][concurrent]" <%= step.concurrent ? 'checked' : '' %>>
+                        Run Concurrently
+                    </label>
+                    <button type="button" onclick="removeStep(<%= index %>)">Remove Step</button>
+                    <button type="button" onclick="copyStep(<%= index %>)">Copy Step</button>
+                </div>
+            <% }); %>
+        </div>
+        
+        <button type="button" onclick="addStep('motor')">Add Motor</button>
+        <button type="button" onclick="addStep('linear-actuator')">Add Linear Actuator</button>
+        <button type="button" onclick="addStep('servo')">Add Servo</button>
+        <button type="button" onclick="addStep('led')">Add LED</button>
+        <button type="button" onclick="addStep('light')">Add Light</button>
+        <button type="button" onclick="addStep('sensor')">Add Sensor</button>
+        <button type="button" onclick="addStep('sound')">Add Sound</button>
+        <button type="button" onclick="addStep('pause')">Add Pause</button>
+        <button type="submit">Save Scene</button>
     </form>
-    <a href="/sounds" class="button">Back to Sounds</a>
+
+    <a href="/scenes" class="button">Back to Scenes</a>
+
+    <script>
+        $(document).ready(function() {
+            $('#character_id').change(function() {
+                updatePartOptions();
+            });
+
+            $(".sortable").sortable({
+                update: function(event, ui) {
+                    updateStepNumbers();
+                }
+            });
+
+            // Initial update of part options
+            updatePartOptions();
+        });
+
+        function updatePartOptions() {
+            const characterId = $('#character_id').val();
+            $.ajax({
+                url: '/characters/' + characterId + '/parts',
+                method: 'GET',
+                success: function(parts) {
+                    window.availableParts = parts;
+                    updateStepPartOptions();
+                },
+                error: function(error) {
+                    console.error('Error fetching parts:', error);
+                }
+            });
+        }
+
+        function updateStepPartOptions() {
+            $('.step').each(function() {
+                const stepType = $(this).find('input[name$="[type]"]').val();
+                const partSelect = $(this).find('select[name$="[part_id]"]');
+                if (partSelect.length) {
+                    const currentValue = partSelect.val();
+                    partSelect.empty();
+                    window.availableParts.filter(part => part.type === stepType).forEach(part => {
+                        partSelect.append($('<option>', {
+                            value: part.id,
+                            text: part.name,
+                            selected: part.id == currentValue
+                        }));
+                    });
+                }
+            });
+        }
+
+        function addStep(type) {
+            const steps = document.getElementById('steps');
+            const stepCount = steps.children.length;
+            const newStep = document.createElement('div');
+            newStep.className = 'step';
+            newStep.dataset.index = stepCount;
+
+            let stepContent = `
+                <h3>Step ${stepCount + 1}: ${type.charAt(0).toUpperCase() + type.slice(1)}</h3>
+                <input type="hidden" name="steps[${stepCount}][type]" value="${type}">
+                <input type="text" name="steps[${stepCount}][name]" placeholder="Step Name" required>
+            `;
+
+            if (type === 'sound') {
+                stepContent += `
+                    <select name="steps[${stepCount}][sound_id]" required>
+                        <% sounds.forEach(function(sound) { %>
+                            <option value="<%= sound.id %>"><%= sound.name %></option>
+                        <% }); %>
+                    </select>
+                `;
+            } else if (['motor', 'linear-actuator', 'servo', 'led', 'light'].includes(type)) {
+                stepContent += `
+                    <select name="steps[${stepCount}][part_id]" required>
+                        ${getPartOptions(type)}
+                    </select>
+                    <input type="number" name="steps[${stepCount}][duration]" placeholder="Duration (ms)" required>
+                `;
+                if (type === 'motor' || type === 'linear-actuator') {
+                    stepContent += `
+                        <select name="steps[${stepCount}][direction]" required>
+                            <option value="forward">Forward</option>
+                            <option value="backward">Backward</option>
+                        </select>
+                        <input type="number" name="steps[${stepCount}][speed]" placeholder="Speed (0-100)" min="0" max="100" required>
+                    `;
+                } else if (type === 'led' || type === 'light') {
+                    stepContent += `
+                        <select name="steps[${stepCount}][state]" required>
+                            <option value="on">On</option>
+                            <option value="off">Off</option>
+                        </select>
+                    `;
+                    if (type === 'led') {
+                        stepContent += `
+                            <input type="number" name="steps[${stepCount}][brightness]" placeholder="Brightness (0-100)" min="0" max="100" required>
+                        `;
+                    }
+                }
+            } else if (type === 'sensor') {
+                stepContent += `
+                    <select name="steps[${stepCount}][part_id]" required>
+                        ${getPartOptions('sensor')}
+                    </select>
+                    <input type="number" name="steps[${stepCount}][timeout]" placeholder="Timeout (seconds)" value="30" required>
+                `;
+            } else if (type === 'pause') {
+                stepContent += `
+                    <input type="number" name="steps[${stepCount}][duration]" placeholder="Duration (ms)" required>
+                `;
+            }
+
+            stepContent += `
+                <label>
+                    <input type="checkbox" name="steps[${stepCount}][concurrent]">
+                    Run Concurrently
+                </label>
+                <button type="button" onclick="removeStep(${stepCount})">Remove Step</button>
+                <button type="button" onclick="copyStep(${stepCount})">Copy Step</button>
+            `;
+
+            newStep.innerHTML = stepContent;
+            steps.appendChild(newStep);
+            updateStepNumbers();
+        }
+
+        function getPartOptions(type) {
+            if (!window.availableParts) {
+                return '<option value="">Please select a character first</option>';
+            }
+            return window.availableParts
+                .filter(part => part.type === type)
+                .map(part => `<option value="${part.id}">${part.name}</option>`)
+                .join('');
+        }
+
+        function removeStep(index) {
+            const steps = document.getElementById('steps');
+            steps.removeChild(steps.children[index]);
+            updateStepNumbers();
+        }
+
+        function copyStep(index) {
+            const steps = document.getElementById('steps');
+            const originalStep = steps.children[index];
+            const newStep = originalStep.cloneNode(true);
+            const newIndex = steps.children.length;
+
+            // Update the step number and type
+            const stepType = newStep.querySelector('input[name$="[type]"]').value;
+            newStep.querySelector('h3').textContent = `Step ${newIndex + 1}: ${stepType.charAt(0).toUpperCase() + stepType.slice(1)}`;
+
+            // Update the data-index attribute
+            newStep.dataset.index = newIndex;
+
+            // Update the name attribute of all inputs and selects
+            newStep.querySelectorAll('input, select').forEach(element => {
+                if (element.name) {
+                    element.name = element.name.replace(`steps[${index}]`, `steps[${newIndex}]`);
+                }
+            });
+
+            // Update the onclick attribute of the buttons
+            newStep.querySelector('button[onclick^="removeStep"]').setAttribute('onclick', `removeStep(${newIndex})`);
+            newStep.querySelector('button[onclick^="copyStep"]').setAttribute('onclick', `copyStep(${newIndex})`);
+
+            // Append the new step to the steps container
+            steps.appendChild(newStep);
+
+            // Update the step name to indicate it's a copy
+            const nameInput = newStep.querySelector('input[name$="[name]"]');
+            nameInput.value = nameInput.value + ' (Copy)';
+
+            updateStepNumbers();
+        }
+
+        function updateStepNumbers() {
+            const steps = document.getElementById('steps').children;
+            for (let i = 0; i < steps.length; i++) {
+                const stepType = steps[i].querySelector('input[name$="[type]"]').value;
+                steps[i].querySelector('h3').textContent = `Step ${i + 1}: ${stepType.charAt(0).toUpperCase() + stepType.slice(1)}`;
+                steps[i].dataset.index = i;
+                updateStepInputNames(steps[i], i);
+            }
+        }
+
+        function updateStepInputNames(stepElement, newIndex) {
+            const inputs = stepElement.querySelectorAll('input, select');
+            inputs.forEach(input => {
+                const name = input.getAttribute('name');
+                if (name) {
+                    input.setAttribute('name', name.replace(/steps\[\d+\]/, `steps[${newIndex}]`));
+                }
+            });
+        }
+
+        // Ensure all steps are included when submitting the form
+        document.getElementById('sceneForm').onsubmit = function() {
+            updateStepNumbers();
+            return true;
+        };
+    </script>
 </body>
 </html>
