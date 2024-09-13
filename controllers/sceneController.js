@@ -8,7 +8,85 @@ const { spawn } = require('child_process');
 const path = require('path');
 
 const sceneController = {
-    // ... (keep all existing methods)
+    getAllScenes: async (req, res) => {
+        try {
+            const scenes = await sceneService.getAllScenes();
+            res.render('scenes', { scenes });
+        } catch (error) {
+            console.error('Error getting all scenes:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    },
+
+    newScene: (req, res) => {
+        res.render('scene-form', { scene: {}, title: 'Create New Scene' });
+    },
+
+    getSceneById: async (req, res) => {
+        try {
+            const scene = await sceneService.getSceneById(req.params.id);
+            if (!scene) {
+                return res.status(404).json({ error: 'Scene not found' });
+            }
+            res.render('scene-form', { scene, title: 'Edit Scene' });
+        } catch (error) {
+            console.error('Error getting scene by ID:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    },
+
+    createScene: async (req, res) => {
+        try {
+            const newScene = await sceneService.createScene(req.body);
+            res.redirect('/scenes');
+        } catch (error) {
+            console.error('Error creating scene:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    },
+
+    updateScene: async (req, res) => {
+        try {
+            const updatedScene = await sceneService.updateScene(req.params.id, req.body);
+            res.redirect('/scenes');
+        } catch (error) {
+            console.error('Error updating scene:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    },
+
+    deleteScene: async (req, res) => {
+        try {
+            await sceneService.deleteScene(req.params.id);
+            res.redirect('/scenes');
+        } catch (error) {
+            console.error('Error deleting scene:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    },
+
+    playScene: async (req, res) => {
+        try {
+            const scene = await sceneService.getSceneById(req.params.id);
+            if (!scene) {
+                return res.status(404).json({ error: 'Scene not found' });
+            }
+            res.render('scene-player', { scene });
+        } catch (error) {
+            console.error('Error playing scene:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    },
+
+    executeStep: async (req, res) => {
+        try {
+            const result = await sceneController._executeStep(req.body);
+            res.json(result);
+        } catch (error) {
+            console.error('Error executing step:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    },
 
     executeScene: async (req, res) => {
         console.log('Executing scene with ID:', req.params.id);
