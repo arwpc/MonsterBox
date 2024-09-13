@@ -10,6 +10,22 @@ $(document).ready(function() {
     $('#armButton').click(armSystem);
     $('#disarmButton').click(disarmSystem);
 
+    // Add this new test function
+    function testServerConnection() {
+        $.get('/scenes/test')
+            .done(function(response) {
+                console.log('Test route response:', response);
+                logArmedModeOutput('Server test successful: ' + response.message);
+            })
+            .fail(function(jqXHR, textStatus, errorThrown) {
+                console.error('Test route error:', textStatus, errorThrown);
+                logArmedModeOutput('Server test failed: ' + textStatus);
+            });
+    }
+
+    // Call the test function when the page loads
+    testServerConnection();
+
     function fetchCharacterInfo() {
         const characterId = $(this).val();
         if (characterId) {

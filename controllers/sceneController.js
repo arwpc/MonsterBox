@@ -8,10 +8,10 @@ const { spawn } = require('child_process');
 const path = require('path');
 
 const sceneController = {
-    // ... (previous methods remain unchanged)
+    // ... (keep all other methods unchanged)
 
     executeScene: async (req, res) => {
-        console.log('Executing scene with ID:', req.params.id);
+        console.log('executeScene called with scene ID:', req.params.id);
         try {
             const sceneId = req.params.id;
             const scene = await sceneService.getSceneById(sceneId);
@@ -69,110 +69,7 @@ const sceneController = {
         }
     },
 
-    _executeStep: async (step) => {
-        return new Promise(async (resolve, reject) => {
-            console.log('Executing step:', JSON.stringify(step, null, 2));
-
-            if (step.type === 'pause') {
-                console.log(`Pausing for ${step.duration}ms`);
-                setTimeout(() => {
-                    console.log('Pause completed');
-                    resolve({ success: true, message: 'Pause completed' });
-                }, parseInt(step.duration));
-                return;
-            }
-
-            let scriptPath;
-            let args = [];
-
-            try {
-                switch(step.type) {
-                    case 'motor':
-                    case 'linear-actuator':
-                        const part = await partService.getPartById(step.part_id);
-                        scriptPath = path.join(__dirname, '..', 'scripts', 'linear_actuator_control.py');
-                        args = [
-                            step.direction || 'forward',
-                            step.speed ? step.speed.toString() : '100',
-                            step.duration ? step.duration.toString() : '1000',
-                            part.directionPin.toString(),
-                            part.pwmPin.toString()
-                        ];
-                        break;
-                    case 'light':
-                    case 'led':
-                        scriptPath = path.join(__dirname, '..', 'scripts', 'light_control.py');
-                        const lightPart = await partService.getPartById(step.part_id);
-                        args = [
-                            lightPart.gpioPin.toString(),
-                            step.state || 'on',
-                            step.duration ? step.duration.toString() : '1000'
-                        ];
-                        if (step.type === 'led') {
-                            args.push(step.brightness ? step.brightness.toString() : '100');
-                        }
-                        break;
-                    case 'sensor':
-                        scriptPath = path.join(__dirname, '..', 'scripts', 'sensor_control.py');
-                        const sensorPart = await partService.getPartById(step.part_id);
-                        args = [sensorPart.gpioPin.toString(), step.timeout ? step.timeout.toString() : '30'];
-                        break;
-                    case 'sound':
-                        scriptPath = path.join(__dirname, '..', 'scripts', 'play_sound.py');
-                        const sound = await soundService.getSoundById(step.sound_id);
-                        if (!sound || !sound.filename) {
-                            throw new Error('Sound file not found');
-                        }
-                        args = [path.join(__dirname, '..', 'public', 'sounds', sound.filename)];
-                        if (step.concurrent) {
-                            args.push('true');
-                        }
-                        break;
-                    default:
-                        throw new Error('Unknown step type');
-                }
-
-                console.log('Spawning process:', 'python3', scriptPath, ...args);
-                const process = spawn('python3', [scriptPath, ...args]);
-
-                let stdout = '';
-                let stderr = '';
-
-                process.stdout.on('data', (data) => {
-                    stdout += data.toString();
-                    console.log(`stdout: ${data}`);
-                });
-
-                process.stderr.on('data', (data) => {
-                    stderr += data.toString();
-                    console.error(`stderr: ${data}`);
-                });
-
-                process.on('close', (code) => {
-                    console.log(`Child process exited with code ${code}`);
-                    if (code === 0) {
-                        if (step.type === 'sensor') {
-                            const motionDetected = stdout.includes('Motion detected');
-                            console.log(`Sensor result: ${motionDetected ? 'Motion detected' : 'No motion detected'}`);
-                            resolve({ success: true, message: motionDetected ? 'Motion detected' : 'No motion detected', motionDetected });
-                        } else if (step.type === 'sound' && step.concurrent) {
-                            console.log('Concurrent sound playback initiated');
-                            resolve({ success: true, message: 'Concurrent sound playback initiated', stdout, stderr });
-                        } else {
-                            console.log('Step executed successfully');
-                            resolve({ success: true, message: 'Step executed successfully', stdout, stderr });
-                        }
-                    } else {
-                        console.error(`Step execution failed with code ${code}`);
-                        reject(new Error(`Step execution failed with code ${code}`));
-                    }
-                });
-            } catch (error) {
-                console.error('Error in _executeStep:', error);
-                reject(error);
-            }
-        });
-    },
+    // ... (keep all other methods unchanged)
 };
 
 module.exports = sceneController;
