@@ -80,19 +80,27 @@ const scenePlayerController = {
     stopScene: async (req, res) => {
         console.log('Stopping all steps and terminating processes');
         isExecuting = false;
-        soundController.stopAllSounds();
-        partController.stopAllParts();
-
-        res.json({ message: 'All steps stopped and processes terminated' });
+        try {
+            await soundController.stopAllSounds();
+            await partController.stopAllParts();
+            res.json({ message: 'All steps stopped and processes terminated' });
+        } catch (error) {
+            console.error('Error stopping all steps:', error);
+            res.status(500).json({ error: 'Failed to stop all steps', details: error.message });
+        }
     },
 
     stopAllScenes: async (req, res) => {
         console.log('Stopping all scenes and terminating processes');
         isExecuting = false;
-        soundController.stopAllSounds();
-        partController.stopAllParts();
-
-        res.json({ message: 'All scenes stopped and processes terminated' });
+        try {
+            await soundController.stopAllSounds();
+            await partController.stopAllParts();
+            res.json({ message: 'All scenes stopped and processes terminated' });
+        } catch (error) {
+            console.error('Error stopping all scenes:', error);
+            res.status(500).json({ error: 'Failed to stop all scenes', details: error.message });
+        }
     }
 };
 

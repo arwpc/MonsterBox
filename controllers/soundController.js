@@ -70,11 +70,16 @@ function playSound(sound, sendEvent) {
 }
 
 function stopAllSounds() {
-    if (soundPlayerProcess) {
-        soundPlayerProcess.stdin.write("STOP_ALL\n");
-        soundPlayerProcess.kill('SIGINT');
-        soundPlayerProcess = null;
-    }
+    return new Promise((resolve, reject) => {
+        if (soundPlayerProcess) {
+            soundPlayerProcess.stdin.write("STOP_ALL\n");
+            soundPlayerProcess.kill('SIGINT');
+            soundPlayerProcess = null;
+            resolve();
+        } else {
+            resolve(); // No sound player running, consider it stopped
+        }
+    });
 }
 
 module.exports = {

@@ -1,39 +1,60 @@
 import RPi.GPIO as GPIO
-import sys
 import time
+import sys
 
-def setup_gpio(pin):
+def setup_gpio():
     GPIO.setmode(GPIO.BCM)
-    GPIO.setup(pin, GPIO.OUT)
-    return GPIO.PWM(pin, 100)  # 100 Hz PWM frequency
+    GPIO.setwarnings(False)
 
-def control_led(pin, state, duration):
-    pwm = setup_gpio(pin)
+def cleanup_gpio():
+    GPIO.cleanup()
+
+def control_light(gpio_pin, state, duration, brightness=None):
+    setup_gpio()
+    GPIO.setup(gpio_pin, GPIO.OUT)
+
     try:
-        if state.lower() == 'on':
-            pwm.start(100)  # Full brightness
-        elif state.lower() == 'off':
-            pwm.start(0)    # Off
+        if brightness is not None:
+            pwm = GPIO.PWM(gpio_pin, 100)  # 100 Hz frequency
+            pwm.start(0)
+            if state.lower() == 'on':
+                pwm.ChangeDutyCycle(int(brightness))
+                print(f"LED on GPIO pin {gpio_pin} is ON with brightness {brightness}%")
+            else:
+                pwm.ChangeDutyCycle(0)
+                print(f"LED on GPIO pin {gpio_pin} is OFF")
         else:
-            print("Invalid state. Use 'on' or 'off'.")
-            return
-        time.sleep(duration / 1000)  # Convert duration to seconds
+            if state.lower() == 'on':
+                GPIO.output(gpio_pin, GPIO.HIGH)
+                print(f"Light on GPIO pin {gpio_pin} is ON")
+            elif state.lower() == 'off':
+                GPIO.output(gpio_pin, GPIO.LOW)
+                print(f"Light on GPIO pin {gpio_pin} is OFF")
+            else:
+                print("Invalid state. Use 'on' or 'off'.")
+                return
+
+        time.sleep(float(duration) / 1000)  # Convert duration to seconds
     finally:
-        pwm.stop()
-        GPIO.cleanup(pin)
+        if brightness is not None:
+            pwm.stop()
+        cleanup_gpio()
 
 if __name__ == "__main__":
-    if len(sys.argv) != 4:
-        print("Usage: python led_control.py <pin> <state> <duration>")
+    if len(sys.argv) < 4 or len(sys.argv) > 5:
+        print("Usage: python light_control.py <gpio_pin> <state> <duration> [brightness]")
         sys.exit(1)
 
-    pin = int(sys.argv[1])
+    gpio_pin = int(sys.argv[1])
     state = sys.argv[2]
     duration = int(sys.argv[3])
+    brightness = int(sys.argv[4]) if len(sys.argv) == 5 else None
 
     try:
-        control_led(pin, state, duration)
-        print("LED control successful")
+        control_light(gpio_pin, state, duration, brightness)
+        print("Light control completed successfully")
     except Exception as e:
-        print(f"Error controlling LED: {str(e)}")
+        print(f"Error: {str(e)}")
         sys.exit(1)
+    finally:
+        cleanup_gpio()

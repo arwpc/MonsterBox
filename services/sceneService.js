@@ -61,16 +61,17 @@ const updateScene = async (id, sceneData) => {
         await fs.writeFile(dataPath, JSON.stringify(scenes, null, 2));
         return scenes[index];
     }
-    throw new Error('Scene not found');
+    return null; // Return null instead of throwing an error
 };
 
 const deleteScene = async (id) => {
     const scenes = await getAllScenes();
     const filteredScenes = scenes.filter(scene => scene.id !== parseInt(id));
     if (filteredScenes.length === scenes.length) {
-        throw new Error('Scene not found');
+        return false; // Indicate that no scene was deleted
     }
     await fs.writeFile(dataPath, JSON.stringify(filteredScenes, null, 2));
+    return true; // Indicate successful deletion
 };
 
 module.exports = {
