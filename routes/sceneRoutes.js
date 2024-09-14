@@ -14,5 +14,6 @@ router.post('/:id', sceneController.updateScene);
 router.delete('/:id', sceneController.deleteScene);
 router.get('/:id/play', scenePlayerController.playScene);
 router.post('/:id/stop', scenePlayerController.stopScene);
+router.post('/stop-all', scenePlayerController.stopAllScenes);
 
 module.exports = router;

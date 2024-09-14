@@ -2,6 +2,7 @@
 
 $(document).ready(function() {
     let isArmed = false;
+    let currentEventSource = null;
 
     $('#characterSelect').change(fetchCharacterInfo);
     $('#addScenes').click(addScenes);
@@ -9,27 +10,22 @@ $(document).ready(function() {
     $('#activatedScenes').sortable().selectable();
     $('#armButton').click(armSystem);
     $('#disarmButton').click(disarmSystem);
+    $('#stopAllSteps').click(stopAllSteps);
 
-    // Add this new test function
-    function testServerConnection() {
-        $.get('/scenes/test')
-            .done(function(response) {
-                console.log('Test route response:', response);
-                logArmedModeOutput('Server test successful: ' + response.message);
-            })
-            .fail(function(jqXHR, textStatus, errorThrown) {
-                console.error('Test route error:', textStatus, errorThrown);
-                logArmedModeOutput('Server test failed: ' + textStatus);
-            });
+    // Load the first character by default
+    loadFirstCharacter();
+
+    function loadFirstCharacter() {
+        const firstCharacter = $('#characterSelect option:first');
+        if (firstCharacter.length > 0) {
+            $('#characterSelect').val(firstCharacter.val()).trigger('change');
+        }
     }
-
-    // Call the test function when the page loads
-    testServerConnection();
 
     function fetchCharacterInfo() {
         const characterId = $(this).val();
         if (characterId) {
-            $.get(`/characters/${characterId}`, displayCharacterInfo)
+            $.get(`/active-mode/character/${characterId}`, displayCharacterInfo)
                 .fail(handleCharacterInfoError);
             fetchScenes(characterId);
         } else {
@@ -38,23 +34,27 @@ $(document).ready(function() {
     }
 
     function displayCharacterInfo(character) {
-        let infoHtml = '';
-        if (character.image) {
-            infoHtml += `<img src="/images/characters/${character.image}" alt="${character.char_name}" onerror="this.onerror=null;this.src='/images/placeholder.jpg';">`;
-        }
-        infoHtml += `<div><h3>${character.char_name}</h3><p>${character.char_description}</p></div>`;
+        let infoHtml = `<h3>${character.char_name}</h3><p>${character.char_description}</p>`;
         $('#characterInfo').html(infoHtml);
+        
+        if (character.image) {
+            $('#characterImage').attr('src', `/images/characters/${character.image}`).attr('alt', character.char_name);
+        } else {
+            $('#characterImage').attr('src', '/images/placeholder.jpg').attr('alt', 'Placeholder Image');
+        }
     }
 
     function handleCharacterInfoError(jqXHR, textStatus, errorThrown) {
         console.error("Error fetching character info:", textStatus, errorThrown);
         $('#characterInfo').html('<p>Failed to load character information. Please try again.</p>');
+        $('#characterImage').attr('src', '/images/placeholder.jpg').attr('alt', 'Placeholder Image');
     }
 
     function clearCharacterInfo() {
         $('#characterInfo').empty();
         $('#availableScenes').empty();
         $('#activatedScenes').empty();
+        $('#characterImage').attr('src', '/images/placeholder.jpg').attr('alt', 'Placeholder Image');
     }
 
     function fetchScenes(characterId) {
@@ -111,6 +111,21 @@ $(document).ready(function() {
         $('#armButton').prop('disabled', false);
         $('#armStatus').text('DISARMED').removeClass('armed').addClass('disarmed');
         logArmedModeOutput('System disarmed. Active Mode stopped.');
+        stopAllSteps();
+    }
+
+    function stopAllSteps() {
+        if (currentEventSource) {
+            currentEventSource.close();
+        }
+        $.post('/scenes/stop-all')
+            .done(function(response) {
+                logArmedModeOutput('All steps stopped: ' + response.message);
+            })
+            .fail(function(xhr, status, error) {
+                console.error('Error stopping all steps:', error);
+                logArmedModeOutput('Error stopping all steps: ' + error);
+            });
     }
 
     function startActiveModeLoop() {
@@ -139,21 +154,24 @@ $(document).ready(function() {
 
     function runScene(sceneId) {
         return new Promise((resolve, reject) => {
-            const eventSource = new EventSource(`/scenes/${sceneId}/execute`);
+            if (currentEventSource) {
+                currentEventSource.close();
+            }
+            currentEventSource = new EventSource(`/scenes/${sceneId}/play`);
 
-            eventSource.onmessage = function(event) {
+            currentEventSource.onmessage = function(event) {
                 const data = JSON.parse(event.data);
                 handleSceneExecutionUpdate(data);
             };
 
-            eventSource.onerror = function(error) {
+            currentEventSource.onerror = function(error) {
                 console.error('EventSource failed:', error);
-                eventSource.close();
+                currentEventSource.close();
                 reject(new Error(`Failed to execute scene ${sceneId}`));
             };
 
-            eventSource.addEventListener('close', function(event) {
-                eventSource.close();
+            currentEventSource.addEventListener('close', function(event) {
+                currentEventSource.close();
                 resolve();
             });
         });
@@ -162,22 +180,8 @@ $(document).ready(function() {
     function handleSceneExecutionUpdate(data) {
         if (data.error) {
             logArmedModeOutput(`Error: ${data.error}`);
-            logSceneDetailsOutput(`Error: ${data.error}`);
         } else if (data.message) {
             logArmedModeOutput(data.message);
-            logSceneDetailsOutput(data.message);
-
-            if (data.step) {
-                logSceneDetailsOutput(`Step details: ${JSON.stringify(data.step, null, 2)}`);
-            }
-
-            if (data.result) {
-                logSceneDetailsOutput(`Step result: ${JSON.stringify(data.result, null, 2)}`);
-            }
-
-            if (data.results) {
-                logSceneDetailsOutput(`Results: ${JSON.stringify(data.results, null, 2)}`);
-            }
         }
     }
 
@@ -185,12 +189,5 @@ $(document).ready(function() {
         const timestamp = new Date().toLocaleTimeString();
         $('#armedModeOutput').append(`<p>[${timestamp}] ${message}</p>`);
         $('#armedModeOutput').scrollTop($('#armedModeOutput')[0].scrollHeight);
-        console.log(`[${timestamp}] ${message}`); // Also log to console for debugging
-    }
-
-    function logSceneDetailsOutput(message) {
-        const timestamp = new Date().toLocaleTimeString();
-        $('#sceneDetailsOutput').append(`<pre>[${timestamp}] ${message}</pre>`);
-        $('#sceneDetailsOutput').scrollTop($('#sceneDetailsOutput')[0].scrollHeight);
     }
 });

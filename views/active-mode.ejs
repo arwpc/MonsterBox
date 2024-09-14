@@ -1,5 +1,3 @@
-<!-- File: views/active-mode.ejs -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,6 +6,21 @@
     <title>Active Mode</title>
     <link rel="stylesheet" href="/css/style.css">
     <style>
+        .character-section {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+        .character-image {
+            width: 250px;
+            height: 250px;
+            object-fit: cover;
+            margin-right: 20px;
+            border: 1px solid #0f0;
+        }
+        .character-info {
+            flex-grow: 1;
+        }
         .scene-container {
             display: flex;
             justify-content: space-between;
@@ -63,14 +76,17 @@
     <h1>Active Mode</h1>
     
     <div class="character-section">
-        <label for="characterSelect">Character:</label>
-        <select id="characterSelect">
-            <option value="">Select a character</option>
-            <% characters.forEach(function(character) { %>
-                <option value="<%= character.id %>"><%= character.char_name %></option>
-            <% }); %>
-        </select>
-        <div id="characterInfo"></div>
+        <img id="characterImage" class="character-image" src="/images/placeholder.jpg" alt="Character Image">
+        <div class="character-info">
+            <label for="characterSelect">Character:</label>
+            <select id="characterSelect">
+                <option value="">Select a character</option>
+                <% characters.forEach(function(character) { %>
+                    <option value="<%= character.id %>"><%= character.char_name %></option>
+                <% }); %>
+            </select>
+            <div id="characterInfo"></div>
+        </div>
     </div>
 
     <div class="scene-container">
@@ -92,14 +108,11 @@
         <h2>Monitoring: <span id="armStatus">DISARMED</span></h2>
         <button id="armButton">Arm</button>
         <button id="disarmButton" disabled>Disarm</button>
+        <button id="stopAllSteps">Stop All Steps</button>
     </div>
 
     <div id="armedModeOutput" class="output-section">
         <h3>Armed Mode Output</h3>
-    </div>
-
-    <div id="sceneDetailsOutput" class="output-section">
-        <h3>Scene Details</h3>
     </div>
 
     <div id="cameraPlaceholder">CAMERA STREAM PLACEHOLDER</div>
