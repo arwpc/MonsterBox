@@ -6,7 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Active Mode</title>
     <link rel="stylesheet" href="/css/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/jsmpeg@1.0.0/jsmpeg.min.js"></script>
+    <style>
+        #errorMessage {
+            color: red;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+    </style>
 </head>
 <body>
     <h1>Active Mode</h1>
@@ -53,7 +59,8 @@
 
     <div class="monitoring-section">
         <h2>Camera Stream</h2>
-        <canvas id="cameraStream"></canvas>
+        <img id="cameraStream" src="/stream" alt="Camera Stream">
+        <audio id="audioStream" controls></audio>
         <div class="camera-controls">
             <button id="toggleNightMode">Toggle Night Mode</button>
             <label>
@@ -65,18 +72,8 @@
             <select id="audioDevice">
                 <!-- Options will be populated dynamically -->
             </select>
-            <select id="resolution">
-                <option value="320x240" selected>320x240</option>
-                <option value="640x480">640x480</option>
-                <option value="800x600">800x600</option>
-                <option value="1280x720">1280x720</option>
-            </select>
-            <select id="framerate">
-                <option value="15" selected>15 fps</option>
-                <option value="30">30 fps</option>
-                <option value="60">60 fps</option>
-            </select>
         </div>
+        <div id="errorMessage"></div>
     </div>
 
     <a href="/" class="button">Back to Main Menu</a>
@@ -86,17 +83,31 @@
     <script src="/scripts/active-mode.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', (event) => {
-            const canvas = document.getElementById('cameraStream');
             const toggleNightModeBtn = document.getElementById('toggleNightMode');
             const audioToggle = document.getElementById('audioToggle');
             const micVolumeSlider = document.getElementById('micVolume');
             const audioDeviceSelect = document.getElementById('audioDevice');
-            const resolutionSelect = document.getElementById('resolution');
-            const framerateSelect = document.getElementById('framerate');
+            const errorMessageDiv = document.getElementById('errorMessage');
 
-            // Set up jsmpeg
-            const client = new WebSocket(`ws://${window.location.hostname}:${window.location.port}/stream`);
-            const player = new JSMpeg.Player(client, {canvas: canvas});
+            let audioWebSocket;
+
+            function startAudioStream() {
+                audioWebSocket = new WebSocket(`ws://${window.location.hostname}:${window.location.port}/audiostream`);
+                audioWebSocket.binaryType = 'arraybuffer';
+                audioWebSocket.onmessage = function(event) {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    audioContext.decodeAudioData(event.data, function(buffer) {
+                        const source = audioContext.createBufferSource();
+                        source.buffer = buffer;
+                        source.connect(audioContext.destination);
+                        source.start(0);
+                    });
+                };
+                audioWebSocket.onerror = function(error) {
+                    console.error('WebSocket Error:', error);
+                    errorMessageDiv.textContent = 'Error connecting to audio stream';
+                };
+            }
 
             toggleNightModeBtn.addEventListener('click', () => {
                 fetch('/camera/toggle-night-mode', { method: 'POST' })
@@ -104,16 +115,25 @@
                     .then(data => {
                         console.log('Night mode:', data.nightMode ? 'ON' : 'OFF');
                     })
-                    .catch(error => console.error('Error:', error));
+                    .catch(error => {
+                        console.error('Error:', error);
+                        errorMessageDiv.textContent = 'Error toggling night mode';
+                    });
             });
 
             audioToggle.addEventListener('change', (e) => {
-                // Implement audio toggle logic here
+                if (e.target.checked) {
+                    startAudioStream();
+                } else {
+                    if (audioWebSocket) {
+                        audioWebSocket.close();
+                    }
+                }
             });
 
             micVolumeSlider.addEventListener('input', (e) => {
                 const volume = parseFloat(e.target.value);
-                fetch('/camera/set-mic-volume', {
+                fetch('/audio/set-mic-volume', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -124,21 +144,27 @@
                 .then(data => {
                     console.log('Mic volume set to:', data.volume);
                 })
-                .catch(error => console.error('Error:', error));
+                .catch(error => {
+                    console.error('Error:', error);
+                    errorMessageDiv.textContent = 'Error setting mic volume';
+                });
             });
 
             // Populate audio devices
-            fetch('/camera/audio-devices')
+            fetch('/audio/devices')
                 .then(response => response.json())
                 .then(data => {
                     audioDeviceSelect.innerHTML = data.devices.map(device => 
                         `<option value="${device}">${device}</option>`
                     ).join('');
                 })
-                .catch(error => console.error('Error:', error));
+                .catch(error => {
+                    console.error('Error:', error);
+                    errorMessageDiv.textContent = 'Error fetching audio devices';
+                });
 
             audioDeviceSelect.addEventListener('change', (e) => {
-                fetch('/camera/set-audio-device', {
+                fetch('/audio/set-audio-device', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -148,45 +174,209 @@
                 .then(response => response.json())
                 .then(data => {
                     console.log('Audio device set to:', data.device);
+                    if (audioWebSocket) {
+                        audioWebSocket.close();
+                    }
+                    startAudioStream();
                 })
-                .catch(error => console.error('Error:', error));
+                .catch(error => {
+                    console.error('Error:', error);
+                    errorMessageDiv.textContent = 'Error setting audio device';
+                });
             });
 
-            resolutionSelect.addEventListener('change', (e) => {
-                fetch('/camera/set-resolution', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ resolution: e.target.value }),
-                })
-                .then(response => response.json())
-                .then(data => {
-                    console.log('Resolution set to:', data.resolution);
-                    player.destroy();
-                    const newClient = new WebSocket(`ws://${window.location.hostname}:${window.location.port}/stream`);
-                    player = new JSMpeg.Player(newClient, {canvas: canvas});
-                })
-                .catch(error => console.error('Error:', error));
-            });
+            // Start audio stream initially if audio is enabled
+            if (audioToggle.checked) {
+                startAudioStream();
+            }
 
-            framerateSelect.addEventListener('change', (e) => {
-                fetch('/camera/set-framerate', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ framerate: e.target.value }),
-                })
-                .then(response => response.json())
-                .then(data => {
-                    console.log('Framerate set to:', data.framerate);
-                    player.destroy();
-                    const newClient = new WebSocket(`ws://${window.location.hostname}:${window.location.port}/stream`);
-                    player = new JSMpeg.Player(newClient, {canvas: canvas});
-                })
-                .catch(error => console.error('Error:', error));
-            });
+            // Function to clear error messages after 5 seconds
+            function clearErrorMessage() {
+                setTimeout(() => {
+                    errorMessageDiv.textContent = '';
+                }, 5000);
+            }
+
+            // Add error handling for the video stream
+            const cameraStream = document.getElementById('cameraStream');
+            cameraStream.onerror = function() {
+                errorMessageDiv.textContent = 'Error loading camera stream';
+				clearErrorMessage();
+            };
+
+            // Restore previously removed functionality
+            $('#characterSelect').change(fetchCharacterInfo);
+            $('#addScenes').click(addScenes);
+            $('#removeScenes').click(removeScenes);
+            $('#activatedScenes').sortable().selectable();
+            $('#armButton').click(armSystem);
+            $('#disarmButton').click(disarmSystem);
+            $('#stopAllSteps').click(stopAllSteps);
+
+            // Load the first character by default
+            loadFirstCharacter();
+
+            function loadFirstCharacter() {
+                const firstCharacter = $('#characterSelect option:first');
+                if (firstCharacter.length > 0) {
+                    $('#characterSelect').val(firstCharacter.val()).trigger('change');
+                }
+            }
+
+            function fetchCharacterInfo() {
+                const characterId = $(this).val();
+                if (characterId) {
+                    $.get(`/active-mode/character/${characterId}`, displayCharacterInfo)
+                        .fail(handleCharacterInfoError);
+                    fetchScenes(characterId);
+                } else {
+                    clearCharacterInfo();
+                }
+            }
+
+            function displayCharacterInfo(character) {
+                let infoHtml = `<h3>${character.char_name}</h3><p>${character.char_description}</p>`;
+                $('#characterInfo').html(infoHtml);
+                
+                if (character.image) {
+                    $('#characterImage').attr('src', `/images/characters/${character.image}`).attr('alt', character.char_name);
+                } else {
+                    $('#characterImage').attr('src', '/images/placeholder.jpg').attr('alt', 'Placeholder Image');
+                }
+            }
+
+            function handleCharacterInfoError(jqXHR, textStatus, errorThrown) {
+                console.error("Error fetching character info:", textStatus, errorThrown);
+                $('#characterInfo').html('<p>Failed to load character information. Please try again.</p>');
+                $('#characterImage').attr('src', '/images/placeholder.jpg').attr('alt', 'Placeholder Image');
+            }
+
+            function clearCharacterInfo() {
+                $('#characterInfo').empty();
+                $('#availableScenes').empty();
+                $('#activatedScenes').empty();
+                $('#characterImage').attr('src', '/images/placeholder.jpg').attr('alt', 'Placeholder Image');
+            }
+
+            function fetchScenes(characterId) {
+                $.get(`/active-mode/character/${characterId}/scenes`, displayScenes)
+                    .fail(handleSceneFetchError);
+            }
+
+            function displayScenes(scenes) {
+                $('#availableScenes').empty();
+                scenes.forEach(function(scene) {
+                    $('#availableScenes').append(`<option value="${scene.id}">${scene.scene_name}</option>`);
+                });
+            }
+
+            function handleSceneFetchError(jqXHR, textStatus, errorThrown) {
+                console.error("Error fetching scenes:", textStatus, errorThrown);
+                $('#availableScenes').html('<option>Failed to load scenes</option>');
+            }
+
+            function addScenes() {
+                $('#availableScenes option:selected').each(function() {
+                    const sceneId = $(this).val();
+                    const sceneName = $(this).text();
+                    $('#activatedScenes').append(`<li data-id="${sceneId}">${sceneName}</li>`);
+                    $(this).remove();
+                });
+            }
+
+            function removeScenes() {
+                $('#activatedScenes li.ui-selected').each(function() {
+                    const sceneId = $(this).data('id');
+                    const sceneName = $(this).text();
+                    $('#availableScenes').append(`<option value="${sceneId}">${sceneName}</option>`);
+                    $(this).remove();
+                });
+            }
+
+            function armSystem() {
+                if ($('#activatedScenes li').length === 0) {
+                    alert('Please select at least one scene to activate.');
+                    return;
+                }
+                isArmed = true;
+                $(this).prop('disabled', true);
+                $('#disarmButton').prop('disabled', false);
+                $('#armStatus').text('ARMED').removeClass('disarmed').addClass('armed');
+                logArmedModeOutput('System armed. Starting Active Mode.');
+                startActiveModeLoop();
+            }
+
+            function disarmSystem() {
+                isArmed = false;
+                $(this).prop('disabled', true);
+                $('#armButton').prop('disabled', false);
+                $('#armStatus').text('DISARMED').removeClass('armed').addClass('disarmed');
+                logArmedModeOutput('System disarmed. Active Mode stopped.');
+                stopAllSteps();
+            }
+
+            function stopAllSteps() {
+                $.post('/scenes/stop-all')
+                    .done(function(response) {
+                        logArmedModeOutput('All steps stopped: ' + response.message);
+                    })
+                    .fail(function(xhr, status, error) {
+                        console.error('Error stopping all steps:', error);
+                        logArmedModeOutput('Error stopping all steps: ' + error);
+                    });
+            }
+
+            function startActiveModeLoop() {
+                const scenes = $('#activatedScenes li').map(function() {
+                    return $(this).data('id');
+                }).get();
+
+                function runNextScene(index) {
+                    if (!isArmed) return;
+                    if (index >= scenes.length) {
+                        index = 0; // Reset to the beginning of the list
+                    }
+                    const sceneId = scenes[index];
+                    logArmedModeOutput(`Starting execution of scene ${sceneId}`);
+                    runScene(sceneId).then(() => {
+                        logArmedModeOutput(`Completed execution of scene ${sceneId}`);
+                        setTimeout(() => runNextScene(index + 1), 5000); // 5 seconds between scenes
+                    }).catch((error) => {
+                        logArmedModeOutput(`Error executing scene ${sceneId}: ${error.message}`);
+                        setTimeout(() => runNextScene(index + 1), 5000); // Continue to next scene even if there's an error
+                    });
+                }
+
+                runNextScene(0);
+            }
+
+            function runScene(sceneId) {
+                return new Promise((resolve, reject) => {
+                    $.get(`/scenes/${sceneId}/play`)
+                        .done(function(data) {
+                            handleSceneExecutionUpdate(data);
+                            resolve();
+                        })
+                        .fail(function(xhr, status, error) {
+                            console.error('Error executing scene:', error);
+                            reject(new Error(`Failed to execute scene ${sceneId}`));
+                        });
+                });
+            }
+
+            function handleSceneExecutionUpdate(data) {
+                if (data.error) {
+                    logArmedModeOutput(`Error: ${data.error}`);
+                } else if (data.message) {
+                    logArmedModeOutput(data.message);
+                }
+            }
+
+            function logArmedModeOutput(message) {
+                const timestamp = new Date().toLocaleTimeString();
+                $('#armedModeOutput').append(`<p>[${timestamp}] ${message}</p>`);
+                $('#armedModeOutput').scrollTop($('#armedModeOutput')[0].scrollHeight);
+            }
         });
     </script>
 </body>
