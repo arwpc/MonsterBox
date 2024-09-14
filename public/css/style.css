@@ -1,3 +1,5 @@
+/* File: public/css/style.css */
+
 body {
     font-family: 'Courier New', Courier, monospace;
     line-height: 1.6;
@@ -155,4 +157,102 @@ option {
 input:focus, textarea:focus, select:focus {
     outline: none;
     box-shadow: 0 0 5px #00ff00;
+}
+
+#cameraStream {
+    width: 50%;
+    max-width: 640px;
+    aspect-ratio: 16 / 9;
+    background-color: #000;
+    margin-bottom: 20px;
+}
+
+.camera-controls {
+    margin-top: 10px;
+    margin-bottom: 20px;
+}
+
+.camera-controls button,
+.camera-controls label,
+.camera-controls select {
+    margin-right: 10px;
+}
+
+.monitoring-section {
+    margin-bottom: 20px;
+}
+
+#armStatus {
+    font-weight: bold;
+}
+
+#armStatus.armed {
+    color: #ff0000;
+}
+
+#armStatus.disarmed {
+    color: #00ff00;
+}
+
+.character-section {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.character-image {
+    width: 250px;
+    height: 250px;
+    object-fit: cover;
+    margin-right: 20px;
+    border: 1px solid #0f0;
+}
+
+.character-info {
+    flex-grow: 1;
+}
+
+.scene-container {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.scene-box {
+    width: 45%;
+    border: 1px solid #0f0;
+    padding: 10px;
+}
+
+.scene-controls {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+#availableScenes, #activatedScenes {
+    width: 100%;
+    height: 200px;
+    overflow-y: auto;
+    border: 1px solid #0f0;
+    background-color: #001100;
+    color: #0f0;
+    padding: 5px;
+}
+
+#activatedScenes {
+    list-style-type: none;
+    margin: 0;
+    padding: 5px;
+}
+
+.output-section {
+    width: 100%;
+    height: 300px;
+    overflow-y: scroll;
+    border: 1px solid #0f0;
+    padding: 10px;
+    background-color: #001100;
+    margin-bottom: 20px;
 }
