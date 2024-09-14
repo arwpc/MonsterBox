@@ -156,14 +156,16 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert('Servo test successful');
+//                    alert('Servo test successful');
+						console.log('Servo Test Successful', data.message);
                 } else {
-                    alert('Servo test failed: ' + data.message);
+                    alert('Servo test failed. Again. Of course you knew that already: ' + data.message);
+						console.log('Servo Test FAAILURRREEE', data.message);
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred while testing the servo');
+                alert('An error occurred while testing the servo.damnit.');
             });
         }
 
