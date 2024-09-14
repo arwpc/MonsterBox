@@ -6,6 +6,7 @@ const app = express();
 const server = http.createServer(app);
 const port = 3000;
 const camera = require('./scripts/camera');
+const audio = require('./scripts/audio');
 
 // Import routes
 const ledRoutes = require('./routes/ledRoutes');
@@ -49,35 +50,59 @@ app.post('/camera/toggle-night-mode', (req, res) => {
     res.json({ success: true, nightMode: camera.nightMode });
 });
 
-app.post('/camera/set-resolution', (req, res) => {
-    camera.setResolution(req.body.resolution);
-    res.json({ success: true, resolution: req.body.resolution });
+// Audio routes
+app.post('/audio/set-mic-volume', (req, res) => {
+    try {
+        audio.setMicVolume(req.body.volume);
+        res.json({ success: true, volume: req.body.volume });
+    } catch (error) {
+        console.error('Error setting mic volume:', error);
+        res.status(500).json({ success: false, error: 'Failed to set mic volume' });
+    }
 });
 
-app.post('/camera/set-framerate', (req, res) => {
-    camera.setFramerate(req.body.framerate);
-    res.json({ success: true, framerate: req.body.framerate });
+app.post('/audio/set-audio-device', (req, res) => {
+    try {
+        audio.setAudioDevice(req.body.device);
+        res.json({ success: true, device: req.body.device });
+    } catch (error) {
+        console.error('Error setting audio device:', error);
+        res.status(500).json({ success: false, error: 'Failed to set audio device' });
+    }
 });
 
-app.post('/camera/set-mic-volume', (req, res) => {
-    camera.setMicVolume(req.body.volume);
-    res.json({ success: true, volume: req.body.volume });
-});
-
-app.post('/camera/set-audio-device', (req, res) => {
-    camera.setAudioDevice(req.body.device);
-    res.json({ success: true, device: req.body.device });
-});
-
-app.get('/camera/audio-devices', (req, res) => {
-    camera.getAudioDevices((devices) => {
+app.get('/audio/devices', (req, res) => {
+    audio.getAudioDevices((devices) => {
         res.json({ devices: devices });
     });
 });
 
-// Start the camera stream
-global.server = server;
-camera.startStream(server);
+// Proxy route for mjpeg-streamer
+app.use('/stream', (req, res) => {
+    const proxyRequest = http.request(
+        {
+            hostname: 'localhost',
+            port: 8080,
+            path: '/?action=stream',
+            method: req.method,
+            headers: req.headers
+        },
+        (proxyResponse) => {
+            res.writeHead(proxyResponse.statusCode, proxyResponse.headers);
+            proxyResponse.pipe(res);
+        }
+    );
+    req.pipe(proxyRequest);
+
+    proxyRequest.on('error', (error) => {
+        console.error('Proxy request error:', error);
+        res.status(500).send('Error connecting to camera stream');
+    });
+});
+
+// Start the camera and audio streams
+camera.startStream();
+audio.startStream(server);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -88,6 +113,18 @@ app.use((err, req, res, next) => {
 // Start the server
 server.listen(port, () => {
     console.log(`MonsterBox server running at http://localhost:${port}`);
+});
+
+process.on('uncaughtException', (error) => {
+    console.error('Uncaught Exception:', error);
+    // Optionally, you can choose to exit the process here
+    // process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    // Optionally, you can choose to exit the process here
+    // process.exit(1);
 });
 
 module.exports = app;

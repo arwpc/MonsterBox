@@ -1,125 +1,74 @@
-// File: scripts/camera.js
-const { spawn } = require('child_process');
-const WebSocket = require('ws');
 const { exec } = require('child_process');
 
 class Camera {
     constructor() {
         this.streamProcess = null;
         this.nightMode = false;
-        this.resolution = '320x240';
+        this.resolution = '640x480';
         this.framerate = '15';
-        this.audioDevice = 'default';
-        this.wss = null;
-        this.micVolume = 1.0;
     }
 
-    startStream(server) {
-        const ffmpegPath = '/usr/bin/ffmpeg';
-        const inputDevice = '/dev/video0';
-
-        const args = [
-            '-f', 'v4l2',
-            '-input_format', 'yuyv422',
-            '-video_size', this.resolution,
-            '-framerate', this.framerate,
-            '-i', inputDevice,
-            '-f', 'mpegts',
-            '-codec:v', 'mpeg1video',
-            '-s', this.resolution,
-            '-b:v', '1000k',
-            '-bf', '0',
-            '-'
-        ];
-
-        if (this.streamProcess) {
-            this.streamProcess.kill();
-        }
-
-        this.streamProcess = spawn(ffmpegPath, args);
-
-        this.wss = new WebSocket.Server({ server, path: '/stream' });
-
-        this.wss.on('connection', (ws) => {
-            console.log('New WebSocket connection for video stream');
-            
-            this.streamProcess.stdout.on('data', (data) => {
-                if (ws.readyState === WebSocket.OPEN) {
-                    ws.send(data);
-                }
-            });
-
-            ws.on('close', () => {
-                console.log('WebSocket connection closed for video stream');
-            });
+    startStream() {
+        this.findAvailableVideoDevice((device) => {
+            if (device) {
+                this.startStreamWithDevice(device);
+            } else {
+                console.error('No available video devices found');
+            }
         });
+    }
 
-        this.streamProcess.stderr.on('data', (data) => {
-            console.error(`ffmpeg stderr: ${data}`);
+    findAvailableVideoDevice(callback) {
+        exec('ls /dev/video*', (error, stdout, stderr) => {
+            if (error) {
+                console.error('Error finding video devices:', error);
+                callback(null);
+                return;
+            }
+            const devices = stdout.trim().split('\n');
+            console.log('Available video devices:', devices);
+            if (devices.length > 0) {
+                callback(devices[0]);
+            } else {
+                callback(null);
+            }
         });
+    }
 
-        console.log('Camera stream started');
+    startStreamWithDevice(device) {
+        const mjpegStreamerCommand = `mjpg_streamer -i "input_uvc.so -d ${device} -r ${this.resolution} -f ${this.framerate}" -o "output_http.so -p 8080"`;
+        exec(mjpegStreamerCommand, (error, stdout, stderr) => {
+            if (error) {
+                console.error(`Error starting mjpg-streamer with device ${device}: ${error}`);
+                console.error(`stderr: ${stderr}`);
+                return;
+            }
+            console.log(`mjpg-streamer started successfully with device ${device}`);
+            console.log(`stdout: ${stdout}`);
+        });
     }
 
     stopStream() {
-        if (this.streamProcess) {
-            this.streamProcess.kill();
-            this.streamProcess = null;
-        }
-        if (this.wss) {
-            this.wss.close();
-            this.wss = null;
-        }
+        exec('pkill mjpg_streamer', (error, stdout, stderr) => {
+            if (error) {
+                console.error(`Error stopping mjpg-streamer: ${error}`);
+                return;
+            }
+            console.log('mjpg-streamer stopped successfully');
+        });
     }
 
     toggleNightMode() {
         this.nightMode = !this.nightMode;
         console.log(`Night mode: ${this.nightMode ? 'ON' : 'OFF'}`);
-        // Implement night mode logic here
-    }
-
-    setResolution(resolution) {
-        this.resolution = resolution;
-        this.restartStream();
-    }
-
-    setFramerate(framerate) {
-        this.framerate = framerate;
-        this.restartStream();
-    }
-
-    setMicVolume(volume) {
-        this.micVolume = volume;
-        // Implement mic volume control logic here
-    }
-
-    setAudioDevice(device) {
-        this.audioDevice = device;
-        // Implement audio device switching logic here
+        // Implement night mode logic here if your camera supports it
     }
 
     restartStream() {
-        if (this.streamProcess) {
-            this.stopStream();
-            this.startStream(global.server);
-        }
-    }
-
-    getAudioDevices(callback) {
-        console.log('Fetching audio devices...');
-        exec('arecord -L', (error, stdout, stderr) => {
-            if (error) {
-                console.error(`Error getting audio devices: ${error}`);
-                callback([]);
-                return;
-            }
-            console.log('Raw audio device output:', stdout);
-            const devices = stdout.split('\n')
-                .filter(line => line.trim() !== '' && !line.startsWith(' '))
-                .map(line => line.trim());
-            console.log('Parsed audio devices:', devices);
-            callback(devices);
-        });
+        this.stopStream();
+        setTimeout(() => {
+            this.startStream();
+        }, 1000); // Wait for 1 second before restarting the stream
     }
 }
 
