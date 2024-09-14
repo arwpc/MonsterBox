@@ -64,6 +64,17 @@ app.post('/camera/set-mic-volume', (req, res) => {
     res.json({ success: true, volume: req.body.volume });
 });
 
+app.post('/camera/set-audio-device', (req, res) => {
+    camera.setAudioDevice(req.body.device);
+    res.json({ success: true, device: req.body.device });
+});
+
+app.get('/camera/audio-devices', (req, res) => {
+    camera.getAudioDevices((devices) => {
+        res.json({ devices: devices });
+    });
+});
+
 // Start the camera stream
 global.server = server;
 camera.startStream(server);

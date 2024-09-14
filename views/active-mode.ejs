@@ -1,3 +1,4 @@
+<!-- File: views/active-mode.ejs -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Active Mode</title>
     <link rel="stylesheet" href="/css/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/jsmpeg@1.0.3/jsmpeg.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsmpeg@1.0.0/jsmpeg.min.js"></script>
 </head>
 <body>
     <h1>Active Mode</h1>
@@ -61,15 +62,18 @@
             <label>
                 Mic Volume: <input type="range" id="micVolume" min="0" max="2" step="0.1" value="1">
             </label>
+            <select id="audioDevice">
+                <!-- Options will be populated dynamically -->
+            </select>
             <select id="resolution">
-                <option value="320x240">320x240</option>
-                <option value="640x480" selected>640x480</option>
+                <option value="320x240" selected>320x240</option>
+                <option value="640x480">640x480</option>
                 <option value="800x600">800x600</option>
                 <option value="1280x720">1280x720</option>
             </select>
             <select id="framerate">
-                <option value="15">15 fps</option>
-                <option value="30" selected>30 fps</option>
+                <option value="15" selected>15 fps</option>
+                <option value="30">30 fps</option>
                 <option value="60">60 fps</option>
             </select>
         </div>
@@ -86,15 +90,13 @@
             const toggleNightModeBtn = document.getElementById('toggleNightMode');
             const audioToggle = document.getElementById('audioToggle');
             const micVolumeSlider = document.getElementById('micVolume');
+            const audioDeviceSelect = document.getElementById('audioDevice');
             const resolutionSelect = document.getElementById('resolution');
             const framerateSelect = document.getElementById('framerate');
 
-            const player = new JSMpeg.Player(`ws://${window.location.hostname}:${window.location.port}`, {
-                canvas: canvas,
-                audio: audioToggle.checked,
-                videoBufferSize: 512 * 1024,
-                audioBufferSize: 128 * 1024,
-            });
+            // Set up jsmpeg
+            const client = new WebSocket(`ws://${window.location.hostname}:${window.location.port}/stream`);
+            const player = new JSMpeg.Player(client, {canvas: canvas});
 
             toggleNightModeBtn.addEventListener('click', () => {
                 fetch('/camera/toggle-night-mode', { method: 'POST' })
@@ -106,7 +108,7 @@
             });
 
             audioToggle.addEventListener('change', (e) => {
-                player.audioEnabled = e.target.checked;
+                // Implement audio toggle logic here
             });
 
             micVolumeSlider.addEventListener('input', (e) => {
@@ -125,6 +127,31 @@
                 .catch(error => console.error('Error:', error));
             });
 
+            // Populate audio devices
+            fetch('/camera/audio-devices')
+                .then(response => response.json())
+                .then(data => {
+                    audioDeviceSelect.innerHTML = data.devices.map(device => 
+                        `<option value="${device}">${device}</option>`
+                    ).join('');
+                })
+                .catch(error => console.error('Error:', error));
+
+            audioDeviceSelect.addEventListener('change', (e) => {
+                fetch('/camera/set-audio-device', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ device: e.target.value }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Audio device set to:', data.device);
+                })
+                .catch(error => console.error('Error:', error));
+            });
+
             resolutionSelect.addEventListener('change', (e) => {
                 fetch('/camera/set-resolution', {
                     method: 'POST',
@@ -137,12 +164,8 @@
                 .then(data => {
                     console.log('Resolution set to:', data.resolution);
                     player.destroy();
-                    player = new JSMpeg.Player(`ws://${window.location.hostname}:${window.location.port}`, {
-                        canvas: canvas,
-                        audio: audioToggle.checked,
-                        videoBufferSize: 512 * 1024,
-                        audioBufferSize: 128 * 1024,
-                    });
+                    const newClient = new WebSocket(`ws://${window.location.hostname}:${window.location.port}/stream`);
+                    player = new JSMpeg.Player(newClient, {canvas: canvas});
                 })
                 .catch(error => console.error('Error:', error));
             });
@@ -159,12 +182,8 @@
                 .then(data => {
                     console.log('Framerate set to:', data.framerate);
                     player.destroy();
-                    player = new JSMpeg.Player(`ws://${window.location.hostname}:${window.location.port}`, {
-                        canvas: canvas,
-                        audio: audioToggle.checked,
-                        videoBufferSize: 512 * 1024,
-                        audioBufferSize: 128 * 1024,
-                    });
+                    const newClient = new WebSocket(`ws://${window.location.hostname}:${window.location.port}/stream`);
+                    player = new JSMpeg.Player(newClient, {canvas: canvas});
                 })
                 .catch(error => console.error('Error:', error));
             });

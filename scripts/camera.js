@@ -1,14 +1,15 @@
 // File: scripts/camera.js
 const { spawn } = require('child_process');
 const WebSocket = require('ws');
+const { exec } = require('child_process');
 
 class Camera {
     constructor() {
         this.streamProcess = null;
         this.nightMode = false;
-        this.resolution = '640x480';
-        this.framerate = '30';
-        this.audioDevice = 'hw:1,0'; // Adjust this to match your USB sound card
+        this.resolution = '320x240';
+        this.framerate = '15';
+        this.audioDevice = 'default';
         this.wss = null;
         this.micVolume = 1.0;
     }
@@ -23,16 +24,11 @@ class Camera {
             '-video_size', this.resolution,
             '-framerate', this.framerate,
             '-i', inputDevice,
-            '-f', 'alsa',
-            '-i', this.audioDevice,
-            '-filter:a', `volume=${this.micVolume}`,
-            '-c:v', 'libx264',
-            '-preset', 'ultrafast',
-            '-tune', 'zerolatency',
-            '-c:a', 'aac',
-            '-b:a', '128k',
-            '-ar', '44100',
             '-f', 'mpegts',
+            '-codec:v', 'mpeg1video',
+            '-s', this.resolution,
+            '-b:v', '1000k',
+            '-bf', '0',
             '-'
         ];
 
@@ -42,10 +38,10 @@ class Camera {
 
         this.streamProcess = spawn(ffmpegPath, args);
 
-        this.wss = new WebSocket.Server({ server });
+        this.wss = new WebSocket.Server({ server, path: '/stream' });
 
         this.wss.on('connection', (ws) => {
-            console.log('New WebSocket connection');
+            console.log('New WebSocket connection for video stream');
             
             this.streamProcess.stdout.on('data', (data) => {
                 if (ws.readyState === WebSocket.OPEN) {
@@ -54,13 +50,15 @@ class Camera {
             });
 
             ws.on('close', () => {
-                console.log('WebSocket connection closed');
+                console.log('WebSocket connection closed for video stream');
             });
         });
 
         this.streamProcess.stderr.on('data', (data) => {
             console.error(`ffmpeg stderr: ${data}`);
         });
+
+        console.log('Camera stream started');
     }
 
     stopStream() {
@@ -77,6 +75,7 @@ class Camera {
     toggleNightMode() {
         this.nightMode = !this.nightMode;
         console.log(`Night mode: ${this.nightMode ? 'ON' : 'OFF'}`);
+        // Implement night mode logic here
     }
 
     setResolution(resolution) {
@@ -91,7 +90,12 @@ class Camera {
 
     setMicVolume(volume) {
         this.micVolume = volume;
-        this.restartStream();
+        // Implement mic volume control logic here
+    }
+
+    setAudioDevice(device) {
+        this.audioDevice = device;
+        // Implement audio device switching logic here
     }
 
     restartStream() {
@@ -99,6 +103,23 @@ class Camera {
             this.stopStream();
             this.startStream(global.server);
         }
+    }
+
+    getAudioDevices(callback) {
+        console.log('Fetching audio devices...');
+        exec('arecord -L', (error, stdout, stderr) => {
+            if (error) {
+                console.error(`Error getting audio devices: ${error}`);
+                callback([]);
+                return;
+            }
+            console.log('Raw audio device output:', stdout);
+            const devices = stdout.split('\n')
+                .filter(line => line.trim() !== '' && !line.startsWith(' '))
+                .map(line => line.trim());
+            console.log('Parsed audio devices:', devices);
+            callback(devices);
+        });
     }
 }
 
