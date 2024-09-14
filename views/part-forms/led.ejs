@@ -9,7 +9,7 @@
 <body>
     <h1><%= title %></h1>
     <form action="<%= action %>" method="POST">
-        <input type="hidden" name="type" value="led">
+        <input type="hidden" name="type" value="light">
         <% if (part.id) { %>
             <input type="hidden" name="id" value="<%= part.id %>">
         <% } %>
@@ -29,39 +29,38 @@
         </div>
         <div>
             <label for="gpioPin">GPIO Pin:</label>
-            <input type="number" id="gpioPin" name="gpioPin" value="<%= part.gpioPin || 17 %>" required>
+            <input type="number" id="gpioPin" name="gpioPin" value="<%= part.gpioPin || 26 %>" required>
         </div>
         <button type="submit">Save Part</button>
     </form>
-    <div id="ledTest">
-        <h2>Test LED</h2>
+    <div id="lightTest">
+        <h2>Test LED - fo shizzle</h2>
         <div>
-            <label for="brightness">Brightness:</label>
-            <input type="range" id="brightness" min="0" max="100" value="50">
-            <span id="brightnessValue">50</span>
+            <label for="state">State:</label>
+            <select id="state">
+                <option value="on">On</option>
+                <option value="off">Off</option>
+            </select>
         </div>
         <div>
             <label for="duration">Duration (ms):</label>
             <input type="number" id="duration" value="1000" min="100" max="10000">
         </div>
-        <button onclick="testPart()">Test LED</button>
+        <button onclick="testPart()">Test Light</button>
     </div>
     <a href="/parts" class="button">Back to Parts</a>
 
     <script>
-        document.getElementById('brightness').addEventListener('input', function() {
-            document.getElementById('brightnessValue').textContent = this.value;
-        });
-
         function testPart() {
             const partData = {
-                type: 'led',
-                gpioPin: parseInt(document.getElementById('gpioPin').value),
-                brightness: parseInt(document.getElementById('brightness').value),
-                duration: parseInt(document.getElementById('duration').value)
+                part_id: <%= part.id || 'null' %>,
+                type: 'light',
+                state: document.getElementById('state').value,
+                duration: parseInt(document.getElementById('duration').value),
+                gpioPin: parseInt(document.getElementById('gpioPin').value)
             };
 
-            fetch('/parts/test', {
+            fetch('/parts/light/test', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -71,14 +70,13 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert('LED test successful: ' + data.message);
+                    console.log('Light test successful:', data.message);
                 } else {
-                    alert('LED test failed: ' + data.message);
+                    console.error('Light test failed:', data.message);
                 }
             })
             .catch((error) => {
                 console.error('Error:', error);
-                alert('An error occurred while testing the LED');
             });
         }
     </script>

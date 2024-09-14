@@ -6,11 +6,15 @@ const servoController = require('../controllers/servoController');
 
 router.get('/:id/edit', async (req, res) => {
     try {
-        const id = parseInt(req.params.id);
+        const id = parseInt(req.params.id, 10);
+        console.log('Editing Servo with ID:', id, 'Type:', typeof id);
         if (isNaN(id)) {
             throw new Error('Invalid part ID');
         }
         const part = await partService.getPartById(id);
+        if (!part) {
+            throw new Error('Part not found');
+        }
         const characters = await characterService.getAllCharacters();
         res.render('part-forms/servo', { title: 'Edit Servo', action: `/parts/servo/${part.id}`, part, characters });
     } catch (error) {
@@ -24,12 +28,12 @@ router.post('/', async (req, res) => {
         const newServo = {
             name: req.body.name,
             type: 'servo',
-            characterId: parseInt(req.body.characterId),
+            characterId: parseInt(req.body.characterId, 10),
             servoType: req.body.servoType,
-            channel: parseInt(req.body.channel),
-            minPulse: parseInt(req.body.minPulse),
-            maxPulse: parseInt(req.body.maxPulse),
-            defaultAngle: parseInt(req.body.defaultAngle)
+            channel: parseInt(req.body.channel, 10),
+            minPulse: parseInt(req.body.minPulse, 10),
+            maxPulse: parseInt(req.body.maxPulse, 10),
+            defaultAngle: parseInt(req.body.defaultAngle, 10)
         };
         const createdServo = await partService.createPart(newServo);
         console.log('Created servo:', createdServo);
@@ -40,9 +44,17 @@ router.post('/', async (req, res) => {
     }
 });
 
+router.post('/test', servoController.testServo);
+
+router.post('/stop', servoController.stopServo);
+
 router.post('/:id', async (req, res) => {
     try {
-        const id = parseInt(req.params.id);
+        console.log('Update Servo Route - Request params:', req.params);
+        console.log('Update Servo Route - Request body:', req.body);
+
+        const id = parseInt(req.params.id, 10);
+        console.log('Updating Servo with ID:', id, 'Type:', typeof id);
         if (isNaN(id)) {
             throw new Error('Invalid part ID');
         }
@@ -50,13 +62,14 @@ router.post('/:id', async (req, res) => {
             id: id,
             name: req.body.name,
             type: 'servo',
-            characterId: parseInt(req.body.characterId),
+            characterId: parseInt(req.body.characterId, 10),
             servoType: req.body.servoType,
-            channel: parseInt(req.body.channel),
-            minPulse: parseInt(req.body.minPulse),
-            maxPulse: parseInt(req.body.maxPulse),
-            defaultAngle: parseInt(req.body.defaultAngle)
+            channel: parseInt(req.body.channel, 10),
+            minPulse: parseInt(req.body.minPulse, 10),
+            maxPulse: parseInt(req.body.maxPulse, 10),
+            defaultAngle: parseInt(req.body.defaultAngle, 10)
         };
+        console.log('Updated Servo data:', updatedServo);
         const result = await partService.updatePart(id, updatedServo);
         console.log('Updated servo:', result);
         res.redirect('/parts');
@@ -65,8 +78,5 @@ router.post('/:id', async (req, res) => {
         res.status(500).send('An error occurred while updating the servo: ' + error.message);
     }
 });
-
-router.post('/test', servoController.testServo);
-router.post('/stop', servoController.stopServo);
 
 module.exports = router;

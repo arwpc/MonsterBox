@@ -16,15 +16,17 @@ const getAllParts = async () => {
 };
 
 const getPartById = async (id) => {
-    console.log('Getting part by ID:', id);
-    if (!id) {
+    console.log('Getting part by ID:', id, 'Type:', typeof id);
+    if (id === undefined || id === null) {
         throw new Error('Part ID is required');
     }
     const parts = await getAllParts();
-    const part = parts.find(part => part.id === parseInt(id));
+    const part = parts.find(part => part.id === parseInt(id, 10));
     if (!part) {
+        console.log(`Part not found with id: ${id}`);
         throw new Error(`Part not found with id: ${id}`);
     }
+    console.log('Found part:', part);
     return part;
 };
 
@@ -49,15 +51,16 @@ const createPart = async (partData) => {
 };
 
 const updatePart = async (id, partData) => {
-    console.log('Updating part - ID:', id);
+    console.log('Updating part - ID:', id, 'Type:', typeof id);
     console.log('Updating part - Data:', partData);
     const parts = await getAllParts();
-    const index = parts.findIndex(part => part.id === parseInt(id));
+    const index = parts.findIndex(part => part.id === parseInt(id, 10));
     console.log('Found part index:', index);
     if (index === -1) {
+        console.log(`Part not found with id: ${id}`);
         throw new Error(`Part not found with id: ${id}`);
     }
-    parts[index] = { ...parts[index], ...partData, id: parseInt(id) };
+    parts[index] = { ...parts[index], ...partData, id: parseInt(id, 10) };
     
     if (parts[index].type === 'servo') {
         parts[index].servoType = partData.servoType;
@@ -68,12 +71,13 @@ const updatePart = async (id, partData) => {
     }
     
     await fs.writeFile(dataPath, JSON.stringify(parts, null, 2));
+    console.log('Updated part:', parts[index]);
     return parts[index];
 };
 
 const deletePart = async (id) => {
     const parts = await getAllParts();
-    const filteredParts = parts.filter(part => part.id !== parseInt(id));
+    const filteredParts = parts.filter(part => part.id !== parseInt(id, 10));
     if (filteredParts.length === parts.length) {
         throw new Error(`Part not found with id: ${id}`);
     }

@@ -58,5 +58,16 @@
     "minPulse": 500,
     "maxPulse": 2500,
     "defaultAngle": 90
+  },
+  {
+    "id": 11,
+    "name": "MS90 Part",
+    "type": "servo",
+    "characterId": 1,
+    "servoType": "MG90S",
+    "channel": 4,
+    "minPulse": 500,
+    "maxPulse": 2500,
+    "defaultAngle": 90
   }
 ]

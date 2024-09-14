@@ -7,7 +7,8 @@ const path = require('path');
 
 router.get('/:id/edit', async (req, res) => {
     try {
-        const id = parseInt(req.params.id);
+        const id = parseInt(req.params.id, 10);
+        console.log('Editing LED with ID:', id, 'Type:', typeof id);
         if (isNaN(id)) {
             throw new Error('Invalid part ID');
         }
@@ -25,8 +26,8 @@ router.post('/', async (req, res) => {
         const newLed = {
             name: req.body.name,
             type: 'led',
-            characterId: parseInt(req.body.characterId),
-            gpioPin: parseInt(req.body.gpioPin) || 26
+            characterId: parseInt(req.body.characterId, 10),
+            gpioPin: parseInt(req.body.gpioPin, 10) || 26
         };
         const createdLed = await partService.createPart(newLed);
         console.log('Created LED:', createdLed);
@@ -37,37 +38,18 @@ router.post('/', async (req, res) => {
     }
 });
 
-router.post('/:id', async (req, res) => {
-    try {
-        const id = parseInt(req.params.id);
-        if (isNaN(id)) {
-            throw new Error('Invalid part ID');
-        }
-        const updatedLed = {
-            id: id,
-            name: req.body.name,
-            type: 'led',
-            characterId: parseInt(req.body.characterId),
-            gpioPin: parseInt(req.body.gpioPin) || 26
-        };
-        const result = await partService.updatePart(id, updatedLed);
-        console.log('Updated LED:', result);
-        res.redirect('/parts');
-    } catch (error) {
-        console.error('Error updating LED:', error);
-        res.status(500).send('An error occurred while updating the LED: ' + error.message);
-    }
-});
-
 router.post('/test', async (req, res) => {
     try {
+        console.log('LED Test Route - Request body:', req.body);
         const { gpioPin, brightness, duration } = req.body;
         const scriptPath = path.join(__dirname, '..', 'scripts', 'led_control.py');
+        console.log('LED test script path:', scriptPath);
         const process = spawn('python3', [
             scriptPath,
             gpioPin.toString(),
-            brightness.toString(),
-            duration.toString()
+            'on',
+            duration.toString(),
+            brightness.toString()
         ]);
 
         let stdout = '';
@@ -94,6 +76,33 @@ router.post('/test', async (req, res) => {
     } catch (error) {
         console.error('Error testing LED:', error);
         res.status(500).json({ success: false, message: 'An error occurred while testing the LED', error: error.message });
+    }
+});
+
+router.post('/:id', async (req, res) => {
+    try {
+        console.log('Update LED Route - Request params:', req.params);
+        console.log('Update LED Route - Request body:', req.body);
+
+        const id = parseInt(req.params.id, 10);
+        console.log('Updating LED with ID:', id, 'Type:', typeof id);
+        if (isNaN(id)) {
+            throw new Error('Invalid part ID');
+        }
+        const updatedLed = {
+            id: id,
+            name: req.body.name,
+            type: 'led',
+            characterId: parseInt(req.body.characterId, 10),
+            gpioPin: parseInt(req.body.gpioPin, 10) || 26
+        };
+        console.log('Updated LED data:', updatedLed);
+        const result = await partService.updatePart(id, updatedLed);
+        console.log('Updated LED:', result);
+        res.redirect('/parts');
+    } catch (error) {
+        console.error('Error updating LED:', error);
+        res.status(500).send('An error occurred while updating the LED: ' + error.message);
     }
 });
 
