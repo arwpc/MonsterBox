@@ -5,72 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Active Mode</title>
     <link rel="stylesheet" href="/css/style.css">
-    <style>
-        .character-section {
-            display: flex;
-            align-items: flex-start;
-            margin-bottom: 20px;
-        }
-        .character-image {
-            width: 250px;
-            height: 250px;
-            object-fit: cover;
-            margin-right: 20px;
-            border: 1px solid #0f0;
-        }
-        .character-info {
-            flex-grow: 1;
-        }
-        .scene-container {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-        .scene-box {
-            width: 45%;
-            border: 1px solid #0f0;
-            padding: 10px;
-        }
-        .scene-controls {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-        #availableScenes, #activatedScenes {
-            width: 100%;
-            height: 200px;
-            overflow-y: auto;
-            border: 1px solid #0f0;
-            background-color: #001100;
-            color: #0f0;
-            padding: 5px;
-        }
-        #activatedScenes {
-            list-style-type: none;
-            margin: 0;
-            padding: 5px;
-        }
-        .output-section {
-            width: 100%;
-            height: 300px;
-            overflow-y: scroll;
-            border: 1px solid #0f0;
-            padding: 10px;
-            background-color: #001100;
-            margin-bottom: 20px;
-        }
-        #cameraPlaceholder {
-            width: 100%;
-            height: 200px;
-            background-color: #001100;
-            border: 1px solid #0f0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-top: 20px;
-        }
-    </style>
+    <script src="https://cdn.jsdelivr.net/npm/jsmpeg@1.0.3/jsmpeg.min.js"></script>
 </head>
 <body>
     <h1>Active Mode</h1>
@@ -115,12 +50,125 @@
         <h3>Armed Mode Output</h3>
     </div>
 
-    <div id="cameraPlaceholder">CAMERA STREAM PLACEHOLDER</div>
+    <div class="monitoring-section">
+        <h2>Camera Stream</h2>
+        <canvas id="cameraStream"></canvas>
+        <div class="camera-controls">
+            <button id="toggleNightMode">Toggle Night Mode</button>
+            <label>
+                <input type="checkbox" id="audioToggle" checked> Enable Audio
+            </label>
+            <label>
+                Mic Volume: <input type="range" id="micVolume" min="0" max="2" step="0.1" value="1">
+            </label>
+            <select id="resolution">
+                <option value="320x240">320x240</option>
+                <option value="640x480" selected>640x480</option>
+                <option value="800x600">800x600</option>
+                <option value="1280x720">1280x720</option>
+            </select>
+            <select id="framerate">
+                <option value="15">15 fps</option>
+                <option value="30" selected>30 fps</option>
+                <option value="60">60 fps</option>
+            </select>
+        </div>
+    </div>
 
     <a href="/" class="button">Back to Main Menu</a>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
     <script src="/scripts/active-mode.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const canvas = document.getElementById('cameraStream');
+            const toggleNightModeBtn = document.getElementById('toggleNightMode');
+            const audioToggle = document.getElementById('audioToggle');
+            const micVolumeSlider = document.getElementById('micVolume');
+            const resolutionSelect = document.getElementById('resolution');
+            const framerateSelect = document.getElementById('framerate');
+
+            const player = new JSMpeg.Player(`ws://${window.location.hostname}:${window.location.port}`, {
+                canvas: canvas,
+                audio: audioToggle.checked,
+                videoBufferSize: 512 * 1024,
+                audioBufferSize: 128 * 1024,
+            });
+
+            toggleNightModeBtn.addEventListener('click', () => {
+                fetch('/camera/toggle-night-mode', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Night mode:', data.nightMode ? 'ON' : 'OFF');
+                    })
+                    .catch(error => console.error('Error:', error));
+            });
+
+            audioToggle.addEventListener('change', (e) => {
+                player.audioEnabled = e.target.checked;
+            });
+
+            micVolumeSlider.addEventListener('input', (e) => {
+                const volume = parseFloat(e.target.value);
+                fetch('/camera/set-mic-volume', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ volume: volume }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Mic volume set to:', data.volume);
+                })
+                .catch(error => console.error('Error:', error));
+            });
+
+            resolutionSelect.addEventListener('change', (e) => {
+                fetch('/camera/set-resolution', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ resolution: e.target.value }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Resolution set to:', data.resolution);
+                    player.destroy();
+                    player = new JSMpeg.Player(`ws://${window.location.hostname}:${window.location.port}`, {
+                        canvas: canvas,
+                        audio: audioToggle.checked,
+                        videoBufferSize: 512 * 1024,
+                        audioBufferSize: 128 * 1024,
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+            });
+
+            framerateSelect.addEventListener('change', (e) => {
+                fetch('/camera/set-framerate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ framerate: e.target.value }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Framerate set to:', data.framerate);
+                    player.destroy();
+                    player = new JSMpeg.Player(`ws://${window.location.hostname}:${window.location.port}`, {
+                        canvas: canvas,
+                        audio: audioToggle.checked,
+                        videoBufferSize: 512 * 1024,
+                        audioBufferSize: 128 * 1024,
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+            });
+        });
+    </script>
 </body>
 </html>
