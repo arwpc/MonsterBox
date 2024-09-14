@@ -5,6 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
     <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .channel-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .channel-button {
+            padding: 10px;
+            text-align: center;
+            background-color: #003300;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            cursor: pointer;
+        }
+        .channel-button.selected {
+            background-color: #00ff00;
+            color: #000000;
+        }
+    </style>
 </head>
 <body>
     <h1><%= title %></h1>
@@ -28,56 +48,110 @@
             </select>
         </div>
         <div>
-            <label for="gpioPin">GPIO Pin:</label>
-            <input type="number" id="gpioPin" name="gpioPin" value="<%= part.gpioPin || '' %>" required>
+            <label for="servoType">Servo Type:</label>
+            <select id="servoType" name="servoType" required onchange="updateServoDescription(document.getElementById('testAngle').value)">
+                <option value="DS3240MG" <%= (part.servoType === 'DS3240MG') ? 'selected' : '' %>>DS3240MG (40KG Digital RC Servo)</option>
+                <option value="FS90R" <%= (part.servoType === 'FS90R') ? 'selected' : '' %>>FITEC FS90R (Continuous Rotation)</option>
+                <option value="MG90S" <%= (part.servoType === 'MG90S') ? 'selected' : '' %>>MG90S Servo</option>
+                <option value="BILDA" <%= (part.servoType === 'BILDA') ? 'selected' : '' %>>BILDA Dual Mode Servo</option>
+            </select>
         </div>
         <div>
-            <label for="pwmFrequency">PWM Frequency (Hz):</label>
-            <input type="number" id="pwmFrequency" name="pwmFrequency" value="<%= part.pwmFrequency || 50 %>" required>
+            <label for="channel">PCA9685 Channel:</label>
+            <input type="number" id="channel" name="channel" value="<%= part.channel || 0 %>" min="0" max="15" required readonly>
         </div>
         <div>
-            <label for="dutyCycle">Duty Cycle (%):</label>
-            <input type="number" id="dutyCycle" name="dutyCycle" value="<%= part.dutyCycle || 7.5 %>" step="0.1" required>
+            <label>Channel Position:</label>
+            <div class="channel-grid">
+                <% for (let i = 0; i < 16; i++) { %>
+                    <div class="channel-button" data-channel="<%= i %>">
+                        <%= i %> (<%= ['Top', 'Top', 'Top', 'Top', 'Upper Mid', 'Upper Mid', 'Upper Mid', 'Upper Mid', 'Lower Mid', 'Lower Mid', 'Lower Mid', 'Lower Mid', 'Bottom', 'Bottom', 'Bottom', 'Bottom'][i] %>)
+                    </div>
+                <% } %>
+            </div>
+        </div>
+        <div>
+            <label for="minPulse">Min Pulse (μs):</label>
+            <input type="number" id="minPulse" name="minPulse" value="<%= part.minPulse || 500 %>" required>
+        </div>
+        <div>
+            <label for="maxPulse">Max Pulse (μs):</label>
+            <input type="number" id="maxPulse" name="maxPulse" value="<%= part.maxPulse || 2500 %>" required>
+        </div>
+        <div>
+            <label for="defaultAngle">Default Angle:</label>
+            <input type="number" id="defaultAngle" name="defaultAngle" value="<%= part.defaultAngle || 90 %>" min="0" max="180" required>
         </div>
         <button type="submit">Save Part</button>
     </form>
     <div id="servoTest">
         <h2>Test Servo</h2>
         <div>
-            <label for="angle">Angle (0-180):</label>
-            <input type="range" id="angle" min="0" max="180" value="90">
+            <label for="testAngle">Angle (0-180) / Speed for FS90R:</label>
+            <input type="range" id="testAngle" min="0" max="180" value="90">
             <span id="angleValue">90</span>
         </div>
-        <div>
-            <label for="duration">Duration (ms):</label>
-            <input type="number" id="duration" value="1000" min="100" max="10000">
-        </div>
-        <button onclick="testPart()">Test Servo</button>
+        <p id="servoDescription"></p>
+        <button onclick="testServo()">Test Servo</button>
+        <button onclick="stopServo()">Stop Test</button>
     </div>
     <a href="/parts" class="button">Back to Parts</a>
 
     <script>
-        document.getElementById('angle').addEventListener('input', function() {
-            document.getElementById('angleValue').textContent = this.value;
+        document.addEventListener('DOMContentLoaded', function() {
+            const channelButtons = document.querySelectorAll('.channel-button');
+            const channelInput = document.getElementById('channel');
+
+            channelButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    channelButtons.forEach(b => b.classList.remove('selected'));
+                    this.classList.add('selected');
+                    channelInput.value = this.dataset.channel;
+                });
+            });
+
+            // Set initial selected channel
+            const initialChannel = parseInt(channelInput.value);
+            channelButtons[initialChannel].classList.add('selected');
+
+            // Initialize servo description
+            updateServoDescription(document.getElementById('testAngle').value);
         });
 
-        function testPart() {
-            const partData = {
-                part_id: <%= part.id || 'null' %>,
-                type: 'servo',
-                angle: parseInt(document.getElementById('angle').value),
-                duration: parseInt(document.getElementById('duration').value),
-                gpioPin: parseInt(document.getElementById('gpioPin').value),
-                pwmFrequency: parseFloat(document.getElementById('pwmFrequency').value),
-                dutyCycle: parseFloat(document.getElementById('dutyCycle').value)
-            };
+        document.getElementById('testAngle').addEventListener('input', function() {
+            const angle = parseInt(this.value);
+            document.getElementById('angleValue').textContent = angle;
+            updateServoDescription(angle);
+        });
 
-            fetch('/parts/test', {
+        function updateServoDescription(angle) {
+            const servoType = document.getElementById('servoType').value;
+            let description = '';
+            if (servoType === 'FS90R') {
+                if (angle === 90) description = 'Stopped';
+                else if (angle < 90) description = `Clockwise (${100 - Math.round(angle / 90 * 100)}% speed)`;
+                else description = `Counterclockwise (${Math.round((angle - 90) / 90 * 100)}% speed)`;
+            } else {
+                description = `Angle: ${angle}°`;
+            }
+            document.getElementById('servoDescription').textContent = description;
+        }
+
+        function testServo() {
+            const angle = document.getElementById('testAngle').value;
+            const channel = document.getElementById('channel').value;
+            fetch('/parts/servo/test', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(partData)
+                body: JSON.stringify({
+                    angle: parseInt(angle),
+                    channel: parseInt(channel),
+                    servoType: document.getElementById('servoType').value,
+                    minPulse: parseInt(document.getElementById('minPulse').value),
+                    maxPulse: parseInt(document.getElementById('maxPulse').value)
+                })
             })
             .then(response => response.json())
             .then(data => {
@@ -87,9 +161,35 @@
                     alert('Servo test failed: ' + data.message);
                 }
             })
-            .catch((error) => {
+            .catch(error => {
                 console.error('Error:', error);
                 alert('An error occurred while testing the servo');
+            });
+        }
+
+        function stopServo() {
+            const channel = document.getElementById('channel').value;
+            fetch('/parts/servo/stop', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    channel: parseInt(channel),
+                    servoType: document.getElementById('servoType').value
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Servo stopped successfully');
+                } else {
+                    alert('Failed to stop servo: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while stopping the servo');
             });
         }
     </script>

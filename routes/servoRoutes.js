@@ -2,8 +2,7 @@ const express = require('express');
 const router = express.Router();
 const partService = require('../services/partService');
 const characterService = require('../services/characterService');
-const { spawn } = require('child_process');
-const path = require('path');
+const servoController = require('../controllers/servoController');
 
 router.get('/:id/edit', async (req, res) => {
     try {
@@ -26,9 +25,11 @@ router.post('/', async (req, res) => {
             name: req.body.name,
             type: 'servo',
             characterId: parseInt(req.body.characterId),
-            gpioPin: parseInt(req.body.gpioPin),
-            pwmFrequency: parseInt(req.body.pwmFrequency) || 50,
-            dutyCycle: parseFloat(req.body.dutyCycle) || 7.5
+            servoType: req.body.servoType,
+            channel: parseInt(req.body.channel),
+            minPulse: parseInt(req.body.minPulse),
+            maxPulse: parseInt(req.body.maxPulse),
+            defaultAngle: parseInt(req.body.defaultAngle)
         };
         const createdServo = await partService.createPart(newServo);
         console.log('Created servo:', createdServo);
@@ -50,9 +51,11 @@ router.post('/:id', async (req, res) => {
             name: req.body.name,
             type: 'servo',
             characterId: parseInt(req.body.characterId),
-            gpioPin: parseInt(req.body.gpioPin),
-            pwmFrequency: parseInt(req.body.pwmFrequency) || 50,
-            dutyCycle: parseFloat(req.body.dutyCycle) || 7.5
+            servoType: req.body.servoType,
+            channel: parseInt(req.body.channel),
+            minPulse: parseInt(req.body.minPulse),
+            maxPulse: parseInt(req.body.maxPulse),
+            defaultAngle: parseInt(req.body.defaultAngle)
         };
         const result = await partService.updatePart(id, updatedServo);
         console.log('Updated servo:', result);
@@ -63,44 +66,7 @@ router.post('/:id', async (req, res) => {
     }
 });
 
-router.post('/test', async (req, res) => {
-    try {
-        const { gpioPin, angle, pwmFrequency, dutyCycle, duration } = req.body;
-        const scriptPath = path.join(__dirname, '..', 'scripts', 'servo_control.py');
-        const process = spawn('python3', [
-            scriptPath,
-            gpioPin.toString(),
-            angle.toString(),
-            pwmFrequency.toString(),
-            dutyCycle.toString(),
-            duration.toString()
-        ]);
-
-        let stdout = '';
-        let stderr = '';
-
-        process.stdout.on('data', (data) => {
-            stdout += data.toString();
-            console.log(`Python script output: ${data}`);
-        });
-
-        process.stderr.on('data', (data) => {
-            stderr += data.toString();
-            console.error(`Python script error: ${data}`);
-        });
-
-        process.on('close', (code) => {
-            console.log(`Python script exited with code ${code}`);
-            if (code === 0) {
-                res.json({ success: true, message: 'Servo test completed successfully', output: stdout });
-            } else {
-                res.status(500).json({ success: false, message: 'Servo test failed', error: stderr });
-            }
-        });
-    } catch (error) {
-        console.error('Error testing servo:', error);
-        res.status(500).json({ success: false, message: 'An error occurred while testing the servo', error: error.message });
-    }
-});
+router.post('/test', servoController.testServo);
+router.post('/stop', servoController.stopServo);
 
 module.exports = router;

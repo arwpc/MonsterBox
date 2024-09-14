@@ -28,7 +28,7 @@
         "part_id": "8",
         "duration": "5000",
         "direction": "backward",
-        "speed": "100"
+        "speed": "50"
       },
       {
         "type": "led",
@@ -42,7 +42,7 @@
         "type": "linear-actuator",
         "name": "Axe Down",
         "part_id": "8",
-        "duration": "5000",
+        "duration": "2500",
         "direction": "forward",
         "speed": "100"
       }
