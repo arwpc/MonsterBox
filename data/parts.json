@@ -65,7 +65,7 @@
     "type": "servo",
     "characterId": 1,
     "servoType": "MG90S",
-    "channel": 4,
+    "channel": 8,
     "minPulse": 500,
     "maxPulse": 2500,
     "defaultAngle": 90

@@ -71,10 +71,10 @@
             .then(data => {
                 if (data.success) {
                     console.log('Light test successful:', data.message);
-                    alert('Light test successful: ' + data.message);
+                  //  alert('Light test successful: ' + data.message);
                 } else {
                     console.error('Light test failed:', data.message);
-                    alert('Light test failed: ' + data.message);
+                  //  alert('Light test failed: ' + data.message);
                 }
             })
             .catch((error) => {
