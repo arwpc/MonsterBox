@@ -1,5 +1,0 @@
-2024-08-27 16:42:58,836 - ERROR - Incorrect number of arguments
-2024-08-27 16:44:08,246 - ERROR - Incorrect number of arguments
-2024-08-27 16:45:05,761 - INFO - Controlling motor: direction=forward, speed=100, duration=1000, dir_pin=23, pwm_pin=12
-2024-08-27 16:56:22,258 - ERROR - Incorrect number of arguments
-2024-09-03 15:09:19,550 - ERROR - Incorrect number of arguments

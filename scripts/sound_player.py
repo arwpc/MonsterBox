@@ -52,12 +52,14 @@ class SoundPlayer:
                 command = input().strip()
                 if command == "EXIT":
                     break
-
-                cmd, sound_id, file_path = command.split("|")
-                if cmd == "PLAY":
-                    Thread(target=self.play_sound, args=(sound_id, file_path)).start()
-                elif cmd == "STOP":
-                    self.stop_sound(sound_id)
+                elif command == "STOP_ALL":
+                    self.stop_all_sounds()
+                else:
+                    cmd, sound_id, file_path = command.split("|")
+                    if cmd == "PLAY":
+                        Thread(target=self.play_sound, args=(sound_id, file_path)).start()
+                    elif cmd == "STOP":
+                        self.stop_sound(sound_id)
             except Exception as e:
                 print(json.dumps({"status": "error", "error": str(e)}))
                 sys.stdout.flush()
