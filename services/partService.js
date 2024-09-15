@@ -52,10 +52,7 @@ const updatePart = async (id, partData) => {
     console.log('Updating part - Data:', partData);
     const parts = await getAllParts();
     console.log('All parts:', parts);
-    const index = parts.findIndex(part => {
-        console.log('Comparing:', part.id, id, part.id === parseInt(id, 10));
-        return part.id === parseInt(id, 10);
-    });
+    const index = parts.findIndex(part => part.id === parseInt(id, 10));
     console.log('Found part index:', index);
     if (index === -1) {
         console.log(`Part not found with id: ${id}`);
