@@ -5,5 +5,41 @@
     "type": "light",
     "characterId": 1,
     "gpioPin": 26
+  },
+  {
+    "id": 2,
+    "name": "asdasd",
+    "type": "linear-actuator",
+    "characterId": 1,
+    "directionPin": 23,
+    "pwmPin": 12,
+    "maxExtension": 10000,
+    "maxRetraction": 10000
+  },
+  {
+    "id": 3,
+    "name": "Baphomet's Eye",
+    "type": "sensor",
+    "characterId": 1,
+    "sensorType": "motion",
+    "gpioPin": 16,
+    "active": true
+  },
+  {
+    "id": 4,
+    "name": "GreenEye",
+    "type": "led",
+    "characterId": 1,
+    "gpioPin": 17
+  },
+  {
+    "id": 5,
+    "name": "asdsadasdasd",
+    "type": "linear-actuator",
+    "characterId": 1,
+    "directionPin": 18,
+    "pwmPin": 13,
+    "maxExtension": 10000,
+    "maxRetraction": 10000
   }
 ]

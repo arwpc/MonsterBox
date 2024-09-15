@@ -7,21 +7,6 @@ const characterService = require('../services/characterService');
 const { spawn } = require('child_process');
 const path = require('path');
 
-// Route to list all linear actuators (commented out for now)
-/*
-router.get('/', async (req, res) => {
-    try {
-        const parts = await partService.getAllParts();
-        const linearActuators = parts.filter(part => part.type === 'linear-actuator');
-        res.render('linear-actuators-list', { title: 'Linear Actuators', linearActuators });
-    } catch (error) {
-        console.error('Error fetching linear actuators:', error);
-        res.status(500).send('An error occurred while fetching linear actuators');
-    }
-});
-*/
-
-// Route to render the form for a new linear actuator
 router.get('/new', async (req, res) => {
     try {
         const characters = await characterService.getAllCharacters();
@@ -37,8 +22,6 @@ router.get('/new', async (req, res) => {
     }
 });
 
-// Route to create a new linear actuator (commented out for now)
-/*
 router.post('/', async (req, res) => {
     try {
         const newActuator = {
@@ -46,7 +29,9 @@ router.post('/', async (req, res) => {
             type: 'linear-actuator',
             characterId: parseInt(req.body.characterId),
             directionPin: parseInt(req.body.directionPin) || 18,
-            pwmPin: parseInt(req.body.pwmPin) || 13
+            pwmPin: parseInt(req.body.pwmPin) || 13,
+            maxExtension: parseInt(req.body.maxExtension) || 10000,
+            maxRetraction: parseInt(req.body.maxRetraction) || 10000
         };
         const createdActuator = await partService.createPart(newActuator);
         console.log('Created linear actuator:', createdActuator);
@@ -56,15 +41,13 @@ router.post('/', async (req, res) => {
         res.status(500).send('An error occurred while creating the linear actuator: ' + error.message);
     }
 });
-*/
 
-// Route to test the linear actuator
 router.post('/test', async (req, res) => {
     try {
-        const { direction, speed, duration, directionPin, pwmPin } = req.body;
+        const { direction, speed, duration, directionPin, pwmPin, maxExtension, maxRetraction } = req.body;
         const scriptPath = path.join(__dirname, '..', 'scripts', 'linear_actuator_control.py');
         
-        console.log('Executing script with parameters:', { direction, speed, duration, directionPin, pwmPin });
+        console.log('Executing script with parameters:', { direction, speed, duration, directionPin, pwmPin, maxExtension, maxRetraction });
         
         const process = spawn('python3', [
             scriptPath,
@@ -72,7 +55,9 @@ router.post('/test', async (req, res) => {
             speed.toString(),
             duration.toString(),
             directionPin.toString(),
-            pwmPin.toString()
+            pwmPin.toString(),
+            (maxExtension || '10000').toString(),
+            (maxRetraction || '10000').toString()
         ]);
 
         let stdout = '';
