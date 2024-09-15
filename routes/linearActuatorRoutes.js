@@ -1,5 +1,3 @@
-// File: routes/linearActuatorRoutes.js
-
 const express = require('express');
 const router = express.Router();
 const partService = require('../services/partService');
@@ -42,8 +40,36 @@ router.post('/', async (req, res) => {
     }
 });
 
+router.post('/:id', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            throw new Error('Invalid part ID');
+        }
+        console.log('Updating linear actuator - Request body:', req.body);
+        const updatedActuator = {
+            id: id,
+            name: req.body.name,
+            type: 'linear-actuator',
+            characterId: parseInt(req.body.characterId),
+            directionPin: parseInt(req.body.directionPin),
+            pwmPin: parseInt(req.body.pwmPin),
+            maxExtension: parseInt(req.body.maxExtension),
+            maxRetraction: parseInt(req.body.maxRetraction)
+        };
+        console.log('Updating linear actuator with data:', updatedActuator);
+        const result = await partService.updatePart(id, updatedActuator);
+        console.log('Updated linear actuator:', result);
+        res.redirect('/parts');
+    } catch (error) {
+        console.error('Error updating linear actuator:', error);
+        res.status(500).send('An error occurred while updating the linear actuator: ' + error.message);
+    }
+});
+
 router.post('/test', async (req, res) => {
     try {
+        console.log('Received test request:', req.body);
         const { direction, speed, duration, directionPin, pwmPin, maxExtension, maxRetraction } = req.body;
         const scriptPath = path.join(__dirname, '..', 'scripts', 'linear_actuator_control.py');
         

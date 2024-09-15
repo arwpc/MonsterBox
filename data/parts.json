@@ -1,7 +1,7 @@
 [
   {
     "id": 1,
-    "name": "Hand of Azura",
+    "name": "Hand of Azuras",
     "type": "light",
     "characterId": 1,
     "gpioPin": 26
@@ -33,13 +33,13 @@
     "gpioPin": 17
   },
   {
-    "id": 5,
-    "name": "asdsadasdasd",
+    "id": 6,
+    "name": "rwaraa",
     "type": "linear-actuator",
     "characterId": 1,
     "directionPin": 18,
     "pwmPin": 13,
-    "maxExtension": 10000,
-    "maxRetraction": 10000
+    "maxExtension": null,
+    "maxRetraction": null
   }
 ]
