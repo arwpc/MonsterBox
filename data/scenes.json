@@ -2,26 +2,47 @@
   {
     "id": 1,
     "character_id": 1,
-    "scene_name": "Awaken",
+    "scene_name": "Testing Script",
     "steps": [
       {
-        "type": "sensor",
-        "name": "Watching you",
-        "part_id": "5",
-        "timeout": "30"
+        "type": "sound",
+        "name": "Background Noise - wind and rain",
+        "sound_id": "2",
+        "concurrent": "on"
       },
       {
-        "type": "led",
-        "name": "Awaken Eyes",
-        "part_id": "4",
-        "duration": "4000",
-        "state": "on",
-        "brightness": "100"
+        "type": "linear-actuator",
+        "name": "Raise Right Arm for Casting",
+        "part_id": "5",
+        "duration": "5000",
+        "direction": "forward",
+        "speed": "25"
       },
       {
         "type": "sound",
-        "name": "Good evening buddy!",
-        "sound_id": "1"
+        "name": "Santos Dominus",
+        "sound_id": "3",
+        "concurrent": "on"
+      },
+      {
+        "type": "light",
+        "name": "Casting Spells",
+        "part_id": "1",
+        "duration": "5000",
+        "state": "on"
+      },
+      {
+        "type": "pause",
+        "name": "holding for effect",
+        "duration": "3000"
+      },
+      {
+        "type": "linear-actuator",
+        "name": "Put Arm Down",
+        "part_id": "5",
+        "duration": "1250",
+        "direction": "forward",
+        "speed": "100"
       }
     ]
   }
