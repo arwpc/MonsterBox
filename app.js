@@ -1,11 +1,11 @@
 // File: app.js
+
 const express = require('express');
 const path = require('path');
 const http = require('http');
 const app = express();
 const server = http.createServer(app);
 const port = 3000;
-const camera = require('./scripts/camera');
 const audio = require('./scripts/audio');
 
 // Import routes
@@ -44,51 +44,28 @@ app.get('/', (req, res) => {
     res.render('index', { title: 'MonsterBox Control Panel' });
 });
 
-// Camera routes
-app.post('/camera/toggle-night-mode', (req, res) => {
-    camera.toggleNightMode();
-    res.json({ success: true, nightMode: camera.nightMode });
-});
-
 // Audio routes
 app.post('/audio/set-mic-volume', (req, res) => {
-    try {
-        audio.setMicVolume(req.body.volume);
-        res.json({ success: true, volume: req.body.volume });
-    } catch (error) {
-        console.error('Error setting mic volume:', error);
-        res.status(500).json({ success: false, error: 'Failed to set mic volume' });
-    }
+    res.status(200).json({ success: true, message: 'Mic volume control not implemented' });
 });
 
-app.post('/audio/set-audio-device', (req, res) => {
-    try {
-        audio.setAudioDevice(req.body.device);
-        res.json({ success: true, device: req.body.device });
-    } catch (error) {
-        console.error('Error setting audio device:', error);
-        res.status(500).json({ success: false, error: 'Failed to set audio device' });
-    }
-});
-
-app.get('/audio/devices', (req, res) => {
-    audio.getAudioDevices((devices) => {
-        res.json({ devices: devices });
-    });
-});
-
-// Proxy route for mjpeg-streamer
+// Proxy route for mjpeg-streamer with error handling
 app.use('/stream', (req, res) => {
+    let headersSent = false;
     const proxyRequest = http.request(
         {
             hostname: 'localhost',
             port: 8080,
             path: '/?action=stream',
             method: req.method,
-            headers: req.headers
+            headers: req.headers,
+            timeout: 5000 // 5 seconds timeout
         },
         (proxyResponse) => {
-            res.writeHead(proxyResponse.statusCode, proxyResponse.headers);
+            if (!headersSent) {
+                res.writeHead(proxyResponse.statusCode, proxyResponse.headers);
+                headersSent = true;
+            }
             proxyResponse.pipe(res);
         }
     );
@@ -96,12 +73,23 @@ app.use('/stream', (req, res) => {
 
     proxyRequest.on('error', (error) => {
         console.error('Proxy request error:', error);
-        res.status(500).send('Error connecting to camera stream');
+        if (!headersSent) {
+            res.status(503).send('Camera stream unavailable');
+            headersSent = true;
+        }
+    });
+
+    proxyRequest.on('timeout', () => {
+        console.error('Proxy request timeout');
+        proxyRequest.destroy();
+        if (!headersSent) {
+            res.status(504).send('Camera stream timeout');
+            headersSent = true;
+        }
     });
 });
 
-// Start the camera and audio streams
-camera.startStream();
+// Start the audio stream
 audio.startStream(server);
 
 // Error handling middleware
@@ -117,14 +105,10 @@ server.listen(port, () => {
 
 process.on('uncaughtException', (error) => {
     console.error('Uncaught Exception:', error);
-    // Optionally, you can choose to exit the process here
-    // process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-    // Optionally, you can choose to exit the process here
-    // process.exit(1);
 });
 
 module.exports = app;

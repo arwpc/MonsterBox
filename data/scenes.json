@@ -24,52 +24,5 @@
         "sound_id": "1"
       }
     ]
-  },
-  {
-    "id": 2,
-    "character_id": 1,
-    "scene_name": "Attack",
-    "steps": [
-      {
-        "type": "sound",
-        "name": "Roar!!!",
-        "sound_id": "2",
-        "concurrent": "on"
-      },
-      {
-        "type": "sound",
-        "name": "santos",
-        "sound_id": "3",
-        "concurrent": "on"
-      },
-      {
-        "type": "linear-actuator",
-        "name": "Raise Right Arm Up",
-        "part_id": "8",
-        "duration": "5000",
-        "direction": "backward",
-        "speed": "25"
-      },
-      {
-        "type": "light",
-        "name": "Here's the money",
-        "part_id": "3",
-        "duration": "10000",
-        "state": "on"
-      },
-      {
-        "type": "pause",
-        "name": "Waiting....5 seconds",
-        "duration": "5000"
-      },
-      {
-        "type": "linear-actuator",
-        "name": "Lowrer Arm",
-        "part_id": "8",
-        "duration": "1250",
-        "direction": "forward",
-        "speed": "100"
-      }
-    ]
   }
 ]

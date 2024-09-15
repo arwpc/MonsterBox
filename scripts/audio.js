@@ -1,4 +1,6 @@
-const { spawn, exec } = require('child_process');
+// File: scripts/audio.js
+
+const { spawn } = require('child_process');
 const WebSocket = require('ws');
 const path = require('path');
 
@@ -6,8 +8,6 @@ class Audio {
     constructor() {
         this.audioProcess = null;
         this.wss = null;
-        this.audioDevice = 'plughw:CARD=Device,DEV=0';
-        this.micVolume = 1.0;
         this.retryCount = 0;
         this.maxRetries = 3;
     }
@@ -59,9 +59,6 @@ class Audio {
         this.audioProcess.on('error', (error) => {
             console.error(`Error starting audio stream: ${error}`);
         });
-
-        // Set the audio device
-        this.setAudioDevice(this.audioDevice);
     }
 
     stopAudioProcess() {
@@ -97,39 +94,6 @@ class Audio {
         } else {
             console.error('Audio process is not running');
         }
-    }
-
-    setMicVolume(volume) {
-        this.micVolume = volume;
-        console.log(`Mic volume set to: ${volume}`);
-        // Implement mic volume control logic here if needed
-    }
-
-    setAudioDevice(device) {
-        this.audioDevice = device;
-        console.log(`Setting audio device to: ${device}`);
-        if (this.audioProcess) {
-            const command = `DEVICE|${device}\n`;
-            this.audioProcess.stdin.write(command);
-        }
-    }
-
-    getAudioDevices(callback) {
-        console.log('Fetching audio devices...');
-        exec('aplay -L', (error, stdout, stderr) => {
-            if (error) {
-                console.error(`Error getting audio devices: ${error}`);
-                callback([]);
-                return;
-            }
-            console.log('Raw audio device output:', stdout);
-            const devices = stdout.split('\n')
-                .filter(line => line.trim() !== '' && !line.startsWith(' '))
-                .map(line => line.trim())
-                .filter(line => line.includes('CARD=') || line === 'default');
-            console.log('Parsed audio devices:', devices);
-            callback(devices);
-        });
     }
 }
 
