@@ -23,16 +23,6 @@
     "gpioPin": 17
   },
   {
-    "id": 6,
-    "name": "Left Arm of Manipulation",
-    "type": "linear-actuator",
-    "characterId": 1,
-    "directionPin": 23,
-    "pwmPin": 12,
-    "maxExtension": 10000,
-    "maxRetraction": 10000
-  },
-  {
     "id": 7,
     "name": "Head of Deceit",
     "type": "servo",
@@ -67,11 +57,21 @@
   },
   {
     "id": 10,
-    "name": "Right Arm of Satan",
+    "name": "Right Arm of Baphomet",
     "type": "linear-actuator",
     "characterId": 1,
     "directionPin": 18,
     "pwmPin": 13,
+    "maxExtension": 7500,
+    "maxRetraction": 7500
+  },
+  {
+    "id": 11,
+    "name": "Left Arm of Manipulation",
+    "type": "linear-actuator",
+    "characterId": 1,
+    "directionPin": 23,
+    "pwmPin": 12,
     "maxExtension": 10000,
     "maxRetraction": 10000
   }

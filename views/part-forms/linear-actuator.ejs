@@ -46,72 +46,69 @@
         <button type="submit">Save Part</button>
     </form>
 
-    <div id="actuatorTest">
-        <h2>Test Linear Actuator</h2>
+    <div id="testfireSection">
+        <h2>Testfire Linear Actuator</h2>
         <div>
-            <label for="direction">Direction:</label>
-            <select id="direction">
+            <label for="testDirection">Direction:</label>
+            <select id="testDirection">
                 <option value="forward">Forward</option>
                 <option value="backward">Backward</option>
             </select>
         </div>
         <div>
-            <label for="speed">Speed:</label>
-            <input type="range" id="speed" min="0" max="100" value="50">
+            <label for="testSpeed">Speed:</label>
+            <input type="range" id="testSpeed" min="0" max="100" value="50">
             <span id="speedValue">50</span>
         </div>
         <div>
-            <label for="duration">Duration (ms):</label>
-            <input type="range" id="duration" min="100" max="5000" value="1000" step="100">
+            <label for="testDuration">Duration (ms):</label>
+            <input type="range" id="testDuration" min="100" max="5000" value="1000" step="100">
             <span id="durationValue">1000</span>
         </div>
-        <button onclick="testPart()">Test Linear Actuator</button>
+        <button onclick="executeTestfire()">Testfire</button>
     </div>
+
+    <div id="testfireResult"></div>
 
     <a href="/parts" class="button">Back to Parts</a>
 
     <script>
-        document.getElementById('speed').addEventListener('input', function() {
+        document.getElementById('testSpeed').addEventListener('input', function() {
             document.getElementById('speedValue').textContent = this.value;
         });
-        document.getElementById('duration').addEventListener('input', function() {
+        document.getElementById('testDuration').addEventListener('input', function() {
             document.getElementById('durationValue').textContent = this.value;
         });
 
-        function testPart() {
-            const partData = {
-                direction: document.getElementById('direction').value,
-                speed: parseInt(document.getElementById('speed').value),
-                duration: parseInt(document.getElementById('duration').value),
-                directionPin: parseInt(document.getElementById('directionPin').value),
-                pwmPin: parseInt(document.getElementById('pwmPin').value),
-                maxExtension: parseInt(document.getElementById('maxExtension').value),
-                maxRetraction: parseInt(document.getElementById('maxRetraction').value)
-            };
+        function executeTestfire() {
+            const direction = document.getElementById('testDirection').value;
+            const speed = document.getElementById('testSpeed').value;
+            const duration = document.getElementById('testDuration').value;
+            const directionPin = document.getElementById('directionPin').value;
+            const pwmPin = document.getElementById('pwmPin').value;
+            const maxExtension = document.getElementById('maxExtension').value;
+            const maxRetraction = document.getElementById('maxRetraction').value;
 
-            console.log('Sending test request with data:', partData);
+            const formData = new FormData();
+            formData.append('direction', direction);
+            formData.append('speed', speed);
+            formData.append('duration', duration);
+            formData.append('directionPin', directionPin);
+            formData.append('pwmPin', pwmPin);
+            formData.append('maxExtension', maxExtension);
+            formData.append('maxRetraction', maxRetraction);
 
-            fetch('/parts/linear-actuator/test', {
+            fetch('/parts/linear-actuator/testfire', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(partData)
+                body: formData
             })
-            .then(response => response.json())
+            .then(response => response.text())
             .then(data => {
-                console.log('Received response:', data);
-                if (data.success) {
-                    console.log('Linear actuator test successful:', data.message);
-                    alert('Linear actuator test successful: ' + data.message);
-                } else {
-                    console.error('Linear actuator test failed:', data.message);
-                    alert('Linear actuator test failed: ' + data.message);
-                }
+                document.getElementById('testfireResult').innerHTML = `<pre>${data}</pre>`;
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred while testing the linear actuator');
+                document.getElementById('testfireResult').innerHTML = `<p>Error: ${error.message}</p>`;
             });
         }
     </script>
