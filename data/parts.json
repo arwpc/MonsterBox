@@ -23,16 +23,6 @@
     "gpioPin": 17
   },
   {
-    "id": 5,
-    "name": "Right Arm of Satanic Influence",
-    "type": "linear-actuator",
-    "characterId": 1,
-    "directionPin": 18,
-    "pwmPin": 13,
-    "maxExtension": 10000,
-    "maxRetraction": 10000
-  },
-  {
     "id": 6,
     "name": "Left Arm of Manipulation",
     "type": "linear-actuator",
@@ -74,5 +64,15 @@
     "minPulse": 500,
     "maxPulse": 2500,
     "defaultAngle": 90
+  },
+  {
+    "id": 10,
+    "name": "Right Arm of Satan",
+    "type": "linear-actuator",
+    "characterId": 1,
+    "directionPin": 18,
+    "pwmPin": 13,
+    "maxExtension": 10000,
+    "maxRetraction": 10000
   }
 ]
