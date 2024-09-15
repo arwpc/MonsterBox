@@ -1,3 +1,5 @@
+# File: /scripts/linear_actuator_control.py
+
 import RPi.GPIO as GPIO
 import time
 import sys

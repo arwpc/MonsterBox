@@ -1,3 +1,5 @@
+// File: /routes/linearActuatorRoutes.js
+
 const express = require('express');
 const router = express.Router();
 const partService = require('../services/partService');
@@ -7,6 +9,7 @@ const path = require('path');
 
 router.get('/new', async (req, res) => {
     try {
+        console.log('Rendering new linear actuator form');
         const characters = await characterService.getAllCharacters();
         res.render('part-forms/linear-actuator', { 
             title: 'New Linear Actuator', 
@@ -16,12 +19,35 @@ router.get('/new', async (req, res) => {
         });
     } catch (error) {
         console.error('Error rendering new linear actuator form:', error);
-        res.status(500).send('An error occurred while loading the new linear actuator form');
+        res.status(500).send('An error occurred while loading the new linear actuator form: ' + error.message);
+    }
+});
+
+router.get('/:id/edit', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        console.log(`Attempting to edit linear actuator with ID: ${id}`);
+        if (isNaN(id)) {
+            throw new Error('Invalid part ID');
+        }
+        const part = await partService.getPartById(id);
+        console.log('Retrieved part for editing:', part);
+        const characters = await characterService.getAllCharacters();
+        res.render('part-forms/linear-actuator', { 
+            title: 'Edit Linear Actuator', 
+            action: `/parts/linear-actuator/${part.id}`, 
+            part, 
+            characters 
+        });
+    } catch (error) {
+        console.error('Error fetching linear actuator for editing:', error);
+        res.status(500).send('An error occurred while fetching the linear actuator: ' + error.message);
     }
 });
 
 router.post('/', async (req, res) => {
     try {
+        console.log('Creating new linear actuator with data:', req.body);
         const newActuator = {
             name: req.body.name,
             type: 'linear-actuator',
@@ -41,8 +67,10 @@ router.post('/', async (req, res) => {
 });
 
 router.post('/:id', async (req, res) => {
+    console.log('Received POST request for linear actuator update. Params:', req.params, 'Body:', req.body);
     try {
         const id = parseInt(req.params.id);
+        console.log(`Attempting to update linear actuator with ID: ${id}`);
         if (isNaN(id)) {
             throw new Error('Invalid part ID');
         }
@@ -69,7 +97,7 @@ router.post('/:id', async (req, res) => {
 
 router.post('/test', async (req, res) => {
     try {
-        console.log('Received test request:', req.body);
+        console.log('Received test request for linear actuator:', req.body);
         const { direction, speed, duration, directionPin, pwmPin, maxExtension, maxRetraction } = req.body;
         const scriptPath = path.join(__dirname, '..', 'scripts', 'linear_actuator_control.py');
         
@@ -82,8 +110,8 @@ router.post('/test', async (req, res) => {
             duration.toString(),
             directionPin.toString(),
             pwmPin.toString(),
-            (maxExtension || '10000').toString(),
-            (maxRetraction || '10000').toString()
+            maxExtension.toString(),
+            maxRetraction.toString()
         ]);
 
         let stdout = '';

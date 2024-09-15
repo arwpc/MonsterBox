@@ -7,16 +7,6 @@
     "gpioPin": 26
   },
   {
-    "id": 2,
-    "name": "asdasd",
-    "type": "linear-actuator",
-    "characterId": 1,
-    "directionPin": 23,
-    "pwmPin": 12,
-    "maxExtension": 10000,
-    "maxRetraction": 10000
-  },
-  {
     "id": 3,
     "name": "Baphomet's Eye",
     "type": "sensor",
@@ -33,13 +23,56 @@
     "gpioPin": 17
   },
   {
-    "id": 6,
-    "name": "rwaraa",
+    "id": 5,
+    "name": "Right Arm of Satanic Influence",
     "type": "linear-actuator",
     "characterId": 1,
     "directionPin": 18,
     "pwmPin": 13,
-    "maxExtension": null,
-    "maxRetraction": null
+    "maxExtension": 10000,
+    "maxRetraction": 10000
+  },
+  {
+    "id": 6,
+    "name": "Left Arm of Manipulation",
+    "type": "linear-actuator",
+    "characterId": 1,
+    "directionPin": 23,
+    "pwmPin": 12,
+    "maxExtension": 10000,
+    "maxRetraction": 10000
+  },
+  {
+    "id": 7,
+    "name": "Head of Deceit",
+    "type": "servo",
+    "characterId": 1,
+    "servoType": "BILDA",
+    "channel": 0,
+    "minPulse": 500,
+    "maxPulse": 2500,
+    "defaultAngle": 90
+  },
+  {
+    "id": 8,
+    "name": "Left Elbow",
+    "type": "servo",
+    "characterId": 1,
+    "servoType": "DS3240MG",
+    "channel": 4,
+    "minPulse": 500,
+    "maxPulse": 2500,
+    "defaultAngle": 90
+  },
+  {
+    "id": 9,
+    "name": "Left Wrist Rotator",
+    "type": "servo",
+    "characterId": 1,
+    "servoType": "DS3240MG",
+    "channel": 5,
+    "minPulse": 500,
+    "maxPulse": 2500,
+    "defaultAngle": 90
   }
 ]

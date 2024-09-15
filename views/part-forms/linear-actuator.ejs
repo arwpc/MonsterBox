@@ -35,6 +35,14 @@
             <label for="pwmPin">PWM Pin:</label>
             <input type="number" id="pwmPin" name="pwmPin" value="<%= part.pwmPin || 13 %>" required>
         </div>
+        <div>
+            <label for="maxExtension">Max Extension (ms):</label>
+            <input type="number" id="maxExtension" name="maxExtension" value="<%= part.maxExtension || 10000 %>" required>
+        </div>
+        <div>
+            <label for="maxRetraction">Max Retraction (ms):</label>
+            <input type="number" id="maxRetraction" name="maxRetraction" value="<%= part.maxRetraction || 10000 %>" required>
+        </div>
         <button type="submit">Save Part</button>
     </form>
 
@@ -76,8 +84,12 @@
                 speed: parseInt(document.getElementById('speed').value),
                 duration: parseInt(document.getElementById('duration').value),
                 directionPin: parseInt(document.getElementById('directionPin').value),
-                pwmPin: parseInt(document.getElementById('pwmPin').value)
+                pwmPin: parseInt(document.getElementById('pwmPin').value),
+                maxExtension: parseInt(document.getElementById('maxExtension').value),
+                maxRetraction: parseInt(document.getElementById('maxRetraction').value)
             };
+
+            console.log('Sending test request with data:', partData);
 
             fetch('/parts/linear-actuator/test', {
                 method: 'POST',
@@ -88,14 +100,18 @@
             })
             .then(response => response.json())
             .then(data => {
+                console.log('Received response:', data);
                 if (data.success) {
                     console.log('Linear actuator test successful:', data.message);
+                    alert('Linear actuator test successful: ' + data.message);
                 } else {
                     console.error('Linear actuator test failed:', data.message);
+                    alert('Linear actuator test failed: ' + data.message);
                 }
             })
             .catch((error) => {
                 console.error('Error:', error);
+                alert('An error occurred while testing the linear actuator');
             });
         }
     </script>
