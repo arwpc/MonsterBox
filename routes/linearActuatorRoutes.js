@@ -1,5 +1,3 @@
-// File: /routes/linearActuatorRoutes.js
-
 const express = require('express');
 const router = express.Router();
 const partService = require('../services/partService');
