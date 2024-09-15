@@ -1,73 +1,9 @@
 [
   {
-    "id": 3,
+    "id": 1,
     "name": "Hand of Azura",
     "type": "light",
     "characterId": 1,
     "gpioPin": 26
-  },
-  {
-    "id": 4,
-    "name": "Eye of Baphomet",
-    "type": "led",
-    "characterId": 1,
-    "gpioPin": 17
-  },
-  {
-    "id": 5,
-    "name": "Satans Sensor",
-    "type": "sensor",
-    "characterId": 1,
-    "sensorType": "motion",
-    "gpioPin": 16,
-    "active": true
-  },
-  {
-    "id": 6,
-    "name": "Head",
-    "type": "servo",
-    "characterId": 1,
-    "gpioPin": 6,
-    "pwmFrequency": 50,
-    "dutyCycle": 7.5
-  },
-  {
-    "id": 8,
-    "name": "Right Arm of God",
-    "type": "linear-actuator",
-    "characterId": 1,
-    "directionPin": 18,
-    "pwmPin": 13
-  },
-  {
-    "id": 9,
-    "name": "motion sensort bpbobbbb",
-    "type": "sensor",
-    "characterId": 1,
-    "sensorType": "motion",
-    "gpioPin": 16,
-    "active": true
-  },
-  {
-    "id": 10,
-    "name": "Head on a Swivel",
-    "type": "servo",
-    "characterId": 1,
-    "servoType": "FS90R",
-    "channel": 0,
-    "minPulse": 500,
-    "maxPulse": 2500,
-    "defaultAngle": 90
-  },
-  {
-    "id": 11,
-    "name": "MS90 Part",
-    "type": "servo",
-    "characterId": 1,
-    "servoType": "MG90S",
-    "channel": 8,
-    "minPulse": 500,
-    "maxPulse": 2500,
-    "defaultAngle": 90
   }
 ]
