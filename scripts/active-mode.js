@@ -11,7 +11,6 @@ $(document).ready(function() {
     $('#armButton').click(armSystem);
     $('#disarmButton').click(disarmSystem);
     $('#stopAllSteps').click(stopAllSteps);
-    $('#testfireLinearActuator').click(testfireLinearActuator);
 
     // Load the first character by default
     loadFirstCharacter();
@@ -190,49 +189,5 @@ $(document).ready(function() {
         const timestamp = new Date().toLocaleTimeString();
         $('#armedModeOutput').append(`<p>[${timestamp}] ${message}</p>`);
         $('#armedModeOutput').scrollTop($('#armedModeOutput')[0].scrollHeight);
-    }
-
-    function testfireLinearActuator() {
-        const direction = $('#direction').val();
-        const speed = $('#speed').val();
-        const duration = $('#duration').val();
-        const directionPin = $('#directionPin').val();
-        const pwmPin = $('#pwmPin').val();
-        const maxExtension = $('#maxExtension').val();
-        const maxRetraction = $('#maxRetraction').val();
-
-        $.ajax({
-            url: '/parts/linear-actuator/testfire',
-            method: 'POST',
-            data: {
-                direction,
-                speed,
-                duration,
-                directionPin,
-                pwmPin,
-                maxExtension,
-                maxRetraction
-            },
-            success: function(response) {
-                if (response.success) {
-                    logArmedModeOutput('Linear actuator testfire successful');
-                    response.logs.forEach(log => logArmedModeOutput(log));
-                } else {
-                    logArmedModeOutput('Linear actuator testfire failed');
-                    if (response.message) logArmedModeOutput(response.message);
-                    if (response.logs) response.logs.forEach(log => logArmedModeOutput(log));
-                    if (response.stderr) logArmedModeOutput('Error: ' + response.stderr);
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error('Error during linear actuator testfire:', error);
-                logArmedModeOutput('Error during linear actuator testfire: ' + error);
-                if (xhr.responseJSON) {
-                    if (xhr.responseJSON.message) logArmedModeOutput(xhr.responseJSON.message);
-                    if (xhr.responseJSON.logs) xhr.responseJSON.logs.forEach(log => logArmedModeOutput(log));
-                    if (xhr.responseJSON.stderr) logArmedModeOutput('Error: ' + xhr.responseJSON.stderr);
-                }
-            }
-        });
     }
 });
