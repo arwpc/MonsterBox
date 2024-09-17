@@ -19,15 +19,11 @@ function writeLog(message) {
     }
 }
 
-// GET route for testfire
+// GET route for testfire with parameters
 router.get('/:id/testfire', (req, res) => {
     const id = parseInt(req.params.id, 10);
-    writeLog(`Received GET testfire request for linear actuator ${id}`);
-    
-    // Default values for testing
-    const direction = 'forward';
-    const speed = '50';
-    const duration = '1000';
+    const { direction = 'forward', speed = '50', duration = '1000' } = req.query;
+    writeLog(`Received GET testfire request for linear actuator ${id} with params: direction=${direction}, speed=${speed}, duration=${duration}`);
     
     partService.getPartById(id)
         .then(part => {
