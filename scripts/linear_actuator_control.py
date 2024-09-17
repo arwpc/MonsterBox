@@ -7,13 +7,29 @@ import logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def setup_gpio(dir_pin, pwm_pin):
-    logging.info(f"Setting up GPIO: dir_pin={dir_pin}, pwm_pin={pwm_pin}")
-    GPIO.setmode(GPIO.BCM)
-    GPIO.setup(dir_pin, GPIO.OUT)
-    GPIO.setup(pwm_pin, GPIO.OUT)
-    pwm = GPIO.PWM(pwm_pin, 100)  # 100Hz frequency
-    logging.info(f"GPIO setup complete. PWM frequency: 100Hz")
-    return pwm
+    try:
+        logging.info(f"Setting up GPIO: dir_pin={dir_pin}, pwm_pin={pwm_pin}")
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(dir_pin, GPIO.OUT)
+        GPIO.setup(pwm_pin, GPIO.OUT)
+        pwm = GPIO.PWM(pwm_pin, 100)  # 100Hz frequency
+        logging.info(f"GPIO setup complete. PWM frequency: 100Hz")
+        
+        # Test GPIO control
+        logging.info("Testing GPIO control")
+        GPIO.output(dir_pin, GPIO.HIGH)
+        time.sleep(0.1)
+        dir_state = GPIO.input(dir_pin)
+        logging.info(f"Direction pin state after setting HIGH: {dir_state}")
+        GPIO.output(dir_pin, GPIO.LOW)
+        time.sleep(0.1)
+        dir_state = GPIO.input(dir_pin)
+        logging.info(f"Direction pin state after setting LOW: {dir_state}")
+        
+        return pwm
+    except Exception as e:
+        logging.error(f"Error setting up GPIO: {str(e)}")
+        raise
 
 def validate_speed(speed):
     try:
@@ -36,7 +52,7 @@ def control_actuator(direction, speed, duration, dir_pin, pwm_pin, max_extension
         pwm = setup_gpio(dir_pin, pwm_pin)
         speed_float = validate_speed(speed)
         
-        # Set direction (matching test_linear_actuator.py)
+        # Set direction
         if direction == 'forward':
             GPIO.output(dir_pin, GPIO.LOW)
             logging.info(f"Set direction pin ({dir_pin}) to LOW (forward)")
@@ -44,6 +60,7 @@ def control_actuator(direction, speed, duration, dir_pin, pwm_pin, max_extension
             GPIO.output(dir_pin, GPIO.HIGH)
             logging.info(f"Set direction pin ({dir_pin}) to HIGH (backward)")
         
+        time.sleep(0.1)  # Short delay to ensure direction is set
         log_gpio_state(dir_pin, pwm_pin)
         
         # Calculate the actual duration based on direction and limits
@@ -51,12 +68,15 @@ def control_actuator(direction, speed, duration, dir_pin, pwm_pin, max_extension
         
         logging.info(f"Moving actuator {direction} at speed {speed_float}% for {actual_duration}ms")
         
-        pwm.start(speed_float)
+        pwm.start(0)
+        time.sleep(0.1)  # Short delay to ensure PWM is started
+        pwm.ChangeDutyCycle(speed_float)
         log_gpio_state(dir_pin, pwm_pin)
         
         time.sleep(actual_duration / 1000)
         
-        pwm.stop()
+        pwm.ChangeDutyCycle(0)
+        time.sleep(0.1)  # Short delay to ensure PWM is stopped
         log_gpio_state(dir_pin, pwm_pin)
         
         return True  # Indicate successful completion
