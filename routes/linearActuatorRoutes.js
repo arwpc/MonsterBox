@@ -8,10 +8,11 @@ const multer = require('multer');
 const upload = multer();
 const fs = require('fs');
 
-// Function to write logs to a file
+// Function to write logs to a file and console
 function writeLog(message) {
-    const logMessage = `${new Date().toISOString()}: ${message}\n`;
-    fs.appendFileSync('linear_actuator_logs.txt', logMessage);
+    const logMessage = `${new Date().toISOString()}: ${message}`;
+    console.log(logMessage);
+    fs.appendFileSync('linear_actuator_logs.txt', logMessage + '\n');
 }
 
 router.get('/:id/edit', async (req, res) => {
@@ -96,11 +97,25 @@ router.post('/:id/testfire', upload.none(), (req, res) => {
     
     partService.getPartById(id)
         .then(part => {
-            const command = `sudo python3 ${path.join(__dirname, '../scripts/linear_actuator_control.py')} ${direction} ${speed} ${duration} ${part.directionPin} ${part.pwmPin} ${part.maxExtension} ${part.maxRetraction}`;
+            const scriptPath = path.join('scripts', 'linear_actuator_control.py');
+            const command = `python3 ${scriptPath} ${direction} ${speed} ${duration} ${part.directionPin} ${part.pwmPin} ${part.maxExtension} ${part.maxRetraction}`;
             
             writeLog(`Executing command: ${command}`);
+            console.log(`Executing command: ${command}`);
 
             exec(command, (error, stdout, stderr) => {
+                console.log('Python script output:');
+                console.log(stdout);
+                if (stderr) {
+                    console.error('Python script error output:');
+                    console.error(stderr);
+                }
+
+                writeLog(`Command stdout: ${stdout}`);
+                if (stderr) {
+                    writeLog(`Command stderr: ${stderr}`);
+                }
+
                 if (error) {
                     writeLog(`Testfire exec error: ${error.message}`);
                     return res.status(500).json({
