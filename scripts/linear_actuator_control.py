@@ -67,8 +67,10 @@ def control_actuator(direction, speed, duration, dir_pin, pwm_pin, max_extension
         
         soft_start_stop(pwm, 0)  # Soft stop
         
+        return True  # Indicate successful completion
     except Exception as e:
         logging.error(f"Error during actuator control: {str(e)}")
+        return False  # Indicate failure
     finally:
         if pwm:
             pwm.stop()
@@ -91,9 +93,15 @@ if __name__ == "__main__":
 
         logging.info(f"Starting linear actuator control with parameters: direction={direction}, speed={speed}, duration={duration}, dir_pin={dir_pin}, pwm_pin={pwm_pin}, max_extension={max_extension}, max_retraction={max_retraction}")
         
-        control_actuator(direction, speed, duration, dir_pin, pwm_pin, max_extension, max_retraction)
-        logging.info("Linear actuator control completed successfully")
-        sys.exit(0)
+        success = control_actuator(direction, speed, duration, dir_pin, pwm_pin, max_extension, max_retraction)
+        if success:
+            logging.info("Linear actuator control completed successfully")
+            print("SUCCESS: Linear actuator control completed successfully")
+        else:
+            logging.error("Linear actuator control failed")
+            print("FAILURE: Linear actuator control failed")
+        sys.exit(0 if success else 1)
     except Exception as e:
         logging.error(f"Error controlling linear actuator: {str(e)}")
+        print(f"FAILURE: Error controlling linear actuator: {str(e)}")
         sys.exit(1)
