@@ -1,6 +1,10 @@
 import RPi.GPIO as GPIO
 import time
 import sys
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def setup_gpio(dir_pin, pwm_pin):
     GPIO.setmode(GPIO.BCM)
@@ -8,13 +12,30 @@ def setup_gpio(dir_pin, pwm_pin):
     GPIO.setup(pwm_pin, GPIO.OUT)
     return GPIO.PWM(pwm_pin, 100)  # 100Hz frequency
 
+def validate_speed(speed):
+    try:
+        speed_float = float(speed)
+        if 0 <= speed_float <= 100:
+            return speed_float
+        else:
+            raise ValueError("Speed must be between 0 and 100")
+    except ValueError:
+        raise ValueError("Invalid speed value")
+
+def soft_start_stop(pwm, target_speed, ramp_time=0.5):
+    steps = 20
+    for i in range(steps + 1):
+        current_speed = (i / steps) * target_speed
+        pwm.ChangeDutyCycle(current_speed)
+        time.sleep(ramp_time / steps)
+
 def control_actuator(direction, speed, duration, dir_pin, pwm_pin, max_extension, max_retraction):
     pwm = None
     try:
         pwm = setup_gpio(dir_pin, pwm_pin)
+        speed_float = validate_speed(speed)
         
         GPIO.output(dir_pin, GPIO.LOW if direction == 'forward' else GPIO.HIGH)
-        pwm.start(float(speed))
         
         # Calculate the actual duration based on direction and limits
         if direction == 'forward':
@@ -22,10 +43,21 @@ def control_actuator(direction, speed, duration, dir_pin, pwm_pin, max_extension
         else:
             actual_duration = min(int(duration), int(max_retraction))
         
-        print(f"Moving actuator {direction} for {actual_duration}ms")
-        time.sleep(actual_duration / 1000)  # Convert duration to seconds
+        logging.info(f"Moving actuator {direction} at speed {speed_float}% for {actual_duration}ms")
+        
+        soft_start_stop(pwm, speed_float)  # Soft start
+        
+        start_time = time.time()
+        while time.time() - start_time < (actual_duration / 1000):
+            if time.time() - start_time > 30:  # Safety timeout of 30 seconds
+                logging.warning("Safety timeout reached. Stopping actuator.")
+                break
+            time.sleep(0.1)  # Check every 100ms
+        
+        soft_start_stop(pwm, 0)  # Soft stop
+        
     except Exception as e:
-        print(f"Error during actuator control: {str(e)}")
+        logging.error(f"Error during actuator control: {str(e)}")
     finally:
         if pwm:
             pwm.stop()
@@ -33,7 +65,7 @@ def control_actuator(direction, speed, duration, dir_pin, pwm_pin, max_extension
 
 if __name__ == "__main__":
     if len(sys.argv) < 8:
-        print("Usage: python3 linear_actuator_control.py <direction> <speed> <duration> <dir_pin> <pwm_pin> <max_extension> <max_retraction>")
+        logging.error("Usage: python3 linear_actuator_control.py <direction> <speed> <duration> <dir_pin> <pwm_pin> <max_extension> <max_retraction>")
         sys.exit(1)
 
     try:
@@ -46,8 +78,8 @@ if __name__ == "__main__":
         max_retraction = sys.argv[7]
 
         control_actuator(direction, speed, duration, dir_pin, pwm_pin, max_extension, max_retraction)
-        print("Linear actuator control completed successfully")
+        logging.info("Linear actuator control completed successfully")
         sys.exit(0)
     except Exception as e:
-        print(f"Error controlling linear actuator: {str(e)}")
+        logging.error(f"Error controlling linear actuator: {str(e)}")
         sys.exit(1)
