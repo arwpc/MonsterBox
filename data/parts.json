@@ -67,7 +67,7 @@
   },
   {
     "id": 11,
-    "name": "Left Arm of Manipulation",
+    "name": "Updated Left Arm",
     "type": "linear-actuator",
     "characterId": 1,
     "directionPin": 23,

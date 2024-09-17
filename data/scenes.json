@@ -13,7 +13,7 @@
       {
         "type": "linear-actuator",
         "name": "Raise Right Arm for Casting",
-        "part_id": "5",
+        "part_id": "10",
         "duration": "5000",
         "direction": "forward",
         "speed": "25"
@@ -39,7 +39,7 @@
       {
         "type": "linear-actuator",
         "name": "Put Arm Down",
-        "part_id": "5",
+        "part_id": "10",
         "duration": "1250",
         "direction": "forward",
         "speed": "100"

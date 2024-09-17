@@ -73,19 +73,19 @@ const sceneController = {
         }
     },
 
-    updateScene: async (req, res) => {
-        try {
-            const updatedScene = await sceneService.updateScene(req.params.id, req.body);
-            if (updatedScene) {
-                res.json({ success: true, message: 'Scene updated successfully', scene: updatedScene });
-            } else {
-                res.status(404).json({ error: 'Scene not found' });
-            }
-        } catch (error) {
-            console.error('Error updating scene:', error);
-            res.status(500).json({ error: 'Failed to update scene', details: error.message });
+updateScene: async (req, res) => {
+    try {
+        const updatedScene = await sceneService.updateScene(req.params.id, req.body);
+        if (updatedScene) {
+            res.redirect('/scenes');  // Redirect to scenes list
+        } else {
+            res.status(404).json({ error: 'Scene not found' });
         }
-    },
+    } catch (error) {
+        console.error('Error updating scene:', error);
+        res.status(500).json({ error: 'Failed to update scene', details: error.message });
+    }
+},
 
     deleteScene: async (req, res) => {
         try {

@@ -82,33 +82,28 @@
             document.getElementById('durationValue').textContent = this.value;
         });
 
-        function executeTestfire() {
-            const direction = document.getElementById('testDirection').value;
-            const speed = document.getElementById('testSpeed').value;
-            const duration = document.getElementById('testDuration').value;
+   function executeTestfire() {
+        const direction = document.getElementById('testDirection').value;
+        const speed = document.getElementById('testSpeed').value;
+        const duration = document.getElementById('testDuration').value;
 
-            const formData = new FormData();
-            formData.append('direction', direction);
-            formData.append('speed', speed);
-            formData.append('duration', duration);
+        fetch('/parts/linear-actuator/<%= part.id %>/testfire?direction=' + direction + '&speed=' + speed + '&duration=' + duration, {
+            method: 'GET'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('testfireResult').innerHTML = `<p>Success: ${data.message}</p>`;
+            } else {
+                document.getElementById('testfireResult').innerHTML = `<p>Error: ${data.message}</p>`;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('testfireResult').innerHTML = `<p>Error: ${error.message}</p>`;
+        });
+    }
 
-            fetch('/parts/linear-actuator/<%= part.id %>/testfire', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    document.getElementById('testfireResult').innerHTML = `<p>Success: ${data.message}</p>`;
-                } else {
-                    document.getElementById('testfireResult').innerHTML = `<p>Error: ${data.message}</p>`;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                document.getElementById('testfireResult').innerHTML = `<p>Error: ${error.message}</p>`;
-            });
-        }
     </script>
 </body>
 </html>

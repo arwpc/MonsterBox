@@ -4,11 +4,17 @@ const sceneService = require('../services/sceneService');
 const partService = require('../services/partService');
 const soundService = require('../services/soundService');
 const soundController = require('./soundController');
-const partController = require('./partController');
 const path = require('path');
 const { spawn } = require('child_process');
 
 let isExecuting = false;
+
+const stopAllParts = async () => {
+    // Implement logic to stop all parts
+    // This might involve sending stop signals to all active parts
+    console.log('Stopping all parts');
+    // For now, we'll just log this action
+};
 
 const scenePlayerController = {
     getScenePlayer: async (req, res) => {
@@ -82,7 +88,7 @@ const scenePlayerController = {
         isExecuting = false;
         try {
             await soundController.stopAllSounds();
-            await partController.stopAllParts();
+            await stopAllParts();
             res.json({ message: 'All steps stopped and processes terminated' });
         } catch (error) {
             console.error('Error stopping all steps:', error);
@@ -95,7 +101,7 @@ const scenePlayerController = {
         isExecuting = false;
         try {
             await soundController.stopAllSounds();
-            await partController.stopAllParts();
+            await stopAllParts();
             res.json({ message: 'All scenes stopped and processes terminated' });
         } catch (error) {
             console.error('Error stopping all scenes:', error);
@@ -119,7 +125,7 @@ async function executeStep(step, sendEvent) {
             case 'led':
             case 'light':
             case 'servo':
-                await partController.executePartAction(step, sendEvent);
+                await executePartAction(step, sendEvent);
                 break;
             case 'sensor':
                 await executeSensor(step, sendEvent);
@@ -143,6 +149,74 @@ async function executeSound(step, sendEvent) {
         throw new Error(`Sound not found for ID: ${step.sound_id}`);
     }
     await soundController.playSound(sound, sendEvent);
+}
+
+async function executePartAction(step, sendEvent) {
+    const part = await partService.getPartById(step.part_id);
+    if (!part) {
+        throw new Error(`Part not found for ID: ${step.part_id}`);
+    }
+
+    let scriptPath;
+    let args;
+
+    switch (part.type) {
+        case 'motor':
+        case 'linear-actuator':
+            scriptPath = path.resolve(__dirname, '..', 'scripts', 'linear_actuator_control.py');
+            args = [
+                step.direction,
+                step.speed.toString(),
+                step.duration.toString(),
+                part.directionPin.toString(),
+                part.pwmPin.toString(),
+                part.maxExtension.toString(),
+                part.maxRetraction.toString()
+            ];
+            break;
+        case 'led':
+        case 'light':
+            scriptPath = path.resolve(__dirname, '..', 'scripts', 'light_control.py');
+            args = [part.gpioPin.toString(), step.state, step.duration.toString()];
+            if (part.type === 'led' && step.brightness) {
+                args.push(step.brightness.toString());
+            }
+            break;
+        case 'servo':
+            scriptPath = path.resolve(__dirname, '..', 'scripts', 'servo_control.py');
+            args = [
+                part.gpioPin.toString(),
+                step.angle.toString(),
+                step.speed.toString(),
+                step.duration.toString(),
+                part.pwmFrequency.toString(),
+                part.dutyCycle.toString()
+            ];
+            break;
+        default:
+            throw new Error(`Unsupported part type: ${part.type}`);
+    }
+
+    return new Promise((resolve, reject) => {
+        const process = spawn('sudo', ['python3', scriptPath, ...args]);
+
+        process.stdout.on('data', (data) => {
+            sendEvent({ message: `${part.type} output: ${data}` });
+        });
+
+        process.stderr.on('data', (data) => {
+            sendEvent({ error: `${part.type} error: ${data}` });
+        });
+
+        process.on('close', (code) => {
+            if (code === 0) {
+                sendEvent({ message: `${part.type} action completed: ${step.name}` });
+                resolve();
+            } else {
+                reject(new Error(`${part.type} process exited with code ${code}`));
+            }
+        });
+    });
 }
 
 async function executeSensor(step, sendEvent) {
