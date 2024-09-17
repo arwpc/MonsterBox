@@ -89,11 +89,32 @@ router.post('/testfire', upload.none(), (req, res) => {
     exec(command, (error, stdout, stderr) => {
         if (error) {
             console.error(`Testfire exec error: ${error}`);
-            return res.status(500).send(`Error: ${error.message}\n${stderr}`);
+            return res.status(500).json({
+                success: false,
+                message: 'An error occurred while controlling the linear actuator.',
+                error: error.message,
+                stdout: stdout,
+                stderr: stderr
+            });
         }
-        console.log(`Testfire stdout: ${stdout}`);
-        console.error(`Testfire stderr: ${stderr}`);
-        res.send(`Output: ${stdout}\nErrors: ${stderr}`);
+
+        const logLines = stdout.split('\n').filter(line => line.trim() !== '');
+        const lastLogLine = logLines[logLines.length - 1];
+
+        if (lastLogLine && lastLogLine.includes('completed successfully')) {
+            res.json({
+                success: true,
+                message: 'Linear actuator control completed successfully.',
+                logs: logLines
+            });
+        } else {
+            res.status(500).json({
+                success: false,
+                message: 'Linear actuator control may have encountered an issue.',
+                logs: logLines,
+                stderr: stderr
+            });
+        }
     });
 });
 
