@@ -1,3 +1,5 @@
+# File: scripts/linear_actuator_control.py
+
 import RPi.GPIO as GPIO
 import time
 import sys
@@ -68,15 +70,12 @@ def control_actuator(direction, speed, duration, dir_pin, pwm_pin, max_extension
         
         logging.info(f"Moving actuator {direction} at speed {speed_float}% for {actual_duration}ms")
         
-        pwm.start(0)
-        time.sleep(0.1)  # Short delay to ensure PWM is started
-        pwm.ChangeDutyCycle(speed_float)
+        pwm.start(speed_float)
         log_gpio_state(dir_pin, pwm_pin)
         
         time.sleep(actual_duration / 1000)
         
-        pwm.ChangeDutyCycle(0)
-        time.sleep(0.1)  # Short delay to ensure PWM is stopped
+        pwm.stop()
         log_gpio_state(dir_pin, pwm_pin)
         
         return True  # Indicate successful completion

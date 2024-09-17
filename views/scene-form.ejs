@@ -1,3 +1,4 @@
+<!-- File: views/scene-form.ejs -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -24,7 +25,6 @@
                 <% }); %>
             </select>
         </div>
-
         <div>
             <label for="scene_name">Scene Name:</label>
             <input type="text" id="scene_name" name="scene_name" value="<%= scene.scene_name || '' %>" required>
@@ -46,10 +46,6 @@
                                 </option>
                             <% }); %>
                         </select>
-                        <label>
-                            <input type="checkbox" name="steps[<%= index %>][concurrent]" <%= step.concurrent ? 'checked' : '' %>>
-                            Play concurrently
-                        </label>
                     <% } else if (['motor', 'linear-actuator', 'servo', 'led', 'light'].includes(step.type)) { %>
                         <select name="steps[<%= index %>][part_id]" required>
                             <% parts.filter(part => part.type === step.type).forEach(function(part) { %>
@@ -74,6 +70,9 @@
                             <% if (step.type === 'led') { %>
                                 <input type="number" name="steps[<%= index %>][brightness]" value="<%= step.brightness || '' %>" placeholder="Brightness (0-100)" min="0" max="100" required>
                             <% } %>
+                        <% } else if (step.type === 'servo') { %>
+                            <input type="number" name="steps[<%= index %>][angle]" value="<%= step.angle || '' %>" placeholder="Angle (0-180)" min="0" max="180" required>
+                            <input type="number" name="steps[<%= index %>][speed]" value="<%= step.speed || '' %>" placeholder="Speed (0-100)" min="0" max="100" required>
                         <% } %>
                     <% } else if (step.type === 'sensor') { %>
                         <select name="steps[<%= index %>][part_id]" required>
@@ -87,6 +86,10 @@
                     <% } else if (step.type === 'pause') { %>
                         <input type="number" name="steps[<%= index %>][duration]" value="<%= step.duration || '' %>" placeholder="Duration (ms)" required>
                     <% } %>
+                    <label>
+                        <input type="checkbox" name="steps[<%= index %>][concurrent]" <%= step.concurrent ? 'checked' : '' %>>
+                        Run Concurrently
+                    </label>
                     <button type="button" onclick="removeStep(<%= index %>)">Remove Step</button>
                     <button type="button" onclick="copyStep(<%= index %>)">Copy Step</button>
                 </div>
@@ -175,10 +178,6 @@
                             <option value="<%= sound.id %>"><%= sound.name %></option>
                         <% }); %>
                     </select>
-                    <label>
-                        <input type="checkbox" name="steps[${stepCount}][concurrent]">
-                        Play concurrently
-                    </label>
                 `;
             } else if (['motor', 'linear-actuator', 'servo', 'led', 'light'].includes(type)) {
                 stepContent += `
@@ -207,6 +206,11 @@
                             <input type="number" name="steps[${stepCount}][brightness]" placeholder="Brightness (0-100)" min="0" max="100" required>
                         `;
                     }
+                } else if (type === 'servo') {
+                    stepContent += `
+                        <input type="number" name="steps[${stepCount}][angle]" placeholder="Angle (0-180)" min="0" max="180" required>
+                        <input type="number" name="steps[${stepCount}][speed]" placeholder="Speed (0-100)" min="0" max="100" required>
+                    `;
                 }
             } else if (type === 'sensor') {
                 stepContent += `
@@ -222,6 +226,10 @@
             }
 
             stepContent += `
+                <label>
+                    <input type="checkbox" name="steps[${stepCount}][concurrent]">
+                    Run Concurrently
+                </label>
                 <button type="button" onclick="removeStep(${stepCount})">Remove Step</button>
                 <button type="button" onclick="copyStep(${stepCount})">Copy Step</button>
             `;
@@ -289,9 +297,8 @@
                 steps[i].dataset.index = i;
                 updateStepInputNames(steps[i], i);
             }
-        }
-
-        function updateStepInputNames(stepElement, newIndex) {
+        }		
+			function updateStepInputNames(stepElement, newIndex) {
             const inputs = stepElement.querySelectorAll('input, select');
             inputs.forEach(input => {
                 const name = input.getAttribute('name');
