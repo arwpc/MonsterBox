@@ -25,14 +25,6 @@ def validate_speed(speed):
     except ValueError:
         raise ValueError("Invalid speed value")
 
-def soft_start_stop(pwm, target_speed, ramp_time=0.5):
-    steps = 20
-    for i in range(steps + 1):
-        current_speed = (i / steps) * target_speed
-        pwm.ChangeDutyCycle(current_speed)
-        logging.debug(f"PWM duty cycle changed to {current_speed}%")
-        time.sleep(ramp_time / steps)
-
 def log_gpio_state(dir_pin, pwm_pin):
     dir_state = GPIO.input(dir_pin)
     pwm_state = GPIO.input(pwm_pin)
@@ -44,28 +36,28 @@ def control_actuator(direction, speed, duration, dir_pin, pwm_pin, max_extension
         pwm = setup_gpio(dir_pin, pwm_pin)
         speed_float = validate_speed(speed)
         
-        GPIO.output(dir_pin, GPIO.LOW if direction == 'forward' else GPIO.HIGH)
-        logging.info(f"Set direction pin ({dir_pin}) to {'LOW' if direction == 'forward' else 'HIGH'}")
+        # Set direction (matching test_linear_actuator.py)
+        if direction == 'forward':
+            GPIO.output(dir_pin, GPIO.LOW)
+            logging.info(f"Set direction pin ({dir_pin}) to LOW (forward)")
+        else:
+            GPIO.output(dir_pin, GPIO.HIGH)
+            logging.info(f"Set direction pin ({dir_pin}) to HIGH (backward)")
+        
+        log_gpio_state(dir_pin, pwm_pin)
         
         # Calculate the actual duration based on direction and limits
-        if direction == 'forward':
-            actual_duration = min(int(duration), int(max_extension))
-        else:
-            actual_duration = min(int(duration), int(max_retraction))
+        actual_duration = min(int(duration), int(max_extension if direction == 'forward' else max_retraction))
         
         logging.info(f"Moving actuator {direction} at speed {speed_float}% for {actual_duration}ms")
         
-        soft_start_stop(pwm, speed_float)  # Soft start
+        pwm.start(speed_float)
+        log_gpio_state(dir_pin, pwm_pin)
         
-        start_time = time.time()
-        while time.time() - start_time < (actual_duration / 1000):
-            if time.time() - start_time > 30:  # Safety timeout of 30 seconds
-                logging.warning("Safety timeout reached. Stopping actuator.")
-                break
-            log_gpio_state(dir_pin, pwm_pin)
-            time.sleep(0.1)  # Check every 100ms
+        time.sleep(actual_duration / 1000)
         
-        soft_start_stop(pwm, 0)  # Soft stop
+        pwm.stop()
+        log_gpio_state(dir_pin, pwm_pin)
         
         return True  # Indicate successful completion
     except Exception as e:
