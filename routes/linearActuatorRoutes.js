@@ -6,16 +6,23 @@ const { exec } = require('child_process');
 const path = require('path');
 const multer = require('multer');
 const upload = multer();
+const fs = require('fs');
+
+// Function to write logs to a file
+function writeLog(message) {
+    const logMessage = `${new Date().toISOString()}: ${message}\n`;
+    fs.appendFileSync('linear_actuator_logs.txt', logMessage);
+}
 
 router.get('/:id/edit', async (req, res) => {
     try {
         const id = parseInt(req.params.id, 10);
-        console.log(`Attempting to edit linear actuator with ID: ${id}`);
+        writeLog(`Attempting to edit linear actuator with ID: ${id}`);
         if (isNaN(id)) {
             throw new Error('Invalid part ID');
         }
         const part = await partService.getPartById(id);
-        console.log('Retrieved part for editing:', part);
+        writeLog(`Retrieved part for editing: ${JSON.stringify(part)}`);
         const characters = await characterService.getAllCharacters();
         res.render('part-forms/linear-actuator', { 
             title: 'Edit Linear Actuator', 
@@ -24,14 +31,14 @@ router.get('/:id/edit', async (req, res) => {
             characters 
         });
     } catch (error) {
-        console.error('Error fetching linear actuator for editing:', error);
+        writeLog(`Error fetching linear actuator for editing: ${error.message}`);
         res.status(500).send('An error occurred while fetching the linear actuator: ' + error.message);
     }
 });
 
 router.post('/', async (req, res) => {
     try {
-        console.log('Creating new linear actuator with data:', req.body);
+        writeLog(`Creating new linear actuator with data: ${JSON.stringify(req.body)}`);
         const newActuator = {
             name: req.body.name,
             type: 'linear-actuator',
@@ -42,22 +49,26 @@ router.post('/', async (req, res) => {
             maxRetraction: parseInt(req.body.maxRetraction, 10) || 10000
         };
         const createdActuator = await partService.createPart(newActuator);
-        console.log('Created linear actuator:', createdActuator);
+        writeLog(`Created new linear actuator: ${JSON.stringify(createdActuator)}`);
         res.redirect('/parts');
     } catch (error) {
-        console.error('Error creating linear actuator:', error);
+        writeLog(`Error creating linear actuator: ${error.message}`);
         res.status(500).send('An error occurred while creating the linear actuator: ' + error.message);
     }
 });
 
 router.post('/:id', async (req, res) => {
     try {
+        writeLog('Received update request for linear actuator');
+        writeLog(`Request params: ${JSON.stringify(req.params)}`);
+        writeLog(`Request body: ${JSON.stringify(req.body)}`);
+        
         const id = parseInt(req.params.id, 10);
-        console.log(`Attempting to update linear actuator with ID: ${id}`);
+        writeLog(`Attempting to update linear actuator with ID: ${id}`);
         if (isNaN(id)) {
             throw new Error('Invalid part ID');
         }
-        console.log('Updating linear actuator - Request body:', req.body);
+        
         const updatedActuator = {
             id: id,
             name: req.body.name,
@@ -68,27 +79,27 @@ router.post('/:id', async (req, res) => {
             maxExtension: parseInt(req.body.maxExtension, 10),
             maxRetraction: parseInt(req.body.maxRetraction, 10)
         };
-        console.log('Updating linear actuator with data:', updatedActuator);
+        writeLog(`Updating linear actuator with data: ${JSON.stringify(updatedActuator)}`);
         const result = await partService.updatePart(id, updatedActuator);
-        console.log('Updated linear actuator:', result);
+        writeLog(`Updated linear actuator: ${JSON.stringify(result)}`);
         res.redirect('/parts');
     } catch (error) {
-        console.error('Error updating linear actuator:', error);
+        writeLog(`Error updating linear actuator: ${error.message}`);
         res.status(500).send('An error occurred while updating the linear actuator: ' + error.message);
     }
 });
 
 router.post('/testfire', upload.none(), (req, res) => {
-    console.log('Received testfire request:', req.body);
+    writeLog(`Received testfire request: ${JSON.stringify(req.body)}`);
     const { direction, speed, duration, directionPin, pwmPin, maxExtension, maxRetraction } = req.body;
     
     const command = `sudo python3 ${path.join(__dirname, '../scripts/linear_actuator_control.py')} ${direction} ${speed} ${duration} ${directionPin} ${pwmPin} ${maxExtension} ${maxRetraction}`;
     
-    console.log('Executing command:', command);
+    writeLog(`Executing command: ${command}`);
 
     exec(command, (error, stdout, stderr) => {
         if (error) {
-            console.error(`Testfire exec error: ${error}`);
+            writeLog(`Testfire exec error: ${error.message}`);
             return res.status(500).json({
                 success: false,
                 message: 'An error occurred while controlling the linear actuator.',
@@ -102,12 +113,14 @@ router.post('/testfire', upload.none(), (req, res) => {
         const lastLogLine = logLines[logLines.length - 1];
 
         if (lastLogLine && lastLogLine.includes('completed successfully')) {
+            writeLog('Linear actuator control completed successfully.');
             res.json({
                 success: true,
                 message: 'Linear actuator control completed successfully.',
                 logs: logLines
             });
         } else {
+            writeLog(`Linear actuator control may have encountered an issue. Stderr: ${stderr}`);
             res.status(500).json({
                 success: false,
                 message: 'Linear actuator control may have encountered an issue.',
