@@ -27,10 +27,15 @@ router.get('/test', (req, res) => {
     res.json({ message: 'Linear actuator test route is working' });
 });
 
-router.post('/:id/testfire', upload.none(), (req, res) => {
+// New GET route for testfire
+router.get('/:id/testfire', (req, res) => {
     const id = parseInt(req.params.id, 10);
-    writeLog(`Received testfire request for linear actuator ${id}: ${JSON.stringify(req.body)}`);
-    const { direction, speed, duration } = req.body;
+    writeLog(`Received GET testfire request for linear actuator ${id}`);
+    
+    // Default values for testing
+    const direction = 'forward';
+    const speed = '50';
+    const duration = '1000';
     
     partService.getPartById(id)
         .then(part => {
@@ -93,6 +98,11 @@ router.post('/:id/testfire', upload.none(), (req, res) => {
                 error: error.message
             });
         });
+});
+
+// Existing POST route for testfire
+router.post('/:id/testfire', upload.none(), (req, res) => {
+    // ... (keep the existing POST route as it is)
 });
 
 module.exports = router;
