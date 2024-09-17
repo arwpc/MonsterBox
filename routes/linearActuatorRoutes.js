@@ -89,46 +89,58 @@ router.post('/:id', async (req, res) => {
     }
 });
 
-router.post('/testfire', upload.none(), (req, res) => {
-    writeLog(`Received testfire request: ${JSON.stringify(req.body)}`);
-    const { direction, speed, duration, directionPin, pwmPin, maxExtension, maxRetraction } = req.body;
+router.post('/:id/testfire', upload.none(), (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    writeLog(`Received testfire request for linear actuator ${id}: ${JSON.stringify(req.body)}`);
+    const { direction, speed, duration } = req.body;
     
-    const command = `sudo python3 ${path.join(__dirname, '../scripts/linear_actuator_control.py')} ${direction} ${speed} ${duration} ${directionPin} ${pwmPin} ${maxExtension} ${maxRetraction}`;
-    
-    writeLog(`Executing command: ${command}`);
+    partService.getPartById(id)
+        .then(part => {
+            const command = `sudo python3 ${path.join(__dirname, '../scripts/linear_actuator_control.py')} ${direction} ${speed} ${duration} ${part.directionPin} ${part.pwmPin} ${part.maxExtension} ${part.maxRetraction}`;
+            
+            writeLog(`Executing command: ${command}`);
 
-    exec(command, (error, stdout, stderr) => {
-        if (error) {
-            writeLog(`Testfire exec error: ${error.message}`);
-            return res.status(500).json({
-                success: false,
-                message: 'An error occurred while controlling the linear actuator.',
-                error: error.message,
-                stdout: stdout,
-                stderr: stderr
+            exec(command, (error, stdout, stderr) => {
+                if (error) {
+                    writeLog(`Testfire exec error: ${error.message}`);
+                    return res.status(500).json({
+                        success: false,
+                        message: 'An error occurred while controlling the linear actuator.',
+                        error: error.message,
+                        stdout: stdout,
+                        stderr: stderr
+                    });
+                }
+
+                const logLines = stdout.split('\n').filter(line => line.trim() !== '');
+                const lastLogLine = logLines[logLines.length - 1];
+
+                if (lastLogLine && lastLogLine.includes('completed successfully')) {
+                    writeLog('Linear actuator control completed successfully.');
+                    res.json({
+                        success: true,
+                        message: 'Linear actuator control completed successfully.',
+                        logs: logLines
+                    });
+                } else {
+                    writeLog(`Linear actuator control may have encountered an issue. Stderr: ${stderr}`);
+                    res.status(500).json({
+                        success: false,
+                        message: 'Linear actuator control may have encountered an issue.',
+                        logs: logLines,
+                        stderr: stderr
+                    });
+                }
             });
-        }
-
-        const logLines = stdout.split('\n').filter(line => line.trim() !== '');
-        const lastLogLine = logLines[logLines.length - 1];
-
-        if (lastLogLine && lastLogLine.includes('completed successfully')) {
-            writeLog('Linear actuator control completed successfully.');
-            res.json({
-                success: true,
-                message: 'Linear actuator control completed successfully.',
-                logs: logLines
-            });
-        } else {
-            writeLog(`Linear actuator control may have encountered an issue. Stderr: ${stderr}`);
+        })
+        .catch(error => {
+            writeLog(`Error fetching linear actuator for testfire: ${error.message}`);
             res.status(500).json({
                 success: false,
-                message: 'Linear actuator control may have encountered an issue.',
-                logs: logLines,
-                stderr: stderr
+                message: 'An error occurred while fetching the linear actuator data.',
+                error: error.message
             });
-        }
-    });
+        });
 });
 
 module.exports = router;
