@@ -180,11 +180,12 @@ router.post('/motor', async (req, res) => {
     try {
         const motorData = req.body;
         motorData.type = 'motor'; // Ensure the type is set to 'motor'
-        const savedMotor = await partService.createPart(motorData);
-        res.status(201).json(savedMotor);
+        await partService.createPart(motorData);
+        res.redirect('/parts'); // Redirect to the parts list page after successful save
     } catch (error) {
         console.error('Error saving motor part:', error);
-        res.status(500).json({ error: 'An error occurred while saving the motor part' });
+        // Redirect back to the form with an error message
+        res.redirect('/parts/new/motor?error=An error occurred while saving the motor part');
     }
 });
 
