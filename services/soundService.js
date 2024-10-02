@@ -17,6 +17,11 @@ const getAllSounds = async () => {
     }
 };
 
+const getSoundsByCharacter = async (characterId) => {
+    const sounds = await getAllSounds();
+    return sounds.filter(sound => sound.characterId === characterId);
+};
+
 const getSoundById = async (id) => {
     const sounds = await getAllSounds();
     return sounds.find(sound => sound.id === parseInt(id));
@@ -30,7 +35,8 @@ const createSound = async (soundData) => {
     const sounds = await getAllSounds();
     const newSound = {
         id: getNextId(sounds),
-        ...soundData
+        ...soundData,
+        characterId: parseInt(soundData.characterId)
     };
     sounds.push(newSound);
     await fs.writeFile(dataPath, JSON.stringify(sounds, null, 2));
@@ -41,7 +47,12 @@ const updateSound = async (id, soundData) => {
     const sounds = await getAllSounds();
     const index = sounds.findIndex(sound => sound.id === parseInt(id));
     if (index !== -1) {
-        sounds[index] = { ...sounds[index], ...soundData, id: parseInt(id) };
+        sounds[index] = { 
+            ...sounds[index], 
+            ...soundData, 
+            id: parseInt(id),
+            characterId: parseInt(soundData.characterId)
+        };
         await fs.writeFile(dataPath, JSON.stringify(sounds, null, 2));
         return sounds[index];
     }
@@ -59,6 +70,7 @@ const deleteSound = async (id) => {
 
 module.exports = {
     getAllSounds,
+    getSoundsByCharacter,
     getSoundById,
     createSound,
     updateSound,
