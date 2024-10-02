@@ -1,0 +1,54 @@
+<div class="step" data-index="<%- index %>">
+    <h3>Step <%- index + 1 %>: <%- step.type.charAt(0).toUpperCase() + step.type.slice(1) %></h3>
+    <input type="hidden" name="steps[<%- index %>][type]" value="<%- step.type %>">
+    <input type="text" name="steps[<%- index %>][name]" value="<%- step.name %>" placeholder="Step Name" required>
+
+    <% if (step.type === 'sound') { %>
+        <select name="steps[<%- index %>][sound_id]" required>
+            <% sounds.forEach(function(sound) { %>
+                <option value="<%- sound.id %>" <%- (step.sound_id == sound.id) ? 'selected' : '' %>><%- sound.name %></option>
+            <% }); %>
+        </select>
+    <% } else if (['motor', 'linear-actuator', 'servo', 'led', 'light'].includes(step.type)) { %>
+        <select name="steps[<%- index %>][part_id]" required>
+            <% parts.filter(part => part.type === step.type).forEach(function(part) { %>
+                <option value="<%- part.id %>" <%- (step.part_id === part.id) ? 'selected' : '' %>><%- part.name %></option>
+            <% }); %>
+        </select>
+        <input type="number" name="steps[<%- index %>][duration]" value="<%- step.duration || '' %>" placeholder="Duration (ms)" required>
+        
+        <% if (step.type === 'motor' || step.type === 'linear-actuator') { %>
+            <select name="steps[<%- index %>][direction]" required>
+                <option value="forward" <%- step.direction === 'forward' ? 'selected' : '' %>>Forward</option>
+                <option value="backward" <%- step.direction === 'backward' ? 'selected' : '' %>>Backward</option>
+            </select>
+            <input type="number" name="steps[<%- index %>][speed]" value="<%- step.speed || '' %>" placeholder="Speed (0-100)" min="0" max="100" required>
+        <% } else if (step.type === 'led' || step.type === 'light') { %>
+            <select name="steps[<%- index %>][state]" required>
+                <option value="on" <%- step.state === 'on' ? 'selected' : '' %>>On</option>
+                <option value="off" <%- step.state === 'off' ? 'selected' : '' %>>Off</option>
+            </select>
+            <% if (step.type === 'led') { %>
+                <input type="number" name="steps[<%- index %>][brightness]" value="<%- step.brightness || '' %>" placeholder="Brightness (0-100)" min="0" max="100" required>
+            <% } %>
+        <% } else if (step.type === 'servo') { %>
+            <input type="number" name="steps[<%- index %>][angle]" value="<%- step.angle || '' %>" placeholder="Angle (0-180)" min="0" max="180" required>
+            <input type="number" name="steps[<%- index %>][speed]" value="<%- step.speed || '' %>" placeholder="Speed (0-100)" min="0" max="100" required>
+        <% } %>
+    <% } else if (step.type === 'sensor') { %>
+        <select name="steps[<%- index %>][part_id]" required>
+            <% parts.filter(part => part.type === 'sensor').forEach(function(part) { %>
+                <option value="<%- part.id %>" <%- (step.part_id === part.id) ? 'selected' : '' %>><%- part.name %></option>
+            <% }); %>
+        </select>
+        <input type="number" name="steps[<%- index %>][timeout]" value="<%- step.timeout || 30 %>" placeholder="Timeout (seconds)" required>
+    <% } else if (step.type === 'pause') { %>
+        <input type="number" name="steps[<%- index %>][duration]" value="<%- step.duration || '' %>" placeholder="Duration (ms)" required>
+    <% } %>
+    <label>
+        <input type="checkbox" name="steps[<%- index %>][concurrent]" <%- step.concurrent ? 'checked' : '' %>>
+        Run Concurrently
+    </label>
+    <button type="button" class="remove-step" data-index="<%- index %>">Remove Step</button>
+    <button type="button" class="copy-step" data-index="<%- index %>">Copy Step</button>
+</div>

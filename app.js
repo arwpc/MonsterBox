@@ -11,7 +11,7 @@ const audio = require('./scripts/audio');
 const fs = require('fs');
 const os = require('os');
 
-// Import routes
+// Import routes and services
 const ledRoutes = require('./routes/ledRoutes');
 const lightRoutes = require('./routes/lightRoutes');
 const servoRoutes = require('./routes/servoRoutes');
@@ -22,6 +22,7 @@ const characterRoutes = require('./routes/characterRoutes');
 const soundRoutes = require('./routes/soundRoutes');
 const linearActuatorRoutes = require('./routes/linearActuatorRoutes');
 const activeModeRoutes = require('./routes/activeModeRoutes');
+const characterService = require('./services/characterService');
 
 // Basic Express setup
 app.use(express.json());
@@ -29,6 +30,15 @@ app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
 app.use('/scripts', express.static(path.join(__dirname, 'scripts')));
+
+// Global character middleware
+app.use((req, res, next) => {
+    if (!req.session) {
+        req.session = {};
+    }
+    req.session.characterId = req.session.characterId || null;
+    next();
+});
 
 // Routes
 app.use('/parts/led', ledRoutes);
@@ -43,8 +53,28 @@ app.use('/sounds', soundRoutes);
 app.use('/active-mode', activeModeRoutes);
 
 // Main menu route
-app.get('/', (req, res) => {
-    res.render('index', { title: 'MonsterBox Control Panel' });
+app.get('/', async (req, res) => {
+    try {
+        const characters = await characterService.getAllCharacters();
+        res.render('index', { 
+            title: 'MonsterBox Control Panel',
+            characters: characters
+        });
+    } catch (error) {
+        console.error('Error fetching characters:', error);
+        res.render('index', { 
+            title: 'MonsterBox Control Panel',
+            characters: [],
+            error: 'Failed to fetch characters'
+        });
+    }
+});
+
+// Set global character route
+app.post('/set-character', (req, res) => {
+    const { characterId } = req.body;
+    req.session.characterId = characterId;
+    res.json({ success: true });
 });
 
 // Audio routes
