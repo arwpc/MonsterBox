@@ -27,7 +27,7 @@ const getSceneById = async (id) => {
     return scenes.find(scene => scene.id === parseInt(id));
 };
 
-const getScenesByCharacterId = async (characterId) => {
+const getScenesByCharacter = async (characterId) => {
     const scenes = await getAllScenes();
     return scenes.filter(scene => scene.character_id === parseInt(characterId));
 };
@@ -79,7 +79,7 @@ const deleteScene = async (id) => {
 module.exports = {
     getAllScenes,
     getSceneById,
-    getScenesByCharacterId,
+    getScenesByCharacter,
     createScene,
     updateScene,
     deleteScene

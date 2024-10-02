@@ -61,6 +61,23 @@
             text-align: center;
             font-style: italic;
         }
+        #character-select {
+            margin-bottom: 20px;
+            padding: 10px;
+            font-size: 1em;
+            background-color: #003300;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            border-radius: 5px;
+        }
+        #character-select:focus {
+            outline: none;
+            box-shadow: 0 0 10px #00ff00;
+        }
+        .error-message {
+            color: #ff0000;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
@@ -69,7 +86,18 @@
     </header>
     <main>
         <h2>Welcome to the MonsterBox Control Panel</h2>
-        <p>Choose an option from the menu to get started.</p>
+        <p>Choose a character and an option from the menu to get started.</p>
+        
+        <% if (characters && characters.length > 0) { %>
+            <select id="character-select" onchange="updateCharacter(this.value)">
+                <option value="">Select a character</option>
+                <% characters.forEach(function(character) { %>
+                    <option value="<%= character.id %>"><%= character.name %></option>
+                <% }); %>
+            </select>
+        <% } else { %>
+            <p class="error-message">No characters defined. Please create a character first.</p>
+        <% } %>
     </main>
 
     <nav>
@@ -83,5 +111,28 @@
     <footer>
         <p>An animatronic automation package by ARW 8.15.2024.</p>
     </footer>
+
+    <script>
+        function updateCharacter(characterId) {
+            fetch('/set-character', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ characterId }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Character updated successfully');
+                } else {
+                    console.error('Failed to update character');
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+    </script>
 </body>
 </html>

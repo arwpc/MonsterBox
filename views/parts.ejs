@@ -25,24 +25,12 @@
         .button:hover {
             background-color: #45a049;
         }
-        #characterSelect {
-            margin-bottom: 20px;
-            padding: 10px;
-            font-size: 16px;
-        }
     </style>
 </head>
 <body>
-    <h1><%= title %></h1>
+    <h1><%= title %> for <%= character.char_name %></h1>
     
-    <select id="characterSelect">
-        <option value="">Select a Character</option>
-        <% characters.forEach(function(character) { %>
-            <option value="<%= character.id %>"><%= character.char_name %></option>
-        <% }); %>
-    </select>
-
-    <div id="partButtons" style="display: none;">
+    <div id="partButtons">
         <a href="/parts/new/motor" class="button">Add Motor</a>
         <a href="/parts/new/linear-actuator" class="button">Add Linear Actuator</a>
         <a href="/parts/new/light" class="button">Add Light</a>
@@ -52,95 +40,54 @@
         <a href="/parts/os-test" class="button">OS Test</a>
     </div>
 
-    <div id="partsContainer"></div>
+    <div id="partsContainer">
+        <% if (parts.length === 0) { %>
+            <p>No parts found for this character.</p>
+        <% } else { %>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Details</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% parts.forEach(function(part) { %>
+                        <tr>
+                            <td><%= part.name %></td>
+                            <td><%= part.type %></td>
+                            <td><%= part.details %></td>
+                            <td>
+                                <a href="/parts/<%= part.id %>/edit" class="button">Edit</a>
+                                <button class="button delete-part" data-id="<%= part.id %>">Delete</button>
+                            </td>
+                        </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        <% } %>
+    </div>
 
     <a href="/" class="button">Back to Main Menu</a>
 
     <script>
         $(document).ready(function() {
-            $('#characterSelect').change(function() {
-                const characterId = $(this).val();
-                if (characterId) {
-                    $('#partButtons').show();
-                    loadParts(characterId);
-                } else {
-                    $('#partButtons').hide();
-                    $('#partsContainer').empty();
+            $('.delete-part').on('click', function() {
+                const id = $(this).data('id');
+                if (confirm('Are you sure you want to delete this part?')) {
+                    $.post('/parts/' + id + '/delete')
+                        .done(function() {
+                            location.reload();
+                        })
+                        .fail(function(xhr, status, error) {
+                            console.error('Error details:', xhr.responseText);
+                            alert('Error deleting part: ' + xhr.status + ' ' + xhr.statusText);
+                        });
                 }
             });
-
-            function loadParts(characterId) {
-                $.get('/parts/by-character/' + characterId)
-                    .done(function(parts) {
-                        renderParts(parts);
-                    })
-                    .fail(function(xhr, status, error) {
-                        console.error('Error loading parts:', error);
-                        $('#partsContainer').html('<p>Error loading parts. Please try again.</p>');
-                    });
-            }
-
-            function renderParts(parts) {
-                let html = '<table><thead><tr><th>Name</th><th>Type</th><th>Details</th><th>Actions</th></tr></thead><tbody>';
-                parts.forEach(function(part) {
-                    html += `
-                        <tr>
-                            <td>${part.name}</td>
-                            <td>${part.type}</td>
-                            <td>${getPartDetails(part)}</td>
-                            <td>
-                                <a href="/parts/${part.id}/edit" class="button">Edit</a>
-                                <button onclick="deletePart(${part.id})" class="button">Delete</button>
-                            </td>
-                        </tr>
-                    `;
-                });
-                html += '</tbody></table>';
-                $('#partsContainer').html(html);
-            }
-
-            function getPartDetails(part) {
-                switch(part.type) {
-                    case 'motor':
-                    case 'linear-actuator':
-                        return `Dir Pin: ${part.directionPin}, PWM Pin: ${part.pwmPin}`;
-                    case 'light':
-                    case 'led':
-                        return `GPIO Pin: ${part.gpioPin}`;
-                    case 'servo':
-                        return `GPIO Pin: ${part.gpioPin}, Frequency: ${part.pwmFrequency}Hz, Duty Cycle: ${part.dutyCycle}%`;
-                    case 'sensor':
-                        return `Type: ${part.sensorType}, GPIO Pin: ${part.gpioPin}, Active: ${part.active ? 'Yes' : 'No'}`;
-                    default:
-                        return '';
-                }
-            }
         });
-
-        function deletePart(id) {
-            if (confirm('Are you sure you want to delete this part?')) {
-                $.post('/parts/' + id + '/delete')
-                    .done(function() {
-                        const characterId = $('#characterSelect').val();
-                        loadParts(characterId);
-                    })
-                    .fail(function(xhr, status, error) {
-                        console.error('Error details:', xhr.responseText);
-                        alert('Error deleting part: ' + xhr.status + ' ' + xhr.statusText);
-                    });
-            }
-        }
-
-        function loadParts(characterId) {
-            $.get('/parts/by-character/' + characterId)
-                .done(function(parts) {
-                    renderParts(parts);
-                })
-                .fail(function(xhr, status, error) {
-                    console.error('Error loading parts:', error);
-                    $('#partsContainer').html('<p>Error loading parts. Please try again.</p>');
-                });
-        }
     </script>
 </body>
 </html>
