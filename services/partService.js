@@ -34,12 +34,19 @@ const getPartById = async (id) => {
     return part;
 };
 
+const getPartsByCharacter = async (characterId) => {
+    console.log('Getting parts for character ID:', characterId);
+    const parts = await getAllParts();
+    return parts.filter(part => part.characterId === parseInt(characterId, 10));
+};
+
 const createPart = async (partData) => {
     console.log('Creating new part with data:', partData);
     const parts = await getAllParts();
     const newPart = {
         id: parts.length > 0 ? Math.max(...parts.map(p => p.id)) + 1 : 1,
-        ...partData
+        ...partData,
+        characterId: parseInt(partData.characterId, 10)
     };
     parts.push(newPart);
     await fs.writeFile(dataPath, JSON.stringify(parts, null, 2));
@@ -58,7 +65,12 @@ const updatePart = async (id, partData) => {
         console.log(`Part not found with id: ${id}`);
         throw new Error(`Part not found with id: ${id}`);
     }
-    parts[index] = { ...parts[index], ...partData, id: parseInt(id, 10) };
+    parts[index] = { 
+        ...parts[index], 
+        ...partData, 
+        id: parseInt(id, 10),
+        characterId: parseInt(partData.characterId, 10)
+    };
     await fs.writeFile(dataPath, JSON.stringify(parts, null, 2));
     console.log('Updated part:', parts[index]);
     return parts[index];
@@ -79,6 +91,7 @@ const deletePart = async (id) => {
 module.exports = {
     getAllParts,
     getPartById,
+    getPartsByCharacter,
     createPart,
     updatePart,
     deletePart

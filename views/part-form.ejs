@@ -25,13 +25,15 @@
                 <option value="led" <%= part.type === 'led' ? 'selected' : '' %>>LED</option>
                 <option value="servo" <%= part.type === 'servo' ? 'selected' : '' %>>Servo</option>
                 <option value="sensor" <%= part.type === 'sensor' ? 'selected' : '' %>>Sensor</option>
+                <option value="linear-actuator" <%= part.type === 'linear-actuator' ? 'selected' : '' %>>Linear Actuator</option>
             </select>
         </div>
         <div>
             <label for="characterId">Character:</label>
             <select id="characterId" name="characterId" required>
+                <option value="">Select a Character</option>
                 <% characters.forEach(function(character) { %>
-                    <option value="<%= character.id %>" <%= (part.characterId === character.id) ? 'selected' : '' %>>
+                    <option value="<%= character.id %>" <%= (part.characterId && part.characterId.toString() === character.id.toString()) ? 'selected' : '' %>>
                         <%= character.char_name %>
                     </option>
                 <% }); %>
@@ -49,8 +51,8 @@
         </div>
         <div id="singlePinInputs" style="display: none;">
             <div>
-                <label for="pin">GPIO Pin:</label>
-                <input type="number" id="pin" name="pin" value="<%= part.pin || '' %>">
+                <label for="gpioPin">GPIO Pin:</label>
+                <input type="number" id="gpioPin" name="gpioPin" value="<%= part.gpioPin || '' %>">
             </div>
         </div>
         <div id="sensorInputs" style="display: none;">
@@ -61,15 +63,33 @@
                     <option value="sound" <%= part.sensorType === 'sound' ? 'selected' : '' %>>Sound</option>
                 </select>
             </div>
+            <div>
+                <label for="gpioPin">GPIO Pin:</label>
+                <input type="number" id="gpioPin" name="gpioPin" value="<%= part.gpioPin || '' %>">
+            </div>
         </div>
         <div id="ledInputs" style="display: none;">
             <div>
-                <label for="ledPin">GPIO Pin:</label>
-                <input type="number" id="ledPin" name="ledPin" value="<%= part.ledPin || '' %>" min="0" max="40">
+                <label for="gpioPin">GPIO Pin:</label>
+                <input type="number" id="gpioPin" name="gpioPin" value="<%= part.gpioPin || '' %>" min="0" max="40">
             </div>
             <div>
                 <label for="duration">Duration (ms):</label>
                 <input type="number" id="duration" name="duration" value="<%= part.duration || '' %>" min="0">
+            </div>
+        </div>
+        <div id="servoInputs" style="display: none;">
+            <div>
+                <label for="gpioPin">GPIO Pin:</label>
+                <input type="number" id="gpioPin" name="gpioPin" value="<%= part.gpioPin || '' %>">
+            </div>
+            <div>
+                <label for="pwmFrequency">PWM Frequency (Hz):</label>
+                <input type="number" id="pwmFrequency" name="pwmFrequency" value="<%= part.pwmFrequency || '' %>">
+            </div>
+            <div>
+                <label for="dutyCycle">Duty Cycle (%):</label>
+                <input type="number" id="dutyCycle" name="dutyCycle" value="<%= part.dutyCycle || '' %>" min="0" max="100">
             </div>
         </div>
         <button type="submit">Save Part</button>
@@ -84,10 +104,11 @@
     <script>
         function toggleInputs() {
             const type = document.getElementById('type').value;
-            document.getElementById('motorInputs').style.display = type === 'motor' ? 'block' : 'none';
-            document.getElementById('singlePinInputs').style.display = ['light', 'servo'].includes(type) ? 'block' : 'none';
+            document.getElementById('motorInputs').style.display = ['motor', 'linear-actuator'].includes(type) ? 'block' : 'none';
+            document.getElementById('singlePinInputs').style.display = ['light'].includes(type) ? 'block' : 'none';
             document.getElementById('sensorInputs').style.display = type === 'sensor' ? 'block' : 'none';
             document.getElementById('ledInputs').style.display = type === 'led' ? 'block' : 'none';
+            document.getElementById('servoInputs').style.display = type === 'servo' ? 'block' : 'none';
             document.getElementById('testArea').style.display = 'block';
         }
 
@@ -99,10 +120,14 @@
             const testStatus = document.getElementById('testStatus');
             testStatus.textContent = 'Testing...';
 
-            let testData = { type: type };
+            let testData = { 
+                type: type,
+                characterId: document.getElementById('characterId').value
+            };
 
             switch (type) {
                 case 'motor':
+                case 'linear-actuator':
                     testData.directionPin = document.getElementById('directionPin').value;
                     testData.pwmPin = document.getElementById('pwmPin').value;
                     testData.direction = 'forward';
@@ -110,16 +135,17 @@
                     testData.duration = 1000;
                     break;
                 case 'light':
-                case 'servo':
-                    testData.pin = document.getElementById('pin').value;
-                    testData.duration = 1000;
-                    break;
                 case 'led':
-                    testData.ledPin = document.getElementById('ledPin').value;
-                    testData.duration = document.getElementById('duration').value;
+                    testData.gpioPin = document.getElementById('gpioPin').value;
+                    testData.duration = document.getElementById('duration').value || 1000;
+                    break;
+                case 'servo':
+                    testData.gpioPin = document.getElementById('gpioPin').value;
+                    testData.pwmFrequency = document.getElementById('pwmFrequency').value;
+                    testData.dutyCycle = document.getElementById('dutyCycle').value;
                     break;
                 case 'sensor':
-                    testData.pin = document.getElementById('pin').value;
+                    testData.gpioPin = document.getElementById('gpioPin').value;
                     testData.sensorType = document.getElementById('sensorType').value;
                     break;
             }
