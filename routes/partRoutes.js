@@ -9,12 +9,22 @@ const path = require('path');
 
 router.get('/', async (req, res) => {
     try {
-        const parts = await partService.getAllParts();
         const characters = await characterService.getAllCharacters();
-        res.render('parts', { title: 'Parts', parts, characters });
+        res.render('parts', { title: 'Parts', characters });
     } catch (error) {
-        console.error('Error fetching parts:', error);
-        res.status(500).send('An error occurred while fetching parts');
+        console.error('Error fetching characters:', error);
+        res.status(500).send('An error occurred while fetching characters');
+    }
+});
+
+router.get('/by-character/:characterId', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.characterId);
+        const parts = await partService.getPartsByCharacter(characterId);
+        res.json(parts);
+    } catch (error) {
+        console.error('Error fetching parts by character:', error);
+        res.status(500).json({ error: 'An error occurred while fetching parts' });
     }
 });
 
@@ -22,10 +32,10 @@ router.get('/new/:type', async (req, res) => {
     try {
         const { type } = req.params;
         const characters = await characterService.getAllCharacters();
-        res.render(`part-forms/${type}`, { 
+        res.render('part-form', { 
             title: `Add ${type.charAt(0).toUpperCase() + type.slice(1)}`, 
             action: `/parts/${type}`, 
-            part: {}, 
+            part: { type }, 
             characters 
         });
     } catch (error) {
@@ -39,15 +49,40 @@ router.get('/:id/edit', async (req, res) => {
         const id = parseInt(req.params.id);
         const part = await partService.getPartById(id);
         const characters = await characterService.getAllCharacters();
-        res.render(`part-forms/${part.type}`, {
+        res.render('part-form', {
             title: `Edit ${part.type.charAt(0).toUpperCase() + part.type.slice(1)}`,
-            action: `/parts/${part.type}/${part.id}`,
+            action: `/parts/${part.id}/update`,
             part,
             characters
         });
     } catch (error) {
         console.error('Error fetching part for edit:', error);
         res.status(500).send('An error occurred while fetching the part');
+    }
+});
+
+router.post('/:type', async (req, res) => {
+    try {
+        const { type } = req.params;
+        const partData = req.body;
+        partData.type = type;
+        await partService.createPart(partData);
+        res.redirect('/parts');
+    } catch (error) {
+        console.error('Error creating part:', error);
+        res.status(500).send('An error occurred while creating the part');
+    }
+});
+
+router.post('/:id/update', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const partData = req.body;
+        await partService.updatePart(id, partData);
+        res.redirect('/parts');
+    } catch (error) {
+        console.error('Error updating part:', error);
+        res.status(500).send('An error occurred while updating the part');
     }
 });
 
@@ -61,69 +96,6 @@ router.get('/all', async (req, res) => {
     }
 });
 
-router.get('/os-test', async (req, res) => {
-    res.render('os-test', { title: 'OS Test' });
-});
-
-router.post('/os-test', async (req, res) => {
-    const { partId, command } = req.body;
-
-    try {
-        const part = await partService.getPartById(partId);
-        let scriptPath;
-        if (part.type === 'linear-actuator') {
-            scriptPath = path.join(__dirname, '..', 'scripts', 'linear_actuator_control.py');
-        } else {
-            scriptPath = path.join(__dirname, '..', 'scripts', `${part.type}_control.py`);
-        }
-        
-        const process = spawn('python3', [scriptPath, ...command.split(' ').slice(2)]);
-
-        let output = '';
-        let error = '';
-
-        process.stdout.on('data', (data) => {
-            output += data.toString();
-        });
-
-        process.stderr.on('data', (data) => {
-            error += data.toString();
-        });
-
-        process.on('close', (code) => {
-            res.json({ output: output || error, exitCode: code });
-        });
-    } catch (error) {
-        console.error('Error running OS test:', error);
-        res.status(500).json({ error: 'An error occurred while running the OS test' });
-    }
-});
-
-router.get('/os-test-stream', (req, res) => {
-    const { command } = req.query;
-    
-    res.writeHead(200, {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive'
-    });
-
-    const process = spawn('python3', command.split(' ').slice(1));
-
-    process.stdout.on('data', (data) => {
-        res.write(`data: ${JSON.stringify({output: data.toString()})}\n\n`);
-    });
-
-    process.stderr.on('data', (data) => {
-        res.write(`data: ${JSON.stringify({output: `Error: ${data.toString()}`})}\n\n`);
-    });
-
-    process.on('close', (code) => {
-        res.write(`data: ${JSON.stringify({done: true})}\n\n`);
-        res.end();
-    });
-});
-
 router.post('/:id/delete', async (req, res) => {
     try {
         const id = parseInt(req.params.id);
@@ -135,57 +107,53 @@ router.post('/:id/delete', async (req, res) => {
     }
 });
 
-router.post('/linear-actuator/test', async (req, res) => {
+router.post('/test', async (req, res) => {
     try {
-        const { direction, speed, duration, directionPin, pwmPin } = req.body;
-        const scriptPath = path.join(__dirname, '..', 'scripts', 'linear_actuator_control.py');
-        const process = spawn('python3', [
-            scriptPath,
-            direction,
-            speed.toString(),
-            duration.toString(),
-            directionPin.toString(),
-            pwmPin.toString()
-        ]);
+        const { type, characterId, ...testData } = req.body;
+        let scriptPath;
+        
+        switch (type) {
+            case 'motor':
+            case 'linear-actuator':
+                scriptPath = path.join(__dirname, '..', 'scripts', 'motor_control.py');
+                break;
+            case 'light':
+            case 'led':
+                scriptPath = path.join(__dirname, '..', 'scripts', 'led_control.py');
+                break;
+            case 'servo':
+                scriptPath = path.join(__dirname, '..', 'scripts', 'servo_control.py');
+                break;
+            case 'sensor':
+                scriptPath = path.join(__dirname, '..', 'scripts', 'sensor_control.py');
+                break;
+            default:
+                throw new Error('Invalid part type');
+        }
+
+        const process = spawn('python3', [scriptPath, ...Object.values(testData).map(String)]);
 
         let stdout = '';
         let stderr = '';
 
         process.stdout.on('data', (data) => {
             stdout += data.toString();
-            console.log(`Python script output: ${data}`);
         });
 
         process.stderr.on('data', (data) => {
             stderr += data.toString();
-            console.error(`Python script error: ${data}`);
         });
 
         process.on('close', (code) => {
-            console.log(`Python script exited with code ${code}`);
             if (code === 0) {
-                res.json({ success: true, message: 'Linear actuator test completed successfully', output: stdout });
+                res.json({ success: true, message: 'Test completed successfully', output: stdout });
             } else {
-                res.status(500).json({ success: false, message: 'Linear actuator test failed', error: stderr });
+                res.status(500).json({ success: false, message: 'Test failed', error: stderr });
             }
         });
     } catch (error) {
-        console.error('Error testing linear actuator:', error);
-        res.status(500).json({ success: false, message: 'An error occurred while testing the linear actuator', error: error.message });
-    }
-});
-
-// Updated route for saving motor parts
-router.post('/motor', async (req, res) => {
-    try {
-        const motorData = req.body;
-        motorData.type = 'motor'; // Ensure the type is set to 'motor'
-        await partService.createPart(motorData);
-        res.redirect('/parts'); // Redirect to the parts list page after successful save
-    } catch (error) {
-        console.error('Error saving motor part:', error);
-        // Redirect back to the form with an error message
-        res.redirect('/parts/new/motor?error=An error occurred while saving the motor part');
+        console.error('Error testing part:', error);
+        res.status(500).json({ success: false, message: 'An error occurred while testing the part', error: error.message });
     }
 });
 
