@@ -3,44 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title %></title>
+    <title><%- title %></title>
     <link rel="stylesheet" href="/css/style.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
-    <h1><%= title %></h1>
-    <a href="/sounds/new" class="button">Add New Sound</a>
-    <table>
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Filename</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            <% sounds.forEach(function(sound) { %>
+    <h1><%- title %></h1>
+    
+    <label for="character-select">Select Character:</label>
+    <select id="character-select" onchange="loadSoundsForCharacter()">
+        <option value="">Select a character</option>
+        <% characters.forEach(function(character) { %>
+            <option value="<%- character.id %>" <%= selectedCharacterId == character.id ? 'selected' : '' %>><%- character.name %></option>
+        <% }); %>
+    </select>
+
+    <div id="sound-list" style="<%= selectedCharacterId ? '' : 'display: none;' %>">
+        <a href="/sounds/new" class="button">Add New Sound</a>
+        <table>
+            <thead>
                 <tr>
-                    <td><%= sound.name %></td>
-                    <td><%= sound.filename %></td>
-                    <td>
-                        <button onclick="playOnCharacter(<%= sound.id %>)">Play (on Character)</button>
-                        <button onclick="playLocal('<%= sound.filename %>')">Play (local)</button>
-                        <a href="/sounds/<%= sound.id %>/edit" class="button">Edit</a>
-                        <button onclick="deleteSound(<%= sound.id %>)">Delete</button>
-                    </td>
+                    <th>Name</th>
+                    <th>Filename</th>
+                    <th>Actions</th>
                 </tr>
-            <% }); %>
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                <% sounds.forEach(function(sound) { %>
+                    <tr>
+                        <td><%- sound.name %></td>
+                        <td><%- sound.filename %></td>
+                        <td>
+                            <button onclick="playOnCharacter('<%- sound.id %>')">Play (on Character)</button>
+                            <button onclick="playLocal('<%- sound.filename %>')">Play (local)</button>
+                            <a href="/sounds/<%- sound.id %>/edit" class="button">Edit</a>
+                            <button onclick="deleteSound('<%- sound.id %>')">Delete</button>
+                        </td>
+                    </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </div>
+    
     <a href="/" class="button">Back to Main Menu</a>
 
     <div id="soundInfo"></div>
     <div id="errorInfo" style="color: red;"></div>
 
     <script>
+        function loadSoundsForCharacter() {
+            const characterId = document.getElementById('character-select').value;
+            if (characterId) {
+                window.location.href = '/sounds/character/' + characterId;
+            } else {
+                window.location.href = '/sounds';
+            }
+        }
+
         function playLocal(filename) {
-            const audio = new Audio(`/sounds/${filename}`);
+            const audio = new Audio('/sounds/' + filename);
             audio.play().catch(error => {
                 console.error('Error playing sound locally:', error);
                 displayError('Error playing sound locally: ' + error.message);
@@ -49,7 +70,7 @@
 
         function playOnCharacter(soundId) {
             console.log('Attempting to play sound with ID:', soundId);
-            fetch(`/sounds/${soundId}/play`, {
+            fetch('/sounds/' + soundId + '/play', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -66,8 +87,8 @@
                 const soundInfo = `
                     <h3>Sound Details:</h3>
                     <p>Message: ${data.message}</p>
-                    <p>Python Output: ${data.pythonOutput}</p>
-                    <p>Executed Command: ${data.command}</p>
+                    <p>Sound: ${data.sound}</p>
+                    <p>File: ${data.file}</p>
                 `;
                 document.getElementById('soundInfo').innerHTML = soundInfo;
                 document.getElementById('errorInfo').innerHTML = '';
@@ -78,9 +99,6 @@
                 if (error.error) {
                     errorMessage += error.error;
                     if (error.details) errorMessage += ' - ' + error.details;
-                    if (error.output) errorMessage += ' (Output: ' + error.output + ')';
-                    if (error.errorOutput) errorMessage += ' (Error Output: ' + error.errorOutput + ')';
-                    if (error.command) errorMessage += ' (Command: ' + error.command + ')';
                 } else {
                     errorMessage += error.toString();
                 }
