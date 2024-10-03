@@ -12,7 +12,65 @@ const audio = require('./scripts/audio');
 const fs = require('fs');
 const os = require('os');
 
-// ... (keep the existing imports and setup code)
+// Import routes
+const ledRoutes = require('./routes/ledRoutes');
+const lightRoutes = require('./routes/lightRoutes');
+const servoRoutes = require('./routes/servoRoutes');
+const sensorRoutes = require('./routes/sensorRoutes');
+const partRoutes = require('./routes/partRoutes');
+const sceneRoutes = require('./routes/sceneRoutes');
+const characterRoutes = require('./routes/characterRoutes');
+const soundRoutes = require('./routes/soundRoutes');
+const linearActuatorRoutes = require('./routes/linearActuatorRoutes');
+const activeModeRoutes = require('./routes/activeModeRoutes');
+
+// Import services
+const characterService = require('./services/characterService');
+
+// Basic Express setup
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Global character middleware
+app.use((req, res, next) => {
+    if (!req.session) {
+        req.session = {};
+    }
+    req.session.characterId = req.session.characterId || null;
+    next();
+});
+
+// Use routes
+app.use('/parts/led', ledRoutes);
+app.use('/parts/light', lightRoutes);
+app.use('/parts/servo', servoRoutes);
+app.use('/parts/sensor', sensorRoutes);
+app.use('/parts/linear-actuator', linearActuatorRoutes);
+app.use('/parts', partRoutes);
+app.use('/scenes', sceneRoutes);
+app.use('/characters', characterRoutes);
+app.use('/sounds', soundRoutes);
+app.use('/active-mode', activeModeRoutes);
+
+// Root route
+app.get('/', async (req, res) => {
+    try {
+        const characters = await characterService.getAllCharacters();
+        res.render('index', { 
+            title: 'MonsterBox Control Panel',
+            characters: characters
+        });
+    } catch (error) {
+        logger.error('Error fetching characters for main menu:', error);
+        res.status(500).render('error', { 
+            error: 'Failed to fetch characters',
+            details: error.message
+        });
+    }
+});
 
 let mjpgStreamerProcess = null;
 
@@ -86,8 +144,6 @@ function startMjpgStreamer(callback) {
         setTimeout(() => startMjpgStreamer(() => {}), 5000);
     });
 }
-
-// ... (keep the rest of the existing functions)
 
 // Wrap server startup in a function
 function startServer() {
