@@ -45,21 +45,10 @@ function startSoundPlayer() {
 router.get('/', async (req, res) => {
     try {
         const characters = await characterService.getAllCharacters();
-        res.render('sounds', { title: 'Sounds', characters, selectedCharacterId: null, sounds: [] });
+        const sounds = await soundService.getAllSounds();
+        res.render('sounds', { title: 'Sounds', characters, sounds });
     } catch (error) {
-        console.error('Error fetching characters:', error);
-        res.status(500).json({ error: 'Internal Server Error', details: error.message });
-    }
-});
-
-router.get('/character/:characterId', async (req, res) => {
-    try {
-        const characterId = parseInt(req.params.characterId);
-        const characters = await characterService.getAllCharacters();
-        const sounds = await soundService.getSoundsByCharacter(characterId);
-        res.render('sounds', { title: 'Sounds', characters, selectedCharacterId: characterId, sounds });
-    } catch (error) {
-        console.error('Error fetching sounds:', error);
+        console.error('Error fetching sounds and characters:', error);
         res.status(500).json({ error: 'Internal Server Error', details: error.message });
     }
 });
@@ -97,7 +86,7 @@ router.post('/', upload.single('sound_file'), async (req, res) => {
             characterId: parseInt(req.body.characterId)
         };
         await soundService.createSound(newSound);
-        res.redirect(`/sounds/character/${newSound.characterId}`);
+        res.redirect('/sounds');
     } catch (error) {
         console.error('Error adding sound:', error);
         res.status(500).json({ error: 'Internal Server Error', details: error.message });
@@ -122,7 +111,7 @@ router.post('/:id', upload.single('sound_file'), async (req, res) => {
         }
 
         await soundService.updateSound(id, updatedSound);
-        res.redirect(`/sounds/character/${updatedSound.characterId}`);
+        res.redirect('/sounds');
     } catch (error) {
         console.error('Error updating sound:', error);
         res.status(500).json({ error: 'Internal Server Error', details: error.message });
