@@ -2,6 +2,7 @@
 
 const fs = require('fs').promises;
 const path = require('path');
+const logger = require('../logger');
 
 const dataPath = path.join(__dirname, '../data/scenes.json');
 
@@ -13,23 +14,34 @@ const getAllScenes = async () => {
             ...scene,
             id: parseInt(scene.id)
         }));
+        logger.debug(`Retrieved ${scenes.length} scenes`);
         return scenes;
     } catch (error) {
         if (error.code === 'ENOENT') {
+            logger.info('Scenes file not found, returning empty array');
             return [];
         }
+        logger.error('Error reading scenes file:', error);
         throw error;
     }
 };
 
 const getSceneById = async (id) => {
     const scenes = await getAllScenes();
-    return scenes.find(scene => scene.id === parseInt(id));
+    const scene = scenes.find(scene => scene.id === parseInt(id));
+    if (scene) {
+        logger.debug(`Retrieved scene with id ${id}`);
+    } else {
+        logger.warn(`Scene with id ${id} not found`);
+    }
+    return scene;
 };
 
 const getScenesByCharacter = async (characterId) => {
     const scenes = await getAllScenes();
-    return scenes.filter(scene => scene.character_id === parseInt(characterId));
+    const characterScenes = scenes.filter(scene => scene.character_id === parseInt(characterId));
+    logger.debug(`Retrieved ${characterScenes.length} scenes for character ${characterId}`);
+    return characterScenes;
 };
 
 const getNextId = (scenes) => {
@@ -46,6 +58,7 @@ const createScene = async (sceneData) => {
     };
     scenes.push(newScene);
     await fs.writeFile(dataPath, JSON.stringify(scenes, null, 2));
+    logger.info(`Created new scene with id ${newScene.id}`);
     return newScene;
 };
 
@@ -61,8 +74,10 @@ const updateScene = async (id, sceneData) => {
             steps: sceneData.steps || scenes[index].steps
         };
         await fs.writeFile(dataPath, JSON.stringify(scenes, null, 2));
+        logger.info(`Updated scene with id ${id}`);
         return scenes[index];
     }
+    logger.warn(`Attempt to update non-existent scene with id ${id}`);
     return null;
 };
 
@@ -70,9 +85,11 @@ const deleteScene = async (id) => {
     const scenes = await getAllScenes();
     const filteredScenes = scenes.filter(scene => scene.id !== parseInt(id));
     if (filteredScenes.length === scenes.length) {
+        logger.warn(`Attempt to delete non-existent scene with id ${id}`);
         return false;
     }
     await fs.writeFile(dataPath, JSON.stringify(filteredScenes, null, 2));
+    logger.info(`Deleted scene with id ${id}`);
     return true;
 };
 

@@ -2,17 +2,22 @@
 
 const fs = require('fs').promises;
 const path = require('path');
+const logger = require('../logger');
 
 const dataPath = path.join(__dirname, '../data/sounds.json');
 
 const getAllSounds = async () => {
     try {
         const data = await fs.readFile(dataPath, 'utf8');
-        return JSON.parse(data);
+        const sounds = JSON.parse(data);
+        logger.debug(`Retrieved ${sounds.length} sounds`);
+        return sounds;
     } catch (error) {
         if (error.code === 'ENOENT') {
+            logger.info('Sounds file not found, returning empty array');
             return [];
         }
+        logger.error('Error reading sounds file:', error);
         throw error;
     }
 };
@@ -20,12 +25,19 @@ const getAllSounds = async () => {
 const getSoundsByCharacter = async (characterId) => {
     const sounds = await getAllSounds();
     const characterSounds = sounds.filter(sound => sound.characterId === parseInt(characterId));
+    logger.debug(`Retrieved ${characterSounds.length} sounds for character ${characterId}`);
     return characterSounds.length > 0 ? characterSounds : sounds;
 };
 
 const getSoundById = async (id) => {
     const sounds = await getAllSounds();
-    return sounds.find(sound => sound.id === parseInt(id));
+    const sound = sounds.find(sound => sound.id === parseInt(id));
+    if (sound) {
+        logger.debug(`Retrieved sound with id ${id}`);
+    } else {
+        logger.warn(`Sound with id ${id} not found`);
+    }
+    return sound;
 };
 
 const getNextId = (sounds) => {
@@ -41,6 +53,7 @@ const createSound = async (soundData) => {
     };
     sounds.push(newSound);
     await fs.writeFile(dataPath, JSON.stringify(sounds, null, 2));
+    logger.info(`Created new sound with id ${newSound.id}`);
     return newSound;
 };
 
@@ -54,6 +67,7 @@ const createMultipleSounds = async (soundDataArray) => {
     }));
     sounds.push(...newSounds);
     await fs.writeFile(dataPath, JSON.stringify(sounds, null, 2));
+    logger.info(`Created ${newSounds.length} new sounds`);
     return newSounds;
 };
 
@@ -68,8 +82,10 @@ const updateSound = async (id, soundData) => {
             characterId: parseInt(soundData.characterId) || null
         };
         await fs.writeFile(dataPath, JSON.stringify(sounds, null, 2));
+        logger.info(`Updated sound with id ${id}`);
         return sounds[index];
     }
+    logger.warn(`Attempt to update non-existent sound with id ${id}`);
     throw new Error('Sound not found');
 };
 
@@ -77,9 +93,11 @@ const deleteSound = async (id) => {
     const sounds = await getAllSounds();
     const filteredSounds = sounds.filter(sound => sound.id !== parseInt(id));
     if (filteredSounds.length === sounds.length) {
+        logger.warn(`Attempt to delete non-existent sound with id ${id}`);
         throw new Error('Sound not found');
     }
     await fs.writeFile(dataPath, JSON.stringify(filteredSounds, null, 2));
+    logger.info(`Deleted sound with id ${id}`);
 };
 
 module.exports = {

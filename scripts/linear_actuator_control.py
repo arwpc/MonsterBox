@@ -6,7 +6,12 @@ import sys
 import logging
 
 # Set up logging
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    filename='MonsterBox.log',
+    filemode='a'
+)
 
 def setup_gpio(dir_pin, pwm_pin):
     try:

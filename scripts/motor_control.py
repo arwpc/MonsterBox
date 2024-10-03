@@ -4,7 +4,7 @@ import time
 import logging
 
 # Set up logging
-logging.basicConfig(filename='motor_control.log', level=logging.DEBUG, 
+logging.basicConfig(filename='MonsterBox.log', level=logging.INFO, 
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 def control_motor(direction, speed, duration, dir_pin, pwm_pin):
@@ -43,10 +43,10 @@ if __name__ == "__main__":
 
     try:
         control_motor(direction, speed, duration, dir_pin, pwm_pin)
-        print("Motor control successful")
+        logging.info("Motor control successful")
     except Exception as e:
         logging.error(f"Error: {str(e)}")
-        print(f"Error: {str(e)}")
+        print(f"FAILURE: Error controlling motor: {str(e)}")
     finally:
         # Only clean up if GPIO was set up
         if GPIO.getmode() is not None:

@@ -2,17 +2,18 @@
 
 const fs = require('fs').promises;
 const path = require('path');
+const logger = require('../logger');
 
 const dataPath = path.join(__dirname, '../data/parts.json');
 
 const getAllParts = async () => {
     try {
         const data = await fs.readFile(dataPath, 'utf8');
-        console.log('Raw parts data:', data);
+        logger.debug('Raw parts data:', data);
         return JSON.parse(data);
     } catch (error) {
         if (error.code === 'ENOENT') {
-            console.log('Parts file not found, returning empty array');
+            logger.info('Parts file not found, returning empty array');
             return [];
         }
         throw error;
@@ -20,28 +21,28 @@ const getAllParts = async () => {
 };
 
 const getPartById = async (id) => {
-    console.log('Getting part by ID:', id, 'Type:', typeof id);
+    logger.debug('Getting part by ID:', id, 'Type:', typeof id);
     if (id === undefined || id === null) {
         throw new Error('Part ID is required');
     }
     const parts = await getAllParts();
     const part = parts.find(part => part.id === parseInt(id, 10));
     if (!part) {
-        console.log(`Part not found with id: ${id}`);
+        logger.warn(`Part not found with id: ${id}`);
         throw new Error(`Part not found with id: ${id}`);
     }
-    console.log('Found part:', part);
+    logger.debug('Found part:', part);
     return part;
 };
 
 const getPartsByCharacter = async (characterId) => {
-    console.log('Getting parts for character ID:', characterId);
+    logger.debug('Getting parts for character ID:', characterId);
     const parts = await getAllParts();
     return parts.filter(part => part.characterId === parseInt(characterId, 10));
 };
 
 const createPart = async (partData) => {
-    console.log('Creating new part with data:', partData);
+    logger.info('Creating new part with data:', partData);
     const parts = await getAllParts();
     const newPart = {
         id: parts.length > 0 ? Math.max(...parts.map(p => p.id)) + 1 : 1,
@@ -50,19 +51,19 @@ const createPart = async (partData) => {
     };
     parts.push(newPart);
     await fs.writeFile(dataPath, JSON.stringify(parts, null, 2));
-    console.log('Created new part:', newPart);
+    logger.info('Created new part:', newPart);
     return newPart;
 };
 
 const updatePart = async (id, partData) => {
-    console.log('Updating part - ID:', id, 'Type:', typeof id);
-    console.log('Updating part - Data:', partData);
+    logger.debug('Updating part - ID:', id, 'Type:', typeof id);
+    logger.debug('Updating part - Data:', partData);
     const parts = await getAllParts();
-    console.log('All parts:', parts);
+    logger.debug('All parts:', parts);
     const index = parts.findIndex(part => part.id === parseInt(id, 10));
-    console.log('Found part index:', index);
+    logger.debug('Found part index:', index);
     if (index === -1) {
-        console.log(`Part not found with id: ${id}`);
+        logger.warn(`Part not found with id: ${id}`);
         throw new Error(`Part not found with id: ${id}`);
     }
     parts[index] = { 
@@ -72,20 +73,20 @@ const updatePart = async (id, partData) => {
         characterId: parseInt(partData.characterId, 10)
     };
     await fs.writeFile(dataPath, JSON.stringify(parts, null, 2));
-    console.log('Updated part:', parts[index]);
+    logger.info('Updated part:', parts[index]);
     return parts[index];
 };
 
 const deletePart = async (id) => {
-    console.log(`Attempting to delete part with ID: ${id}`);
+    logger.info(`Attempting to delete part with ID: ${id}`);
     const parts = await getAllParts();
     const filteredParts = parts.filter(part => part.id !== parseInt(id, 10));
     if (filteredParts.length === parts.length) {
-        console.log(`Part not found with id: ${id}`);
+        logger.warn(`Part not found with id: ${id}`);
         throw new Error(`Part not found with id: ${id}`);
     }
     await fs.writeFile(dataPath, JSON.stringify(filteredParts, null, 2));
-    console.log(`Part with ID ${id} deleted successfully`);
+    logger.info(`Part with ID ${id} deleted successfully`);
 };
 
 module.exports = {
