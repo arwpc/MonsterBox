@@ -34,8 +34,8 @@ const sceneController = {
                     scene, 
                     action: `/scenes/${scene.id}`,
                     character,
-                    sounds,
-                    parts
+                    sounds: sounds || [],
+                    parts: parts || []
                 });
             } else {
                 logger.warn(`Scene ${sceneId} not found for character ${characterId}`);
@@ -60,8 +60,8 @@ const sceneController = {
                 scene: { character_id: characterId },
                 action: '/scenes',
                 character,
-                sounds,
-                parts
+                sounds: sounds || [],
+                parts: parts || []
             });
         } catch (error) {
             logger.error('Error rendering new scene form:', error);
@@ -132,8 +132,8 @@ const sceneController = {
             res.render('partials/step', {
                 step,
                 index: parseInt(index),
-                parts,
-                sounds,
+                parts: parts || [],
+                sounds: sounds || [],
                 layout: false
             });
         } catch (error) {
