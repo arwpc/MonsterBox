@@ -31,9 +31,9 @@
                             <td><%- sound.filename %></td>
                             <td>
                                 <% 
-                                    const characterNames = sound.characterIds.map(id => 
+                                    const characterNames = Array.isArray(sound.characterIds) ? sound.characterIds.map(id => 
                                         characters.find(char => char.id === id)?.char_name || 'Unknown'
-                                    ).join(', ');
+                                    ).join(', ') : 'No characters assigned';
                                 %>
                                 <%- characterNames %>
                             </td>
