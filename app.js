@@ -3,7 +3,7 @@
 const express = require('express');
 const path = require('path');
 const http = require('http');
-const { exec, execSync } = require('child_process');
+const { spawn } = require('child_process');
 const logger = require('./logger');
 const app = express();
 const server = http.createServer(app);
@@ -14,53 +14,39 @@ const os = require('os');
 
 // ... (keep the existing imports and setup code)
 
-// Function to check if mjpg-streamer is running
-function isMjpgStreamerRunning() {
-    try {
-        const output = execSync('pgrep mjpg_streamer').toString();
-        return output.trim() !== '';
-    } catch (error) {
-        logger.error('Error checking mjpg-streamer status:', error);
-        return false;
-    }
-}
-
-// Function to check if video device exists
-function videoDeviceExists() {
-    return fs.existsSync('/dev/video0');
-}
+let mjpgStreamerProcess = null;
 
 // Function to start mjpg-streamer
 function startMjpgStreamer() {
-    if (isMjpgStreamerRunning()) {
+    if (mjpgStreamerProcess) {
         logger.info('mjpg-streamer is already running');
         return;
     }
 
-    if (!videoDeviceExists()) {
-        logger.error('Video device /dev/video0 not found. Cannot start mjpg-streamer.');
-        return;
-    }
+    logger.info('Starting mjpg-streamer...');
+    mjpgStreamerProcess = spawn('mjpg_streamer', [
+        '-i', 'input_uvc.so',
+        '-o', 'output_http.so -w /usr/local/share/mjpg-streamer/www -p 8080'
+    ]);
 
-    exec('sudo mjpg_streamer -i "input_uvc.so" -o "output_http.so -w /usr/local/share/mjpg-streamer/www -p 8080"', (error, stdout, stderr) => {
-        if (error) {
-            logger.error(`Error starting mjpg-streamer: ${error}`);
-            return;
-        }
-        logger.info(`mjpg-streamer started: ${stdout}`);
+    mjpgStreamerProcess.stdout.on('data', (data) => {
+        logger.info(`mjpg-streamer stdout: ${data}`);
+    });
+
+    mjpgStreamerProcess.stderr.on('data', (data) => {
+        logger.error(`mjpg-streamer stderr: ${data}`);
+    });
+
+    mjpgStreamerProcess.on('close', (code) => {
+        logger.warn(`mjpg-streamer process exited with code ${code}`);
+        mjpgStreamerProcess = null;
+        // Attempt to restart mjpg-streamer
+        setTimeout(startMjpgStreamer, 5000);
     });
 }
 
-// Health check for mjpg-streamer
-function checkMjpgStreamerHealth() {
-    if (!isMjpgStreamerRunning()) {
-        logger.warn('mjpg-streamer is not running. Attempting to start...');
-        startMjpgStreamer();
-    }
-}
-
-// Set up a periodic health check
-setInterval(checkMjpgStreamerHealth, 60000); // Check every minute
+// Start mjpg-streamer when the application starts
+startMjpgStreamer();
 
 // Function to get the local IP address
 function getLocalIpAddress() {
@@ -94,7 +80,7 @@ function retryProxyRequest(req, res, retries = 3) {
             path: '/?action=stream',
             method: req.method,
             headers: req.headers,
-            timeout: 30000 // Increased timeout to 30 seconds
+            timeout: 30000 // 30 seconds timeout
         },
         (proxyResponse) => {
             logger.info(`Proxy request successful, status: ${proxyResponse.statusCode}`);
@@ -144,7 +130,7 @@ function sendFallbackImage(res, fallbackImagePath) {
 // Proxy route for mjpeg-streamer with error handling, fallback, and retry mechanism
 app.use('/stream', (req, res) => {
     try {
-        if (!isMjpgStreamerRunning()) {
+        if (!mjpgStreamerProcess) {
             logger.warn('mjpg-streamer is not running. Attempting to start...');
             startMjpgStreamer();
             // Wait for a short time to allow mjpg-streamer to start
@@ -158,6 +144,32 @@ app.use('/stream', (req, res) => {
     }
 });
 
-// ... (keep the rest of the existing code, including error handling and graceful shutdown)
+// ... (keep the rest of the existing code, including error handling)
+
+// Graceful shutdown function
+function gracefulShutdown(reason) {
+    logger.info(`Initiating graceful shutdown. Reason: ${reason}`);
+    
+    // Stop mjpg-streamer process
+    if (mjpgStreamerProcess) {
+        logger.info('Stopping mjpg-streamer process...');
+        mjpgStreamerProcess.kill();
+    }
+
+    server.close(() => {
+        logger.info('HTTP server closed');
+        process.exit(0);
+    });
+
+    // If server hasn't finished in 10 seconds, shut down forcefully
+    setTimeout(() => {
+        logger.error('Could not close connections in time, forcefully shutting down');
+        process.exit(1);
+    }, 10000);
+}
+
+// Handle termination signals
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 module.exports = app;
