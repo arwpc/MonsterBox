@@ -100,7 +100,7 @@
         <% } %>
     </main>
 
-    <nav>
+    <nav id="navigation">
         <a href="/scenes" class="button">Scenes</a>
         <a href="/characters" class="button">Characters</a>
         <a href="/parts" class="button">Parts</a>
@@ -114,6 +114,8 @@
 
     <script>
         function updateCharacter(characterId) {
+            localStorage.setItem('selectedCharacter', characterId);
+            updateNavigation(characterId);
             fetch('/set-character', {
                 method: 'POST',
                 headers: {
@@ -132,6 +134,29 @@
             .catch((error) => {
                 console.error('Error:', error);
             });
+        }
+
+        function updateNavigation(characterId) {
+            const nav = document.getElementById('navigation');
+            const links = nav.getElementsByTagName('a');
+            for (let link of links) {
+                const url = new URL(link.href);
+                if (characterId) {
+                    url.searchParams.set('characterId', characterId);
+                } else {
+                    url.searchParams.delete('characterId');
+                }
+                link.href = url.toString();
+            }
+        }
+
+        // Load the selected character from localStorage on page load
+        window.onload = function() {
+            const savedCharacter = localStorage.getItem('selectedCharacter');
+            if (savedCharacter) {
+                document.getElementById('character-select').value = savedCharacter;
+                updateNavigation(savedCharacter);
+            }
         }
     </script>
 </body>

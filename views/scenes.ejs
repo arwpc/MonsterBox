@@ -9,7 +9,7 @@
 </head>
 <body>
     <h1><%= title %> for <%= character.char_name %></h1>
-    <a href="/scenes/new" class="button">Add New Scene</a>
+    <a href="/scenes/new?characterId=<%= character.id %>" class="button">Add New Scene</a>
     <% if (scenes.length === 0) { %>
         <p>No scenes found for this character.</p>
     <% } else { %>
@@ -37,23 +37,25 @@
                             <% } %>
                         </td>
                         <td>
-                            <a href="/scenes/<%= scene.id %>/edit" class="button edit-scene" data-id="<%= scene.id %>">Edit</a>
+                            <a href="/scenes/<%= scene.id %>/edit?characterId=<%= character.id %>" class="button edit-scene" data-id="<%= scene.id %>">Edit</a>
                             <button onclick="deleteScene('<%= scene.id %>')" class="button">Delete</button>
-                            <a href="/scenes/<%= scene.id %>" class="button play-scene" data-id="<%= scene.id %>">Run</a>
+                            <a href="/scenes/<%= scene.id %>?characterId=<%= character.id %>" class="button play-scene" data-id="<%= scene.id %>">Run</a>
                         </td>
                     </tr>
                 <% }); %>
             </tbody>
         </table>
     <% } %>
-    <a href="/" class="button">Back to Main Menu</a>
+    <a href="/?characterId=<%= character.id %>" class="button">Back to Main Menu</a>
 
     <script>
+        const characterId = '<%= character.id %>';
+
         function deleteScene(id) {
             console.log('Attempting to delete scene:', id);
             if (confirm('Are you sure you want to delete this scene?')) {
                 $.ajax({
-                    url: '/scenes/' + id,
+                    url: '/scenes/' + id + '?characterId=' + characterId,
                     type: 'DELETE',
                     success: function(result) {
                         console.log('Scene deleted successfully');
@@ -72,7 +74,7 @@
             $('.edit-scene').on('click', function(e) {
                 e.preventDefault();
                 var id = $(this).data('id');
-                var url = '/scenes/' + id + '/edit';
+                var url = '/scenes/' + id + '/edit?characterId=' + characterId;
                 console.log('Attempting to edit scene:', id);
                 console.log('Edit URL:', url);
                 window.location.href = url;
@@ -81,7 +83,7 @@
             $('.play-scene').on('click', function(e) {
                 e.preventDefault();
                 var id = $(this).data('id');
-                var url = '/scenes/' + id;
+                var url = '/scenes/' + id + '?characterId=' + characterId;
                 console.log('Attempting to play scene:', id);
                 console.log('Play URL:', url);
                 window.location.href = url;

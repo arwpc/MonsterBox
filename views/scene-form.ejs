@@ -12,7 +12,7 @@
 </head>
 <body>
     <h1><%= title %> for <%= character.char_name %></h1>
-    <form id="sceneForm" action="<%= action %>" method="POST">
+    <form id="sceneForm" action="<%= action %>?characterId=<%= character.id %>" method="POST">
         <input type="hidden" name="id" value="<%= scene.id %>">
         <input type="hidden" name="character_id" value="<%= character.id %>">
 
@@ -39,9 +39,11 @@
         <button type="submit">Save Scene</button>
     </form>
 
-    <a href="/scenes" class="button">Back to Scenes</a>
+    <a href="/scenes?characterId=<%= character.id %>" class="button">Back to Scenes</a>
 
     <script>
+        const characterId = '<%= character.id %>';
+
         $(document).ready(function() {
             $(".sortable").sortable({
                 update: function(event, ui) {
@@ -63,7 +65,7 @@
             const steps = document.getElementById('steps');
             const stepCount = steps.children.length;
             
-            $.get('/scenes/step-template', { type: type, index: stepCount }, function(html) {
+            $.get('/scenes/step-template', { type: type, index: stepCount, characterId: characterId }, function(html) {
                 const newStep = document.createElement('div');
                 newStep.innerHTML = html;
                 steps.appendChild(newStep.firstChild);

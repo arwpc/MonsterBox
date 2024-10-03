@@ -24,13 +24,22 @@ function getPartDetails(part) {
     }
 }
 
+// Middleware to check if a character is selected
+const checkCharacterSelected = (req, res, next) => {
+    if (!req.query.characterId) {
+        return res.redirect('/');  // Redirect to main page if no character is selected
+    }
+    req.characterId = req.query.characterId;
+    next();
+};
+
+// Apply the middleware to all routes
+router.use(checkCharacterSelected);
+
 router.get('/', async (req, res) => {
     try {
-        if (!req.session.characterId) {
-            return res.redirect('/');  // Redirect to main page if no character is selected
-        }
-        const parts = await partService.getPartsByCharacter(req.session.characterId);
-        const character = await characterService.getCharacterById(req.session.characterId);
+        const parts = await partService.getPartsByCharacter(req.characterId);
+        const character = await characterService.getCharacterById(req.characterId);
         const partsWithDetails = parts.map(part => ({
             ...part,
             details: getPartDetails(part)
@@ -44,11 +53,8 @@ router.get('/', async (req, res) => {
 
 router.get('/new/:type', async (req, res) => {
     try {
-        if (!req.session.characterId) {
-            return res.redirect('/');  // Redirect to main page if no character is selected
-        }
         const { type } = req.params;
-        const character = await characterService.getCharacterById(req.session.characterId);
+        const character = await characterService.getCharacterById(req.characterId);
         res.render('part-form', { 
             title: `Add ${type.charAt(0).toUpperCase() + type.slice(1)}`, 
             action: `/parts/${type}`, 
@@ -63,12 +69,9 @@ router.get('/new/:type', async (req, res) => {
 
 router.get('/:id/edit', async (req, res) => {
     try {
-        if (!req.session.characterId) {
-            return res.redirect('/');  // Redirect to main page if no character is selected
-        }
         const id = parseInt(req.params.id);
         const part = await partService.getPartById(id);
-        const character = await characterService.getCharacterById(req.session.characterId);
+        const character = await characterService.getCharacterById(req.characterId);
         res.render('part-form', {
             title: `Edit ${part.type.charAt(0).toUpperCase() + part.type.slice(1)}`,
             action: `/parts/${part.id}/update`,
@@ -83,15 +86,12 @@ router.get('/:id/edit', async (req, res) => {
 
 router.post('/:type', async (req, res) => {
     try {
-        if (!req.session.characterId) {
-            return res.redirect('/');  // Redirect to main page if no character is selected
-        }
         const { type } = req.params;
         const partData = req.body;
         partData.type = type;
-        partData.characterId = req.session.characterId;
+        partData.characterId = req.characterId;
         await partService.createPart(partData);
-        res.redirect('/parts');
+        res.redirect(`/parts?characterId=${req.characterId}`);
     } catch (error) {
         console.error('Error creating part:', error);
         res.status(500).send('An error occurred while creating the part');
@@ -100,14 +100,11 @@ router.post('/:type', async (req, res) => {
 
 router.post('/:id/update', async (req, res) => {
     try {
-        if (!req.session.characterId) {
-            return res.redirect('/');  // Redirect to main page if no character is selected
-        }
         const id = parseInt(req.params.id);
         const partData = req.body;
-        partData.characterId = req.session.characterId;
+        partData.characterId = req.characterId;
         await partService.updatePart(id, partData);
-        res.redirect('/parts');
+        res.redirect(`/parts?characterId=${req.characterId}`);
     } catch (error) {
         console.error('Error updating part:', error);
         res.status(500).send('An error occurred while updating the part');
