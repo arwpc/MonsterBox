@@ -15,7 +15,7 @@ const storage = multer.diskStorage({
         cb(null, 'public/sounds/');
     },
     filename: function (req, file, cb) {
-        cb(null, Date.now() + path.extname(file.originalname));
+        cb(null, Date.now() + '-' + file.originalname);
     }
 });
 const upload = multer({ storage: storage });
@@ -47,7 +47,7 @@ const checkCharacterSelected = (req, res, next) => {
     if (!req.query.characterId) {
         return res.redirect('/');  // Redirect to main page if no character is selected
     }
-    req.characterId = req.query.characterId;
+    req.characterId = parseInt(req.query.characterId);
     next();
 };
 
@@ -56,9 +56,12 @@ router.use(checkCharacterSelected);
 
 router.get('/', async (req, res) => {
     try {
+        console.log('Fetching sounds for character ID:', req.characterId);
         const characters = await characterService.getAllCharacters();
         const sounds = await soundService.getSoundsByCharacter(req.characterId);
         const character = await characterService.getCharacterById(req.characterId);
+        console.log('Fetched sounds:', sounds);
+        console.log('Fetched character:', character);
         res.render('sounds', { title: 'Sounds', characters, sounds, character });
     } catch (error) {
         console.error('Error fetching sounds and characters:', error);
@@ -93,17 +96,18 @@ router.get('/:id/edit', async (req, res) => {
     }
 });
 
-router.post('/', upload.single('sound_file'), async (req, res) => {
+router.post('/', upload.array('sound_files', 10), async (req, res) => {
     try {
-        const newSound = {
-            name: req.body.name,
-            filename: req.file.filename,
+        const soundDataArray = req.files.map(file => ({
+            name: file.originalname.split('.').slice(0, -1).join('.'), // Use filename without extension as name
+            filename: file.filename,
             characterId: req.characterId
-        };
-        await soundService.createSound(newSound);
+        }));
+        
+        await soundService.createMultipleSounds(soundDataArray);
         res.redirect(`/sounds?characterId=${req.characterId}`);
     } catch (error) {
-        console.error('Error adding sound:', error);
+        console.error('Error adding sounds:', error);
         res.status(500).json({ error: 'Internal Server Error', details: error.message });
     }
 });

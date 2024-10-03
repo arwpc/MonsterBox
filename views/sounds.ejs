@@ -12,11 +12,17 @@
     
     <div id="sound-list">
         <a href="/sounds/new?characterId=<%- character.id %>" class="button">Add New Sound</a>
+        <% if (sounds.length === 0) { %>
+            <p>No sounds available for this character. Displaying all sounds:</p>
+        <% } else if (sounds.some(sound => sound.characterId !== parseInt(character.id))) { %>
+            <p>No character-specific sounds found. Displaying all available sounds:</p>
+        <% } %>
         <table>
             <thead>
                 <tr>
                     <th>Name</th>
                     <th>Filename</th>
+                    <th>Character</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -25,6 +31,7 @@
                     <tr class="sound-row">
                         <td><%- sound.name %></td>
                         <td><%- sound.filename %></td>
+                        <td><%- sound.characterId === parseInt(character.id) ? character.char_name : 'All Characters' %></td>
                         <td>
                             <button onclick="playOnCharacter('<%- sound.id %>')">Play (on Character)</button>
                             <button onclick="playLocal('<%- sound.filename %>')">Play (local)</button>
