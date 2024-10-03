@@ -18,7 +18,7 @@
             <select id="characterIds" name="characterIds" multiple required>
                 <% characters.forEach(function(character) { %>
                     <option value="<%- character.id %>" 
-                        <% if (sound && sound.characterIds && sound.characterIds.includes(character.id)) { %>
+                        <% if (sound && sound.characterIds && Array.isArray(sound.characterIds) && sound.characterIds.includes(character.id)) { %>
                             selected
                         <% } %>
                     >
@@ -35,7 +35,7 @@
 
         <div>
             <label for="sound_files">Sound File(s):</label>
-            <input type="file" id="sound_files" name="sound_files" accept=".mp3,.wav" <% if (!sound) { %>multiple<% } %>>
+            <input type="file" id="sound_files" name="sound_files" accept=".mp3,.wav" <% if (!sound) { %>multiple<% } %> required>
             <% if (sound && sound.filename) { %>
                 <p>Current file: <%- sound.filename %></p>
             <% } %>
