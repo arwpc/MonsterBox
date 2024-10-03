@@ -34,8 +34,27 @@ const checkCharacterSelected = (req, res, next) => {
     next();
 };
 
-// Apply the middleware to all routes
-router.use(checkCharacterSelected);
+// New route for OS test (before applying middleware)
+router.get('/os-test', (req, res) => {
+    const osInfo = {
+        platform: os.platform(),
+        release: os.release(),
+        type: os.type(),
+        arch: os.arch(),
+        cpus: os.cpus(),
+        totalMemory: os.totalmem(),
+        freeMemory: os.freemem()
+    };
+    res.render('os-test', { title: 'OS Test', osInfo });
+});
+
+// Apply the middleware to all routes except '/os-test'
+router.use((req, res, next) => {
+    if (req.path !== '/os-test') {
+        return checkCharacterSelected(req, res, next);
+    }
+    next();
+});
 
 router.get('/', async (req, res) => {
     try {
@@ -171,20 +190,6 @@ router.post('/test', async (req, res) => {
         console.error('Error testing part:', error);
         res.status(500).json({ success: false, message: 'An error occurred while testing the part', error: error.message });
     }
-});
-
-// New route for OS test
-router.get('/os-test', (req, res) => {
-    const osInfo = {
-        platform: os.platform(),
-        release: os.release(),
-        type: os.type(),
-        arch: os.arch(),
-        cpus: os.cpus(),
-        totalMemory: os.totalmem(),
-        freeMemory: os.freemem()
-    };
-    res.render('os-test', { title: 'OS Test', osInfo });
 });
 
 module.exports = router;
