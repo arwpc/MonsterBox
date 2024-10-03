@@ -39,7 +39,7 @@ router.get('/character/:id/scenes', async (req, res) => {
     try {
         const characterId = parseInt(req.params.id);
         logger.info(`Fetching scenes for character ID: ${characterId}`);
-        const scenes = await sceneService.getScenesByCharacterId(characterId);
+        const scenes = await sceneService.getScenesByCharacter(characterId);
         logger.info(`Fetched scenes: ${JSON.stringify(scenes)}`);
         res.json(scenes);
     } catch (error) {
