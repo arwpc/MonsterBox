@@ -6,6 +6,7 @@ const partService = require('../services/partService');
 const characterService = require('../services/characterService');
 const { spawn } = require('child_process');
 const path = require('path');
+const os = require('os');
 
 function getPartDetails(part) {
     switch(part.type) {
@@ -170,6 +171,20 @@ router.post('/test', async (req, res) => {
         console.error('Error testing part:', error);
         res.status(500).json({ success: false, message: 'An error occurred while testing the part', error: error.message });
     }
+});
+
+// New route for OS test
+router.get('/os-test', (req, res) => {
+    const osInfo = {
+        platform: os.platform(),
+        release: os.release(),
+        type: os.type(),
+        arch: os.arch(),
+        cpus: os.cpus(),
+        totalMemory: os.totalmem(),
+        freeMemory: os.freemem()
+    };
+    res.render('os-test', { title: 'OS Test', osInfo });
 });
 
 module.exports = router;
