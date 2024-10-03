@@ -57,16 +57,16 @@ app.use('/active-mode', activeModeRoutes);
 app.get('/', async (req, res) => {
     try {
         const characters = await characterService.getAllCharacters();
+        logger.info(`Fetched ${characters.length} characters for main menu`);
         res.render('index', { 
             title: 'MonsterBox Control Panel',
             characters: characters
         });
     } catch (error) {
-        logger.error('Error fetching characters:', error);
-        res.render('index', { 
-            title: 'MonsterBox Control Panel',
-            characters: [],
-            error: 'Failed to fetch characters'
+        logger.error('Error fetching characters for main menu:', error);
+        res.status(500).render('error', { 
+            error: 'Failed to fetch characters',
+            details: error.message
         });
     }
 });
@@ -75,11 +75,13 @@ app.get('/', async (req, res) => {
 app.post('/set-character', (req, res) => {
     const { characterId } = req.body;
     req.session.characterId = characterId;
+    logger.info(`Set global character ID to ${characterId}`);
     res.json({ success: true });
 });
 
 // Audio routes
 app.post('/audio/set-mic-volume', (req, res) => {
+    logger.info('Mic volume control not implemented');
     res.status(200).json({ success: true, message: 'Mic volume control not implemented' });
 });
 
@@ -93,10 +95,20 @@ function isMjpgStreamerRunning() {
     }
 }
 
+// Function to check if video device exists
+function videoDeviceExists() {
+    return fs.existsSync('/dev/video0');
+}
+
 // Function to start mjpg-streamer
 function startMjpgStreamer() {
     if (isMjpgStreamerRunning()) {
         logger.info('mjpg-streamer is already running');
+        return;
+    }
+
+    if (!videoDeviceExists()) {
+        logger.error('Video device /dev/video0 not found. Cannot start mjpg-streamer.');
         return;
     }
 
@@ -144,7 +156,7 @@ function retryProxyRequest(req, res, retries = 3) {
             path: '/?action=stream',
             method: req.method,
             headers: req.headers,
-            timeout: 10000 // Increased timeout to 10 seconds
+            timeout: 10000 // 10 seconds timeout
         },
         (proxyResponse) => {
             logger.info(`Proxy request successful, status: ${proxyResponse.statusCode}`);
@@ -193,17 +205,27 @@ function sendFallbackImage(res, fallbackImagePath) {
 
 // Proxy route for mjpeg-streamer with error handling, fallback, and retry mechanism
 app.use('/stream', (req, res) => {
-    retryProxyRequest(req, res);
+    try {
+        retryProxyRequest(req, res);
+    } catch (error) {
+        logger.error('Error in stream route:', error);
+        sendFallbackImage(res, path.join(__dirname, 'public', 'images', 'no-stream.jpg'));
+    }
 });
 
 // Start the audio stream
-audio.startStream(server);
+try {
+    audio.startStream(server);
+    logger.info('Audio stream started successfully');
+} catch (error) {
+    logger.error('Error starting audio stream:', error);
+}
 
 // Error handling middleware
 app.use((err, req, res, next) => {
     logger.error('Unhandled error:', { error: err.message, stack: err.stack });
     if (!res.headersSent) {
-        res.status(500).send('Something broke!');
+        res.status(500).render('error', { error: 'An unexpected error occurred', details: err.message });
     } else {
         res.end();
     }
@@ -215,12 +237,34 @@ server.listen(port, () => {
     logger.info(`Local IP address: ${getLocalIpAddress()}`);
 });
 
+// Global error handlers
 process.on('uncaughtException', (error) => {
     logger.error('Uncaught Exception:', { error: error.message, stack: error.stack });
+    gracefulShutdown('Uncaught Exception');
 });
 
 process.on('unhandledRejection', (reason, promise) => {
     logger.error('Unhandled Rejection:', { reason: reason, promise: promise });
+    gracefulShutdown('Unhandled Rejection');
 });
+
+// Graceful shutdown function
+function gracefulShutdown(reason) {
+    logger.info(`Initiating graceful shutdown. Reason: ${reason}`);
+    server.close(() => {
+        logger.info('HTTP server closed');
+        process.exit(1);
+    });
+
+    // If server hasn't finished in 10 seconds, shut down forcefully
+    setTimeout(() => {
+        logger.error('Could not close connections in time, forcefully shutting down');
+        process.exit(1);
+    }, 10000);
+}
+
+// Handle termination signals
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 module.exports = app;

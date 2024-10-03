@@ -51,6 +51,7 @@ const getSoundsByCharacter = async (characterId) => {
     try {
         const sounds = await getAllSounds(characterId);
         logger.debug(`Retrieved ${sounds.length} sounds for character ${characterId}`);
+        logger.debug(`Sound IDs: ${sounds.map(s => s.id).join(', ')}`);
         return sounds;
     } catch (error) {
         logger.error(`Error retrieving sounds for character ${characterId}:`, error);
@@ -63,7 +64,7 @@ const getSoundById = async (id) => {
         const sounds = await getAllSounds();
         const sound = sounds.find(sound => sound && sound.id === parseInt(id));
         if (sound) {
-            logger.debug(`Retrieved sound with id ${id}`);
+            logger.debug(`Retrieved sound with id ${id}: ${JSON.stringify(sound)}`);
         } else {
             logger.warn(`Sound with id ${id} not found`);
         }
@@ -100,11 +101,19 @@ const createMultipleSounds = async (soundDataArray) => {
     try {
         const sounds = await getAllSounds();
         let nextId = getNextId(sounds);
-        const newSounds = soundDataArray.map(soundData => ({
-            id: nextId++,
-            ...soundData,
-            characterId: soundData.characterId ? parseInt(soundData.characterId) : null
-        }));
+        const newSounds = soundDataArray.map(soundData => {
+            try {
+                return {
+                    id: nextId++,
+                    ...soundData,
+                    characterId: soundData.characterId ? parseInt(soundData.characterId) : null
+                };
+            } catch (error) {
+                logger.error(`Error creating sound object: ${JSON.stringify(soundData)}`, error);
+                return null;
+            }
+        }).filter(sound => sound !== null);
+        
         sounds.push(...newSounds);
         await fs.writeFile(dataPath, JSON.stringify(sounds, null, 2));
         logger.info(`Created ${newSounds.length} new sounds`);
