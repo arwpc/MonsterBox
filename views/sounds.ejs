@@ -11,28 +11,30 @@
     <h1><%- title %></h1>
     
     <label for="character-select">Select Character:</label>
-    <select id="character-select" onchange="loadSoundsForCharacter()">
-        <option value="">Select a character</option>
+    <select id="character-select" onchange="filterSoundsByCharacter()">
+        <option value="">All Characters</option>
         <% characters.forEach(function(character) { %>
-            <option value="<%- character.id %>" <%= selectedCharacterId == character.id ? 'selected' : '' %>><%- character.name %></option>
+            <option value="<%- character.id %>"><%- character.name %></option>
         <% }); %>
     </select>
 
-    <div id="sound-list" style="<%= selectedCharacterId ? '' : 'display: none;' %>">
+    <div id="sound-list">
         <a href="/sounds/new" class="button">Add New Sound</a>
         <table>
             <thead>
                 <tr>
                     <th>Name</th>
                     <th>Filename</th>
+                    <th>Character</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 <% sounds.forEach(function(sound) { %>
-                    <tr>
+                    <tr class="sound-row" data-character-id="<%- sound.characterId %>">
                         <td><%- sound.name %></td>
                         <td><%- sound.filename %></td>
+                        <td><%- characters.find(c => c.id === sound.characterId)?.name || 'Unknown' %></td>
                         <td>
                             <button onclick="playOnCharacter('<%- sound.id %>')">Play (on Character)</button>
                             <button onclick="playLocal('<%- sound.filename %>')">Play (local)</button>
@@ -51,13 +53,17 @@
     <div id="errorInfo" style="color: red;"></div>
 
     <script>
-        function loadSoundsForCharacter() {
+        function filterSoundsByCharacter() {
             const characterId = document.getElementById('character-select').value;
-            if (characterId) {
-                window.location.href = '/sounds/character/' + characterId;
-            } else {
-                window.location.href = '/sounds';
-            }
+            const soundRows = document.querySelectorAll('.sound-row');
+            
+            soundRows.forEach(row => {
+                if (!characterId || row.dataset.characterId === characterId) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
         }
 
         function playLocal(filename) {
