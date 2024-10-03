@@ -16,15 +16,23 @@ const getAllSounds = async (characterId = null) => {
             return [];
         }
         
-        logger.debug(`Retrieved ${sounds.length} sounds`);
+        // Filter out any undefined or null sound objects
+        sounds = sounds.filter(sound => sound != null);
+        
+        logger.debug(`Retrieved ${sounds.length} valid sounds`);
         
         if (characterId !== null) {
-            sounds = sounds.filter(sound => 
-                sound && 
-                sound.characterIds && 
-                Array.isArray(sound.characterIds) && 
-                sound.characterIds.includes(parseInt(characterId))
-            );
+            sounds = sounds.filter(sound => {
+                if (sound.characterIds) {
+                    // If characterIds exists, use it (future-proofing)
+                    return Array.isArray(sound.characterIds) && sound.characterIds.includes(parseInt(characterId));
+                } else if (sound.characterId !== undefined) {
+                    // If characterId exists, use it (current format)
+                    return sound.characterId === parseInt(characterId) || sound.characterId === null;
+                }
+                // If neither exists, include the sound (assume it's available for all characters)
+                return true;
+            });
             logger.debug(`Filtered to ${sounds.length} sounds for character ${characterId}`);
         }
         
@@ -53,7 +61,7 @@ const getSoundsByCharacter = async (characterId) => {
 const getSoundById = async (id) => {
     try {
         const sounds = await getAllSounds();
-        const sound = sounds.find(sound => sound.id === parseInt(id));
+        const sound = sounds.find(sound => sound && sound.id === parseInt(id));
         if (sound) {
             logger.debug(`Retrieved sound with id ${id}`);
         } else {
@@ -76,7 +84,7 @@ const createSound = async (soundData) => {
         const newSound = {
             id: getNextId(sounds),
             ...soundData,
-            characterIds: soundData.characterIds.map(id => parseInt(id))
+            characterId: soundData.characterId ? parseInt(soundData.characterId) : null
         };
         sounds.push(newSound);
         await fs.writeFile(dataPath, JSON.stringify(sounds, null, 2));
@@ -95,7 +103,7 @@ const createMultipleSounds = async (soundDataArray) => {
         const newSounds = soundDataArray.map(soundData => ({
             id: nextId++,
             ...soundData,
-            characterIds: soundData.characterIds.map(id => parseInt(id))
+            characterId: soundData.characterId ? parseInt(soundData.characterId) : null
         }));
         sounds.push(...newSounds);
         await fs.writeFile(dataPath, JSON.stringify(sounds, null, 2));
@@ -110,13 +118,13 @@ const createMultipleSounds = async (soundDataArray) => {
 const updateSound = async (id, soundData) => {
     try {
         const sounds = await getAllSounds();
-        const index = sounds.findIndex(sound => sound.id === parseInt(id));
+        const index = sounds.findIndex(sound => sound && sound.id === parseInt(id));
         if (index !== -1) {
             sounds[index] = { 
                 ...sounds[index], 
                 ...soundData, 
                 id: parseInt(id),
-                characterIds: soundData.characterIds.map(id => parseInt(id))
+                characterId: soundData.characterId ? parseInt(soundData.characterId) : null
             };
             await fs.writeFile(dataPath, JSON.stringify(sounds, null, 2));
             logger.info(`Updated sound with id ${id}`);
@@ -133,7 +141,7 @@ const updateSound = async (id, soundData) => {
 const deleteSound = async (id) => {
     try {
         const sounds = await getAllSounds();
-        const filteredSounds = sounds.filter(sound => sound.id !== parseInt(id));
+        const filteredSounds = sounds.filter(sound => sound && sound.id !== parseInt(id));
         if (filteredSounds.length === sounds.length) {
             logger.warn(`Attempt to delete non-existent sound with id ${id}`);
             throw new Error('Sound not found');
