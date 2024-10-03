@@ -92,7 +92,7 @@
             <select id="character-select" onchange="updateCharacter(this.value)">
                 <option value="">Select a character</option>
                 <% characters.forEach(function(character) { %>
-                    <option value="<%= character.id %>"><%= character.name %></option>
+                    <option value="<%= character.id %>"><%= character.char_name %></option>
                 <% }); %>
             </select>
         <% } else { %>
