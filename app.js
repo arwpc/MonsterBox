@@ -4,6 +4,10 @@ const express = require('express');
 const path = require('path');
 const http = require('http');
 const { exec } = require('child_process');
+// Import the logger
+// To set the log level, use the LOG_LEVEL environment variable
+// Example: LOG_LEVEL=debug node app.js
+const logger = require('./logger');
 const app = express();
 const server = http.createServer(app);
 const port = 3000;
@@ -61,7 +65,7 @@ app.get('/', async (req, res) => {
             characters: characters
         });
     } catch (error) {
-        console.error('Error fetching characters:', error);
+        logger.error('Error fetching characters:', error);
         res.render('index', { 
             title: 'MonsterBox Control Panel',
             characters: [],
@@ -86,10 +90,10 @@ app.post('/audio/set-mic-volume', (req, res) => {
 function startMjpgStreamer() {
     exec('sudo mjpg_streamer -i "input_uvc.so" -o "output_http.so -w /usr/local/share/mjpg-streamer/www -p 8080"', (error, stdout, stderr) => {
         if (error) {
-            console.error(`Error starting mjpg-streamer: ${error}`);
+            logger.error(`Error starting mjpg-streamer: ${error}`);
             return;
         }
-        console.log(`mjpg-streamer started: ${stdout}`);
+        logger.info(`mjpg-streamer started: ${stdout}`);
     });
 }
 
@@ -132,7 +136,7 @@ app.use('/stream', (req, res) => {
     );
 
     proxyRequest.on('error', (error) => {
-        console.error('Proxy request error:', error);
+        logger.error('Proxy request error:', error);
         // Send fallback image
         if (!res.headersSent) {
             res.writeHead(200, { 'Content-Type': 'image/jpeg' });
@@ -142,7 +146,7 @@ app.use('/stream', (req, res) => {
 
     proxyRequest.on('timeout', () => {
         proxyRequest.destroy();
-        console.error('Proxy request timeout');
+        logger.error('Proxy request timeout');
         // Send fallback image
         if (!res.headersSent) {
             res.writeHead(200, { 'Content-Type': 'image/jpeg' });
@@ -158,7 +162,7 @@ audio.startStream(server);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-    console.error(err.stack);
+    logger.error(err.stack);
     if (!res.headersSent) {
         res.status(500).send('Something broke!');
     }
@@ -171,11 +175,11 @@ server.listen(port, () => {
 });
 
 process.on('uncaughtException', (error) => {
-    console.error('Uncaught Exception:', error);
+    logger.error('Uncaught Exception:', error);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
 module.exports = app;
