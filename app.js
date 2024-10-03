@@ -144,11 +144,13 @@ function retryProxyRequest(req, res, retries = 3) {
             path: '/?action=stream',
             method: req.method,
             headers: req.headers,
-            timeout: 5000 // 5 seconds timeout
+            timeout: 10000 // Increased timeout to 10 seconds
         },
         (proxyResponse) => {
             logger.info(`Proxy request successful, status: ${proxyResponse.statusCode}`);
-            res.writeHead(proxyResponse.statusCode, proxyResponse.headers);
+            if (!res.headersSent) {
+                res.writeHead(proxyResponse.statusCode, proxyResponse.headers);
+            }
             proxyResponse.pipe(res);
         }
     );
@@ -160,10 +162,7 @@ function retryProxyRequest(req, res, retries = 3) {
             setTimeout(() => retryProxyRequest(req, res, retries - 1), 1000);
         } else {
             logger.warn('Max retries reached, sending fallback image');
-            if (!res.headersSent) {
-                res.writeHead(200, { 'Content-Type': 'image/jpeg' });
-                fs.createReadStream(fallbackImagePath).pipe(res);
-            }
+            sendFallbackImage(res, fallbackImagePath);
         }
     });
 
@@ -175,14 +174,21 @@ function retryProxyRequest(req, res, retries = 3) {
             setTimeout(() => retryProxyRequest(req, res, retries - 1), 1000);
         } else {
             logger.warn('Max retries reached after timeout, sending fallback image');
-            if (!res.headersSent) {
-                res.writeHead(200, { 'Content-Type': 'image/jpeg' });
-                fs.createReadStream(fallbackImagePath).pipe(res);
-            }
+            sendFallbackImage(res, fallbackImagePath);
         }
     });
 
     req.pipe(proxyRequest);
+}
+
+// Function to send fallback image
+function sendFallbackImage(res, fallbackImagePath) {
+    if (!res.headersSent) {
+        res.writeHead(200, { 'Content-Type': 'image/jpeg' });
+        fs.createReadStream(fallbackImagePath).pipe(res);
+    } else {
+        res.end();
+    }
 }
 
 // Proxy route for mjpeg-streamer with error handling, fallback, and retry mechanism
@@ -198,6 +204,8 @@ app.use((err, req, res, next) => {
     logger.error('Unhandled error:', { error: err.message, stack: err.stack });
     if (!res.headersSent) {
         res.status(500).send('Something broke!');
+    } else {
+        res.end();
     }
 });
 
