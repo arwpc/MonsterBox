@@ -19,7 +19,8 @@ const getAllSounds = async () => {
 
 const getSoundsByCharacter = async (characterId) => {
     const sounds = await getAllSounds();
-    return sounds.filter(sound => sound.characterId === characterId);
+    const characterSounds = sounds.filter(sound => sound.characterId === parseInt(characterId));
+    return characterSounds.length > 0 ? characterSounds : sounds;
 };
 
 const getSoundById = async (id) => {
@@ -36,11 +37,24 @@ const createSound = async (soundData) => {
     const newSound = {
         id: getNextId(sounds),
         ...soundData,
-        characterId: parseInt(soundData.characterId)
+        characterId: parseInt(soundData.characterId) || null
     };
     sounds.push(newSound);
     await fs.writeFile(dataPath, JSON.stringify(sounds, null, 2));
     return newSound;
+};
+
+const createMultipleSounds = async (soundDataArray) => {
+    const sounds = await getAllSounds();
+    let nextId = getNextId(sounds);
+    const newSounds = soundDataArray.map(soundData => ({
+        id: nextId++,
+        ...soundData,
+        characterId: parseInt(soundData.characterId) || null
+    }));
+    sounds.push(...newSounds);
+    await fs.writeFile(dataPath, JSON.stringify(sounds, null, 2));
+    return newSounds;
 };
 
 const updateSound = async (id, soundData) => {
@@ -51,7 +65,7 @@ const updateSound = async (id, soundData) => {
             ...sounds[index], 
             ...soundData, 
             id: parseInt(id),
-            characterId: parseInt(soundData.characterId)
+            characterId: parseInt(soundData.characterId) || null
         };
         await fs.writeFile(dataPath, JSON.stringify(sounds, null, 2));
         return sounds[index];
@@ -73,6 +87,7 @@ module.exports = {
     getSoundsByCharacter,
     getSoundById,
     createSound,
+    createMultipleSounds,
     updateSound,
     deleteSound
 };

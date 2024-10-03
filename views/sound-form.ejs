@@ -27,14 +27,14 @@
         </div>
 
         <div>
-            <label for="sound_file">Sound File:</label>
-            <input type="file" id="sound_file" name="sound_file" accept=".mp3,.wav" <%= sound ? '' : 'required' %>>
+            <label for="sound_files">Sound File(s):</label>
+            <input type="file" id="sound_files" name="sound_files" accept=".mp3,.wav" multiple>
             <% if (sound && sound.filename) { %>
                 <p>Current file: <%- sound.filename %></p>
             <% } %>
         </div>
 
-        <button type="submit">Save Sound</button>
+        <button type="submit">Save Sound(s)</button>
     </form>
 
     <a href="/sounds?characterId=<%- character.id %>" class="button">Back to Sounds</a>
