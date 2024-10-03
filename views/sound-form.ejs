@@ -7,21 +7,17 @@
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-    <h1><%- title %></h1>
-    <form action="<%- action %>" method="POST" enctype="multipart/form-data">
+    <h1><%- title %> for <%- character.char_name %></h1>
+    <form action="<%- action %>?characterId=<%- character.id %>" method="POST" enctype="multipart/form-data">
         <% if (sound && sound.id) { %>
             <input type="hidden" name="id" value="<%- sound.id %>">
         <% } %>
+        <input type="hidden" name="characterId" value="<%- character.id %>">
         
         <div>
             <label for="character_id">Character:</label>
-            <select id="character_id" name="characterId" required>
-                <option value="">Select a character</option>
-                <% characters.forEach(function(character) { %>
-                    <option value="<%- character.id %>" <%= (sound && sound.characterId == character.id) ? 'selected' : '' %>>
-                        <%- character.name %>
-                    </option>
-                <% }); %>
+            <select id="character_id" name="characterId" required disabled>
+                <option value="<%- character.id %>" selected><%- character.char_name %></option>
             </select>
         </div>
 
@@ -41,6 +37,10 @@
         <button type="submit">Save Sound</button>
     </form>
 
-    <a href="/sounds" class="button">Back to Sounds</a>
+    <a href="/sounds?characterId=<%- character.id %>" class="button">Back to Sounds</a>
+
+    <script>
+        const characterId = '<%- character.id %>';
+    </script>
 </body>
 </html>

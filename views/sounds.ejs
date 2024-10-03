@@ -8,37 +8,27 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
-    <h1><%- title %></h1>
+    <h1><%- title %> for <%- character.char_name %></h1>
     
-    <label for="character-select">Select Character:</label>
-    <select id="character-select" onchange="filterSoundsByCharacter()">
-        <option value="">All Characters</option>
-        <% characters.forEach(function(character) { %>
-            <option value="<%- character.id %>"><%- character.name %></option>
-        <% }); %>
-    </select>
-
     <div id="sound-list">
-        <a href="/sounds/new" class="button">Add New Sound</a>
+        <a href="/sounds/new?characterId=<%- character.id %>" class="button">Add New Sound</a>
         <table>
             <thead>
                 <tr>
                     <th>Name</th>
                     <th>Filename</th>
-                    <th>Character</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 <% sounds.forEach(function(sound) { %>
-                    <tr class="sound-row" data-character-id="<%- sound.characterId %>">
+                    <tr class="sound-row">
                         <td><%- sound.name %></td>
                         <td><%- sound.filename %></td>
-                        <td><%- characters.find(c => c.id === sound.characterId)?.name || 'Unknown' %></td>
                         <td>
                             <button onclick="playOnCharacter('<%- sound.id %>')">Play (on Character)</button>
                             <button onclick="playLocal('<%- sound.filename %>')">Play (local)</button>
-                            <a href="/sounds/<%- sound.id %>/edit" class="button">Edit</a>
+                            <a href="/sounds/<%- sound.id %>/edit?characterId=<%- character.id %>" class="button">Edit</a>
                             <button onclick="deleteSound('<%- sound.id %>')">Delete</button>
                         </td>
                     </tr>
@@ -47,24 +37,13 @@
         </table>
     </div>
     
-    <a href="/" class="button">Back to Main Menu</a>
+    <a href="/?characterId=<%- character.id %>" class="button">Back to Main Menu</a>
 
     <div id="soundInfo"></div>
     <div id="errorInfo" style="color: red;"></div>
 
     <script>
-        function filterSoundsByCharacter() {
-            const characterId = document.getElementById('character-select').value;
-            const soundRows = document.querySelectorAll('.sound-row');
-            
-            soundRows.forEach(row => {
-                if (!characterId || row.dataset.characterId === characterId) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-        }
+        const characterId = '<%- character.id %>';
 
         function playLocal(filename) {
             const audio = new Audio('/sounds/' + filename);
@@ -76,7 +55,7 @@
 
         function playOnCharacter(soundId) {
             console.log('Attempting to play sound with ID:', soundId);
-            fetch('/sounds/' + soundId + '/play', {
+            fetch(`/sounds/${soundId}/play?characterId=${characterId}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -114,7 +93,7 @@
 
         function deleteSound(id) {
             if (confirm('Are you sure you want to delete this sound?')) {
-                fetch('/sounds/' + id + '/delete', { method: 'POST' })
+                fetch(`/sounds/${id}/delete?characterId=${characterId}`, { method: 'POST' })
                 .then(response => {
                     if (!response.ok) {
                         return response.json().then(err => { throw err; });

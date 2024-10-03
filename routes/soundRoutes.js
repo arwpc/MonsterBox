@@ -42,11 +42,24 @@ function startSoundPlayer() {
     }
 }
 
+// Middleware to check if a character is selected
+const checkCharacterSelected = (req, res, next) => {
+    if (!req.query.characterId) {
+        return res.redirect('/');  // Redirect to main page if no character is selected
+    }
+    req.characterId = req.query.characterId;
+    next();
+};
+
+// Apply the middleware to all routes
+router.use(checkCharacterSelected);
+
 router.get('/', async (req, res) => {
     try {
         const characters = await characterService.getAllCharacters();
-        const sounds = await soundService.getAllSounds();
-        res.render('sounds', { title: 'Sounds', characters, sounds });
+        const sounds = await soundService.getSoundsByCharacter(req.characterId);
+        const character = await characterService.getCharacterById(req.characterId);
+        res.render('sounds', { title: 'Sounds', characters, sounds, character });
     } catch (error) {
         console.error('Error fetching sounds and characters:', error);
         res.status(500).json({ error: 'Internal Server Error', details: error.message });
@@ -56,7 +69,8 @@ router.get('/', async (req, res) => {
 router.get('/new', async (req, res) => {
     try {
         const characters = await characterService.getAllCharacters();
-        res.render('sound-form', { title: 'Add New Sound', action: '/sounds', sound: null, characters });
+        const character = await characterService.getCharacterById(req.characterId);
+        res.render('sound-form', { title: 'Add New Sound', action: `/sounds?characterId=${req.characterId}`, sound: null, characters, character });
     } catch (error) {
         console.error('Error fetching characters:', error);
         res.status(500).json({ error: 'Internal Server Error', details: error.message });
@@ -67,8 +81,9 @@ router.get('/:id/edit', async (req, res) => {
     try {
         const sound = await soundService.getSoundById(parseInt(req.params.id));
         const characters = await characterService.getAllCharacters();
+        const character = await characterService.getCharacterById(req.characterId);
         if (sound) {
-            res.render('sound-form', { title: 'Edit Sound', action: `/sounds/${sound.id}`, sound, characters });
+            res.render('sound-form', { title: 'Edit Sound', action: `/sounds/${sound.id}?characterId=${req.characterId}`, sound, characters, character });
         } else {
             res.status(404).json({ error: 'Sound not found', details: `No sound with id ${req.params.id}` });
         }
@@ -83,10 +98,10 @@ router.post('/', upload.single('sound_file'), async (req, res) => {
         const newSound = {
             name: req.body.name,
             filename: req.file.filename,
-            characterId: parseInt(req.body.characterId)
+            characterId: req.characterId
         };
         await soundService.createSound(newSound);
-        res.redirect('/sounds');
+        res.redirect(`/sounds?characterId=${req.characterId}`);
     } catch (error) {
         console.error('Error adding sound:', error);
         res.status(500).json({ error: 'Internal Server Error', details: error.message });
@@ -98,7 +113,7 @@ router.post('/:id', upload.single('sound_file'), async (req, res) => {
         const id = parseInt(req.params.id);
         const updatedSound = {
             name: req.body.name,
-            characterId: parseInt(req.body.characterId)
+            characterId: req.characterId
         };
         
         if (req.file) {
@@ -111,7 +126,7 @@ router.post('/:id', upload.single('sound_file'), async (req, res) => {
         }
 
         await soundService.updateSound(id, updatedSound);
-        res.redirect('/sounds');
+        res.redirect(`/sounds?characterId=${req.characterId}`);
     } catch (error) {
         console.error('Error updating sound:', error);
         res.status(500).json({ error: 'Internal Server Error', details: error.message });

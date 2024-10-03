@@ -9,10 +9,11 @@
 </head>
 <body>
     <h1><%= title %></h1>
-    <form action="<%= action %>" method="POST">
+    <form action="<%= action %>?characterId=<%= character.id %>" method="POST">
         <% if (part.id) { %>
             <input type="hidden" name="id" value="<%= part.id %>">
         <% } %>
+        <input type="hidden" name="characterId" value="<%= character.id %>">
         <div>
             <label for="name">Part Name:</label>
             <input type="text" id="name" name="name" value="<%= part.name || '' %>" required>
@@ -30,13 +31,8 @@
         </div>
         <div>
             <label for="characterId">Character:</label>
-            <select id="characterId" name="characterId" required>
-                <option value="">Select a Character</option>
-                <% characters.forEach(function(character) { %>
-                    <option value="<%= character.id %>" <%= (part.characterId && part.characterId.toString() === character.id.toString()) ? 'selected' : '' %>>
-                        <%= character.char_name %>
-                    </option>
-                <% }); %>
+            <select id="characterId" name="characterId" required disabled>
+                <option value="<%= character.id %>" selected><%= character.char_name %></option>
             </select>
         </div>
         <div id="motorInputs" style="display: none;">
@@ -99,9 +95,11 @@
         <h2>Test Results</h2>
         <p id="testStatus">Not testing</p>
     </div>
-    <a href="/parts" class="button">Back to Parts</a>
+    <a href="/parts?characterId=<%= character.id %>" class="button">Back to Parts</a>
 
     <script>
+        const characterId = '<%= character.id %>';
+
         function toggleInputs() {
             const type = document.getElementById('type').value;
             document.getElementById('motorInputs').style.display = ['motor', 'linear-actuator'].includes(type) ? 'block' : 'none';
@@ -122,7 +120,7 @@
 
             let testData = { 
                 type: type,
-                characterId: document.getElementById('characterId').value
+                characterId: characterId
             };
 
             switch (type) {
@@ -150,7 +148,7 @@
                     break;
             }
 
-            axios.post('/parts/test', testData)
+            axios.post('/parts/test?characterId=' + characterId, testData)
                 .then(function (response) {
                     testStatus.textContent = 'Test completed: ' + response.data.message;
                 })

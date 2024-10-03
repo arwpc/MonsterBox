@@ -31,13 +31,13 @@
     <h1><%= title %> for <%= character.char_name %></h1>
     
     <div id="partButtons">
-        <a href="/parts/new/motor" class="button">Add Motor</a>
-        <a href="/parts/new/linear-actuator" class="button">Add Linear Actuator</a>
-        <a href="/parts/new/light" class="button">Add Light</a>
-        <a href="/parts/new/led" class="button">Add LED</a>
-        <a href="/parts/new/servo" class="button">Add Servo</a>
-        <a href="/parts/new/sensor" class="button">Add Sensor</a>
-        <a href="/parts/os-test" class="button">OS Test</a>
+        <a href="/parts/new/motor?characterId=<%= character.id %>" class="button">Add Motor</a>
+        <a href="/parts/new/linear-actuator?characterId=<%= character.id %>" class="button">Add Linear Actuator</a>
+        <a href="/parts/new/light?characterId=<%= character.id %>" class="button">Add Light</a>
+        <a href="/parts/new/led?characterId=<%= character.id %>" class="button">Add LED</a>
+        <a href="/parts/new/servo?characterId=<%= character.id %>" class="button">Add Servo</a>
+        <a href="/parts/new/sensor?characterId=<%= character.id %>" class="button">Add Sensor</a>
+        <a href="/parts/os-test?characterId=<%= character.id %>" class="button">OS Test</a>
     </div>
 
     <div id="partsContainer">
@@ -60,7 +60,7 @@
                             <td><%= part.type %></td>
                             <td><%= part.details %></td>
                             <td>
-                                <a href="/parts/<%= part.id %>/edit" class="button">Edit</a>
+                                <a href="/parts/<%= part.id %>/edit?characterId=<%= character.id %>" class="button">Edit</a>
                                 <button class="button delete-part" data-id="<%= part.id %>">Delete</button>
                             </td>
                         </tr>
@@ -70,14 +70,15 @@
         <% } %>
     </div>
 
-    <a href="/" class="button">Back to Main Menu</a>
+    <a href="/?characterId=<%= character.id %>" class="button">Back to Main Menu</a>
 
     <script>
         $(document).ready(function() {
+            const characterId = '<%= character.id %>';
             $('.delete-part').on('click', function() {
                 const id = $(this).data('id');
                 if (confirm('Are you sure you want to delete this part?')) {
-                    $.post('/parts/' + id + '/delete')
+                    $.post('/parts/' + id + '/delete?characterId=' + characterId)
                         .done(function() {
                             location.reload();
                         })
