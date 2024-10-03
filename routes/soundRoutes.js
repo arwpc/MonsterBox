@@ -8,6 +8,7 @@ const characterService = require('../services/characterService');
 const multer = require('multer');
 const fs = require('fs').promises;
 const router = express.Router();
+const logger = require('../logger');
 
 // Multer setup for file uploads
 const storage = multer.diskStorage({
@@ -28,15 +29,15 @@ function startSoundPlayer() {
         soundPlayerProcess = spawn('python3', [scriptPath]);
 
         soundPlayerProcess.stdout.on('data', (data) => {
-            console.log(`Sound player output: ${data}`);
+            logger.info(`Sound player output: ${data}`);
         });
 
         soundPlayerProcess.stderr.on('data', (data) => {
-            console.error(`Sound player error: ${data}`);
+            logger.error(`Sound player error: ${data}`);
         });
 
         soundPlayerProcess.on('close', (code) => {
-            console.log(`Sound player exited with code ${code}`);
+            logger.info(`Sound player exited with code ${code}`);
             soundPlayerProcess = null;
         });
     }
@@ -44,12 +45,14 @@ function startSoundPlayer() {
 
 router.get('/', async (req, res) => {
     try {
-        const characters = await characterService.getAllCharacters();
-        const sounds = await soundService.getAllSounds();
+        const [characters, sounds] = await Promise.all([
+            characterService.getAllCharacters(),
+            soundService.getAllSounds()
+        ]);
         res.render('sounds', { title: 'Sounds', characters, sounds });
     } catch (error) {
-        console.error('Error fetching sounds and characters:', error);
-        res.status(500).json({ error: 'Internal Server Error', details: error.message });
+        logger.error('Error fetching sounds and characters:', error);
+        res.status(500).render('error', { error: 'Failed to fetch sounds and characters' });
     }
 });
 
@@ -58,29 +61,31 @@ router.get('/new', async (req, res) => {
         const characters = await characterService.getAllCharacters();
         res.render('sound-form', { title: 'Add New Sound', action: '/sounds', sound: null, characters });
     } catch (error) {
-        console.error('Error fetching characters:', error);
-        res.status(500).json({ error: 'Internal Server Error', details: error.message });
+        logger.error('Error fetching characters:', error);
+        res.status(500).render('error', { error: 'Failed to fetch characters' });
     }
 });
 
 router.get('/:id/edit', async (req, res) => {
     try {
-        const sound = await soundService.getSoundById(parseInt(req.params.id));
-        const characters = await characterService.getAllCharacters();
+        const [sound, characters] = await Promise.all([
+            soundService.getSoundById(parseInt(req.params.id)),
+            characterService.getAllCharacters()
+        ]);
         if (sound) {
             res.render('sound-form', { title: 'Edit Sound', action: `/sounds/${sound.id}`, sound, characters });
         } else {
-            res.status(404).json({ error: 'Sound not found', details: `No sound with id ${req.params.id}` });
+            res.status(404).render('error', { error: 'Sound not found' });
         }
     } catch (error) {
-        console.error('Error fetching sound:', error);
-        res.status(500).json({ error: 'Internal Server Error', details: error.message });
+        logger.error('Error fetching sound:', error);
+        res.status(500).render('error', { error: 'Failed to fetch sound' });
     }
 });
 
 router.post('/', upload.array('sound_files', 10), async (req, res) => {
     try {
-        const characterIds = Array.isArray(req.body.characterIds) ? req.body.characterIds.map(Number) : [Number(req.body.characterIds)];
+        const characterIds = req.body.characterIds ? (Array.isArray(req.body.characterIds) ? req.body.characterIds.map(Number) : [Number(req.body.characterIds)]) : [];
         const soundDataArray = req.files.map(file => ({
             name: file.originalname.split('.').slice(0, -1).join('.'), // Use filename without extension as name
             filename: file.filename,
@@ -90,15 +95,15 @@ router.post('/', upload.array('sound_files', 10), async (req, res) => {
         await soundService.createMultipleSounds(soundDataArray);
         res.redirect('/sounds');
     } catch (error) {
-        console.error('Error adding sounds:', error);
-        res.status(500).json({ error: 'Internal Server Error', details: error.message });
+        logger.error('Error adding sounds:', error);
+        res.status(500).render('error', { error: 'Failed to add sounds' });
     }
 });
 
 router.post('/:id', upload.single('sound_file'), async (req, res) => {
     try {
         const id = parseInt(req.params.id);
-        const characterIds = Array.isArray(req.body.characterIds) ? req.body.characterIds.map(Number) : [Number(req.body.characterIds)];
+        const characterIds = req.body.characterIds ? (Array.isArray(req.body.characterIds) ? req.body.characterIds.map(Number) : [Number(req.body.characterIds)]) : [];
         const updatedSound = {
             name: req.body.name,
             characterIds: characterIds
@@ -106,9 +111,9 @@ router.post('/:id', upload.single('sound_file'), async (req, res) => {
         
         if (req.file) {
             const sound = await soundService.getSoundById(id);
-            if (sound.filename) {
+            if (sound && sound.filename) {
                 const oldFilePath = path.join(__dirname, '../public/sounds', sound.filename);
-                await fs.unlink(oldFilePath).catch(console.error);
+                await fs.unlink(oldFilePath).catch(err => logger.warn(`Failed to delete old sound file: ${err.message}`));
             }
             updatedSound.filename = req.file.filename;
         }
@@ -116,33 +121,33 @@ router.post('/:id', upload.single('sound_file'), async (req, res) => {
         await soundService.updateSound(id, updatedSound);
         res.redirect('/sounds');
     } catch (error) {
-        console.error('Error updating sound:', error);
-        res.status(500).json({ error: 'Internal Server Error', details: error.message });
+        logger.error('Error updating sound:', error);
+        res.status(500).render('error', { error: 'Failed to update sound' });
     }
 });
 
 router.post('/:id/play', async (req, res) => {
     try {
         const soundId = parseInt(req.params.id);
-        console.log('Attempting to play sound with ID:', soundId);
+        logger.info('Attempting to play sound with ID:', soundId);
 
         const sound = await soundService.getSoundById(soundId);
         
         if (!sound) {
-            console.error('Sound not found for ID:', soundId);
+            logger.warn('Sound not found for ID:', soundId);
             return res.status(404).json({ error: 'Sound not found', details: `No sound with id ${soundId}`, soundId });
         }
 
-        console.log('Found sound:', sound);
+        logger.info('Found sound:', sound);
 
         const filePath = path.resolve(__dirname, '..', 'public', 'sounds', sound.filename);
-        console.log('Absolute file path:', filePath);
+        logger.info('Absolute file path:', filePath);
 
         try {
             await fs.access(filePath, fs.constants.R_OK);
-            console.log('File exists and is readable:', filePath);
+            logger.info('File exists and is readable:', filePath);
         } catch (error) {
-            console.error('File access error:', error);
+            logger.error('File access error:', error);
             return res.status(404).json({ error: 'Sound file not accessible', details: error.message, filePath });
         }
 
@@ -162,7 +167,7 @@ router.post('/:id/play', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error in /play route:', error);
+        logger.error('Error in /play route:', error);
         res.status(500).json({ error: 'Internal Server Error', details: error.message });
     }
 });
@@ -171,14 +176,14 @@ router.post('/:id/delete', async (req, res) => {
     try {
         const id = parseInt(req.params.id);
         const sound = await soundService.getSoundById(id);
-        if (sound.filename) {
+        if (sound && sound.filename) {
             const filePath = path.join(__dirname, '../public/sounds', sound.filename);
-            await fs.unlink(filePath).catch(console.error);
+            await fs.unlink(filePath).catch(err => logger.warn(`Failed to delete sound file: ${err.message}`));
         }
         await soundService.deleteSound(id);
         res.status(200).json({ message: 'Sound deleted successfully' });
     } catch (error) {
-        console.error('Error deleting sound:', error);
+        logger.error('Error deleting sound:', error);
         res.status(500).json({ error: 'Internal Server Error', details: error.message });
     }
 });

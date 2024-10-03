@@ -18,7 +18,7 @@
             <select id="characterIds" name="characterIds" multiple required>
                 <% characters.forEach(function(character) { %>
                     <option value="<%- character.id %>" 
-                        <% if (sound && sound.characterIds && Array.isArray(sound.characterIds) && sound.characterIds.includes(character.id)) { %>
+                        <% if (sound && Array.isArray(sound.characterIds) && sound.characterIds.includes(character.id)) { %>
                             selected
                         <% } %>
                     >
