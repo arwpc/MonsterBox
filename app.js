@@ -3,10 +3,7 @@
 const express = require('express');
 const path = require('path');
 const http = require('http');
-const { exec } = require('child_process');
-// Import the logger
-// To set the log level, use the LOG_LEVEL environment variable
-// Example: LOG_LEVEL=debug node app.js
+const { exec, execSync } = require('child_process');
 const logger = require('./logger');
 const app = express();
 const server = http.createServer(app);
@@ -86,8 +83,23 @@ app.post('/audio/set-mic-volume', (req, res) => {
     res.status(200).json({ success: true, message: 'Mic volume control not implemented' });
 });
 
+// Function to check if mjpg-streamer is running
+function isMjpgStreamerRunning() {
+    try {
+        const output = execSync('pgrep mjpg_streamer').toString();
+        return output.trim() !== '';
+    } catch (error) {
+        return false;
+    }
+}
+
 // Function to start mjpg-streamer
 function startMjpgStreamer() {
+    if (isMjpgStreamerRunning()) {
+        logger.info('mjpg-streamer is already running');
+        return;
+    }
+
     exec('sudo mjpg_streamer -i "input_uvc.so" -o "output_http.so -w /usr/local/share/mjpg-streamer/www -p 8080"', (error, stdout, stderr) => {
         if (error) {
             logger.error(`Error starting mjpg-streamer: ${error}`);
@@ -108,18 +120,23 @@ function getLocalIpAddress() {
         for (let i = 0; i < iface.length; i++) {
             const alias = iface[i];
             if (alias.family === 'IPv4' && alias.address !== '127.0.0.1' && !alias.internal) {
-                return alias.address;
+                if (alias.address === '10.10.10.215') {
+                    return alias.address;
+                }
             }
         }
     }
-    return '127.0.0.1';  // Fallback to localhost if no other IP is found
+    logger.warn('IP address 10.10.10.215 not found, using fallback');
+    return '127.0.0.1';  // Fallback to localhost if the specific IP is not found
 }
 
-// Proxy route for mjpeg-streamer with error handling and fallback
-app.use('/stream', (req, res) => {
+// Function to retry the proxy request
+function retryProxyRequest(req, res, retries = 3) {
     const fallbackImagePath = path.join(__dirname, 'public', 'images', 'no-stream.jpg');
     const localIpAddress = getLocalIpAddress();
     
+    logger.info(`Attempting proxy request to ${localIpAddress}:8080`);
+
     const proxyRequest = http.request(
         {
             hostname: localIpAddress,
@@ -130,31 +147,47 @@ app.use('/stream', (req, res) => {
             timeout: 5000 // 5 seconds timeout
         },
         (proxyResponse) => {
+            logger.info(`Proxy request successful, status: ${proxyResponse.statusCode}`);
             res.writeHead(proxyResponse.statusCode, proxyResponse.headers);
             proxyResponse.pipe(res);
         }
     );
 
     proxyRequest.on('error', (error) => {
-        logger.error('Proxy request error:', error);
-        // Send fallback image
-        if (!res.headersSent) {
-            res.writeHead(200, { 'Content-Type': 'image/jpeg' });
-            fs.createReadStream(fallbackImagePath).pipe(res);
+        logger.error('Proxy request error:', { error: error.message, code: error.code, stack: error.stack });
+        if (retries > 0) {
+            logger.info(`Retrying proxy request. Attempts left: ${retries - 1}`);
+            setTimeout(() => retryProxyRequest(req, res, retries - 1), 1000);
+        } else {
+            logger.warn('Max retries reached, sending fallback image');
+            if (!res.headersSent) {
+                res.writeHead(200, { 'Content-Type': 'image/jpeg' });
+                fs.createReadStream(fallbackImagePath).pipe(res);
+            }
         }
     });
 
     proxyRequest.on('timeout', () => {
         proxyRequest.destroy();
         logger.error('Proxy request timeout');
-        // Send fallback image
-        if (!res.headersSent) {
-            res.writeHead(200, { 'Content-Type': 'image/jpeg' });
-            fs.createReadStream(fallbackImagePath).pipe(res);
+        if (retries > 0) {
+            logger.info(`Retrying proxy request after timeout. Attempts left: ${retries - 1}`);
+            setTimeout(() => retryProxyRequest(req, res, retries - 1), 1000);
+        } else {
+            logger.warn('Max retries reached after timeout, sending fallback image');
+            if (!res.headersSent) {
+                res.writeHead(200, { 'Content-Type': 'image/jpeg' });
+                fs.createReadStream(fallbackImagePath).pipe(res);
+            }
         }
     });
 
     req.pipe(proxyRequest);
+}
+
+// Proxy route for mjpeg-streamer with error handling, fallback, and retry mechanism
+app.use('/stream', (req, res) => {
+    retryProxyRequest(req, res);
 });
 
 // Start the audio stream
@@ -162,7 +195,7 @@ audio.startStream(server);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-    logger.error(err.stack);
+    logger.error('Unhandled error:', { error: err.message, stack: err.stack });
     if (!res.headersSent) {
         res.status(500).send('Something broke!');
     }
@@ -170,16 +203,16 @@ app.use((err, req, res, next) => {
 
 // Start the server
 server.listen(port, () => {
-    console.log(`MonsterBox server running at http://localhost:${port}`);
-    console.log(`Local IP address: ${getLocalIpAddress()}`);
+    logger.info(`MonsterBox server running at http://localhost:${port}`);
+    logger.info(`Local IP address: ${getLocalIpAddress()}`);
 });
 
 process.on('uncaughtException', (error) => {
-    logger.error('Uncaught Exception:', error);
+    logger.error('Uncaught Exception:', { error: error.message, stack: error.stack });
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-    logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    logger.error('Unhandled Rejection:', { reason: reason, promise: promise });
 });
 
 module.exports = app;
