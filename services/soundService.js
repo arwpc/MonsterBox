@@ -6,11 +6,17 @@ const logger = require('../logger');
 
 const dataPath = path.join(__dirname, '../data/sounds.json');
 
-const getAllSounds = async () => {
+const getAllSounds = async (characterId = null) => {
     try {
         const data = await fs.readFile(dataPath, 'utf8');
-        const sounds = JSON.parse(data);
+        let sounds = JSON.parse(data);
         logger.debug(`Retrieved ${sounds.length} sounds`);
+        
+        if (characterId !== null) {
+            sounds = sounds.filter(sound => sound.characterIds.includes(parseInt(characterId)));
+            logger.debug(`Filtered to ${sounds.length} sounds for character ${characterId}`);
+        }
+        
         return sounds;
     } catch (error) {
         if (error.code === 'ENOENT') {
@@ -23,10 +29,9 @@ const getAllSounds = async () => {
 };
 
 const getSoundsByCharacter = async (characterId) => {
-    const sounds = await getAllSounds();
-    const characterSounds = sounds.filter(sound => sound.characterId === parseInt(characterId));
-    logger.debug(`Retrieved ${characterSounds.length} sounds for character ${characterId}`);
-    return characterSounds.length > 0 ? characterSounds : sounds;
+    const sounds = await getAllSounds(characterId);
+    logger.debug(`Retrieved ${sounds.length} sounds for character ${characterId}`);
+    return sounds;
 };
 
 const getSoundById = async (id) => {
@@ -49,7 +54,7 @@ const createSound = async (soundData) => {
     const newSound = {
         id: getNextId(sounds),
         ...soundData,
-        characterId: parseInt(soundData.characterId) || null
+        characterIds: soundData.characterIds.map(id => parseInt(id))
     };
     sounds.push(newSound);
     await fs.writeFile(dataPath, JSON.stringify(sounds, null, 2));
@@ -63,7 +68,7 @@ const createMultipleSounds = async (soundDataArray) => {
     const newSounds = soundDataArray.map(soundData => ({
         id: nextId++,
         ...soundData,
-        characterId: parseInt(soundData.characterId) || null
+        characterIds: soundData.characterIds.map(id => parseInt(id))
     }));
     sounds.push(...newSounds);
     await fs.writeFile(dataPath, JSON.stringify(sounds, null, 2));
@@ -79,7 +84,7 @@ const updateSound = async (id, soundData) => {
             ...sounds[index], 
             ...soundData, 
             id: parseInt(id),
-            characterId: parseInt(soundData.characterId) || null
+            characterIds: soundData.characterIds.map(id => parseInt(id))
         };
         await fs.writeFile(dataPath, JSON.stringify(sounds, null, 2));
         logger.info(`Updated sound with id ${id}`);
