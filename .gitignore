@@ -3,5 +3,4 @@ linear_actuator_logs.txt
 motor_control.log
 MonsterBox.log
 *.log
-mjpg-streamer/
 node_modules/

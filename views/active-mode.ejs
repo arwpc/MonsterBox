@@ -57,20 +57,14 @@
         <h3>Armed Mode Output</h3>
     </div>
 
-    <div class="monitoring-section">
-        <h2>Camera Stream</h2>
-        <img id="cameraStream" src="/stream" alt="Camera Stream">
+    <div class="audio-controls">
         <audio id="audioStream" controls></audio>
-        <div class="camera-controls">
-            <button id="toggleNightMode">Toggle Night Mode</button>
-            <label>
-                <input type="checkbox" id="audioToggle" checked> Enable Audio
-            </label>
-            <label>
-                Mic Volume: <input type="range" id="micVolume" min="0" max="2" step="0.1" value="1">
-            </label>
-        </div>
-        <div id="errorMessage"></div>
+        <label>
+            <input type="checkbox" id="audioToggle" checked> Enable Audio
+        </label>
+        <label>
+            Audio Volume: <input type="range" id="audioVolume" min="0" max="2" step="0.1" value="1">
+        </label>
     </div>
 
     <a href="/" class="button">Back to Main Menu</a>

@@ -11,6 +11,8 @@ $(document).ready(function() {
     $('#armButton').click(armSystem);
     $('#disarmButton').click(disarmSystem);
     $('#stopAllSteps').click(stopAllSteps);
+    $('#audioToggle').change(toggleAudio);
+    $('#audioVolume').on('input', adjustAudioVolume);
 
     // Load the first character by default
     loadFirstCharacter();
@@ -189,5 +191,29 @@ $(document).ready(function() {
         const timestamp = new Date().toLocaleTimeString();
         $('#armedModeOutput').append(`<p>[${timestamp}] ${message}</p>`);
         $('#armedModeOutput').scrollTop($('#armedModeOutput')[0].scrollHeight);
+    }
+
+    function toggleAudio() {
+        const isEnabled = $(this).prop('checked');
+        $.post('/audio/toggle', { enabled: isEnabled })
+            .done(function(response) {
+                logArmedModeOutput('Audio ' + (isEnabled ? 'enabled' : 'disabled'));
+            })
+            .fail(function(xhr, status, error) {
+                console.error('Error toggling audio:', error);
+                logArmedModeOutput('Error toggling audio: ' + error);
+            });
+    }
+
+    function adjustAudioVolume() {
+        const volume = $(this).val();
+        $.post('/audio/volume', { volume: volume })
+            .done(function(response) {
+                logArmedModeOutput('Audio volume adjusted to: ' + volume);
+            })
+            .fail(function(xhr, status, error) {
+                console.error('Error adjusting audio volume:', error);
+                logArmedModeOutput('Error adjusting audio volume: ' + error);
+            });
     }
 });
