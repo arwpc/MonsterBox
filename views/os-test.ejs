@@ -1,230 +1,34 @@
-<!-- File: views/os-test.ejs -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OS Test</title>
+    <title><%= title %></title>
     <link rel="stylesheet" href="/css/style.css">
-    <style>
-        body {
-            font-family: 'Courier New', Courier, monospace;
-            line-height: 1.6;
-            margin: 0;
-            padding: 20px;
-            background-color: #000000;
-            color: #00ff00;
-        }
-        h1, h2, h3, h4, h5, h6 {
-            color: #00ff00;
-            text-shadow: 0 0 5px #00ff00;
-        }
-        #osTestForm {
-            background-color: #001100;
-            margin-top: 20px;
-            border: 1px solid #00ff00;
-            padding: 15px;
-            border-radius: 5px;
-        }
-        #osTestResult {
-            font-family: 'Courier New', Courier, monospace;
-            margin-top: 15px;
-            padding: 10px;
-            border: 1px solid #00ff00;
-            background-color: #000;
-            color: #e0b0ff;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            height: 200px;
-            overflow-y: auto;
-        }
-        #flagInfo {
-            background-color: #001800;
-            padding: 10px;
-            margin-top: 10px;
-            border-radius: 5px;
-            border: 1px solid #00ff00;
-        }
-        label {
-            display: block;
-            margin-top: 10px;
-            color: #00ff00;
-        }
-        select, textarea {
-            width: 100%;
-            padding: 5px;
-            margin-top: 5px;
-            background-color: #001100;
-            color: #00ff00;
-            border: 1px solid #00ff00;
-        }
-        button {
-            background-color: #003300;
-            color: #00ff00;
-            padding: 10px 15px;
-            border: 1px solid #00ff00;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-        button:hover {
-            background-color: #004400;
-            box-shadow: 0 0 10px #00ff00;
-        }
-        a.button {
-            display: inline-block;
-            background-color: #003300;
-            color: #00ff00;
-            padding: 10px 15px;
-            border: 1px solid #00ff00;
-            border-radius: 5px;
-            cursor: pointer;
-            text-decoration: none;
-            margin-top: 10px;
-        }
-        a.button:hover {
-            background-color: #004400;
-            text-decoration: none;
-            box-shadow: 0 0 10px #00ff00;
-        }
-    </style>
 </head>
 <body>
-    <h1>OS Test</h1>
+    <h1><%= title %></h1>
+    <div class="os-info">
+        <h2>Operating System Information</h2>
+        <ul>
+            <li><strong>Platform:</strong> <%= osInfo.platform %></li>
+            <li><strong>Release:</strong> <%= osInfo.release %></li>
+            <li><strong>Type:</strong> <%= osInfo.type %></li>
+            <li><strong>Architecture:</strong> <%= osInfo.arch %></li>
+            <li><strong>Total Memory:</strong> <%= (osInfo.totalMemory / (1024 * 1024 * 1024)).toFixed(2) %> GB</li>
+            <li><strong>Free Memory:</strong> <%= (osInfo.freeMemory / (1024 * 1024 * 1024)).toFixed(2) %> GB</li>
+        </ul>
 
-    <div id="osTestResult"></div>
-
-    <div id="osTestForm">
-        <div>
-            <label for="osTestPart">Select Part:</label>
-            <select id="osTestPart" onchange="updateCommand()">
-                <!-- Options will be populated dynamically -->
-            </select>
-        </div>
-        <div id="flagInfo"></div>
-        <div>
-            <label for="osTestCommand">Command:</label>
-            <textarea id="osTestCommand" rows="4" cols="50"></textarea>
-        </div>
-        <button onclick="runOSTest()">Run OS Test</button>
+        <h3>CPU Information</h3>
+        <% osInfo.cpus.forEach((cpu, index) => { %>
+            <div class="cpu-info">
+                <h4>CPU <%= index + 1 %></h4>
+                <ul>
+                    <li><strong>Model:</strong> <%= cpu.model %></li>
+                    <li><strong>Speed:</strong> <%= cpu.speed %> MHz</li>
+                </ul>
+            </div>
+        <% }); %>
     </div>
-
-    <a href="/parts" class="button">Back to Parts</a>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', fetchAllParts);
-        const commandHistory = {};
-        let eventSource;
-
-        function fetchAllParts() {
-            fetch('/parts/all')
-                .then(response => response.json())
-                .then(parts => {
-                    const select = document.getElementById('osTestPart');
-                    select.innerHTML = '';
-                    parts.forEach(part => {
-                        const option = document.createElement('option');
-                        option.value = JSON.stringify(part);
-                        option.textContent = `${part.name} (${part.type})`;
-                        select.appendChild(option);
-                    });
-                    updateCommand();
-                })
-                .catch(error => console.error('Error fetching parts:', error));
-        }
-
-        function updateCommand() {
-            const partSelect = document.getElementById('osTestPart');
-            const commandTextarea = document.getElementById('osTestCommand');
-            const flagInfo = document.getElementById('flagInfo');
-            
-            if (partSelect.value) {
-                const part = JSON.parse(partSelect.value);
-                let command = `python3 ${part.type === 'linear-actuator' ? 'linear_actuator_control.py' : part.type + '_control.py'}`;
-                let flagInfoText = '';
-                
-                switch(part.type) {
-                    case 'motor':
-                    case 'linear-actuator':
-                        command += ` <direction> <speed> <duration> ${part.directionPin} ${part.pwmPin}`;
-                        flagInfoText = `direction: forward, backward || speed: 0 - 100 || duration: time in milliseconds || directionPin: ${part.directionPin} (Direction GPIO Pin) || pwmPin: ${part.pwmPin} (PWM Pin) ||`;
-                        break;
-                    case 'led':
-                    case 'light':
-                        command += ` ${part.gpioPin} <state> <duration>`;
-                        flagInfoText = `gpioPin: ${part.gpioPin} (GPIO Pin) || state: on, off || duration: time in milliseconds ||`;
-                        break;
-                    case 'servo':
-                        command += ` ${part.gpioPin} <angle> <frequency> <duty_cycle> <duration>`;
-                        flagInfoText = `gpioPin: ${part.gpioPin} (GPIO Pin) || angle: 0 - 180 || frequency: typically 50Hz || duty_cycle: typically 2.5 - 12.5 || duration: time in milliseconds ||`;
-                        break;
-                    case 'sensor':
-                        command += ` ${part.gpioPin} <timeout>`;
-                        flagInfoText = `gpioPin: ${part.gpioPin} (GPIO Pin) || timeout: time in seconds ||`;
-                        break;
-                }
-                
-                commandTextarea.value = commandHistory[part.id] || command;
-                flagInfo.textContent = flagInfoText;
-            } else {
-                commandTextarea.value = '';
-                flagInfo.textContent = '';
-            }
-        }
-
-        function runOSTest() {
-            const command = document.getElementById('osTestCommand').value;
-            const part = JSON.parse(document.getElementById('osTestPart').value);
-
-            // Save the command to history
-            commandHistory[part.id] = command;
-
-            if (eventSource) {
-                eventSource.close();
-            }
-
-            const resultDiv = document.getElementById('osTestResult');
-            const timestamp = new Date().toLocaleTimeString();
-            resultDiv.textContent += `\n[${timestamp}] Running command: ${command}\n`;
-
-            if (part.type === 'sensor') {
-                eventSource = new EventSource(`/parts/os-test-stream?command=${encodeURIComponent(command)}`);
-                
-                eventSource.onmessage = function(event) {
-                    const data = JSON.parse(event.data);
-                    if (data.done) {
-                        eventSource.close();
-                    } else {
-                        resultDiv.textContent += data.output;
-                        resultDiv.scrollTop = resultDiv.scrollHeight;
-                    }
-                };
-
-                eventSource.onerror = function(event) {
-                    console.error('EventSource failed:', event);
-                    eventSource.close();
-                };
-            } else {
-                fetch('/parts/os-test', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ partId: part.id, command })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    resultDiv.textContent += `${data.output}\n`;
-                    resultDiv.scrollTop = resultDiv.scrollHeight;
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    resultDiv.textContent += `An error occurred during the OS test.\n`;
-                    resultDiv.scrollTop = resultDiv.scrollHeight;
-                });
-            }
-        }
-    </script>
 </body>
 </html>
