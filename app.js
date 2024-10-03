@@ -16,10 +16,11 @@ const os = require('os');
 
 let mjpgStreamerProcess = null;
 
-// Function to start mjpg-streamer
-function startMjpgStreamer() {
+// Function to start mjpg-streamer with a timeout
+function startMjpgStreamer(callback) {
     if (mjpgStreamerProcess) {
         logger.info('mjpg-streamer is already running');
+        callback(null);
         return;
     }
 
@@ -29,8 +30,21 @@ function startMjpgStreamer() {
         '-o', 'output_http.so -w /usr/local/share/mjpg-streamer/www -p 8080'
     ]);
 
+    let startupTimeout = setTimeout(() => {
+        logger.error('mjpg-streamer startup timed out');
+        if (mjpgStreamerProcess) {
+            mjpgStreamerProcess.kill();
+        }
+        mjpgStreamerProcess = null;
+        callback(new Error('mjpg-streamer startup timed out'));
+    }, 10000); // 10 seconds timeout
+
     mjpgStreamerProcess.stdout.on('data', (data) => {
         logger.info(`mjpg-streamer stdout: ${data}`);
+        if (data.includes('starting to serve')) {
+            clearTimeout(startupTimeout);
+            callback(null);
+        }
     });
 
     mjpgStreamerProcess.stderr.on('data', (data) => {
@@ -39,137 +53,65 @@ function startMjpgStreamer() {
 
     mjpgStreamerProcess.on('close', (code) => {
         logger.warn(`mjpg-streamer process exited with code ${code}`);
+        clearTimeout(startupTimeout);
         mjpgStreamerProcess = null;
         // Attempt to restart mjpg-streamer
-        setTimeout(startMjpgStreamer, 5000);
+        setTimeout(() => startMjpgStreamer(() => {}), 5000);
     });
 }
 
-// Start mjpg-streamer when the application starts
-startMjpgStreamer();
+// ... (keep the rest of the existing functions)
 
-// Function to get the local IP address
-function getLocalIpAddress() {
-    const interfaces = os.networkInterfaces();
-    for (const devName in interfaces) {
-        const iface = interfaces[devName];
-        for (let i = 0; i < iface.length; i++) {
-            const alias = iface[i];
-            if (alias.family === 'IPv4' && alias.address !== '127.0.0.1' && !alias.internal) {
-                if (alias.address === '10.10.10.215') {
-                    return alias.address;
-                }
-            }
-        }
-    }
-    logger.warn('IP address 10.10.10.215 not found, using fallback');
-    return '127.0.0.1';  // Fallback to localhost if the specific IP is not found
-}
-
-// Function to retry the proxy request
-function retryProxyRequest(req, res, retries = 3) {
-    const fallbackImagePath = path.join(__dirname, 'public', 'images', 'no-stream.jpg');
-    const localIpAddress = getLocalIpAddress();
-    
-    logger.info(`Attempting proxy request to ${localIpAddress}:8080`);
-
-    const proxyRequest = http.request(
-        {
-            hostname: localIpAddress,
-            port: 8080,
-            path: '/?action=stream',
-            method: req.method,
-            headers: req.headers,
-            timeout: 30000 // 30 seconds timeout
-        },
-        (proxyResponse) => {
-            logger.info(`Proxy request successful, status: ${proxyResponse.statusCode}`);
-            if (!res.headersSent) {
-                res.writeHead(proxyResponse.statusCode, proxyResponse.headers);
-            }
-            proxyResponse.pipe(res);
-        }
-    );
-
-    proxyRequest.on('error', (error) => {
-        logger.error('Proxy request error:', { error: error.message, code: error.code, stack: error.stack });
-        if (retries > 0) {
-            logger.info(`Retrying proxy request. Attempts left: ${retries - 1}`);
-            setTimeout(() => retryProxyRequest(req, res, retries - 1), 1000);
-        } else {
-            logger.warn('Max retries reached, sending fallback image');
-            sendFallbackImage(res, fallbackImagePath);
-        }
+// Wrap server startup in a function
+function startServer() {
+    server.listen(port, () => {
+        logger.info(`MonsterBox server running at http://localhost:${port}`);
+        logger.info(`Local IP address: ${getLocalIpAddress()}`);
     });
 
-    proxyRequest.on('timeout', () => {
-        proxyRequest.destroy();
-        logger.error('Proxy request timeout');
-        if (retries > 0) {
-            logger.info(`Retrying proxy request after timeout. Attempts left: ${retries - 1}`);
-            setTimeout(() => retryProxyRequest(req, res, retries - 1), 1000);
-        } else {
-            logger.warn('Max retries reached after timeout, sending fallback image');
-            sendFallbackImage(res, fallbackImagePath);
+    server.on('error', (error) => {
+        if (error.syscall !== 'listen') {
+            throw error;
+        }
+
+        switch (error.code) {
+            case 'EACCES':
+                logger.error(`Port ${port} requires elevated privileges`);
+                process.exit(1);
+                break;
+            case 'EADDRINUSE':
+                logger.error(`Port ${port} is already in use`);
+                process.exit(1);
+                break;
+            default:
+                throw error;
         }
     });
-
-    req.pipe(proxyRequest);
 }
 
-// Function to send fallback image
-function sendFallbackImage(res, fallbackImagePath) {
-    if (!res.headersSent) {
-        res.writeHead(200, { 'Content-Type': 'image/jpeg' });
-        fs.createReadStream(fallbackImagePath).pipe(res);
-    } else {
-        res.end();
-    }
-}
-
-// Proxy route for mjpeg-streamer with error handling, fallback, and retry mechanism
-app.use('/stream', (req, res) => {
-    try {
-        if (!mjpgStreamerProcess) {
-            logger.warn('mjpg-streamer is not running. Attempting to start...');
-            startMjpgStreamer();
-            // Wait for a short time to allow mjpg-streamer to start
-            setTimeout(() => retryProxyRequest(req, res), 5000);
-        } else {
-            retryProxyRequest(req, res);
+// Initialize the application
+function initializeApp() {
+    startMjpgStreamer((err) => {
+        if (err) {
+            logger.error('Failed to start mjpg-streamer, but continuing with app startup');
         }
-    } catch (error) {
-        logger.error('Error in stream route:', error);
-        sendFallbackImage(res, path.join(__dirname, 'public', 'images', 'no-stream.jpg'));
-    }
-});
+        
+        // Start the audio stream
+        try {
+            audio.startStream(server);
+            logger.info('Audio stream started successfully');
+        } catch (error) {
+            logger.error('Error starting audio stream:', error);
+        }
 
-// ... (keep the rest of the existing code, including error handling)
-
-// Graceful shutdown function
-function gracefulShutdown(reason) {
-    logger.info(`Initiating graceful shutdown. Reason: ${reason}`);
-    
-    // Stop mjpg-streamer process
-    if (mjpgStreamerProcess) {
-        logger.info('Stopping mjpg-streamer process...');
-        mjpgStreamerProcess.kill();
-    }
-
-    server.close(() => {
-        logger.info('HTTP server closed');
-        process.exit(0);
+        // Start the server
+        startServer();
     });
-
-    // If server hasn't finished in 10 seconds, shut down forcefully
-    setTimeout(() => {
-        logger.error('Could not close connections in time, forcefully shutting down');
-        process.exit(1);
-    }, 10000);
 }
 
-// Handle termination signals
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+// Start the application
+initializeApp();
+
+// ... (keep the rest of the existing code, including error handling and graceful shutdown)
 
 module.exports = app;
