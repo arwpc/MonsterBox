@@ -95,18 +95,28 @@
                     timeout: timeout
                 },
                 success: function(response) {
+                    console.log('Server response:', response);
                     if (response.success) {
                         updateSensorStatus(response.output);
                         $('#testResults').text('Test completed successfully: ' + response.output);
                     } else {
-                        updateSensorStatus('Error: ' + (response.error || 'Unknown error'));
-                        $('#testResults').text('Test failed: ' + (response.error || 'Unknown error'));
+                        const errorMessage = response.error || response.message || 'Unknown error';
+                        updateSensorStatus('Error: ' + errorMessage);
+                        $('#testResults').text('Test failed: ' + errorMessage);
                     }
                 },
                 error: function(xhr, status, error) {
-                    console.error('Error:', error);
-                    updateSensorStatus('Error: ' + error);
-                    $('#testResults').text('Test failed: ' + error);
+                    console.error('AJAX Error:', xhr.responseText);
+                    let errorMessage = 'Unknown error';
+                    try {
+                        const errorResponse = JSON.parse(xhr.responseText);
+                        errorMessage = errorResponse.error || errorResponse.message || error || 'Unknown error';
+                    } catch (e) {
+                        console.error('Error parsing error response:', e);
+                        errorMessage = xhr.responseText || error || 'Unknown error';
+                    }
+                    updateSensorStatus('Error: ' + errorMessage);
+                    $('#testResults').text('Test failed: ' + errorMessage);
                 },
                 complete: function() {
                     $('#startTest').prop('disabled', false);
