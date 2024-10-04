@@ -52,51 +52,48 @@ class PCA9685:
 def angle_to_duty_cycle(angle):
     return 2.5 + (angle / 18.0)  # Maps 0-180 degrees to 2.5-12.5% duty cycle
 
-def control_servo(pin, angle, use_pca9685, channel=None, pca9685=None):
-    if use_pca9685 and pca9685:
+def control_servo(control_type, pin_or_channel, angle, servo_type):
+    if control_type == 'pca9685':
+        pca = PCA9685()
+        pca.set_pwm_freq(50)
         pulse = int(angle_to_duty_cycle(angle) / 100 * 4096)
-        pca9685.set_pwm(channel, 0, pulse)
-    else:
-        pwm = setup_gpio(pin)
+        pca.set_pwm(int(pin_or_channel), 0, pulse)
+    else:  # GPIO control
+        pwm = setup_gpio(int(pin_or_channel))
         try:
             pwm.start(angle_to_duty_cycle(angle))
             time.sleep(0.5)  # Allow time for the servo to move
         finally:
             pwm.stop()
-            GPIO.cleanup(pin)
+            GPIO.cleanup(int(pin_or_channel))
 
-def stop_servo(pin, use_pca9685, channel=None, pca9685=None):
-    if use_pca9685 and pca9685:
-        pca9685.set_pwm(channel, 0, 0)
-    else:
-        GPIO.cleanup(pin)
+def stop_servo(control_type, pin_or_channel):
+    if control_type == 'pca9685':
+        pca = PCA9685()
+        pca.set_pwm(int(pin_or_channel), 0, 0)
+    else:  # GPIO control
+        GPIO.cleanup(int(pin_or_channel))
 
 if __name__ == "__main__":
     if len(sys.argv) < 4:
-        print("Usage: python servo_control.py <command> <pin> <use_pca9685> [angle] [channel]")
+        print("Usage: python servo_control.py <command> <control_type> <pin_or_channel> [angle] [servo_type]")
         sys.exit(1)
 
     command = sys.argv[1]
-    pin = int(sys.argv[2])
-    use_pca9685 = sys.argv[3].lower() == 'true'
-
-    pca9685 = None
-    if use_pca9685:
-        pca9685 = PCA9685()
-        pca9685.set_pwm_freq(50)  # 50 Hz frequency for servos
+    control_type = sys.argv[2]
+    pin_or_channel = sys.argv[3]
 
     try:
         if command == "test":
             if len(sys.argv) != 6:
-                print("Usage for test: python servo_control.py test <pin> <use_pca9685> <angle> <channel>")
+                print("Usage for test: python servo_control.py test <control_type> <pin_or_channel> <angle> <servo_type>")
                 sys.exit(1)
             angle = float(sys.argv[4])
-            channel = int(sys.argv[5]) if use_pca9685 else None
-            control_servo(pin, angle, use_pca9685, channel, pca9685)
+            servo_type = sys.argv[5]
+            control_servo(control_type, pin_or_channel, angle, servo_type)
             print("Servo test successful")
         elif command == "stop":
-            channel = int(sys.argv[4]) if use_pca9685 else None
-            stop_servo(pin, use_pca9685, channel, pca9685)
+            stop_servo(control_type, pin_or_channel)
             print("Servo stopped successfully")
         else:
             print(f"Unknown command: {command}")
@@ -105,5 +102,5 @@ if __name__ == "__main__":
         print(f"Error controlling servo: {str(e)}")
         sys.exit(1)
     finally:
-        if not use_pca9685:
+        if control_type != 'pca9685':
             GPIO.cleanup()

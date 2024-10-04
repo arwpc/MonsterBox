@@ -36,10 +36,10 @@ exports.testServo = async (req, res) => {
         const { angle, pin, channel, servoType, usePCA9685 } = req.body;
         
         const args = [
-            pin,
-            usePCA9685,
+            usePCA9685 ? 'pca9685' : 'gpio',
+            usePCA9685 ? channel : pin,
             angle,
-            channel
+            servoType
         ];
 
         const result = await executeServoCommand('test', args);
@@ -56,10 +56,10 @@ exports.stopServo = async (req, res) => {
     try {
         const { pin, channel, usePCA9685 } = req.body;
         
-        const args = [pin, usePCA9685];
-        if (usePCA9685) {
-            args.push(channel);
-        }
+        const args = [
+            usePCA9685 ? 'pca9685' : 'gpio',
+            usePCA9685 ? channel : pin
+        ];
 
         const result = await executeServoCommand('stop', args);
         res.json({ success: true, message: result });
