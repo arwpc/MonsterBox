@@ -248,12 +248,12 @@ router.post('/test', async (req, res) => {
             if (code === 0) {
                 res.json({ success: true, message: 'Test completed successfully', output: stdout });
             } else {
-                res.status(500).json({ success: false, message: 'Test failed', error: stderr, output: stdout });
+                res.status(500).json({ success: false, message: 'Test failed', error: stderr || 'Unknown error', output: stdout });
             }
         });
     } catch (error) {
         logger.error('Error testing part:', error);
-        res.status(500).json({ success: false, message: 'An error occurred while testing the part', error: error.message });
+        res.status(500).json({ success: false, message: 'An error occurred while testing the part', error: error.message || 'Unknown error' });
     }
 });
 
