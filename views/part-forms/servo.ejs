@@ -24,24 +24,37 @@
             background-color: #00ff00;
             color: #000000;
         }
+        #testResult {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #dff0d8;
+            color: #3c763d;
+        }
+        .error {
+            background-color: #f2dede;
+            color: #a94442;
+        }
     </style>
 </head>
 <body>
     <h1><%= title %></h1>
     <form action="<%= action %>" method="POST">
         <input type="hidden" name="type" value="servo">
-        <% if (part.id) { %>
+        <% if (part && part.id) { %>
             <input type="hidden" name="id" value="<%= part.id %>">
         <% } %>
         <div>
             <label for="name">Part Name:</label>
-            <input type="text" id="name" name="name" value="<%= part.name || '' %>" required>
+            <input type="text" id="name" name="name" value="<%= part ? part.name : '' %>" required>
         </div>
         <div>
             <label for="characterId">Character:</label>
             <select id="characterId" name="characterId" required>
                 <% characters.forEach(function(character) { %>
-                    <option value="<%= character.id %>" <%= (part.characterId === character.id) ? 'selected' : '' %>>
+                    <option value="<%= character.id %>" <%= (part && part.characterId === character.id) ? 'selected' : '' %>>
                         <%= character.char_name %>
                     </option>
                 <% }); %>
@@ -50,15 +63,15 @@
         <div>
             <label for="servoType">Servo Type:</label>
             <select id="servoType" name="servoType" required onchange="updateServoDescription(document.getElementById('testAngle').value)">
-                <option value="DS3240MG" <%= (part.servoType === 'DS3240MG') ? 'selected' : '' %>>DS3240MG (40KG Digital RC Servo)</option>
-                <option value="FS90R" <%= (part.servoType === 'FS90R') ? 'selected' : '' %>>FITEC FS90R (Continuous Rotation)</option>
-                <option value="MG90S" <%= (part.servoType === 'MG90S') ? 'selected' : '' %>>MG90S Servo</option>
-                <option value="BILDA" <%= (part.servoType === 'BILDA') ? 'selected' : '' %>>BILDA Dual Mode Servo</option>
+                <option value="DS3240MG" <%= (part && part.servoType === 'DS3240MG') ? 'selected' : '' %>>DS3240MG (40KG Digital RC Servo)</option>
+                <option value="FS90R" <%= (part && part.servoType === 'FS90R') ? 'selected' : '' %>>FITEC FS90R (Continuous Rotation)</option>
+                <option value="MG90S" <%= (part && part.servoType === 'MG90S') ? 'selected' : '' %>>MG90S Servo</option>
+                <option value="BILDA" <%= (part && part.servoType === 'BILDA') ? 'selected' : '' %>>BILDA Dual Mode Servo</option>
             </select>
         </div>
         <div>
             <label for="channel">PCA9685 Channel:</label>
-            <input type="number" id="channel" name="channel" value="<%= part.channel || 0 %>" min="0" max="15" required readonly>
+            <input type="number" id="channel" name="channel" value="<%= part ? part.channel : 0 %>" min="0" max="15" required readonly>
         </div>
         <div>
             <label>Channel Position:</label>
@@ -72,15 +85,15 @@
         </div>
         <div>
             <label for="minPulse">Min Pulse (μs):</label>
-            <input type="number" id="minPulse" name="minPulse" value="<%= part.minPulse || 500 %>" required>
+            <input type="number" id="minPulse" name="minPulse" value="<%= part ? part.minPulse : 500 %>" required>
         </div>
         <div>
             <label for="maxPulse">Max Pulse (μs):</label>
-            <input type="number" id="maxPulse" name="maxPulse" value="<%= part.maxPulse || 2500 %>" required>
+            <input type="number" id="maxPulse" name="maxPulse" value="<%= part ? part.maxPulse : 2500 %>" required>
         </div>
         <div>
             <label for="defaultAngle">Default Angle:</label>
-            <input type="number" id="defaultAngle" name="defaultAngle" value="<%= part.defaultAngle || 90 %>" min="0" max="180" required>
+            <input type="number" id="defaultAngle" name="defaultAngle" value="<%= part ? part.defaultAngle : 90 %>" min="0" max="180" required>
         </div>
         <button type="submit">Save Part</button>
     </form>
@@ -94,6 +107,7 @@
         <p id="servoDescription"></p>
         <button onclick="testServo()">Test Servo</button>
         <button onclick="stopServo()">Stop Test</button>
+        <div id="testResult"></div>
     </div>
     <a href="/parts" class="button">Back to Parts</a>
 
@@ -155,17 +169,21 @@
             })
             .then(response => response.json())
             .then(data => {
+                const resultDiv = document.getElementById('testResult');
                 if (data.success) {
-//                    alert('Servo test successful');
-						console.log('Servo Test Successful', data.message);
+                    resultDiv.textContent = 'Servo test successful: ' + data.message;
+                    resultDiv.className = 'success';
                 } else {
-                    alert('Servo test failed. Again. Of course you knew that already: ' + data.message);
-						console.log('Servo Test FAAILURRREEE', data.message);
+                    resultDiv.textContent = 'Servo test failed: ' + data.message;
+                    resultDiv.className = 'error';
                 }
+                console.log('Servo Test Result:', data.message);
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred while testing the servo.damnit.');
+                const resultDiv = document.getElementById('testResult');
+                resultDiv.textContent = 'An error occurred while testing the servo: ' + error.message;
+                resultDiv.className = 'error';
             });
         }
 
@@ -183,15 +201,21 @@
             })
             .then(response => response.json())
             .then(data => {
+                const resultDiv = document.getElementById('testResult');
                 if (data.success) {
-                    alert('Servo stopped successfully');
+                    resultDiv.textContent = 'Servo stopped successfully: ' + data.message;
+                    resultDiv.className = 'success';
                 } else {
-                    alert('Failed to stop servo: ' + data.message);
+                    resultDiv.textContent = 'Failed to stop servo: ' + data.message;
+                    resultDiv.className = 'error';
                 }
+                console.log('Servo Stop Result:', data.message);
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred while stopping the servo');
+                const resultDiv = document.getElementById('testResult');
+                resultDiv.textContent = 'An error occurred while stopping the servo: ' + error.message;
+                resultDiv.className = 'error';
             });
         }
     </script>
