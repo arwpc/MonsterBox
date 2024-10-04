@@ -1,7 +1,15 @@
 const winston = require('winston');
 require('winston-daily-rotate-file');
+const path = require('path');
+const fs = require('fs');
 
 const logLevel = process.env.LOG_LEVEL || 'info';
+const logDir = path.join(__dirname, '..', 'log');
+
+// Ensure log directory exists
+if (!fs.existsSync(logDir)) {
+    fs.mkdirSync(logDir);
+}
 
 const logger = winston.createLogger({
     level: logLevel,
@@ -13,7 +21,7 @@ const logger = winston.createLogger({
     ),
     transports: [
         new winston.transports.DailyRotateFile({
-            filename: 'MonsterBox-%DATE%.log',
+            filename: path.join(logDir, 'MonsterBox-%DATE%.log'),
             datePattern: 'YYYY-MM-DD',
             zippedArchive: true,
             maxSize: '20m',
