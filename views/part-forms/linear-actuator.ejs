@@ -5,10 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
     <link rel="stylesheet" href="/css/style.css">
+    <style>
+        #testfireSection {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        #testfireResult {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .loading {
+            display: none;
+            margin-top: 10px;
+        }
+    </style>
 </head>
 <body>
     <h1><%= title %></h1>
-    <form action="<%= action %>" method="POST">
+    <form id="actuatorForm" action="<%= action %>" method="POST">
         <input type="hidden" name="type" value="linear-actuator">
         <% if (part.id) { %>
             <input type="hidden" name="id" value="<%= part.id %>">
@@ -46,7 +71,6 @@
         <button type="submit">Save Part</button>
     </form>
 
-    <% if (part.id) { %>
     <div id="testfireSection">
         <h2>Testfire Linear Actuator</h2>
         <div>
@@ -67,10 +91,9 @@
             <span id="durationValue">1000</span>
         </div>
         <button onclick="executeTestfire()">Testfire</button>
+        <div class="loading" id="loadingIndicator">Testing linear actuator...</div>
+        <div id="testfireResult"></div>
     </div>
-
-    <div id="testfireResult"></div>
-    <% } %>
 
     <a href="/parts" class="button">Back to Parts</a>
 
@@ -82,28 +105,53 @@
             document.getElementById('durationValue').textContent = this.value;
         });
 
-   function executeTestfire() {
-        const direction = document.getElementById('testDirection').value;
-        const speed = document.getElementById('testSpeed').value;
-        const duration = document.getElementById('testDuration').value;
+        function executeTestfire() {
+            const direction = document.getElementById('testDirection').value;
+            const speed = document.getElementById('testSpeed').value;
+            const duration = document.getElementById('testDuration').value;
+            const directionPin = document.getElementById('directionPin').value;
+            const pwmPin = document.getElementById('pwmPin').value;
+            const maxExtension = document.getElementById('maxExtension').value;
+            const maxRetraction = document.getElementById('maxRetraction').value;
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const testfireResult = document.getElementById('testfireResult');
 
-        fetch('/parts/linear-actuator/<%= part.id %>/testfire?direction=' + direction + '&speed=' + speed + '&duration=' + duration, {
-            method: 'GET'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                document.getElementById('testfireResult').innerHTML = `<p>Success: ${data.message}</p>`;
-            } else {
-                document.getElementById('testfireResult').innerHTML = `<p>Error: ${data.message}</p>`;
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            document.getElementById('testfireResult').innerHTML = `<p>Error: ${error.message}</p>`;
-        });
-    }
+            loadingIndicator.style.display = 'block';
+            testfireResult.innerHTML = '';
+            testfireResult.className = '';
 
+            const url = '<%= part.id ? `/parts/linear-actuator/${part.id}/testfire` : "/parts/linear-actuator/testfire" %>';
+            const params = new URLSearchParams({
+                direction,
+                speed,
+                duration,
+                directionPin,
+                pwmPin,
+                maxExtension,
+                maxRetraction
+            });
+
+            fetch(`${url}?${params.toString()}`, {
+                method: 'GET'
+            })
+            .then(response => response.json())
+            .then(data => {
+                loadingIndicator.style.display = 'none';
+                if (data.success) {
+                    testfireResult.innerHTML = `<p>Success: ${data.message}</p>`;
+                    testfireResult.className = 'success';
+                } else {
+                    testfireResult.innerHTML = `<p>Error: ${data.message}</p>`;
+                    testfireResult.className = 'error';
+                }
+            })
+            .catch(error => {
+                loadingIndicator.style.display = 'none';
+                console.error('Error:', error);
+                testfireResult.innerHTML = `<p>Error: ${error.message}</p>`;
+                testfireResult.className = 'error';
+            });
+        }
     </script>
 </body>
 </html>
