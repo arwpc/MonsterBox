@@ -47,18 +47,28 @@
             <input type="number" id="duration" value="1000" min="100" max="10000">
         </div>
         <button onclick="testPart()">Test Light</button>
+        <div id="testResult"></div>
     </div>
     <a href="/parts" class="button">Back to Parts</a>
 
     <script>
+        // Set the part ID safely
+        var partId = '<%= part.id || "null" %>';
+        partId = partId === 'null' ? null : parseInt(partId, 10);
+
         function testPart() {
+            const testResultElement = document.getElementById('testResult');
+            testResultElement.innerHTML = 'Testing...';
+
             const partData = {
-                part_id: <%= part.id || 'null' %>,
+                part_id: partId,
                 type: 'light',
                 state: document.getElementById('state').value,
                 duration: parseInt(document.getElementById('duration').value),
                 gpioPin: parseInt(document.getElementById('gpioPin').value)
             };
+
+            console.log('Sending test data:', partData);
 
             fetch('/parts/light/test', {
                 method: 'POST',
@@ -67,19 +77,28 @@
                 },
                 body: JSON.stringify(partData)
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
+                console.log('Received response:', data);
                 if (data.success) {
                     console.log('Light test successful:', data.message);
-                  //  alert('Light test successful: ' + data.message);
+                    testResultElement.innerHTML = `Test successful: ${data.message}`;
+                    testResultElement.style.color = 'green';
                 } else {
                     console.error('Light test failed:', data.message);
-                  //  alert('Light test failed: ' + data.message);
+                    testResultElement.innerHTML = `Test failed: ${data.message}`;
+                    testResultElement.style.color = 'red';
                 }
             })
             .catch((error) => {
-                console.error('Error:', error);
-                alert('An error occurred while testing the light');
+                console.error('Error during light test:', error);
+                testResultElement.innerHTML = `Error: ${error.message}`;
+                testResultElement.style.color = 'red';
             });
         }
     </script>
