@@ -89,16 +89,18 @@
             </div>
         </div>
         <button type="submit">Save Part</button>
-        <button type="button" id="testPartButton" onclick="testPart()">Test Part</button>
     </form>
-    <div id="testArea" style="display: none;">
+    <button type="button" id="testPartButton" onclick="testPart()">Test Part</button>
+    <div id="testArea">
         <h2>Test Results</h2>
-        <p id="testStatus">Not testing</p>
+        <p id="testStatus">Not tested yet</p>
+        <pre id="testOutput"></pre>
     </div>
     <a href="/parts?characterId=<%= character.id %>" class="button">Back to Parts</a>
 
     <script>
         const characterId = '<%= character.id %>';
+        const partId = '<%= part.id %>';
 
         function toggleInputs() {
             const type = document.getElementById('type').value;
@@ -107,7 +109,6 @@
             document.getElementById('sensorInputs').style.display = type === 'sensor' ? 'block' : 'none';
             document.getElementById('ledInputs').style.display = type === 'led' ? 'block' : 'none';
             document.getElementById('servoInputs').style.display = type === 'servo' ? 'block' : 'none';
-            document.getElementById('testArea').style.display = 'block';
         }
 
         // Call toggleInputs on page load to set initial state
@@ -116,9 +117,12 @@
         function testPart() {
             const type = document.getElementById('type').value;
             const testStatus = document.getElementById('testStatus');
+            const testOutput = document.getElementById('testOutput');
             testStatus.textContent = 'Testing...';
+            testOutput.textContent = '';
 
             let testData = { 
+                id: partId,
                 type: type,
                 characterId: characterId
             };
@@ -126,35 +130,46 @@
             switch (type) {
                 case 'motor':
                 case 'linear-actuator':
-                    testData.directionPin = document.getElementById('directionPin').value;
-                    testData.pwmPin = document.getElementById('pwmPin').value;
                     testData.direction = 'forward';
                     testData.speed = 50;
                     testData.duration = 1000;
                     break;
                 case 'light':
                 case 'led':
-                    testData.gpioPin = document.getElementById('gpioPin').value;
-                    testData.duration = document.getElementById('duration').value || 1000;
+                    testData.state = 'on';
+                    testData.duration = 1000;
+                    if (type === 'led') {
+                        testData.brightness = 50;
+                    }
                     break;
                 case 'servo':
-                    testData.gpioPin = document.getElementById('gpioPin').value;
-                    testData.pwmFrequency = document.getElementById('pwmFrequency').value;
-                    testData.dutyCycle = document.getElementById('dutyCycle').value;
+                    testData.angle = 90;
+                    testData.duration = 1000;
                     break;
                 case 'sensor':
-                    testData.gpioPin = document.getElementById('gpioPin').value;
-                    testData.sensorType = document.getElementById('sensorType').value;
+                    testData.timeout = 5;
                     break;
             }
 
-            axios.post('/parts/test?characterId=' + characterId, testData)
+            axios.post('/parts/test', testData)
                 .then(function (response) {
-                    testStatus.textContent = 'Test completed: ' + response.data.message;
+                    console.log('Test response:', response.data);
+                    if (response.data.success) {
+                        testStatus.textContent = 'Test completed successfully';
+                        testOutput.textContent = response.data.output || 'No output';
+                    } else {
+                        testStatus.textContent = 'Test failed';
+                        testOutput.textContent = response.data.error || 'Unknown error';
+                    }
                 })
                 .catch(function (error) {
                     console.error('Error testing part:', error);
-                    testStatus.textContent = 'Error testing part: ' + (error.response ? error.response.data : error.message);
+                    testStatus.textContent = 'Error testing part';
+                    if (error.response && error.response.data) {
+                        testOutput.textContent = JSON.stringify(error.response.data, null, 2);
+                    } else {
+                        testOutput.textContent = error.message || 'Unknown error';
+                    }
                 });
         }
     </script>
