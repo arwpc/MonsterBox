@@ -1,66 +1,21 @@
-2024-10-04T21:23:13.759Z info: Audio stream server started
-2024-10-04T21:23:13.766Z info: Audio stream started successfully
-2024-10-04T21:23:13.782Z info: MonsterBox server running at http://localhost:3000
-2024-10-04T21:23:13.784Z info: Local IP address: 10.10.10.215
-2024-10-04T21:23:30.568Z info: Creating new part with data:
-2024-10-04T21:23:30.578Z info: Created new part:
-2024-10-04T21:23:30.579Z info: Created sensor:
-2024-10-04T21:29:34.523Z info: Initiating graceful shutdown. Reason: SIGINT
-2024-10-04T21:31:52.399Z info: Audio stream server started
-2024-10-04T21:31:52.406Z info: Audio stream started successfully
-2024-10-04T21:31:52.420Z info: MonsterBox server running at http://localhost:3000
-2024-10-04T21:31:52.423Z info: Local IP address: 10.10.10.215
-2024-10-04T21:32:50.023Z info: Getting all scenes for character 1
-2024-10-04T21:32:50.041Z info: Retrieved 1 scenes for character 1
-2024-10-04T21:32:54.211Z info: Deleting scene 1
-2024-10-04T21:32:54.225Z info: Deleted scene with id 1
-2024-10-04T21:32:54.226Z info: Deleted scene with ID 1
-2024-10-04T21:32:54.246Z info: Getting all scenes for character 1
-2024-10-04T21:32:54.253Z info: Retrieved 0 scenes for character 1
-2024-10-04T21:32:55.097Z info: Rendering new scene form for character 1
-2024-10-04T21:32:55.103Z info: Rendering new scene form for character 1
-2024-10-04T21:33:04.968Z info: Getting step template for character 1
-2024-10-04T21:33:04.977Z info: Rendering step template for character 1, type linear-actuator, index 0
-2024-10-04T21:33:25.243Z info: Getting step template for character 1
-2024-10-04T21:33:25.250Z info: Rendering step template for character 1, type light, index 1
-2024-10-04T21:33:40.926Z info: Creating new scene for character 1
-2024-10-04T21:33:40.933Z info: Created new scene with id 1
-2024-10-04T21:33:40.934Z info: Created new scene with ID 1 for character 1
-2024-10-04T21:33:40.952Z warn: No character selected, redirecting to main page
-2024-10-04T21:33:43.049Z info: Getting all scenes for character 1
-2024-10-04T21:33:43.052Z info: Retrieved 1 scenes for character 1
-2024-10-04T21:33:45.026Z info: Getting scene 1 for editing, character 1
-2024-10-04T21:33:45.032Z info: Retrieved scene 1 for character 1
-2024-10-04T21:33:47.358Z info: Getting all scenes for character 1
-2024-10-04T21:33:47.365Z info: Retrieved 1 scenes for character 1
-2024-10-04T21:33:49.250Z info: Getting scene player for scene 1, character 1
-2024-10-04T21:33:57.461Z warn: No character selected, redirecting to main page
-2024-10-04T21:34:51.870Z info: Initiating graceful shutdown. Reason: SIGINT
-2024-10-04T21:39:29.259Z info: Audio stream server started
-2024-10-04T21:39:29.266Z info: Audio stream started successfully
-2024-10-04T21:39:29.281Z info: MonsterBox server running at http://localhost:3000
-2024-10-04T21:39:29.284Z info: Local IP address: 10.10.10.215
-2024-10-04T21:40:31.658Z info: Creating new part with data:
-2024-10-04T21:40:31.682Z info: Created new part:
-2024-10-04T21:40:31.684Z info: Created sensor:
-2024-10-04T21:45:44.382Z info: Initiating graceful shutdown. Reason: SIGINT
-2024-10-04T21:46:03.312Z info: Audio stream server started
-2024-10-04T21:46:03.319Z info: Audio stream started successfully
-2024-10-04T21:46:03.334Z info: MonsterBox server running at http://localhost:3000
-2024-10-04T21:46:03.336Z info: Local IP address: 10.10.10.215
-2024-10-04T21:50:58.335Z info: Initiating graceful shutdown. Reason: SIGINT
-2024-10-04T21:51:15.319Z info: Audio stream server started
-2024-10-04T21:51:15.325Z info: Audio stream started successfully
-2024-10-04T21:51:15.340Z info: MonsterBox server running at http://localhost:3000
-2024-10-04T21:51:15.342Z info: Local IP address: 10.10.10.215
-2024-10-04T21:51:22.343Z info: Rendering system-config page with system information
-2024-10-04T21:51:45.762Z info: Updated part:
-2024-10-04T21:51:45.763Z info: Updated sensor:
-2024-10-04T21:52:45.828Z info: Sensor control script exited with code null
-2024-10-04T21:52:45.838Z error: Error updating sensor: Invalid part ID
-2024-10-04T21:53:08.926Z info: Received GET testfire request for linear actuator 20 with params: direction=forward, speed=50, duration=1000
-2024-10-04T21:53:08.932Z info: Executing command: sudo python3 "/home/remote/monsterbox/MonsterBox/scripts/linear_actuator_control.py" forward 50 1000 23 12 10000 10000
-2024-10-04T21:53:10.437Z info: Linear actuator control completed successfully.
-2024-10-04T21:57:22.373Z info: Sensor control script exited with code null
-2024-10-04T21:57:22.387Z error: Error updating sensor: Invalid part ID
-2024-10-04T21:58:10.343Z info: Fetched 2 characters for Active Mode
+2024-10-04T22:36:05.223Z info: Audio stream server started
+2024-10-04T22:36:05.230Z info: Audio stream started successfully
+2024-10-04T22:36:05.245Z info: MonsterBox server running at http://localhost:3000
+2024-10-04T22:36:05.248Z info: Local IP address: 10.10.10.215
+2024-10-04T22:36:09.483Z info: Getting all scenes for character 1
+2024-10-04T22:36:09.499Z info: Retrieved 1 scenes for character 1
+2024-10-04T22:36:12.443Z info: Getting scene 1 for editing, character 1
+2024-10-04T22:36:12.455Z info: Retrieved scene 1 for character 1
+2024-10-04T22:36:15.039Z info: Updating scene 1 for character 1
+2024-10-04T22:36:15.047Z info: Updated scene with id 1
+2024-10-04T22:36:15.048Z info: Updated scene with ID 1 for character 1
+2024-10-04T22:36:15.067Z warn: No character selected, redirecting to main page
+2024-10-04T22:36:16.401Z info: Getting all scenes for character 1
+2024-10-04T22:36:16.405Z info: Retrieved 1 scenes for character 1
+2024-10-04T22:36:18.139Z info: Getting scene player for scene 1, character 1
+2024-10-04T22:36:18.140Z info: Getting scene player for scene 1
+2024-10-04T22:36:18.142Z info: Rendering scene player for scene 1
+2024-10-04T22:36:20.987Z warn: No character selected, redirecting to main page
+2024-10-04T22:36:27.804Z warn: No character selected, redirecting to main page
+2024-10-04T22:36:29.850Z warn: No character selected, redirecting to main page
+2024-10-04T22:42:39.619Z info: Initiating graceful shutdown. Reason: SIGINT

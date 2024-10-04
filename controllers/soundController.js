@@ -9,40 +9,50 @@ let soundPlayerRetries = 0;
 const MAX_SOUND_PLAYER_RETRIES = 3;
 
 function startSoundPlayer() {
-    if (!soundPlayerProcess) {
-        const scriptPath = path.resolve(__dirname, '..', 'scripts', 'sound_player.py');
-        soundPlayerProcess = spawn('python3', [scriptPath]);
+    return new Promise((resolve, reject) => {
+        if (!soundPlayerProcess) {
+            const scriptPath = path.resolve(__dirname, '..', 'scripts', 'sound_player.py');
+            soundPlayerProcess = spawn('python3', [scriptPath]);
 
-        soundPlayerProcess.stdout.on('data', (data) => {
-            logger.info(`Sound player output: ${data}`);
-        });
+            soundPlayerProcess.stdout.on('data', (data) => {
+                logger.info(`Sound player output: ${data}`);
+            });
 
-        soundPlayerProcess.stderr.on('data', (data) => {
-            logger.error(`Sound player error: ${data}`);
-        });
+            soundPlayerProcess.stderr.on('data', (data) => {
+                logger.error(`Sound player error: ${data}`);
+            });
 
-        soundPlayerProcess.on('close', (code) => {
-            logger.info(`Sound player exited with code ${code}`);
-            soundPlayerProcess = null;
-            if (soundPlayerRetries < MAX_SOUND_PLAYER_RETRIES) {
-                soundPlayerRetries++;
-                logger.info(`Retrying to start sound player (Attempt ${soundPlayerRetries})`);
-                startSoundPlayer();
-            } else {
-                logger.error('Max retries reached. Unable to start sound player.');
-            }
-        });
-    }
+            soundPlayerProcess.on('close', (code) => {
+                logger.info(`Sound player exited with code ${code}`);
+                soundPlayerProcess = null;
+                if (soundPlayerRetries < MAX_SOUND_PLAYER_RETRIES) {
+                    soundPlayerRetries++;
+                    logger.info(`Retrying to start sound player (Attempt ${soundPlayerRetries})`);
+                    startSoundPlayer().then(resolve).catch(reject);
+                } else {
+                    logger.error('Max retries reached. Unable to start sound player.');
+                    reject(new Error('Unable to start sound player after max retries'));
+                }
+            });
+
+            // Wait for the process to start
+            setTimeout(() => {
+                if (soundPlayerProcess) {
+                    logger.info('Sound player started successfully');
+                    resolve();
+                } else {
+                    reject(new Error('Sound player failed to start'));
+                }
+            }, 1000);
+        } else {
+            resolve();
+        }
+    });
 }
 
 function playSound(sound, sendEvent) {
     return new Promise((resolve, reject) => {
         if (!soundPlayerProcess) {
-            startSoundPlayer();
-        }
-
-        if (!soundPlayerProcess) {
-            logger.error('Sound player not available');
             reject(new Error('Sound player not available'));
             return;
         }
@@ -83,7 +93,7 @@ function stopAllSounds() {
             resolve();
         } else {
             logger.info('No sound player running, consider it stopped');
-            resolve(); // No sound player running, consider it stopped
+            resolve();
         }
     });
 }
