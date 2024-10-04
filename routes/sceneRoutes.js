@@ -70,6 +70,7 @@ router.get('/:id/play', (req, res, next) => {
 router.post('/:id/stop', (req, res, next) => {
     logger.info(`Stopping scene ${req.params.id}`);
     scenePlayerController.stopScene(req, res, next);
+});
 
 router.post('/stop-all', (req, res, next) => {
     logger.info('Stopping all scenes');
