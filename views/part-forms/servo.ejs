@@ -62,11 +62,10 @@
         </div>
         <div>
             <label for="servoType">Servo Type:</label>
-            <select id="servoType" name="servoType" required onchange="updateServoDescription(document.getElementById('testAngle').value)">
-                <option value="DS3240MG" <%= (part && part.servoType === 'DS3240MG') ? 'selected' : '' %>>DS3240MG (40KG Digital RC Servo)</option>
-                <option value="FS90R" <%= (part && part.servoType === 'FS90R') ? 'selected' : '' %>>FITEC FS90R (Continuous Rotation)</option>
-                <option value="MG90S" <%= (part && part.servoType === 'MG90S') ? 'selected' : '' %>>MG90S Servo</option>
-                <option value="BILDA" <%= (part && part.servoType === 'BILDA') ? 'selected' : '' %>>BILDA Dual Mode Servo</option>
+            <select id="servoType" name="servoType" required onchange="updateServoDefaults()">
+                <% servoTypes.forEach(function(type) { %>
+                    <option value="<%= type %>" <%= (part && part.servoType === type) ? 'selected' : '' %>><%= type %></option>
+                <% }); %>
             </select>
         </div>
         <div>
@@ -112,6 +111,8 @@
     <a href="/parts" class="button">Back to Parts</a>
 
     <script>
+        const servoDefaults = <%- JSON.stringify(servoTypes.reduce((acc, type) => ({ ...acc, [type]: getServoDefaults(type) }), {})) %>;
+
         document.addEventListener('DOMContentLoaded', function() {
             const channelButtons = document.querySelectorAll('.channel-button');
             const channelInput = document.getElementById('channel');
@@ -128,7 +129,8 @@
             const initialChannel = parseInt(channelInput.value);
             channelButtons[initialChannel].classList.add('selected');
 
-            // Initialize servo description
+            // Initialize servo description and defaults
+            updateServoDefaults();
             updateServoDescription(document.getElementById('testAngle').value);
         });
 
@@ -137,6 +139,15 @@
             document.getElementById('angleValue').textContent = angle;
             updateServoDescription(angle);
         });
+
+        function updateServoDefaults() {
+            const servoType = document.getElementById('servoType').value;
+            const defaults = servoDefaults[servoType];
+            document.getElementById('minPulse').value = defaults.minPulse;
+            document.getElementById('maxPulse').value = defaults.maxPulse;
+            document.getElementById('defaultAngle').value = defaults.defaultAngle;
+            updateServoDescription(document.getElementById('testAngle').value);
+        }
 
         function updateServoDescription(angle) {
             const servoType = document.getElementById('servoType').value;
