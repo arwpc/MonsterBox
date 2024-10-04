@@ -4,6 +4,7 @@ const partService = require('../services/partService');
 const characterService = require('../services/characterService');
 const { spawn } = require('child_process');
 const path = require('path');
+const logger = require('../scripts/logger');
 
 router.get('/:id/edit', async (req, res) => {
     try {
@@ -15,7 +16,7 @@ router.get('/:id/edit', async (req, res) => {
         const characters = await characterService.getAllCharacters();
         res.render('part-forms/sensor', { title: 'Edit Sensor', action: `/parts/sensor/${part.id}`, part, characters });
     } catch (error) {
-        console.error('Error fetching sensor:', error);
+        logger.error('Error fetching sensor:', error);
         res.status(500).send('An error occurred while fetching the sensor: ' + error.message);
     }
 });
@@ -31,10 +32,10 @@ router.post('/', async (req, res) => {
             active: req.body.active === 'on'
         };
         const createdSensor = await partService.createPart(newSensor);
-        console.log('Created sensor:', createdSensor);
+        logger.info('Created sensor:', createdSensor);
         res.redirect('/parts');
     } catch (error) {
-        console.error('Error creating sensor:', error);
+        logger.error('Error creating sensor:', error);
         res.status(500).send('An error occurred while creating the sensor: ' + error.message);
     }
 });
@@ -55,10 +56,10 @@ router.post('/:id', async (req, res) => {
             active: req.body.active === 'on'
         };
         const result = await partService.updatePart(id, updatedSensor);
-        console.log('Updated sensor:', result);
+        logger.info('Updated sensor:', result);
         res.redirect('/parts');
     } catch (error) {
-        console.error('Error updating sensor:', error);
+        logger.error('Error updating sensor:', error);
         res.status(500).send('An error occurred while updating the sensor: ' + error.message);
     }
 });
@@ -87,12 +88,12 @@ router.get('/test-sensor', async (req, res) => {
         });
 
         python.stderr.on('data', (data) => {
-            console.error(`Python script error: ${data}`);
+            logger.error(`Python script error: ${data}`);
             res.write(`data: ${JSON.stringify({ error: data.toString() })}\n\n`);
         });
 
         python.on('close', (code) => {
-            console.log(`Python script exited with code ${code}`);
+            logger.info(`Python script exited with code ${code}`);
             res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
             res.end();
         });
@@ -101,7 +102,7 @@ router.get('/test-sensor', async (req, res) => {
             python.kill();
         });
     } catch (error) {
-        console.error('Error testing sensor:', error);
+        logger.error('Error testing sensor:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });

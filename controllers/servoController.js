@@ -1,6 +1,7 @@
 const { exec } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const logger = require('../scripts/logger');
 
 const servoTypes = {
     DS3240MG: { minPulse: 500, maxPulse: 2500, defaultAngle: 90 },
@@ -16,13 +17,13 @@ function executeServoCommand(command, args) {
         
         exec(fullCommand, (error, stdout, stderr) => {
             if (error) {
-                console.error(`Error executing servo command: ${error.message}`);
+                logger.error(`Error executing servo command: ${error.message}`);
                 return reject(error);
             }
             if (stderr) {
-                console.error(`Servo command stderr: ${stderr}`);
+                logger.error(`Servo command stderr: ${stderr}`);
             }
-            console.log(`Servo command stdout: ${stdout}`);
+            logger.debug(`Servo command stdout: ${stdout}`);
             resolve(stdout.trim());
         });
     });
@@ -31,7 +32,7 @@ function executeServoCommand(command, args) {
 exports.getServoDefaults = (servoType) => servoTypes[servoType] || { minPulse: 500, maxPulse: 2500, defaultAngle: 90 };
 
 exports.testServo = async (req, res) => {
-    console.log('Testing servo - Body:', req.body);
+    logger.info('Testing servo - Body:', req.body);
 
     try {
         const { angle, pin, channel, servoType, usePCA9685 } = req.body;
@@ -46,13 +47,13 @@ exports.testServo = async (req, res) => {
         const result = await executeServoCommand('test', args);
         res.json({ success: true, message: result });
     } catch (error) {
-        console.error('Error testing servo:', error);
+        logger.error('Error testing servo:', error);
         res.status(500).json({ success: false, message: 'An error occurred while testing the servo', error: error.message });
     }
 };
 
 exports.stopServo = async (req, res) => {
-    console.log('Stopping servo - Body:', req.body);
+    logger.info('Stopping servo - Body:', req.body);
 
     try {
         const { pin, channel, usePCA9685 } = req.body;
@@ -65,7 +66,7 @@ exports.stopServo = async (req, res) => {
         const result = await executeServoCommand('stop', args);
         res.json({ success: true, message: result });
     } catch (error) {
-        console.error('Error stopping servo:', error);
+        logger.error('Error stopping servo:', error);
         res.status(500).json({ success: false, message: 'An error occurred while stopping the servo', error: error.message });
     }
 };
@@ -73,7 +74,7 @@ exports.stopServo = async (req, res) => {
 exports.getServoTypes = () => Object.keys(servoTypes);
 
 exports.saveServo = async (req, res) => {
-    console.log('Saving servo - Body:', req.body);
+    logger.info('Saving servo - Body:', req.body);
 
     try {
         const usePCA9685 = req.body.usePCA9685 === 'on' || req.body.usePCA9685 === true;
@@ -107,18 +108,20 @@ exports.saveServo = async (req, res) => {
         const existingServoIndex = parts.findIndex(part => part.id === servoData.id);
         if (existingServoIndex !== -1) {
             parts[existingServoIndex] = servoData;
+            logger.info(`Updated existing servo with ID: ${servoData.id}`);
         } else {
             parts.push(servoData);
+            logger.info(`Created new servo with ID: ${servoData.id}`);
         }
 
         fs.writeFileSync(partsFilePath, JSON.stringify(parts, null, 2));
 
-        console.log('Created servo:', servoData);
+        logger.info('Saved servo:', servoData);
 
         // Redirect to the parts page with the character ID
         res.redirect(`/parts?characterId=${servoData.characterId}`);
     } catch (error) {
-        console.error('Error saving servo:', error);
+        logger.error('Error saving servo:', error);
         res.status(500).json({ success: false, message: 'An error occurred while saving the servo', error: error.message });
     }
 };

@@ -3,6 +3,7 @@ const router = express.Router();
 const os = require('os');
 const { exec } = require('child_process');
 const nodeDiskInfo = require('node-disk-info');
+const logger = require('../scripts/logger');
 
 router.get('/', async (req, res) => {
     const systemInfo = {
@@ -33,7 +34,7 @@ router.get('/', async (req, res) => {
             mountpoint: disk.mounted
         }));
     } catch (error) {
-        console.error('Error getting disk info:', error);
+        logger.error('Error getting disk info:', error);
         driveInfo = [{ error: 'Unable to retrieve drive information' }];
     }
 
@@ -45,6 +46,8 @@ router.get('/', async (req, res) => {
             if (match) {
                 wifiSignal = match[1] + ' dBm';
             }
+        } else {
+            logger.warn('Error getting Wi-Fi signal strength:', error);
         }
 
         // Get current power (this command works on Raspberry Pi)
@@ -55,8 +58,11 @@ router.get('/', async (req, res) => {
                 if (match) {
                     power = match[1] + ' V';
                 }
+            } else {
+                logger.warn('Error getting current power:', error);
             }
 
+            logger.info('Rendering system-config page with system information');
             res.render('system-config', { 
                 systemInfo, 
                 ipAddress, 
