@@ -218,7 +218,7 @@ router.post('/test', async (req, res) => {
                 scriptPath = path.join(__dirname, '..', 'scripts', 'sensor_control.py');
                 args = [
                     part.gpioPin.toString(),
-                    testData.timeout || '5'
+                    testData.timeout || '30'
                 ];
                 break;
             default:
