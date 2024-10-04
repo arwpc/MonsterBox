@@ -1,6 +1,7 @@
 import RPi.GPIO as GPIO
 import time
 import sys
+import json
 
 def setup_gpio():
     GPIO.setmode(GPIO.BCM)
@@ -9,47 +10,42 @@ def setup_gpio():
 def cleanup_gpio():
     GPIO.cleanup()
 
-def control_sensor(gpio_pin, timeout):
+def control_sensor(gpio_pin):
     setup_gpio()
     GPIO.setup(gpio_pin, GPIO.IN)
 
-    print(f"Monitoring sensor on GPIO pin {gpio_pin} for {timeout} seconds")
+    print(json.dumps({"status": f"Monitoring sensor on GPIO pin {gpio_pin}"}))
     sys.stdout.flush()
 
-    end_time = time.time() + float(timeout)
     last_status = None
-    while time.time() < end_time:
-        current_status = GPIO.input(gpio_pin)
-        if current_status != last_status:
-            if current_status:
-                print("Motion detected!")
-            else:
-                print("No motion detected")
-            sys.stdout.flush()
-            last_status = current_status
-        time.sleep(0.1)
-
-    print("Monitoring complete")
-    sys.stdout.flush()
-    return last_status
-
-if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Usage: python sensor_control.py <gpio_pin> <timeout>")
-        sys.exit(1)
-
-    gpio_pin = int(sys.argv[1])
-    timeout = float(sys.argv[2])
-
     try:
-        final_status = control_sensor(gpio_pin, timeout)
-        print(f"Final status: {'Motion detected' if final_status else 'No motion'}")
+        while True:
+            current_status = GPIO.input(gpio_pin)
+            if current_status != last_status:
+                if current_status:
+                    print(json.dumps({"status": "Motion detected!"}))
+                else:
+                    print(json.dumps({"status": "No motion detected"}))
+                sys.stdout.flush()
+                last_status = current_status
+            time.sleep(0.1)
+    except KeyboardInterrupt:
+        print(json.dumps({"status": "Monitoring stopped"}))
         sys.stdout.flush()
-    except Exception as e:
-        print(f"Error: {str(e)}")
-        sys.stdout.flush()
-        sys.exit(1)
     finally:
         cleanup_gpio()
 
-    sys.exit(0)
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print(json.dumps({"error": "Usage: python sensor_control.py <gpio_pin>"}))
+        sys.exit(1)
+
+    try:
+        gpio_pin = int(sys.argv[1])
+        control_sensor(gpio_pin)
+    except ValueError:
+        print(json.dumps({"error": "Invalid GPIO pin number"}))
+        sys.exit(1)
+    except Exception as e:
+        print(json.dumps({"error": str(e)}))
+        sys.exit(1)

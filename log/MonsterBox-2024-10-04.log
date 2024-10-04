@@ -36,3 +36,11 @@
 2024-10-04T21:33:49.250Z info: Getting scene player for scene 1, character 1
 2024-10-04T21:33:57.461Z warn: No character selected, redirecting to main page
 2024-10-04T21:34:51.870Z info: Initiating graceful shutdown. Reason: SIGINT
+2024-10-04T21:39:29.259Z info: Audio stream server started
+2024-10-04T21:39:29.266Z info: Audio stream started successfully
+2024-10-04T21:39:29.281Z info: MonsterBox server running at http://localhost:3000
+2024-10-04T21:39:29.284Z info: Local IP address: 10.10.10.215
+2024-10-04T21:40:31.658Z info: Creating new part with data:
+2024-10-04T21:40:31.682Z info: Created new part:
+2024-10-04T21:40:31.684Z info: Created sensor:
+2024-10-04T21:45:44.382Z info: Initiating graceful shutdown. Reason: SIGINT

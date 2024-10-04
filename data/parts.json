@@ -50,5 +50,14 @@
     "pwmPin": 13,
     "maxExtension": null,
     "maxRetraction": null
+  },
+  {
+    "id": 22,
+    "name": "Eye of Baphomet",
+    "type": "sensor",
+    "characterId": 1,
+    "sensorType": "motion",
+    "gpioPin": 16,
+    "active": false
   }
 ]

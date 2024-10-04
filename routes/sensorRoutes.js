@@ -6,6 +6,8 @@ const { spawn } = require('child_process');
 const path = require('path');
 const logger = require('../scripts/logger');
 
+let activeSensorProcesses = {};
+
 router.get('/:id/edit', async (req, res) => {
     try {
         const id = parseInt(req.params.id);
@@ -64,47 +66,72 @@ router.post('/:id', async (req, res) => {
     }
 });
 
-router.get('/test-sensor', async (req, res) => {
-    try {
-        const sensorId = parseInt(req.query.id);
-        const gpioPin = parseInt(req.query.gpioPin);
-        const timeout = parseInt(req.query.timeout) || 30;
+router.get('/control', (req, res) => {
+    const sensorId = parseInt(req.query.id);
+    const gpioPin = parseInt(req.query.gpioPin);
+    const action = req.query.action;
 
-        if (isNaN(sensorId) || isNaN(gpioPin)) {
-            throw new Error('Invalid sensor ID or GPIO pin');
+    if (isNaN(sensorId) || isNaN(gpioPin)) {
+        return res.status(400).json({ error: 'Invalid sensor ID or GPIO pin' });
+    }
+
+    if (action !== 'start') {
+        return res.status(400).json({ error: 'Invalid action' });
+    }
+
+    res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive'
+    });
+
+    const scriptPath = path.join(__dirname, '..', 'scripts', 'sensor_control.py');
+    const process = spawn('python3', [scriptPath, gpioPin.toString()]);
+
+    activeSensorProcesses[sensorId] = process;
+
+    process.stdout.on('data', (data) => {
+        res.write(`data: ${data}\n\n`);
+    });
+
+    process.stderr.on('data', (data) => {
+        logger.error(`Sensor control script error: ${data}`);
+        res.write(`data: ${JSON.stringify({ error: data.toString() })}\n\n`);
+    });
+
+    process.on('close', (code) => {
+        logger.info(`Sensor control script exited with code ${code}`);
+        res.write(`data: ${JSON.stringify({ status: 'Sensor monitoring stopped' })}\n\n`);
+        delete activeSensorProcesses[sensorId];
+        res.end();
+    });
+
+    req.on('close', () => {
+        if (activeSensorProcesses[sensorId]) {
+            activeSensorProcesses[sensorId].kill();
+            delete activeSensorProcesses[sensorId];
         }
+    });
+});
 
-        const scriptPath = path.join(__dirname, '..', 'scripts', 'test_sensor.py');
+router.post('/control', (req, res) => {
+    const sensorId = parseInt(req.body.id);
+    const action = req.body.action;
 
-        res.writeHead(200, {
-            'Content-Type': 'text/event-stream',
-            'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive'
-        });
+    if (isNaN(sensorId)) {
+        return res.status(400).json({ error: 'Invalid sensor ID' });
+    }
 
-        const python = spawn('sudo', ['python3', scriptPath, gpioPin.toString(), timeout.toString()]);
+    if (action !== 'stop') {
+        return res.status(400).json({ error: 'Invalid action' });
+    }
 
-        python.stdout.on('data', (data) => {
-            res.write(`data: ${data}\n\n`);
-        });
-
-        python.stderr.on('data', (data) => {
-            logger.error(`Python script error: ${data}`);
-            res.write(`data: ${JSON.stringify({ error: data.toString() })}\n\n`);
-        });
-
-        python.on('close', (code) => {
-            logger.info(`Python script exited with code ${code}`);
-            res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-            res.end();
-        });
-
-        req.on('close', () => {
-            python.kill();
-        });
-    } catch (error) {
-        logger.error('Error testing sensor:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+    if (activeSensorProcesses[sensorId]) {
+        activeSensorProcesses[sensorId].kill();
+        delete activeSensorProcesses[sensorId];
+        res.json({ status: 'Sensor monitoring stopped' });
+    } else {
+        res.status(404).json({ error: 'No active sensor process found' });
     }
 });
 
