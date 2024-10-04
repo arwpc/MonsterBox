@@ -1,6 +1,5 @@
 repopack-output.txt
-linear_actuator_logs.txt
-motor_control.log
-MonsterBox.log
-*.log
 node_modules/
+# Ignore all log files except those in the /log directory
+*.log
+!/log/*.log
