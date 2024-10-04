@@ -44,3 +44,8 @@
 2024-10-04T21:40:31.682Z info: Created new part:
 2024-10-04T21:40:31.684Z info: Created sensor:
 2024-10-04T21:45:44.382Z info: Initiating graceful shutdown. Reason: SIGINT
+2024-10-04T21:46:03.312Z info: Audio stream server started
+2024-10-04T21:46:03.319Z info: Audio stream started successfully
+2024-10-04T21:46:03.334Z info: MonsterBox server running at http://localhost:3000
+2024-10-04T21:46:03.336Z info: Local IP address: 10.10.10.215
+2024-10-04T21:50:58.335Z info: Initiating graceful shutdown. Reason: SIGINT

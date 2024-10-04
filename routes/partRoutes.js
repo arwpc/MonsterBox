@@ -71,12 +71,23 @@ router.get('/:id/edit', async (req, res) => {
         const id = parseInt(req.params.id);
         const part = await partService.getPartById(id);
         const character = await characterService.getCharacterById(req.characterId);
-        res.render('part-form', {
-            title: `Edit ${part.type.charAt(0).toUpperCase() + part.type.slice(1)}`,
-            action: `/parts/${part.id}/update`,
-            part,
-            character
-        });
+        if (part.type === 'sensor') {
+            const characters = await characterService.getAllCharacters();
+            res.render('part-forms/sensor', {
+                title: 'Edit Sensor',
+                action: `/parts/sensor/${part.id}`,
+                part,
+                characters,
+                character
+            });
+        } else {
+            res.render('part-form', {
+                title: `Edit ${part.type.charAt(0).toUpperCase() + part.type.slice(1)}`,
+                action: `/parts/${part.id}/update`,
+                part,
+                character
+            });
+        }
     } catch (error) {
         logger.error('Error fetching part for edit:', error);
         res.status(500).send('An error occurred while fetching the part');

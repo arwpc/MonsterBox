@@ -25,15 +25,8 @@
             <input type="hidden" name="id" value="<%= part.id %>">
         <% } %>
         <div>
-            <label for="name">Sensor Name:</label>
+            <label for="name">Part Name:</label>
             <input type="text" id="name" name="name" value="<%= part.name || '' %>" required>
-        </div>
-        <div>
-            <label for="sensorType">Type:</label>
-            <select id="sensorType" name="sensorType" required>
-                <option value="motion" <%= part.sensorType === 'motion' ? 'selected' : '' %>>Motion</option>
-                <option value="sound" <%= part.sensorType === 'sound' ? 'selected' : '' %>>Sound</option>
-            </select>
         </div>
         <div>
             <label for="characterId">Character:</label>
@@ -46,6 +39,13 @@
             </select>
         </div>
         <div>
+            <label for="sensorType">Sensor Type:</label>
+            <select id="sensorType" name="sensorType" required>
+                <option value="motion" <%= part.sensorType === 'motion' ? 'selected' : '' %>>Motion</option>
+                <option value="sound" <%= part.sensorType === 'sound' ? 'selected' : '' %>>Sound</option>
+            </select>
+        </div>
+        <div>
             <label for="gpioPin">GPIO Pin:</label>
             <input type="number" id="gpioPin" name="gpioPin" value="<%= part.gpioPin || '' %>" required>
         </div>
@@ -55,10 +55,10 @@
                 Active
             </label>
         </div>
-        <button type="submit">Save Sensor</button>
+        <button type="submit">Save Part</button>
     </form>
 
-    <div id="testArea" style="margin-top: 20px;">
+    <div id="sensorControl" style="margin-top: 20px;">
         <h2>Sensor Control</h2>
         <p id="statusText">Sensor status: Not active</p>
         <button id="sensorOn">Sensor On</button>
