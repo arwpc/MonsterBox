@@ -25,46 +25,30 @@
     "gpioPin": 26
   },
   {
-    "id": 14,
-    "characterId": 1,
-    "name": "Right Arm",
-    "type": "motor",
-    "directionPin": "18",
-    "pwmPin": "13",
-    "gpioPin": [
-      "",
-      "",
-      "",
-      ""
-    ],
-    "sensorType": "motion",
-    "duration": "",
-    "pwmFrequency": "",
-    "dutyCycle": ""
-  },
-  {
-    "id": 18,
-    "characterId": 1,
-    "name": "Left Arm",
-    "type": "motor",
-    "directionPin": "23",
-    "pwmPin": "12",
-    "gpioPin": [
-      "",
-      "",
-      "",
-      ""
-    ],
-    "sensorType": "motion",
-    "duration": "",
-    "pwmFrequency": "",
-    "dutyCycle": ""
-  },
-  {
     "id": 19,
     "name": "Light of Azura",
     "type": "light",
     "characterId": 1,
     "gpioPin": 26
+  },
+  {
+    "id": 20,
+    "name": "Right Arm",
+    "type": "linear-actuator",
+    "characterId": 1,
+    "directionPin": 23,
+    "pwmPin": 12,
+    "maxExtension": null,
+    "maxRetraction": null
+  },
+  {
+    "id": 21,
+    "name": "Left Arm",
+    "type": "linear-actuator",
+    "characterId": 1,
+    "directionPin": 18,
+    "pwmPin": 13,
+    "maxExtension": null,
+    "maxRetraction": null
   }
 ]
