@@ -5,9 +5,10 @@ $(document).ready(function() {
     let eventSource = null;
     const steps = sceneData.steps || [];
 
-    function logMessage(message) {
+    function logMessage(message, isError = false) {
         const logBox = $("#log-box");
-        logBox.append(`<p>${new Date().toLocaleTimeString()} - ${message}</p>`);
+        const className = isError ? 'error-message' : '';
+        logBox.append(`<p class="${className}">${new Date().toLocaleTimeString()} - ${message}</p>`);
         logBox.scrollTop(logBox[0].scrollHeight);
         console.log(message);
     }
@@ -43,6 +44,7 @@ $(document).ready(function() {
         $(this).prop('disabled', true);
         $("#backward-btn").prop('disabled', true);
         $("#forward-btn").prop('disabled', true);
+        $("#stop-btn").prop('disabled', false);
         logMessage(`Running scene from step ${currentStep + 1}`);
         runScene();
     });
@@ -56,27 +58,32 @@ $(document).ready(function() {
             eventSource.close();
         }
 
-        eventSource = new EventSource(`/scenes/${sceneData.id}/play?startStep=${currentStep}`);
+        eventSource = new EventSource(`/scenes/${sceneData.id}/play?characterId=${characterId}&startStep=${currentStep}`);
 
         eventSource.onmessage = function(event) {
-            const data = JSON.parse(event.data);
-            if (data.message) {
-                logMessage(data.message);
-            }
-            if (data.currentStep !== undefined) {
-                currentStep = data.currentStep;
-                updateCurrentStep(currentStep);
-            }
-            if (data.error) {
-                logMessage(`Error: ${data.error}`);
+            try {
+                const data = JSON.parse(event.data);
+                if (data.message) {
+                    logMessage(data.message);
+                }
+                if (data.currentStep !== undefined) {
+                    currentStep = data.currentStep;
+                    updateCurrentStep(currentStep);
+                }
+                if (data.error) {
+                    logMessage(`Error: ${data.error}`, true);
+                }
+            } catch (error) {
+                console.error('Error parsing event data:', error);
+                logMessage(`Error parsing event data: ${error.message}`, true);
             }
         };
 
         eventSource.onerror = function(error) {
             console.error('EventSource failed:', error);
+            logMessage(`EventSource error: ${error.message || 'Unknown error'}`, true);
             eventSource.close();
             resetControlButtons();
-            logMessage("Scene execution stopped due to an error");
         };
 
         eventSource.addEventListener('close', function(event) {
@@ -92,7 +99,7 @@ $(document).ready(function() {
         }
 
         $.ajax({
-            url: `/scenes/${sceneData.id}/stop`,
+            url: `/scenes/${sceneData.id}/stop?characterId=${characterId}`,
             method: 'POST',
             success: function(response) {
                 logMessage("All steps stopped");
@@ -100,7 +107,7 @@ $(document).ready(function() {
             },
             error: function(xhr, status, error) {
                 console.error('Error stopping steps:', error);
-                logMessage(`Error stopping steps: ${error}`);
+                logMessage(`Error stopping steps: ${error}`, true);
                 resetControlButtons();
             }
         });
@@ -110,6 +117,7 @@ $(document).ready(function() {
         $("#run-btn").prop('disabled', false);
         $("#backward-btn").prop('disabled', false);
         $("#forward-btn").prop('disabled', false);
+        $("#stop-btn").prop('disabled', true);
     }
 
     // Initial scene overview
@@ -118,4 +126,7 @@ $(document).ready(function() {
     steps.forEach((step, index) => {
         logMessage(`Step ${index + 1}: ${step.name} (Type: ${step.type}${step.concurrent ? ', Concurrent' : ''})`);
     });
+
+    // Disable stop button initially
+    $("#stop-btn").prop('disabled', true);
 });
