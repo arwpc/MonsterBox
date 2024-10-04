@@ -121,7 +121,7 @@ router.post('/:id/delete', async (req, res) => {
     }
 });
 
-router.get('/sensor/test-sensor', (req, res) => {
+router.get('/sensor/test', (req, res) => {
     const { gpioPin, timeout } = req.query;
 
     if (!gpioPin) {
@@ -162,99 +162,6 @@ router.get('/sensor/test-sensor', (req, res) => {
     req.on('close', () => {
         process.kill();
     });
-});
-
-router.post('/test', async (req, res) => {
-    try {
-        const { id, type, ...testData } = req.body;
-        let scriptPath;
-        let args;
-        
-        logger.info(`Received test request for part ID: ${id}, Type: ${type}`);
-
-        const part = await partService.getPartById(id);
-        if (!part) {
-            logger.error(`Part not found with ID: ${id}`);
-            return res.status(404).json({ success: false, error: 'Part not found' });
-        }
-
-        logger.info(`Part details: ${JSON.stringify(part)}`);
-
-        switch (type) {
-            case 'motor':
-            case 'linear-actuator':
-                scriptPath = path.join(__dirname, '..', 'scripts', 'motor_control.py');
-                args = [
-                    testData.direction || 'forward',
-                    testData.speed || '50',
-                    testData.duration || '1000',
-                    part.directionPin.toString(),
-                    part.pwmPin.toString()
-                ];
-                break;
-            case 'light':
-            case 'led':
-                scriptPath = path.join(__dirname, '..', 'scripts', 'led_control.py');
-                args = [
-                    part.gpioPin.toString(),
-                    testData.state || 'on',
-                    testData.duration || '1000'
-                ];
-                if (type === 'led' && testData.brightness) {
-                    args.push(testData.brightness.toString());
-                }
-                break;
-            case 'servo':
-                scriptPath = path.join(__dirname, '..', 'scripts', 'servo_control.py');
-                args = [
-                    part.gpioPin.toString(),
-                    testData.angle || '90',
-                    part.pwmFrequency.toString(),
-                    part.dutyCycle.toString(),
-                    testData.duration || '1000'
-                ];
-                break;
-            case 'sensor':
-                scriptPath = path.join(__dirname, '..', 'scripts', 'sensor_control.py');
-                args = [
-                    part.gpioPin.toString(),
-                    testData.timeout || '30'
-                ];
-                break;
-            default:
-                logger.error(`Invalid part type: ${type}`);
-                return res.status(400).json({ success: false, error: 'Invalid part type' });
-        }
-
-        logger.info(`Executing script: ${scriptPath} with args: ${args.join(', ')}`);
-
-        const process = spawn('python3', [scriptPath, ...args]);
-
-        let stdout = '';
-        let stderr = '';
-
-        process.stdout.on('data', (data) => {
-            stdout += data.toString();
-            logger.debug(`Script output: ${data}`);
-        });
-
-        process.stderr.on('data', (data) => {
-            stderr += data.toString();
-            logger.error(`Script error: ${data}`);
-        });
-
-        process.on('close', (code) => {
-            logger.info(`Script exited with code ${code}`);
-            if (code === 0) {
-                res.json({ success: true, message: 'Test completed successfully', output: stdout });
-            } else {
-                res.status(500).json({ success: false, message: 'Test failed', error: stderr || 'Unknown error', output: stdout });
-            }
-        });
-    } catch (error) {
-        logger.error('Error testing part:', error);
-        res.status(500).json({ success: false, message: 'An error occurred while testing the part', error: error.message || 'Unknown error' });
-    }
 });
 
 module.exports = router;
