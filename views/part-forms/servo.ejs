@@ -111,7 +111,7 @@
     <a href="/parts" class="button">Back to Parts</a>
 
     <script>
-        const servoDefaults = <%- JSON.stringify(servoTypes.reduce((acc, type) => ({ ...acc, [type]: getServoDefaults(type) }), {})) %>;
+        const servoDefaults = JSON.parse('<%= JSON.stringify(servoTypes.reduce((acc, type) => ({ ...acc, [type]: getServoDefaults(type) }), {})) %>');
 
         document.addEventListener('DOMContentLoaded', function() {
             const channelButtons = document.querySelectorAll('.channel-button');
