@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Config</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <h1>System Config</h1>
+    <h2>System Information</h2>
+    <ul>
+        <li>Platform: <%= systemInfo.platform %></li>
+        <li>Architecture: <%= systemInfo.arch %></li>
+        <li>Hostname: <%= systemInfo.hostname %></li>
+        <li>Total Memory: <%= systemInfo.totalMem %></li>
+        <li>Free Memory: <%= systemInfo.freeMem %></li>
+        <li>CPUs: <%= systemInfo.cpus %></li>
+        <li>Uptime: <%= systemInfo.uptime %></li>
+    </ul>
+    <h2>Network Information</h2>
+    <ul>
+        <li>IP Address: <%= ipAddress %></li>
+        <li>Wi-Fi Signal Strength: <%= wifiSignal %></li>
+    </ul>
+    <h2>Power Information</h2>
+    <ul>
+        <li>Current Power: <%= power %></li>
+    </ul>
+    <a href="/">Back to Main Menu</a>
+</body>
+</html>

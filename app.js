@@ -22,6 +22,7 @@ const characterRoutes = require('./routes/characterRoutes');
 const soundRoutes = require('./routes/soundRoutes');
 const linearActuatorRoutes = require('./routes/linearActuatorRoutes');
 const activeModeRoutes = require('./routes/activeModeRoutes');
+const systemConfigRoutes = require('./routes/systemConfigRoutes');
 
 // Import services
 const characterService = require('./services/characterService');
@@ -53,6 +54,7 @@ app.use('/scenes', sceneRoutes);
 app.use('/characters', characterRoutes);
 app.use('/sounds', soundRoutes);
 app.use('/active-mode', activeModeRoutes);
+app.use('/system-config', systemConfigRoutes);
 
 // Root route
 app.get('/', async (req, res) => {

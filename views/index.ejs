@@ -106,6 +106,7 @@
         <a href="/parts" class="button">Parts</a>
         <a href="/sounds" class="button">Sounds</a>
         <a href="/active-mode" class="button">Active Mode</a>
+        <a href="/system-config" class="button">System Config</a>
     </nav>
     
     <footer>
@@ -141,7 +142,7 @@
             const links = nav.getElementsByTagName('a');
             for (let link of links) {
                 const url = new URL(link.href);
-                if (characterId) {
+                if (characterId && link.href !== '/system-config') {
                     url.searchParams.set('characterId', characterId);
                 } else {
                     url.searchParams.delete('characterId');
