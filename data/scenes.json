@@ -2,31 +2,38 @@
   {
     "id": 1,
     "character_id": 1,
-    "scene_name": "Post refactor",
+    "scene_name": "First since stable",
     "steps": [
       {
         "type": "linear-actuator",
-        "name": "rtaise",
+        "name": "arm up",
         "part_id": "20",
-        "duration": "3200",
+        "duration": "2500",
         "direction": "forward",
-        "speed": "100"
+        "speed": "75"
       },
       {
         "type": "light",
-        "name": "Hand On",
+        "name": "Hey Asshole!",
         "part_id": "19",
-        "duration": "5000",
+        "duration": "8000",
         "state": "on"
       },
       {
+        "type": "sound",
+        "name": "Santos Dominus",
+        "sound_id": "3",
+        "concurrent": "on"
+      },
+      {
         "type": "linear-actuator",
-        "name": "rtaise (Copy)",
+        "name": "Arm Down",
         "part_id": "20",
-        "duration": "3200",
+        "duration": "2500",
         "direction": "backward",
         "speed": "100"
       }
-    ]
+    ],
+    "characterId": "1"
   }
 ]

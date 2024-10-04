@@ -11,20 +11,21 @@ const logger = require('../scripts/logger');
 let isExecuting = false;
 
 const stopAllParts = async () => {
-    // Implement logic to stop all parts
-    // This might involve sending stop signals to all active parts
     logger.info('Stopping all parts');
-    // For now, we'll just log this action
+    // Implement logic to stop all parts
 };
 
 const scenePlayerController = {
     getScenePlayer: async (req, res) => {
         try {
             const sceneId = req.params.id;
+            logger.info(`Getting scene player for scene ${sceneId}`);
             const scene = await sceneService.getSceneById(sceneId);
             if (scene) {
+                logger.info(`Rendering scene player for scene ${sceneId}`);
                 res.render('scene-player', { title: 'Scene Player', scene });
             } else {
+                logger.warn(`Scene ${sceneId} not found`);
                 res.status(404).render('error', { title: 'Not Found', message: 'Scene not found' });
             }
         } catch (error) {
@@ -42,6 +43,7 @@ const scenePlayerController = {
         try {
             scene = await sceneService.getSceneById(sceneId);
             if (!scene) {
+                logger.warn(`Scene ${sceneId} not found`);
                 return res.status(404).json({ error: 'Scene not found' });
             }
         } catch (error) {
@@ -59,29 +61,35 @@ const scenePlayerController = {
             res.write(`data: ${JSON.stringify(data)}\n\n`);
         };
 
-        soundController.startSoundPlayer();
-        isExecuting = true;
+        try {
+            logger.info('Starting sound player');
+            await soundController.startSoundPlayer();
+            isExecuting = true;
 
-        let concurrentSteps = [];
-        for (let i = startStep; i < scene.steps.length && isExecuting; i++) {
-            const step = scene.steps[i];
-            concurrentSteps.push(step);
-
-            if (!step.concurrent || i === scene.steps.length - 1) {
-                sendEvent({ message: `Executing concurrent steps`, currentStep: i });
+            for (let i = startStep; i < scene.steps.length && isExecuting; i++) {
+                const step = scene.steps[i];
+                logger.info(`Executing step ${i + 1}: ${step.name} (${step.type})`);
+                sendEvent({ message: `Executing step ${i + 1}: ${step.name}`, currentStep: i });
+                
                 try {
-                    await Promise.all(concurrentSteps.map(s => executeStep(s, sendEvent)));
+                    await executeStep(step, sendEvent);
+                    logger.info(`Completed step ${i + 1}: ${step.name}`);
                 } catch (error) {
-                    logger.error(`Error executing concurrent steps:`, error);
-                    sendEvent({ error: `Failed to execute concurrent steps: ${error.message}` });
+                    logger.error(`Error executing step ${i + 1}: ${step.name}`, error);
+                    sendEvent({ error: `Failed to execute step ${i + 1}: ${step.name} - ${error.message}` });
+                    break; // Stop execution on error
                 }
-                concurrentSteps = [];
             }
-        }
 
-        sendEvent({ message: 'Scene execution completed' });
-        isExecuting = false;
-        res.end();
+            logger.info('Scene execution completed');
+            sendEvent({ message: 'Scene execution completed' });
+        } catch (error) {
+            logger.error('Error during scene execution:', error);
+            sendEvent({ error: `Scene execution failed: ${error.message}` });
+        } finally {
+            isExecuting = false;
+            res.end();
+        }
     },
 
     stopScene: async (req, res) => {
@@ -113,7 +121,7 @@ const scenePlayerController = {
 
 async function executeStep(step, sendEvent) {
     if (!isExecuting) return;
-    logger.info('Executing step:', step);
+    logger.info(`Executing step: ${step.name} (${step.type})`);
     sendEvent({ message: `Starting execution of ${step.type} step: ${step.name}` });
 
     try {
@@ -137,24 +145,30 @@ async function executeStep(step, sendEvent) {
             default:
                 throw new Error(`Unknown step type: ${step.type}`);
         }
+        logger.info(`Completed execution of ${step.type} step: ${step.name}`);
         sendEvent({ message: `Completed execution of ${step.type} step: ${step.name}` });
     } catch (error) {
-        logger.error(`Error executing step:`, error);
+        logger.error(`Error executing step ${step.name}:`, error);
         sendEvent({ error: `Failed to execute ${step.type} step: ${error.message}` });
+        throw error; // Re-throw to stop execution
     }
 }
 
 async function executeSound(step, sendEvent) {
+    logger.info(`Executing sound step: ${step.name}`);
     const sound = await soundService.getSoundById(step.sound_id);
     if (!sound) {
+        logger.error(`Sound not found for ID: ${step.sound_id}`);
         throw new Error(`Sound not found for ID: ${step.sound_id}`);
     }
     await soundController.playSound(sound, sendEvent);
 }
 
 async function executePartAction(step, sendEvent) {
+    logger.info(`Executing part action step: ${step.name}`);
     const part = await partService.getPartById(step.part_id);
     if (!part) {
+        logger.error(`Part not found for ID: ${step.part_id}`);
         throw new Error(`Part not found for ID: ${step.part_id}`);
     }
 
@@ -171,8 +185,8 @@ async function executePartAction(step, sendEvent) {
                 step.duration.toString(),
                 part.directionPin.toString(),
                 part.pwmPin.toString(),
-                part.maxExtension.toString(),
-                part.maxRetraction.toString()
+                part.maxExtension ? part.maxExtension.toString() : '10000',
+                part.maxRetraction ? part.maxRetraction.toString() : '10000'
             ];
             break;
         case 'led':
@@ -190,8 +204,8 @@ async function executePartAction(step, sendEvent) {
                 step.angle.toString(),
                 step.speed.toString(),
                 step.duration.toString(),
-                part.pwmFrequency.toString(),
-                part.dutyCycle.toString()
+                part.pwmFrequency ? part.pwmFrequency.toString() : '50',
+                part.dutyCycle ? part.dutyCycle.toString() : '0'
             ];
             break;
         default:
@@ -199,64 +213,85 @@ async function executePartAction(step, sendEvent) {
     }
 
     return new Promise((resolve, reject) => {
+        logger.info(`Executing script: ${scriptPath} with args: ${args.join(', ')}`);
         const process = spawn('sudo', ['python3', scriptPath, ...args]);
 
         process.stdout.on('data', (data) => {
-            sendEvent({ message: `${part.type} output: ${data}` });
+            const message = data.toString().trim();
+            logger.info(`${part.type} output: ${message}`);
+            sendEvent({ message: `${part.type} output: ${message}` });
         });
 
         process.stderr.on('data', (data) => {
-            sendEvent({ error: `${part.type} error: ${data}` });
+            const errorMessage = data.toString().trim();
+            logger.error(`${part.type} error: ${errorMessage}`);
+            sendEvent({ error: `${part.type} error: ${errorMessage}` });
         });
 
         process.on('close', (code) => {
             if (code === 0) {
+                logger.info(`${part.type} action completed: ${step.name}`);
                 sendEvent({ message: `${part.type} action completed: ${step.name}` });
                 resolve();
             } else {
-                reject(new Error(`${part.type} process exited with code ${code}`));
+                const errorMessage = `${part.type} process exited with code ${code}`;
+                logger.error(errorMessage);
+                reject(new Error(errorMessage));
             }
         });
     });
 }
 
 async function executeSensor(step, sendEvent) {
+    logger.info(`Executing sensor step: ${step.name}`);
     const part = await partService.getPartById(step.part_id);
     if (!part) {
+        logger.error(`Sensor not found for ID: ${step.part_id}`);
         throw new Error(`Sensor not found for ID: ${step.part_id}`);
     }
 
     return new Promise((resolve, reject) => {
         const scriptPath = path.resolve(__dirname, '..', 'scripts', 'sensor_control.py');
         const args = [part.gpioPin.toString(), step.timeout.toString()];
+        logger.info(`Executing sensor script: ${scriptPath} with args: ${args.join(', ')}`);
         const process = spawn('python3', [scriptPath, ...args]);
 
         process.stdout.on('data', (data) => {
-            sendEvent({ message: `Sensor output: ${data}` });
+            const message = data.toString().trim();
+            logger.info(`Sensor output: ${message}`);
+            sendEvent({ message: `Sensor output: ${message}` });
         });
 
         process.stderr.on('data', (data) => {
-            sendEvent({ error: `Sensor error: ${data}` });
+            const errorMessage = data.toString().trim();
+            logger.error(`Sensor error: ${errorMessage}`);
+            sendEvent({ error: `Sensor error: ${errorMessage}` });
         });
 
         process.on('close', (code) => {
             if (code === 0) {
+                logger.info(`Sensor step completed: ${step.name}`);
                 sendEvent({ message: `Sensor step completed: ${step.name}`, result: { detected: true } });
                 resolve({ detected: true });
             } else if (code === 1) {
+                logger.info(`Sensor step completed (no detection): ${step.name}`);
                 sendEvent({ message: `Sensor step completed: ${step.name}`, result: { detected: false } });
                 resolve({ detected: false });
             } else {
-                reject(new Error(`Sensor process exited with code ${code}`));
+                const errorMessage = `Sensor process exited with code ${code}`;
+                logger.error(errorMessage);
+                reject(new Error(errorMessage));
             }
         });
     });
 }
 
 async function executePause(step, sendEvent) {
+    logger.info(`Executing pause step: ${step.name}, duration: ${step.duration}ms`);
     return new Promise((resolve) => {
         sendEvent({ message: `Starting pause: ${step.duration}ms` });
         setTimeout(() => {
+            logger.info(`Pause completed: ${step.duration}ms`);
             sendEvent({ message: `Pause completed: ${step.duration}ms` });
             resolve();
         }, step.duration);
