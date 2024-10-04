@@ -52,7 +52,7 @@ router.post('/test', async (req, res) => {
     console.log('Light Test Route Hit');
     try {
         console.log('Light Test Route - Request body:', req.body);
-        const { part_id, gpioPin, state, duration } = req.body;
+        const { part_id, gpioPin, state } = req.body;
         
         if (!gpioPin || !state) {
             throw new Error('Missing required parameters for light test');
@@ -60,7 +60,6 @@ router.post('/test', async (req, res) => {
 
         const scriptPath = path.join(__dirname, '..', 'scripts', 'light_control.py');
         console.log('Light test script path:', scriptPath);
-        console.log('Executing light test with parameters:', { gpioPin, state, duration });
 
         const scriptArgs = [
             scriptPath,
@@ -68,9 +67,12 @@ router.post('/test', async (req, res) => {
             state
         ];
 
-        if (duration) {
-            scriptArgs.push(duration.toString());
+        // Add duration of 5000ms when turning the light on
+        if (state === 'on') {
+            scriptArgs.push('5000');
         }
+
+        console.log('Executing light test with parameters:', scriptArgs);
 
         console.log('Executing command:', 'sudo', 'python3', ...scriptArgs);
 
