@@ -32,7 +32,7 @@
     
     <div id="partButtons">
         <a href="/parts/new/motor?characterId=<%= character.id %>" class="button">Add Motor</a>
-        <a href="/parts/new/linear-actuator?characterId=<%= character.id %>" class="button">Add Linear Actuator</a>
+        <a href="/parts/linear-actuator/new?characterId=<%= character.id %>" class="button">Add Linear Actuator</a>
         <a href="/parts/new/light?characterId=<%= character.id %>" class="button">Add Light</a>
         <a href="/parts/new/led?characterId=<%= character.id %>" class="button">Add LED</a>
         <a href="/parts/new/servo?characterId=<%= character.id %>" class="button">Add Servo</a>
@@ -60,7 +60,11 @@
                             <td><%= part.type %></td>
                             <td><%= part.details %></td>
                             <td>
-                                <a href="/parts/<%= part.id %>/edit?characterId=<%= character.id %>" class="button">Edit</a>
+                                <% if (part.type === 'linear-actuator') { %>
+                                    <a href="/parts/linear-actuator/<%= part.id %>/edit?characterId=<%= character.id %>" class="button">Edit</a>
+                                <% } else { %>
+                                    <a href="/parts/<%= part.id %>/edit?characterId=<%= character.id %>" class="button">Edit</a>
+                                <% } %>
                                 <button class="button delete-part" data-id="<%= part.id %>">Delete</button>
                             </td>
                         </tr>
