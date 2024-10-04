@@ -5,6 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
     <link rel="stylesheet" href="/css/style.css">
+    <style>
+        #lightTest {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background-color: #f0f0f0;
+        }
+        #testResult {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        #debugInfo {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background-color: #e0e0e0;
+            white-space: pre-wrap;
+        }
+    </style>
 </head>
 <body>
     <h1><%= title %></h1>
@@ -33,6 +52,7 @@
         </div>
         <button type="submit">Save Part</button>
     </form>
+
     <div id="lightTest">
         <h2>Test Light</h2>
         <div>
@@ -49,6 +69,9 @@
         <button onclick="testPart()">Test Light</button>
         <div id="testResult"></div>
     </div>
+
+    <div id="debugInfo"></div>
+
     <a href="/parts" class="button">Back to Parts</a>
 
     <script>
@@ -58,7 +81,9 @@
 
         function testPart() {
             const testResultElement = document.getElementById('testResult');
+            const debugInfoElement = document.getElementById('debugInfo');
             testResultElement.innerHTML = 'Testing...';
+            debugInfoElement.innerHTML = '';
 
             const partData = {
                 part_id: partId,
@@ -69,6 +94,7 @@
             };
 
             console.log('Sending test data:', partData);
+            debugInfoElement.innerHTML += `Sending test data: ${JSON.stringify(partData, null, 2)}\n\n`;
 
             fetch('/parts/light/test', {
                 method: 'POST',
@@ -78,6 +104,7 @@
                 body: JSON.stringify(partData)
             })
             .then(response => {
+                debugInfoElement.innerHTML += `Response status: ${response.status}\n`;
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -85,6 +112,7 @@
             })
             .then(data => {
                 console.log('Received response:', data);
+                debugInfoElement.innerHTML += `Received response: ${JSON.stringify(data, null, 2)}\n`;
                 if (data.success) {
                     console.log('Light test successful:', data.message);
                     testResultElement.innerHTML = `Test successful: ${data.message}`;
@@ -97,6 +125,7 @@
             })
             .catch((error) => {
                 console.error('Error during light test:', error);
+                debugInfoElement.innerHTML += `Error: ${error.message}\n`;
                 testResultElement.innerHTML = `Error: ${error.message}`;
                 testResultElement.style.color = 'red';
             });

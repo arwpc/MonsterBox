@@ -39,6 +39,7 @@ router.post('/', async (req, res) => {
 });
 
 router.post('/test', async (req, res) => {
+    console.log('Light Test Route Hit');
     try {
         console.log('Light Test Route - Request body:', req.body);
         const { part_id, gpioPin, state, duration } = req.body;
