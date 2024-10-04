@@ -72,7 +72,9 @@ router.post('/test', async (req, res) => {
             scriptArgs.push(duration.toString());
         }
 
-        const process = spawn('python3', scriptArgs);
+        console.log('Executing command:', 'sudo', 'python3', ...scriptArgs);
+
+        const process = spawn('sudo', ['python3', ...scriptArgs], { stdio: 'pipe' });
 
         let stdout = '';
         let stderr = '';
