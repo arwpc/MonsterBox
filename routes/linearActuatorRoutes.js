@@ -92,8 +92,8 @@ router.get('/testfire', (req, res) => {
         duration,
         directionPin,
         pwmPin,
-        maxExtension,
-        maxRetraction
+        maxExtension: maxExtension || '10000',
+        maxRetraction: maxRetraction || '10000'
     });
 });
 
@@ -110,10 +110,10 @@ router.get('/:id/testfire', (req, res) => {
                 direction,
                 speed,
                 duration,
-                directionPin: part.directionPin.toString(),
-                pwmPin: part.pwmPin.toString(),
-                maxExtension: part.maxExtension.toString(),
-                maxRetraction: part.maxRetraction.toString()
+                directionPin: (part.directionPin || 18).toString(),
+                pwmPin: (part.pwmPin || 13).toString(),
+                maxExtension: (part.maxExtension || 10000).toString(),
+                maxRetraction: (part.maxRetraction || 10000).toString()
             });
         })
         .catch(error => {
@@ -135,8 +135,8 @@ router.post('/', async (req, res) => {
             characterId: parseInt(req.body.characterId, 10),
             directionPin: parseInt(req.body.directionPin, 10),
             pwmPin: parseInt(req.body.pwmPin, 10),
-            maxExtension: parseInt(req.body.maxExtension, 10),
-            maxRetraction: parseInt(req.body.maxRetraction, 10)
+            maxExtension: parseInt(req.body.maxExtension, 10) || 10000,
+            maxRetraction: parseInt(req.body.maxRetraction, 10) || 10000
         };
         const createdLinearActuator = await partService.createPart(newLinearActuator);
         console.log('Created linear actuator:', createdLinearActuator);
@@ -162,8 +162,8 @@ router.post('/:id', async (req, res) => {
             characterId: parseInt(req.body.characterId, 10),
             directionPin: parseInt(req.body.directionPin, 10),
             pwmPin: parseInt(req.body.pwmPin, 10),
-            maxExtension: parseInt(req.body.maxExtension, 10),
-            maxRetraction: parseInt(req.body.maxRetraction, 10)
+            maxExtension: parseInt(req.body.maxExtension, 10) || 10000,
+            maxRetraction: parseInt(req.body.maxRetraction, 10) || 10000
         };
         console.log('Updated Linear Actuator data:', updatedLinearActuator);
         const result = await partService.updatePart(id, updatedLinearActuator);
