@@ -19,3 +19,26 @@
 2024-10-04T22:36:27.804Z warn: No character selected, redirecting to main page
 2024-10-04T22:36:29.850Z warn: No character selected, redirecting to main page
 2024-10-04T22:42:39.619Z info: Initiating graceful shutdown. Reason: SIGINT
+2024-10-04T23:09:38.507Z info: Audio stream server started
+2024-10-04T23:09:38.514Z info: Audio stream started successfully
+2024-10-04T23:09:38.529Z info: MonsterBox server running at http://localhost:3000
+2024-10-04T23:09:38.531Z info: Local IP address: 10.10.10.215
+2024-10-04T23:10:01.346Z info: Getting all scenes for character 1
+2024-10-04T23:10:01.353Z info: Retrieved 1 scenes for character 1
+2024-10-04T23:10:02.906Z info: Getting scene 1 for editing, character 1
+2024-10-04T23:10:02.935Z info: Retrieved scene 1 for character 1
+2024-10-04T23:10:06.810Z info: Updating scene 1 for character 1
+2024-10-04T23:10:06.818Z info: Updated scene with id 1
+2024-10-04T23:10:06.818Z info: Updated scene with ID 1 for character 1
+2024-10-04T23:10:06.845Z warn: No character selected, redirecting to main page
+2024-10-04T23:10:08.675Z info: Getting all scenes for character 1
+2024-10-04T23:10:08.685Z info: Retrieved 1 scenes for character 1
+2024-10-04T23:10:11.392Z info: Getting scene player for scene 1, character 1
+2024-10-04T23:10:11.394Z info: Getting scene player for scene 1, character 1
+2024-10-04T23:10:11.398Z info: Rendering scene player for scene 1
+2024-10-04T23:10:24.698Z info: Getting all scenes for character 1
+2024-10-04T23:10:24.706Z info: Retrieved 1 scenes for character 1
+2024-10-04T23:10:27.393Z info: Initiating graceful shutdown. Reason: SIGINT
+2024-10-04T23:10:30.346Z info: Initiating graceful shutdown. Reason: SIGINT
+2024-10-04T23:10:30.568Z info: Initiating graceful shutdown. Reason: SIGINT
+2024-10-04T23:10:37.404Z error: Could not close connections in time, forcefully shutting down
