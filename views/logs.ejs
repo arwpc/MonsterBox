@@ -6,8 +6,13 @@
     <title>System Logs</title>
     <link rel="stylesheet" href="/css/style.css">
     <style>
+        body {
+            background-color: black;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
         .log-container {
-            background-color: #f4f4f4;
+            background-color: #111;
             padding: 20px;
             border-radius: 5px;
             margin-bottom: 20px;
@@ -25,29 +30,48 @@
         .pagination a {
             padding: 8px 16px;
             text-decoration: none;
-            border: 1px solid #ddd;
+            border: 1px solid #444;
             margin: 0 4px;
+            color: white;
+            background-color: #333;
         }
         .pagination a.active {
             background-color: #4CAF50;
-            color: white;
             border: 1px solid #4CAF50;
         }
         .error-message {
-            background-color: #ffcccc;
+            background-color: #660000;
             border: 1px solid #ff0000;
-            color: #ff0000;
+            color: #ff9999;
             padding: 10px;
             margin-bottom: 20px;
             border-radius: 5px;
         }
         .info-message {
-            background-color: #e6f3ff;
-            border: 1px solid #0066cc;
-            color: #0066cc;
+            background-color: #003366;
+            border: 1px solid #0099ff;
+            color: #99ccff;
             padding: 10px;
             margin-bottom: 20px;
             border-radius: 5px;
+        }
+        .search-form {
+            margin-bottom: 20px;
+        }
+        .search-form input[type="text"] {
+            padding: 5px;
+            width: 300px;
+        }
+        .search-form button {
+            padding: 5px 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .highlight {
+            background-color: yellow;
+            color: black;
         }
     </style>
 </head>
@@ -65,12 +89,13 @@
             <%= logs[0] %>
         </div>
     <% } else { %>
-        <form action="/logs" method="GET">
-            <input type="text" name="search" value="<%= search %>" placeholder="Search logs...">
-            <button type="submit">Search</button>
-        </form>
+        <div class="search-form">
+            <input type="text" id="searchInput" value="<%= search %>" placeholder="Search logs...">
+            <button onclick="performSearch()">Search</button>
+            <button onclick="searchNext()">Search Next</button>
+        </div>
 
-        <div class="log-container">
+        <div class="log-container" id="logContainer">
             <% logs.forEach(function(log) { %>
                 <div class="log-entry"><%= log %></div>
             <% }); %>
@@ -93,6 +118,45 @@
         <% } %>
     <% } %>
 
-    <a href="/system-config">Back to System Config</a>
+    <a href="/system-config" style="color: #4CAF50;">Back to System Config</a>
+
+    <script>
+        let currentHighlightIndex = -1;
+
+        function performSearch() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const logContainer = document.getElementById('logContainer');
+            const logEntries = logContainer.getElementsByClassName('log-entry');
+            
+            // Remove existing highlights
+            const highlights = logContainer.getElementsByClassName('highlight');
+            while (highlights.length > 0) {
+                highlights[0].outerHTML = highlights[0].innerHTML;
+            }
+
+            // Add new highlights
+            for (let i = 0; i < logEntries.length; i++) {
+                const entryText = logEntries[i].innerHTML;
+                const highlightedText = entryText.replace(new RegExp(searchTerm, 'gi'), match => `<span class="highlight">${match}</span>`);
+                logEntries[i].innerHTML = highlightedText;
+            }
+
+            currentHighlightIndex = -1;
+            searchNext();
+        }
+
+        function searchNext() {
+            const highlights = document.getElementsByClassName('highlight');
+            if (highlights.length > 0) {
+                currentHighlightIndex = (currentHighlightIndex + 1) % highlights.length;
+                highlights[currentHighlightIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        // Perform initial search if there's a search term
+        if (document.getElementById('searchInput').value) {
+            performSearch();
+        }
+    </script>
 </body>
 </html>
