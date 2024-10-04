@@ -34,6 +34,12 @@
         .error-message {
             color: #ff0000;
         }
+        #debug-info {
+            background-color: #ffffcc;
+            border: 1px solid #ffcc00;
+            padding: 10px;
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
@@ -42,11 +48,15 @@
     
     <div id="scene-overview">
         <h3>Scene Steps:</h3>
-        <% scene.steps.forEach((step, index) => { %>
-            <div class="step" id="step-<%= index %>">
-                <strong>Step <%= index + 1 %>:</strong> <%= step.name %> (<%= step.type %>)
-            </div>
-        <% }); %>
+        <% if (scene && scene.steps && scene.steps.length > 0) { %>
+            <% scene.steps.forEach((step, index) => { %>
+                <div class="step" id="step-<%= index %>">
+                    <strong>Step <%= index + 1 %>:</strong> <%= step.name %> (<%= step.type %>)
+                </div>
+            <% }); %>
+        <% } else { %>
+            <p>No steps found for this scene.</p>
+        <% } %>
     </div>
     
     <div id="log-box"></div>
@@ -59,6 +69,12 @@
     </div>
     
     <a href="/scenes?characterId=<%= characterId %>" class="button">Back to Scenes</a>
+
+    <div id="debug-info">
+        <h3>Debug Information:</h3>
+        <pre id="scene-data"></pre>
+        <p>Character ID: <span id="character-id"></span></p>
+    </div>
 
     <script>
         const sceneData = <%- JSON.stringify(scene) %>;
@@ -74,6 +90,17 @@
         }
         console.log("Scene data:", sceneData);
         console.log("Character ID:", characterId);
+
+        // Display debug information
+        document.getElementById('scene-data').textContent = JSON.stringify(sceneData, null, 2);
+        document.getElementById('character-id').textContent = characterId;
+
+        // Add click event listeners to buttons
+        document.querySelectorAll('#controls button').forEach(button => {
+            button.addEventListener('click', function() {
+                console.log(this.id + " clicked");
+            });
+        });
     </script>
     <script src="/scripts/scene-player.js"></script>
 </body>
