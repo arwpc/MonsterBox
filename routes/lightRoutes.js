@@ -16,6 +16,7 @@ router.get('/new', async (req, res) => {
     }
 });
 
+// Route for editing an existing light
 router.get('/:id/edit', async (req, res) => {
     try {
         const id = parseInt(req.params.id, 10);
