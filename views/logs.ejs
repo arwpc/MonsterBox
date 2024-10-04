@@ -33,35 +33,65 @@
             color: white;
             border: 1px solid #4CAF50;
         }
+        .error-message {
+            background-color: #ffcccc;
+            border: 1px solid #ff0000;
+            color: #ff0000;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .info-message {
+            background-color: #e6f3ff;
+            border: 1px solid #0066cc;
+            color: #0066cc;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
     <h1>System Logs</h1>
     
-    <form action="/logs" method="GET">
-        <input type="text" name="search" value="<%= search %>" placeholder="Search logs...">
-        <button type="submit">Search</button>
-    </form>
+    <% if (typeof error !== 'undefined' && error) { %>
+        <div class="error-message">
+            <%= error %>
+        </div>
+    <% } %>
 
-    <div class="log-container">
-        <% logs.forEach(function(log) { %>
-            <div class="log-entry"><%= log %></div>
-        <% }); %>
-    </div>
+    <% if (logs.length === 1 && (logs[0].includes('No log file found') || logs[0].includes('The log file is empty'))) { %>
+        <div class="info-message">
+            <%= logs[0] %>
+        </div>
+    <% } else { %>
+        <form action="/logs" method="GET">
+            <input type="text" name="search" value="<%= search %>" placeholder="Search logs...">
+            <button type="submit">Search</button>
+        </form>
 
-    <div class="pagination">
-        <% if (currentPage > 1) { %>
-            <a href="/logs?page=<%= currentPage - 1 %>&search=<%= search %>">&laquo; Previous</a>
+        <div class="log-container">
+            <% logs.forEach(function(log) { %>
+                <div class="log-entry"><%= log %></div>
+            <% }); %>
+        </div>
+
+        <% if (totalPages > 1) { %>
+            <div class="pagination">
+                <% if (currentPage > 1) { %>
+                    <a href="/logs?page=<%= currentPage - 1 %>&search=<%= search %>">&laquo; Previous</a>
+                <% } %>
+                
+                <% for (let i = 1; i <= totalPages; i++) { %>
+                    <a href="/logs?page=<%= i %>&search=<%= search %>" class="<%= i === currentPage ? 'active' : '' %>"><%= i %></a>
+                <% } %>
+                
+                <% if (currentPage < totalPages) { %>
+                    <a href="/logs?page=<%= currentPage + 1 %>&search=<%= search %>">Next &raquo;</a>
+                <% } %>
+            </div>
         <% } %>
-        
-        <% for (let i = 1; i <= totalPages; i++) { %>
-            <a href="/logs?page=<%= i %>&search=<%= search %>" class="<%= i === currentPage ? 'active' : '' %>"><%= i %></a>
-        <% } %>
-        
-        <% if (currentPage < totalPages) { %>
-            <a href="/logs?page=<%= currentPage + 1 %>&search=<%= search %>">Next &raquo;</a>
-        <% } %>
-    </div>
+    <% } %>
 
     <a href="/system-config">Back to System Config</a>
 </body>
