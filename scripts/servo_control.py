@@ -1,80 +1,102 @@
 import RPi.GPIO as GPIO
+import smbus
 import sys
 import time
 
-try:
-    from adafruit_pca9685 import PCA9685
-    import board
-    import busio
-except ImportError:
-    print("Error: Required modules not found. Please install the following modules:")
-    print("pip3 install adafruit-circuitpython-pca9685")
-    print("pip3 install adafruit-circuitpython-motor")
-    sys.exit(1)
+# PCA9685 registers
+PCA9685_MODE1 = 0x00
+PCA9685_PRESCALE = 0xFE
+LED0_ON_L = 0x06
+LED0_ON_H = 0x07
+LED0_OFF_L = 0x08
+LED0_OFF_H = 0x09
 
-def setup_pca9685():
-    i2c = busio.I2C(board.SCL, board.SDA)
-    pca = PCA9685(i2c)
-    pca.frequency = 50
-    return pca
+def setup_gpio(pin):
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(pin, GPIO.OUT)
+    return GPIO.PWM(pin, 50)  # 50 Hz PWM frequency
 
-def angle_to_pulse(angle, min_pulse, max_pulse):
-    return min_pulse + (angle / 180) * (max_pulse - min_pulse)
+class PCA9685:
+    def __init__(self, address=0x40, bus_number=1):
+        self.bus = smbus.SMBus(bus_number)
+        self.address = address
+        self.set_all_pwm(0, 0)
+        self.bus.write_byte_data(self.address, PCA9685_MODE1, 0x00)
 
-def control_servo(channel, angle, servo_type, min_pulse, max_pulse, duration):
-    pca = setup_pca9685()
-    try:
-        if servo_type == 'FS90R':
-            # For continuous rotation servo
-            if angle == 90:
-                pca.channels[channel].duty_cycle = 0  # Stop
-            elif angle < 90:
-                # Clockwise rotation
-                speed = int((90 - angle) / 90 * 65535)
-                pca.channels[channel].duty_cycle = speed
-            else:
-                # Counter-clockwise rotation
-                speed = int((angle - 90) / 90 * 65535)
-                pca.channels[channel].duty_cycle = speed
-        else:
-            # For standard servos
-            pulse = angle_to_pulse(angle, min_pulse, max_pulse)
-            pca.channels[channel].duty_cycle = int(pulse / 20000 * 65535)
-        
-        time.sleep(duration / 1000)  # Convert duration to seconds
-    finally:
-        pca.channels[channel].duty_cycle = 0
-        pca.deinit()
+    def set_pwm_freq(self, freq_hz):
+        prescaleval = 25000000.0    # 25MHz
+        prescaleval /= 4096.0       # 12-bit
+        prescaleval /= float(freq_hz)
+        prescaleval -= 1.0
+        prescale = int(prescaleval + 0.5)
+        oldmode = self.bus.read_byte_data(self.address, PCA9685_MODE1)
+        newmode = (oldmode & 0x7F) | 0x10
+        self.bus.write_byte_data(self.address, PCA9685_MODE1, newmode)
+        self.bus.write_byte_data(self.address, PCA9685_PRESCALE, prescale)
+        self.bus.write_byte_data(self.address, PCA9685_MODE1, oldmode)
+        time.sleep(0.005)
+        self.bus.write_byte_data(self.address, PCA9685_MODE1, oldmode | 0xa1)
 
-def stop_servo(channel):
-    pca = setup_pca9685()
-    try:
-        pca.channels[channel].duty_cycle = 0
-    finally:
-        pca.deinit()
+    def set_pwm(self, channel, on, off):
+        self.bus.write_byte_data(self.address, LED0_ON_L + 4 * channel, on & 0xFF)
+        self.bus.write_byte_data(self.address, LED0_ON_H + 4 * channel, on >> 8)
+        self.bus.write_byte_data(self.address, LED0_OFF_L + 4 * channel, off & 0xFF)
+        self.bus.write_byte_data(self.address, LED0_OFF_H + 4 * channel, off >> 8)
+
+    def set_all_pwm(self, on, off):
+        self.bus.write_byte_data(self.address, LED0_ON_L, on & 0xFF)
+        self.bus.write_byte_data(self.address, LED0_ON_H, on >> 8)
+        self.bus.write_byte_data(self.address, LED0_OFF_L, off & 0xFF)
+        self.bus.write_byte_data(self.address, LED0_OFF_H, off >> 8)
+
+def angle_to_duty_cycle(angle):
+    return 2.5 + (angle / 18.0)  # Maps 0-180 degrees to 2.5-12.5% duty cycle
+
+def control_servo(pin, angle, use_pca9685, channel=None, pca9685=None):
+    if use_pca9685 and pca9685:
+        pulse = int(angle_to_duty_cycle(angle) / 100 * 4096)
+        pca9685.set_pwm(channel, 0, pulse)
+    else:
+        pwm = setup_gpio(pin)
+        try:
+            pwm.start(angle_to_duty_cycle(angle))
+            time.sleep(0.5)  # Allow time for the servo to move
+        finally:
+            pwm.stop()
+            GPIO.cleanup(pin)
+
+def stop_servo(pin, use_pca9685, channel=None, pca9685=None):
+    if use_pca9685 and pca9685:
+        pca9685.set_pwm(channel, 0, 0)
+    else:
+        GPIO.cleanup(pin)
 
 if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print("Usage: python servo_control.py <command> <channel> [angle] [servo_type] [min_pulse] [max_pulse] [duration]")
+    if len(sys.argv) < 4:
+        print("Usage: python servo_control.py <command> <pin> <use_pca9685> [angle] [channel]")
         sys.exit(1)
 
     command = sys.argv[1]
-    channel = int(sys.argv[2])
+    pin = int(sys.argv[2])
+    use_pca9685 = sys.argv[3].lower() == 'true'
+
+    pca9685 = None
+    if use_pca9685:
+        pca9685 = PCA9685()
+        pca9685.set_pwm_freq(50)  # 50 Hz frequency for servos
 
     try:
         if command == "test":
-            if len(sys.argv) != 8:
-                print("Usage for test: python servo_control.py test <channel> <angle> <servo_type> <min_pulse> <max_pulse> <duration>")
+            if len(sys.argv) != 6:
+                print("Usage for test: python servo_control.py test <pin> <use_pca9685> <angle> <channel>")
                 sys.exit(1)
-            angle = float(sys.argv[3])
-            servo_type = sys.argv[4]
-            min_pulse = int(sys.argv[5])
-            max_pulse = int(sys.argv[6])
-            duration = int(sys.argv[7])
-            control_servo(channel, angle, servo_type, min_pulse, max_pulse, duration)
+            angle = float(sys.argv[4])
+            channel = int(sys.argv[5]) if use_pca9685 else None
+            control_servo(pin, angle, use_pca9685, channel, pca9685)
             print("Servo test successful")
         elif command == "stop":
-            stop_servo(channel)
+            channel = int(sys.argv[4]) if use_pca9685 else None
+            stop_servo(pin, use_pca9685, channel, pca9685)
             print("Servo stopped successfully")
         else:
             print(f"Unknown command: {command}")
@@ -82,3 +104,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"Error controlling servo: {str(e)}")
         sys.exit(1)
+    finally:
+        if not use_pca9685:
+            GPIO.cleanup()

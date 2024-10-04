@@ -3,14 +3,10 @@ const path = require('path');
 
 const servoTypes = {
     DS3240MG: { minPulse: 500, maxPulse: 2500, defaultAngle: 90 },
-    FS90R: { minPulse: 700, maxPulse: 2300, defaultAngle: 90 }, // For continuous rotation, 90 is the stop position
+    FS90R: { minPulse: 700, maxPulse: 2300, defaultAngle: 90 },
     MG90S: { minPulse: 600, maxPulse: 2400, defaultAngle: 90 },
     BILDA: { minPulse: 500, maxPulse: 2500, defaultAngle: 90 },
 };
-
-function getServoDefaults(servoType) {
-    return servoTypes[servoType] || { minPulse: 500, maxPulse: 2500, defaultAngle: 90 };
-}
 
 function executeServoCommand(command, args) {
     return new Promise((resolve, reject) => {
@@ -31,22 +27,19 @@ function executeServoCommand(command, args) {
     });
 }
 
-exports.getServoDefaults = getServoDefaults;
+exports.getServoDefaults = (servoType) => servoTypes[servoType] || { minPulse: 500, maxPulse: 2500, defaultAngle: 90 };
 
 exports.testServo = async (req, res) => {
     console.log('Testing servo - Body:', req.body);
 
     try {
-        const { angle, channel, servoType, minPulse, maxPulse } = req.body;
-        const servoConfig = getServoDefaults(servoType);
+        const { angle, pin, channel, servoType, usePCA9685 } = req.body;
         
         const args = [
-            channel,
+            pin,
+            usePCA9685,
             angle,
-            servoType,
-            minPulse || servoConfig.minPulse,
-            maxPulse || servoConfig.maxPulse,
-            1000 // duration in milliseconds
+            channel
         ];
 
         const result = await executeServoCommand('test', args);
@@ -61,9 +54,12 @@ exports.stopServo = async (req, res) => {
     console.log('Stopping servo - Body:', req.body);
 
     try {
-        const { channel } = req.body;
+        const { pin, channel, usePCA9685 } = req.body;
         
-        const args = [channel];
+        const args = [pin, usePCA9685];
+        if (usePCA9685) {
+            args.push(channel);
+        }
 
         const result = await executeServoCommand('stop', args);
         res.json({ success: true, message: result });

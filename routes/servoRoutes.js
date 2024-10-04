@@ -57,7 +57,9 @@ router.post('/', async (req, res) => {
             type: 'servo',
             characterId: parseInt(req.body.characterId, 10),
             servoType: req.body.servoType,
-            channel: parseInt(req.body.channel, 10),
+            usePCA9685: req.body.usePCA9685 === 'on',
+            channel: req.body.usePCA9685 === 'on' ? parseInt(req.body.channel, 10) : null,
+            pin: req.body.usePCA9685 !== 'on' ? parseInt(req.body.pin, 10) : null,
             minPulse: parseInt(req.body.minPulse) || servoDefaults.minPulse,
             maxPulse: parseInt(req.body.maxPulse) || servoDefaults.maxPulse,
             defaultAngle: parseInt(req.body.defaultAngle) || servoDefaults.defaultAngle
@@ -92,7 +94,9 @@ router.post('/:id', async (req, res) => {
             type: 'servo',
             characterId: parseInt(req.body.characterId, 10),
             servoType: req.body.servoType,
-            channel: parseInt(req.body.channel, 10),
+            usePCA9685: req.body.usePCA9685 === 'on',
+            channel: req.body.usePCA9685 === 'on' ? parseInt(req.body.channel, 10) : null,
+            pin: req.body.usePCA9685 !== 'on' ? parseInt(req.body.pin, 10) : null,
             minPulse: parseInt(req.body.minPulse) || servoDefaults.minPulse,
             maxPulse: parseInt(req.body.maxPulse) || servoDefaults.maxPulse,
             defaultAngle: parseInt(req.body.defaultAngle) || servoDefaults.defaultAngle

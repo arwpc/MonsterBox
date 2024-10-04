@@ -69,18 +69,28 @@
             </select>
         </div>
         <div>
-            <label for="channel">PCA9685 Channel:</label>
-            <input type="number" id="channel" name="channel" value="<%= part ? part.channel : 0 %>" min="0" max="15" required>
+            <label for="usePCA9685">Use PCA9685:</label>
+            <input type="checkbox" id="usePCA9685" name="usePCA9685" <%= (part && part.usePCA9685) ? 'checked' : '' %> onchange="togglePCA9685()">
         </div>
-        <div>
-            <label>Channel Position:</label>
-            <div class="channel-grid">
-                <% for (let i = 0; i < 16; i++) { %>
-                    <div class="channel-button" data-channel="<%= i %>">
-                        <%= i %> (<%= ['Top', 'Top', 'Top', 'Top', 'Upper Mid', 'Upper Mid', 'Upper Mid', 'Upper Mid', 'Lower Mid', 'Lower Mid', 'Lower Mid', 'Lower Mid', 'Bottom', 'Bottom', 'Bottom', 'Bottom'][i] %>)
-                    </div>
-                <% } %>
+        <div id="pca9685Fields" style="display: none;">
+            <div>
+                <label for="channel">PCA9685 Channel:</label>
+                <input type="number" id="channel" name="channel" value="<%= part ? part.channel : 0 %>" min="0" max="15" required>
             </div>
+            <div>
+                <label>Channel Position:</label>
+                <div class="channel-grid">
+                    <% for (let i = 0; i < 16; i++) { %>
+                        <div class="channel-button" data-channel="<%= i %>">
+                            <%= i %> (<%= ['Top', 'Top', 'Top', 'Top', 'Upper Mid', 'Upper Mid', 'Upper Mid', 'Upper Mid', 'Lower Mid', 'Lower Mid', 'Lower Mid', 'Lower Mid', 'Bottom', 'Bottom', 'Bottom', 'Bottom'][i] %>)
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+        <div id="gpioField" style="display: none;">
+            <label for="pin">GPIO Pin:</label>
+            <input type="number" id="pin" name="pin" value="<%= part ? part.pin : '' %>" min="0" max="27" required>
         </div>
         <div>
             <label for="minPulse">Min Pulse (μs):</label>
@@ -132,6 +142,7 @@
             // Initialize servo description and defaults
             updateServoDefaults();
             updateServoDescription(document.getElementById('testAngle').value);
+            togglePCA9685();
 
             // Add event listener for channel input
             channelInput.addEventListener('change', function() {
@@ -171,9 +182,17 @@
             document.getElementById('servoDescription').textContent = description;
         }
 
+        function togglePCA9685() {
+            const usePCA9685 = document.getElementById('usePCA9685').checked;
+            document.getElementById('pca9685Fields').style.display = usePCA9685 ? 'block' : 'none';
+            document.getElementById('gpioField').style.display = usePCA9685 ? 'none' : 'block';
+        }
+
         function testServo() {
             const angle = document.getElementById('testAngle').value;
+            const usePCA9685 = document.getElementById('usePCA9685').checked;
             const channel = document.getElementById('channel').value;
+            const pin = document.getElementById('pin').value;
             fetch('/parts/servo/test', {
                 method: 'POST',
                 headers: {
@@ -181,7 +200,9 @@
                 },
                 body: JSON.stringify({
                     angle: parseInt(angle),
+                    usePCA9685: usePCA9685,
                     channel: parseInt(channel),
+                    pin: parseInt(pin),
                     servoType: document.getElementById('servoType').value,
                     minPulse: parseInt(document.getElementById('minPulse').value),
                     maxPulse: parseInt(document.getElementById('maxPulse').value)
@@ -208,14 +229,18 @@
         }
 
         function stopServo() {
+            const usePCA9685 = document.getElementById('usePCA9685').checked;
             const channel = document.getElementById('channel').value;
+            const pin = document.getElementById('pin').value;
             fetch('/parts/servo/stop', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
+                    usePCA9685: usePCA9685,
                     channel: parseInt(channel),
+                    pin: parseInt(pin),
                     servoType: document.getElementById('servoType').value
                 })
             })
