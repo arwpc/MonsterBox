@@ -1,9 +1,6 @@
 
 repopack-output.txt
 node_modules/
-# Ignore all log files except those in the /log directory
-*.log
-!/log/*.log
 MonsterBox*.log
-/log/
-
+/log/*.log
+./log/*
