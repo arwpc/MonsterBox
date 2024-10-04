@@ -7,11 +7,14 @@ const servoController = require('../controllers/servoController');
 router.get('/new', async (req, res) => {
     try {
         const characters = await characterService.getAllCharacters();
+        const servoTypes = servoController.getServoTypes();
         res.render('part-forms/servo', { 
             title: 'New Servo', 
             action: '/parts/servo', 
             part: null, 
-            characters 
+            characters,
+            servoTypes,
+            getServoDefaults: servoController.getServoDefaults
         });
     } catch (error) {
         console.error('Error preparing new servo form:', error);
@@ -31,11 +34,14 @@ router.get('/:id/edit', async (req, res) => {
             throw new Error('Part not found');
         }
         const characters = await characterService.getAllCharacters();
+        const servoTypes = servoController.getServoTypes();
         res.render('part-forms/servo', { 
             title: 'Edit Servo', 
             action: `/parts/servo/${part.id}`, 
             part, 
-            characters 
+            characters,
+            servoTypes,
+            getServoDefaults: servoController.getServoDefaults
         });
     } catch (error) {
         console.error('Error fetching servo:', error);
@@ -45,15 +51,16 @@ router.get('/:id/edit', async (req, res) => {
 
 router.post('/', async (req, res) => {
     try {
+        const servoDefaults = servoController.getServoDefaults(req.body.servoType);
         const newServo = {
             name: req.body.name,
             type: 'servo',
             characterId: parseInt(req.body.characterId, 10),
             servoType: req.body.servoType,
             channel: parseInt(req.body.channel, 10),
-            minPulse: parseInt(req.body.minPulse, 10),
-            maxPulse: parseInt(req.body.maxPulse, 10),
-            defaultAngle: parseInt(req.body.defaultAngle, 10)
+            minPulse: parseInt(req.body.minPulse) || servoDefaults.minPulse,
+            maxPulse: parseInt(req.body.maxPulse) || servoDefaults.maxPulse,
+            defaultAngle: parseInt(req.body.defaultAngle) || servoDefaults.defaultAngle
         };
         const createdServo = await partService.createPart(newServo);
         console.log('Created servo:', createdServo);
@@ -78,6 +85,7 @@ router.post('/:id', async (req, res) => {
         if (isNaN(id)) {
             throw new Error('Invalid part ID');
         }
+        const servoDefaults = servoController.getServoDefaults(req.body.servoType);
         const updatedServo = {
             id: id,
             name: req.body.name,
@@ -85,9 +93,9 @@ router.post('/:id', async (req, res) => {
             characterId: parseInt(req.body.characterId, 10),
             servoType: req.body.servoType,
             channel: parseInt(req.body.channel, 10),
-            minPulse: parseInt(req.body.minPulse, 10),
-            maxPulse: parseInt(req.body.maxPulse, 10),
-            defaultAngle: parseInt(req.body.defaultAngle, 10)
+            minPulse: parseInt(req.body.minPulse) || servoDefaults.minPulse,
+            maxPulse: parseInt(req.body.maxPulse) || servoDefaults.maxPulse,
+            defaultAngle: parseInt(req.body.defaultAngle) || servoDefaults.defaultAngle
         };
         console.log('Updated Servo data:', updatedServo);
         const result = await partService.updatePart(id, updatedServo);

@@ -2,11 +2,15 @@ const { exec } = require('child_process');
 const path = require('path');
 
 const servoTypes = {
-    DS3240MG: { minPulse: 500, maxPulse: 2500 },
-    FS90R: { minPulse: 700, maxPulse: 2300 },
-    MG90S: { minPulse: 600, maxPulse: 2400 },
-    BILDA: { minPulse: 500, maxPulse: 2500 },
+    DS3240MG: { minPulse: 500, maxPulse: 2500, defaultAngle: 90 },
+    FS90R: { minPulse: 700, maxPulse: 2300, defaultAngle: 90 }, // For continuous rotation, 90 is the stop position
+    MG90S: { minPulse: 600, maxPulse: 2400, defaultAngle: 90 },
+    BILDA: { minPulse: 500, maxPulse: 2500, defaultAngle: 90 },
 };
+
+function getServoDefaults(servoType) {
+    return servoTypes[servoType] || { minPulse: 500, maxPulse: 2500, defaultAngle: 90 };
+}
 
 function executeServoCommand(command, args) {
     return new Promise((resolve, reject) => {
@@ -27,19 +31,21 @@ function executeServoCommand(command, args) {
     });
 }
 
+exports.getServoDefaults = getServoDefaults;
+
 exports.testServo = async (req, res) => {
     console.log('Testing servo - Body:', req.body);
 
     try {
         const { angle, channel, servoType, minPulse, maxPulse } = req.body;
-        const servoConfig = servoTypes[servoType] || { minPulse, maxPulse };
+        const servoConfig = getServoDefaults(servoType);
         
         const args = [
             channel,
             angle,
             servoType,
-            servoConfig.minPulse,
-            servoConfig.maxPulse,
+            minPulse || servoConfig.minPulse,
+            maxPulse || servoConfig.maxPulse,
             1000 // duration in milliseconds
         ];
 
@@ -66,3 +72,5 @@ exports.stopServo = async (req, res) => {
         res.status(500).json({ success: false, message: 'An error occurred while stopping the servo', error: error.message });
     }
 };
+
+exports.getServoTypes = () => Object.keys(servoTypes);
