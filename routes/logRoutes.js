@@ -38,7 +38,8 @@ router.get('/', async (req, res) => {
 
         let filteredLogs = allLogs;
         if (search) {
-            filteredLogs = allLogs.filter(line => line.toLowerCase().includes(search.toLowerCase()));
+            const searchRegex = new RegExp(search, 'i');
+            filteredLogs = allLogs.filter(line => searchRegex.test(line));
         }
 
         const totalPages = Math.ceil(filteredLogs.length / LINES_PER_PAGE);
