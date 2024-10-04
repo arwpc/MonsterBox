@@ -3,18 +3,72 @@
     "id": 1,
     "name": "Good Evening2!",
     "filename": "1724882301591.mp3",
-    "characterId": null
+    "characterId": null,
+    "characterIds": [
+      1
+    ]
   },
   {
     "id": 2,
     "name": "Wind and Rain",
     "filename": "1724882315375.mp3",
-    "characterId": null
+    "characterId": null,
+    "characterIds": [
+      1
+    ]
   },
   {
     "id": 3,
     "name": "Santos Dominus ",
     "filename": "1724882328571.mp3",
     "characterId": null
+  },
+  {
+    "id": 4,
+    "name": "gibberish words",
+    "filename": "1727971772879-gibberish words.mp3",
+    "characterId": 2
+  },
+  {
+    "id": 5,
+    "name": "hybrid-monster-growl-90325",
+    "filename": "1727971772936-hybrid-monster-growl-90325.mp3",
+    "characterId": 2
+  },
+  {
+    "id": 6,
+    "name": "laughing monster",
+    "filename": "1727971772946-laughing monster.mp3",
+    "characterId": 2
+  },
+  {
+    "id": 7,
+    "name": "monster-howl-85304",
+    "filename": "1727971772950-monster-howl-85304.mp3",
+    "characterId": 2
+  },
+  {
+    "id": 8,
+    "name": "monster-roar-6985",
+    "filename": "1727971772958-monster-roar-6985.mp3",
+    "characterId": 2
+  },
+  {
+    "id": 9,
+    "name": "monster-snarl-5-69062",
+    "filename": "1727971772964-monster-snarl-5-69062.mp3",
+    "characterId": 2
+  },
+  {
+    "id": 10,
+    "name": "random-monster-sounds-29328",
+    "filename": "1727971772997-random-monster-sounds-29328.mp3",
+    "characterId": 2
+  },
+  {
+    "id": 11,
+    "name": "Roar",
+    "filename": "1727971773054-Roar.mp3",
+    "characterId": 2
   }
 ]

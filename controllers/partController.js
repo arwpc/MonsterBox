@@ -2,6 +2,7 @@
 
 const { spawn } = require('child_process');
 const path = require('path');
+const logger = require('../scripts/logger');
 
 let runningProcesses = [];
 

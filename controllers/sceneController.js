@@ -4,7 +4,7 @@ const sceneService = require('../services/sceneService');
 const characterService = require('../services/characterService');
 const partService = require('../services/partService');
 const soundService = require('../services/soundService');
-const logger = require('../logger');
+const logger = require('../scripts/logger');
 
 const sceneController = {
     getAllScenes: async (req, res, next, characterId) => {

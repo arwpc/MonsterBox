@@ -1,78 +1,70 @@
 [
   {
-    "id": 1,
-    "name": "Hand of Azuras",
+    "id": 12,
+    "characterId": 2,
+    "name": "Moving Body",
+    "type": "motor",
+    "directionPin": "5",
+    "pwmPin": "19",
+    "gpioPin": [
+      "",
+      "",
+      "",
+      ""
+    ],
+    "sensorType": "motion",
+    "duration": "",
+    "pwmFrequency": "",
+    "dutyCycle": ""
+  },
+  {
+    "id": 13,
+    "name": "BodyLight Pumpkinghead",
     "type": "light",
-    "characterId": 1,
+    "characterId": 2,
     "gpioPin": 26
   },
   {
-    "id": 3,
-    "name": "Baphomet's Eye",
-    "type": "sensor",
+    "id": 14,
     "characterId": 1,
+    "name": "Right Arm",
+    "type": "motor",
+    "directionPin": "18",
+    "pwmPin": "13",
+    "gpioPin": [
+      "",
+      "",
+      "",
+      ""
+    ],
     "sensorType": "motion",
-    "gpioPin": 16,
-    "active": true
+    "duration": "",
+    "pwmFrequency": "",
+    "dutyCycle": ""
   },
   {
-    "id": 4,
-    "name": "GreenEye",
-    "type": "led",
+    "id": 18,
     "characterId": 1,
-    "gpioPin": 17
+    "name": "Left Arm",
+    "type": "motor",
+    "directionPin": "23",
+    "pwmPin": "12",
+    "gpioPin": [
+      "",
+      "",
+      "",
+      ""
+    ],
+    "sensorType": "motion",
+    "duration": "",
+    "pwmFrequency": "",
+    "dutyCycle": ""
   },
   {
-    "id": 7,
-    "name": "Head of Deceit",
-    "type": "servo",
+    "id": 19,
+    "name": "Light of Azura",
+    "type": "light",
     "characterId": 1,
-    "servoType": "BILDA",
-    "channel": 0,
-    "minPulse": 500,
-    "maxPulse": 2500,
-    "defaultAngle": 90
-  },
-  {
-    "id": 8,
-    "name": "Left Elbow",
-    "type": "servo",
-    "characterId": 1,
-    "servoType": "DS3240MG",
-    "channel": 4,
-    "minPulse": 500,
-    "maxPulse": 2500,
-    "defaultAngle": 90
-  },
-  {
-    "id": 9,
-    "name": "Left Wrist Rotator",
-    "type": "servo",
-    "characterId": 1,
-    "servoType": "DS3240MG",
-    "channel": 5,
-    "minPulse": 500,
-    "maxPulse": 2500,
-    "defaultAngle": 90
-  },
-  {
-    "id": 10,
-    "name": "Right Arm of Baphomet",
-    "type": "linear-actuator",
-    "characterId": 1,
-    "directionPin": 18,
-    "pwmPin": 13,
-    "maxExtension": 7500,
-    "maxRetraction": 7500
-  },
-  {
-    "id": 11,
-    "name": "Updated Left Arm",
-    "type": "linear-actuator",
-    "characterId": 1,
-    "directionPin": 23,
-    "pwmPin": 12,
-    "maxExtension": 10000,
-    "maxRetraction": 10000
+    "gpioPin": 26
   }
 ]

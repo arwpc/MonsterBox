@@ -2,77 +2,35 @@
   {
     "id": 1,
     "character_id": 1,
-    "scene_name": "Testing Script",
+    "scene_name": "testing sene",
     "steps": [
       {
-        "type": "sound",
-        "name": "Background Noise - wind and rain",
-        "sound_id": "2",
-        "concurrent": "on"
-      },
-      {
         "type": "linear-actuator",
-        "name": "Raise Right Arm for Casting",
+        "name": "Lift Arm Up",
         "part_id": "10",
-        "duration": "5000",
+        "duration": "3000",
         "direction": "forward",
-        "speed": "25"
+        "speed": "50"
       },
       {
         "type": "sound",
-        "name": "Santos Dominus",
-        "sound_id": "3",
-        "concurrent": "on"
+        "name": "Santos",
+        "sound_id": "3"
       },
       {
         "type": "light",
-        "name": "Casting Spells",
+        "name": "Turn on light",
         "part_id": "1",
         "duration": "5000",
         "state": "on"
       },
       {
-        "type": "pause",
-        "name": "holding for effect",
-        "duration": "3000"
-      },
-      {
         "type": "linear-actuator",
-        "name": "Put Arm Down",
+        "name": "Lift Arm Down",
         "part_id": "10",
-        "duration": "1250",
-        "direction": "forward",
-        "speed": "100"
-      }
-    ]
-  },
-  {
-    "id": 2,
-    "character_id": 1,
-    "scene_name": "test",
-    "steps": [
-      {
-        "type": "linear-actuator",
-        "name": "Up",
-        "part_id": "10",
-        "duration": "2000",
-        "direction": "forward",
-        "speed": "100"
-      },
-      {
-        "type": "light",
-        "name": "Say Hello!",
-        "part_id": "1",
-        "duration": "2000",
-        "state": "on"
-      },
-      {
-        "type": "linear-actuator",
-        "name": "Arm Down Faster",
-        "part_id": "10",
-        "duration": "2000",
+        "duration": "3000",
         "direction": "backward",
-        "speed": "100"
+        "speed": "50"
       }
     ]
   }
