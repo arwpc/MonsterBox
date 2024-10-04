@@ -2,8 +2,9 @@ const express = require('express');
 const router = express.Router();
 const os = require('os');
 const { exec } = require('child_process');
+const nodeDiskInfo = require('node-disk-info');
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
     const systemInfo = {
         platform: os.platform(),
         arch: os.arch(),
@@ -19,6 +20,22 @@ router.get('/', (req, res) => {
     const ipAddress = Object.values(networkInterfaces)
         .flat()
         .find(iface => !iface.internal && iface.family === 'IPv4')?.address || 'N/A';
+
+    // Get drive space information
+    let driveInfo = [];
+    try {
+        const disks = await nodeDiskInfo.getDiskInfo();
+        driveInfo = disks.map(disk => ({
+            filesystem: disk.filesystem,
+            size: (disk.blocks / (1024 * 1024 * 1024)).toFixed(2) + ' GB',
+            used: (disk.used / (1024 * 1024 * 1024)).toFixed(2) + ' GB',
+            available: (disk.available / (1024 * 1024 * 1024)).toFixed(2) + ' GB',
+            mountpoint: disk.mounted
+        }));
+    } catch (error) {
+        console.error('Error getting disk info:', error);
+        driveInfo = [{ error: 'Unable to retrieve drive information' }];
+    }
 
     // Get Wi-Fi signal strength (this command works on Raspberry Pi)
     exec('iwconfig wlan0 | grep -i --color signal', (error, stdout, stderr) => {
@@ -44,7 +61,8 @@ router.get('/', (req, res) => {
                 systemInfo, 
                 ipAddress, 
                 wifiSignal, 
-                power 
+                power,
+                driveInfo
             });
         });
     });
