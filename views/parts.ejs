@@ -35,7 +35,7 @@
         <a href="/parts/linear-actuator/new?characterId=<%= character.id %>" class="button">Add Linear Actuator</a>
         <a href="/parts/new/light?characterId=<%= character.id %>" class="button">Add Light</a>
         <a href="/parts/new/led?characterId=<%= character.id %>" class="button">Add LED</a>
-        <a href="/parts/new/servo?characterId=<%= character.id %>" class="button">Add Servo</a>
+        <a href="/parts/servo/new?characterId=<%= character.id %>" class="button">Add Servo</a>
         <a href="/parts/new/sensor?characterId=<%= character.id %>" class="button">Add Sensor</a>
         <a href="/parts/os-test?characterId=<%= character.id %>" class="button">OS Test</a>
     </div>
@@ -62,6 +62,8 @@
                             <td>
                                 <% if (part.type === 'linear-actuator') { %>
                                     <a href="/parts/linear-actuator/<%= part.id %>/edit?characterId=<%= character.id %>" class="button">Edit</a>
+                                <% } else if (part.type === 'servo') { %>
+                                    <a href="/parts/servo/<%= part.id %>/edit?characterId=<%= character.id %>" class="button">Edit</a>
                                 <% } else { %>
                                     <a href="/parts/<%= part.id %>/edit?characterId=<%= character.id %>" class="button">Edit</a>
                                 <% } %>
