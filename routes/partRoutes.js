@@ -121,6 +121,49 @@ router.post('/:id/delete', async (req, res) => {
     }
 });
 
+router.get('/sensor/test-sensor', (req, res) => {
+    const { gpioPin, timeout } = req.query;
+
+    if (!gpioPin) {
+        return res.status(400).json({ error: 'GPIO pin is required' });
+    }
+
+    res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive'
+    });
+
+    const scriptPath = path.join(__dirname, '..', 'scripts', 'sensor_control.py');
+    const args = [gpioPin, timeout || '30'];
+
+    logger.info(`Executing sensor test script: ${scriptPath} with args: ${args.join(', ')}`);
+
+    const process = spawn('python3', [scriptPath, ...args]);
+
+    process.stdout.on('data', (data) => {
+        const output = data.toString().trim();
+        logger.debug(`Sensor script output: ${output}`);
+        res.write(`data: ${JSON.stringify({ status: output })}\n\n`);
+    });
+
+    process.stderr.on('data', (data) => {
+        const error = data.toString().trim();
+        logger.error(`Sensor script error: ${error}`);
+        res.write(`data: ${JSON.stringify({ error: error })}\n\n`);
+    });
+
+    process.on('close', (code) => {
+        logger.info(`Sensor script exited with code ${code}`);
+        res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+        res.end();
+    });
+
+    req.on('close', () => {
+        process.kill();
+    });
+});
+
 router.post('/test', async (req, res) => {
     try {
         const { id, type, ...testData } = req.body;

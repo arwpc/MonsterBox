@@ -75,7 +75,7 @@
             const statusText = $('#statusText');
             statusText.text('Sensor status: ' + status);
 
-            if (status === 'Motion Detected') {
+            if (status === 'Motion detected!') {
                 statusText.addClass('motion-detected');
             } else {
                 statusText.removeClass('motion-detected');
@@ -83,10 +83,10 @@
         }
 
         function startTest() {
-            const sensorId = $('input[name="id"]').val();
             const gpioPin = $('#gpioPin').val();
+            const timeout = 30; // Set a default timeout of 30 seconds
 
-            eventSource = new EventSource(`/parts/sensor/test-sensor?id=${sensorId}&gpioPin=${gpioPin}`);
+            eventSource = new EventSource(`/parts/sensor/test-sensor?gpioPin=${gpioPin}&timeout=${timeout}`);
 
             eventSource.onmessage = function(event) {
                 const data = JSON.parse(event.data);
@@ -132,6 +132,19 @@
 
         // Trigger change event on page load
         $('#sensorType').change();
+
+        // Disable test buttons if GPIO pin is not set (for new sensors)
+        function updateTestButtonState() {
+            const gpioPin = $('#gpioPin').val();
+            const isSoundSensor = $('#sensorType').val() === 'sound';
+            $('#startTest').prop('disabled', !gpioPin || isSoundSensor);
+        }
+
+        $('#gpioPin').on('input', updateTestButtonState);
+        $('#sensorType').change(updateTestButtonState);
+
+        // Initial state
+        updateTestButtonState();
     </script>
 </body>
 </html>
