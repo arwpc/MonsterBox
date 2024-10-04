@@ -12,6 +12,18 @@
     
     <div id="sound-list">
         <a href="/sounds/new" class="button">Add New Sound</a>
+        
+        <div id="character-filter">
+            <label for="character-select">Filter by Character:</label>
+            <select id="character-select" onchange="filterSounds()">
+                <option value="all">All Sounds</option>
+                <option value="unassigned">Unassigned Sounds</option>
+                <% characters.forEach(function(character) { %>
+                    <option value="<%- character.id %>"><%- character.char_name %></option>
+                <% }); %>
+            </select>
+        </div>
+
         <% if (sounds.length === 0) { %>
             <p>No sounds available.</p>
         <% } else { %>
@@ -24,9 +36,9 @@
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="sound-table-body">
                     <% sounds.forEach(function(sound) { %>
-                        <tr class="sound-row">
+                        <tr class="sound-row" data-characters="<%- JSON.stringify(sound.characterIds || []) %>">
                             <td><%- sound.name %></td>
                             <td><%- sound.filename %></td>
                             <td>
@@ -59,6 +71,22 @@
     <div id="errorInfo" style="color: red;"></div>
 
     <script>
+        function filterSounds() {
+            const selectedCharacter = document.getElementById('character-select').value;
+            const rows = document.querySelectorAll('#sound-table-body tr');
+
+            rows.forEach(row => {
+                const characterIds = JSON.parse(row.dataset.characters);
+                if (selectedCharacter === 'all' ||
+                    (selectedCharacter === 'unassigned' && characterIds.length === 0) ||
+                    (characterIds.includes(parseInt(selectedCharacter)))) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
         function playLocal(filename) {
             const audio = new Audio('/sounds/' + filename);
             audio.play().catch(error => {
