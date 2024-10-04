@@ -69,6 +69,8 @@
     <a href="/parts" class="button">Back to Parts</a>
 
     <script>
+        let eventSource;
+
         function updateSensorStatus(status) {
             const statusText = $('#statusText');
             statusText.text('Sensor status: ' + status);
@@ -81,54 +83,42 @@
         }
 
         function startTest() {
-            const id = $('input[name="id"]').val();
             const gpioPin = $('#gpioPin').val();
             const timeout = 30; // Set a default timeout of 30 seconds
 
-            $.ajax({
-                url: '/parts/test',
-                method: 'POST',
-                data: {
-                    id: id,
-                    type: 'sensor',
-                    gpioPin: gpioPin,
-                    timeout: timeout
-                },
-                success: function(response) {
-                    console.log('Server response:', response);
-                    if (response.success) {
-                        updateSensorStatus(response.output);
-                        $('#testResults').text('Test completed successfully: ' + response.output);
-                    } else {
-                        const errorMessage = response.error || response.message || 'Unknown error';
-                        updateSensorStatus('Error: ' + errorMessage);
-                        $('#testResults').text('Test failed: ' + errorMessage);
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('AJAX Error:', xhr.responseText);
-                    let errorMessage = 'Unknown error';
-                    try {
-                        const errorResponse = JSON.parse(xhr.responseText);
-                        errorMessage = errorResponse.error || errorResponse.message || error || 'Unknown error';
-                    } catch (e) {
-                        console.error('Error parsing error response:', e);
-                        errorMessage = xhr.responseText || error || 'Unknown error';
-                    }
-                    updateSensorStatus('Error: ' + errorMessage);
-                    $('#testResults').text('Test failed: ' + errorMessage);
-                },
-                complete: function() {
-                    $('#startTest').prop('disabled', false);
-                    $('#stopTest').prop('disabled', true);
+            eventSource = new EventSource(`/parts/sensor/test?gpioPin=${gpioPin}&timeout=${timeout}`);
+
+            eventSource.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                if (data.status) {
+                    updateSensorStatus(data.status);
+                    $('#testResults').text(data.status);
+                } else if (data.error) {
+                    console.error('Error:', data.error);
+                    updateSensorStatus('Error: ' + data.error);
+                    $('#testResults').text('Test failed: ' + data.error);
+                    stopTest();
+                } else if (data.done) {
+                    $('#testResults').text('Test completed');
+                    stopTest();
                 }
-            });
+            };
+
+            eventSource.onerror = function(event) {
+                console.error('EventSource failed:', event);
+                updateSensorStatus('Error: EventSource failed');
+                $('#testResults').text('Test failed: EventSource error');
+                stopTest();
+            };
 
             $('#startTest').prop('disabled', true);
             $('#stopTest').prop('disabled', false);
         }
 
         function stopTest() {
+            if (eventSource) {
+                eventSource.close();
+            }
             $('#startTest').prop('disabled', false);
             $('#stopTest').prop('disabled', true);
             updateSensorStatus('Not testing');
