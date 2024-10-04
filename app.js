@@ -23,6 +23,7 @@ const soundRoutes = require('./routes/soundRoutes');
 const linearActuatorRoutes = require('./routes/linearActuatorRoutes');
 const activeModeRoutes = require('./routes/activeModeRoutes');
 const systemConfigRoutes = require('./routes/systemConfigRoutes');
+const logRoutes = require('./routes/logRoutes');
 
 // Import services
 const characterService = require('./services/characterService');
@@ -55,6 +56,7 @@ app.use('/characters', characterRoutes);
 app.use('/sounds', soundRoutes);
 app.use('/active-mode', activeModeRoutes);
 app.use('/system-config', systemConfigRoutes);
+app.use('/logs', logRoutes);
 
 // Root route
 app.get('/', async (req, res) => {

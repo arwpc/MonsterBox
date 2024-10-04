@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Logs</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .log-container {
+            background-color: #f4f4f4;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .log-entry {
+            font-family: monospace;
+            white-space: pre-wrap;
+            margin-bottom: 10px;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .pagination a {
+            padding: 8px 16px;
+            text-decoration: none;
+            border: 1px solid #ddd;
+            margin: 0 4px;
+        }
+        .pagination a.active {
+            background-color: #4CAF50;
+            color: white;
+            border: 1px solid #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <h1>System Logs</h1>
+    
+    <form action="/logs" method="GET">
+        <input type="text" name="search" value="<%= search %>" placeholder="Search logs...">
+        <button type="submit">Search</button>
+    </form>
+
+    <div class="log-container">
+        <% logs.forEach(function(log) { %>
+            <div class="log-entry"><%= log %></div>
+        <% }); %>
+    </div>
+
+    <div class="pagination">
+        <% if (currentPage > 1) { %>
+            <a href="/logs?page=<%= currentPage - 1 %>&search=<%= search %>">&laquo; Previous</a>
+        <% } %>
+        
+        <% for (let i = 1; i <= totalPages; i++) { %>
+            <a href="/logs?page=<%= i %>&search=<%= search %>" class="<%= i === currentPage ? 'active' : '' %>"><%= i %></a>
+        <% } %>
+        
+        <% if (currentPage < totalPages) { %>
+            <a href="/logs?page=<%= currentPage + 1 %>&search=<%= search %>">Next &raquo;</a>
+        <% } %>
+    </div>
+
+    <a href="/system-config">Back to System Config</a>
+</body>
+</html>
