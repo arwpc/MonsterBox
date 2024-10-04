@@ -120,7 +120,8 @@
             testfireResult.innerHTML = '';
             testfireResult.className = '';
 
-            const url = '<%= part.id ? `/parts/linear-actuator/${part.id}/testfire` : "/parts/linear-actuator/testfire" %>';
+            const partId = '<%= part.id %>';
+            const url = partId ? `/parts/linear-actuator/${partId}/testfire` : "/parts/linear-actuator/testfire";
             const params = new URLSearchParams({
                 direction,
                 speed,
