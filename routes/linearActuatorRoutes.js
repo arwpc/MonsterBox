@@ -18,7 +18,42 @@ function writeLog(message) {
     }
 }
 
-// GET route for testfire with parameters
+// Function to execute testfire
+function executeTestfire(res, params) {
+    const { direction, speed, duration, directionPin, pwmPin, maxExtension, maxRetraction } = params;
+    const scriptPath = path.join(__dirname, '..', 'scripts', 'linear_actuator_control.py');
+    const command = `sudo python3 "${scriptPath}" ${direction} ${speed} ${duration} ${directionPin} ${pwmPin} ${maxExtension} ${maxRetraction}`;
+    
+    writeLog(`Executing command: ${command}`);
+    console.log(`Executing command: ${command}`);
+
+    spawn('sudo', ['python3', scriptPath, direction, speed, duration, directionPin, pwmPin, maxExtension, maxRetraction], { stdio: 'pipe' })
+        .on('error', (error) => {
+            writeLog(`Testfire exec error: ${error.message}`);
+            res.status(500).json({
+                success: false,
+                message: 'An error occurred while controlling the linear actuator.',
+                error: error.message
+            });
+        })
+        .on('close', (code) => {
+            if (code === 0) {
+                writeLog('Linear actuator control completed successfully.');
+                res.json({
+                    success: true,
+                    message: 'Linear actuator control completed successfully.'
+                });
+            } else {
+                writeLog(`Linear actuator control failed with exit code: ${code}`);
+                res.status(500).json({
+                    success: false,
+                    message: `Linear actuator control failed with exit code: ${code}`
+                });
+            }
+        });
+}
+
+// GET route for testfire with parameters (for saved actuators)
 router.get('/:id/testfire', (req, res) => {
     const id = parseInt(req.params.id, 10);
     const { direction = 'forward', speed = '50', duration = '1000' } = req.query;
@@ -27,36 +62,15 @@ router.get('/:id/testfire', (req, res) => {
     partService.getPartById(id)
         .then(part => {
             writeLog(`Retrieved part for testfire: ${JSON.stringify(part)}`);
-            const scriptPath = path.join(__dirname, '..', 'scripts', 'linear_actuator_control.py');
-            const command = `sudo python3 "${scriptPath}" ${direction} ${speed} ${duration} ${part.directionPin} ${part.pwmPin} ${part.maxExtension} ${part.maxRetraction}`;
-            
-            writeLog(`Executing command: ${command}`);
-            console.log(`Executing command: ${command}`);
-
-            spawn('sudo', ['python3', scriptPath, direction, speed, duration, part.directionPin.toString(), part.pwmPin.toString(), part.maxExtension.toString(), part.maxRetraction.toString()], { stdio: 'pipe' })
-                .on('error', (error) => {
-                    writeLog(`Testfire exec error: ${error.message}`);
-                    res.status(500).json({
-                        success: false,
-                        message: 'An error occurred while controlling the linear actuator.',
-                        error: error.message
-                    });
-                })
-                .on('close', (code) => {
-                    if (code === 0) {
-                        writeLog('Linear actuator control completed successfully.');
-                        res.json({
-                            success: true,
-                            message: 'Linear actuator control completed successfully.'
-                        });
-                    } else {
-                        writeLog(`Linear actuator control failed with exit code: ${code}`);
-                        res.status(500).json({
-                            success: false,
-                            message: `Linear actuator control failed with exit code: ${code}`
-                        });
-                    }
-                });
+            executeTestfire(res, {
+                direction,
+                speed,
+                duration,
+                directionPin: part.directionPin.toString(),
+                pwmPin: part.pwmPin.toString(),
+                maxExtension: part.maxExtension.toString(),
+                maxRetraction: part.maxRetraction.toString()
+            });
         })
         .catch(error => {
             writeLog(`Error fetching linear actuator for testfire: ${error.message}`);
@@ -66,6 +80,22 @@ router.get('/:id/testfire', (req, res) => {
                 error: error.message
             });
         });
+});
+
+// GET route for testfire with parameters (for unsaved actuators)
+router.get('/testfire', (req, res) => {
+    const { direction = 'forward', speed = '50', duration = '1000', directionPin, pwmPin, maxExtension, maxRetraction } = req.query;
+    writeLog(`Received GET testfire request for unsaved linear actuator with params: direction=${direction}, speed=${speed}, duration=${duration}, directionPin=${directionPin}, pwmPin=${pwmPin}, maxExtension=${maxExtension}, maxRetraction=${maxRetraction}`);
+    
+    executeTestfire(res, {
+        direction,
+        speed,
+        duration,
+        directionPin,
+        pwmPin,
+        maxExtension,
+        maxRetraction
+    });
 });
 
 // GET route for linear actuator edit page
