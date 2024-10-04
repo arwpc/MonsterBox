@@ -113,7 +113,10 @@ exports.saveServo = async (req, res) => {
 
         fs.writeFileSync(partsFilePath, JSON.stringify(parts, null, 2));
 
-        res.json({ success: true, message: 'Servo saved successfully', servo: servoData });
+        console.log('Created servo:', servoData);
+
+        // Redirect to the parts page with the character ID
+        res.redirect(`/parts?characterId=${servoData.characterId}`);
     } catch (error) {
         console.error('Error saving servo:', error);
         res.status(500).json({ success: false, message: 'An error occurred while saving the servo', error: error.message });
