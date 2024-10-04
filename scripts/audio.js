@@ -3,7 +3,7 @@
 const { spawn } = require('child_process');
 const WebSocket = require('ws');
 const path = require('path');
-const logger = require('../logger');
+const logger = require('./logger');
 
 class Audio {
     constructor() {

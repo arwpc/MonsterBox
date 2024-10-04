@@ -6,13 +6,14 @@ const soundService = require('../services/soundService');
 const soundController = require('./soundController');
 const path = require('path');
 const { spawn } = require('child_process');
+const logger = require('../scripts/logger');
 
 let isExecuting = false;
 
 const stopAllParts = async () => {
     // Implement logic to stop all parts
     // This might involve sending stop signals to all active parts
-    console.log('Stopping all parts');
+    logger.info('Stopping all parts');
     // For now, we'll just log this action
 };
 
@@ -27,7 +28,7 @@ const scenePlayerController = {
                 res.status(404).render('error', { title: 'Not Found', message: 'Scene not found' });
             }
         } catch (error) {
-            console.error('Error getting scene by ID:', error);
+            logger.error('Error getting scene by ID:', error);
             res.status(500).render('error', { title: 'Error', message: 'Failed to retrieve scene', error });
         }
     },
@@ -35,7 +36,7 @@ const scenePlayerController = {
     playScene: async (req, res) => {
         const sceneId = req.params.id;
         const startStep = parseInt(req.query.startStep) || 0;
-        console.log(`Attempting to play scene with ID: ${sceneId} from step ${startStep}`);
+        logger.info(`Attempting to play scene with ID: ${sceneId} from step ${startStep}`);
         
         let scene;
         try {
@@ -44,7 +45,7 @@ const scenePlayerController = {
                 return res.status(404).json({ error: 'Scene not found' });
             }
         } catch (error) {
-            console.error('Error fetching scene:', error);
+            logger.error('Error fetching scene:', error);
             return res.status(500).json({ error: 'Failed to fetch scene' });
         }
 
@@ -71,7 +72,7 @@ const scenePlayerController = {
                 try {
                     await Promise.all(concurrentSteps.map(s => executeStep(s, sendEvent)));
                 } catch (error) {
-                    console.error(`Error executing concurrent steps:`, error);
+                    logger.error(`Error executing concurrent steps:`, error);
                     sendEvent({ error: `Failed to execute concurrent steps: ${error.message}` });
                 }
                 concurrentSteps = [];
@@ -84,27 +85,27 @@ const scenePlayerController = {
     },
 
     stopScene: async (req, res) => {
-        console.log('Stopping all steps and terminating processes');
+        logger.info('Stopping all steps and terminating processes');
         isExecuting = false;
         try {
             await soundController.stopAllSounds();
             await stopAllParts();
             res.json({ message: 'All steps stopped and processes terminated' });
         } catch (error) {
-            console.error('Error stopping all steps:', error);
+            logger.error('Error stopping all steps:', error);
             res.status(500).json({ error: 'Failed to stop all steps', details: error.message });
         }
     },
 
     stopAllScenes: async (req, res) => {
-        console.log('Stopping all scenes and terminating processes');
+        logger.info('Stopping all scenes and terminating processes');
         isExecuting = false;
         try {
             await soundController.stopAllSounds();
             await stopAllParts();
             res.json({ message: 'All scenes stopped and processes terminated' });
         } catch (error) {
-            console.error('Error stopping all scenes:', error);
+            logger.error('Error stopping all scenes:', error);
             res.status(500).json({ error: 'Failed to stop all scenes', details: error.message });
         }
     }
@@ -112,7 +113,7 @@ const scenePlayerController = {
 
 async function executeStep(step, sendEvent) {
     if (!isExecuting) return;
-    console.log('Executing step:', step);
+    logger.info('Executing step:', step);
     sendEvent({ message: `Starting execution of ${step.type} step: ${step.name}` });
 
     try {
@@ -138,7 +139,7 @@ async function executeStep(step, sendEvent) {
         }
         sendEvent({ message: `Completed execution of ${step.type} step: ${step.name}` });
     } catch (error) {
-        console.error(`Error executing step:`, error);
+        logger.error(`Error executing step:`, error);
         sendEvent({ error: `Failed to execute ${step.type} step: ${error.message}` });
     }
 }
