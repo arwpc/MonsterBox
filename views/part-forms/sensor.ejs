@@ -59,10 +59,10 @@
     </form>
 
     <div id="testArea" style="margin-top: 20px;">
-        <h2>Test Sensor</h2>
-        <p id="statusText">Sensor status: Not testing</p>
-        <button id="startTest">Start Test</button>
-        <button id="stopTest" disabled>Stop Test</button>
+        <h2>Sensor Control</h2>
+        <p id="statusText">Sensor status: Not active</p>
+        <button id="sensorOn">Sensor On</button>
+        <button id="sensorOff" disabled>Sensor Off</button>
         <div id="testResults" style="margin-top: 10px;"></div>
     </div>
 
@@ -82,11 +82,10 @@
             }
         }
 
-        function startTest() {
+        function startSensor() {
             const gpioPin = $('#gpioPin').val();
-            const timeout = 30; // Set a default timeout of 30 seconds
 
-            eventSource = new EventSource(`/parts/sensor/test-sensor?id=${<%= part.id || 'null' %>}&gpioPin=${gpioPin}&timeout=${timeout}`);
+            eventSource = new EventSource(`/parts/sensor/control?id=${<%= part.id || 'null' %>}&gpioPin=${gpioPin}&action=start`);
 
             eventSource.onmessage = function(event) {
                 const data = JSON.parse(event.data);
@@ -96,36 +95,49 @@
                 } else if (data.error) {
                     console.error('Error:', data.error);
                     updateSensorStatus('Error: ' + data.error);
-                    $('#testResults').text('Test failed: ' + data.error);
-                    stopTest();
-                } else if (data.done) {
-                    $('#testResults').text('Test completed');
-                    stopTest();
+                    $('#testResults').text('Sensor control failed: ' + data.error);
+                    stopSensor();
                 }
             };
 
             eventSource.onerror = function(event) {
                 console.error('EventSource failed:', event);
                 updateSensorStatus('Error: EventSource failed');
-                $('#testResults').text('Test failed: EventSource error');
-                stopTest();
+                $('#testResults').text('Sensor control failed: EventSource error');
+                stopSensor();
             };
 
-            $('#startTest').prop('disabled', true);
-            $('#stopTest').prop('disabled', false);
+            $('#sensorOn').prop('disabled', true);
+            $('#sensorOff').prop('disabled', false);
         }
 
-        function stopTest() {
+        function stopSensor() {
             if (eventSource) {
                 eventSource.close();
             }
-            $('#startTest').prop('disabled', false);
-            $('#stopTest').prop('disabled', true);
-            updateSensorStatus('Not testing');
+
+            $.post('/parts/sensor/control', { 
+                id: <%= part.id || 'null' %>, 
+                gpioPin: $('#gpioPin').val(),
+                action: 'stop'
+            })
+            .done(function(data) {
+                updateSensorStatus('Sensor stopped');
+                $('#testResults').text('Sensor stopped successfully');
+            })
+            .fail(function(jqXHR, textStatus, errorThrown) {
+                console.error('Error stopping sensor:', errorThrown);
+                updateSensorStatus('Error stopping sensor');
+                $('#testResults').text('Failed to stop sensor: ' + errorThrown);
+            })
+            .always(function() {
+                $('#sensorOn').prop('disabled', false);
+                $('#sensorOff').prop('disabled', true);
+            });
         }
 
-        $('#startTest').click(startTest);
-        $('#stopTest').click(stopTest);
+        $('#sensorOn').click(startSensor);
+        $('#sensorOff').click(stopSensor);
 
         $('#sensorType').change(function() {
             if ($(this).val() === 'sound') {
@@ -138,18 +150,18 @@
         // Trigger change event on page load
         $('#sensorType').change();
 
-        // Disable test buttons if GPIO pin is not set (for new sensors)
-        function updateTestButtonState() {
+        // Disable sensor control buttons if GPIO pin is not set (for new sensors)
+        function updateSensorControlButtonState() {
             const gpioPin = $('#gpioPin').val();
             const isSoundSensor = $('#sensorType').val() === 'sound';
-            $('#startTest').prop('disabled', !gpioPin || isSoundSensor);
+            $('#sensorOn').prop('disabled', !gpioPin || isSoundSensor);
         }
 
-        $('#gpioPin').on('input', updateTestButtonState);
-        $('#sensorType').change(updateTestButtonState);
+        $('#gpioPin').on('input', updateSensorControlButtonState);
+        $('#sensorType').change(updateSensorControlButtonState);
 
         // Initial state
-        updateTestButtonState();
+        updateSensorControlButtonState();
     </script>
 </body>
 </html>
