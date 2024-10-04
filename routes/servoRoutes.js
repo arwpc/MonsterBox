@@ -4,18 +4,36 @@ const partService = require('../services/partService');
 const characterService = require('../services/characterService');
 const servoController = require('../controllers/servoController');
 
+router.get('/new', async (req, res) => {
+    try {
+        const characters = await characterService.getAllCharacters();
+        res.render('part-forms/servo', { 
+            title: 'New Servo', 
+            action: '/parts/servo', 
+            part: null, 
+            characters 
+        });
+    } catch (error) {
+        console.error('Error preparing new servo form:', error);
+        res.status(500).send('An error occurred while preparing the new servo form: ' + error.message);
+    }
+});
+
 router.get('/:id/edit', async (req, res) => {
     try {
         const id = parseInt(req.params.id, 10);
         console.log('Editing Servo with ID:', id, 'Type:', typeof id);
-        let part = null;
-        if (!isNaN(id)) {
-            part = await partService.getPartById(id);
+        if (isNaN(id)) {
+            throw new Error('Invalid part ID');
+        }
+        const part = await partService.getPartById(id);
+        if (!part) {
+            throw new Error('Part not found');
         }
         const characters = await characterService.getAllCharacters();
         res.render('part-forms/servo', { 
-            title: part ? 'Edit Servo' : 'New Servo', 
-            action: part ? `/parts/servo/${part.id}` : '/parts/servo', 
+            title: 'Edit Servo', 
+            action: `/parts/servo/${part.id}`, 
             part, 
             characters 
         });
@@ -39,7 +57,7 @@ router.post('/', async (req, res) => {
         };
         const createdServo = await partService.createPart(newServo);
         console.log('Created servo:', createdServo);
-        res.redirect('/parts');
+        res.redirect('/parts?characterId=' + newServo.characterId);
     } catch (error) {
         console.error('Error creating servo:', error);
         res.status(500).send('An error occurred while creating the servo: ' + error.message);
@@ -74,7 +92,7 @@ router.post('/:id', async (req, res) => {
         console.log('Updated Servo data:', updatedServo);
         const result = await partService.updatePart(id, updatedServo);
         console.log('Updated servo:', result);
-        res.redirect('/parts');
+        res.redirect('/parts?characterId=' + updatedServo.characterId);
     } catch (error) {
         console.error('Error updating servo:', error);
         res.status(500).send('An error occurred while updating the servo: ' + error.message);
