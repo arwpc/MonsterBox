@@ -65,5 +65,17 @@
         const characterId = "<%= characterId %>";
     </script>
     <script src="/scripts/scene-player.js"></script>
+    <script>
+        // Basic diagnostic script
+        console.log("Inline script running");
+        $(document).ready(function() {
+            console.log("Document ready");
+            console.log("jQuery version:", $.fn.jquery);
+            console.log("Buttons found:", $("#controls button").length);
+            $("#controls button").on("click", function() {
+                console.log(this.id + " clicked");
+            });
+        });
+    </script>
 </body>
 </html>
