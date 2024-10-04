@@ -70,7 +70,7 @@
         </div>
         <div>
             <label for="channel">PCA9685 Channel:</label>
-            <input type="number" id="channel" name="channel" value="<%= part ? part.channel : 0 %>" min="0" max="15" required readonly>
+            <input type="number" id="channel" name="channel" value="<%= part ? part.channel : 0 %>" min="0" max="15" required>
         </div>
         <div>
             <label>Channel Position:</label>
@@ -132,6 +132,15 @@
             // Initialize servo description and defaults
             updateServoDefaults();
             updateServoDescription(document.getElementById('testAngle').value);
+
+            // Add event listener for channel input
+            channelInput.addEventListener('change', function() {
+                const channel = parseInt(this.value);
+                if (channel >= 0 && channel <= 15) {
+                    channelButtons.forEach(b => b.classList.remove('selected'));
+                    channelButtons[channel].classList.add('selected');
+                }
+            });
         });
 
         document.getElementById('testAngle').addEventListener('input', function() {
