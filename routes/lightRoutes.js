@@ -5,7 +5,6 @@ const characterService = require('../services/characterService');
 const { spawn } = require('child_process');
 const path = require('path');
 
-// Route for adding a new light
 router.get('/new', async (req, res) => {
     try {
         const characters = await characterService.getAllCharacters();
@@ -16,7 +15,6 @@ router.get('/new', async (req, res) => {
     }
 });
 
-// Route for editing an existing light
 router.get('/:id/edit', async (req, res) => {
     try {
         const id = parseInt(req.params.id, 10);
@@ -54,21 +52,20 @@ router.post('/test', async (req, res) => {
     console.log('Light Test Route Hit');
     try {
         console.log('Light Test Route - Request body:', req.body);
-        const { part_id, gpioPin, state, duration } = req.body;
+        const { part_id, gpioPin, state } = req.body;
         
-        if (!gpioPin || !state || !duration) {
+        if (!gpioPin || !state) {
             throw new Error('Missing required parameters for light test');
         }
 
         const scriptPath = path.join(__dirname, '..', 'scripts', 'light_control.py');
         console.log('Light test script path:', scriptPath);
-        console.log('Executing light test with parameters:', { gpioPin, state, duration });
+        console.log('Executing light test with parameters:', { gpioPin, state });
 
         const process = spawn('python3', [
             scriptPath,
             gpioPin.toString(),
-            state,
-            duration.toString()
+            state
         ]);
 
         let stdout = '';
@@ -87,7 +84,7 @@ router.post('/test', async (req, res) => {
         process.on('close', (code) => {
             console.log(`Python script exited with code ${code}`);
             if (code === 0) {
-                res.json({ success: true, message: 'Light test completed successfully', output: stdout });
+                res.json({ success: true, message: `Light turned ${state} successfully`, output: stdout });
             } else {
                 res.status(500).json({ success: false, message: 'Light test failed', error: stderr });
             }

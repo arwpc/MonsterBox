@@ -10,7 +10,8 @@
             margin-top: 20px;
             padding: 10px;
             border: 1px solid #ccc;
-            background-color: #f0f0f0;
+            background-color: #000000;
+            color: #00ff00;
         }
         #testResult {
             margin-top: 10px;
@@ -20,8 +21,15 @@
             margin-top: 20px;
             padding: 10px;
             border: 1px solid #ccc;
-            background-color: #e0e0e0;
+            background-color: #000000;
+            color: #00ff00;
             white-space: pre-wrap;
+        }
+        .test-button {
+            margin: 5px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -55,18 +63,8 @@
 
     <div id="lightTest">
         <h2>Test Light</h2>
-        <div>
-            <label for="state">State:</label>
-            <select id="state">
-                <option value="on">On</option>
-                <option value="off">Off</option>
-            </select>
-        </div>
-        <div>
-            <label for="duration">Duration (ms):</label>
-            <input type="number" id="duration" value="1000" min="100" max="10000">
-        </div>
-        <button onclick="testPart()">Test Light</button>
+        <button onclick="testLight('on')" class="test-button">Light On</button>
+        <button onclick="testLight('off')" class="test-button">Light Off</button>
         <div id="testResult"></div>
     </div>
 
@@ -78,7 +76,7 @@
         var partId = '<%= part.id || "null" %>';
         partId = partId === 'null' ? null : parseInt(partId, 10);
 
-        function testPart() {
+        function testLight(state) {
             const testResultElement = document.getElementById('testResult');
             const debugInfoElement = document.getElementById('debugInfo');
             testResultElement.innerHTML = 'Testing...';
@@ -87,8 +85,7 @@
             const partData = {
                 part_id: partId,
                 type: 'light',
-                state: document.getElementById('state').value,
-                duration: parseInt(document.getElementById('duration').value),
+                state: state,
                 gpioPin: parseInt(document.getElementById('gpioPin').value)
             };
 
@@ -115,18 +112,18 @@
                 if (data.success) {
                     console.log('Light test successful:', data.message);
                     testResultElement.innerHTML = `Test successful: ${data.message}`;
-                    testResultElement.style.color = 'green';
+                    testResultElement.style.color = '#00ff00';
                 } else {
                     console.error('Light test failed:', data.message);
                     testResultElement.innerHTML = `Test failed: ${data.message}`;
-                    testResultElement.style.color = 'red';
+                    testResultElement.style.color = '#ff0000';
                 }
             })
             .catch((error) => {
                 console.error('Error during light test:', error);
                 debugInfoElement.innerHTML += `Error: ${error.message}\n`;
                 testResultElement.innerHTML = `Error: ${error.message}`;
-                testResultElement.style.color = 'red';
+                testResultElement.style.color = '#ff0000';
             });
         }
     </script>
