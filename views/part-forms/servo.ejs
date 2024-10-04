@@ -126,36 +126,47 @@
         document.addEventListener('DOMContentLoaded', function() {
             const channelButtons = document.querySelectorAll('.channel-button');
             const channelInput = document.getElementById('channel');
+            const usePCA9685Checkbox = document.getElementById('usePCA9685');
+
+            function updateChannelSelection() {
+                const selectedChannel = parseInt(channelInput.value);
+                channelButtons.forEach(button => {
+                    const buttonChannel = parseInt(button.dataset.channel);
+                    if (buttonChannel === selectedChannel) {
+                        button.classList.add('selected');
+                    } else {
+                        button.classList.remove('selected');
+                    }
+                });
+            }
 
             channelButtons.forEach(button => {
                 button.addEventListener('click', function() {
-                    channelButtons.forEach(b => b.classList.remove('selected'));
-                    this.classList.add('selected');
-                    channelInput.value = this.dataset.channel;
+                    if (usePCA9685Checkbox.checked) {
+                        channelInput.value = this.dataset.channel;
+                        updateChannelSelection();
+                    }
                 });
             });
 
+            channelInput.addEventListener('change', updateChannelSelection);
+
+            usePCA9685Checkbox.addEventListener('change', function() {
+                if (this.checked) {
+                    updateChannelSelection();
+                }
+            });
+
             // Set initial selected channel
-            const initialChannel = parseInt(channelInput.value);
-            channelButtons[initialChannel].classList.add('selected');
+            updateChannelSelection();
 
             // Initialize servo description and defaults
             updateServoDefaults();
             updateServoDescription(document.getElementById('testAngle').value);
             togglePCA9685();
 
-            // Add event listener for channel input
-            channelInput.addEventListener('change', function() {
-                const channel = parseInt(this.value);
-                if (channel >= 0 && channel <= 15) {
-                    channelButtons.forEach(b => b.classList.remove('selected'));
-                    channelButtons[channel].classList.add('selected');
-                }
-            });
-
             // Add event listener for form submission
             document.getElementById('servoForm').addEventListener('submit', function(event) {
-                // Remove the event.preventDefault() call to allow the form to submit normally
                 const usePCA9685 = document.getElementById('usePCA9685').checked;
                 
                 if (usePCA9685) {

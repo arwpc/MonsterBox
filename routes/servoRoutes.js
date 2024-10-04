@@ -66,10 +66,10 @@ router.post('/', async (req, res) => {
         };
         const createdServo = await partService.createPart(newServo);
         console.log('Created servo:', createdServo);
-        res.json({ success: true, message: 'Servo created successfully', part: createdServo });
+        res.redirect(`/parts?characterId=${createdServo.characterId}`);
     } catch (error) {
         console.error('Error creating servo:', error);
-        res.status(500).json({ success: false, message: 'An error occurred while creating the servo: ' + error.message });
+        res.status(500).send('An error occurred while creating the servo: ' + error.message);
     }
 });
 
@@ -104,10 +104,10 @@ router.post('/:id', async (req, res) => {
         console.log('Updated Servo data:', updatedServo);
         const result = await partService.updatePart(id, updatedServo);
         console.log('Updated servo:', result);
-        res.json({ success: true, message: 'Servo updated successfully', part: result });
+        res.redirect(`/parts?characterId=${result.characterId}`);
     } catch (error) {
         console.error('Error updating servo:', error);
-        res.status(500).json({ success: false, message: 'An error occurred while updating the servo: ' + error.message });
+        res.status(500).send('An error occurred while updating the servo: ' + error.message);
     }
 });
 
