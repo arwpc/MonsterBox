@@ -58,17 +58,6 @@
             <span id="durationValue">1000</span>
         </div>
         <button onclick="testPart()">Test Motor</button>
-        <button onclick="openOSTestForm()">OS Test</button>
-    </div>
-
-    <div id="osTestForm" style="display: none;">
-        <h2>OS Test</h2>
-        <select id="osTestPart">
-            <!-- Options will be populated dynamically -->
-        </select>
-        <textarea id="osTestCommand" rows="4" cols="50"></textarea>
-        <button onclick="runOSTest()">Run</button>
-        <div id="osTestResult"></div>
     </div>
 
     <a href="/parts" class="button">Back to Parts</a>
@@ -112,48 +101,6 @@
             .catch((error) => {
                 console.error('Error:', error);
                 alert('An error occurred while testing the motor. Check console for details.');
-            });
-        }
-
-        function openOSTestForm() {
-            document.getElementById('osTestForm').style.display = 'block';
-            fetchAllParts();
-        }
-
-        function fetchAllParts() {
-            fetch('/parts/all')
-                .then(response => response.json())
-                .then(parts => {
-                    const select = document.getElementById('osTestPart');
-                    select.innerHTML = '';
-                    parts.forEach(part => {
-                        const option = document.createElement('option');
-                        option.value = part.id;
-                        option.textContent = `${part.name} (${part.type})`;
-                        select.appendChild(option);
-                    });
-                })
-                .catch(error => console.error('Error fetching parts:', error));
-        }
-
-        function runOSTest() {
-            const partId = document.getElementById('osTestPart').value;
-            const command = document.getElementById('osTestCommand').value;
-
-            fetch('/parts/os-test', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ partId, command })
-            })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('osTestResult').textContent = data.output;
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                document.getElementById('osTestResult').textContent = 'An error occurred during the OS test.';
             });
         }
     </script>
