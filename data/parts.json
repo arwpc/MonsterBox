@@ -58,6 +58,6 @@
     "characterId": 1,
     "sensorType": "motion",
     "gpioPin": 16,
-    "active": false
+    "active": true
   }
 ]
