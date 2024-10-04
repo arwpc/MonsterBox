@@ -7,6 +7,7 @@ const characterService = require('../services/characterService');
 const { spawn } = require('child_process');
 const path = require('path');
 const os = require('os');
+const logger = require('../scripts/logger');
 
 function getPartDetails(part) {
     switch(part.type) {
@@ -25,16 +26,14 @@ function getPartDetails(part) {
     }
 }
 
-// Middleware to check if a character is selected
 const checkCharacterSelected = (req, res, next) => {
     if (!req.query.characterId) {
-        return res.redirect('/');  // Redirect to main page if no character is selected
+        return res.redirect('/');
     }
     req.characterId = req.query.characterId;
     next();
 };
 
-// New route for OS test (before applying middleware)
 router.get('/os-test', (req, res) => {
     const osInfo = {
         platform: os.platform(),
@@ -48,7 +47,6 @@ router.get('/os-test', (req, res) => {
     res.render('os-test', { title: 'OS Test', osInfo });
 });
 
-// Apply the middleware to all routes except '/os-test'
 router.use((req, res, next) => {
     if (req.path !== '/os-test') {
         return checkCharacterSelected(req, res, next);
@@ -66,7 +64,7 @@ router.get('/', async (req, res) => {
         }));
         res.render('parts', { title: 'Parts', parts: partsWithDetails, character });
     } catch (error) {
-        console.error('Error fetching parts:', error);
+        logger.error('Error fetching parts:', error);
         res.status(500).send('An error occurred while fetching parts');
     }
 });
@@ -82,7 +80,7 @@ router.get('/new/:type', async (req, res) => {
             character 
         });
     } catch (error) {
-        console.error('Error rendering new part form:', error);
+        logger.error('Error rendering new part form:', error);
         res.status(500).send('An error occurred while loading the new part form');
     }
 });
@@ -99,7 +97,7 @@ router.get('/:id/edit', async (req, res) => {
             character
         });
     } catch (error) {
-        console.error('Error fetching part for edit:', error);
+        logger.error('Error fetching part for edit:', error);
         res.status(500).send('An error occurred while fetching the part');
     }
 });
@@ -113,7 +111,7 @@ router.post('/:type', async (req, res) => {
         await partService.createPart(partData);
         res.redirect(`/parts?characterId=${req.characterId}`);
     } catch (error) {
-        console.error('Error creating part:', error);
+        logger.error('Error creating part:', error);
         res.status(500).send('An error occurred while creating the part');
     }
 });
@@ -126,7 +124,7 @@ router.post('/:id/update', async (req, res) => {
         await partService.updatePart(id, partData);
         res.redirect(`/parts?characterId=${req.characterId}`);
     } catch (error) {
-        console.error('Error updating part:', error);
+        logger.error('Error updating part:', error);
         res.status(500).send('An error occurred while updating the part');
     }
 });
@@ -137,57 +135,100 @@ router.post('/:id/delete', async (req, res) => {
         await partService.deletePart(id);
         res.status(200).json({ message: 'Part deleted successfully' });
     } catch (error) {
-        console.error('Error deleting part:', error);
+        logger.error('Error deleting part:', error);
         res.status(500).json({ error: 'An error occurred while deleting the part' });
     }
 });
 
 router.post('/test', async (req, res) => {
     try {
-        const { type, ...testData } = req.body;
+        const { id, type, ...testData } = req.body;
         let scriptPath;
+        let args;
         
+        logger.info(`Received test request for part ID: ${id}, Type: ${type}`);
+
+        const part = await partService.getPartById(id);
+        if (!part) {
+            logger.error(`Part not found with ID: ${id}`);
+            return res.status(404).json({ success: false, error: 'Part not found' });
+        }
+
+        logger.info(`Part details: ${JSON.stringify(part)}`);
+
         switch (type) {
             case 'motor':
             case 'linear-actuator':
                 scriptPath = path.join(__dirname, '..', 'scripts', 'motor_control.py');
+                args = [
+                    testData.direction || 'forward',
+                    testData.speed || '50',
+                    testData.duration || '1000',
+                    part.directionPin.toString(),
+                    part.pwmPin.toString()
+                ];
                 break;
             case 'light':
             case 'led':
                 scriptPath = path.join(__dirname, '..', 'scripts', 'led_control.py');
+                args = [
+                    part.gpioPin.toString(),
+                    testData.state || 'on',
+                    testData.duration || '1000'
+                ];
+                if (type === 'led' && testData.brightness) {
+                    args.push(testData.brightness.toString());
+                }
                 break;
             case 'servo':
                 scriptPath = path.join(__dirname, '..', 'scripts', 'servo_control.py');
+                args = [
+                    part.gpioPin.toString(),
+                    testData.angle || '90',
+                    part.pwmFrequency.toString(),
+                    part.dutyCycle.toString(),
+                    testData.duration || '1000'
+                ];
                 break;
             case 'sensor':
                 scriptPath = path.join(__dirname, '..', 'scripts', 'sensor_control.py');
+                args = [
+                    part.gpioPin.toString(),
+                    testData.timeout || '5'
+                ];
                 break;
             default:
-                throw new Error('Invalid part type');
+                logger.error(`Invalid part type: ${type}`);
+                return res.status(400).json({ success: false, error: 'Invalid part type' });
         }
 
-        const process = spawn('python3', [scriptPath, ...Object.values(testData).map(String)]);
+        logger.info(`Executing script: ${scriptPath} with args: ${args.join(', ')}`);
+
+        const process = spawn('python3', [scriptPath, ...args]);
 
         let stdout = '';
         let stderr = '';
 
         process.stdout.on('data', (data) => {
             stdout += data.toString();
+            logger.debug(`Script output: ${data}`);
         });
 
         process.stderr.on('data', (data) => {
             stderr += data.toString();
+            logger.error(`Script error: ${data}`);
         });
 
         process.on('close', (code) => {
+            logger.info(`Script exited with code ${code}`);
             if (code === 0) {
                 res.json({ success: true, message: 'Test completed successfully', output: stdout });
             } else {
-                res.status(500).json({ success: false, message: 'Test failed', error: stderr });
+                res.status(500).json({ success: false, message: 'Test failed', error: stderr, output: stdout });
             }
         });
     } catch (error) {
-        console.error('Error testing part:', error);
+        logger.error('Error testing part:', error);
         res.status(500).json({ success: false, message: 'An error occurred while testing the part', error: error.message });
     }
 });

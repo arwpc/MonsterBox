@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const characterService = require('../services/characterService');
 const sceneService = require('../services/sceneService');
-const logger = require('../logger');
+const logger = require('../scripts/logger');
 
 router.get('/', async (req, res) => {
     try {
