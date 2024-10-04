@@ -3,6 +3,7 @@ const router = express.Router();
 const partService = require('../services/partService');
 const characterService = require('../services/characterService');
 const servoController = require('../controllers/servoController');
+const logger = require('../scripts/logger');
 
 router.get('/new', async (req, res) => {
     try {
@@ -17,7 +18,7 @@ router.get('/new', async (req, res) => {
             getServoDefaults: servoController.getServoDefaults
         });
     } catch (error) {
-        console.error('Error preparing new servo form:', error);
+        logger.error('Error preparing new servo form:', error);
         res.status(500).send('An error occurred while preparing the new servo form: ' + error.message);
     }
 });
@@ -25,7 +26,7 @@ router.get('/new', async (req, res) => {
 router.get('/:id/edit', async (req, res) => {
     try {
         const id = parseInt(req.params.id, 10);
-        console.log('Editing Servo with ID:', id, 'Type:', typeof id);
+        logger.debug('Editing Servo with ID:', id, 'Type:', typeof id);
         if (isNaN(id)) {
             throw new Error('Invalid part ID');
         }
@@ -44,7 +45,7 @@ router.get('/:id/edit', async (req, res) => {
             getServoDefaults: servoController.getServoDefaults
         });
     } catch (error) {
-        console.error('Error fetching servo:', error);
+        logger.error('Error fetching servo:', error);
         res.status(500).send('An error occurred while fetching the servo: ' + error.message);
     }
 });
@@ -65,10 +66,10 @@ router.post('/', async (req, res) => {
             defaultAngle: parseInt(req.body.defaultAngle) || servoDefaults.defaultAngle
         };
         const createdServo = await partService.createPart(newServo);
-        console.log('Created servo:', createdServo);
+        logger.info('Created servo:', createdServo);
         res.redirect(`/parts?characterId=${createdServo.characterId}`);
     } catch (error) {
-        console.error('Error creating servo:', error);
+        logger.error('Error creating servo:', error);
         res.status(500).send('An error occurred while creating the servo: ' + error.message);
     }
 });
@@ -79,11 +80,11 @@ router.post('/stop', servoController.stopServo);
 
 router.post('/:id', async (req, res) => {
     try {
-        console.log('Update Servo Route - Request params:', req.params);
-        console.log('Update Servo Route - Request body:', req.body);
+        logger.debug('Update Servo Route - Request params:', req.params);
+        logger.debug('Update Servo Route - Request body:', req.body);
 
         const id = parseInt(req.params.id, 10);
-        console.log('Updating Servo with ID:', id, 'Type:', typeof id);
+        logger.debug('Updating Servo with ID:', id, 'Type:', typeof id);
         if (isNaN(id)) {
             throw new Error('Invalid part ID');
         }
@@ -101,12 +102,12 @@ router.post('/:id', async (req, res) => {
             maxPulse: parseInt(req.body.maxPulse) || servoDefaults.maxPulse,
             defaultAngle: parseInt(req.body.defaultAngle) || servoDefaults.defaultAngle
         };
-        console.log('Updated Servo data:', updatedServo);
+        logger.debug('Updated Servo data:', updatedServo);
         const result = await partService.updatePart(id, updatedServo);
-        console.log('Updated servo:', result);
+        logger.info('Updated servo:', result);
         res.redirect(`/parts?characterId=${result.characterId}`);
     } catch (error) {
-        console.error('Error updating servo:', error);
+        logger.error('Error updating servo:', error);
         res.status(500).send('An error occurred while updating the servo: ' + error.message);
     }
 });

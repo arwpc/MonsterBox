@@ -2,6 +2,7 @@
 
 const { spawn } = require('child_process');
 const path = require('path');
+const logger = require('../scripts/logger');
 
 let soundPlayerProcess = null;
 let soundPlayerRetries = 0;
@@ -13,22 +14,22 @@ function startSoundPlayer() {
         soundPlayerProcess = spawn('python3', [scriptPath]);
 
         soundPlayerProcess.stdout.on('data', (data) => {
-            console.log(`Sound player output: ${data}`);
+            logger.info(`Sound player output: ${data}`);
         });
 
         soundPlayerProcess.stderr.on('data', (data) => {
-            console.error(`Sound player error: ${data}`);
+            logger.error(`Sound player error: ${data}`);
         });
 
         soundPlayerProcess.on('close', (code) => {
-            console.log(`Sound player exited with code ${code}`);
+            logger.info(`Sound player exited with code ${code}`);
             soundPlayerProcess = null;
             if (soundPlayerRetries < MAX_SOUND_PLAYER_RETRIES) {
                 soundPlayerRetries++;
-                console.log(`Retrying to start sound player (Attempt ${soundPlayerRetries})`);
+                logger.info(`Retrying to start sound player (Attempt ${soundPlayerRetries})`);
                 startSoundPlayer();
             } else {
-                console.error('Max retries reached. Unable to start sound player.');
+                logger.error('Max retries reached. Unable to start sound player.');
             }
         });
     }
@@ -41,6 +42,7 @@ function playSound(sound, sendEvent) {
         }
 
         if (!soundPlayerProcess) {
+            logger.error('Sound player not available');
             reject(new Error('Sound player not available'));
             return;
         }
@@ -49,6 +51,7 @@ function playSound(sound, sendEvent) {
         const command = `PLAY|${sound.id}|${filePath}\n`;
         soundPlayerProcess.stdin.write(command);
 
+        logger.info(`Playing sound: ${sound.name}`);
         sendEvent({ message: `Sound started: ${sound.name}` });
 
         const listener = (data) => {
@@ -57,6 +60,7 @@ function playSound(sound, sendEvent) {
                 const jsonOutput = JSON.parse(output);
                 if (jsonOutput.status === 'finished' && jsonOutput.sound_id === sound.id.toString()) {
                     soundPlayerProcess.stdout.removeListener('data', listener);
+                    logger.info(`Sound completed: ${sound.name}`);
                     sendEvent({ message: `Sound completed: ${sound.name}` });
                     resolve();
                 }
@@ -72,11 +76,13 @@ function playSound(sound, sendEvent) {
 function stopAllSounds() {
     return new Promise((resolve, reject) => {
         if (soundPlayerProcess) {
+            logger.info('Stopping all sounds');
             soundPlayerProcess.stdin.write("STOP_ALL\n");
             soundPlayerProcess.kill('SIGINT');
             soundPlayerProcess = null;
             resolve();
         } else {
+            logger.info('No sound player running, consider it stopped');
             resolve(); // No sound player running, consider it stopped
         }
     });
