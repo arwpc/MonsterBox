@@ -69,13 +69,11 @@
     <a href="/parts" class="button">Back to Parts</a>
 
     <script>
-        let eventSource;
-
         function updateSensorStatus(status) {
             const statusText = $('#statusText');
             statusText.text('Sensor status: ' + status);
 
-            if (status === 'Motion detected!') {
+            if (status.includes('Motion detected')) {
                 statusText.addClass('motion-detected');
             } else {
                 statusText.removeClass('motion-detected');
@@ -83,37 +81,44 @@
         }
 
         function startTest() {
+            const id = $('input[name="id"]').val();
             const gpioPin = $('#gpioPin').val();
             const timeout = 30; // Set a default timeout of 30 seconds
 
-            eventSource = new EventSource(`/parts/sensor/test-sensor?gpioPin=${gpioPin}&timeout=${timeout}`);
-
-            eventSource.onmessage = function(event) {
-                const data = JSON.parse(event.data);
-                if (data.status) {
-                    updateSensorStatus(data.status);
-                } else if (data.error) {
-                    console.error('Error:', data.error);
-                    updateSensorStatus('Error: ' + data.error);
-                    stopTest();
-                } else if (data.done) {
-                    stopTest();
+            $.ajax({
+                url: '/parts/test',
+                method: 'POST',
+                data: {
+                    id: id,
+                    type: 'sensor',
+                    gpioPin: gpioPin,
+                    timeout: timeout
+                },
+                success: function(response) {
+                    if (response.success) {
+                        updateSensorStatus(response.output);
+                        $('#testResults').text('Test completed successfully: ' + response.output);
+                    } else {
+                        updateSensorStatus('Error: ' + (response.error || 'Unknown error'));
+                        $('#testResults').text('Test failed: ' + (response.error || 'Unknown error'));
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error:', error);
+                    updateSensorStatus('Error: ' + error);
+                    $('#testResults').text('Test failed: ' + error);
+                },
+                complete: function() {
+                    $('#startTest').prop('disabled', false);
+                    $('#stopTest').prop('disabled', true);
                 }
-            };
-
-            eventSource.onerror = function(event) {
-                console.error('EventSource failed:', event);
-                stopTest();
-            };
+            });
 
             $('#startTest').prop('disabled', true);
             $('#stopTest').prop('disabled', false);
         }
 
         function stopTest() {
-            if (eventSource) {
-                eventSource.close();
-            }
             $('#startTest').prop('disabled', false);
             $('#stopTest').prop('disabled', true);
             updateSensorStatus('Not testing');
