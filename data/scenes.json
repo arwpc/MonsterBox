@@ -2,35 +2,30 @@
   {
     "id": 1,
     "character_id": 1,
-    "scene_name": "testing sene",
+    "scene_name": "Post refactor",
     "steps": [
       {
         "type": "linear-actuator",
-        "name": "Lift Arm Up",
-        "part_id": "10",
-        "duration": "3000",
+        "name": "rtaise",
+        "part_id": "20",
+        "duration": "3200",
         "direction": "forward",
-        "speed": "50"
-      },
-      {
-        "type": "sound",
-        "name": "Santos",
-        "sound_id": "3"
+        "speed": "100"
       },
       {
         "type": "light",
-        "name": "Turn on light",
-        "part_id": "1",
+        "name": "Hand On",
+        "part_id": "19",
         "duration": "5000",
         "state": "on"
       },
       {
         "type": "linear-actuator",
-        "name": "Lift Arm Down",
-        "part_id": "10",
-        "duration": "3000",
+        "name": "rtaise (Copy)",
+        "part_id": "20",
+        "duration": "3200",
         "direction": "backward",
-        "speed": "50"
+        "speed": "100"
       }
     ]
   }

@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "/home/remote/monsterbox/MonsterBox/log/.7ec5de391b33af950299087c3d3d603497968538-audit.json",
+    "files": [
+        {
+            "date": 1728076993508,
+            "name": "/home/remote/monsterbox/MonsterBox/log/MonsterBox-2024-10-04.log",
+            "hash": "c819f6c9c92954d3f791d0c2f362282bd98cd015eeac99eb72c01ecc027a2eb1"
+        }
+    ],
+    "hashType": "sha256"
+}
