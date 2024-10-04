@@ -68,6 +68,7 @@ router.get('/test-sensor', async (req, res) => {
     try {
         const sensorId = parseInt(req.query.id);
         const gpioPin = parseInt(req.query.gpioPin);
+        const timeout = parseInt(req.query.timeout) || 30;
 
         if (isNaN(sensorId) || isNaN(gpioPin)) {
             throw new Error('Invalid sensor ID or GPIO pin');
@@ -81,7 +82,7 @@ router.get('/test-sensor', async (req, res) => {
             'Connection': 'keep-alive'
         });
 
-        const python = spawn('sudo', ['python3', scriptPath, gpioPin.toString()]);
+        const python = spawn('sudo', ['python3', scriptPath, gpioPin.toString(), timeout.toString()]);
 
         python.stdout.on('data', (data) => {
             res.write(`data: ${data}\n\n`);

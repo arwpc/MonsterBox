@@ -86,7 +86,7 @@
             const gpioPin = $('#gpioPin').val();
             const timeout = 30; // Set a default timeout of 30 seconds
 
-            eventSource = new EventSource(`/parts/sensor/test?gpioPin=${gpioPin}&timeout=${timeout}`);
+            eventSource = new EventSource(`/parts/sensor/test-sensor?id=${<%= part.id || 'null' %>}&gpioPin=${gpioPin}&timeout=${timeout}`);
 
             eventSource.onmessage = function(event) {
                 const data = JSON.parse(event.data);
