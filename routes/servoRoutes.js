@@ -8,15 +8,17 @@ router.get('/:id/edit', async (req, res) => {
     try {
         const id = parseInt(req.params.id, 10);
         console.log('Editing Servo with ID:', id, 'Type:', typeof id);
-        if (isNaN(id)) {
-            throw new Error('Invalid part ID');
-        }
-        const part = await partService.getPartById(id);
-        if (!part) {
-            throw new Error('Part not found');
+        let part = null;
+        if (!isNaN(id)) {
+            part = await partService.getPartById(id);
         }
         const characters = await characterService.getAllCharacters();
-        res.render('part-forms/servo', { title: 'Edit Servo', action: `/parts/servo/${part.id}`, part, characters });
+        res.render('part-forms/servo', { 
+            title: part ? 'Edit Servo' : 'New Servo', 
+            action: part ? `/parts/servo/${part.id}` : '/parts/servo', 
+            part, 
+            characters 
+        });
     } catch (error) {
         console.error('Error fetching servo:', error);
         res.status(500).send('An error occurred while fetching the servo: ' + error.message);
