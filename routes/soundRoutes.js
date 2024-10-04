@@ -8,7 +8,7 @@ const characterService = require('../services/characterService');
 const multer = require('multer');
 const fs = require('fs').promises;
 const router = express.Router();
-const logger = require('../logger');
+const logger = require('../scripts/logger');
 
 // Multer setup for file uploads
 const storage = multer.diskStorage({
