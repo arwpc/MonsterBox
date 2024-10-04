@@ -3,7 +3,7 @@ const router = express.Router();
 const fs = require('fs').promises;
 const path = require('path');
 
-const LOG_FILE_PATH = path.join(__dirname, '..', 'logs', 'app.log');
+const LOG_DIR = path.join(__dirname, '..', 'log');
 const LINES_PER_PAGE = 100;
 
 router.get('/', async (req, res) => {
@@ -11,53 +11,51 @@ router.get('/', async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const search = req.query.search || '';
 
-        // Check if the log file exists
-        try {
-            await fs.access(LOG_FILE_PATH, fs.constants.F_OK);
-        } catch (error) {
-            console.error(`Log file does not exist at ${LOG_FILE_PATH}`);
+        // Get list of log files
+        const files = await fs.readdir(LOG_DIR);
+        const logFiles = files.filter(file => file.startsWith('MonsterBox-') && file.endsWith('.log'))
+                              .sort((a, b) => b.localeCompare(a)); // Sort in descending order
+
+        if (logFiles.length === 0) {
             return res.render('logs', {
-                logs: ['No log file found. The application may not have generated any logs yet.'],
+                logs: ['No log files found. The application may not have generated any logs yet.'],
                 currentPage: 1,
                 totalPages: 1,
                 search: search,
-                error: 'Log file not found'
+                error: 'No log files found'
             });
         }
 
-        const content = await fs.readFile(LOG_FILE_PATH, 'utf8');
-
-        if (content.trim() === '') {
-            return res.render('logs', {
-                logs: ['The log file is empty.'],
-                currentPage: 1,
-                totalPages: 1,
-                search: search
-            });
+        // Read content from all log files
+        let allLogs = [];
+        for (const file of logFiles) {
+            const content = await fs.readFile(path.join(LOG_DIR, file), 'utf8');
+            allLogs = allLogs.concat(content.split('\n').filter(line => line.trim() !== ''));
         }
 
-        const lines = content.split('\n').reverse(); // Reverse to show newest logs first
+        // Reverse to show newest logs first
+        allLogs.reverse();
 
-        let filteredLines = lines;
+        let filteredLogs = allLogs;
         if (search) {
-            filteredLines = lines.filter(line => line.toLowerCase().includes(search.toLowerCase()));
+            filteredLogs = allLogs.filter(line => line.toLowerCase().includes(search.toLowerCase()));
         }
 
-        const totalPages = Math.ceil(filteredLines.length / LINES_PER_PAGE);
+        const totalPages = Math.ceil(filteredLogs.length / LINES_PER_PAGE);
         const startIndex = (page - 1) * LINES_PER_PAGE;
         const endIndex = startIndex + LINES_PER_PAGE;
-        const paginatedLines = filteredLines.slice(startIndex, endIndex);
+        const paginatedLogs = filteredLogs.slice(startIndex, endIndex);
 
         res.render('logs', {
-            logs: paginatedLines,
+            logs: paginatedLogs,
             currentPage: page,
             totalPages: totalPages,
             search: search
         });
     } catch (error) {
-        console.error('Error reading log file:', error);
+        console.error('Error reading log files:', error);
         res.status(500).render('logs', {
-            logs: ['An error occurred while reading the log file.'],
+            logs: ['An error occurred while reading the log files.'],
             currentPage: 1,
             totalPages: 1,
             search: '',
