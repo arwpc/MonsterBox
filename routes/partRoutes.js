@@ -6,7 +6,6 @@ const partService = require('../services/partService');
 const characterService = require('../services/characterService');
 const { spawn } = require('child_process');
 const path = require('path');
-const os = require('os');
 const logger = require('../scripts/logger');
 
 function getPartDetails(part) {
@@ -34,25 +33,7 @@ const checkCharacterSelected = (req, res, next) => {
     next();
 };
 
-router.get('/os-test', (req, res) => {
-    const osInfo = {
-        platform: os.platform(),
-        release: os.release(),
-        type: os.type(),
-        arch: os.arch(),
-        cpus: os.cpus(),
-        totalMemory: os.totalmem(),
-        freeMemory: os.freemem()
-    };
-    res.render('os-test', { title: 'OS Test', osInfo });
-});
-
-router.use((req, res, next) => {
-    if (req.path !== '/os-test') {
-        return checkCharacterSelected(req, res, next);
-    }
-    next();
-});
+router.use(checkCharacterSelected);
 
 router.get('/', async (req, res) => {
     try {
