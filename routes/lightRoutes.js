@@ -67,9 +67,11 @@ router.post('/test', async (req, res) => {
             state
         ];
 
-        // Add duration of 5000ms when turning the light on
+        // Add duration for both on and off states
         if (state === 'on') {
-            scriptArgs.push('5000');
+            scriptArgs.push('5000');  // 5 seconds for on state
+        } else {
+            scriptArgs.push('100');   // 100ms for off state
         }
 
         console.log('Executing light test with parameters:', scriptArgs);
