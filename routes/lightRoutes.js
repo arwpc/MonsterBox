@@ -5,6 +5,17 @@ const characterService = require('../services/characterService');
 const { spawn } = require('child_process');
 const path = require('path');
 
+// Route for adding a new light
+router.get('/new', async (req, res) => {
+    try {
+        const characters = await characterService.getAllCharacters();
+        res.render('part-forms/light', { title: 'Add Light', action: '/parts/light', part: {}, characters });
+    } catch (error) {
+        console.error('Error fetching characters:', error);
+        res.status(500).send('An error occurred while fetching characters: ' + error.message);
+    }
+});
+
 router.get('/:id/edit', async (req, res) => {
     try {
         const id = parseInt(req.params.id, 10);
