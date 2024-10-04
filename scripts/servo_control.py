@@ -1,9 +1,16 @@
 import RPi.GPIO as GPIO
 import sys
 import time
-from adafruit_pca9685 import PCA9685
-import board
-import busio
+
+try:
+    from adafruit_pca9685 import PCA9685
+    import board
+    import busio
+except ImportError:
+    print("Error: Required modules not found. Please install the following modules:")
+    print("pip3 install adafruit-circuitpython-pca9685")
+    print("pip3 install adafruit-circuitpython-motor")
+    sys.exit(1)
 
 def setup_pca9685():
     i2c = busio.I2C(board.SCL, board.SDA)
