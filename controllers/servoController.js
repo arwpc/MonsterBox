@@ -1,5 +1,6 @@
 const { exec } = require('child_process');
 const path = require('path');
+const fs = require('fs');
 
 const servoTypes = {
     DS3240MG: { minPulse: 500, maxPulse: 2500, defaultAngle: 90 },
@@ -70,3 +71,51 @@ exports.stopServo = async (req, res) => {
 };
 
 exports.getServoTypes = () => Object.keys(servoTypes);
+
+exports.saveServo = async (req, res) => {
+    console.log('Saving servo - Body:', req.body);
+
+    try {
+        const usePCA9685 = req.body.usePCA9685 === 'on' || req.body.usePCA9685 === true;
+
+        const servoData = {
+            id: req.body.id || Date.now().toString(),
+            type: 'servo',
+            name: req.body.name,
+            characterId: req.body.characterId,
+            servoType: req.body.servoType,
+            usePCA9685: usePCA9685,
+            minPulse: parseInt(req.body.minPulse),
+            maxPulse: parseInt(req.body.maxPulse),
+            defaultAngle: parseInt(req.body.defaultAngle)
+        };
+
+        if (usePCA9685) {
+            servoData.channel = parseInt(req.body.channel);
+        } else {
+            servoData.pin = parseInt(req.body.pin);
+        }
+
+        const partsFilePath = path.join(__dirname, '..', 'data', 'parts.json');
+        let parts = [];
+
+        if (fs.existsSync(partsFilePath)) {
+            const partsData = fs.readFileSync(partsFilePath, 'utf8');
+            parts = JSON.parse(partsData);
+        }
+
+        const existingServoIndex = parts.findIndex(part => part.id === servoData.id);
+        if (existingServoIndex !== -1) {
+            parts[existingServoIndex] = servoData;
+        } else {
+            parts.push(servoData);
+        }
+
+        fs.writeFileSync(partsFilePath, JSON.stringify(parts, null, 2));
+
+        res.json({ success: true, message: 'Servo saved successfully', servo: servoData });
+    } catch (error) {
+        console.error('Error saving servo:', error);
+        res.status(500).json({ success: false, message: 'An error occurred while saving the servo', error: error.message });
+    }
+};

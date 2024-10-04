@@ -157,8 +157,11 @@
             document.getElementById('servoForm').addEventListener('submit', function(event) {
                 event.preventDefault();
                 const formData = new FormData(this);
-                const usePCA9685 = formData.get('usePCA9685') === 'on';
+                const usePCA9685 = document.getElementById('usePCA9685').checked;
                 
+                // Ensure usePCA9685 is correctly set
+                formData.set('usePCA9685', usePCA9685);
+
                 if (usePCA9685) {
                     formData.delete('pin');
                 } else {
@@ -216,6 +219,10 @@
             const usePCA9685 = document.getElementById('usePCA9685').checked;
             document.getElementById('pca9685Fields').style.display = usePCA9685 ? 'block' : 'none';
             document.getElementById('gpioField').style.display = usePCA9685 ? 'none' : 'block';
+            
+            // Toggle required attribute for channel and pin inputs
+            document.getElementById('channel').required = usePCA9685;
+            document.getElementById('pin').required = !usePCA9685;
         }
 
         function testServo() {
