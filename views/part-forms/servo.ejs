@@ -41,7 +41,7 @@
 </head>
 <body>
     <h1><%= title %></h1>
-    <form action="<%= action %>" method="POST">
+    <form action="<%= action %>" method="POST" id="servoForm">
         <input type="hidden" name="type" value="servo">
         <% if (part && part.id) { %>
             <input type="hidden" name="id" value="<%= part.id %>">
@@ -151,6 +151,36 @@
                     channelButtons.forEach(b => b.classList.remove('selected'));
                     channelButtons[channel].classList.add('selected');
                 }
+            });
+
+            // Add event listener for form submission
+            document.getElementById('servoForm').addEventListener('submit', function(event) {
+                event.preventDefault();
+                const formData = new FormData(this);
+                const usePCA9685 = formData.get('usePCA9685') === 'on';
+                
+                if (usePCA9685) {
+                    formData.delete('pin');
+                } else {
+                    formData.delete('channel');
+                }
+
+                fetch(this.action, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = '/parts?characterId=' + formData.get('characterId');
+                    } else {
+                        alert('Error saving servo: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while saving the servo');
+                });
             });
         });
 
