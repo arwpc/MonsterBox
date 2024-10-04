@@ -34,20 +34,44 @@
         </div>
 
         <div>
-            <label for="sound_files">Sound File(s):</label>
-            <input type="file" id="sound_files" name="sound_files" accept=".mp3,.wav" <% if (!sound) { %>multiple<% } %> required>
+            <label for="sound_files">Sound File:</label>
             <% if (sound && sound.filename) { %>
                 <p>Current file: <%- sound.filename %></p>
+                <label>
+                    <input type="radio" name="file_option" value="keep" checked> Keep current file
+                </label>
+                <label>
+                    <input type="radio" name="file_option" value="replace"> Replace file
+                </label>
+                <input type="file" id="sound_files" name="sound_files" accept=".mp3,.wav" style="display: none;">
+            <% } else { %>
+                <input type="file" id="sound_files" name="sound_files" accept=".mp3,.wav" required>
             <% } %>
         </div>
 
-        <button type="submit">Save Sound(s)</button>
+        <button type="submit">Save Sound</button>
     </form>
 
     <a href="/sounds" class="button">Back to Sounds</a>
 
     <script>
-        // You can add any client-side JavaScript here if needed
+        // Show/hide file input based on radio button selection
+        const fileOptions = document.getElementsByName('file_option');
+        const fileInput = document.getElementById('sound_files');
+
+        if (fileOptions.length > 0) {
+            fileOptions.forEach(option => {
+                option.addEventListener('change', function() {
+                    if (this.value === 'replace') {
+                        fileInput.style.display = 'block';
+                        fileInput.required = true;
+                    } else {
+                        fileInput.style.display = 'none';
+                        fileInput.required = false;
+                    }
+                });
+            });
+        }
     </script>
 </body>
 </html>

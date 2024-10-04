@@ -83,11 +83,11 @@ router.get('/:id/edit', async (req, res) => {
     }
 });
 
-router.post('/', upload.array('sound_files', 10), async (req, res) => {
+router.post('/', upload.array('sound_files'), async (req, res) => {
     try {
         const characterIds = req.body.characterIds ? (Array.isArray(req.body.characterIds) ? req.body.characterIds.map(Number) : [Number(req.body.characterIds)]) : [];
         const soundDataArray = req.files.map(file => ({
-            name: file.originalname.split('.').slice(0, -1).join('.'), // Use filename without extension as name
+            name: req.body.name || file.originalname.split('.').slice(0, -1).join('.'), // Use provided name or filename without extension
             filename: file.filename,
             characterIds: characterIds
         }));
@@ -100,7 +100,7 @@ router.post('/', upload.array('sound_files', 10), async (req, res) => {
     }
 });
 
-router.post('/:id', upload.single('sound_file'), async (req, res) => {
+router.post('/:id', upload.single('sound_files'), async (req, res) => {
     try {
         const id = parseInt(req.params.id);
         const characterIds = req.body.characterIds ? (Array.isArray(req.body.characterIds) ? req.body.characterIds.map(Number) : [Number(req.body.characterIds)]) : [];
@@ -109,7 +109,7 @@ router.post('/:id', upload.single('sound_file'), async (req, res) => {
             characterIds: characterIds
         };
         
-        if (req.file) {
+        if (req.body.file_option === 'replace' && req.file) {
             const sound = await soundService.getSoundById(id);
             if (sound && sound.filename) {
                 const oldFilePath = path.join(__dirname, '../public/sounds', sound.filename);
