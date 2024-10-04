@@ -64,18 +64,17 @@
         const sceneData = <%- JSON.stringify(scene) %>;
         const characterId = "<%= characterId %>";
     </script>
-    <script src="/scripts/scene-player.js"></script>
     <script>
         // Basic diagnostic script
         console.log("Inline script running");
-        $(document).ready(function() {
-            console.log("Document ready");
-            console.log("jQuery version:", $.fn.jquery);
-            console.log("Buttons found:", $("#controls button").length);
-            $("#controls button").on("click", function() {
-                console.log(this.id + " clicked");
-            });
-        });
+        if (typeof jQuery !== 'undefined') {
+            console.log("jQuery is loaded, version:", jQuery.fn.jquery);
+        } else {
+            console.log("jQuery is not loaded");
+        }
+        console.log("Scene data:", sceneData);
+        console.log("Character ID:", characterId);
     </script>
+    <script src="/scripts/scene-player.js"></script>
 </body>
 </html>
