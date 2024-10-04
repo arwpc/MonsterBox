@@ -53,6 +53,50 @@ function executeTestfire(res, params) {
         });
 }
 
+// GET route for linear actuator creation page
+router.get('/new', async (req, res) => {
+    try {
+        const characters = await require('../services/characterService').getAllCharacters();
+        res.render('part-forms/linear-actuator', { title: 'Create Linear Actuator', action: '/parts/linear-actuator', part: {}, characters });
+    } catch (error) {
+        console.error('Error fetching characters:', error);
+        res.status(500).send('An error occurred while fetching the characters: ' + error.message);
+    }
+});
+
+// GET route for linear actuator edit page
+router.get('/:id/edit', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id, 10);
+        console.log('Editing Linear Actuator with ID:', id);
+        if (isNaN(id)) {
+            throw new Error('Invalid part ID');
+        }
+        const part = await partService.getPartById(id);
+        const characters = await require('../services/characterService').getAllCharacters();
+        res.render('part-forms/linear-actuator', { title: 'Edit Linear Actuator', action: `/parts/linear-actuator/${part.id}`, part, characters });
+    } catch (error) {
+        console.error('Error fetching linear actuator:', error);
+        res.status(500).send('An error occurred while fetching the linear actuator: ' + error.message);
+    }
+});
+
+// GET route for testfire with parameters (for unsaved actuators)
+router.get('/testfire', (req, res) => {
+    const { direction = 'forward', speed = '50', duration = '1000', directionPin, pwmPin, maxExtension, maxRetraction } = req.query;
+    writeLog(`Received GET testfire request for unsaved linear actuator with params: direction=${direction}, speed=${speed}, duration=${duration}, directionPin=${directionPin}, pwmPin=${pwmPin}, maxExtension=${maxExtension}, maxRetraction=${maxRetraction}`);
+    
+    executeTestfire(res, {
+        direction,
+        speed,
+        duration,
+        directionPin,
+        pwmPin,
+        maxExtension,
+        maxRetraction
+    });
+});
+
 // GET route for testfire with parameters (for saved actuators)
 router.get('/:id/testfire', (req, res) => {
     const id = parseInt(req.params.id, 10);
@@ -80,39 +124,6 @@ router.get('/:id/testfire', (req, res) => {
                 error: error.message
             });
         });
-});
-
-// GET route for testfire with parameters (for unsaved actuators)
-router.get('/testfire', (req, res) => {
-    const { direction = 'forward', speed = '50', duration = '1000', directionPin, pwmPin, maxExtension, maxRetraction } = req.query;
-    writeLog(`Received GET testfire request for unsaved linear actuator with params: direction=${direction}, speed=${speed}, duration=${duration}, directionPin=${directionPin}, pwmPin=${pwmPin}, maxExtension=${maxExtension}, maxRetraction=${maxRetraction}`);
-    
-    executeTestfire(res, {
-        direction,
-        speed,
-        duration,
-        directionPin,
-        pwmPin,
-        maxExtension,
-        maxRetraction
-    });
-});
-
-// GET route for linear actuator edit page
-router.get('/:id/edit', async (req, res) => {
-    try {
-        const id = parseInt(req.params.id, 10);
-        console.log('Editing Linear Actuator with ID:', id);
-        if (isNaN(id)) {
-            throw new Error('Invalid part ID');
-        }
-        const part = await partService.getPartById(id);
-        const characters = await require('../services/characterService').getAllCharacters();
-        res.render('part-forms/linear-actuator', { title: 'Edit Linear Actuator', action: `/parts/linear-actuator/${part.id}`, part, characters });
-    } catch (error) {
-        console.error('Error fetching linear actuator:', error);
-        res.status(500).send('An error occurred while fetching the linear actuator: ' + error.message);
-    }
 });
 
 // POST route for creating a new linear actuator
