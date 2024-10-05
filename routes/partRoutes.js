@@ -197,8 +197,11 @@ router.get('/sensor/test', (req, res) => {
 router.get('/motor/:id?/testfire', (req, res) => {
     const { direction, speed, duration, directionPin, pwmPin } = req.query;
     
+    logger.info(`Received testfire request with params: ${JSON.stringify(req.query)}`);
+
     if (!directionPin || !pwmPin) {
-        return res.status(400).json({ error: 'Direction pin and PWM pin are required' });
+        logger.warn('Testfire request missing required parameters');
+        return res.status(400).json({ success: false, error: 'Direction pin and PWM pin are required' });
     }
 
     const scriptPath = path.join(__dirname, '..', 'scripts', 'motor_control.py');
@@ -212,29 +215,40 @@ router.get('/motor/:id?/testfire', (req, res) => {
 
     logger.info(`Executing motor test script: ${scriptPath} with args: ${args.join(', ')}`);
 
-    const process = spawn('python3', [scriptPath, ...args]);
+    try {
+        const process = spawn('python3', [scriptPath, ...args]);
 
-    let output = '';
-    let errorOutput = '';
+        let output = '';
+        let errorOutput = '';
 
-    process.stdout.on('data', (data) => {
-        output += data.toString();
-        logger.debug(`Motor script output: ${data}`);
-    });
+        process.stdout.on('data', (data) => {
+            output += data.toString();
+            logger.debug(`Motor script output: ${data}`);
+        });
 
-    process.stderr.on('data', (data) => {
-        errorOutput += data.toString();
-        logger.error(`Motor script error: ${data}`);
-    });
+        process.stderr.on('data', (data) => {
+            errorOutput += data.toString();
+            logger.error(`Motor script error: ${data}`);
+        });
 
-    process.on('close', (code) => {
-        logger.info(`Motor script exited with code ${code}`);
-        if (code === 0) {
-            res.json({ success: true, message: 'Motor test completed successfully', output });
-        } else {
-            res.status(500).json({ success: false, message: 'Motor test failed', error: errorOutput });
-        }
-    });
+        process.on('close', (code) => {
+            logger.info(`Motor script exited with code ${code}`);
+            if (code === 0) {
+                res.json({ success: true, message: 'Motor test completed successfully', output });
+            } else {
+                res.status(500).json({ success: false, message: 'Motor test failed', error: errorOutput });
+            }
+        });
+
+        process.on('error', (error) => {
+            logger.error(`Failed to start motor script: ${error}`);
+            res.status(500).json({ success: false, message: 'Failed to start motor test', error: error.message });
+        });
+
+    } catch (error) {
+        logger.error(`Unexpected error in motor testfire route: ${error}`);
+        res.status(500).json({ success: false, message: 'An unexpected error occurred', error: error.message });
+    }
 });
 
 module.exports = router;
