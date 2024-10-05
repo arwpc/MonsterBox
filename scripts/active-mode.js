@@ -33,6 +33,7 @@ $(document).ready(function() {
             $.get(`/active-mode/character/${characterId}`, function(character) {
                 displayCharacterInfo(character);
                 fetchScenes(characterId);
+                fetchPartsAndSounds(characterId);
             }).fail(handleCharacterInfoError);
         } else {
             clearCharacterInfo();
@@ -50,10 +51,36 @@ $(document).ready(function() {
         }
     }
 
+    function fetchPartsAndSounds(characterId) {
+        $.get(`/active-mode/character/${characterId}/parts-and-sounds`, function(data) {
+            displayPartsAndSounds(data);
+        }).fail(function(jqXHR, textStatus, errorThrown) {
+            console.error("Error fetching parts and sounds:", textStatus, errorThrown);
+            $('#partsAndSounds').html('<p>Failed to load parts and sounds information. Please try again.</p>');
+        });
+    }
+
+    function displayPartsAndSounds(data) {
+        let partsHtml = '<h4>Parts:</h4><ul>';
+        data.parts.forEach(part => {
+            partsHtml += `<li>${part.part_name} (${part.part_type})</li>`;
+        });
+        partsHtml += '</ul>';
+
+        let soundsHtml = '<h4>Sounds:</h4><ul>';
+        data.sounds.forEach(sound => {
+            soundsHtml += `<li>${sound.sound_name}</li>`;
+        });
+        soundsHtml += '</ul>';
+
+        $('#partsAndSounds').html(partsHtml + soundsHtml);
+    }
+
     function handleCharacterInfoError(jqXHR, textStatus, errorThrown) {
         console.error("Error fetching character info:", textStatus, errorThrown);
         $('#characterInfo').html('<p>Failed to load character information. Please try again.</p>');
         $('#characterImage').attr('src', '/images/placeholder.jpg').attr('alt', 'Placeholder Image');
+        $('#partsAndSounds').empty();
     }
 
     function clearCharacterInfo() {
@@ -61,6 +88,7 @@ $(document).ready(function() {
         $('#availableScenes').empty();
         $('#activatedScenes').empty();
         $('#characterImage').attr('src', '/images/placeholder.jpg').attr('alt', 'Placeholder Image');
+        $('#partsAndSounds').empty();
         updateSceneTimeline();
     }
 
