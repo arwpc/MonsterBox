@@ -16,7 +16,7 @@ $(document).ready(function() {
     $('#stopAllSteps').click(stopAllSteps);
     $('#sceneDelay').on('input', updateSceneTimeline);
 
-    // Load character information on page load
+    // Load character information and scenes on page load
     loadCharacterInfo();
 
     function loadCharacterInfo() {
@@ -86,28 +86,20 @@ $(document).ready(function() {
         if (scenes.length === 0) {
             $('#availableScenes').append('<option value="">No available scenes</option>');
             $('#sceneSelectionArea').hide();
-            $('#noScenesMessage').show();
         } else {
             scenes.forEach(function(scene) {
                 $('#availableScenes').append(`<option value="${scene.id}">${scene.scene_name}</option>`);
             });
             $('#sceneSelectionArea').show();
-            $('#noScenesMessage').hide();
         }
-        updateSceneSelectionVisibility();
+        updateArmButtonState();
     }
 
     function handleSceneFetchError(jqXHR, textStatus, errorThrown) {
         console.error("Error fetching scenes:", textStatus, errorThrown);
         $('#availableScenes').html('<option>Failed to load scenes</option>');
         $('#debugInfo').append(`<p>Error fetching scenes: ${textStatus} - ${errorThrown}</p>`);
-        updateSceneSelectionVisibility();
-    }
-
-    function updateSceneSelectionVisibility() {
-        const hasScenes = $('#availableScenes option').length > 0 && $('#availableScenes option').first().val() !== "";
-        $('#sceneSelectionArea').toggle(hasScenes);
-        $('#noScenesMessage').toggle(!hasScenes);
+        $('#sceneSelectionArea').hide();
     }
 
     function addScenes() {
@@ -119,7 +111,6 @@ $(document).ready(function() {
         });
         updateSceneTimeline();
         updateArmButtonState();
-        updateSceneSelectionVisibility();
     }
 
     function removeScenes() {
@@ -131,7 +122,6 @@ $(document).ready(function() {
         });
         updateSceneTimeline();
         updateArmButtonState();
-        updateSceneSelectionVisibility();
     }
 
     function updateSceneTimeline() {
