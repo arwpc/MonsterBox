@@ -35,6 +35,8 @@ app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
+// Add this line to serve files from the 'scripts' directory
+app.use('/scripts', express.static(path.join(__dirname, 'scripts')));
 
 // Session middleware
 app.use(session({
