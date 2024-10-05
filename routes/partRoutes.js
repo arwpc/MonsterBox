@@ -218,36 +218,40 @@ router.get('/motor/:id?/testfire', (req, res) => {
     try {
         const process = spawn('python3', [scriptPath, ...args]);
 
-        let output = '';
-        let errorOutput = '';
+        let jsonOutput = '';
 
         process.stdout.on('data', (data) => {
-            output += data.toString();
+            jsonOutput += data.toString();
             logger.debug(`Motor script output: ${data}`);
         });
 
         process.stderr.on('data', (data) => {
-            errorOutput += data.toString();
             logger.error(`Motor script error: ${data}`);
         });
 
         process.on('close', (code) => {
             logger.info(`Motor script exited with code ${code}`);
-            if (code === 0) {
-                res.json({ success: true, message: 'Motor test completed successfully', output });
-            } else {
-                res.status(500).json({ success: false, message: 'Motor test failed', error: errorOutput });
+            try {
+                const result = JSON.parse(jsonOutput);
+                if (result.success) {
+                    res.json({ success: true, message: result.message });
+                } else {
+                    res.status(500).json({ success: false, error: result.error });
+                }
+            } catch (error) {
+                logger.error(`Error parsing JSON output: ${error}`);
+                res.status(500).json({ success: false, error: 'Failed to parse motor test result' });
             }
         });
 
         process.on('error', (error) => {
             logger.error(`Failed to start motor script: ${error}`);
-            res.status(500).json({ success: false, message: 'Failed to start motor test', error: error.message });
+            res.status(500).json({ success: false, error: 'Failed to start motor test' });
         });
 
     } catch (error) {
         logger.error(`Unexpected error in motor testfire route: ${error}`);
-        res.status(500).json({ success: false, message: 'An unexpected error occurred', error: error.message });
+        res.status(500).json({ success: false, error: 'An unexpected error occurred' });
     }
 });
 
