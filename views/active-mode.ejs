@@ -74,6 +74,24 @@
             padding: 10px;
             margin-top: 20px;
         }
+        #sceneSelectionArea {
+            display: none;
+        }
+        .armed {
+            color: green;
+            font-weight: bold;
+        }
+        .disarmed {
+            color: red;
+            font-weight: bold;
+        }
+        #armedModeOutput {
+            height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
@@ -96,52 +114,54 @@
 
     <div id="partsAndSounds"></div>
 
-    <div class="scene-container">
-        <div class="scene-box">
-            <h2>Available Scenes</h2>
-            <select id="availableScenes" multiple></select>
+    <div id="sceneSelectionArea">
+        <div class="scene-container">
+            <div class="scene-box">
+                <h2>Available Scenes</h2>
+                <select id="availableScenes" multiple></select>
+            </div>
+            <div class="scene-controls">
+                <button id="addScenes" class="tooltip">&gt;&gt;
+                    <span class="tooltiptext">Add selected scenes to active list</span>
+                </button>
+                <button id="removeScenes" class="tooltip">&lt;&lt;
+                    <span class="tooltiptext">Remove selected scenes from active list</span>
+                </button>
+            </div>
+            <div class="scene-box">
+                <h2>ACTIVE Scenes</h2>
+                <ul id="activatedScenes"></ul>
+            </div>
         </div>
-        <div class="scene-controls">
-            <button id="addScenes" class="tooltip">&gt;&gt;
-                <span class="tooltiptext">Add selected scenes to active list</span>
+
+        <div class="scene-delay">
+            <label for="sceneDelay" class="tooltip">Delay between scenes (seconds):
+                <span class="tooltiptext">Set the time delay between each scene execution</span>
+            </label>
+            <input type="number" id="sceneDelay" min="1" value="5">
+        </div>
+
+        <div class="timeline">
+            <h2>Scene Timeline</h2>
+            <div id="sceneTimeline"></div>
+        </div>
+
+        <div class="monitoring-section">
+            <h2>Monitoring: <span id="armStatus" class="disarmed">DISARMED</span></h2>
+            <button id="armButton" disabled class="tooltip">Arm
+                <span class="tooltiptext">Start executing the active scenes</span>
             </button>
-            <button id="removeScenes" class="tooltip">&lt;&lt;
-                <span class="tooltiptext">Remove selected scenes from active list</span>
+            <button id="disarmButton" disabled class="tooltip">Disarm
+                <span class="tooltiptext">Stop executing scenes and disarm the system</span>
+            </button>
+            <button id="stopAllSteps" class="tooltip">Stop All Steps
+                <span class="tooltiptext">Immediately stop all running steps</span>
             </button>
         </div>
-        <div class="scene-box">
-            <h2>ACTIVE Scenes</h2>
-            <ul id="activatedScenes"></ul>
+
+        <div id="armedModeOutput" class="output-section">
+            <h3>Armed Mode Output</h3>
         </div>
-    </div>
-
-    <div class="scene-delay">
-        <label for="sceneDelay" class="tooltip">Delay between scenes (seconds):
-            <span class="tooltiptext">Set the time delay between each scene execution</span>
-        </label>
-        <input type="number" id="sceneDelay" min="1" value="5">
-    </div>
-
-    <div class="timeline">
-        <h2>Scene Timeline</h2>
-        <div id="sceneTimeline"></div>
-    </div>
-
-    <div class="monitoring-section">
-        <h2>Monitoring: <span id="armStatus">DISARMED</span></h2>
-        <button id="armButton" class="tooltip">Arm
-            <span class="tooltiptext">Start executing the active scenes</span>
-        </button>
-        <button id="disarmButton" disabled class="tooltip">Disarm
-            <span class="tooltiptext">Stop executing scenes and disarm the system</span>
-        </button>
-        <button id="stopAllSteps" class="tooltip">Stop All Steps
-            <span class="tooltiptext">Immediately stop all running steps</span>
-        </button>
-    </div>
-
-    <div id="armedModeOutput" class="output-section">
-        <h3>Armed Mode Output</h3>
     </div>
 
     <a href="/" class="button">Back to Main Menu</a>

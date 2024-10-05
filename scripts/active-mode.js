@@ -83,9 +83,14 @@ $(document).ready(function() {
 
     function displayScenes(scenes) {
         $('#availableScenes').empty();
-        scenes.forEach(function(scene) {
-            $('#availableScenes').append(`<option value="${scene.id}">${scene.scene_name}</option>`);
-        });
+        if (scenes.length === 0) {
+            $('#availableScenes').append('<option value="">No available scenes</option>');
+        } else {
+            scenes.forEach(function(scene) {
+                $('#availableScenes').append(`<option value="${scene.id}">${scene.scene_name}</option>`);
+            });
+        }
+        $('#sceneSelectionArea').show();
     }
 
     function handleSceneFetchError(jqXHR, textStatus, errorThrown) {
@@ -102,6 +107,7 @@ $(document).ready(function() {
             $(this).remove();
         });
         updateSceneTimeline();
+        updateArmButtonState();
     }
 
     function removeScenes() {
@@ -112,6 +118,7 @@ $(document).ready(function() {
             $(this).remove();
         });
         updateSceneTimeline();
+        updateArmButtonState();
     }
 
     function updateSceneTimeline() {
@@ -134,6 +141,11 @@ $(document).ready(function() {
         const minutes = Math.floor(seconds / 60);
         const remainingSeconds = seconds % 60;
         return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    }
+
+    function updateArmButtonState() {
+        const hasActivatedScenes = $('#activatedScenes li').length > 0;
+        $('#armButton').prop('disabled', !hasActivatedScenes);
     }
 
     function confirmArmSystem() {
