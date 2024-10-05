@@ -370,17 +370,19 @@ async function executeSensor(step, sendEvent) {
         logger.debug(`Sensor details: ${JSON.stringify(sensor)}`);
         
         const scriptPath = path.join(__dirname, '..', 'scripts', 'sensor_control.py');
-        const process = spawn('python3', [scriptPath, sensor.gpioPin.toString(), step.duration.toString()]);
+        const process = spawn('python3', [scriptPath, sensor.gpioPin.toString()]);
 
-        let sensorResult = null;
+        let motionDetected = false;
+        const duration = parseInt(step.duration);
+        const startTime = Date.now();
 
         process.stdout.on('data', (data) => {
             try {
                 const output = JSON.parse(data.toString().trim());
                 logger.debug(`Sensor output: ${JSON.stringify(output)}`);
                 sendEvent({ message: `Sensor: ${output.status}` });
-                if (output.result) {
-                    sensorResult = output.result;
+                if (output.status === "Motion detected!") {
+                    motionDetected = true;
                     process.kill();
                 }
             } catch (error) {
@@ -394,12 +396,24 @@ async function executeSensor(step, sendEvent) {
         });
 
         return new Promise((resolve) => {
-            process.on('close', (code) => {
-                if (sensorResult === 'motion') {
-                    sendEvent({ message: 'Motion detected, continuing to next step' });
-                    resolve(true);
-                } else {
-                    sendEvent({ message: 'No motion detected within the specified duration, ending scene' });
+            const checkDuration = setInterval(() => {
+                if (Date.now() - startTime >= duration || motionDetected) {
+                    clearInterval(checkDuration);
+                    process.kill();
+                    if (motionDetected) {
+                        sendEvent({ message: 'Motion detected, continuing to next step' });
+                        resolve(true);
+                    } else {
+                        sendEvent({ message: 'No motion detected within the specified duration, ending scene' });
+                        resolve(false);
+                    }
+                }
+            }, 100);
+
+            process.on('close', () => {
+                clearInterval(checkDuration);
+                if (!motionDetected && Date.now() - startTime < duration) {
+                    sendEvent({ message: 'Sensor monitoring stopped unexpectedly' });
                     resolve(false);
                 }
             });
