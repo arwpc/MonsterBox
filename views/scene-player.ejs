@@ -72,36 +72,83 @@
 
     <div id="debug-info">
         <h3>Debug Information:</h3>
-        <pre id="scene-data"></pre>
-        <p>Character ID: <span id="character-id"></span></p>
+        <pre id="scene-data"><%= JSON.stringify(scene, null, 2) %></pre>
+        <p>Character ID: <span id="character-id"><%= characterId %></span></p>
     </div>
 
     <script>
         const sceneData = <%- JSON.stringify(scene) %>;
         const characterId = "<%= characterId %>";
-    </script>
-    <script>
-        // Basic diagnostic script
-        console.log("Inline script running");
-        if (typeof jQuery !== 'undefined') {
-            console.log("jQuery is loaded, version:", jQuery.fn.jquery);
-        } else {
-            console.log("jQuery is not loaded");
+
+        function logToServer(message) {
+            console.log("Logging to server:", message);
+            $.post('/log', { message: message })
+                .fail(function(xhr, status, error) {
+                    console.error('Failed to log to server:', error);
+                });
         }
-        console.log("Scene data:", sceneData);
-        console.log("Character ID:", characterId);
 
-        // Display debug information
-        document.getElementById('scene-data').textContent = JSON.stringify(sceneData, null, 2);
-        document.getElementById('character-id').textContent = characterId;
+        function logMessage(message, isError = false) {
+            const logBox = $("#log-box");
+            const className = isError ? 'error-message' : '';
+            logBox.append(`<p class="${className}">${new Date().toLocaleTimeString()} - ${message}</p>`);
+            logBox.scrollTop(logBox[0].scrollHeight);
+            console.log(message);
+            logToServer(message);
+        }
 
-        // Add click event listeners to buttons
-        document.querySelectorAll('#controls button').forEach(button => {
-            button.addEventListener('click', function() {
-                console.log(this.id + " clicked");
+        $(document).ready(function() {
+            logToServer('Document ready');
+            console.log('Document ready');
+
+            $("#backward-btn").on("click", function() {
+                console.log("Backward button clicked");
+                logMessage("Backward button clicked");
             });
+
+            $("#forward-btn").on("click", function() {
+                console.log("Forward button clicked");
+                logMessage("Forward button clicked");
+            });
+
+            $("#run-btn").on("click", function() {
+                console.log("Run button clicked");
+                logMessage("Run button clicked");
+                $.get(`/scenes/${sceneData.id}/play?characterId=${characterId}`)
+                    .done(function(data) {
+                        console.log("Scene play request sent", data);
+                        logMessage("Scene play request sent");
+                    })
+                    .fail(function(xhr, status, error) {
+                        console.error("Error playing scene:", error);
+                        logMessage("Error playing scene: " + error, true);
+                    });
+            });
+
+            $("#stop-btn").on("click", function() {
+                console.log("Stop button clicked");
+                logMessage("Stop button clicked");
+                $.post(`/scenes/${sceneData.id}/stop?characterId=${characterId}`)
+                    .done(function(data) {
+                        console.log("Scene stop request sent", data);
+                        logMessage("Scene stop request sent");
+                    })
+                    .fail(function(xhr, status, error) {
+                        console.error("Error stopping scene:", error);
+                        logMessage("Error stopping scene: " + error, true);
+                    });
+            });
+
+            // Initial scene overview
+            logMessage(`Scene Overview: "${sceneData.scene_name}"`);
+            logMessage(`Total steps: ${sceneData.steps.length}`);
+            sceneData.steps.forEach((step, index) => {
+                logMessage(`Step ${index + 1}: ${step.name} (Type: ${step.type}${step.concurrent ? ', Concurrent' : ''})`);
+            });
+
+            console.log("Scene player initialization complete");
+            logToServer("Scene player initialization complete");
         });
     </script>
-    <script src="/scripts/scene-player.js"></script>
 </body>
 </html>

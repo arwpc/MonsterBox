@@ -75,6 +75,12 @@ app.get('/', async (req, res) => {
     }
 });
 
+// New route for client-side logging
+app.post('/log', (req, res) => {
+    logger.info(`Client log: ${req.body.message}`);
+    res.sendStatus(200);
+});
+
 // Function to get the local IP address
 function getLocalIpAddress() {
     const interfaces = os.networkInterfaces();
