@@ -106,8 +106,12 @@ $(document).ready(function() {
         };
 
         eventSource.onerror = function(error) {
-            logToServer('EventSource failed: ' + error);
-            logMessage(`EventSource error: ${error.message || 'Unknown error'}`, true);
+            logToServer('EventSource error: ' + error);
+            if (eventSource.readyState === EventSource.CLOSED) {
+                logMessage("Scene execution ended", true);
+            } else {
+                logMessage(`EventSource error: ${error.message || 'Unknown error'}`, true);
+            }
             eventSource.close();
             resetControlButtons();
         };
