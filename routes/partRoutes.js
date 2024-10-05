@@ -194,72 +194,56 @@ router.get('/sensor/test', (req, res) => {
     });
 });
 
-router.get('/motor/:id?/testfire', (req, res) => {
-    const { direction = 'forward', speed = '100', duration = '1000', directionPin, pwmPin } = req.query;
+router.post('/execute-python-script', (req, res) => {
+    const { script, args } = req.body;
     
-    logger.info(`Received testfire request with params: ${JSON.stringify(req.query)}`);
-
-    if (!directionPin || !pwmPin) {
-        logger.warn('Testfire request missing required parameters');
-        return res.status(400).json({ success: false, error: 'Direction pin and PWM pin are required' });
+    if (!script || !Array.isArray(args)) {
+        logger.error('Invalid request to execute Python script');
+        return res.status(400).json({ success: false, error: 'Invalid request parameters' });
     }
 
-    const scriptPath = path.join(__dirname, '..', 'scripts', 'motor_control.py');
-    const args = [
-        direction,
-        speed,
-        duration,
-        directionPin,
-        pwmPin
-    ];
-
-    logger.info(`Executing motor test script: ${scriptPath} with args: ${args.join(', ')}`);
+    const scriptPath = path.join(__dirname, '..', 'scripts', script);
+    logger.info(`Executing Python script: ${scriptPath} with args: ${args.join(', ')}`);
 
     try {
         const process = spawn('python3', [scriptPath, ...args]);
 
-        let jsonOutput = '';
-        let errorOutput = '';
+        let stdoutData = '';
+        let stderrData = '';
 
         process.stdout.on('data', (data) => {
-            jsonOutput += data.toString();
-            logger.debug(`Motor script output: ${data}`);
+            stdoutData += data.toString();
+            logger.debug(`Python script output: ${data}`);
         });
 
         process.stderr.on('data', (data) => {
-            errorOutput += data.toString();
-            logger.error(`Motor script error: ${data}`);
+            stderrData += data.toString();
+            logger.error(`Python script error: ${data}`);
         });
 
         process.on('close', (code) => {
-            logger.info(`Motor script exited with code ${code}`);
+            logger.info(`Python script exited with code ${code}`);
             try {
-                const result = JSON.parse(jsonOutput.trim());
-                if (result.success) {
-                    res.json({ success: true, message: result.message });
-                } else {
-                    res.status(500).json({ success: false, error: result.error || 'Unknown error occurred' });
-                }
+                const result = JSON.parse(stdoutData.trim());
+                res.json(result);
             } catch (error) {
-                logger.error(`Error parsing JSON output: ${error}`);
-                logger.error(`Raw output: ${jsonOutput}`);
-                logger.error(`Error output: ${errorOutput}`);
+                logger.error(`Error parsing Python script output: ${error}`);
                 res.status(500).json({ 
                     success: false, 
-                    error: 'Failed to parse motor test result', 
-                    rawOutput: jsonOutput, 
-                    errorOutput: errorOutput 
+                    error: 'Failed to parse script result',
+                    stdout: stdoutData,
+                    stderr: stderrData
                 });
             }
         });
 
         process.on('error', (error) => {
-            logger.error(`Failed to start motor script: ${error}`);
-            res.status(500).json({ success: false, error: 'Failed to start motor test' });
+            logger.error(`Failed to start Python script: ${error}`);
+            res.status(500).json({ success: false, error: 'Failed to start script' });
         });
 
     } catch (error) {
-        logger.error(`Unexpected error in motor testfire route: ${error}`);
+        logger.error(`Unexpected error executing Python script: ${error}`);
         res.status(500).json({ success: false, error: 'An unexpected error occurred' });
     }
 });
