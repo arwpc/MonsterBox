@@ -56,8 +56,8 @@ router.post('/', upload.single('character_image'), async (req, res) => {
         const newCharacter = {
             char_name: req.body.char_name,
             char_description: req.body.char_description,
-            parts: req.body.parts ? req.body.parts.map(Number) : [],
-            sounds: req.body.sounds ? req.body.sounds.map(Number) : [],
+            parts: req.body.parts ? (Array.isArray(req.body.parts) ? req.body.parts.map(Number) : [Number(req.body.parts)]) : [],
+            sounds: req.body.sounds ? (Array.isArray(req.body.sounds) ? req.body.sounds.map(Number) : [Number(req.body.sounds)]) : [],
             image: req.file ? req.file.filename : null
         };
         await characterService.createCharacter(newCharacter);
@@ -74,8 +74,8 @@ router.post('/:id', upload.single('character_image'), async (req, res) => {
         const updatedCharacter = {
             char_name: req.body.char_name,
             char_description: req.body.char_description,
-            parts: req.body.parts ? req.body.parts.map(Number) : [],
-            sounds: req.body.sounds ? req.body.sounds.map(Number) : []
+            parts: req.body.parts ? (Array.isArray(req.body.parts) ? req.body.parts.map(Number) : [Number(req.body.parts)]) : [],
+            sounds: req.body.sounds ? (Array.isArray(req.body.sounds) ? req.body.sounds.map(Number) : [Number(req.body.sounds)]) : []
         };
         if (req.file) {
             const character = await characterService.getCharacterById(id);
