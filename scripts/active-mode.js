@@ -15,15 +15,13 @@ $(document).ready(function() {
     $('#armButton').click(confirmArmSystem);
     $('#disarmButton').click(confirmDisarmSystem);
     $('#stopAllSteps').click(stopAllSteps);
-    $('#audioToggle').change(toggleAudio);
-    $('#audioVolume').on('input', adjustAudioVolume);
     $('#sceneDelay').on('input', updateSceneTimeline);
 
     // Load the first character by default
     loadFirstCharacter();
 
     function loadFirstCharacter() {
-        const firstCharacter = $('#characterSelect option:first');
+        const firstCharacter = $('#characterSelect option:eq(1)');
         if (firstCharacter.length > 0) {
             $('#characterSelect').val(firstCharacter.val()).trigger('change');
         }
@@ -32,9 +30,10 @@ $(document).ready(function() {
     function fetchCharacterInfo() {
         const characterId = $(this).val();
         if (characterId) {
-            $.get(`/active-mode/character/${characterId}`, displayCharacterInfo)
-                .fail(handleCharacterInfoError);
-            fetchScenes(characterId);
+            $.get(`/active-mode/character/${characterId}`, function(character) {
+                displayCharacterInfo(character);
+                fetchScenes(characterId);
+            }).fail(handleCharacterInfoError);
         } else {
             clearCharacterInfo();
         }
@@ -251,29 +250,5 @@ $(document).ready(function() {
         const timestamp = new Date().toLocaleTimeString();
         $('#armedModeOutput').append(`<p>[${timestamp}] ${message}</p>`);
         $('#armedModeOutput').scrollTop($('#armedModeOutput')[0].scrollHeight);
-    }
-
-    function toggleAudio() {
-        const isEnabled = $(this).prop('checked');
-        $.post('/audio/toggle', { enabled: isEnabled })
-            .done(function(response) {
-                logArmedModeOutput('Audio ' + (isEnabled ? 'enabled' : 'disabled'));
-            })
-            .fail(function(xhr, status, error) {
-                console.error('Error toggling audio:', error);
-                logArmedModeOutput('Error toggling audio: ' + error);
-            });
-    }
-
-    function adjustAudioVolume() {
-        const volume = $(this).val();
-        $.post('/audio/volume', { volume: volume })
-            .done(function(response) {
-                logArmedModeOutput('Audio volume adjusted to: ' + volume);
-            })
-            .fail(function(xhr, status, error) {
-                console.error('Error adjusting audio volume:', error);
-                logArmedModeOutput('Error adjusting audio volume: ' + error);
-            });
     }
 });
