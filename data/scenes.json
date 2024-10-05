@@ -5,6 +5,12 @@
     "scene_name": "starting point",
     "steps": [
       {
+        "type": "sensor",
+        "name": "Waiting fo yo - hide yo kids",
+        "part_id": "22",
+        "timeout": "300"
+      },
+      {
         "type": "sound",
         "name": "New Scare!!!",
         "sound_id": "11",
