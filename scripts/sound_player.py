@@ -6,11 +6,19 @@ import time
 import json
 from threading import Thread
 import os
+
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+os.environ['SDL_AUDIODRIVER'] = 'alsa'  # Set SDL audio driver to ALSA
 
 class SoundPlayer:
     def __init__(self):
-        pygame.mixer.init()
+        try:
+            pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=4096, driver='alsa')
+        except pygame.error as e:
+            print(json.dumps({"status": "error", "error": f"Failed to initialize pygame mixer: {str(e)}"}))
+            sys.stdout.flush()
+            raise
+
         self.channels = {}
 
     def play_sound(self, sound_id, file_path):
@@ -40,21 +48,26 @@ class SoundPlayer:
             sys.stdout.flush()
 
 if __name__ == "__main__":
-    player = SoundPlayer()
+    try:
+        player = SoundPlayer()
 
-    while True:
-        try:
-            command = input().strip()
-            if command == "EXIT":
-                break
+        while True:
+            try:
+                command = input().strip()
+                if command == "EXIT":
+                    break
 
-            cmd, sound_id, file_path = command.split("|")
-            if cmd == "PLAY":
-                Thread(target=player.play_sound, args=(sound_id, file_path)).start()
-            elif cmd == "STOP":
-                player.stop_sound(sound_id)
-        except Exception as e:
-            print(json.dumps({"status": "error", "error": str(e)}))
-            sys.stdout.flush()
+                cmd, sound_id, file_path = command.split("|")
+                if cmd == "PLAY":
+                    Thread(target=player.play_sound, args=(sound_id, file_path)).start()
+                elif cmd == "STOP":
+                    player.stop_sound(sound_id)
+            except Exception as e:
+                print(json.dumps({"status": "error", "error": str(e)}))
+                sys.stdout.flush()
 
-    pygame.mixer.quit()
+    except Exception as e:
+        print(json.dumps({"status": "error", "error": f"Failed to initialize SoundPlayer: {str(e)}"}))
+        sys.stdout.flush()
+    finally:
+        pygame.mixer.quit()
