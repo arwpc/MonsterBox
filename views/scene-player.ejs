@@ -34,12 +34,6 @@
         .error-message {
             color: #ff0000;
         }
-        #debug-info {
-            background-color: #ffffcc;
-            border: 1px solid #ffcc00;
-            padding: 10px;
-            margin-top: 20px;
-        }
     </style>
 </head>
 <body>
@@ -70,15 +64,11 @@
     
     <a href="/scenes?characterId=<%= characterId %>" class="button">Back to Scenes</a>
 
-    <div id="debug-info">
-        <h3>Debug Information:</h3>
-        <pre id="scene-data"><%= JSON.stringify(scene, null, 2) %></pre>
-        <p>Character ID: <span id="character-id"><%= characterId %></span></p>
-    </div>
-
     <script>
         const sceneData = <%- JSON.stringify(scene) %>;
         const characterId = "<%= characterId %>";
+        let currentStep = 0;
+        let eventSource = null;
 
         function logToServer(message) {
             console.log("Logging to server:", message);
@@ -97,6 +87,11 @@
             logToServer(message);
         }
 
+        function updateCurrentStep(index) {
+            $(".step").removeClass("current-step");
+            $(`#step-${index}`).addClass("current-step");
+        }
+
         $(document).ready(function() {
             logToServer('Document ready');
             console.log('Document ready');
@@ -104,39 +99,31 @@
             $("#backward-btn").on("click", function() {
                 console.log("Backward button clicked");
                 logMessage("Backward button clicked");
+                if (currentStep > 0) {
+                    currentStep--;
+                    updateCurrentStep(currentStep);
+                }
             });
 
             $("#forward-btn").on("click", function() {
                 console.log("Forward button clicked");
                 logMessage("Forward button clicked");
+                if (currentStep < sceneData.steps.length - 1) {
+                    currentStep++;
+                    updateCurrentStep(currentStep);
+                }
             });
 
             $("#run-btn").on("click", function() {
                 console.log("Run button clicked");
                 logMessage("Run button clicked");
-                $.get(`/scenes/${sceneData.id}/play?characterId=${characterId}`)
-                    .done(function(data) {
-                        console.log("Scene play request sent", data);
-                        logMessage("Scene play request sent");
-                    })
-                    .fail(function(xhr, status, error) {
-                        console.error("Error playing scene:", error);
-                        logMessage("Error playing scene: " + error, true);
-                    });
+                runScene();
             });
 
             $("#stop-btn").on("click", function() {
                 console.log("Stop button clicked");
                 logMessage("Stop button clicked");
-                $.post(`/scenes/${sceneData.id}/stop?characterId=${characterId}`)
-                    .done(function(data) {
-                        console.log("Scene stop request sent", data);
-                        logMessage("Scene stop request sent");
-                    })
-                    .fail(function(xhr, status, error) {
-                        console.error("Error stopping scene:", error);
-                        logMessage("Error stopping scene: " + error, true);
-                    });
+                stopScene();
             });
 
             // Initial scene overview
@@ -149,6 +136,71 @@
             console.log("Scene player initialization complete");
             logToServer("Scene player initialization complete");
         });
+
+        function runScene() {
+            if (eventSource) {
+                eventSource.close();
+            }
+
+            $("#run-btn").prop('disabled', true);
+            $("#stop-btn").prop('disabled', false);
+
+            eventSource = new EventSource(`/scenes/${sceneData.id}/play?characterId=${characterId}&startStep=${currentStep}`);
+
+            eventSource.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                handleSceneExecutionUpdate(data);
+            };
+
+            eventSource.onerror = function(error) {
+                console.error('EventSource error:', error);
+                logMessage(`EventSource error: ${error.message || 'Connection lost'}`, true);
+                if (eventSource.readyState === EventSource.CLOSED) {
+                    resetButtons();
+                }
+            };
+
+            logMessage("Scene execution started");
+        }
+
+        function stopScene() {
+            if (eventSource) {
+                eventSource.close();
+            }
+
+            $.post(`/scenes/${sceneData.id}/stop?characterId=${characterId}`)
+                .done(function(data) {
+                    logMessage("Scene execution stopped");
+                })
+                .fail(function(xhr, status, error) {
+                    logMessage(`Error stopping scene: ${error}`, true);
+                })
+                .always(function() {
+                    resetButtons();
+                });
+        }
+
+        function handleSceneExecutionUpdate(data) {
+            if (data.error) {
+                logMessage(`Error: ${data.error}`, true);
+            } else if (data.message) {
+                logMessage(data.message);
+            }
+
+            if (data.currentStep !== undefined) {
+                currentStep = data.currentStep;
+                updateCurrentStep(currentStep);
+            }
+
+            if (data.message === 'Scene execution completed') {
+                resetButtons();
+            }
+        }
+
+        function resetButtons() {
+            $("#run-btn").prop('disabled', false);
+            $("#stop-btn").prop('disabled', true);
+        }
     </script>
 </body>
 </html>
