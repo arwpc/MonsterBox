@@ -6,7 +6,6 @@ $(document).ready(function() {
     let retryCount = 0;
     const MAX_RETRIES = 3;
 
-    $('#characterSelect').change(fetchCharacterInfo);
     $('#addScenes').click(addScenes);
     $('#removeScenes').click(removeScenes);
     $('#activatedScenes').sortable({
@@ -17,27 +16,14 @@ $(document).ready(function() {
     $('#stopAllSteps').click(stopAllSteps);
     $('#sceneDelay').on('input', updateSceneTimeline);
 
-    // Load the first character by default
-    loadFirstCharacter();
+    // Load character information on page load
+    loadCharacterInfo();
 
-    function loadFirstCharacter() {
-        const firstCharacter = $('#characterSelect option:eq(1)');
-        if (firstCharacter.length > 0) {
-            $('#characterSelect').val(firstCharacter.val()).trigger('change');
-        }
-    }
-
-    function fetchCharacterInfo() {
-        const characterId = $(this).val();
-        if (characterId) {
-            $.get(`/active-mode/character/${characterId}`, function(character) {
-                displayCharacterInfo(character);
-                fetchScenes(characterId);
-                fetchPartsAndSounds(characterId);
-            }).fail(handleCharacterInfoError);
-        } else {
-            clearCharacterInfo();
-        }
+    function loadCharacterInfo() {
+        const character = JSON.parse($('#characterData').text());
+        displayCharacterInfo(character);
+        fetchScenes(character.id);
+        fetchPartsAndSounds(character.id);
     }
 
     function displayCharacterInfo(character) {
@@ -74,22 +60,6 @@ $(document).ready(function() {
         soundsHtml += '</ul>';
 
         $('#partsAndSounds').html(partsHtml + soundsHtml);
-    }
-
-    function handleCharacterInfoError(jqXHR, textStatus, errorThrown) {
-        console.error("Error fetching character info:", textStatus, errorThrown);
-        $('#characterInfo').html('<p>Failed to load character information. Please try again.</p>');
-        $('#characterImage').attr('src', '/images/placeholder.jpg').attr('alt', 'Placeholder Image');
-        $('#partsAndSounds').empty();
-    }
-
-    function clearCharacterInfo() {
-        $('#characterInfo').empty();
-        $('#availableScenes').empty();
-        $('#activatedScenes').empty();
-        $('#characterImage').attr('src', '/images/placeholder.jpg').attr('alt', 'Placeholder Image');
-        $('#partsAndSounds').empty();
-        updateSceneTimeline();
     }
 
     function fetchScenes(characterId) {

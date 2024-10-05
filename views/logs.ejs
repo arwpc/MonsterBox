@@ -68,6 +68,7 @@
             color: white;
             border: none;
             cursor: pointer;
+            margin-right: 5px;
         }
         .highlight {
             background-color: yellow;
@@ -93,6 +94,7 @@
             <input type="text" id="searchInput" value="<%= search %>" placeholder="Search logs...">
             <button onclick="performSearch()">Search</button>
             <button onclick="searchNext()">Search Next</button>
+            <button onclick="clearLogs()">Clear Logs</button>
         </div>
 
         <div class="log-container" id="logContainer">
@@ -150,6 +152,25 @@
             if (highlights.length > 0) {
                 currentHighlightIndex = (currentHighlightIndex + 1) % highlights.length;
                 highlights[currentHighlightIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        function clearLogs() {
+            if (confirm('Are you sure you want to clear all logs? This action cannot be undone.')) {
+                fetch('/logs/clear', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Logs cleared successfully');
+                            window.location.reload();
+                        } else {
+                            alert('Failed to clear logs: ' + data.error);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred while clearing logs');
+                    });
             }
         }
 
