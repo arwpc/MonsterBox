@@ -50,7 +50,7 @@ app.use('/parts/light', lightRoutes);
 app.use('/parts/servo', servoRoutes);
 app.use('/parts/sensor', sensorRoutes);
 app.use('/parts/linear-actuator', linearActuatorRoutes);
-app.use('/parts', partRoutes);
+app.use('/parts', partRoutes.router);
 app.use('/scenes', sceneRoutes);
 app.use('/characters', characterRoutes);
 app.use('/sounds', soundRoutes);
@@ -80,6 +80,9 @@ app.post('/log', (req, res) => {
     logger.info(`Client log: ${req.body.message}`);
     res.sendStatus(200);
 });
+
+// New route for executing Python scripts
+app.post('/execute-python-script', partRoutes.executePythonScript);
 
 // Function to get the local IP address
 function getLocalIpAddress() {
