@@ -108,7 +108,8 @@ $(document).ready(function() {
             });
         }
         $('#sceneSelectionArea').show();
-        console.log('Scene selection area displayed');
+        console.log('Scene selection area should now be visible');
+        console.log('Scene selection area display style:', $('#sceneSelectionArea').css('display'));
     }
 
     function handleSceneFetchError(jqXHR, textStatus, errorThrown) {
@@ -116,7 +117,8 @@ $(document).ready(function() {
         $('#availableScenes').html('<option>Failed to load scenes</option>');
         $('#debugInfo').append(`<p>Error fetching scenes: ${textStatus} - ${errorThrown}</p>`);
         $('#sceneSelectionArea').show();
-        console.log('Scene selection area displayed (error state)');
+        console.log('Scene selection area should now be visible (error state)');
+        console.log('Scene selection area display style:', $('#sceneSelectionArea').css('display'));
     }
 
     function addScenes() {
