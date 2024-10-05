@@ -6,19 +6,31 @@ import time
 import json
 from threading import Thread
 import os
+import subprocess
 
 def log_message(message):
     print(json.dumps(message))
     sys.stdout.flush()
 
+def set_alsa_params():
+    try:
+        subprocess.run(["amixer", "sset", "PCM", "100%"], check=True)
+        subprocess.run(["alsactl", "store"], check=True)
+        log_message({"status": "info", "message": "ALSA parameters set successfully"})
+    except subprocess.CalledProcessError as e:
+        log_message({"status": "error", "error": f"Failed to set ALSA parameters: {str(e)}"})
+
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
-os.environ['SDL_AUDIODRIVER'] = 'alsa'  # Set SDL audio driver to ALSA
+os.environ['SDL_AUDIODRIVER'] = 'alsa'  # Try 'pulse' if 'alsa' doesn't work
 
 class SoundPlayer:
     def __init__(self):
         log_message({"status": "info", "message": "Initializing SoundPlayer"})
+        set_alsa_params()
         try:
-            pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=4096)
+            pygame.mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=4096)
+            pygame.init()
+            pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=8192)
             log_message({"status": "info", "message": "pygame.mixer initialized successfully"})
             
             # Log information about the audio device
@@ -49,7 +61,7 @@ class SoundPlayer:
             log_message({"status": "playing", "sound_id": sound_id, "file": file_path})
             
             while channel.get_busy():
-                time.sleep(0.1)
+                pygame.time.wait(100)
             
             log_message({"status": "finished", "sound_id": sound_id, "file": file_path})
         except Exception as e:
@@ -84,4 +96,5 @@ if __name__ == "__main__":
     finally:
         log_message({"status": "info", "message": "Quitting pygame mixer"})
         pygame.mixer.quit()
+        pygame.quit()
         log_message({"status": "exit", "message": "SoundPlayer exiting"})
