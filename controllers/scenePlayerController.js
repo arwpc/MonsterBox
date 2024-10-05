@@ -78,25 +78,34 @@ const scenePlayerController = {
             await soundController.startSoundPlayer();
             isExecuting = true;
 
-            for (let i = startStep; i < scene.steps.length && isExecuting; i++) {
-                const step = scene.steps[i];
-                logger.info(`Executing step ${i + 1}/${scene.steps.length} for scene ${sceneId}: ${step.name} (${step.type})`);
-                sendEvent({ message: `Executing step ${i + 1}: ${step.name}`, currentStep: i });
-                
-                try {
-                    const result = await executeStep(sceneId, step, sendEvent);
-                    if (result === false) {
-                        logger.info(`Scene ${sceneId} execution ended early due to sensor condition`);
-                        sendEvent({ message: 'Scene execution ended early due to sensor condition' });
-                        break;
+            const executeSteps = async (steps, startIndex) => {
+                const concurrentPromises = [];
+                for (let i = startIndex; i < steps.length && isExecuting; i++) {
+                    const step = steps[i];
+                    logger.info(`Executing step ${i + 1}/${steps.length} for scene ${sceneId}: ${step.name} (${step.type})`);
+                    sendEvent({ message: `Executing step ${i + 1}: ${step.name}`, currentStep: i });
+                    
+                    const stepExecution = executeStep(sceneId, step, sendEvent);
+                    
+                    if (step.concurrent) {
+                        concurrentPromises.push(stepExecution);
+                    } else {
+                        await Promise.all(concurrentPromises);
+                        concurrentPromises.length = 0;
+                        await stepExecution;
                     }
-                    logger.info(`Completed step ${i + 1}/${scene.steps.length} for scene ${sceneId}: ${step.name}`);
-                } catch (error) {
-                    logger.error(`Error executing step ${i + 1}/${scene.steps.length} for scene ${sceneId}: ${step.name}`, error);
-                    sendEvent({ error: `Failed to execute step ${i + 1}: ${step.name} - ${error.message}` });
-                    break;  // Stop execution on error
+
+                    if (step.type === 'sound' && !step.concurrent) {
+                        // Wait for non-concurrent sound to finish before moving to the next step
+                        await new Promise(resolve => setTimeout(resolve, step.duration));
+                    }
                 }
-            }
+                
+                // Wait for any remaining concurrent steps to complete
+                await Promise.all(concurrentPromises);
+            };
+
+            await executeSteps(scene.steps, startStep);
 
             logger.info(`Scene ${sceneId} execution completed`);
             sendEvent({ message: 'Scene execution completed' });
@@ -175,7 +184,7 @@ async function executeSound(step, sendEvent) {
         await soundController.playSound(sound, sendEvent);
     } catch (error) {
         logger.error(`Error executing sound step: ${error.message}`);
-        throw error;
+        sendEvent({ error: `Sound error: ${error.message}` });
     }
 }
 
@@ -207,19 +216,19 @@ async function executeMotor(step, sendEvent) {
             sendEvent({ error: `Motor error: ${data}` });
         });
 
-        await new Promise((resolve, reject) => {
+        await new Promise((resolve) => {
             process.on('close', (code) => {
-                if (code === 0) {
-                    resolve();
-                } else {
-                    reject(new Error(`Motor process exited with code ${code}`));
+                if (code !== 0) {
+                    logger.error(`Motor process exited with code ${code}`);
+                    sendEvent({ error: `Motor process exited with code ${code}` });
                 }
+                resolve();
             });
         });
 
     } catch (error) {
         logger.error(`Error executing motor step: ${error.message}`);
-        throw error;
+        sendEvent({ error: `Motor error: ${error.message}` });
     }
 }
 
@@ -253,19 +262,19 @@ async function executeLinearActuator(step, sendEvent) {
             sendEvent({ error: `Linear actuator error: ${data}` });
         });
 
-        await new Promise((resolve, reject) => {
+        await new Promise((resolve) => {
             process.on('close', (code) => {
-                if (code === 0) {
-                    resolve();
-                } else {
-                    reject(new Error(`Linear actuator process exited with code ${code}`));
+                if (code !== 0) {
+                    logger.error(`Linear actuator process exited with code ${code}`);
+                    sendEvent({ error: `Linear actuator process exited with code ${code}` });
                 }
+                resolve();
             });
         });
 
     } catch (error) {
         logger.error(`Error executing linear actuator step: ${error.message}`);
-        throw error;
+        sendEvent({ error: `Linear actuator error: ${error.message}` });
     }
 }
 
@@ -297,19 +306,19 @@ async function executeServo(step, sendEvent) {
             sendEvent({ error: `Servo error: ${data}` });
         });
 
-        await new Promise((resolve, reject) => {
+        await new Promise((resolve) => {
             process.on('close', (code) => {
-                if (code === 0) {
-                    resolve();
-                } else {
-                    reject(new Error(`Servo process exited with code ${code}`));
+                if (code !== 0) {
+                    logger.error(`Servo process exited with code ${code}`);
+                    sendEvent({ error: `Servo process exited with code ${code}` });
                 }
+                resolve();
             });
         });
 
     } catch (error) {
         logger.error(`Error executing servo step: ${error.message}`);
-        throw error;
+        sendEvent({ error: `Servo error: ${error.message}` });
     }
 }
 
@@ -344,19 +353,19 @@ async function executeLight(step, sendEvent) {
             sendEvent({ error: `Light error: ${data}` });
         });
 
-        await new Promise((resolve, reject) => {
+        await new Promise((resolve) => {
             process.on('close', (code) => {
-                if (code === 0) {
-                    resolve();
-                } else {
-                    reject(new Error(`Light process exited with code ${code}`));
+                if (code !== 0) {
+                    logger.error(`Light process exited with code ${code}`);
+                    sendEvent({ error: `Light process exited with code ${code}` });
                 }
+                resolve();
             });
         });
 
     } catch (error) {
         logger.error(`Error executing light step: ${error.message}`);
-        throw error;
+        sendEvent({ error: `Light error: ${error.message}` });
     }
 }
 
@@ -429,7 +438,8 @@ async function executeSensor(step, sendEvent) {
 
     } catch (error) {
         logger.error(`Error executing sensor step: ${error.message}`);
-        throw error;
+        sendEvent({ error: `Sensor error: ${error.message}` });
+        return true;
     }
 }
 
