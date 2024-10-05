@@ -110,6 +110,7 @@ $(document).ready(function() {
         $('#sceneSelectionArea').show();
         console.log('Scene selection area should now be visible');
         console.log('Scene selection area display style:', $('#sceneSelectionArea').css('display'));
+        console.log('Scene selection area HTML:', $('#sceneSelectionArea').html());
     }
 
     function handleSceneFetchError(jqXHR, textStatus, errorThrown) {
@@ -119,6 +120,7 @@ $(document).ready(function() {
         $('#sceneSelectionArea').show();
         console.log('Scene selection area should now be visible (error state)');
         console.log('Scene selection area display style:', $('#sceneSelectionArea').css('display'));
+        console.log('Scene selection area HTML:', $('#sceneSelectionArea').html());
     }
 
     function addScenes() {
