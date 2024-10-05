@@ -8,13 +8,17 @@ const logger = require('../scripts/logger');
 
 router.get('/', async (req, res) => {
     try {
-        const characterId = req.session.characterId; // Changed from selectedCharacter to characterId
+        const characterId = req.session.characterId;
+        logger.info(`Active Mode: Session characterId: ${characterId}`);
+
         if (!characterId) {
             logger.warn('No character selected for Active Mode');
             return res.redirect('/?error=noCharacterSelected');
         }
 
         const character = await characterService.getCharacterById(characterId);
+        logger.info(`Active Mode: Retrieved character: ${JSON.stringify(character)}`);
+
         if (!character) {
             logger.warn(`Character not found for ID: ${characterId}`);
             return res.redirect('/?error=characterNotFound');
