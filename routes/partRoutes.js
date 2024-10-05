@@ -194,7 +194,7 @@ router.get('/sensor/test', (req, res) => {
     });
 });
 
-router.post('/execute-python-script', (req, res) => {
+const executePythonScript = (req, res) => {
     const { script, args } = req.body;
     
     if (!script || !Array.isArray(args)) {
@@ -246,6 +246,11 @@ router.post('/execute-python-script', (req, res) => {
         logger.error(`Unexpected error executing Python script: ${error}`);
         res.status(500).json({ success: false, error: 'An unexpected error occurred' });
     }
-});
+};
 
-module.exports = router;
+router.post('/execute-python-script', executePythonScript);
+
+module.exports = {
+    router: router,
+    executePythonScript: executePythonScript
+};
