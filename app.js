@@ -10,6 +10,7 @@ const port = 3000;
 const audio = require('./scripts/audio');
 const fs = require('fs');
 const os = require('os');
+const session = require('express-session');
 
 // Import routes
 const ledRoutes = require('./routes/ledRoutes');
@@ -34,6 +35,14 @@ app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Session middleware
+app.use(session({
+    secret: 'your-secret-key',
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false } // set to true if using https
+}));
 
 // Global character middleware
 app.use((req, res, next) => {
@@ -73,6 +82,14 @@ app.get('/', async (req, res) => {
             details: error.message
         });
     }
+});
+
+// New route for setting the selected character
+app.post('/set-character', (req, res) => {
+    const characterId = req.body.characterId;
+    req.session.characterId = characterId;
+    logger.info(`Character selected: ${characterId}`);
+    res.json({ success: true, message: 'Character updated successfully' });
 });
 
 // New route for client-side logging

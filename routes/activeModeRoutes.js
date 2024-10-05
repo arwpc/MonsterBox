@@ -8,7 +8,7 @@ const logger = require('../scripts/logger');
 
 router.get('/', async (req, res) => {
     try {
-        const characterId = req.session.selectedCharacter;
+        const characterId = req.session.characterId; // Changed from selectedCharacter to characterId
         if (!characterId) {
             logger.warn('No character selected for Active Mode');
             return res.redirect('/?error=noCharacterSelected');
