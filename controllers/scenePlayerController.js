@@ -13,6 +13,7 @@ let isExecuting = false;
 const stopAllParts = async () => {
     logger.info('Stopping all parts');
     // Implement logic to stop all parts
+    // This could involve calling a Python script that stops all motors, actuators, etc.
 };
 
 const scenePlayerController = {
@@ -83,7 +84,12 @@ const scenePlayerController = {
                 sendEvent({ message: `Executing step ${i + 1}: ${step.name}`, currentStep: i });
                 
                 try {
-                    await executeStep(sceneId, step, sendEvent);
+                    const result = await executeStep(sceneId, step, sendEvent);
+                    if (result === false) {
+                        logger.info(`Scene ${sceneId} execution ended early due to sensor condition`);
+                        sendEvent({ message: 'Scene execution ended early due to sensor condition' });
+                        break;
+                    }
                     logger.info(`Completed step ${i + 1}/${scene.steps.length} for scene ${sceneId}: ${step.name}`);
                 } catch (error) {
                     logger.error(`Error executing step ${i + 1}/${scene.steps.length} for scene ${sceneId}: ${step.name}`, error);
@@ -136,11 +142,14 @@ async function executeStep(sceneId, step, sendEvent) {
         case 'sound':
             return await executeSound(step, sendEvent);
         case 'motor':
+            return await executeMotor(step, sendEvent);
         case 'linear-actuator':
+            return await executeLinearActuator(step, sendEvent);
         case 'servo':
+            return await executeServo(step, sendEvent);
         case 'led':
         case 'light':
-            return await executePart(step, sendEvent);
+            return await executeLight(step, sendEvent);
         case 'sensor':
             return await executeSensor(step, sendEvent);
         case 'pause':
@@ -165,19 +174,183 @@ async function executeSound(step, sendEvent) {
     }
 }
 
-async function executePart(step, sendEvent) {
-    logger.info(`Executing part step: ${step.name}`);
+async function executeMotor(step, sendEvent) {
+    logger.info(`Executing motor step: ${step.name}`);
     try {
         const part = await partService.getPartById(step.part_id);
         if (!part) {
             throw new Error(`Part not found for ID: ${step.part_id}`);
         }
-        // Here you would add logic to control the specific part type
-        // This is a placeholder and should be replaced with actual part control logic
-        sendEvent({ message: `Simulating ${part.type} control: ${step.name}` });
-        await new Promise(resolve => setTimeout(resolve, parseInt(step.duration) || 1000));
+        
+        const scriptPath = path.join(__dirname, '..', 'scripts', 'motor_control.py');
+        const process = spawn('python3', [
+            scriptPath,
+            step.direction,
+            step.speed,
+            step.duration,
+            part.directionPin,
+            part.pwmPin
+        ]);
+
+        process.stdout.on('data', (data) => {
+            logger.debug(`Motor output: ${data}`);
+            sendEvent({ message: `Motor: ${data}` });
+        });
+
+        process.stderr.on('data', (data) => {
+            logger.error(`Motor error: ${data}`);
+            sendEvent({ error: `Motor error: ${data}` });
+        });
+
+        await new Promise((resolve, reject) => {
+            process.on('close', (code) => {
+                if (code === 0) {
+                    resolve();
+                } else {
+                    reject(new Error(`Motor process exited with code ${code}`));
+                }
+            });
+        });
+
     } catch (error) {
-        logger.error(`Error executing part step: ${error.message}`);
+        logger.error(`Error executing motor step: ${error.message}`);
+        throw error;
+    }
+}
+
+async function executeLinearActuator(step, sendEvent) {
+    logger.info(`Executing linear actuator step: ${step.name}`);
+    try {
+        const part = await partService.getPartById(step.part_id);
+        if (!part) {
+            throw new Error(`Part not found for ID: ${step.part_id}`);
+        }
+        
+        const scriptPath = path.join(__dirname, '..', 'scripts', 'linear_actuator_control.py');
+        const process = spawn('python3', [
+            scriptPath,
+            step.direction,
+            step.speed,
+            step.duration,
+            part.directionPin,
+            part.pwmPin,
+            part.maxExtension || '10000',
+            part.maxRetraction || '10000'
+        ]);
+
+        process.stdout.on('data', (data) => {
+            logger.debug(`Linear actuator output: ${data}`);
+            sendEvent({ message: `Linear actuator: ${data}` });
+        });
+
+        process.stderr.on('data', (data) => {
+            logger.error(`Linear actuator error: ${data}`);
+            sendEvent({ error: `Linear actuator error: ${data}` });
+        });
+
+        await new Promise((resolve, reject) => {
+            process.on('close', (code) => {
+                if (code === 0) {
+                    resolve();
+                } else {
+                    reject(new Error(`Linear actuator process exited with code ${code}`));
+                }
+            });
+        });
+
+    } catch (error) {
+        logger.error(`Error executing linear actuator step: ${error.message}`);
+        throw error;
+    }
+}
+
+async function executeServo(step, sendEvent) {
+    logger.info(`Executing servo step: ${step.name}`);
+    try {
+        const part = await partService.getPartById(step.part_id);
+        if (!part) {
+            throw new Error(`Part not found for ID: ${step.part_id}`);
+        }
+        
+        const scriptPath = path.join(__dirname, '..', 'scripts', 'servo_control.py');
+        const process = spawn('python3', [
+            scriptPath,
+            'test',
+            part.usePCA9685 ? 'pca9685' : 'gpio',
+            part.usePCA9685 ? part.channel : part.pin,
+            step.angle,
+            part.servoType
+        ]);
+
+        process.stdout.on('data', (data) => {
+            logger.debug(`Servo output: ${data}`);
+            sendEvent({ message: `Servo: ${data}` });
+        });
+
+        process.stderr.on('data', (data) => {
+            logger.error(`Servo error: ${data}`);
+            sendEvent({ error: `Servo error: ${data}` });
+        });
+
+        await new Promise((resolve, reject) => {
+            process.on('close', (code) => {
+                if (code === 0) {
+                    resolve();
+                } else {
+                    reject(new Error(`Servo process exited with code ${code}`));
+                }
+            });
+        });
+
+    } catch (error) {
+        logger.error(`Error executing servo step: ${error.message}`);
+        throw error;
+    }
+}
+
+async function executeLight(step, sendEvent) {
+    logger.info(`Executing light step: ${step.name}`);
+    try {
+        const part = await partService.getPartById(step.part_id);
+        if (!part) {
+            throw new Error(`Part not found for ID: ${step.part_id}`);
+        }
+        
+        const scriptPath = path.join(__dirname, '..', 'scripts', 'light_control.py');
+        const process = spawn('python3', [
+            scriptPath,
+            part.gpioPin,
+            step.state,
+            step.duration
+        ]);
+
+        if (step.type === 'led' && step.brightness) {
+            process.stdin.write(step.brightness.toString());
+            process.stdin.end();
+        }
+
+        process.stdout.on('data', (data) => {
+            logger.debug(`Light output: ${data}`);
+            sendEvent({ message: `Light: ${data}` });
+        });
+
+        process.stderr.on('data', (data) => {
+            logger.error(`Light error: ${data}`);
+            sendEvent({ error: `Light error: ${data}` });
+        });
+
+        await new Promise((resolve, reject) => {
+            process.on('close', (code) => {
+                if (code === 0) {
+                    resolve();
+                } else {
+                    reject(new Error(`Light process exited with code ${code}`));
+                }
+            });
+        });
+
+    } catch (error) {
+        logger.error(`Error executing light step: ${error.message}`);
         throw error;
     }
 }
@@ -189,10 +362,39 @@ async function executeSensor(step, sendEvent) {
         if (!sensor) {
             throw new Error(`Sensor not found for ID: ${step.part_id}`);
         }
-        // Here you would add logic to read from the sensor
-        // This is a placeholder and should be replaced with actual sensor reading logic
-        sendEvent({ message: `Simulating sensor read: ${step.name}` });
-        await new Promise(resolve => setTimeout(resolve, parseInt(step.duration) || 1000));
+        
+        const scriptPath = path.join(__dirname, '..', 'scripts', 'sensor_control.py');
+        const process = spawn('python3', [scriptPath, sensor.gpioPin, step.duration]);
+
+        let motionDetected = false;
+
+        process.stdout.on('data', (data) => {
+            const output = data.toString().trim();
+            logger.debug(`Sensor output: ${output}`);
+            sendEvent({ message: `Sensor: ${output}` });
+            if (output.includes('Motion detected')) {
+                motionDetected = true;
+                process.kill();
+            }
+        });
+
+        process.stderr.on('data', (data) => {
+            logger.error(`Sensor error: ${data}`);
+            sendEvent({ error: `Sensor error: ${data}` });
+        });
+
+        return new Promise((resolve) => {
+            process.on('close', (code) => {
+                if (motionDetected) {
+                    sendEvent({ message: 'Motion detected, continuing to next step' });
+                    resolve(true);
+                } else {
+                    sendEvent({ message: 'No motion detected within the specified duration, ending scene' });
+                    resolve(false);
+                }
+            });
+        });
+
     } catch (error) {
         logger.error(`Error executing sensor step: ${error.message}`);
         throw error;
