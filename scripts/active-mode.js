@@ -3,16 +3,21 @@
 $(document).ready(function() {
     let isArmed = false;
     let currentEventSource = null;
+    let retryCount = 0;
+    const MAX_RETRIES = 3;
 
     $('#characterSelect').change(fetchCharacterInfo);
     $('#addScenes').click(addScenes);
     $('#removeScenes').click(removeScenes);
-    $('#activatedScenes').sortable().selectable();
-    $('#armButton').click(armSystem);
-    $('#disarmButton').click(disarmSystem);
+    $('#activatedScenes').sortable({
+        update: updateSceneTimeline
+    }).selectable();
+    $('#armButton').click(confirmArmSystem);
+    $('#disarmButton').click(confirmDisarmSystem);
     $('#stopAllSteps').click(stopAllSteps);
     $('#audioToggle').change(toggleAudio);
     $('#audioVolume').on('input', adjustAudioVolume);
+    $('#sceneDelay').on('input', updateSceneTimeline);
 
     // Load the first character by default
     loadFirstCharacter();
@@ -57,6 +62,7 @@ $(document).ready(function() {
         $('#availableScenes').empty();
         $('#activatedScenes').empty();
         $('#characterImage').attr('src', '/images/placeholder.jpg').attr('alt', 'Placeholder Image');
+        updateSceneTimeline();
     }
 
     function fetchScenes(characterId) {
@@ -83,6 +89,7 @@ $(document).ready(function() {
             $('#activatedScenes').append(`<li data-id="${sceneId}">${sceneName}</li>`);
             $(this).remove();
         });
+        updateSceneTimeline();
     }
 
     function removeScenes() {
@@ -92,25 +99,60 @@ $(document).ready(function() {
             $('#availableScenes').append(`<option value="${sceneId}">${sceneName}</option>`);
             $(this).remove();
         });
+        updateSceneTimeline();
     }
 
-    function armSystem() {
+    function updateSceneTimeline() {
+        const delay = parseInt($('#sceneDelay').val()) || 5;
+        let totalTime = 0;
+        const timelineHtml = $('#activatedScenes li').map(function(index) {
+            const sceneName = $(this).text();
+            const startTime = totalTime;
+            totalTime += delay;
+            return `<div class="timeline-item">
+                        <strong>${sceneName}</strong><br>
+                        Start: ${formatTime(startTime)}, End: ${formatTime(totalTime)}
+                    </div>`;
+        }).get().join('');
+        
+        $('#sceneTimeline').html(timelineHtml);
+    }
+
+    function formatTime(seconds) {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = seconds % 60;
+        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    }
+
+    function confirmArmSystem() {
         if ($('#activatedScenes li').length === 0) {
             alert('Please select at least one scene to activate.');
             return;
         }
+        if (confirm('Are you sure you want to arm the system and start executing scenes?')) {
+            armSystem();
+        }
+    }
+
+    function armSystem() {
         isArmed = true;
-        $(this).prop('disabled', true);
+        $('#armButton').prop('disabled', true);
         $('#disarmButton').prop('disabled', false);
         $('#armStatus').text('ARMED').removeClass('disarmed').addClass('armed');
         logArmedModeOutput('System armed. Starting Active Mode.');
         startActiveModeLoop();
     }
 
+    function confirmDisarmSystem() {
+        if (confirm('Are you sure you want to disarm the system and stop executing scenes?')) {
+            disarmSystem();
+        }
+    }
+
     function disarmSystem() {
         isArmed = false;
-        $(this).prop('disabled', true);
         $('#armButton').prop('disabled', false);
+        $('#disarmButton').prop('disabled', true);
         $('#armStatus').text('DISARMED').removeClass('armed').addClass('disarmed');
         logArmedModeOutput('System disarmed. Active Mode stopped.');
         stopAllSteps();
@@ -134,6 +176,7 @@ $(document).ready(function() {
         const scenes = $('#activatedScenes li').map(function() {
             return $(this).data('id');
         }).get();
+        const delay = parseInt($('#sceneDelay').val()) * 1000 || 5000;
 
         function runNextScene(index) {
             if (!isArmed) return;
@@ -144,10 +187,19 @@ $(document).ready(function() {
             logArmedModeOutput(`Starting execution of scene ${sceneId}`);
             runScene(sceneId).then(() => {
                 logArmedModeOutput(`Completed execution of scene ${sceneId}`);
-                setTimeout(() => runNextScene(index + 1), 5000); // 5 seconds between scenes
+                retryCount = 0; // Reset retry count on successful execution
+                setTimeout(() => runNextScene(index + 1), delay);
             }).catch((error) => {
                 logArmedModeOutput(`Error executing scene ${sceneId}: ${error.message}`);
-                setTimeout(() => runNextScene(index + 1), 5000); // Continue to next scene even if there's an error
+                if (retryCount < MAX_RETRIES) {
+                    retryCount++;
+                    logArmedModeOutput(`Retrying scene ${sceneId} (Attempt ${retryCount} of ${MAX_RETRIES})`);
+                    setTimeout(() => runNextScene(index), delay);
+                } else {
+                    retryCount = 0; // Reset retry count
+                    logArmedModeOutput(`Max retries reached for scene ${sceneId}. Moving to next scene.`);
+                    setTimeout(() => runNextScene(index + 1), delay);
+                }
             });
         }
 
@@ -176,6 +228,14 @@ $(document).ready(function() {
                 currentEventSource.close();
                 resolve();
             });
+
+            // Add a timeout to prevent hanging if the server doesn't respond
+            setTimeout(() => {
+                if (currentEventSource.readyState !== EventSource.CLOSED) {
+                    currentEventSource.close();
+                    reject(new Error(`Timeout while executing scene ${sceneId}`));
+                }
+            }, 60000); // 60 second timeout
         });
     }
 
