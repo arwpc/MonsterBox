@@ -195,7 +195,7 @@ router.get('/sensor/test', (req, res) => {
 });
 
 router.get('/motor/:id?/testfire', (req, res) => {
-    const { direction, speed, duration, directionPin, pwmPin } = req.query;
+    const { direction = 'forward', speed = '100', duration = '1000', directionPin, pwmPin } = req.query;
     
     logger.info(`Received testfire request with params: ${JSON.stringify(req.query)}`);
 
@@ -219,6 +219,7 @@ router.get('/motor/:id?/testfire', (req, res) => {
         const process = spawn('python3', [scriptPath, ...args]);
 
         let jsonOutput = '';
+        let errorOutput = '';
 
         process.stdout.on('data', (data) => {
             jsonOutput += data.toString();
@@ -226,21 +227,29 @@ router.get('/motor/:id?/testfire', (req, res) => {
         });
 
         process.stderr.on('data', (data) => {
+            errorOutput += data.toString();
             logger.error(`Motor script error: ${data}`);
         });
 
         process.on('close', (code) => {
             logger.info(`Motor script exited with code ${code}`);
             try {
-                const result = JSON.parse(jsonOutput);
+                const result = JSON.parse(jsonOutput.trim());
                 if (result.success) {
                     res.json({ success: true, message: result.message });
                 } else {
-                    res.status(500).json({ success: false, error: result.error });
+                    res.status(500).json({ success: false, error: result.error || 'Unknown error occurred' });
                 }
             } catch (error) {
                 logger.error(`Error parsing JSON output: ${error}`);
-                res.status(500).json({ success: false, error: 'Failed to parse motor test result' });
+                logger.error(`Raw output: ${jsonOutput}`);
+                logger.error(`Error output: ${errorOutput}`);
+                res.status(500).json({ 
+                    success: false, 
+                    error: 'Failed to parse motor test result', 
+                    rawOutput: jsonOutput, 
+                    errorOutput: errorOutput 
+                });
             }
         });
 
