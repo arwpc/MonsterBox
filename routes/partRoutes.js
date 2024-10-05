@@ -54,12 +54,23 @@ router.get('/new/:type', async (req, res) => {
     try {
         const { type } = req.params;
         const character = await characterService.getCharacterById(req.characterId);
-        res.render('part-form', { 
-            title: `Add ${type.charAt(0).toUpperCase() + type.slice(1)}`, 
-            action: `/parts/${type}`, 
-            part: { type }, 
-            character 
-        });
+        const characters = await characterService.getAllCharacters();
+        if (type === 'motor') {
+            res.render('part-forms/motor', { 
+                title: 'Add Motor', 
+                action: `/parts/${type}`, 
+                part: { type }, 
+                character,
+                characters
+            });
+        } else {
+            res.render('part-form', { 
+                title: `Add ${type.charAt(0).toUpperCase() + type.slice(1)}`, 
+                action: `/parts/${type}`, 
+                part: { type }, 
+                character 
+            });
+        }
     } catch (error) {
         logger.error('Error rendering new part form:', error);
         res.status(500).send('An error occurred while loading the new part form');
@@ -71,11 +82,19 @@ router.get('/:id/edit', async (req, res) => {
         const id = parseInt(req.params.id);
         const part = await partService.getPartById(id);
         const character = await characterService.getCharacterById(req.characterId);
+        const characters = await characterService.getAllCharacters();
         if (part.type === 'sensor') {
-            const characters = await characterService.getAllCharacters();
             res.render('part-forms/sensor', {
                 title: 'Edit Sensor',
                 action: `/parts/sensor/${part.id}`,
+                part,
+                characters,
+                character
+            });
+        } else if (part.type === 'motor') {
+            res.render('part-forms/motor', {
+                title: 'Edit Motor',
+                action: `/parts/${part.id}/update`,
                 part,
                 characters,
                 character
@@ -172,6 +191,49 @@ router.get('/sensor/test', (req, res) => {
 
     req.on('close', () => {
         process.kill();
+    });
+});
+
+router.get('/motor/:id?/testfire', (req, res) => {
+    const { direction, speed, duration, directionPin, pwmPin } = req.query;
+    
+    if (!directionPin || !pwmPin) {
+        return res.status(400).json({ error: 'Direction pin and PWM pin are required' });
+    }
+
+    const scriptPath = path.join(__dirname, '..', 'scripts', 'motor_control.py');
+    const args = [
+        direction,
+        speed,
+        duration,
+        directionPin,
+        pwmPin
+    ];
+
+    logger.info(`Executing motor test script: ${scriptPath} with args: ${args.join(', ')}`);
+
+    const process = spawn('python3', [scriptPath, ...args]);
+
+    let output = '';
+    let errorOutput = '';
+
+    process.stdout.on('data', (data) => {
+        output += data.toString();
+        logger.debug(`Motor script output: ${data}`);
+    });
+
+    process.stderr.on('data', (data) => {
+        errorOutput += data.toString();
+        logger.error(`Motor script error: ${data}`);
+    });
+
+    process.on('close', (code) => {
+        logger.info(`Motor script exited with code ${code}`);
+        if (code === 0) {
+            res.json({ success: true, message: 'Motor test completed successfully', output });
+        } else {
+            res.status(500).json({ success: false, message: 'Motor test failed', error: errorOutput });
+        }
     });
 });
 

@@ -73,5 +73,14 @@
     "characterIds": [
       1
     ]
+  },
+  {
+    "id": 12,
+    "name": "Coffin Door",
+    "filename": "1728146577509-coffin_door_creaking.mp3",
+    "characterIds": [
+      3
+    ],
+    "characterId": null
   }
 ]

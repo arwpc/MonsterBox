@@ -5,7 +5,7 @@
     "name": "Moving Body",
     "type": "motor",
     "directionPin": "5",
-    "pwmPin": "19",
+    "pwmPin": "13",
     "gpioPin": [
       "",
       "",
@@ -16,13 +16,6 @@
     "duration": "",
     "pwmFrequency": "",
     "dutyCycle": ""
-  },
-  {
-    "id": 13,
-    "name": "BodyLight Pumpkinghead",
-    "type": "light",
-    "characterId": 2,
-    "gpioPin": 26
   },
   {
     "id": 19,

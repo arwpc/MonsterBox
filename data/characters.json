@@ -21,7 +21,9 @@
     "id": 2,
     "char_name": "PumpkinHead",
     "char_description": "Scary monster who owns the pumpkin patch",
-    "parts": [],
+    "parts": [
+      12
+    ],
     "sounds": [
       4,
       5,
