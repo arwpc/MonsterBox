@@ -53,6 +53,7 @@ router.get('/character/:id/scenes', async (req, res) => {
             return res.status(404).json({ error: 'Character not found' });
         }
         logger.info(`Successfully fetched ${scenes.length} scenes for character: ${character.char_name} (ID: ${character.id})`);
+        logger.debug(`Scenes data: ${JSON.stringify(scenes)}`);
         res.json(scenes);
     } catch (error) {
         logger.error('Error fetching scenes for character:', { error: error.message, stack: error.stack, characterId: req.params.id });
@@ -74,6 +75,8 @@ router.get('/character/:id/parts-and-sounds', async (req, res) => {
             return res.status(404).json({ error: 'Character not found' });
         }
         logger.info(`Successfully fetched ${parts.length} parts and ${sounds.length} sounds for character: ${character.char_name} (ID: ${character.id})`);
+        logger.debug(`Parts data: ${JSON.stringify(parts)}`);
+        logger.debug(`Sounds data: ${JSON.stringify(sounds)}`);
         res.json({ parts, sounds });
     } catch (error) {
         logger.error('Error fetching parts and sounds for character:', { error: error.message, stack: error.stack, characterId: req.params.id });
