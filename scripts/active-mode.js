@@ -1,6 +1,10 @@
 // File: scripts/active-mode.js
 
+console.log('Active Mode script loaded');
+
 $(document).ready(function() {
+    console.log('Document ready');
+
     let isArmed = false;
     let currentEventSource = null;
     let retryCount = 0;
@@ -20,6 +24,7 @@ $(document).ready(function() {
     loadCharacterInfo();
 
     function loadCharacterInfo() {
+        console.log('Loading character info');
         try {
             const characterData = $('#characterData').text();
             console.log('Character data from hidden element:', characterData);
@@ -40,6 +45,7 @@ $(document).ready(function() {
     }
 
     function displayCharacterInfo(character) {
+        console.log('Displaying character info');
         let infoHtml = `<h3>${character.char_name}</h3><p>${character.char_description}</p>`;
         $('#characterInfo').html(infoHtml);
         
@@ -51,6 +57,7 @@ $(document).ready(function() {
     }
 
     function fetchPartsAndSounds(characterId) {
+        console.log('Fetching parts and sounds');
         $.get(`/active-mode/character/${characterId}/parts-and-sounds`, function(data) {
             displayPartsAndSounds(data);
         }).fail(function(jqXHR, textStatus, errorThrown) {
@@ -61,6 +68,7 @@ $(document).ready(function() {
     }
 
     function displayPartsAndSounds(data) {
+        console.log('Displaying parts and sounds');
         let partsHtml = '<h4>Parts:</h4><ul>';
         data.parts.forEach(part => {
             partsHtml += `<li>${part.part_name} (${part.part_type})</li>`;
