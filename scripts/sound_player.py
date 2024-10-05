@@ -14,14 +14,21 @@ def log_message(message):
 
 def set_alsa_params():
     try:
-        subprocess.run(["amixer", "sset", "PCM", "100%"], check=True)
+        subprocess.run(["amixer", "-c", "3", "sset", "PCM", "100%"], check=True)
         subprocess.run(["alsactl", "store"], check=True)
         log_message({"status": "info", "message": "ALSA parameters set successfully"})
     except subprocess.CalledProcessError as e:
         log_message({"status": "error", "error": f"Failed to set ALSA parameters: {str(e)}"})
 
+# Set XDG_RUNTIME_DIR
+if 'XDG_RUNTIME_DIR' not in os.environ:
+    runtime_dir = f"/run/user/{os.getuid()}"
+    os.environ['XDG_RUNTIME_DIR'] = runtime_dir
+    log_message({"status": "info", "message": f"Set XDG_RUNTIME_DIR to {runtime_dir}"})
+
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
-os.environ['SDL_AUDIODRIVER'] = 'alsa'  # Try 'pulse' if 'alsa' doesn't work
+os.environ['SDL_AUDIODRIVER'] = 'alsa'
+os.environ['AUDIODEV'] = 'plughw:3,0'  # Use USB Audio Device (card 3)
 
 class SoundPlayer:
     def __init__(self):
@@ -35,6 +42,7 @@ class SoundPlayer:
             
             # Log information about the audio device
             log_message({"status": "info", "message": f"SDL_AUDIODRIVER: {os.environ.get('SDL_AUDIODRIVER', 'Not set')}"})
+            log_message({"status": "info", "message": f"AUDIODEV: {os.environ.get('AUDIODEV', 'Not set')}"})
             log_message({"status": "info", "message": f"Pygame audio driver: {pygame.mixer.get_init()}"})
             log_message({"status": "info", "message": f"Pygame mixer info: {pygame.mixer.get_init()}"})
             
@@ -60,10 +68,13 @@ class SoundPlayer:
             self.channels[sound_id] = channel
             log_message({"status": "playing", "sound_id": sound_id, "file": file_path})
             
+            start_time = time.time()
             while channel.get_busy():
                 pygame.time.wait(100)
+            end_time = time.time()
             
-            log_message({"status": "finished", "sound_id": sound_id, "file": file_path})
+            duration = end_time - start_time
+            log_message({"status": "finished", "sound_id": sound_id, "file": file_path, "duration": duration})
         except Exception as e:
             log_message({"status": "error", "sound_id": sound_id, "file": file_path, "error": str(e)})
 
