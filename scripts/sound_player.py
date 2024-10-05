@@ -14,11 +14,22 @@ def log_message(message):
 
 def set_alsa_params():
     try:
-        subprocess.run(["amixer", "-c", "3", "sset", "PCM", "100%"], check=True)
+        # Try to set PCM volume for different cards
+        for card in range(5):  # Check cards 0 to 4
+            try:
+                subprocess.run(["amixer", "-c", str(card), "sset", "PCM", "100%"], check=True, stderr=subprocess.DEVNULL)
+                log_message({"status": "info", "message": f"ALSA parameters set successfully for card {card}"})
+                return
+            except subprocess.CalledProcessError:
+                continue
+        
+        # If we couldn't set PCM for any card, try Master volume
+        subprocess.run(["amixer", "sset", "Master", "100%"], check=True)
+        log_message({"status": "info", "message": "Master volume set to 100%"})
+        
         subprocess.run(["alsactl", "store"], check=True)
-        log_message({"status": "info", "message": "ALSA parameters set successfully"})
     except subprocess.CalledProcessError as e:
-        log_message({"status": "error", "error": f"Failed to set ALSA parameters: {str(e)}"})
+        log_message({"status": "warning", "message": f"Failed to set ALSA parameters: {str(e)}"})
 
 # Set XDG_RUNTIME_DIR
 if 'XDG_RUNTIME_DIR' not in os.environ:
@@ -28,7 +39,23 @@ if 'XDG_RUNTIME_DIR' not in os.environ:
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 os.environ['SDL_AUDIODRIVER'] = 'alsa'
-os.environ['AUDIODEV'] = 'plughw:3,0'  # Use USB Audio Device (card 3)
+
+def find_audio_device():
+    try:
+        result = subprocess.run(["aplay", "-l"], capture_output=True, text=True, check=True)
+        lines = result.stdout.split('\n')
+        for line in lines:
+            if "USB Audio Device" in line:
+                card = line.split(':')[0].split(' ')[-1]
+                log_message({"status": "info", "message": f"Found USB Audio Device: card {card}"})
+                return f"plughw:{card},0"
+    except subprocess.CalledProcessError as e:
+        log_message({"status": "error", "message": f"Error finding audio devices: {str(e)}"})
+    
+    log_message({"status": "warning", "message": "USB Audio Device not found, using default"})
+    return 'default'
+
+os.environ['AUDIODEV'] = find_audio_device()
 
 class SoundPlayer:
     def __init__(self):

@@ -9,15 +9,11 @@ logger = get_logger(__name__)
 def control_motor(direction, speed, duration, dir_pin, pwm_pin):
     logger.info(f"Controlling motor: direction={direction}, speed={speed}, duration={duration}, dir_pin={dir_pin}, pwm_pin={pwm_pin}")
 
-    GPIO.setmode(GPIO.BCM)
-    GPIO.setup(dir_pin, GPIO.OUT)
-    GPIO.setup(pwm_pin, GPIO.OUT)
-
-    pwm = GPIO.PWM(pwm_pin, 100)  # Use a default frequency of 100 Hz
-    pwm.start(0)
-
+    pwm = None
     try:
         GPIO.output(dir_pin, GPIO.HIGH if direction == 'forward' else GPIO.LOW)
+        pwm = GPIO.PWM(pwm_pin, 100)  # Use a default frequency of 100 Hz
+        pwm.start(0)
         pwm.ChangeDutyCycle(int(speed))
         time.sleep(int(duration) / 1000)  # Convert duration to seconds
         pwm.ChangeDutyCycle(0)
@@ -26,8 +22,8 @@ def control_motor(direction, speed, duration, dir_pin, pwm_pin):
         logger.error(f"Error controlling motor: {str(e)}")
         return {"success": False, "error": str(e)}
     finally:
-        pwm.stop()
-        GPIO.cleanup([dir_pin, pwm_pin])
+        if pwm:
+            pwm.stop()
 
 if __name__ == "__main__":
     if len(sys.argv) != 6:
@@ -40,17 +36,27 @@ if __name__ == "__main__":
         dir_pin = int(sys.argv[4])
         pwm_pin = int(sys.argv[5])
 
+        gpio_setup = False
         try:
+            logger.info("Setting up GPIO")
+            GPIO.setmode(GPIO.BCM)
+            GPIO.setup(dir_pin, GPIO.OUT)
+            GPIO.setup(pwm_pin, GPIO.OUT)
+            gpio_setup = True
+            logger.info("GPIO setup completed")
+
             result = control_motor(direction, speed, duration, dir_pin, pwm_pin)
             logger.info("Motor control execution completed")
         except Exception as e:
             logger.error(f"Error: {str(e)}")
             result = {"success": False, "error": f"Error controlling motor: {str(e)}"}
         finally:
-            # Only clean up if GPIO was set up
-            if GPIO.getmode() is not None:
-                GPIO.cleanup()
+            if gpio_setup:
+                logger.info("Cleaning up GPIO")
+                GPIO.cleanup([dir_pin, pwm_pin])
                 logger.info("GPIO cleanup completed")
+            else:
+                logger.info("GPIO was not set up, skipping cleanup")
 
     # Print the result as JSON
     print(json.dumps(result))

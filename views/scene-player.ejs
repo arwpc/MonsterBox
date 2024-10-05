@@ -45,7 +45,7 @@
         <% if (scene && scene.steps && scene.steps.length > 0) { %>
             <% scene.steps.forEach((step, index) => { %>
                 <div class="step" id="step-<%= index %>">
-                    <strong>Step <%= index + 1 %>:</strong> <%= step.name %> (<%= step.type %>)
+                    <strong>Step <%= index + 1 %>:</strong> <%= step.name %> (<%= step.type %><%= step.concurrent ? ', Concurrent' : '' %>)
                 </div>
             <% }); %>
         <% } else { %>
@@ -69,6 +69,7 @@
         const characterId = "<%= characterId %>";
         let currentStep = 0;
         let eventSource = null;
+        let isExecuting = false;
 
         function logToServer(message) {
             console.log("Logging to server:", message);
@@ -144,6 +145,7 @@
 
             $("#run-btn").prop('disabled', true);
             $("#stop-btn").prop('disabled', false);
+            isExecuting = true;
 
             eventSource = new EventSource(`/scenes/${sceneData.id}/play?characterId=${characterId}&startStep=${currentStep}`);
 
@@ -164,6 +166,7 @@
         }
 
         function stopScene() {
+            isExecuting = false;
             if (eventSource) {
                 eventSource.close();
             }
@@ -192,14 +195,19 @@
                 updateCurrentStep(currentStep);
             }
 
-            if (data.message === 'Scene execution completed') {
+            if (data.event === 'scene_end' || data.message === 'Scene execution completed') {
+                logMessage("Scene execution completed");
                 resetButtons();
+                if (eventSource) {
+                    eventSource.close();
+                }
             }
         }
 
         function resetButtons() {
             $("#run-btn").prop('disabled', false);
             $("#stop-btn").prop('disabled', true);
+            isExecuting = false;
         }
     </script>
 </body>
