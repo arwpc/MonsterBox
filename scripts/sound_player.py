@@ -18,7 +18,7 @@ class SoundPlayer:
     def __init__(self):
         log_message({"status": "info", "message": "Initializing SoundPlayer"})
         try:
-            pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=4096, driver='alsa')
+            pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=4096)
             log_message({"status": "info", "message": "pygame.mixer initialized successfully"})
         except pygame.error as e:
             log_message({"status": "error", "error": f"Failed to initialize pygame mixer: {str(e)}"})
