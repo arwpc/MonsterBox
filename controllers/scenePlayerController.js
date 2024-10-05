@@ -363,6 +363,12 @@ async function executeSensor(step, sendEvent) {
             throw new Error(`Sensor not found for ID: ${step.part_id}`);
         }
         
+        if (!sensor.gpioPin) {
+            throw new Error(`GPIO pin not defined for sensor with ID: ${step.part_id}`);
+        }
+
+        logger.debug(`Sensor details: ${JSON.stringify(sensor)}`);
+        
         const scriptPath = path.join(__dirname, '..', 'scripts', 'sensor_control.py');
         const process = spawn('python3', [scriptPath, sensor.gpioPin.toString(), step.duration.toString()]);
 
