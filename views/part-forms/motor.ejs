@@ -110,33 +110,30 @@
             testfireResult.innerHTML = '';
             testfireResult.className = '';
 
-            const partId = '<%= part && part.id || "" %>';
-            const url = partId ? `/parts/motor/${partId}/testfire` : "/parts/motor/testfire";
-            const params = new URLSearchParams({
-                direction,
-                speed,
-                duration,
-                directionPin,
-                pwmPin
-            });
-
             try {
-                const response = await fetch(`${url}?${params.toString()}`, {
-                    method: 'GET'
+                const response = await fetch('/execute-python-script', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        script: 'motor_control.py',
+                        args: [direction, speed, duration, directionPin, pwmPin]
+                    }),
                 });
 
-                const contentType = response.headers.get("content-type");
-                if (!contentType || !contentType.includes("application/json")) {
-                    throw new TypeError("Response is not JSON");
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                const data = await response.json();
+                const result = await response.json();
                 loadingIndicator.style.display = 'none';
-                if (data.success) {
-                    testfireResult.innerHTML = `<p>Success: ${data.message}</p>`;
+
+                if (result.success) {
+                    testfireResult.innerHTML = `<p>Success: ${result.message}</p>`;
                     testfireResult.className = 'success';
                 } else {
-                    testfireResult.innerHTML = `<p>Error: ${data.error || 'Unknown error occurred'}</p>`;
+                    testfireResult.innerHTML = `<p>Error: ${result.error || 'Unknown error occurred'}</p>`;
                     testfireResult.className = 'error';
                 }
             } catch (error) {
@@ -144,18 +141,6 @@
                 console.error('Error:', error);
                 testfireResult.innerHTML = `<p>Error: ${error.message}</p>`;
                 testfireResult.className = 'error';
-                
-                // Additional error logging
-                if (error instanceof TypeError && error.message === "Response is not JSON") {
-                    console.error('Response was not JSON. Attempting to read response text...');
-                    try {
-                        const responseText = await response.text();
-                        console.error('Response text:', responseText);
-                        testfireResult.innerHTML += `<p>Response text: ${responseText}</p>`;
-                    } catch (textError) {
-                        console.error('Failed to read response text:', textError);
-                    }
-                }
             }
         }
     </script>
