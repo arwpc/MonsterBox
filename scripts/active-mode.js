@@ -20,10 +20,23 @@ $(document).ready(function() {
     loadCharacterInfo();
 
     function loadCharacterInfo() {
-        const character = JSON.parse($('#characterData').text());
-        displayCharacterInfo(character);
-        fetchScenes(character.id);
-        fetchPartsAndSounds(character.id);
+        try {
+            const characterData = $('#characterData').text();
+            console.log('Character data from hidden element:', characterData);
+            const character = JSON.parse(characterData);
+            console.log('Parsed character data:', character);
+            if (character && character.id) {
+                displayCharacterInfo(character);
+                fetchScenes(character.id);
+                fetchPartsAndSounds(character.id);
+            } else {
+                console.error('Invalid character data:', character);
+                $('#debugInfo').append('<p>Error: Invalid character data</p>');
+            }
+        } catch (error) {
+            console.error('Error parsing character data:', error);
+            $('#debugInfo').append(`<p>Error parsing character data: ${error.message}</p>`);
+        }
     }
 
     function displayCharacterInfo(character) {
@@ -43,6 +56,7 @@ $(document).ready(function() {
         }).fail(function(jqXHR, textStatus, errorThrown) {
             console.error("Error fetching parts and sounds:", textStatus, errorThrown);
             $('#partsAndSounds').html('<p>Failed to load parts and sounds information. Please try again.</p>');
+            $('#debugInfo').append(`<p>Error fetching parts and sounds: ${textStatus} - ${errorThrown}</p>`);
         });
     }
 
@@ -77,6 +91,7 @@ $(document).ready(function() {
     function handleSceneFetchError(jqXHR, textStatus, errorThrown) {
         console.error("Error fetching scenes:", textStatus, errorThrown);
         $('#availableScenes').html('<option>Failed to load scenes</option>');
+        $('#debugInfo').append(`<p>Error fetching scenes: ${textStatus} - ${errorThrown}</p>`);
     }
 
     function addScenes() {
