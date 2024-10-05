@@ -68,16 +68,29 @@
             border: 1px solid #ccc;
             background-color: #f9f9f9;
         }
+        #debugInfo {
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
     <h1>Active Mode</h1>
     
     <div class="character-section">
-        <img id="characterImage" class="character-image" src="/images/placeholder.jpg" alt="Character Image">
+        <img id="characterImage" class="character-image" src="<%= character && character.image ? `/images/characters/${character.image}` : '/images/placeholder.jpg' %>" alt="<%= character ? character.char_name : 'Placeholder Image' %>">
         <div class="character-info">
             <h2>Selected Character</h2>
-            <div id="characterInfo"></div>
+            <div id="characterInfo">
+                <% if (character) { %>
+                    <h3><%= character.char_name %></h3>
+                    <p><%= character.char_description %></p>
+                <% } else { %>
+                    <p>No character information available.</p>
+                <% } %>
+            </div>
         </div>
     </div>
 
@@ -132,6 +145,12 @@
     </div>
 
     <a href="/" class="button">Back to Main Menu</a>
+
+    <!-- Debug Information -->
+    <div id="debugInfo">
+        <h3>Debug Information</h3>
+        <pre><%= JSON.stringify({character: character}, null, 2) %></pre>
+    </div>
 
     <!-- Hidden element to store character data -->
     <script type="application/json" id="characterData">
