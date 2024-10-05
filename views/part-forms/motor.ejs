@@ -127,7 +127,7 @@
 
                 const contentType = response.headers.get("content-type");
                 if (!contentType || !contentType.includes("application/json")) {
-                    throw new TypeError("Oops, we haven't got JSON!");
+                    throw new TypeError("Response is not JSON");
                 }
 
                 const data = await response.json();
@@ -144,6 +144,18 @@
                 console.error('Error:', error);
                 testfireResult.innerHTML = `<p>Error: ${error.message}</p>`;
                 testfireResult.className = 'error';
+                
+                // Additional error logging
+                if (error instanceof TypeError && error.message === "Response is not JSON") {
+                    console.error('Response was not JSON. Attempting to read response text...');
+                    try {
+                        const responseText = await response.text();
+                        console.error('Response text:', responseText);
+                        testfireResult.innerHTML += `<p>Response text: ${responseText}</p>`;
+                    } catch (textError) {
+                        console.error('Failed to read response text:', textError);
+                    }
+                }
             }
         }
     </script>
