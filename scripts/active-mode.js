@@ -85,18 +85,29 @@ $(document).ready(function() {
         $('#availableScenes').empty();
         if (scenes.length === 0) {
             $('#availableScenes').append('<option value="">No available scenes</option>');
+            $('#sceneSelectionArea').hide();
+            $('#noScenesMessage').show();
         } else {
             scenes.forEach(function(scene) {
                 $('#availableScenes').append(`<option value="${scene.id}">${scene.scene_name}</option>`);
             });
+            $('#sceneSelectionArea').show();
+            $('#noScenesMessage').hide();
         }
-        $('#sceneSelectionArea').show();
+        updateSceneSelectionVisibility();
     }
 
     function handleSceneFetchError(jqXHR, textStatus, errorThrown) {
         console.error("Error fetching scenes:", textStatus, errorThrown);
         $('#availableScenes').html('<option>Failed to load scenes</option>');
         $('#debugInfo').append(`<p>Error fetching scenes: ${textStatus} - ${errorThrown}</p>`);
+        updateSceneSelectionVisibility();
+    }
+
+    function updateSceneSelectionVisibility() {
+        const hasScenes = $('#availableScenes option').length > 0 && $('#availableScenes option').first().val() !== "";
+        $('#sceneSelectionArea').toggle(hasScenes);
+        $('#noScenesMessage').toggle(!hasScenes);
     }
 
     function addScenes() {
@@ -108,6 +119,7 @@ $(document).ready(function() {
         });
         updateSceneTimeline();
         updateArmButtonState();
+        updateSceneSelectionVisibility();
     }
 
     function removeScenes() {
@@ -119,6 +131,7 @@ $(document).ready(function() {
         });
         updateSceneTimeline();
         updateArmButtonState();
+        updateSceneSelectionVisibility();
     }
 
     function updateSceneTimeline() {
