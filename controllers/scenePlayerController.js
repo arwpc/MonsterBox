@@ -105,6 +105,7 @@ const scenePlayerController = {
             sendEvent({ error: `Scene execution failed: ${error.message}` });
         } finally {
             isExecuting = false;
+            await stopAllParts();
             res.end();
         }
     },
@@ -377,25 +378,32 @@ async function executeSensor(step, sendEvent) {
 
         return new Promise((resolve) => {
             const checkDuration = setInterval(() => {
-                if (Date.now() - startTime >= duration) {
+                if (Date.now() - startTime >= duration || !isExecuting) {
                     clearInterval(checkDuration);
                     process.kill();
-                    sendEvent({ message: 'No motion detected within the specified duration, ending scene' });
-                    resolve(false);
+                    if (isExecuting) {
+                        sendEvent({ message: 'No motion detected within the specified duration, ending scene' });
+                        resolve(false);
+                    } else {
+                        resolve(true);
+                    }
                 }
             }, 100);
 
             process.stdout.on('data', (data) => {
                 try {
-                    const output = JSON.parse(data.toString().trim());
-                    logger.debug(`Sensor output: ${JSON.stringify(output)}`);
-                    sendEvent({ message: `Sensor: ${output.status}` });
-                    if (output.status === "Motion detected!") {
-                        clearInterval(checkDuration);
-                        process.kill();
-                        sendEvent({ message: 'Motion detected, continuing to next step' });
-                        resolve(true);
-                    }
+                    const lines = data.toString().trim().split('\n');
+                    lines.forEach(line => {
+                        const output = JSON.parse(line);
+                        logger.debug(`Sensor output: ${JSON.stringify(output)}`);
+                        sendEvent({ message: `Sensor: ${output.status}` });
+                        if (output.status === "Motion detected!") {
+                            clearInterval(checkDuration);
+                            process.kill();
+                            sendEvent({ message: 'Motion detected, continuing to next step' });
+                            resolve(true);
+                        }
+                    });
                 } catch (error) {
                     logger.error(`Error parsing sensor output: ${error.message}`);
                 }
@@ -408,7 +416,7 @@ async function executeSensor(step, sendEvent) {
 
             process.on('close', () => {
                 clearInterval(checkDuration);
-                if (Date.now() - startTime < duration) {
+                if (Date.now() - startTime < duration && isExecuting) {
                     sendEvent({ message: 'Sensor monitoring stopped unexpectedly' });
                     resolve(false);
                 }
