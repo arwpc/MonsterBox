@@ -97,7 +97,7 @@
             document.getElementById('durationValue').textContent = this.value;
         });
 
-        function executeTestfire() {
+        async function executeTestfire() {
             const direction = document.getElementById('testDirection').value;
             const speed = document.getElementById('testSpeed').value;
             const duration = document.getElementById('testDuration').value;
@@ -120,11 +120,21 @@
                 pwmPin
             });
 
-            fetch(`${url}?${params.toString()}`, {
-                method: 'GET'
-            })
-            .then(response => response.json())
-            .then(data => {
+            try {
+                const response = await fetch(`${url}?${params.toString()}`, {
+                    method: 'GET'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const contentType = response.headers.get("content-type");
+                if (!contentType || !contentType.includes("application/json")) {
+                    throw new TypeError("Oops, we haven't got JSON!");
+                }
+
+                const data = await response.json();
                 loadingIndicator.style.display = 'none';
                 if (data.success) {
                     testfireResult.innerHTML = `<p>Success: ${data.message}</p>`;
@@ -133,13 +143,12 @@
                     testfireResult.innerHTML = `<p>Error: ${data.message}</p>`;
                     testfireResult.className = 'error';
                 }
-            })
-            .catch(error => {
+            } catch (error) {
                 loadingIndicator.style.display = 'none';
                 console.error('Error:', error);
                 testfireResult.innerHTML = `<p>Error: ${error.message}</p>`;
                 testfireResult.className = 'error';
-            });
+            }
         }
     </script>
 </body>
