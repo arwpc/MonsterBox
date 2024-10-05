@@ -94,18 +94,21 @@ const scenePlayerController = {
                 } catch (error) {
                     logger.error(`Error executing step ${i + 1}/${scene.steps.length} for scene ${sceneId}: ${step.name}`, error);
                     sendEvent({ error: `Failed to execute step ${i + 1}: ${step.name} - ${error.message}` });
-                    // Continue to the next step instead of breaking
+                    break;  // Stop execution on error
                 }
             }
 
             logger.info(`Scene ${sceneId} execution completed`);
-            sendEvent({ message: 'Scene execution completed' });
+            sendEvent({ message: 'Scene execution completed', sceneEnded: true });
         } catch (error) {
             logger.error(`Error during scene ${sceneId} execution:`, error);
-            sendEvent({ error: `Scene execution failed: ${error.message}` });
+            sendEvent({ error: `Scene execution failed: ${error.message}`, sceneEnded: true });
         } finally {
             isExecuting = false;
             await stopAllParts();
+            await soundController.stopAllSounds();
+            logger.info(`Scene ${sceneId} cleanup completed`);
+            sendEvent({ message: 'Scene cleanup completed', sceneEnded: true });
             res.end();
         }
     },
