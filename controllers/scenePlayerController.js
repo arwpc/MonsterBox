@@ -364,17 +364,21 @@ async function executeSensor(step, sendEvent) {
         }
         
         const scriptPath = path.join(__dirname, '..', 'scripts', 'sensor_control.py');
-        const process = spawn('python3', [scriptPath, sensor.gpioPin, step.duration]);
+        const process = spawn('python3', [scriptPath, sensor.gpioPin.toString(), step.duration.toString()]);
 
-        let motionDetected = false;
+        let sensorResult = null;
 
         process.stdout.on('data', (data) => {
-            const output = data.toString().trim();
-            logger.debug(`Sensor output: ${output}`);
-            sendEvent({ message: `Sensor: ${output}` });
-            if (output.includes('Motion detected')) {
-                motionDetected = true;
-                process.kill();
+            try {
+                const output = JSON.parse(data.toString().trim());
+                logger.debug(`Sensor output: ${JSON.stringify(output)}`);
+                sendEvent({ message: `Sensor: ${output.status}` });
+                if (output.result) {
+                    sensorResult = output.result;
+                    process.kill();
+                }
+            } catch (error) {
+                logger.error(`Error parsing sensor output: ${error.message}`);
             }
         });
 
@@ -385,7 +389,7 @@ async function executeSensor(step, sendEvent) {
 
         return new Promise((resolve) => {
             process.on('close', (code) => {
-                if (motionDetected) {
+                if (sensorResult === 'motion') {
                     sendEvent({ message: 'Motion detected, continuing to next step' });
                     resolve(true);
                 } else {
