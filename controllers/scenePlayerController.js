@@ -99,16 +99,17 @@ const scenePlayerController = {
             }
 
             logger.info(`Scene ${sceneId} execution completed`);
-            sendEvent({ message: 'Scene execution completed', sceneEnded: true });
+            sendEvent({ message: 'Scene execution completed' });
         } catch (error) {
             logger.error(`Error during scene ${sceneId} execution:`, error);
-            sendEvent({ error: `Scene execution failed: ${error.message}`, sceneEnded: true });
+            sendEvent({ error: `Scene execution failed: ${error.message}` });
         } finally {
             isExecuting = false;
             await stopAllParts();
             await soundController.stopAllSounds();
             logger.info(`Scene ${sceneId} cleanup completed`);
-            sendEvent({ message: 'Scene cleanup completed', sceneEnded: true });
+            sendEvent({ message: 'Scene cleanup completed' });
+            sendEvent({ event: 'scene_end' });
             res.end();
         }
     },
