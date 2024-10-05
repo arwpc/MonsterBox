@@ -94,6 +94,11 @@ $(document).ready(function() {
                 if (data.error) {
                     logMessage(`Error: ${data.error}`, true);
                 }
+                if (data.event === 'scene_end') {
+                    logMessage("Scene execution completed");
+                    eventSource.close();
+                    resetControlButtons();
+                }
             } catch (error) {
                 logToServer('Error parsing event data: ' + error.message);
                 logMessage(`Error parsing event data: ${error.message}`, true);
@@ -106,13 +111,6 @@ $(document).ready(function() {
             eventSource.close();
             resetControlButtons();
         };
-
-        eventSource.addEventListener('close', function(event) {
-            logToServer("EventSource closed");
-            eventSource.close();
-            resetControlButtons();
-            logMessage("Scene execution completed");
-        });
     }
 
     function stopAllSteps() {
