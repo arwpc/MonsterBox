@@ -28,6 +28,7 @@ const scenePlayerController = {
                     return res.status(403).render('error', { title: 'Forbidden', message: 'Scene does not belong to this character' });
                 }
                 logger.info(`Rendering scene player for scene ${sceneId}`);
+                logger.debug(`Scene data: ${JSON.stringify(scene)}`);
                 res.render('scene-player', { title: 'Scene Player', scene, characterId });
             } else {
                 logger.warn(`Scene ${sceneId} not found`);
@@ -129,6 +130,79 @@ const scenePlayerController = {
     }
 };
 
-// ... (rest of the file remains unchanged)
+async function executeStep(sceneId, step, sendEvent) {
+    logger.debug(`Executing step: ${JSON.stringify(step)}`);
+    switch (step.type) {
+        case 'sound':
+            return await executeSound(step, sendEvent);
+        case 'motor':
+        case 'linear-actuator':
+        case 'servo':
+        case 'led':
+        case 'light':
+            return await executePart(step, sendEvent);
+        case 'sensor':
+            return await executeSensor(step, sendEvent);
+        case 'pause':
+            return await executePause(step, sendEvent);
+        default:
+            logger.warn(`Unknown step type: ${step.type}`);
+            throw new Error(`Unknown step type: ${step.type}`);
+    }
+}
+
+async function executeSound(step, sendEvent) {
+    logger.info(`Executing sound step: ${step.name}`);
+    try {
+        const sound = await soundService.getSoundById(step.sound_id);
+        if (!sound) {
+            throw new Error(`Sound not found for ID: ${step.sound_id}`);
+        }
+        await soundController.playSound(sound, sendEvent);
+    } catch (error) {
+        logger.error(`Error executing sound step: ${error.message}`);
+        throw error;
+    }
+}
+
+async function executePart(step, sendEvent) {
+    logger.info(`Executing part step: ${step.name}`);
+    try {
+        const part = await partService.getPartById(step.part_id);
+        if (!part) {
+            throw new Error(`Part not found for ID: ${step.part_id}`);
+        }
+        // Here you would add logic to control the specific part type
+        // This is a placeholder and should be replaced with actual part control logic
+        sendEvent({ message: `Simulating ${part.type} control: ${step.name}` });
+        await new Promise(resolve => setTimeout(resolve, parseInt(step.duration) || 1000));
+    } catch (error) {
+        logger.error(`Error executing part step: ${error.message}`);
+        throw error;
+    }
+}
+
+async function executeSensor(step, sendEvent) {
+    logger.info(`Executing sensor step: ${step.name}`);
+    try {
+        const sensor = await partService.getPartById(step.part_id);
+        if (!sensor) {
+            throw new Error(`Sensor not found for ID: ${step.part_id}`);
+        }
+        // Here you would add logic to read from the sensor
+        // This is a placeholder and should be replaced with actual sensor reading logic
+        sendEvent({ message: `Simulating sensor read: ${step.name}` });
+        await new Promise(resolve => setTimeout(resolve, parseInt(step.duration) || 1000));
+    } catch (error) {
+        logger.error(`Error executing sensor step: ${error.message}`);
+        throw error;
+    }
+}
+
+async function executePause(step, sendEvent) {
+    logger.info(`Executing pause step: ${step.name}`);
+    sendEvent({ message: `Pausing for ${step.duration}ms` });
+    await new Promise(resolve => setTimeout(resolve, parseInt(step.duration)));
+}
 
 module.exports = scenePlayerController;
