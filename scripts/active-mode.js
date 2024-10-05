@@ -16,7 +16,7 @@ $(document).ready(function() {
     $('#stopAllSteps').click(stopAllSteps);
     $('#sceneDelay').on('input', updateSceneTimeline);
 
-    // Load character information and scenes on page load
+    // Load character information on page load
     loadCharacterInfo();
 
     function loadCharacterInfo() {
@@ -77,29 +77,38 @@ $(document).ready(function() {
     }
 
     function fetchScenes(characterId) {
-        $.get(`/active-mode/character/${characterId}/scenes`, displayScenes)
-            .fail(handleSceneFetchError);
+        console.log(`Fetching scenes for character ID: ${characterId}`);
+        $.get(`/active-mode/character/${characterId}/scenes`)
+            .done(function(scenes) {
+                console.log(`Scenes fetched successfully:`, scenes);
+                displayScenes(scenes);
+            })
+            .fail(function(jqXHR, textStatus, errorThrown) {
+                console.error("Error fetching scenes:", textStatus, errorThrown);
+                handleSceneFetchError(jqXHR, textStatus, errorThrown);
+            });
     }
 
     function displayScenes(scenes) {
+        console.log(`Displaying ${scenes.length} scenes`);
         $('#availableScenes').empty();
         if (scenes.length === 0) {
             $('#availableScenes').append('<option value="">No available scenes</option>');
-            $('#sceneSelectionArea').hide();
         } else {
             scenes.forEach(function(scene) {
                 $('#availableScenes').append(`<option value="${scene.id}">${scene.scene_name}</option>`);
             });
-            $('#sceneSelectionArea').show();
         }
-        updateArmButtonState();
+        $('#sceneSelectionArea').show();
+        console.log('Scene selection area displayed');
     }
 
     function handleSceneFetchError(jqXHR, textStatus, errorThrown) {
         console.error("Error fetching scenes:", textStatus, errorThrown);
         $('#availableScenes').html('<option>Failed to load scenes</option>');
         $('#debugInfo').append(`<p>Error fetching scenes: ${textStatus} - ${errorThrown}</p>`);
-        $('#sceneSelectionArea').hide();
+        $('#sceneSelectionArea').show();
+        console.log('Scene selection area displayed (error state)');
     }
 
     function addScenes() {
