@@ -49,6 +49,25 @@
             visibility: visible;
             opacity: 1;
         }
+        .character-section {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .character-image {
+            width: 200px;
+            height: 200px;
+            object-fit: cover;
+            margin-right: 20px;
+        }
+        .character-info {
+            flex-grow: 1;
+        }
+        #partsAndSounds {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+        }
     </style>
 </head>
 <body>
@@ -67,6 +86,8 @@
             <div id="characterInfo"></div>
         </div>
     </div>
+
+    <div id="partsAndSounds"></div>
 
     <div class="scene-container">
         <div class="scene-box">
