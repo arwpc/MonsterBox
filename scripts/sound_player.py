@@ -24,7 +24,7 @@ class SoundPlayer:
             # Log information about the audio device
             log_message({"status": "info", "message": f"SDL_AUDIODRIVER: {os.environ.get('SDL_AUDIODRIVER', 'Not set')}"})
             log_message({"status": "info", "message": f"Pygame audio driver: {pygame.mixer.get_init()}"})
-            log_message({"status": "info", "message": f"Pygame audio device: {pygame.mixer.get_audio_device_name(0)}"})
+            log_message({"status": "info", "message": f"Pygame mixer info: {pygame.mixer.get_init()}"})
             
             # Set volume to maximum
             pygame.mixer.music.set_volume(1.0)
