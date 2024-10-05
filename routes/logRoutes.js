@@ -81,4 +81,24 @@ router.get('/', async (req, res) => {
     }
 });
 
+router.post('/clear', async (req, res) => {
+    try {
+        logger.info('Attempting to clear all log files');
+
+        const files = await fs.readdir(LOG_DIR);
+        const logFiles = files.filter(file => file.startsWith('MonsterBox-') && file.endsWith('.log'));
+
+        for (const file of logFiles) {
+            await fs.writeFile(path.join(LOG_DIR, file), '', 'utf8');
+            logger.debug(`Cleared contents of log file: ${file}`);
+        }
+
+        logger.info('All log files have been cleared successfully');
+        res.json({ success: true, message: 'All logs cleared successfully' });
+    } catch (error) {
+        logger.error('Error clearing log files:', error);
+        res.status(500).json({ success: false, error: 'Failed to clear logs: ' + error.message });
+    }
+});
+
 module.exports = router;

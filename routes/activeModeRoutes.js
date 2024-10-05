@@ -8,33 +8,31 @@ const logger = require('../scripts/logger');
 
 router.get('/', async (req, res) => {
     try {
-        const characters = await characterService.getAllCharacters();
-        logger.info(`Fetched ${characters.length} characters for Active Mode`);
+        const characterId = req.session.selectedCharacter;
+        if (!characterId) {
+            logger.warn('No character selected for Active Mode');
+            return res.redirect('/?error=noCharacterSelected');
+        }
+
+        const character = await characterService.getCharacterById(characterId);
+        if (!character) {
+            logger.warn(`Character not found for ID: ${characterId}`);
+            return res.redirect('/?error=characterNotFound');
+        }
+
+        // Ensure character has an image property, if not set a default
+        if (!character.image) {
+            character.image = 'placeholder.jpg';
+        }
+
+        logger.info(`Fetched character for Active Mode: ${character.char_name} (ID: ${character.id})`);
         res.render('active-mode', { 
             title: 'Active Mode',
-            characters: characters
+            character: character
         });
     } catch (error) {
         logger.error('Error fetching data for Active Mode:', { error: error.message, stack: error.stack });
         res.status(500).render('error', { error: 'Failed to load Active Mode' });
-    }
-});
-
-router.get('/character/:id', async (req, res) => {
-    try {
-        const characterId = parseInt(req.params.id);
-        logger.info(`Fetching character with ID: ${characterId}`);
-        const character = await characterService.getCharacterById(characterId);
-        if (character) {
-            logger.info(`Successfully fetched character: ${character.char_name} (ID: ${character.id})`);
-            res.json(character);
-        } else {
-            logger.warn(`Character not found for ID: ${characterId}`);
-            res.status(404).json({ error: 'Character not found' });
-        }
-    } catch (error) {
-        logger.error('Error fetching character:', { error: error.message, stack: error.stack, characterId: req.params.id });
-        res.status(500).json({ error: 'Failed to fetch character' });
     }
 });
 

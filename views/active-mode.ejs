@@ -76,13 +76,7 @@
     <div class="character-section">
         <img id="characterImage" class="character-image" src="/images/placeholder.jpg" alt="Character Image">
         <div class="character-info">
-            <label for="characterSelect">Character:</label>
-            <select id="characterSelect">
-                <option value="">Select a character</option>
-                <% characters.forEach(function(character) { %>
-                    <option value="<%= character.id %>"><%= character.char_name %></option>
-                <% }); %>
-            </select>
+            <h2>Selected Character</h2>
             <div id="characterInfo"></div>
         </div>
     </div>
@@ -138,6 +132,11 @@
     </div>
 
     <a href="/" class="button">Back to Main Menu</a>
+
+    <!-- Hidden element to store character data -->
+    <script type="application/json" id="characterData">
+        <%- JSON.stringify(character) %>
+    </script>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
