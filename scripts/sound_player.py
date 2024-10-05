@@ -20,6 +20,16 @@ class SoundPlayer:
         try:
             pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=4096)
             log_message({"status": "info", "message": "pygame.mixer initialized successfully"})
+            
+            # Log information about the audio device
+            log_message({"status": "info", "message": f"SDL_AUDIODRIVER: {os.environ.get('SDL_AUDIODRIVER', 'Not set')}"})
+            log_message({"status": "info", "message": f"Pygame audio driver: {pygame.mixer.get_init()}"})
+            log_message({"status": "info", "message": f"Pygame audio device: {pygame.mixer.get_audio_device_name(0)}"})
+            
+            # Set volume to maximum
+            pygame.mixer.music.set_volume(1.0)
+            log_message({"status": "info", "message": f"Volume set to: {pygame.mixer.music.get_volume()}"})
+            
         except pygame.error as e:
             log_message({"status": "error", "error": f"Failed to initialize pygame mixer: {str(e)}"})
             raise
