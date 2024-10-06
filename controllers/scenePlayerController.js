@@ -9,6 +9,7 @@ const { spawn } = require('child_process');
 const logger = require('../scripts/logger');
 
 let isExecuting = false;
+let currentSceneState = {};
 
 const stopAllParts = async () => {
     logger.info('Stopping all parts');
@@ -41,73 +42,62 @@ const scenePlayerController = {
             return res.status(500).json({ error: 'Failed to fetch scene', details: error.message });
         }
 
-        logger.info('Setting SSE headers');
-        res.writeHead(200, {
-            'Content-Type': 'text/event-stream',
-            'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive'
-        });
-
-        const sendEvent = (data) => {
-            const eventString = `data: ${JSON.stringify(data)}\n\n`;
-            logger.debug(`Sending SSE event: ${eventString}`);
-            res.write(eventString);
+        // Initialize scene state
+        currentSceneState = {
+            sceneId,
+            currentStep: startStep,
+            isCompleted: false,
+            messages: [],
+            error: null
         };
 
-        try {
-            logger.info(`Starting sound player for scene ${sceneId}`);
-            await soundController.startSoundPlayer();
-            isExecuting = true;
+        // Start scene execution in the background
+        executeScene(scene, startStep);
 
-            const executeSteps = async (steps, startIndex) => {
-                const concurrentPromises = [];
-                for (let i = startIndex; i < steps.length && isExecuting; i++) {
-                    const step = steps[i];
-                    logger.info(`Executing step ${i + 1}/${steps.length} for scene ${sceneId}: ${step.name} (${step.type})`);
-                    sendEvent({ message: `Executing step ${i + 1}: ${step.name}`, currentStep: i });
-                    
-                    const stepExecution = executeStep(sceneId, step, sendEvent);
-                    
-                    if (step.concurrent) {
-                        concurrentPromises.push(stepExecution);
-                    } else {
-                        await Promise.all(concurrentPromises);
-                        concurrentPromises.length = 0;
-                        await stepExecution;
-                    }
-
-                    if (step.type === 'sound' && !step.concurrent) {
-                        // Wait for non-concurrent sound to finish before moving to the next step
-                        await new Promise(resolve => setTimeout(resolve, step.duration));
-                    }
-                }
-                
-                // Wait for any remaining concurrent steps to complete
-                await Promise.all(concurrentPromises);
-            };
-
-            logger.info(`Starting execution of scene ${sceneId} steps`);
-            await executeSteps(scene.steps, startStep);
-
-            logger.info(`Scene ${sceneId} execution completed`);
-            sendEvent({ message: 'Scene execution completed' });
-        } catch (error) {
-            logger.error(`Error during scene ${sceneId} execution:`, error);
-            sendEvent({ error: `Scene execution failed: ${error.message}` });
-        } finally {
-            isExecuting = false;
-            logger.info('Stopping all parts and sounds');
-            await stopAllParts();
-            await soundController.stopAllSounds();
-            logger.info(`Scene ${sceneId} cleanup completed`);
-            sendEvent({ message: 'Scene cleanup completed' });
-            sendEvent({ event: 'scene_end' });
-            logger.info('Ending SSE connection');
-            res.end();
-        }
+        // Respond to the initial request
+        res.json({ message: 'Scene execution started', sceneId });
     },
 
-    // ... other methods and functions remain unchanged
+    getSceneStatus: (req, res) => {
+        res.json(currentSceneState);
+    },
+
+    // ... other methods remain unchanged
 };
+
+async function executeScene(scene, startStep) {
+    logger.info(`Starting execution of scene ${scene.id} from step ${startStep}`);
+    isExecuting = true;
+
+    try {
+        await soundController.startSoundPlayer();
+
+        for (let i = startStep; i < scene.steps.length && isExecuting; i++) {
+            const step = scene.steps[i];
+            currentSceneState.currentStep = i;
+            currentSceneState.messages.push(`Executing step ${i + 1}: ${step.name}`);
+
+            await executeStep(scene.id, step);
+
+            if (step.type === 'sound' && !step.concurrent) {
+                await new Promise(resolve => setTimeout(resolve, step.duration));
+            }
+        }
+
+        currentSceneState.isCompleted = true;
+        currentSceneState.messages.push('Scene execution completed');
+    } catch (error) {
+        logger.error(`Error during scene ${scene.id} execution:`, error);
+        currentSceneState.error = `Scene execution failed: ${error.message}`;
+    } finally {
+        isExecuting = false;
+        await stopAllParts();
+        await soundController.stopAllSounds();
+        logger.info(`Scene ${scene.id} cleanup completed`);
+        currentSceneState.messages.push('Scene cleanup completed');
+    }
+}
+
+// ... rest of the file remains unchanged
 
 module.exports = scenePlayerController;
