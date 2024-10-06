@@ -254,13 +254,16 @@ $(document).ready(function() {
             if (currentEventSource) {
                 currentEventSource.close();
             }
-            currentEventSource = new EventSource(`/scenes/${sceneId}/play`);
+            const url = `/scenes/${sceneId}/play`;
+            console.log(`Connecting to EventSource: ${url}`);
+            currentEventSource = new EventSource(url);
 
             currentEventSource.onopen = function(event) {
-                console.log('EventSource connection opened');
+                console.log('EventSource connection opened:', event);
             };
 
             currentEventSource.onmessage = function(event) {
+                console.log('Received message:', event.data);
                 try {
                     const data = JSON.parse(event.data);
                     handleSceneExecutionUpdate(data);
@@ -270,13 +273,13 @@ $(document).ready(function() {
             };
 
             currentEventSource.onerror = function(error) {
-                console.error('EventSource failed:', error);
+                console.error('EventSource error:', error);
                 currentEventSource.close();
-                reject(new Error(`Failed to execute scene ${sceneId}`));
+                reject(new Error(`Failed to execute scene ${sceneId}: ${error.message}`));
             };
 
             currentEventSource.addEventListener('scene_end', function(event) {
-                console.log('Scene execution completed');
+                console.log('Received scene_end event:', event);
                 currentEventSource.close();
                 resolve();
             });
@@ -284,6 +287,7 @@ $(document).ready(function() {
             // Add a timeout to prevent hanging if the server doesn't respond
             setTimeout(() => {
                 if (currentEventSource.readyState !== EventSource.CLOSED) {
+                    console.log('EventSource timed out, closing connection');
                     currentEventSource.close();
                     reject(new Error(`Timeout while executing scene ${sceneId}`));
                 }
