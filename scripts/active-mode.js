@@ -266,8 +266,12 @@ $(document).ready(function() {
             $.post(`/scenes/${sceneId}/play`)
                 .done(function(response) {
                     console.log(`Scene ${sceneId} execution started:`, response);
-                    currentSceneId = sceneId;
-                    pollSceneStatus(sceneId, resolve, reject);
+                    if (response.message === 'Scene execution started') {
+                        currentSceneId = sceneId;
+                        pollSceneStatus(sceneId, resolve, reject);
+                    } else {
+                        reject(new Error(`Unexpected response: ${JSON.stringify(response)}`));
+                    }
                 })
                 .fail(function(jqXHR, textStatus, errorThrown) {
                     console.error(`Failed to start scene ${sceneId}:`, textStatus, errorThrown);
