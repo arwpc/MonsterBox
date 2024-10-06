@@ -69,7 +69,7 @@ router.post('/:id/play', (req, res, next) => {
 
 router.get('/:id/status', (req, res, next) => {
     logger.info(`Getting status for scene ${req.params.id}`);
-    scenePlayerController.getSceneStatus(req, res);
+    scenePlayerController.getSceneStatus(req, res, next);
 });
 
 router.post('/:id/stop', (req, res, next) => {
