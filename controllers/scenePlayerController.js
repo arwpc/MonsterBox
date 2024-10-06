@@ -18,7 +18,29 @@ const stopAllParts = async () => {
 };
 
 const scenePlayerController = {
-    // ... other methods remain unchanged
+    getScenePlayer: async (req, res) => {
+        try {
+            const sceneId = req.params.id;
+            const characterId = req.query.characterId;
+            logger.info(`Getting scene player for scene ${sceneId}, character ${characterId}`);
+            const scene = await sceneService.getSceneById(sceneId);
+            if (scene) {
+                if (scene.character_id.toString() !== characterId) {
+                    logger.warn(`Scene ${sceneId} does not belong to character ${characterId}`);
+                    return res.status(403).json({ error: 'Scene does not belong to this character' });
+                }
+                logger.info(`Rendering scene player for scene ${sceneId}`);
+                logger.debug(`Scene data: ${JSON.stringify(scene)}`);
+                res.json({ scene, characterId });
+            } else {
+                logger.warn(`Scene ${sceneId} not found`);
+                res.status(404).json({ error: 'Scene not found' });
+            }
+        } catch (error) {
+            logger.error('Error getting scene by ID:', error);
+            res.status(500).json({ error: 'Failed to retrieve scene', details: error.message });
+        }
+    },
 
     playScene: async (req, res) => {
         const sceneId = req.params.id;
@@ -62,7 +84,31 @@ const scenePlayerController = {
         res.json(currentSceneState);
     },
 
-    // ... other methods remain unchanged
+    stopScene: async (req, res) => {
+        logger.info('Stopping all steps and terminating processes');
+        isExecuting = false;
+        try {
+            await soundController.stopAllSounds();
+            await stopAllParts();
+            res.json({ message: 'All steps stopped and processes terminated' });
+        } catch (error) {
+            logger.error('Error stopping all steps:', error);
+            res.status(500).json({ error: 'Failed to stop all steps', details: error.message });
+        }
+    },
+
+    stopAllScenes: async (req, res) => {
+        logger.info('Stopping all scenes and terminating processes');
+        isExecuting = false;
+        try {
+            await soundController.stopAllSounds();
+            await stopAllParts();
+            res.json({ message: 'All scenes stopped and processes terminated' });
+        } catch (error) {
+            logger.error('Error stopping all scenes:', error);
+            res.status(500).json({ error: 'Failed to stop all scenes', details: error.message });
+        }
+    }
 };
 
 async function executeScene(scene, startStep) {
@@ -98,6 +144,30 @@ async function executeScene(scene, startStep) {
     }
 }
 
-// ... rest of the file remains unchanged
+async function executeStep(sceneId, step) {
+    logger.debug(`Executing step: ${JSON.stringify(step)}`);
+    switch (step.type) {
+        case 'sound':
+            return await executeSound(step);
+        case 'motor':
+            return await executeMotor(step);
+        case 'linear-actuator':
+            return await executeLinearActuator(step);
+        case 'servo':
+            return await executeServo(step);
+        case 'led':
+        case 'light':
+            return await executeLight(step);
+        case 'sensor':
+            return await executeSensor(step);
+        case 'pause':
+            return await executePause(step);
+        default:
+            logger.warn(`Unknown step type: ${step.type}`);
+            throw new Error(`Unknown step type: ${step.type}`);
+    }
+}
+
+// ... (keep all the other step execution functions unchanged)
 
 module.exports = scenePlayerController;
