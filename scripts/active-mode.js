@@ -99,7 +99,7 @@ $(document).ready(function() {
                 displayScenes(scenes);
             })
             .fail(function(jqXHR, textStatus, errorThrown) {
-                console.error("Error fetching scenes:", textStatus, errorThrown);
+		console.error("Error fetching scenes:", textStatus, errorThrown);
                 console.error("Response text:", jqXHR.responseText);
                 handleSceneFetchError(jqXHR, textStatus, errorThrown);
             });

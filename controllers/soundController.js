@@ -57,35 +57,25 @@ function startSoundPlayer() {
     });
 }
 
-function playSound(sound, sendEvent) {
+function playSound(soundId, filePath) {
     return new Promise((resolve, reject) => {
         if (!soundPlayerProcess) {
-            logger.error('Attempted to play sound, but sound player is not available');
-            reject(new Error('Sound player not available'));
+            logger.error('Sound player is not running');
+            reject(new Error('Sound player is not running'));
             return;
         }
 
-        const filePath = path.resolve(__dirname, '..', 'public', 'sounds', sound.filename);
-        const command = `PLAY|${sound.id}|${filePath}\n`;
+        const command = `PLAY|${soundId}|${filePath}\n`;
         logger.info(`Sending play command: ${command.trim()}`);
         soundPlayerProcess.stdin.write(command);
 
-        logger.info(`Playing sound: ${sound.name}`);
-        sendEvent({ message: `Sound started: ${sound.name}` });
-
+        // Here we're assuming the sound player will send a "FINISHED" message when done
         const listener = (data) => {
             const output = data.toString().trim();
-            logger.info(`Received output from sound player: ${output}`);
-            try {
-                const jsonOutput = JSON.parse(output);
-                if (jsonOutput.status === 'finished' && jsonOutput.sound_id === sound.id.toString()) {
-                    soundPlayerProcess.stdout.removeListener('data', listener);
-                    logger.info(`Sound completed: ${sound.name}`);
-                    sendEvent({ message: `Sound completed: ${sound.name}` });
-                    resolve();
-                }
-            } catch (e) {
-                logger.warn(`Received non-JSON output from sound player: ${output}`);
+            if (output.includes('FINISHED')) {
+                soundPlayerProcess.stdout.removeListener('data', listener);
+                logger.info(`Sound completed: ${soundId}`);
+                resolve();
             }
         };
 

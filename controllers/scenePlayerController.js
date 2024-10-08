@@ -31,14 +31,14 @@ const scenePlayerController = {
                 }
                 logger.info(`Rendering scene player for scene ${sceneId}`);
                 logger.debug(`Scene data: ${JSON.stringify(scene)}`);
-                res.json({ scene, characterId });
+                res.render('scene-player', { title: 'Scene Player', scene, characterId });
             } else {
                 logger.warn(`Scene ${sceneId} not found`);
-                res.status(404).json({ error: 'Scene not found' });
+                res.status(404).render('error', { error: 'Scene not found' });
             }
         } catch (error) {
             logger.error('Error getting scene by ID:', error);
-            res.status(500).json({ error: 'Failed to retrieve scene', details: error.message });
+            res.status(500).render('error', { error: 'Failed to retrieve scene' });
         }
     },
 
@@ -94,19 +94,6 @@ const scenePlayerController = {
         } catch (error) {
             logger.error('Error stopping all steps:', error);
             res.status(500).json({ error: 'Failed to stop all steps', details: error.message });
-        }
-    },
-
-    stopAllScenes: async (req, res) => {
-        logger.info('Stopping all scenes and terminating processes');
-        isExecuting = false;
-        try {
-            await soundController.stopAllSounds();
-            await stopAllParts();
-            res.json({ message: 'All scenes stopped and processes terminated' });
-        } catch (error) {
-            logger.error('Error stopping all scenes:', error);
-            res.status(500).json({ error: 'Failed to stop all scenes', details: error.message });
         }
     }
 };
@@ -168,6 +155,193 @@ async function executeStep(sceneId, step) {
     }
 }
 
-// ... (keep all the other step execution functions unchanged)
+async function executeSound(step) {
+    logger.info(`Executing sound step: ${step.name}`);
+    try {
+        const sound = await soundService.getSoundById(step.sound_id);
+        if (!sound) {
+            throw new Error(`Sound not found for ID: ${step.sound_id}`);
+        }
+        const filePath = path.resolve(__dirname, '..', 'public', 'sounds', sound.filename);
+        await soundController.playSound(sound.id, filePath);
+        logger.info(`Sound played: ${sound.name}`);
+        return true;
+    } catch (error) {
+        logger.error(`Error executing sound step: ${error.message}`);
+        throw error;
+    }
+}
+async function executeMotor(step) {
+    logger.info(`Executing motor step: ${step.name}`);
+    try {
+        const scriptPath = path.resolve(__dirname, '..', 'scripts', 'motor_control.py');
+        const args = [
+            step.direction,
+            step.speed.toString(),
+            step.duration.toString(),
+            step.part_id.toString()
+        ];
+        await new Promise((resolve, reject) => {
+            const process = spawn('python3', [scriptPath, ...args]);
+            process.stdout.on('data', (data) => {
+                logger.debug(`Motor control output: ${data}`);
+            });
+            process.stderr.on('data', (data) => {
+                logger.error(`Motor control error: ${data}`);
+            });
+            process.on('close', (code) => {
+                if (code === 0) {
+                    resolve();
+                } else {
+                    reject(new Error(`Motor control process exited with code ${code}`));
+                }
+            });
+        });
+        return true;
+    } catch (error) {
+        logger.error(`Error executing motor step: ${error.message}`);
+        throw error;
+    }
+}
+
+async function executeLinearActuator(step) {
+    logger.info(`Executing linear actuator step: ${step.name}`);
+    try {
+        const scriptPath = path.resolve(__dirname, '..', 'scripts', 'linear_actuator_control.py');
+        const args = [
+            step.direction,
+            step.speed.toString(),
+            step.duration.toString(),
+            step.part_id.toString()
+        ];
+        await new Promise((resolve, reject) => {
+            const process = spawn('python3', [scriptPath, ...args]);
+            process.stdout.on('data', (data) => {
+                logger.debug(`Linear actuator control output: ${data}`);
+            });
+            process.stderr.on('data', (data) => {
+                logger.error(`Linear actuator control error: ${data}`);
+            });
+            process.on('close', (code) => {
+                if (code === 0) {
+                    resolve();
+                } else {
+                    reject(new Error(`Linear actuator control process exited with code ${code}`));
+                }
+            });
+        });
+        return true;
+    } catch (error) {
+        logger.error(`Error executing linear actuator step: ${error.message}`);
+        throw error;
+    }
+}
+
+async function executeServo(step) {
+    logger.info(`Executing servo step: ${step.name}`);
+    try {
+        const scriptPath = path.resolve(__dirname, '..', 'scripts', 'servo_control.py');
+        const args = [
+            step.angle.toString(),
+            step.speed.toString(),
+            step.duration.toString(),
+            step.part_id.toString()
+        ];
+        await new Promise((resolve, reject) => {
+            const process = spawn('python3', [scriptPath, ...args]);
+            process.stdout.on('data', (data) => {
+                logger.debug(`Servo control output: ${data}`);
+            });
+            process.stderr.on('data', (data) => {
+                logger.error(`Servo control error: ${data}`);
+            });
+            process.on('close', (code) => {
+                if (code === 0) {
+                    resolve();
+                } else {
+                    reject(new Error(`Servo control process exited with code ${code}`));
+                }
+            });
+        });
+        return true;
+    } catch (error) {
+        logger.error(`Error executing servo step: ${error.message}`);
+        throw error;
+    }
+}
+
+async function executeLight(step) {
+    logger.info(`Executing light step: ${step.name}`);
+    try {
+        const scriptPath = path.resolve(__dirname, '..', 'scripts', 'light_control.py');
+        const args = [
+            step.state,
+            step.duration.toString(),
+            step.part_id.toString()
+        ];
+        if (step.type === 'led') {
+            args.push(step.brightness.toString());
+        }
+        await new Promise((resolve, reject) => {
+            const process = spawn('python3', [scriptPath, ...args]);
+            process.stdout.on('data', (data) => {
+                logger.debug(`Light control output: ${data}`);
+            });
+            process.stderr.on('data', (data) => {
+                logger.error(`Light control error: ${data}`);
+            });
+            process.on('close', (code) => {
+                if (code === 0) {
+                    resolve();
+                } else {
+                    reject(new Error(`Light control process exited with code ${code}`));
+                }
+            });
+        });
+        return true;
+    } catch (error) {
+        logger.error(`Error executing light step: ${error.message}`);
+        throw error;
+    }
+}
+
+async function executeSensor(step) {
+    logger.info(`Executing sensor step: ${step.name}`);
+    try {
+        const scriptPath = path.resolve(__dirname, '..', 'scripts', 'sensor_control.py');
+        const args = [
+            step.part_id.toString(),
+            step.timeout.toString()
+        ];
+        return new Promise((resolve, reject) => {
+            const process = spawn('python3', [scriptPath, ...args]);
+            process.stdout.on('data', (data) => {
+                logger.debug(`Sensor control output: ${data}`);
+                if (data.toString().includes('Motion detected')) {
+                    process.kill();
+                    resolve(true);
+                }
+            });
+            process.stderr.on('data', (data) => {
+                logger.error(`Sensor control error: ${data}`);
+            });
+            process.on('close', (code) => {
+                if (code === 0) {
+                    resolve(false);
+                } else {
+                    reject(new Error(`Sensor control process exited with code ${code}`));
+                }
+            });
+        });
+    } catch (error) {
+        logger.error(`Error executing sensor step: ${error.message}`);
+        throw error;
+    }
+}
+
+async function executePause(step) {
+    logger.info(`Executing pause step: ${step.name}`);
+    return new Promise(resolve => setTimeout(resolve, step.duration));
+}
 
 module.exports = scenePlayerController;
