@@ -119,7 +119,14 @@ async function executeScene(scene, startStep, res) {
             // Send SSE update
             res.write(`data: ${JSON.stringify({ message, currentStep: i })}\n\n`);
 
-            await executeStep(scene.id, step);
+            try {
+                await executeStep(scene.id, step);
+            } catch (stepError) {
+                logger.error(`Error executing step ${i + 1}: ${stepError.message}`);
+                res.write(`data: ${JSON.stringify({ error: `Error in step ${i + 1}: ${stepError.message}` })}\n\n`);
+                // Continue with the next step instead of stopping the entire scene
+                continue;
+            }
 
             if (step.type === 'sound' && !step.concurrent) {
                 await new Promise(resolve => setTimeout(resolve, step.duration));
@@ -196,16 +203,23 @@ async function executeSound(step) {
 async function executeMotor(step) {
     logger.info(`Executing motor step: ${step.name}`);
     try {
+        const part = await partService.getPartById(step.part_id);
+        if (!part) {
+            throw new Error(`Part not found for ID: ${step.part_id}`);
+        }
         const scriptPath = path.resolve(__dirname, '..', 'scripts', 'motor_control.py');
         const args = [
             step.direction,
             step.speed.toString(),
             step.duration.toString(),
-            step.part_id.toString()
+            part.dir_pin.toString(),
+            part.pwm_pin.toString()
         ];
-        await new Promise((resolve, reject) => {
+        const result = await new Promise((resolve, reject) => {
             const process = spawn('python3', [scriptPath, ...args]);
+            let output = '';
             process.stdout.on('data', (data) => {
+                output += data.toString();
                 logger.debug(`Motor control output: ${data}`);
             });
             process.stderr.on('data', (data) => {
@@ -213,12 +227,20 @@ async function executeMotor(step) {
             });
             process.on('close', (code) => {
                 if (code === 0) {
-                    resolve();
+                    try {
+                        const jsonOutput = JSON.parse(output);
+                        resolve(jsonOutput);
+                    } catch (error) {
+                        reject(new Error(`Failed to parse motor control output: ${output}`));
+                    }
                 } else {
                     reject(new Error(`Motor control process exited with code ${code}`));
                 }
             });
         });
+        if (!result.success) {
+            throw new Error(`Motor control failed: ${result.error}`);
+        }
         return true;
     } catch (error) {
         logger.error(`Error executing motor step: ${error.message}`);
@@ -229,16 +251,23 @@ async function executeMotor(step) {
 async function executeLinearActuator(step) {
     logger.info(`Executing linear actuator step: ${step.name}`);
     try {
+        const part = await partService.getPartById(step.part_id);
+        if (!part) {
+            throw new Error(`Part not found for ID: ${step.part_id}`);
+        }
         const scriptPath = path.resolve(__dirname, '..', 'scripts', 'linear_actuator_control.py');
         const args = [
             step.direction,
             step.speed.toString(),
             step.duration.toString(),
-            step.part_id.toString()
+            part.dir_pin.toString(),
+            part.pwm_pin.toString()
         ];
-        await new Promise((resolve, reject) => {
+        const result = await new Promise((resolve, reject) => {
             const process = spawn('python3', [scriptPath, ...args]);
+            let output = '';
             process.stdout.on('data', (data) => {
+                output += data.toString();
                 logger.debug(`Linear actuator control output: ${data}`);
             });
             process.stderr.on('data', (data) => {
@@ -246,12 +275,20 @@ async function executeLinearActuator(step) {
             });
             process.on('close', (code) => {
                 if (code === 0) {
-                    resolve();
+                    try {
+                        const jsonOutput = JSON.parse(output);
+                        resolve(jsonOutput);
+                    } catch (error) {
+                        reject(new Error(`Failed to parse linear actuator control output: ${output}`));
+                    }
                 } else {
                     reject(new Error(`Linear actuator control process exited with code ${code}`));
                 }
             });
         });
+        if (!result.success) {
+            throw new Error(`Linear actuator control failed: ${result.error}`);
+        }
         return true;
     } catch (error) {
         logger.error(`Error executing linear actuator step: ${error.message}`);
@@ -262,16 +299,22 @@ async function executeLinearActuator(step) {
 async function executeServo(step) {
     logger.info(`Executing servo step: ${step.name}`);
     try {
+        const part = await partService.getPartById(step.part_id);
+        if (!part) {
+            throw new Error(`Part not found for ID: ${step.part_id}`);
+        }
         const scriptPath = path.resolve(__dirname, '..', 'scripts', 'servo_control.py');
         const args = [
             step.angle.toString(),
             step.speed.toString(),
             step.duration.toString(),
-            step.part_id.toString()
+            part.pwm_pin.toString()
         ];
-        await new Promise((resolve, reject) => {
+        const result = await new Promise((resolve, reject) => {
             const process = spawn('python3', [scriptPath, ...args]);
+            let output = '';
             process.stdout.on('data', (data) => {
+                output += data.toString();
                 logger.debug(`Servo control output: ${data}`);
             });
             process.stderr.on('data', (data) => {
@@ -279,12 +322,20 @@ async function executeServo(step) {
             });
             process.on('close', (code) => {
                 if (code === 0) {
-                    resolve();
+                    try {
+                        const jsonOutput = JSON.parse(output);
+                        resolve(jsonOutput);
+                    } catch (error) {
+                        reject(new Error(`Failed to parse servo control output: ${output}`));
+                    }
                 } else {
                     reject(new Error(`Servo control process exited with code ${code}`));
                 }
             });
         });
+        if (!result.success) {
+            throw new Error(`Servo control failed: ${result.error}`);
+        }
         return true;
     } catch (error) {
         logger.error(`Error executing servo step: ${error.message}`);
@@ -295,18 +346,24 @@ async function executeServo(step) {
 async function executeLight(step) {
     logger.info(`Executing light step: ${step.name}`);
     try {
+        const part = await partService.getPartById(step.part_id);
+        if (!part) {
+            throw new Error(`Part not found for ID: ${step.part_id}`);
+        }
         const scriptPath = path.resolve(__dirname, '..', 'scripts', 'light_control.py');
         const args = [
             step.state,
             step.duration.toString(),
-            step.part_id.toString()
+            part.pin.toString()
         ];
         if (step.type === 'led') {
             args.push(step.brightness.toString());
         }
-        await new Promise((resolve, reject) => {
+        const result = await new Promise((resolve, reject) => {
             const process = spawn('python3', [scriptPath, ...args]);
+            let output = '';
             process.stdout.on('data', (data) => {
+                output += data.toString();
                 logger.debug(`Light control output: ${data}`);
             });
             process.stderr.on('data', (data) => {
@@ -314,12 +371,20 @@ async function executeLight(step) {
             });
             process.on('close', (code) => {
                 if (code === 0) {
-                    resolve();
+                    try {
+                        const jsonOutput = JSON.parse(output);
+                        resolve(jsonOutput);
+                    } catch (error) {
+                        reject(new Error(`Failed to parse light control output: ${output}`));
+                    }
                 } else {
                     reject(new Error(`Light control process exited with code ${code}`));
                 }
             });
         });
+        if (!result.success) {
+            throw new Error(`Light control failed: ${result.error}`);
+        }
         return true;
     } catch (error) {
         logger.error(`Error executing light step: ${error.message}`);
@@ -330,18 +395,24 @@ async function executeLight(step) {
 async function executeSensor(step) {
     logger.info(`Executing sensor step: ${step.name}`);
     try {
+        const part = await partService.getPartById(step.part_id);
+        if (!part) {
+            throw new Error(`Part not found for ID: ${step.part_id}`);
+        }
         const scriptPath = path.resolve(__dirname, '..', 'scripts', 'sensor_control.py');
         const args = [
-            step.part_id.toString(),
+            part.pin.toString(),
             step.timeout.toString()
         ];
-        return new Promise((resolve, reject) => {
+        const result = await new Promise((resolve, reject) => {
             const process = spawn('python3', [scriptPath, ...args]);
+            let output = '';
             process.stdout.on('data', (data) => {
+                output += data.toString();
                 logger.debug(`Sensor control output: ${data}`);
                 if (data.toString().includes('Motion detected')) {
                     process.kill();
-                    resolve(true);
+                    resolve({ success: true, message: 'Motion detected' });
                 }
             });
             process.stderr.on('data', (data) => {
@@ -349,12 +420,21 @@ async function executeSensor(step) {
             });
             process.on('close', (code) => {
                 if (code === 0) {
-                    resolve(false);
+                    try {
+                        const jsonOutput = JSON.parse(output);
+                        resolve(jsonOutput);
+                    } catch (error) {
+                        reject(new Error(`Failed to parse sensor control output: ${output}`));
+                    }
                 } else {
                     reject(new Error(`Sensor control process exited with code ${code}`));
                 }
             });
         });
+        if (!result.success) {
+            throw new Error(`Sensor control failed: ${result.error}`);
+        }
+        return result.message === 'Motion detected';
     } catch (error) {
         logger.error(`Error executing sensor step: ${error.message}`);
         throw error;

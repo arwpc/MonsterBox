@@ -1,5 +1,3 @@
-# File: scripts/sound_player.py
-
 import sys
 import pygame
 import time
@@ -9,12 +7,10 @@ import os
 import subprocess
 
 def log_message(message):
-    print(json.dumps(message))
-    sys.stdout.flush()
+    print(json.dumps(message), flush=True)
 
 def set_alsa_params():
     try:
-        # Try to set PCM volume for different cards
         for card in range(5):  # Check cards 0 to 4
             try:
                 subprocess.run(["amixer", "-c", str(card), "sset", "PCM", "100%"], check=True, stderr=subprocess.DEVNULL)
@@ -23,15 +19,13 @@ def set_alsa_params():
             except subprocess.CalledProcessError:
                 continue
         
-        # If we couldn't set PCM for any card, try Master volume
         subprocess.run(["amixer", "sset", "Master", "100%"], check=True)
         log_message({"status": "info", "message": "Master volume set to 100%"})
         
         subprocess.run(["alsactl", "store"], check=True)
     except subprocess.CalledProcessError as e:
-        log_message({"status": "warning", "message": f"Failed to set ALSA parameters: {str(e)}"})
+        log_message({"status": "error", "message": f"Failed to set ALSA parameters: {str(e)}"})
 
-# Set XDG_RUNTIME_DIR
 if 'XDG_RUNTIME_DIR' not in os.environ:
     runtime_dir = f"/run/user/{os.getuid()}"
     os.environ['XDG_RUNTIME_DIR'] = runtime_dir
@@ -67,18 +61,16 @@ class SoundPlayer:
             pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=8192)
             log_message({"status": "info", "message": "pygame.mixer initialized successfully"})
             
-            # Log information about the audio device
             log_message({"status": "info", "message": f"SDL_AUDIODRIVER: {os.environ.get('SDL_AUDIODRIVER', 'Not set')}"})
             log_message({"status": "info", "message": f"AUDIODEV: {os.environ.get('AUDIODEV', 'Not set')}"})
             log_message({"status": "info", "message": f"Pygame audio driver: {pygame.mixer.get_init()}"})
             log_message({"status": "info", "message": f"Pygame mixer info: {pygame.mixer.get_init()}"})
             
-            # Set volume to maximum
             pygame.mixer.music.set_volume(1.0)
             log_message({"status": "info", "message": f"Volume set to: {pygame.mixer.music.get_volume()}"})
             
         except pygame.error as e:
-            log_message({"status": "error", "error": f"Failed to initialize pygame mixer: {str(e)}"})
+            log_message({"status": "error", "message": f"Failed to initialize pygame mixer: {str(e)}"})
             raise
 
         self.channels = {}
@@ -103,7 +95,8 @@ class SoundPlayer:
             duration = end_time - start_time
             log_message({"status": "finished", "sound_id": sound_id, "file": file_path, "duration": duration})
         except Exception as e:
-            log_message({"status": "error", "sound_id": sound_id, "file": file_path, "error": str(e)})
+            log_message({"status": "error", "sound_id": sound_id, "file": file_path, "message": str(e)})
+            raise
 
     def stop_sound(self, sound_id):
         if sound_id in self.channels:
@@ -127,10 +120,10 @@ if __name__ == "__main__":
                 elif cmd == "STOP":
                     player.stop_sound(sound_id)
             except Exception as e:
-                log_message({"status": "error", "error": f"Command processing error: {str(e)}"})
+                log_message({"status": "error", "message": f"Command processing error: {str(e)}"})
 
     except Exception as e:
-        log_message({"status": "error", "error": f"Failed to initialize or run SoundPlayer: {str(e)}"})
+        log_message({"status": "error", "message": f"Failed to initialize or run SoundPlayer: {str(e)}"})
     finally:
         log_message({"status": "info", "message": "Quitting pygame mixer"})
         pygame.mixer.quit()
