@@ -34,12 +34,29 @@
         .error-message {
             color: #ff0000;
         }
+        #progress-bar {
+            width: 100%;
+            background-color: #ddd;
+            margin-bottom: 20px;
+        }
+        #progress {
+            width: 0%;
+            height: 30px;
+            background-color: #00ff00;
+            text-align: center;
+            line-height: 30px;
+            color: black;
+        }
     </style>
 </head>
 <body>
     <h1><%= title %></h1>
     <h2><%= scene.scene_name %></h2>
     
+    <div id="progress-bar">
+        <div id="progress">0%</div>
+    </div>
+
     <div id="scene-overview">
         <h3>Scene Steps:</h3>
         <% if (scene && scene.steps && scene.steps.length > 0) { %>
@@ -69,6 +86,7 @@
         const characterId = "<%= characterId %>";
         let currentStep = 0;
         let isExecuting = false;
+        let eventSource = null;
 
         function logMessage(message, isError = false) {
             const logBox = $("#log-box");
@@ -81,34 +99,41 @@
         function updateCurrentStep(index) {
             $(".step").removeClass("current-step");
             $(`#step-${index}`).addClass("current-step");
+            updateProgressBar(index);
+        }
+
+        function updateProgressBar(index) {
+            const progress = ((index + 1) / sceneData.steps.length) * 100;
+            $("#progress").css("width", `${progress}%`);
+            $("#progress").text(`${Math.round(progress)}%`);
         }
 
         $(document).ready(function() {
-            logMessage('Document ready');
+            logMessage('Scene player initialized');
 
             $("#backward-btn").on("click", function() {
-                logMessage("Backward button clicked");
                 if (currentStep > 0) {
                     currentStep--;
                     updateCurrentStep(currentStep);
+                    logMessage(`Moved to step ${currentStep + 1}`);
                 }
             });
 
             $("#forward-btn").on("click", function() {
-                logMessage("Forward button clicked");
                 if (currentStep < sceneData.steps.length - 1) {
                     currentStep++;
                     updateCurrentStep(currentStep);
+                    logMessage(`Moved to step ${currentStep + 1}`);
                 }
             });
 
             $("#run-btn").on("click", function() {
-                logMessage("Run button clicked");
+                logMessage("Starting scene execution");
                 runScene();
             });
 
             $("#stop-btn").on("click", function() {
-                logMessage("Stop button clicked");
+                logMessage("Stopping scene execution");
                 stopScene();
             });
 
@@ -128,76 +153,61 @@
 
             isExecuting = true;
             $("#run-btn").prop('disabled', true);
+            $("#backward-btn").prop('disabled', true);
+            $("#forward-btn").prop('disabled', true);
             $("#stop-btn").prop('disabled', false);
 
-            $.ajax({
-                url: `/scenes/${sceneData.id}/play`,
-                method: 'POST',
-                data: { characterId: characterId, startStep: currentStep },
-                success: function(response) {
-                    logMessage("Scene execution started");
-                    pollSceneStatus();
-                },
-                error: function(xhr, status, error) {
-                    logMessage(`Error starting scene: ${error}`, true);
-                    isExecuting = false;
-                    $("#run-btn").prop('disabled', false);
-                    $("#stop-btn").prop('disabled', true);
+            if (eventSource) {
+                eventSource.close();
+            }
+
+            const url = `/scenes/${sceneData.id}/play?characterId=${characterId}&startStep=${currentStep}`;
+            eventSource = new EventSource(url);
+
+            eventSource.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                if (data.message) {
+                    logMessage(data.message);
                 }
-            });
+                if (data.currentStep !== undefined) {
+                    currentStep = data.currentStep;
+                    updateCurrentStep(currentStep);
+                }
+                if (data.error) {
+                    logMessage(`Error: ${data.error}`, true);
+                    stopScene();
+                }
+                if (data.event === 'scene_end') {
+                    logMessage("Scene execution completed");
+                    stopScene();
+                }
+            };
+
+            eventSource.onerror = function(error) {
+                logMessage(`EventSource error: ${error.message || 'Unknown error'}`, true);
+                stopScene();
+            };
         }
 
         function stopScene() {
+            if (eventSource) {
+                eventSource.close();
+            }
+
             $.ajax({
-                url: `/scenes/${sceneData.id}/stop`,
+                url: `/scenes/${sceneData.id}/stop?characterId=${characterId}`,
                 method: 'POST',
-                data: { characterId: characterId },
                 success: function(response) {
                     logMessage("Scene execution stopped");
-                    isExecuting = false;
-                    $("#run-btn").prop('disabled', false);
-                    $("#stop-btn").prop('disabled', true);
                 },
                 error: function(xhr, status, error) {
                     logMessage(`Error stopping scene: ${error}`, true);
-                }
-            });
-        }
-
-        function pollSceneStatus() {
-            if (!isExecuting) return;
-
-            $.ajax({
-                url: `/scenes/${sceneData.id}/status`,
-                method: 'GET',
-                success: function(status) {
-                    if (status.messages && status.messages.length > 0) {
-                        status.messages.forEach(message => logMessage(message));
-                    }
-
-                    if (status.error) {
-                        logMessage(`Error: ${status.error}`, true);
-                        isExecuting = false;
-                        $("#run-btn").prop('disabled', false);
-                        $("#stop-btn").prop('disabled', true);
-                        return;
-                    }
-
-                    if (status.isCompleted) {
-                        logMessage("Scene execution completed");
-                        isExecuting = false;
-                        $("#run-btn").prop('disabled', false);
-                        $("#stop-btn").prop('disabled', true);
-                        return;
-                    }
-
-                    updateCurrentStep(status.currentStep);
-                    setTimeout(pollSceneStatus, 1000);
                 },
-                error: function(xhr, status, error) {
-                    logMessage(`Error getting scene status: ${error}`, true);
+                complete: function() {
                     isExecuting = false;
                     $("#run-btn").prop('disabled', false);
+                    $("#backward-btn").prop('disabled', false);
+                    $("#forward-btn").prop('disabled', false);
                     $("#stop-btn").prop('disabled', true);
                 }
             });

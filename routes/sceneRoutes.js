@@ -62,7 +62,7 @@ router.delete('/:id', (req, res, next) => {
     sceneController.deleteScene(req, res, next);
 });
 
-router.post('/:id/play', (req, res, next) => {
+router.get('/:id/play', (req, res, next) => {
     logger.info(`Playing scene ${req.params.id} for character ${req.characterId}`);
     scenePlayerController.playScene(req, res, next);
 });
