@@ -10,6 +10,7 @@ const logger = require('../scripts/logger');
 
 let isExecuting = false;
 let currentSceneState = {};
+let res = null;
 
 const stopAllParts = async () => {
     logger.info('Stopping all parts');
@@ -73,11 +74,15 @@ const scenePlayerController = {
             error: null
         };
 
-        // Start scene execution in the background
-        executeScene(scene, startStep);
+        // Set up SSE
+        res.writeHead(200, {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive'
+        });
 
-        // Respond to the initial request
-        res.json({ message: 'Scene execution started', sceneId });
+        // Start scene execution in the background
+        executeScene(scene, startStep, res);
     },
 
     getSceneStatus: (req, res) => {
@@ -98,7 +103,7 @@ const scenePlayerController = {
     }
 };
 
-async function executeScene(scene, startStep) {
+async function executeScene(scene, startStep, res) {
     logger.info(`Starting execution of scene ${scene.id} from step ${startStep}`);
     isExecuting = true;
 
@@ -108,7 +113,11 @@ async function executeScene(scene, startStep) {
         for (let i = startStep; i < scene.steps.length && isExecuting; i++) {
             const step = scene.steps[i];
             currentSceneState.currentStep = i;
-            currentSceneState.messages.push(`Executing step ${i + 1}: ${step.name}`);
+            const message = `Executing step ${i + 1}: ${step.name}`;
+            currentSceneState.messages.push(message);
+            
+            // Send SSE update
+            res.write(`data: ${JSON.stringify({ message, currentStep: i })}\n\n`);
 
             await executeStep(scene.id, step);
 
@@ -118,16 +127,28 @@ async function executeScene(scene, startStep) {
         }
 
         currentSceneState.isCompleted = true;
-        currentSceneState.messages.push('Scene execution completed');
+        const completionMessage = 'Scene execution completed';
+        currentSceneState.messages.push(completionMessage);
+        
+        // Send final SSE update
+        res.write(`data: ${JSON.stringify({ message: completionMessage, event: 'scene_end' })}\n\n`);
     } catch (error) {
         logger.error(`Error during scene ${scene.id} execution:`, error);
         currentSceneState.error = `Scene execution failed: ${error.message}`;
+        
+        // Send error SSE update
+        res.write(`data: ${JSON.stringify({ error: currentSceneState.error })}\n\n`);
     } finally {
         isExecuting = false;
         await stopAllParts();
         await soundController.stopAllSounds();
         logger.info(`Scene ${scene.id} cleanup completed`);
-        currentSceneState.messages.push('Scene cleanup completed');
+        const cleanupMessage = 'Scene cleanup completed';
+        currentSceneState.messages.push(cleanupMessage);
+        
+        // Send final cleanup SSE update
+        res.write(`data: ${JSON.stringify({ message: cleanupMessage })}\n\n`);
+        res.end();
     }
 }
 
@@ -171,6 +192,7 @@ async function executeSound(step) {
         throw error;
     }
 }
+
 async function executeMotor(step) {
     logger.info(`Executing motor step: ${step.name}`);
     try {

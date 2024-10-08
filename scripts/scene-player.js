@@ -93,6 +93,8 @@ $(document).ready(function() {
                 }
                 if (data.error) {
                     logMessage(`Error: ${data.error}`, true);
+                    eventSource.close();
+                    resetControlButtons();
                 }
                 if (data.event === 'scene_end') {
                     logMessage("Scene execution completed");
