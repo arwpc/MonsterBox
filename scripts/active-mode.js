@@ -276,20 +276,32 @@ $(document).ready(function() {
             console.log(`Starting execution of scene ${sceneId}`);
             const eventSource = new EventSource(`/scenes/${sceneId}/play`);
 
+            eventSource.onopen = function(event) {
+                console.log(`SSE connection opened for scene ${sceneId}`);
+                logArmedModeOutput(`SSE connection opened for scene ${sceneId}`);
+            };
+
             eventSource.onmessage = function(event) {
-                const data = JSON.parse(event.data);
-                console.log(`Received SSE data:`, data);
-                handleSceneUpdate(data);
+                console.log(`Received SSE data for scene ${sceneId}:`, event.data);
+                try {
+                    const data = JSON.parse(event.data);
+                    handleSceneUpdate(data);
+                } catch (error) {
+                    console.error(`Error parsing SSE data for scene ${sceneId}:`, error);
+                    logArmedModeOutput(`Error parsing SSE data for scene ${sceneId}: ${error.message}`, 'error');
+                }
             };
 
             eventSource.onerror = function(error) {
-                console.error(`SSE Error:`, error);
+                console.error(`SSE Error for scene ${sceneId}:`, error);
                 eventSource.close();
-                reject(new Error(`SSE Error: ${error.type}`));
+                logArmedModeOutput(`SSE Error for scene ${sceneId}: ${error.type}`, 'error');
+                reject(new Error(`SSE Error for scene ${sceneId}: ${error.type}`));
             };
 
             eventSource.addEventListener('scene_end', function(event) {
                 console.log(`Scene ${sceneId} completed`);
+                logArmedModeOutput(`Scene ${sceneId} completed`);
                 eventSource.close();
                 resolve();
             });
