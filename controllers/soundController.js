@@ -13,10 +13,22 @@ function startSoundPlayer() {
         if (!soundPlayerProcess) {
             const scriptPath = path.resolve(__dirname, '..', 'scripts', 'sound_player.py');
             logger.info(`Starting sound player: ${scriptPath}`);
-            soundPlayerProcess = spawn('python3', [scriptPath]);
+            soundPlayerProcess = spawn('python3', [scriptPath], {
+                stdio: ['pipe', 'pipe', 'pipe']
+            });
 
             soundPlayerProcess.stdout.on('data', (data) => {
                 logger.info(`Sound player output: ${data}`);
+                try {
+                    const jsonOutput = JSON.parse(data);
+                    if (jsonOutput.status === 'ready') {
+                        logger.info('Sound player is ready');
+                        resolve();
+                    }
+                } catch (error) {
+                    // Not JSON data, just log it
+                    logger.debug(`Non-JSON output from sound player: ${data}`);
+                }
             });
 
             soundPlayerProcess.stderr.on('data', (data) => {
@@ -41,16 +53,13 @@ function startSoundPlayer() {
                 }
             });
 
-            // Wait for the process to start
+            // Set a timeout in case the 'ready' message is not received
             setTimeout(() => {
                 if (soundPlayerProcess) {
-                    logger.info('Sound player started successfully');
+                    logger.warn('Sound player did not send ready message within timeout period');
                     resolve();
-                } else {
-                    logger.error('Sound player failed to start within the timeout period');
-                    reject(new Error('Sound player failed to start'));
                 }
-            }, 5000); // Increased timeout to 5 seconds
+            }, 10000); // 10 seconds timeout
         } else {
             resolve();
         }
@@ -76,10 +85,18 @@ function playSound(soundId, filePath) {
                 if (jsonOutput.status === 'playing' && jsonOutput.sound_id === soundId) {
                     soundPlayerProcess.stdout.removeListener('data', listener);
                     logger.info(`Sound started playing: ${soundId}`);
+                    resolve({ success: true, duration: 0 }); // We'll update duration when the sound finishes
+                } else if (jsonOutput.status === 'finished' && jsonOutput.sound_id === soundId) {
+                    soundPlayerProcess.stdout.removeListener('data', listener);
+                    logger.info(`Sound finished playing: ${soundId}, duration: ${jsonOutput.duration}`);
                     resolve({ success: true, duration: jsonOutput.duration });
+                } else if (jsonOutput.status === 'error' && jsonOutput.sound_id === soundId) {
+                    soundPlayerProcess.stdout.removeListener('data', listener);
+                    logger.error(`Error playing sound ${soundId}: ${jsonOutput.message}`);
+                    reject(new Error(jsonOutput.message));
                 }
             } catch (error) {
-                logger.error(`Error parsing sound player output: ${error.message}`);
+                // Not JSON data, ignore it
             }
         };
 
@@ -90,7 +107,7 @@ function playSound(soundId, filePath) {
             soundPlayerProcess.stdout.removeListener('data', listener);
             logger.warn(`Timeout waiting for sound ${soundId} to start`);
             resolve({ success: false, duration: 0 });
-        }, 5000); // 5 seconds timeout
+        }, 10000); // 10 seconds timeout
     });
 }
 
@@ -99,9 +116,13 @@ function stopAllSounds() {
         if (soundPlayerProcess) {
             logger.info('Stopping all sounds');
             soundPlayerProcess.stdin.write("STOP_ALL\n");
-            soundPlayerProcess.kill('SIGINT');
-            soundPlayerProcess = null;
-            resolve();
+            
+            // Wait for a short time to allow the sound player to process the stop command
+            setTimeout(() => {
+                soundPlayerProcess.kill('SIGTERM');
+                soundPlayerProcess = null;
+                resolve();
+            }, 1000); // Wait for 1 second before killing the process
         } else {
             logger.info('No sound player running, consider it stopped');
             resolve();

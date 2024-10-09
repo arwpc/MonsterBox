@@ -5,6 +5,7 @@ import json
 from threading import Thread
 import os
 import subprocess
+import signal
 
 def log_message(message):
     print(json.dumps(message), flush=True)
@@ -113,7 +114,14 @@ class SoundPlayer:
             self.channels[sound_id].stop()
             log_message({"status": "stopped", "sound_id": sound_id})
 
+def signal_handler(signum, frame):
+    log_message({"status": "info", "message": f"Received signal {signum}. Exiting gracefully."})
+    sys.exit(0)
+
 if __name__ == "__main__":
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
     try:
         log_message({"status": "info", "message": "Starting SoundPlayer"})
         player = SoundPlayer()
@@ -129,6 +137,9 @@ if __name__ == "__main__":
                     Thread(target=player.play_sound, args=(sound_id, file_path)).start()
                 elif cmd == "STOP":
                     player.stop_sound(sound_id)
+            except EOFError:
+                log_message({"status": "info", "message": "Received EOF. Exiting."})
+                break
             except Exception as e:
                 log_message({"status": "error", "message": f"Command processing error: {str(e)}"})
 
