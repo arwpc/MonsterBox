@@ -243,12 +243,12 @@ $(document).ready(function() {
             if (index >= scenes.length) {
                 if ($('#loopAllScenes').is(':checked')) {
                     logArmedModeOutput('All scenes completed. Loop All Scenes is enabled. Restarting from the beginning.');
-                    index = 0;
+                    setTimeout(() => runNextScene(0), delay);
                 } else {
                     logArmedModeOutput('All scenes completed. Loop All Scenes is disabled. Disarming system.');
                     disarmSystem();
-                    return;
                 }
+                return;
             }
 
             const sceneId = scenes[index];
