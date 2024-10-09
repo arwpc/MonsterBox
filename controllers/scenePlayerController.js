@@ -229,11 +229,27 @@ async function executeMotor(step) {
             });
             process.on('close', (code) => {
                 if (code === 0) {
+                    logger.debug(`Raw motor control output: ${output}`);
                     try {
-                        const jsonOutput = JSON.parse(output);
-                        resolve(jsonOutput);
+                        const lines = output.trim().split('\n');
+                        const jsonLines = lines.map(line => JSON.parse(line));
+                        
+                        // Log all messages
+                        jsonLines.forEach(json => {
+                            if (json.log) {
+                                logger.info(`Motor control log: ${JSON.stringify(json.log)}`);
+                            }
+                        });
+
+                        // Find the result object
+                        const resultLine = jsonLines.find(json => json.result);
+                        if (resultLine && resultLine.result) {
+                            resolve(resultLine.result);
+                        } else {
+                            reject(new Error(`No valid result found in output: ${output}`));
+                        }
                     } catch (error) {
-                        reject(new Error(`Failed to parse motor control output: ${output}`));
+                        reject(new Error(`Failed to parse motor control output: ${output}. Error: ${error.message}`));
                     }
                 } else {
                     reject(new Error(`Motor control process exited with code ${code}. Error: ${errorOutput}`));

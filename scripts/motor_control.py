@@ -4,7 +4,7 @@ import time
 import json
 
 def log_message(message):
-    print(json.dumps(message), flush=True)
+    print(json.dumps({"log": message}), flush=True)
 
 def validate_inputs(direction, speed, duration):
     if direction not in ['forward', 'backward']:
@@ -70,7 +70,7 @@ if __name__ == "__main__":
     if len(sys.argv) != 6:
         error_message = "Incorrect number of arguments. Usage: python motor_control.py <direction> <speed> <duration> <dir_pin> <pwm_pin>"
         log_message({"status": "error", "message": error_message})
-        print(json.dumps({"success": False, "error": error_message}))
+        print(json.dumps({"result": {"success": False, "error": error_message}}))
         sys.exit(1)
 
     direction = sys.argv[1]
@@ -104,5 +104,5 @@ if __name__ == "__main__":
         else:
             log_message({"status": "info", "message": "GPIO was not set up, skipping cleanup"})
 
-    # Print the result as JSON
-    print(json.dumps(result))
+    # Print the final result as JSON
+    print(json.dumps({"result": result}))
