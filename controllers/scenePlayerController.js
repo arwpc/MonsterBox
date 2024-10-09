@@ -215,6 +215,7 @@ async function executeMotor(step) {
             part.dir_pin.toString(),
             part.pwm_pin.toString()
         ];
+        logger.debug(`Executing Python script: ${scriptPath} with args: ${args.join(', ')}`);
         const result = await new Promise((resolve, reject) => {
             const process = spawn('python3', [scriptPath, ...args]);
             let output = '';
@@ -228,6 +229,7 @@ async function executeMotor(step) {
                 logger.error(`Motor control error: ${data}`);
             });
             process.on('close', (code) => {
+                logger.info(`Python script exited with code ${code}`);
                 if (code === 0) {
                     logger.debug(`Raw motor control output: ${output}`);
                     try {
@@ -243,14 +245,17 @@ async function executeMotor(step) {
                             reject(new Error(`No valid result found in output: ${output}`));
                         }
                     } catch (error) {
+                        logger.error(`Failed to parse motor control output: ${output}. Error: ${error.message}`);
                         reject(new Error(`Failed to parse motor control output: ${output}. Error: ${error.message}`));
                     }
                 } else {
+                    logger.error(`Motor control process exited with code ${code}. Error: ${errorOutput}`);
                     reject(new Error(`Motor control process exited with code ${code}. Error: ${errorOutput}`));
                 }
             });
         });
         if (!result.success) {
+            logger.error(`Motor control failed: ${result.error}`);
             throw new Error(`Motor control failed: ${result.error}`);
         }
         logger.info(`Motor step executed successfully: ${step.name}`);
