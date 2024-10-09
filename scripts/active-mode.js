@@ -110,7 +110,7 @@ $(document).ready(function() {
                 displayScenes(scenes);
             })
             .fail(function(jqXHR, textStatus, errorThrown) {
-		console.error("Error fetching scenes:", textStatus, errorThrown);
+                console.error("Error fetching scenes:", textStatus, errorThrown);
                 console.error("Response text:", jqXHR.responseText);
                 handleSceneFetchError(jqXHR, textStatus, errorThrown);
             });
@@ -306,6 +306,14 @@ $(document).ready(function() {
                     status.messages.forEach(message => logArmedModeOutput(message));
                 }
 
+                // Display current step information
+                if (status.currentStep) {
+                    logArmedModeOutput(`Current Step: ${status.currentStep.name}`);
+                    if (status.currentStep.progress) {
+                        logArmedModeOutput(`Progress: ${status.currentStep.progress}`);
+                    }
+                }
+
                 // Check for errors
                 if (status.error) {
                     console.error(`Error in scene ${sceneId}:`, status.error);
@@ -317,6 +325,7 @@ $(document).ready(function() {
                 // Check if the scene is completed
                 if (status.isCompleted) {
                     console.log(`Scene ${sceneId} completed`);
+                    logArmedModeOutput(`Scene ${sceneId} completed`);
                     resolve();
                     return;
                 }
