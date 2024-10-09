@@ -6,6 +6,7 @@ $(document).ready(function() {
     let isArmed = false;
     let currentSceneId = null;
     let retryCount = 0;
+    let characterId = null;
     const MAX_RETRIES = 3;
     const POLLING_INTERVAL = 1000; // 1 second
 
@@ -33,6 +34,7 @@ $(document).ready(function() {
             const character = JSON.parse(characterData);
             console.log('Parsed character data:', character);
             if (character && character.id) {
+                characterId = character.id;
                 displayCharacterInfo(character);
                 fetchScenes(character.id);
                 fetchCharacterParts(character.id);
@@ -274,7 +276,7 @@ $(document).ready(function() {
     function runScene(sceneId) {
         return new Promise((resolve, reject) => {
             console.log(`Starting execution of scene ${sceneId}`);
-            const eventSource = new EventSource(`/scenes/${sceneId}/play?_=${Date.now()}`, {
+            const eventSource = new EventSource(`/scenes/${sceneId}/play?characterId=${characterId}&_=${Date.now()}`, {
                 withCredentials: true
             });
 
