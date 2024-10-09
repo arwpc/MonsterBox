@@ -116,6 +116,8 @@ class SoundPlayer:
 
 def signal_handler(signum, frame):
     log_message({"status": "info", "message": f"Received signal {signum}. Exiting gracefully."})
+    pygame.mixer.quit()
+    pygame.quit()
     sys.exit(0)
 
 if __name__ == "__main__":
