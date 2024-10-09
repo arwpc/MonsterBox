@@ -1,17 +1,17 @@
-const scenePlayerController = require('../controllers/scenePlayerController');
-const soundService = require('../services/soundService');
-const partService = require('../services/partService');
-
-// Override the logger to use console only
-const logger = {
+// Override the logger module
+const mockLogger = {
     info: (message) => console.log(`[INFO] ${message}`),
     error: (message) => console.error(`[ERROR] ${message}`),
     debug: (message) => console.log(`[DEBUG] ${message}`),
     warn: (message) => console.warn(`[WARN] ${message}`)
 };
 
-// Override the default logger in scenePlayerController
-scenePlayerController.logger = logger;
+// Directly override the logger module
+require.cache[require.resolve('../scripts/logger')].exports = mockLogger;
+
+const scenePlayerController = require('../controllers/scenePlayerController');
+const soundService = require('../services/soundService');
+const partService = require('../services/partService');
 
 async function testSceneExecution() {
     // First, let's get an actual sound file from the database
