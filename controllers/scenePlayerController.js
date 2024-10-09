@@ -1,5 +1,3 @@
-// File: controllers/scenePlayerController.js
-
 const sceneService = require('../services/sceneService');
 const partService = require('../services/partService');
 const soundService = require('../services/soundService');
@@ -101,8 +99,12 @@ const scenePlayerController = {
         } catch (error) {
             logger.error(`Error during scene execution:`, error);
             sendSSEMessage(res, { error: `Scene execution failed: ${error.message}` });
-            res.end();
         }
+
+        // Keep the connection open
+        req.on('close', () => {
+            logger.info('Client closed the connection');
+        });
     },
 
     getSceneStatus: (req, res) => {
@@ -196,8 +198,6 @@ async function executeScene(scene, startStep, res) {
         // Send final cleanup SSE update
         sendSSEMessage(res, { message: cleanupMessage });
         logger.info('Sent cleanup SSE update');
-        res.end();
-        logger.info('SSE connection closed');
     }
 }
 
