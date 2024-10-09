@@ -206,16 +206,13 @@ async function executeSound(step) {
         }
         const filePath = path.resolve(__dirname, '..', 'public', 'sounds', sound.filename);
         const playResult = await soundController.playSound(sound.id, filePath);
-        logger.info(`Sound played: ${sound.name}, Result: ${JSON.stringify(playResult)}`);
+        logger.info(`Sound started playing: ${sound.name}, Result: ${JSON.stringify(playResult)}`);
 
-        if (!step.concurrent) {
-            // Wait for the sound to finish playing only if it's not concurrent
-            if (playResult && playResult.duration) {
-                await new Promise(resolve => setTimeout(resolve, playResult.duration * 1000));
-            } else {
-                logger.warn(`Sound duration not available, using step duration: ${step.duration}`);
-                await new Promise(resolve => setTimeout(resolve, step.duration));
-            }
+        if (!step.concurrent && playResult.success && playResult.duration) {
+            // For non-concurrent steps, we'll wait for the duration of the sound
+            // This is just to ensure the step doesn't complete immediately
+            // The actual sound will continue playing in the background
+            await new Promise(resolve => setTimeout(resolve, playResult.duration * 1000));
         }
 
         logger.info(`Sound step completed: ${step.name}`);

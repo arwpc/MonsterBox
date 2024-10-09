@@ -73,9 +73,9 @@ function playSound(soundId, filePath) {
             const output = data.toString().trim();
             try {
                 const jsonOutput = JSON.parse(output);
-                if (jsonOutput.status === 'finished' && jsonOutput.sound_id === soundId) {
+                if (jsonOutput.status === 'playing' && jsonOutput.sound_id === soundId) {
                     soundPlayerProcess.stdout.removeListener('data', listener);
-                    logger.info(`Sound completed: ${soundId}, Duration: ${jsonOutput.duration}`);
+                    logger.info(`Sound started playing: ${soundId}`);
                     resolve({ success: true, duration: jsonOutput.duration });
                 }
             } catch (error) {
@@ -88,9 +88,9 @@ function playSound(soundId, filePath) {
         // Add a timeout in case the sound player doesn't respond
         setTimeout(() => {
             soundPlayerProcess.stdout.removeListener('data', listener);
-            logger.warn(`Timeout waiting for sound ${soundId} to complete`);
+            logger.warn(`Timeout waiting for sound ${soundId} to start`);
             resolve({ success: false, duration: 0 });
-        }, 30000); // 30 seconds timeout
+        }, 5000); // 5 seconds timeout
     });
 }
 
