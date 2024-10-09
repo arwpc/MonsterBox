@@ -35,7 +35,7 @@ $(document).ready(function() {
             if (character && character.id) {
                 displayCharacterInfo(character);
                 fetchScenes(character.id);
-                fetchPartsAndSounds(character.id);
+                fetchCharacterParts(character.id);
             } else {
                 console.error('Invalid character data:', character);
                 $('#debugInfo').append('<p>Error: Invalid character data</p>');
@@ -58,32 +58,26 @@ $(document).ready(function() {
         }
     }
 
-    function fetchPartsAndSounds(characterId) {
-        console.log('Fetching parts and sounds');
-        $.get(`/active-mode/character/${characterId}/parts-and-sounds`, function(data) {
-            displayPartsAndSounds(data);
+    function fetchCharacterParts(characterId) {
+        console.log('Fetching character parts');
+        $.get(`/active-mode/character/${characterId}/parts`, function(data) {
+            displayCharacterParts(data);
         }).fail(function(jqXHR, textStatus, errorThrown) {
-            console.error("Error fetching parts and sounds:", textStatus, errorThrown);
-            $('#partsAndSounds').html('<p>Failed to load parts and sounds information. Please try again.</p>');
-            $('#debugInfo').append(`<p>Error fetching parts and sounds: ${textStatus} - ${errorThrown}</p>`);
+            console.error("Error fetching character parts:", textStatus, errorThrown);
+            $('#characterParts').html('<p>Failed to load character parts information. Please try again.</p>');
+            $('#debugInfo').append(`<p>Error fetching character parts: ${textStatus} - ${errorThrown}</p>`);
         });
     }
 
-    function displayPartsAndSounds(data) {
-        console.log('Displaying parts and sounds');
-        let partsHtml = '<h4>Parts:</h4><ul>';
-        data.parts.forEach(part => {
+    function displayCharacterParts(parts) {
+        console.log('Displaying character parts');
+        let partsHtml = '<h4>Character Parts:</h4><ul>';
+        parts.forEach(part => {
             partsHtml += `<li>${part.part_name} (${part.part_type})</li>`;
         });
         partsHtml += '</ul>';
 
-        let soundsHtml = '<h4>Sounds:</h4><ul>';
-        data.sounds.forEach(sound => {
-            soundsHtml += `<li>${sound.sound_name}</li>`;
-        });
-        soundsHtml += '</ul>';
-
-        $('#partsAndSounds').html(partsHtml + soundsHtml);
+        $('#characterParts').html(partsHtml);
     }
 
     function fetchScenes(characterId) {

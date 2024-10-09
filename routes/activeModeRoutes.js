@@ -61,26 +61,24 @@ router.get('/character/:id/scenes', async (req, res) => {
     }
 });
 
-router.get('/character/:id/parts-and-sounds', async (req, res) => {
+router.get('/character/:id/parts', async (req, res) => {
     try {
         const characterId = parseInt(req.params.id);
-        logger.info(`Fetching parts and sounds for character ID: ${characterId}`);
-        const [character, parts, sounds] = await Promise.all([
+        logger.info(`Fetching parts for character ID: ${characterId}`);
+        const [character, parts] = await Promise.all([
             characterService.getCharacterById(characterId),
-            partService.getPartsByCharacter(characterId),
-            soundService.getSoundsByCharacter(characterId)
+            partService.getPartsByCharacter(characterId)
         ]);
         if (!character) {
             logger.warn(`Character not found for ID: ${characterId}`);
             return res.status(404).json({ error: 'Character not found' });
         }
-        logger.info(`Successfully fetched ${parts.length} parts and ${sounds.length} sounds for character: ${character.char_name} (ID: ${character.id})`);
+        logger.info(`Successfully fetched ${parts.length} parts for character: ${character.char_name} (ID: ${character.id})`);
         logger.debug(`Parts data: ${JSON.stringify(parts)}`);
-        logger.debug(`Sounds data: ${JSON.stringify(sounds)}`);
-        res.json({ parts, sounds });
+        res.json(parts);
     } catch (error) {
-        logger.error('Error fetching parts and sounds for character:', { error: error.message, stack: error.stack, characterId: req.params.id });
-        res.status(500).json({ error: 'Failed to fetch parts and sounds for character' });
+        logger.error('Error fetching parts for character:', { error: error.message, stack: error.stack, characterId: req.params.id });
+        res.status(500).json({ error: 'Failed to fetch parts for character' });
     }
 });
 
