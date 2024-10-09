@@ -110,6 +110,8 @@ async function executeScene(scene, startStep, res) {
     try {
         await soundController.startSoundPlayer();
 
+        const concurrentPromises = [];
+
         for (let i = startStep; i < scene.steps.length && isExecuting; i++) {
             const step = scene.steps[i];
             currentSceneState.currentStep = i;
@@ -120,13 +122,29 @@ async function executeScene(scene, startStep, res) {
             res.write(`data: ${JSON.stringify({ message, currentStep: i })}\n\n`);
 
             try {
-                await executeStep(scene.id, step);
+                const stepPromise = executeStep(scene.id, step);
+                
+                if (step.concurrent) {
+                    concurrentPromises.push(stepPromise);
+                } else {
+                    // Wait for all concurrent steps to finish before executing the next non-concurrent step
+                    if (concurrentPromises.length > 0) {
+                        await Promise.all(concurrentPromises);
+                        concurrentPromises.length = 0;
+                    }
+                    await stepPromise;
+                }
             } catch (stepError) {
                 logger.error(`Error executing step ${i + 1}: ${stepError.message}`);
                 res.write(`data: ${JSON.stringify({ error: `Error in step ${i + 1}: ${stepError.message}` })}\n\n`);
                 // Continue with the next step instead of stopping the entire scene
                 continue;
             }
+        }
+
+        // Wait for any remaining concurrent steps to finish
+        if (concurrentPromises.length > 0) {
+            await Promise.all(concurrentPromises);
         }
 
         currentSceneState.isCompleted = true;
@@ -190,12 +208,14 @@ async function executeSound(step) {
         const playResult = await soundController.playSound(sound.id, filePath);
         logger.info(`Sound played: ${sound.name}, Result: ${JSON.stringify(playResult)}`);
 
-        // Wait for the sound to finish playing
-        if (playResult && playResult.duration) {
-            await new Promise(resolve => setTimeout(resolve, playResult.duration * 1000));
-        } else {
-            logger.warn(`Sound duration not available, using step duration: ${step.duration}`);
-            await new Promise(resolve => setTimeout(resolve, step.duration));
+        if (!step.concurrent) {
+            // Wait for the sound to finish playing only if it's not concurrent
+            if (playResult && playResult.duration) {
+                await new Promise(resolve => setTimeout(resolve, playResult.duration * 1000));
+            } else {
+                logger.warn(`Sound duration not available, using step duration: ${step.duration}`);
+                await new Promise(resolve => setTimeout(resolve, step.duration));
+            }
         }
 
         logger.info(`Sound step completed: ${step.name}`);
