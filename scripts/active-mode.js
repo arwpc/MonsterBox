@@ -84,9 +84,10 @@ $(document).ready(function() {
             parts.forEach(part => {
                 console.log('Processing part:', part);
                 partsHtml += `<li>
-                    <strong>${part.part_name || 'Unnamed Part'}</strong> (${part.part_type || 'Unknown Type'})
-                    <br>Description: ${part.part_description || 'N/A'}
-                    <br>Pin: ${part.pin || 'N/A'}
+                    <strong>${part.name || 'Unnamed Part'}</strong> (${part.type || 'Unknown Type'})
+                    <br>Description: ${part.description || 'N/A'}
+                    <br>Direction Pin: ${part.directionPin || 'N/A'}
+                    <br>Speed Pin: ${part.speedPin || 'N/A'}
                 </li>`;
             });
             partsHtml += '</ul>';
