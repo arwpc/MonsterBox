@@ -19,10 +19,8 @@ $(document).ready(function() {
     $('#disarmButton').click(disarmSystem);
     $('#sceneDelay').on('input', updateSceneTimeline);
 
-    // Show scene selection area by default
     $('#sceneSelectionArea').show();
 
-    // Load character information on page load
     loadCharacterInfo();
 
     function loadCharacterInfo() {
@@ -233,23 +231,31 @@ $(document).ready(function() {
         const delay = parseInt($('#sceneDelay').val()) * 1000 || 5000;
 
         function runNextScene(index) {
-            if (!isArmed) return;
+            if (!isArmed) {
+                logArmedModeOutput('System disarmed. Stopping Active Mode loop.');
+                return;
+            }
+            
             if (index >= scenes.length) {
                 if ($('#loopAllScenes').is(':checked')) {
-                    index = 0; // Reset to the beginning of the list if looping is enabled
-                    logArmedModeOutput('Looping back to the first scene');
+                    logArmedModeOutput('All scenes completed. Looping back to the first scene.');
+                    index = 0;
                 } else {
                     logArmedModeOutput('All scenes completed. Disarming system.');
                     disarmSystem();
                     return;
                 }
             }
+
             const sceneId = scenes[index];
             logArmedModeOutput(`Starting execution of scene ${sceneId}`);
+            
             runScene(sceneId).then(() => {
                 logArmedModeOutput(`Completed execution of scene ${sceneId}`);
-                retryCount = 0; // Reset retry count on successful execution
-                setTimeout(() => runNextScene(index + 1), delay);
+                retryCount = 0;
+                if (isArmed) {
+                    setTimeout(() => runNextScene(index + 1), delay);
+                }
             }).catch((error) => {
                 logArmedModeOutput(`Error executing scene ${sceneId}: ${error.message}`);
                 if (retryCount < MAX_RETRIES) {
@@ -257,7 +263,7 @@ $(document).ready(function() {
                     logArmedModeOutput(`Retrying scene ${sceneId} (Attempt ${retryCount} of ${MAX_RETRIES})`);
                     setTimeout(() => runNextScene(index), delay);
                 } else {
-                    retryCount = 0; // Reset retry count
+                    retryCount = 0;
                     logArmedModeOutput(`Max retries reached for scene ${sceneId}. Moving to next scene.`);
                     setTimeout(() => runNextScene(index + 1), delay);
                 }
