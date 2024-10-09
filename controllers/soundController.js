@@ -69,17 +69,28 @@ function playSound(soundId, filePath) {
         logger.info(`Sending play command: ${command.trim()}`);
         soundPlayerProcess.stdin.write(command);
 
-        // Here we're assuming the sound player will send a "FINISHED" message when done
         const listener = (data) => {
             const output = data.toString().trim();
-            if (output.includes('FINISHED')) {
-                soundPlayerProcess.stdout.removeListener('data', listener);
-                logger.info(`Sound completed: ${soundId}`);
-                resolve();
+            try {
+                const jsonOutput = JSON.parse(output);
+                if (jsonOutput.status === 'finished' && jsonOutput.sound_id === soundId) {
+                    soundPlayerProcess.stdout.removeListener('data', listener);
+                    logger.info(`Sound completed: ${soundId}, Duration: ${jsonOutput.duration}`);
+                    resolve({ success: true, duration: jsonOutput.duration });
+                }
+            } catch (error) {
+                logger.error(`Error parsing sound player output: ${error.message}`);
             }
         };
 
         soundPlayerProcess.stdout.on('data', listener);
+
+        // Add a timeout in case the sound player doesn't respond
+        setTimeout(() => {
+            soundPlayerProcess.stdout.removeListener('data', listener);
+            logger.warn(`Timeout waiting for sound ${soundId} to complete`);
+            resolve({ success: false, duration: 0 });
+        }, 30000); // 30 seconds timeout
     });
 }
 

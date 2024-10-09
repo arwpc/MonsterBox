@@ -127,10 +127,6 @@ async function executeScene(scene, startStep, res) {
                 // Continue with the next step instead of stopping the entire scene
                 continue;
             }
-
-            if (step.type === 'sound' && !step.concurrent) {
-                await new Promise(resolve => setTimeout(resolve, step.duration));
-            }
         }
 
         currentSceneState.isCompleted = true;
@@ -191,8 +187,18 @@ async function executeSound(step) {
             throw new Error(`Sound not found for ID: ${step.sound_id}`);
         }
         const filePath = path.resolve(__dirname, '..', 'public', 'sounds', sound.filename);
-        await soundController.playSound(sound.id, filePath);
-        logger.info(`Sound played: ${sound.name}`);
+        const playResult = await soundController.playSound(sound.id, filePath);
+        logger.info(`Sound played: ${sound.name}, Result: ${JSON.stringify(playResult)}`);
+
+        // Wait for the sound to finish playing
+        if (playResult && playResult.duration) {
+            await new Promise(resolve => setTimeout(resolve, playResult.duration * 1000));
+        } else {
+            logger.warn(`Sound duration not available, using step duration: ${step.duration}`);
+            await new Promise(resolve => setTimeout(resolve, step.duration));
+        }
+
+        logger.info(`Sound step completed: ${step.name}`);
         return true;
     } catch (error) {
         logger.error(`Error executing sound step: ${error.message}`);
