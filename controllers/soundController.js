@@ -15,16 +15,18 @@ function startSoundPlayer() {
                 stdio: ['pipe', 'pipe', 'pipe']
             });
 
+            let readyReceived = false;
+
             soundPlayerProcess.stdout.on('data', (data) => {
                 logger.info(`Sound player output: ${data}`);
                 try {
                     const jsonOutput = JSON.parse(data);
                     if (jsonOutput.status === 'ready') {
                         logger.info('Sound player is ready');
+                        readyReceived = true;
                         resolve();
                     }
                 } catch (error) {
-                    // Not JSON data, just log it
                     logger.debug(`Non-JSON output from sound player: ${data}`);
                 }
             });
@@ -51,13 +53,12 @@ function startSoundPlayer() {
                 }
             });
 
-            // Set a timeout in case the 'ready' message is not received
             setTimeout(() => {
-                if (soundPlayerProcess) {
+                if (!readyReceived) {
                     logger.warn('Sound player did not send ready message within timeout period');
                     resolve();
                 }
-            }, 10000); // 10 seconds timeout
+            }, 15000);
         } else {
             resolve();
         }
@@ -83,7 +84,7 @@ function playSound(soundId, filePath) {
                 if (jsonOutput.status === 'playing' && jsonOutput.sound_id === soundId) {
                     soundPlayerProcess.stdout.removeListener('data', listener);
                     logger.info(`Sound started playing: ${soundId}`);
-                    resolve({ success: true, duration: 0 }); // We'll update duration when the sound finishes
+                    resolve({ success: true, duration: 0 });
                 } else if (jsonOutput.status === 'finished' && jsonOutput.sound_id === soundId) {
                     soundPlayerProcess.stdout.removeListener('data', listener);
                     logger.info(`Sound finished playing: ${soundId}, duration: ${jsonOutput.duration}`);
@@ -94,18 +95,17 @@ function playSound(soundId, filePath) {
                     reject(new Error(jsonOutput.message));
                 }
             } catch (error) {
-                // Not JSON data, ignore it
+                logger.debug(`Non-JSON output from sound player: ${output}`);
             }
         };
 
         soundPlayerProcess.stdout.on('data', listener);
 
-        // Add a timeout in case the sound player doesn't respond
         setTimeout(() => {
             soundPlayerProcess.stdout.removeListener('data', listener);
             logger.warn(`Timeout waiting for sound ${soundId} to start`);
             resolve({ success: false, duration: 0 });
-        }, 10000); // 10 seconds timeout
+        }, 10000);
     });
 }
 
@@ -115,12 +115,12 @@ function stopAllSounds() {
             logger.info('Stopping all sounds');
             soundPlayerProcess.stdin.write("STOP_ALL\n");
             
-            // Wait for a short time to allow the sound player to process the stop command
             setTimeout(() => {
                 soundPlayerProcess.kill('SIGTERM');
                 soundPlayerProcess = null;
+                soundPlayerRetries = 0;
                 resolve();
-            }, 1000); // Wait for 1 second before killing the process
+            }, 1000);
         } else {
             logger.info('No sound player running, consider it stopped');
             resolve();
