@@ -231,28 +231,19 @@ async function executeMotor(step) {
                 if (code === 0) {
                     logger.debug(`Raw motor control output: ${output}`);
                     try {
-                        const lines = output.trim().split('\n');
-                        let finalResult = null;
-                        lines.forEach(line => {
-                            try {
-                                const json = JSON.parse(line);
-                                if (json.log) {
-                                    logger.info(`Motor control log: ${JSON.stringify(json.log)}`);
-                                } else if (json.result) {
-                                    finalResult = json.result;
-                                }
-                            } catch (error) {
-                                logger.warn(`Failed to parse line: ${line}. Error: ${error.message}`);
-                            }
-                        });
-
-                        if (finalResult) {
-                            resolve(finalResult);
+                        const jsonOutput = JSON.parse(output);
+                        if (jsonOutput.logs) {
+                            jsonOutput.logs.forEach(log => {
+                                logger.info(`Motor control log: ${JSON.stringify(log)}`);
+                            });
+                        }
+                        if (jsonOutput.result) {
+                            resolve(jsonOutput.result);
                         } else {
                             reject(new Error(`No valid result found in output: ${output}`));
                         }
                     } catch (error) {
-                        reject(new Error(`Failed to process motor control output: ${output}. Error: ${error.message}`));
+                        reject(new Error(`Failed to parse motor control output: ${output}. Error: ${error.message}`));
                     }
                 } else {
                     reject(new Error(`Motor control process exited with code ${code}. Error: ${errorOutput}`));

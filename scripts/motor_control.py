@@ -4,7 +4,8 @@ import time
 import json
 
 def log_message(message):
-    print(json.dumps({"log": message}), flush=True)
+    # Instead of printing, we'll add to a list of log messages
+    log_messages.append(message)
 
 def validate_inputs(direction, speed, duration):
     if direction not in ['forward', 'backward']:
@@ -67,10 +68,12 @@ def control_motor(direction, speed, duration, dir_pin, pwm_pin):
             log_message({"status": "info", "message": "PWM stopped"})
 
 if __name__ == "__main__":
+    log_messages = []
+    
     if len(sys.argv) != 6:
         error_message = "Incorrect number of arguments. Usage: python motor_control.py <direction> <speed> <duration> <dir_pin> <pwm_pin>"
         log_message({"status": "error", "message": error_message})
-        print(json.dumps({"result": {"success": False, "error": error_message}}))
+        print(json.dumps({"success": False, "error": error_message, "logs": log_messages}))
         sys.exit(1)
 
     direction = sys.argv[1]
@@ -104,5 +107,5 @@ if __name__ == "__main__":
         else:
             log_message({"status": "info", "message": "GPIO was not set up, skipping cleanup"})
 
-    # Print the final result as JSON
-    print(json.dumps({"result": result}))
+    # Print a single JSON object containing both the result and logs
+    print(json.dumps({"result": result, "logs": log_messages}))
