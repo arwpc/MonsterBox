@@ -45,11 +45,17 @@ const scenePlayerController = {
 
     playScene: async (req, res) => {
         const sceneId = req.params.id;
-        const characterId = req.query.characterId;
+        const characterId = req.query.characterId || req.session.characterId;
         const startStep = parseInt(req.query.startStep) || 0;
         logger.info(`Attempting to play scene with ID: ${sceneId} for character ${characterId} from step ${startStep}`);
         logger.debug(`Request headers: ${JSON.stringify(req.headers)}`);
+        logger.debug(`Session: ${JSON.stringify(req.session)}`);
         
+        if (!characterId) {
+            logger.warn(`No character ID provided for scene ${sceneId}`);
+            return res.status(400).json({ error: 'Character ID is required' });
+        }
+
         let scene;
         try {
             scene = await sceneService.getSceneById(sceneId);
@@ -57,7 +63,7 @@ const scenePlayerController = {
                 logger.warn(`Scene ${sceneId} not found`);
                 return res.status(404).json({ error: 'Scene not found' });
             }
-            if (scene.character_id.toString() !== characterId) {
+            if (scene.character_id.toString() !== characterId.toString()) {
                 logger.warn(`Scene ${sceneId} does not belong to character ${characterId}`);
                 return res.status(403).json({ error: 'Scene does not belong to this character' });
             }
