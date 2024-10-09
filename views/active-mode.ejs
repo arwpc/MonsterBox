@@ -183,7 +183,6 @@
         <div class="character-section">
             <img id="characterImage" class="character-image" src="<%= character && character.image ? `/images/characters/${character.image}` : '/images/placeholder.jpg' %>" alt="<%= character ? character.char_name : 'Placeholder Image' %>">
             <div class="character-info">
-                <h2>Selected Character</h2>
                 <div id="characterInfo">
                     <% if (character) { %>
                         <h3><%= character.char_name %></h3>
