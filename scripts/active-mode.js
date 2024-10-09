@@ -274,75 +274,59 @@ $(document).ready(function() {
     function runScene(sceneId) {
         return new Promise((resolve, reject) => {
             console.log(`Starting execution of scene ${sceneId}`);
-            $.post(`/scenes/${sceneId}/play`)
-                .done(function(response) {
-                    console.log(`Scene ${sceneId} execution started:`, response);
-                    if (response.message === 'Scene execution started') {
-                        currentSceneId = sceneId;
-                        pollSceneStatus(sceneId, resolve, reject);
-                    } else {
-                        reject(new Error(`Unexpected response: ${JSON.stringify(response)}`));
-                    }
-                })
-                .fail(function(jqXHR, textStatus, errorThrown) {
-                    console.error(`Failed to start scene ${sceneId}:`, textStatus, errorThrown);
-                    reject(new Error(`Failed to start scene ${sceneId}: ${errorThrown}`));
-                });
+            const eventSource = new EventSource(`/scenes/${sceneId}/play`);
+
+            eventSource.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                console.log(`Received SSE data:`, data);
+                handleSceneUpdate(data);
+            };
+
+            eventSource.onerror = function(error) {
+                console.error(`SSE Error:`, error);
+                eventSource.close();
+                reject(new Error(`SSE Error: ${error.type}`));
+            };
+
+            eventSource.addEventListener('scene_end', function(event) {
+                console.log(`Scene ${sceneId} completed`);
+                eventSource.close();
+                resolve();
+            });
+
+            currentSceneId = sceneId;
         });
     }
 
-    function pollSceneStatus(sceneId, resolve, reject) {
-        if (currentSceneId !== sceneId) {
-            console.log(`Polling stopped for scene ${sceneId}`);
-            return;
+    function handleSceneUpdate(data) {
+        if (data.message) {
+            logArmedModeOutput(data.message);
         }
-
-        $.get(`/scenes/${sceneId}/status`)
-            .done(function(status) {
-                console.log(`Scene ${sceneId} status:`, status);
-                
-                // Process any new messages
-                if (status.messages && status.messages.length > 0) {
-                    status.messages.forEach(message => logArmedModeOutput(message));
-                }
-
-                // Display current step information
-                if (status.currentStep) {
-                    logArmedModeOutput(`Current Step: ${status.currentStep.name}`);
-                    if (status.currentStep.progress) {
-                        logArmedModeOutput(`Progress: ${status.currentStep.progress}`);
-                    }
-                }
-
-                // Check for errors
-                if (status.error) {
-                    console.error(`Error in scene ${sceneId}:`, status.error);
-                    logArmedModeOutput(`Error: ${status.error}`);
-                    reject(new Error(status.error));
-                    return;
-                }
-
-                // Check if the scene is completed
-                if (status.isCompleted) {
-                    console.log(`Scene ${sceneId} completed`);
-                    logArmedModeOutput(`Scene ${sceneId} completed`);
-                    resolve();
-                    return;
-                }
-
-                // Continue polling
-                setTimeout(() => pollSceneStatus(sceneId, resolve, reject), POLLING_INTERVAL);
-            })
-            .fail(function(jqXHR, textStatus, errorThrown) {
-                console.error(`Failed to get status for scene ${sceneId}:`, textStatus, errorThrown);
-                logArmedModeOutput(`Error getting scene status: ${errorThrown}`);
-                reject(new Error(`Failed to get status for scene ${sceneId}: ${errorThrown}`));
-            });
+        if (data.currentStep !== undefined) {
+            logArmedModeOutput(`Current Step: ${data.currentStep}`);
+        }
+        if (data.progress) {
+            logArmedModeOutput(`Progress: ${data.progress}`);
+        }
+        if (data.error) {
+            logArmedModeOutput(`Error: ${data.error}`, 'error');
+        }
     }
 
-    function logArmedModeOutput(message) {
+    function logArmedModeOutput(message, type = 'info') {
         const timestamp = new Date().toLocaleTimeString();
-        $('#armedModeOutput').append(`<p>[${timestamp}] ${message}</p>`);
+        let cssClass = '';
+        switch (type) {
+            case 'error':
+                cssClass = 'text-danger';
+                break;
+            case 'warning':
+                cssClass = 'text-warning';
+                break;
+            default:
+                cssClass = 'text-info';
+        }
+        $('#armedModeOutput').append(`<p class="${cssClass}">[${timestamp}] ${message}</p>`);
         $('#armedModeOutput').scrollTop($('#armedModeOutput')[0].scrollHeight);
     }
 });
