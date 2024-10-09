@@ -121,54 +121,56 @@
             testStatus.textContent = 'Testing...';
             testOutput.textContent = '';
 
-            let testData = { 
-                id: partId,
-                type: type,
-                characterId: characterId
-            };
+            let script = '';
+            let args = [];
 
             switch (type) {
                 case 'motor':
                 case 'linear-actuator':
-                    testData.direction = 'forward';
-                    testData.speed = 50;
-                    testData.duration = 1000;
+                    script = 'motor_control.py';
+                    args = ['forward', '50', '1000', document.getElementById('directionPin').value, document.getElementById('pwmPin').value];
                     break;
                 case 'light':
                 case 'led':
-                    testData.state = 'on';
-                    testData.duration = 1000;
+                    script = 'light_control.py';
+                    args = ['on', '1000', document.getElementById('gpioPin').value];
                     if (type === 'led') {
-                        testData.brightness = 50;
+                        args.push('50'); // brightness
                     }
                     break;
                 case 'servo':
-                    testData.angle = 90;
-                    testData.duration = 1000;
+                    script = 'servo_control.py';
+                    args = ['90', '50', '1000', document.getElementById('gpioPin').value];
                     break;
                 case 'sensor':
-                    testData.timeout = 5;
+                    script = 'sensor_control.py';
+                    args = [document.getElementById('gpioPin').value, '5'];
                     break;
+                default:
+                    testStatus.textContent = 'Error: Unknown part type';
+                    return;
             }
 
-            axios.post('/parts/test', testData)
+            axios.post('/execute-python-script', { script, args })
                 .then(function (response) {
                     console.log('Test response:', response.data);
                     if (response.data.success) {
                         testStatus.textContent = 'Test completed successfully';
-                        testOutput.textContent = response.data.output || 'No output';
+                        testOutput.textContent = JSON.stringify(response.data, null, 2);
                     } else {
                         testStatus.textContent = 'Test failed';
-                        testOutput.textContent = response.data.error || 'Unknown error';
+                        testOutput.textContent = JSON.stringify(response.data, null, 2);
                     }
                 })
                 .catch(function (error) {
                     console.error('Error testing part:', error);
                     testStatus.textContent = 'Error testing part';
-                    if (error.response && error.response.data) {
-                        testOutput.textContent = JSON.stringify(error.response.data, null, 2);
+                    if (error.response) {
+                        testOutput.textContent = `Status: ${error.response.status}\nData: ${JSON.stringify(error.response.data, null, 2)}`;
+                    } else if (error.request) {
+                        testOutput.textContent = 'No response received from server';
                     } else {
-                        testOutput.textContent = error.message || 'Unknown error';
+                        testOutput.textContent = `Error: ${error.message}`;
                     }
                 });
         }
