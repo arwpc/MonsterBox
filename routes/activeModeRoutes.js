@@ -75,6 +75,10 @@ router.get('/character/:id/parts', async (req, res) => {
         }
         logger.info(`Successfully fetched ${parts.length} parts for character: ${character.char_name} (ID: ${character.id})`);
         logger.debug(`Parts data: ${JSON.stringify(parts)}`);
+        
+        // Log the exact response being sent
+        logger.info(`Sending parts response: ${JSON.stringify(parts)}`);
+        
         res.json(parts);
     } catch (error) {
         logger.error('Error fetching parts for character:', { error: error.message, stack: error.stack, characterId: req.params.id });
