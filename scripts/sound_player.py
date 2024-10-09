@@ -55,32 +55,39 @@ class SoundPlayer:
     def __init__(self):
         log_message({"status": "info", "message": "Initializing SoundPlayer"})
         set_alsa_params()
-        try:
-            pygame.mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=4096)
-            pygame.init()
-            pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=8192)
-            log_message({"status": "info", "message": "pygame.mixer initialized successfully"})
-            
-            log_message({"status": "info", "message": f"SDL_AUDIODRIVER: {os.environ.get('SDL_AUDIODRIVER', 'Not set')}"})
-            log_message({"status": "info", "message": f"AUDIODEV: {os.environ.get('AUDIODEV', 'Not set')}"})
-            log_message({"status": "info", "message": f"Pygame audio driver: {pygame.mixer.get_init()}"})
-            log_message({"status": "info", "message": f"Pygame mixer info: {pygame.mixer.get_init()}"})
-            
-            pygame.mixer.music.set_volume(1.0)
-            log_message({"status": "info", "message": f"Volume set to: {pygame.mixer.music.get_volume()}"})
-            
-        except pygame.error as e:
-            log_message({"status": "error", "message": f"Failed to initialize pygame mixer: {str(e)}"})
-            raise
-
+        self.init_pygame_mixer(retries=3)
         self.channels = {}
         log_message({"status": "ready", "message": "SoundPlayer initialized and ready"})
+
+    def init_pygame_mixer(self, retries=3):
+        for attempt in range(retries):
+            try:
+                pygame.mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=4096)
+                pygame.init()
+                pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=8192)
+                log_message({"status": "info", "message": "pygame.mixer initialized successfully"})
+                
+                log_message({"status": "info", "message": f"SDL_AUDIODRIVER: {os.environ.get('SDL_AUDIODRIVER', 'Not set')}"})
+                log_message({"status": "info", "message": f"AUDIODEV: {os.environ.get('AUDIODEV', 'Not set')}"})
+                log_message({"status": "info", "message": f"Pygame audio driver: {pygame.mixer.get_init()}"})
+                log_message({"status": "info", "message": f"Pygame mixer info: {pygame.mixer.get_init()}"})
+                
+                pygame.mixer.music.set_volume(1.0)
+                log_message({"status": "info", "message": f"Volume set to: {pygame.mixer.music.get_volume()}"})
+                return
+            except pygame.error as e:
+                log_message({"status": "error", "message": f"Failed to initialize pygame mixer (attempt {attempt + 1}): {str(e)}"})
+                if attempt == retries - 1:
+                    raise
 
     def play_sound(self, sound_id, file_path):
         if sound_id in self.channels:
             self.channels[sound_id].stop()
         
         try:
+            if not os.path.exists(file_path):
+                raise FileNotFoundError(f"Sound file not found: {file_path}")
+            
             log_message({"status": "info", "message": f"Loading sound file: {file_path}"})
             sound = pygame.mixer.Sound(file_path)
             channel = sound.play()
@@ -94,6 +101,9 @@ class SoundPlayer:
             
             duration = end_time - start_time
             log_message({"status": "finished", "sound_id": sound_id, "file": file_path, "duration": duration})
+        except FileNotFoundError as e:
+            log_message({"status": "error", "sound_id": sound_id, "file": file_path, "message": str(e)})
+            raise
         except Exception as e:
             log_message({"status": "error", "sound_id": sound_id, "file": file_path, "message": str(e)})
             raise

@@ -218,11 +218,13 @@ async function executeMotor(step) {
         const result = await new Promise((resolve, reject) => {
             const process = spawn('python3', [scriptPath, ...args]);
             let output = '';
+            let errorOutput = '';
             process.stdout.on('data', (data) => {
                 output += data.toString();
                 logger.debug(`Motor control output: ${data}`);
             });
             process.stderr.on('data', (data) => {
+                errorOutput += data.toString();
                 logger.error(`Motor control error: ${data}`);
             });
             process.on('close', (code) => {
@@ -234,13 +236,14 @@ async function executeMotor(step) {
                         reject(new Error(`Failed to parse motor control output: ${output}`));
                     }
                 } else {
-                    reject(new Error(`Motor control process exited with code ${code}`));
+                    reject(new Error(`Motor control process exited with code ${code}. Error: ${errorOutput}`));
                 }
             });
         });
         if (!result.success) {
             throw new Error(`Motor control failed: ${result.error}`);
         }
+        logger.info(`Motor step executed successfully: ${step.name}`);
         return true;
     } catch (error) {
         logger.error(`Error executing motor step: ${error.message}`);
@@ -266,11 +269,13 @@ async function executeLinearActuator(step) {
         const result = await new Promise((resolve, reject) => {
             const process = spawn('python3', [scriptPath, ...args]);
             let output = '';
+            let errorOutput = '';
             process.stdout.on('data', (data) => {
                 output += data.toString();
                 logger.debug(`Linear actuator control output: ${data}`);
             });
             process.stderr.on('data', (data) => {
+                errorOutput += data.toString();
                 logger.error(`Linear actuator control error: ${data}`);
             });
             process.on('close', (code) => {
@@ -282,13 +287,14 @@ async function executeLinearActuator(step) {
                         reject(new Error(`Failed to parse linear actuator control output: ${output}`));
                     }
                 } else {
-                    reject(new Error(`Linear actuator control process exited with code ${code}`));
+                    reject(new Error(`Linear actuator control process exited with code ${code}. Error: ${errorOutput}`));
                 }
             });
         });
         if (!result.success) {
             throw new Error(`Linear actuator control failed: ${result.error}`);
         }
+        logger.info(`Linear actuator step executed successfully: ${step.name}`);
         return true;
     } catch (error) {
         logger.error(`Error executing linear actuator step: ${error.message}`);
@@ -313,11 +319,13 @@ async function executeServo(step) {
         const result = await new Promise((resolve, reject) => {
             const process = spawn('python3', [scriptPath, ...args]);
             let output = '';
+            let errorOutput = '';
             process.stdout.on('data', (data) => {
                 output += data.toString();
                 logger.debug(`Servo control output: ${data}`);
             });
             process.stderr.on('data', (data) => {
+                errorOutput += data.toString();
                 logger.error(`Servo control error: ${data}`);
             });
             process.on('close', (code) => {
@@ -329,13 +337,14 @@ async function executeServo(step) {
                         reject(new Error(`Failed to parse servo control output: ${output}`));
                     }
                 } else {
-                    reject(new Error(`Servo control process exited with code ${code}`));
+                    reject(new Error(`Servo control process exited with code ${code}. Error: ${errorOutput}`));
                 }
             });
         });
         if (!result.success) {
             throw new Error(`Servo control failed: ${result.error}`);
         }
+        logger.info(`Servo step executed successfully: ${step.name}`);
         return true;
     } catch (error) {
         logger.error(`Error executing servo step: ${error.message}`);
@@ -362,11 +371,13 @@ async function executeLight(step) {
         const result = await new Promise((resolve, reject) => {
             const process = spawn('python3', [scriptPath, ...args]);
             let output = '';
+            let errorOutput = '';
             process.stdout.on('data', (data) => {
                 output += data.toString();
                 logger.debug(`Light control output: ${data}`);
             });
             process.stderr.on('data', (data) => {
+                errorOutput += data.toString();
                 logger.error(`Light control error: ${data}`);
             });
             process.on('close', (code) => {
@@ -378,13 +389,14 @@ async function executeLight(step) {
                         reject(new Error(`Failed to parse light control output: ${output}`));
                     }
                 } else {
-                    reject(new Error(`Light control process exited with code ${code}`));
+                    reject(new Error(`Light control process exited with code ${code}. Error: ${errorOutput}`));
                 }
             });
         });
         if (!result.success) {
             throw new Error(`Light control failed: ${result.error}`);
         }
+        logger.info(`Light step executed successfully: ${step.name}`);
         return true;
     } catch (error) {
         logger.error(`Error executing light step: ${error.message}`);
@@ -407,6 +419,7 @@ async function executeSensor(step) {
         const result = await new Promise((resolve, reject) => {
             const process = spawn('python3', [scriptPath, ...args]);
             let output = '';
+            let errorOutput = '';
             process.stdout.on('data', (data) => {
                 output += data.toString();
                 logger.debug(`Sensor control output: ${data}`);
@@ -416,6 +429,7 @@ async function executeSensor(step) {
                 }
             });
             process.stderr.on('data', (data) => {
+                errorOutput += data.toString();
                 logger.error(`Sensor control error: ${data}`);
             });
             process.on('close', (code) => {
@@ -427,13 +441,14 @@ async function executeSensor(step) {
                         reject(new Error(`Failed to parse sensor control output: ${output}`));
                     }
                 } else {
-                    reject(new Error(`Sensor control process exited with code ${code}`));
+                    reject(new Error(`Sensor control process exited with code ${code}. Error: ${errorOutput}`));
                 }
             });
         });
         if (!result.success) {
             throw new Error(`Sensor control failed: ${result.error}`);
         }
+        logger.info(`Sensor step executed successfully: ${step.name}`);
         return result.message === 'Motion detected';
     } catch (error) {
         logger.error(`Error executing sensor step: ${error.message}`);
