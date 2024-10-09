@@ -70,12 +70,21 @@ $(document).ready(function() {
     }
 
     function displayCharacterParts(parts) {
-        console.log('Displaying character parts');
-        let partsHtml = '<h4>Character Parts:</h4><ul>';
-        parts.forEach(part => {
-            partsHtml += `<li>${part.part_name} (${part.part_type})</li>`;
-        });
-        partsHtml += '</ul>';
+        console.log('Displaying character parts:', parts);
+        let partsHtml = '<h4>Character Parts:</h4>';
+        if (parts.length === 0) {
+            partsHtml += '<p>No parts assigned to this character.</p>';
+        } else {
+            partsHtml += '<ul>';
+            parts.forEach(part => {
+                partsHtml += `<li>
+                    <strong>${part.part_name}</strong> (${part.part_type})
+                    <br>Description: ${part.part_description || 'N/A'}
+                    <br>Pin: ${part.pin || 'N/A'}
+                </li>`;
+            });
+            partsHtml += '</ul>';
+        }
 
         $('#characterParts').html(partsHtml);
     }
