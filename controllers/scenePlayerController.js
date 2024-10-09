@@ -81,8 +81,17 @@ const scenePlayerController = {
             'Connection': 'keep-alive'
         });
 
+        // Send initial message to establish SSE connection
+        res.write(`data: ${JSON.stringify({ message: 'SSE connection established' })}\n\n`);
+
         // Start scene execution in the background
-        executeScene(scene, startStep, res);
+        try {
+            await executeScene(scene, startStep, res);
+        } catch (error) {
+            logger.error(`Error during scene execution:`, error);
+            res.write(`data: ${JSON.stringify({ error: `Scene execution failed: ${error.message}` })}\n\n`);
+            res.end();
+        }
     },
 
     getSceneStatus: (req, res) => {
