@@ -48,6 +48,7 @@ const scenePlayerController = {
         const characterId = req.query.characterId;
         const startStep = parseInt(req.query.startStep) || 0;
         logger.info(`Attempting to play scene with ID: ${sceneId} for character ${characterId} from step ${startStep}`);
+        logger.debug(`Request headers: ${JSON.stringify(req.headers)}`);
         
         let scene;
         try {
@@ -75,17 +76,21 @@ const scenePlayerController = {
         };
 
         // Set up SSE
+        logger.info('Setting up SSE connection');
         res.writeHead(200, {
             'Content-Type': 'text/event-stream',
             'Cache-Control': 'no-cache',
             'Connection': 'keep-alive'
         });
+        logger.debug(`Response headers: ${JSON.stringify(res._headers)}`);
 
         // Send initial message to establish SSE connection
         res.write(`data: ${JSON.stringify({ message: 'SSE connection established' })}\n\n`);
+        logger.info('Sent initial SSE message');
 
         // Start scene execution in the background
         try {
+            logger.info('Starting scene execution');
             await executeScene(scene, startStep, res);
         } catch (error) {
             logger.error(`Error during scene execution:`, error);
@@ -129,6 +134,7 @@ async function executeScene(scene, startStep, res) {
             
             // Send SSE update
             res.write(`data: ${JSON.stringify({ message, currentStep: i })}\n\n`);
+            logger.debug(`Sent SSE update for step ${i + 1}`);
 
             try {
                 const stepPromise = executeStep(scene.id, step);
@@ -162,6 +168,7 @@ async function executeScene(scene, startStep, res) {
         
         // Send final SSE update
         res.write(`data: ${JSON.stringify({ message: completionMessage, event: 'scene_end' })}\n\n`);
+        logger.info('Sent final SSE update');
     } catch (error) {
         logger.error(`Error during scene ${scene.id} execution:`, error);
         currentSceneState.error = `Scene execution failed: ${error.message}`;
@@ -178,7 +185,9 @@ async function executeScene(scene, startStep, res) {
         
         // Send final cleanup SSE update
         res.write(`data: ${JSON.stringify({ message: cleanupMessage })}\n\n`);
+        logger.info('Sent cleanup SSE update');
         res.end();
+        logger.info('SSE connection closed');
     }
 }
 
