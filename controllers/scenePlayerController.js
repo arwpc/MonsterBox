@@ -210,7 +210,8 @@ async function executeMotor(step) {
         if (!part) {
             throw new Error(`Part not found for ID: ${step.part_id}`);
         }
-        if (typeof part.dir_pin === 'undefined' || typeof part.pwm_pin === 'undefined') {
+        logger.debug(`Part details: ${JSON.stringify(part)}`);
+        if (typeof part.directionPin === 'undefined' || typeof part.pwmPin === 'undefined') {
             throw new Error(`Invalid pin configuration for part ID: ${step.part_id}`);
         }
         const scriptPath = path.resolve(__dirname, '..', 'scripts', 'motor_control.py');
@@ -218,8 +219,8 @@ async function executeMotor(step) {
             step.direction || 'forward',
             (typeof step.speed !== 'undefined' ? step.speed : 0).toString(),
             (typeof step.duration !== 'undefined' ? step.duration : 0).toString(),
-            part.dir_pin.toString(),
-            part.pwm_pin.toString()
+            part.directionPin.toString(),
+            part.pwmPin.toString()
         ];
         logger.debug(`Executing Python script: ${scriptPath} with args: ${args.join(', ')}`);
         const result = await new Promise((resolve, reject) => {
@@ -288,8 +289,8 @@ async function executeLinearActuator(step) {
             step.direction,
             step.speed.toString(),
             step.duration.toString(),
-            part.dir_pin.toString(),
-            part.pwm_pin.toString()
+            part.directionPin.toString(),
+            part.pwmPin.toString()
         ];
         const result = await new Promise((resolve, reject) => {
             const process = spawn('python3', [scriptPath, ...args]);
@@ -339,7 +340,7 @@ async function executeServo(step) {
             step.angle.toString(),
             step.speed.toString(),
             step.duration.toString(),
-            part.pwm_pin.toString()
+            part.pwmPin.toString()
         ];
         const result = await new Promise((resolve, reject) => {
             const process = spawn('python3', [scriptPath, ...args]);
@@ -388,7 +389,7 @@ async function executeLight(step) {
         const args = [
             step.state,
             step.duration.toString(),
-            part.pin.toString()
+            part.gpioPin.toString()
         ];
         if (step.type === 'led') {
             args.push(step.brightness.toString());
@@ -438,7 +439,7 @@ async function executeSensor(step) {
         }
         const scriptPath = path.resolve(__dirname, '..', 'scripts', 'sensor_control.py');
         const args = [
-            part.pin.toString(),
+            part.gpioPin.toString(),
             step.timeout.toString()
         ];
         const result = await new Promise((resolve, reject) => {
