@@ -174,6 +174,14 @@
             border-radius: 3px;
             margin-top: 20px;
         }
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+        .checkbox-container input[type="checkbox"] {
+            margin-right: 10px;
+        }
     </style>
 </head>
 <body>
@@ -235,9 +243,12 @@
                 <button id="disarmButton" disabled class="tooltip">Disarm
                     <span class="tooltiptext">Stop executing scenes and disarm the system</span>
                 </button>
-                <button id="stopAllSteps" class="tooltip">Stop All Steps
-                    <span class="tooltiptext">Immediately stop all running steps</span>
-                </button>
+                <div class="checkbox-container">
+                    <input type="checkbox" id="loopAllScenes" name="loopAllScenes">
+                    <label for="loopAllScenes" class="tooltip">Loop All Scenes
+                        <span class="tooltiptext">When checked, all scenes will loop continuously until disarmed</span>
+                    </label>
+                </div>
             </div>
 
             <div id="armedModeOutput" class="output-section">
