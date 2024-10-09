@@ -232,24 +232,27 @@ async function executeMotor(step) {
                     logger.debug(`Raw motor control output: ${output}`);
                     try {
                         const lines = output.trim().split('\n');
-                        const jsonLines = lines.map(line => JSON.parse(line));
-                        
-                        // Log all messages
-                        jsonLines.forEach(json => {
-                            if (json.log) {
-                                logger.info(`Motor control log: ${JSON.stringify(json.log)}`);
+                        let finalResult = null;
+                        lines.forEach(line => {
+                            try {
+                                const json = JSON.parse(line);
+                                if (json.log) {
+                                    logger.info(`Motor control log: ${JSON.stringify(json.log)}`);
+                                } else if (json.result) {
+                                    finalResult = json.result;
+                                }
+                            } catch (error) {
+                                logger.warn(`Failed to parse line: ${line}. Error: ${error.message}`);
                             }
                         });
 
-                        // Find the result object
-                        const resultLine = jsonLines.find(json => json.result);
-                        if (resultLine && resultLine.result) {
-                            resolve(resultLine.result);
+                        if (finalResult) {
+                            resolve(finalResult);
                         } else {
                             reject(new Error(`No valid result found in output: ${output}`));
                         }
                     } catch (error) {
-                        reject(new Error(`Failed to parse motor control output: ${output}. Error: ${error.message}`));
+                        reject(new Error(`Failed to process motor control output: ${output}. Error: ${error.message}`));
                     }
                 } else {
                     reject(new Error(`Motor control process exited with code ${code}. Error: ${errorOutput}`));
