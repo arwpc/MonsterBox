@@ -203,15 +203,21 @@ async function executeSound(step) {
 async function executeMotor(step) {
     logger.info(`Executing motor step: ${step.name}`);
     try {
+        if (!step.part_id) {
+            throw new Error('Part ID is missing in the motor step');
+        }
         const part = await partService.getPartById(step.part_id);
         if (!part) {
             throw new Error(`Part not found for ID: ${step.part_id}`);
         }
+        if (typeof part.dir_pin === 'undefined' || typeof part.pwm_pin === 'undefined') {
+            throw new Error(`Invalid pin configuration for part ID: ${step.part_id}`);
+        }
         const scriptPath = path.resolve(__dirname, '..', 'scripts', 'motor_control.py');
         const args = [
-            step.direction,
-            step.speed.toString(),
-            step.duration.toString(),
+            step.direction || 'forward',
+            (typeof step.speed !== 'undefined' ? step.speed : 0).toString(),
+            (typeof step.duration !== 'undefined' ? step.duration : 0).toString(),
             part.dir_pin.toString(),
             part.pwm_pin.toString()
         ];
@@ -254,9 +260,13 @@ async function executeMotor(step) {
                 }
             });
         });
+        if (!result || typeof result.success === 'undefined') {
+            logger.error(`Motor control failed: ${result ? JSON.stringify(result) : 'Unknown error'}`);
+            throw new Error(`Motor control failed: ${result ? JSON.stringify(result) : 'Unknown error'}`);
+        }
         if (!result.success) {
-            logger.error(`Motor control failed: ${result.error}`);
-            throw new Error(`Motor control failed: ${result.error}`);
+            logger.error(`Motor control failed: ${result.error || 'Unknown error'}`);
+            throw new Error(`Motor control failed: ${result.error || 'Unknown error'}`);
         }
         logger.info(`Motor step executed successfully: ${step.name}`);
         return true;
