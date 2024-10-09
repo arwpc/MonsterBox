@@ -38,6 +38,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Add this line to serve files from the 'scripts' directory
 app.use('/scripts', express.static(path.join(__dirname, 'scripts')));
 
+// Use sceneRoutes before session middleware
+app.use('/scenes', sceneRoutes);
+
 // Session middleware
 app.use(session({
     secret: 'your-secret-key',
@@ -55,14 +58,13 @@ app.use((req, res, next) => {
     next();
 });
 
-// Use routes
+// Use other routes
 app.use('/parts/led', ledRoutes);
 app.use('/parts/light', lightRoutes);
 app.use('/parts/servo', servoRoutes);
 app.use('/parts/sensor', sensorRoutes);
 app.use('/parts/linear-actuator', linearActuatorRoutes);
 app.use('/parts', partRoutes.router);
-app.use('/scenes', sceneRoutes);
 app.use('/characters', characterRoutes);
 app.use('/sounds', soundRoutes);
 app.use('/active-mode', activeModeRoutes);

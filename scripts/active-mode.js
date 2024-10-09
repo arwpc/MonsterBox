@@ -274,7 +274,9 @@ $(document).ready(function() {
     function runScene(sceneId) {
         return new Promise((resolve, reject) => {
             console.log(`Starting execution of scene ${sceneId}`);
-            const eventSource = new EventSource(`/scenes/${sceneId}/play`);
+            const eventSource = new EventSource(`/scenes/${sceneId}/play?_=${Date.now()}`, {
+                withCredentials: true
+            });
 
             eventSource.onopen = function(event) {
                 console.log(`SSE connection opened for scene ${sceneId}`);
@@ -294,6 +296,8 @@ $(document).ready(function() {
 
             eventSource.onerror = function(error) {
                 console.error(`SSE Error for scene ${sceneId}:`, error);
+                console.error(`SSE ReadyState: ${eventSource.readyState}`);
+                console.error(`SSE URL: ${eventSource.url}`);
                 eventSource.close();
                 logArmedModeOutput(`SSE Error for scene ${sceneId}: ${error.type}`, 'error');
                 reject(new Error(`SSE Error for scene ${sceneId}: ${error.type}`));

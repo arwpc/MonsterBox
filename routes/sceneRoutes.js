@@ -17,8 +17,13 @@ const checkCharacterSelected = (req, res, next) => {
     next();
 };
 
-// Apply the middleware to all routes
-router.use(checkCharacterSelected);
+// Apply the middleware to all routes except the SSE route
+router.use((req, res, next) => {
+    if (req.path.match(/^\/\d+\/play$/)) {
+        return next();
+    }
+    checkCharacterSelected(req, res, next);
+});
 
 router.get('/', (req, res, next) => {
     logger.info(`Getting all scenes for character ${req.characterId}`);
@@ -63,7 +68,7 @@ router.delete('/:id', (req, res, next) => {
 });
 
 router.get('/:id/play', (req, res, next) => {
-    logger.info(`Playing scene ${req.params.id} for character ${req.characterId}`);
+    logger.info(`Playing scene ${req.params.id}`);
     scenePlayerController.playScene(req, res, next);
 });
 
@@ -73,12 +78,12 @@ router.get('/:id/status', (req, res, next) => {
 });
 
 router.post('/:id/stop', (req, res, next) => {
-    logger.info(`Stopping scene ${req.params.id} for character ${req.characterId}`);
+    logger.info(`Stopping scene ${req.params.id}`);
     scenePlayerController.stopScene(req, res, next);
 });
 
 router.post('/stop-all', (req, res, next) => {
-    logger.info(`Stopping all scenes for character ${req.characterId}`);
+    logger.info(`Stopping all scenes`);
     scenePlayerController.stopAllScenes(req, res, next);
 });
 
