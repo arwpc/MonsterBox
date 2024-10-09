@@ -261,7 +261,9 @@ $(document).ready(function() {
             runScene(sceneId).then(() => {
                 logArmedModeOutput(`Completed execution of scene ${sceneId}`);
                 retryCount = 0; // Reset retry count on successful execution
-                setTimeout(() => runNextScene(index + 1), delay);
+                if (isArmed) {
+                    setTimeout(() => runNextScene(index + 1), delay);
+                }
             }).catch((error) => {
                 logArmedModeOutput(`Error executing scene ${sceneId}: ${error.message}`);
                 if (retryCount < MAX_RETRIES) {
