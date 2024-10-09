@@ -59,26 +59,32 @@ $(document).ready(function() {
     }
 
     function fetchCharacterParts(characterId) {
-        console.log('Fetching character parts');
-        $.get(`/active-mode/character/${characterId}/parts`, function(data) {
-            displayCharacterParts(data);
-        }).fail(function(jqXHR, textStatus, errorThrown) {
-            console.error("Error fetching character parts:", textStatus, errorThrown);
-            $('#characterParts').html('<p>Failed to load character parts information. Please try again.</p>');
-            $('#debugInfo').append(`<p>Error fetching character parts: ${textStatus} - ${errorThrown}</p>`);
-        });
+        console.log('Fetching character parts for ID:', characterId);
+        $.get(`/active-mode/character/${characterId}/parts`)
+            .done(function(data) {
+                console.log('Character parts fetched successfully:', data);
+                displayCharacterParts(data);
+            })
+            .fail(function(jqXHR, textStatus, errorThrown) {
+                console.error("Error fetching character parts:", textStatus, errorThrown);
+                console.error("Response text:", jqXHR.responseText);
+                $('#characterParts').html('<p>Failed to load character parts information. Please try again.</p>');
+                $('#debugInfo').append(`<p>Error fetching character parts: ${textStatus} - ${errorThrown}</p>`);
+            });
     }
 
     function displayCharacterParts(parts) {
         console.log('Displaying character parts:', parts);
         let partsHtml = '<h4>Character Parts:</h4>';
-        if (parts.length === 0) {
+        if (!Array.isArray(parts) || parts.length === 0) {
+            console.log('No parts to display');
             partsHtml += '<p>No parts assigned to this character.</p>';
         } else {
             partsHtml += '<ul>';
             parts.forEach(part => {
+                console.log('Processing part:', part);
                 partsHtml += `<li>
-                    <strong>${part.part_name}</strong> (${part.part_type})
+                    <strong>${part.part_name || 'Unnamed Part'}</strong> (${part.part_type || 'Unknown Type'})
                     <br>Description: ${part.part_description || 'N/A'}
                     <br>Pin: ${part.pin || 'N/A'}
                 </li>`;
@@ -86,6 +92,7 @@ $(document).ready(function() {
             partsHtml += '</ul>';
         }
 
+        console.log('Final parts HTML:', partsHtml);
         $('#characterParts').html(partsHtml);
     }
 
