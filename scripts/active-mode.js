@@ -15,8 +15,8 @@ $(document).ready(function() {
     $('#activatedScenes').sortable({
         update: updateSceneTimeline
     }).selectable();
-    $('#armButton').click(confirmArmSystem);
-    $('#disarmButton').click(confirmDisarmSystem);
+    $('#armButton').click(armSystem);
+    $('#disarmButton').click(disarmSystem);
     $('#sceneDelay').on('input', updateSceneTimeline);
 
     // Show scene selection area by default
@@ -190,29 +190,17 @@ $(document).ready(function() {
         $('#armButton').prop('disabled', !hasActivatedScenes);
     }
 
-    function confirmArmSystem() {
+    function armSystem() {
         if ($('#activatedScenes li').length === 0) {
             alert('Please select at least one scene to activate.');
             return;
         }
-        if (confirm('Are you sure you want to arm the system and start executing scenes?')) {
-            armSystem();
-        }
-    }
-
-    function armSystem() {
         isArmed = true;
         $('#armButton').prop('disabled', true);
         $('#disarmButton').prop('disabled', false);
         $('#armStatus').text('ARMED').removeClass('disarmed').addClass('armed');
         logArmedModeOutput('System armed. Starting Active Mode.');
         startActiveModeLoop();
-    }
-
-    function confirmDisarmSystem() {
-        if (confirm('Are you sure you want to disarm the system and stop executing scenes?')) {
-            disarmSystem();
-        }
     }
 
     function disarmSystem() {
@@ -261,9 +249,7 @@ $(document).ready(function() {
             runScene(sceneId).then(() => {
                 logArmedModeOutput(`Completed execution of scene ${sceneId}`);
                 retryCount = 0; // Reset retry count on successful execution
-                if (isArmed) {
-                    setTimeout(() => runNextScene(index + 1), delay);
-                }
+                setTimeout(() => runNextScene(index + 1), delay);
             }).catch((error) => {
                 logArmedModeOutput(`Error executing scene ${sceneId}: ${error.message}`);
                 if (retryCount < MAX_RETRIES) {
