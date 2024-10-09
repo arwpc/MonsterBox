@@ -17,7 +17,6 @@ $(document).ready(function() {
     }).selectable();
     $('#armButton').click(confirmArmSystem);
     $('#disarmButton').click(confirmDisarmSystem);
-    $('#stopAllSteps').click(stopAllSteps);
     $('#sceneDelay').on('input', updateSceneTimeline);
 
     // Show scene selection area by default
@@ -222,18 +221,18 @@ $(document).ready(function() {
         $('#disarmButton').prop('disabled', true);
         $('#armStatus').text('DISARMED').removeClass('armed').addClass('disarmed');
         logArmedModeOutput('System disarmed. Active Mode stopped.');
-        stopAllSteps();
+        stopCurrentScene();
     }
 
-    function stopAllSteps() {
+    function stopCurrentScene() {
         if (currentSceneId) {
             $.post(`/scenes/${currentSceneId}/stop`)
                 .done(function(response) {
-                    logArmedModeOutput('All steps stopped: ' + response.message);
+                    logArmedModeOutput('Current scene stopped: ' + response.message);
                 })
                 .fail(function(xhr, status, error) {
-                    console.error('Error stopping all steps:', error);
-                    logArmedModeOutput('Error stopping all steps: ' + error);
+                    console.error('Error stopping current scene:', error);
+                    logArmedModeOutput('Error stopping current scene: ' + error);
                 });
         }
         currentSceneId = null;
@@ -248,7 +247,14 @@ $(document).ready(function() {
         function runNextScene(index) {
             if (!isArmed) return;
             if (index >= scenes.length) {
-                index = 0; // Reset to the beginning of the list
+                if ($('#loopAllScenes').is(':checked')) {
+                    index = 0; // Reset to the beginning of the list if looping is enabled
+                    logArmedModeOutput('Looping back to the first scene');
+                } else {
+                    logArmedModeOutput('All scenes completed. Disarming system.');
+                    disarmSystem();
+                    return;
+                }
             }
             const sceneId = scenes[index];
             logArmedModeOutput(`Starting execution of scene ${sceneId}`);
