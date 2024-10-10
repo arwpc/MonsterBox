@@ -116,9 +116,19 @@ function stopAllSounds() {
             soundPlayerProcess.stdin.write("STOP_ALL\n");
             
             setTimeout(() => {
-                soundPlayerProcess.kill('SIGTERM');
-                soundPlayerProcess = null;
-                soundPlayerRetries = 0;
+                if (soundPlayerProcess) {
+                    logger.info('Terminating sound player process');
+                    try {
+                        soundPlayerProcess.kill('SIGTERM');
+                        logger.info('Sound player process terminated successfully');
+                    } catch (error) {
+                        logger.error(`Error terminating sound player process: ${error.message}`);
+                    }
+                    soundPlayerProcess = null;
+                    soundPlayerRetries = 0;
+                } else {
+                    logger.info('Sound player process already null, no need to terminate');
+                }
                 resolve();
             }, 1000);
         } else {

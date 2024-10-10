@@ -135,6 +135,7 @@ async function executeScene(scene, startStep, res) {
 
     try {
         await soundController.startSoundPlayer();
+        logger.info('Sound player started successfully');
 
         const concurrentPromises = [];
 
@@ -189,9 +190,13 @@ async function executeScene(scene, startStep, res) {
         sendSSEMessage(res, { error: currentSceneState.error });
     } finally {
         isExecuting = false;
-        await stopAllParts();
-        await soundController.stopAllSounds();
-        logger.info(`Scene ${scene.id} cleanup completed`);
+        try {
+            await stopAllParts();
+            await soundController.stopAllSounds();
+            logger.info(`Scene ${scene.id} cleanup completed`);
+        } catch (error) {
+            logger.error(`Error during scene cleanup: ${error.message}`);
+        }
         const cleanupMessage = 'Scene cleanup completed';
         currentSceneState.messages.push(cleanupMessage);
         
