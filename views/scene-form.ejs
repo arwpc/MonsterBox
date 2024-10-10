@@ -1,26 +1,26 @@
-<!-- File: views/scene-form.ejs -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title %></title>
-    <link rel="stylesheet" href="/css/style.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
-    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
-</head>
-<body>
-    <h1><%= title %> for <%= character.char_name %></h1>
-    <form id="sceneForm" action="<%= action %>?characterId=<%= character.id %>" method="POST">
-        <input type="hidden" name="id" value="<%= scene.id %>">
-        <input type="hidden" name="character_id" value="<%= character.id %>">
+// File: services/soundService.js
 
-        <div>
-            <label for="scene_name">Scene Name:</label>
-            <input type="text" id="scene_name" name="scene_name" value="<%= scene.scene_name || '' %>" required>
-        </div>
+const fs = require('fs').promises;
+const path = require('path');
+const logger = require('../scripts/logger');
 
+const dataPath = path.join(__dirname, '../data/sounds.json');
+
+const getAllSounds = async (characterId = null) => {
+    try {
+        const data = await fs.readFile(dataPath, 'utf8');
+        let sounds = JSON.parse(data);
+        
+        if (!Array.isArray(sounds)) {
+            logger.error('Invalid sounds data: not an array');
+            return [];
+        }
+        
+        // Filter out any undefined or null sound objects
+        sounds = sounds.filter(sound => sound != null);
+        
+        logger.debug(`Retrieved ${sounds.length} valid sounds`);
+        
         <h2>Steps</h2>
         <div id="steps" class="sortable">
             <% (scene.steps || []).forEach(function(step, index) { %>
