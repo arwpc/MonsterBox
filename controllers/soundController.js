@@ -15,16 +15,15 @@ function startSoundPlayer() {
                 stdio: ['pipe', 'pipe', 'pipe']
             });
 
-            let readyReceived = false;
-
             soundPlayerProcess.stdout.on('data', (data) => {
                 logger.info(`Sound player output: ${data}`);
                 try {
                     const jsonOutput = JSON.parse(data);
                     if (jsonOutput.status === 'ready') {
                         logger.info('Sound player is ready');
-                        readyReceived = true;
                         resolve();
+                    } else if (jsonOutput.status === 'finished') {
+                        handleSoundCompletion(jsonOutput);
                     }
                 } catch (error) {
                     logger.debug(`Non-JSON output from sound player: ${data}`);
@@ -52,13 +51,6 @@ function startSoundPlayer() {
                     reject(new Error('Unable to start sound player after max retries'));
                 }
             });
-
-            setTimeout(() => {
-                if (!readyReceived) {
-                    logger.warn('Sound player did not send ready message within timeout period');
-                    resolve();
-                }
-            }, 15000);
         } else {
             resolve();
         }
@@ -75,37 +67,41 @@ function playSound(soundId, filePath) {
 
         const command = `PLAY|${soundId}|${filePath}\n`;
         logger.info(`Sending play command: ${command.trim()}`);
-        soundPlayerProcess.stdin.write(command);
-
-        const listener = (data) => {
-            const output = data.toString().trim();
-            try {
-                const jsonOutput = JSON.parse(output);
-                if (jsonOutput.status === 'playing' && jsonOutput.sound_id === soundId) {
-                    soundPlayerProcess.stdout.removeListener('data', listener);
-                    logger.info(`Sound started playing: ${soundId}`);
-                    resolve({ success: true, duration: 0 });
-                } else if (jsonOutput.status === 'finished' && jsonOutput.sound_id === soundId) {
-                    soundPlayerProcess.stdout.removeListener('data', listener);
-                    logger.info(`Sound finished playing: ${soundId}, duration: ${jsonOutput.duration}`);
-                    resolve({ success: true, duration: jsonOutput.duration });
-                } else if (jsonOutput.status === 'error' && jsonOutput.sound_id === soundId) {
-                    soundPlayerProcess.stdout.removeListener('data', listener);
-                    logger.error(`Error playing sound ${soundId}: ${jsonOutput.message}`);
-                    reject(new Error(jsonOutput.message));
-                }
-            } catch (error) {
-                logger.debug(`Non-JSON output from sound player: ${output}`);
+        soundPlayerProcess.stdin.write(command, (error) => {
+            if (error) {
+                logger.error(`Error sending play command: ${error.message}`);
+                reject(error);
+            } else {
+                resolve({ success: true, message: 'Play command sent successfully' });
             }
-        };
+        });
+    });
+}
 
-        soundPlayerProcess.stdout.on('data', listener);
+function handleSoundCompletion(jsonOutput) {
+    const { sound_id, duration } = jsonOutput;
+    logger.info(`Sound finished playing: ${sound_id}, duration: ${duration}`);
+    // Here you can add any additional logic for when a sound completes playing
+}
 
-        setTimeout(() => {
-            soundPlayerProcess.stdout.removeListener('data', listener);
-            logger.warn(`Timeout waiting for sound ${soundId} to start`);
-            resolve({ success: false, duration: 0 });
-        }, 10000);
+function stopSound(soundId) {
+    return new Promise((resolve, reject) => {
+        if (!soundPlayerProcess) {
+            logger.error('Sound player is not running');
+            reject(new Error('Sound player is not running'));
+            return;
+        }
+
+        const command = `STOP|${soundId}\n`;
+        logger.info(`Sending stop command: ${command.trim()}`);
+        soundPlayerProcess.stdin.write(command, (error) => {
+            if (error) {
+                logger.error(`Error sending stop command: ${error.message}`);
+                reject(error);
+            } else {
+                resolve({ success: true, message: 'Stop command sent successfully' });
+            }
+        });
     });
 }
 
@@ -113,27 +109,17 @@ function stopAllSounds() {
     return new Promise((resolve, reject) => {
         if (soundPlayerProcess) {
             logger.info('Stopping all sounds');
-            soundPlayerProcess.stdin.write("STOP_ALL\n");
-            
-            setTimeout(() => {
-                if (soundPlayerProcess) {
-                    logger.info('Terminating sound player process');
-                    try {
-                        soundPlayerProcess.kill('SIGTERM');
-                        logger.info('Sound player process terminated successfully');
-                    } catch (error) {
-                        logger.error(`Error terminating sound player process: ${error.message}`);
-                    }
-                    soundPlayerProcess = null;
-                    soundPlayerRetries = 0;
+            soundPlayerProcess.stdin.write("STOP_ALL\n", (error) => {
+                if (error) {
+                    logger.error(`Error sending stop all command: ${error.message}`);
+                    reject(error);
                 } else {
-                    logger.info('Sound player process already null, no need to terminate');
+                    resolve({ success: true, message: 'Stop all command sent successfully' });
                 }
-                resolve();
-            }, 1000);
+            });
         } else {
             logger.info('No sound player running, consider it stopped');
-            resolve();
+            resolve({ success: true, message: 'No sound player running' });
         }
     });
 }
@@ -141,5 +127,6 @@ function stopAllSounds() {
 module.exports = {
     startSoundPlayer,
     playSound,
+    stopSound,
     stopAllSounds
 };
