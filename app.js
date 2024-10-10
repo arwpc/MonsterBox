@@ -1,3 +1,6 @@
+// Suppress deprecation warnings
+process.env.NODE_NO_WARNINGS = '1';
+
 // File: app.js
 
 const express = require('express');
