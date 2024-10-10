@@ -38,16 +38,19 @@
                 </thead>
                 <tbody id="sound-table-body">
                     <% sounds.forEach(function(sound) { %>
-                        <tr class="sound-row" data-characters="<%- JSON.stringify(sound.characterIds || []) %>">
+                        <tr class="sound-row" data-characters="<%- JSON.stringify(sound.characterIds || [sound.characterId].filter(Boolean)) %>">
                             <td><%- sound.name %></td>
                             <td><%- sound.filename %></td>
                             <td>
                                 <% 
-                                    let characterNames = 'No characters assigned';
+                                    let characterNames = 'Unassigned';
                                     if (Array.isArray(sound.characterIds) && sound.characterIds.length > 0) {
                                         characterNames = sound.characterIds.map(id => 
                                             characters.find(char => char.id === id)?.char_name || 'Unknown'
                                         ).join(', ');
+                                    } else if (sound.characterId) {
+                                        const character = characters.find(char => char.id === sound.characterId);
+                                        characterNames = character ? character.char_name : 'Unknown';
                                     }
                                 %>
                                 <%- characterNames %>
