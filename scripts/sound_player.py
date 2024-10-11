@@ -1,5 +1,5 @@
 import sys
-import pygame
+import pygame # type: ignore
 import time
 import json
 from threading import Thread
