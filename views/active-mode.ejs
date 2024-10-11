@@ -183,6 +183,10 @@
             font-weight: bold;
             color: #ffd700;
         }
+        .system-info input[type="number"] {
+            width: 60px;
+            margin-left: 10px;
+        }
     </style>
 </head>
 <body>
@@ -245,8 +249,18 @@
                 <h3>System Information</h3>
                 <p>Current Scene: <span id="currentScene" class="current-scene">None</span></p>
                 <p>Consecutive Failures: <span id="consecutiveFailures">0</span></p>
-                <p>Max Retries: <span id="maxRetries">3</span></p>
-                <p>Scene Timeout: <span id="sceneTimeout">120</span> seconds</p>
+                <p>
+                    <label for="maxRetries" class="tooltip">Max Retries:
+                        <span class="tooltiptext">Maximum number of retry attempts for a failed scene</span>
+                    </label>
+                    <input type="number" id="maxRetries" min="1" value="3">
+                </p>
+                <p>
+                    <label for="sceneTimeout" class="tooltip">Scene Timeout (seconds):
+                        <span class="tooltiptext">Maximum time allowed for a scene to complete</span>
+                    </label>
+                    <input type="number" id="sceneTimeout" min="1" value="120">
+                </p>
             </div>
 
             <div id="armedModeOutput" class="output-section">

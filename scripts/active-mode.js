@@ -5,9 +5,8 @@ $(document).ready(function() {
     let currentSceneId = null;
     let retryCount = 0;
     let characterId = null;
-    const MAX_RETRIES = 3;
-    const POLLING_INTERVAL = 1000; // 1 second
-    const SCENE_TIMEOUT = 120000; // 2 minutes timeout for each scene
+    let MAX_RETRIES = 3;
+    let SCENE_TIMEOUT = 120000; // 2 minutes timeout for each scene
     let consecutiveFailures = 0;
     const MAX_CONSECUTIVE_FAILURES = 5;
     let sceneDetails = {}; // Store scene names and step counts
@@ -23,6 +22,7 @@ $(document).ready(function() {
     $('#sceneSelectionArea').show();
 
     loadCharacterInfo();
+    loadSavedSettings();
 
     function loadCharacterInfo() {
         console.log('Loading character info');
@@ -44,6 +44,26 @@ $(document).ready(function() {
             console.error('Error parsing character data:', error);
             $('#debugInfo').append(`<p>Error parsing character data: ${error.message}</p>`);
         }
+    }
+
+    function loadSavedSettings() {
+        const savedMaxRetries = localStorage.getItem('maxRetries');
+        const savedSceneTimeout = localStorage.getItem('sceneTimeout');
+
+        if (savedMaxRetries) {
+            $('#maxRetries').val(savedMaxRetries);
+            MAX_RETRIES = parseInt(savedMaxRetries);
+        }
+
+        if (savedSceneTimeout) {
+            $('#sceneTimeout').val(savedSceneTimeout);
+            SCENE_TIMEOUT = parseInt(savedSceneTimeout) * 1000; // Convert to milliseconds
+        }
+    }
+
+    function saveSettings() {
+        localStorage.setItem('maxRetries', MAX_RETRIES);
+        localStorage.setItem('sceneTimeout', SCENE_TIMEOUT / 1000); // Save in seconds
     }
 
     function displayCharacterInfo(character) {
@@ -181,6 +201,12 @@ $(document).ready(function() {
         $('#disarmButton').prop('disabled', false);
         $('#armStatus').text('ARMED').removeClass('disarmed').addClass('armed');
         logArmedModeOutput('System armed. Starting Active Mode.');
+        
+        // Update MAX_RETRIES and SCENE_TIMEOUT from input fields
+        MAX_RETRIES = parseInt($('#maxRetries').val());
+        SCENE_TIMEOUT = parseInt($('#sceneTimeout').val()) * 1000; // Convert to milliseconds
+        saveSettings();
+        
         resetSystemInfo();
         startActiveModeLoop();
     }

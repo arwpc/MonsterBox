@@ -37,6 +37,7 @@ def setup_gpio(dir_pin, pwm_pin, retries=3):
             log_message({"status": "error", "message": f"GPIO setup failed (attempt {attempt + 1}): {str(e)}"})
             if attempt == retries - 1:
                 raise
+    return False
 
 def control_motor(direction, speed, duration, dir_pin, pwm_pin):
     log_message({"status": "info", "message": f"Controlling motor: direction={direction}, speed={speed}, duration={duration}, dir_pin={dir_pin}, pwm_pin={pwm_pin}"})
@@ -45,6 +46,9 @@ def control_motor(direction, speed, duration, dir_pin, pwm_pin):
     gpio_setup = False
     try:
         gpio_setup = setup_gpio(dir_pin, pwm_pin)
+        if not gpio_setup:
+            raise Exception("Failed to set up GPIO")
+        
         GPIO.output(dir_pin, GPIO.HIGH if direction == 'forward' else GPIO.LOW)
         pwm = GPIO.PWM(pwm_pin, 100)  # Use a default frequency of 100 Hz
         pwm.start(0)
@@ -93,7 +97,6 @@ if __name__ == "__main__":
         speed = int(speed)
         duration = int(duration)
         
-        gpio_setup = setup_gpio(dir_pin, pwm_pin)
         result = control_motor(direction, speed, duration, dir_pin, pwm_pin)
         log_message({"status": "info", "message": "Motor control execution completed"})
     except ValueError as e:
@@ -104,13 +107,6 @@ if __name__ == "__main__":
         error_message = f"Unexpected error: {str(e)}"
         log_message({"status": "error", "message": error_message})
         result = {"success": False, "error": error_message}
-    finally:
-        if gpio_setup:
-            log_message({"status": "info", "message": "Cleaning up GPIO"})
-            GPIO.cleanup([dir_pin, pwm_pin])
-            log_message({"status": "info", "message": "GPIO cleanup completed"})
-        else:
-            log_message({"status": "info", "message": "GPIO was not set up, skipping cleanup"})
 
     # Print a single JSON object containing both the result and logs
     print(json.dumps({"result": result, "logs": log_messages}))
