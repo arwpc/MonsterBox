@@ -10,6 +10,8 @@ let isExecuting = false;
 let currentSceneState = {};
 let res = null;
 
+const STEP_TIMEOUT = 60000; // 60 seconds timeout for each step
+
 const stopAllParts = async () => {
     logger.info('Stopping all parts');
     // Implement logic to stop all parts
@@ -150,7 +152,7 @@ async function executeScene(scene, startStep, res) {
             logger.debug(`Sent SSE update for step ${i + 1}`);
 
             try {
-                const stepPromise = executeStep(scene.id, step);
+                const stepPromise = executeStepWithTimeout(scene.id, step);
                 
                 if (step.concurrent) {
                     concurrentPromises.push(stepPromise);
@@ -204,6 +206,23 @@ async function executeScene(scene, startStep, res) {
         sendSSEMessage(res, { message: cleanupMessage });
         logger.info('Sent cleanup SSE update');
     }
+}
+
+async function executeStepWithTimeout(sceneId, step) {
+    return new Promise(async (resolve, reject) => {
+        const timeoutId = setTimeout(() => {
+            reject(new Error(`Step ${step.name} timed out after ${STEP_TIMEOUT / 1000} seconds`));
+        }, STEP_TIMEOUT);
+
+        try {
+            await executeStep(sceneId, step);
+            clearTimeout(timeoutId);
+            resolve();
+        } catch (error) {
+            clearTimeout(timeoutId);
+            reject(error);
+        }
+    });
 }
 
 async function executeStep(sceneId, step) {
