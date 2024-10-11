@@ -1,5 +1,3 @@
-// File: scripts/active-mode.js
-
 $(document).ready(function() {
     console.log('Document ready');
 
@@ -212,9 +210,8 @@ $(document).ready(function() {
             }
             
             if (index >= scenes.length) {
-                logArmedModeOutput('All scenes completed. Disarming system.');
-                disarmSystem();
-                return;
+                logArmedModeOutput('All scenes completed. Restarting from the first scene.');
+                index = 0; // Reset index to loop from the beginning
             }
 
             const sceneId = scenes[index];
