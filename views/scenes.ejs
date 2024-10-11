@@ -8,8 +8,9 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
-    <h1><%= title %> for <%= character.name %></h1>
-    <a href="/scenes/new?characterId=<%= character.id %>" class="button">Add New Scene</a>
+    <h1><%= title %> for <%= character ? (character.name || 'Unknown Character') : 'Unknown Character' %></h1>
+    <p>Debug: Character object: <%= JSON.stringify(character) %></p>
+    <a href="/scenes/new?characterId=<%= character ? character.id : '' %>" class="button">Add New Scene</a>
     <% if (scenes.length === 0) { %>
         <p>No scenes found for this character.</p>
     <% } else { %>
@@ -37,19 +38,19 @@
                             <% } %>
                         </td>
                         <td>
-                            <a href="/scenes/<%= scene.id %>/edit?characterId=<%= character.id %>" class="button edit-scene" data-id="<%= scene.id %>">Edit</a>
+                            <a href="/scenes/<%= scene.id %>/edit?characterId=<%= character ? character.id : '' %>" class="button edit-scene" data-id="<%= scene.id %>">Edit</a>
                             <button onclick="deleteScene('<%= scene.id %>')" class="button">Delete</button>
-                            <a href="/scenes/<%= scene.id %>?characterId=<%= character.id %>" class="button play-scene" data-id="<%= scene.id %>">Run</a>
+                            <a href="/scenes/<%= scene.id %>?characterId=<%= character ? character.id : '' %>" class="button play-scene" data-id="<%= scene.id %>">Run</a>
                         </td>
                     </tr>
                 <% }); %>
             </tbody>
         </table>
     <% } %>
-    <a href="/?characterId=<%= character.id %>" class="button">Back to Main Menu</a>
+    <a href="/?characterId=<%= character ? character.id : '' %>" class="button">Back to Main Menu</a>
 
     <script>
-        const characterId = '<%= character.id %>';
+        const characterId = '<%= character ? character.id : "" %>';
 
         function deleteScene(id) {
             console.log('Attempting to delete scene:', id);
