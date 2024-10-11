@@ -24,7 +24,7 @@ if 'XDG_RUNTIME_DIR' not in os.environ:
     log_message({"status": "info", "message": f"Set XDG_RUNTIME_DIR to {runtime_dir}"})
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
-os.environ['SDL_AUDIODRIVER'] = 'pulseaudio'  # Use PulseAudio as the audio driver
+os.environ['SDL_AUDIODRIVER'] = 'alsa'  # Use ALSA as the audio driver
 
 class SoundPlayer:
     def __init__(self):

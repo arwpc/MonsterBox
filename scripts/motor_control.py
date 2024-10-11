@@ -66,6 +66,8 @@ def control_motor(direction, speed, duration, dir_pin, pwm_pin):
         if pwm:
             pwm.stop()
             log_message({"status": "info", "message": "PWM stopped"})
+        GPIO.cleanup([dir_pin, pwm_pin])
+        log_message({"status": "info", "message": "GPIO cleanup completed"})
 
 if __name__ == "__main__":
     log_messages = []
