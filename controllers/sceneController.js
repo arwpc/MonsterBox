@@ -77,7 +77,7 @@ const sceneController = {
             logger.info('Attempting to create new scene with data:', JSON.stringify(req.body));
             const newScene = await sceneService.createScene(req.body);
             logger.info(`Created new scene with ID ${newScene.id} for character ${newScene.character_id}`);
-            res.redirect('/scenes');
+            res.redirect(`/scenes?characterId=${newScene.character_id}`);
         } catch (error) {
             logger.error('Error creating new scene:', error);
             logger.error('Request body:', JSON.stringify(req.body));
@@ -90,7 +90,7 @@ const sceneController = {
             const updatedScene = await sceneService.updateScene(req.params.id, req.body);
             if (updatedScene) {
                 logger.info(`Updated scene with ID ${req.params.id} for character ${updatedScene.character_id}`);
-                res.redirect('/scenes');
+                res.redirect(`/scenes?characterId=${updatedScene.character_id}`);
             } else {
                 logger.warn(`Attempt to update non-existent scene with ID ${req.params.id}`);
                 res.status(404).render('error', { error: 'Scene not found' });

@@ -31,10 +31,12 @@
         <button type="button" onclick="addStep('sensor')">Add Sensor</button>
         <button type="button" onclick="addStep('sound')">Add Sound</button>
         <button type="button" onclick="addStep('pause')">Add Pause</button>
-        <button type="submit">Save Scene</button>
+        
+        <div class="form-actions">
+            <button type="submit" class="button">Save Scene</button>
+            <a href="/scenes?characterId=<%= character.id %>" class="button">Back to Scenes</a>
+        </div>
     </form>
-
-    <a href="/scenes?characterId=<%= character.id %>" class="button">Back to Scenes</a>
 
     <script>
         const characterId = '<%= character.id %>';
