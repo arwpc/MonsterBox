@@ -21,7 +21,7 @@ function setupAudioEnvironment() {
 
     env.XDG_RUNTIME_DIR = xdgRuntimeDir;
     env.PULSE_SERVER = pulseServer;
-    env.SDL_AUDIODRIVER = 'alsa'; // Change to ALSA
+    env.SDL_AUDIODRIVER = 'pipewire'; // Use PipeWire as the audio driver
     env.PYTHONUNBUFFERED = '1';
 
     return env;
