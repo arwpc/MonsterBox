@@ -47,6 +47,8 @@ function startSoundPlayer() {
                             resolve();
                         } else if (jsonOutput.status === 'finished') {
                             handleSoundCompletion(jsonOutput);
+                        } else if (jsonOutput.status === 'error') {
+                            logger.error(`Sound player error: ${JSON.stringify(jsonOutput)}`);
                         }
                     } catch (error) {
                         logger.debug(`Non-JSON output from sound player: ${line}`);
@@ -57,11 +59,7 @@ function startSoundPlayer() {
 
             soundPlayerProcess.stderr.on('data', (data) => {
                 stderrBuffer += data.toString();
-                let lines = stderrBuffer.split('\n');
-                while (lines.length > 1) {
-                    logger.error(`Sound player error: ${lines.shift()}`);
-                }
-                stderrBuffer = lines.join('\n');
+                logger.error(`Sound player stderr: ${data.toString()}`);
             });
 
             soundPlayerProcess.on('error', (error) => {
@@ -72,7 +70,7 @@ function startSoundPlayer() {
             soundPlayerProcess.on('close', (code) => {
                 logger.info(`Sound player exited with code ${code}`);
                 if (stderrBuffer) {
-                    logger.error(`Sound player stderr: ${stderrBuffer}`);
+                    logger.error(`Sound player stderr buffer: ${stderrBuffer}`);
                 }
                 soundPlayerProcess = null;
                 if (soundPlayerRetries < MAX_SOUND_PLAYER_RETRIES) {
