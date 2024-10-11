@@ -168,7 +168,15 @@
                 steps.push(step);
             });
             
-            formData.append('steps', JSON.stringify(steps));
+            // Remove any existing 'steps' field from formData
+            formData.delete('steps');
+            
+            // Append each step as a separate field
+            steps.forEach((step, index) => {
+                Object.keys(step).forEach(key => {
+                    formData.append(`steps[${index}][${key}]`, step[key]);
+                });
+            });
 
             // Log the form data
             console.log('Form data before sending:');
