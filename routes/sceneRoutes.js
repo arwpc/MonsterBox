@@ -8,11 +8,12 @@ const logger = require('../scripts/logger');
 
 // Middleware to check if a character is selected
 const checkCharacterSelected = (req, res, next) => {
-    if (!req.query.characterId) {
+    const characterId = req.query.characterId || req.body.character_id;
+    if (!characterId) {
         logger.warn('No character selected, redirecting to main page');
         return res.redirect('/');  // Redirect to main page if no character is selected
     }
-    req.characterId = req.query.characterId;
+    req.characterId = characterId;
     logger.debug(`Character selected: ${req.characterId}`);
     next();
 };
@@ -51,13 +52,11 @@ router.get('/:id/edit', (req, res, next) => {
 });
 
 router.post('/', (req, res, next) => {
-    req.body.characterId = req.characterId;
     logger.info(`Creating new scene for character ${req.characterId}`);
     sceneController.createScene(req, res, next);
 });
 
 router.post('/:id', (req, res, next) => {
-    req.body.characterId = req.characterId;
     logger.info(`Updating scene ${req.params.id} for character ${req.characterId}`);
     sceneController.updateScene(req, res, next);
 });
