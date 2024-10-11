@@ -11,6 +11,12 @@ const sceneController = {
         try {
             const scenes = await sceneService.getScenesByCharacter(characterId);
             const character = await characterService.getCharacterById(characterId);
+            
+            if (!character) {
+                logger.warn(`Character with ID ${characterId} not found`);
+                return res.status(404).render('error', { error: 'Character not found' });
+            }
+            
             logger.info(`Retrieved ${scenes.length} scenes for character ${characterId}`);
             res.render('scenes', { title: 'Scenes', scenes, character });
         } catch (error) {
@@ -28,6 +34,11 @@ const sceneController = {
                 soundService.getSoundsByCharacter(characterId),
                 partService.getPartsByCharacter(characterId)
             ]);
+
+            if (!character) {
+                logger.warn(`Character with ID ${characterId} not found`);
+                return res.status(404).render('error', { error: 'Character not found' });
+            }
 
             if (scene && scene.character_id === parseInt(characterId)) {
                 logger.info(`Retrieved scene ${sceneId} for character ${characterId}`);
@@ -56,6 +67,11 @@ const sceneController = {
                 soundService.getSoundsByCharacter(characterId),
                 partService.getPartsByCharacter(characterId)
             ]);
+            
+            if (!character) {
+                logger.warn(`Character with ID ${characterId} not found`);
+                return res.status(404).render('error', { error: 'Character not found' });
+            }
             
             logger.info(`Rendering new scene form for character ${characterId}`);
             res.render('scene-form', {
