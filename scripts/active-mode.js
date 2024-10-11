@@ -193,6 +193,8 @@ $(document).ready(function() {
                     console.error('Error stopping current scene:', error);
                     logArmedModeOutput('Error stopping current scene: ' + error);
                 });
+        } else {
+            logArmedModeOutput('No current scene to stop.');
         }
         currentSceneId = null;
     }
@@ -215,6 +217,7 @@ $(document).ready(function() {
             }
 
             const sceneId = scenes[index];
+            currentSceneId = sceneId; // Set currentSceneId when starting a scene
             logArmedModeOutput(`Starting execution of scene ${sceneId}`);
             
             runScene(sceneId).then(() => {
