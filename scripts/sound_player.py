@@ -27,16 +27,13 @@ class SoundPlayer:
     def init_pygame_mixer(self, retries=3):
         for attempt in range(retries):
             try:
-                pygame.mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=1024)
-                pygame.init()
                 pygame.mixer.init()
-                pygame.mixer.set_num_channels(32)  # Set a higher number of channels for concurrent playback
                 log_message({"status": "info", "message": "pygame.mixer initialized successfully"})
                 
                 log_message({"status": "info", "message": f"SDL_AUDIODRIVER: {os.environ.get('SDL_AUDIODRIVER', 'Not set')}"})
                 log_message({"status": "info", "message": f"Pygame audio driver: {pygame.mixer.get_init()}"})
-                log_message({"status": "info", "message": f"Pygame mixer info: {pygame.mixer.get_init()}"})
                 
+                pygame.mixer.set_num_channels(32)  # Set a higher number of channels for concurrent playback
                 pygame.mixer.music.set_volume(1.0)
                 log_message({"status": "info", "message": f"Volume set to: {pygame.mixer.music.get_volume()}"})
                 return
