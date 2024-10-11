@@ -42,7 +42,9 @@ def control_motor(direction, speed, duration, dir_pin, pwm_pin):
     log_message({"status": "info", "message": f"Controlling motor: direction={direction}, speed={speed}, duration={duration}, dir_pin={dir_pin}, pwm_pin={pwm_pin}"})
 
     pwm = None
+    gpio_setup = False
     try:
+        gpio_setup = setup_gpio(dir_pin, pwm_pin)
         GPIO.output(dir_pin, GPIO.HIGH if direction == 'forward' else GPIO.LOW)
         pwm = GPIO.PWM(pwm_pin, 100)  # Use a default frequency of 100 Hz
         pwm.start(0)
@@ -66,8 +68,9 @@ def control_motor(direction, speed, duration, dir_pin, pwm_pin):
         if pwm:
             pwm.stop()
             log_message({"status": "info", "message": "PWM stopped"})
-        GPIO.cleanup([dir_pin, pwm_pin])
-        log_message({"status": "info", "message": "GPIO cleanup completed"})
+        if gpio_setup:
+            GPIO.cleanup([dir_pin, pwm_pin])
+            log_message({"status": "info", "message": "GPIO cleanup completed"})
 
 if __name__ == "__main__":
     log_messages = []
