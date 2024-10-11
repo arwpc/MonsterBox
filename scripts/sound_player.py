@@ -123,10 +123,6 @@ if __name__ == "__main__":
                     break
 
                 parts = command.split("|")
-                if len(parts) < 2:
-                    log_message({"status": "error", "message": f"Invalid command format: {command}"})
-                    continue
-
                 cmd = parts[0]
                 if cmd == "PLAY":
                     if len(parts) != 3:
