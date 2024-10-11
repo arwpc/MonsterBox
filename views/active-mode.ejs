@@ -170,6 +170,19 @@
         .checkbox-container input[type="checkbox"] {
             margin-right: 10px;
         }
+        .system-info {
+            background-color: #2a2a2a;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        .system-info p {
+            margin: 5px 0;
+        }
+        .current-scene {
+            font-weight: bold;
+            color: #ffd700;
+        }
     </style>
 </head>
 <body>
@@ -226,6 +239,14 @@
                 <button id="disarmButton" disabled class="tooltip">Disarm
                     <span class="tooltiptext">Stop executing scenes and disarm the system</span>
                 </button>
+            </div>
+
+            <div class="system-info">
+                <h3>System Information</h3>
+                <p>Current Scene: <span id="currentScene" class="current-scene">None</span></p>
+                <p>Consecutive Failures: <span id="consecutiveFailures">0</span></p>
+                <p>Max Retries: <span id="maxRetries">3</span></p>
+                <p>Scene Timeout: <span id="sceneTimeout">120</span> seconds</p>
             </div>
 
             <div id="armedModeOutput" class="output-section">

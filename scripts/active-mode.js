@@ -7,6 +7,10 @@ $(document).ready(function() {
     let characterId = null;
     const MAX_RETRIES = 3;
     const POLLING_INTERVAL = 1000; // 1 second
+    const SCENE_TIMEOUT = 120000; // 2 minutes timeout for each scene
+    let consecutiveFailures = 0;
+    const MAX_CONSECUTIVE_FAILURES = 5;
+    let sceneDetails = {}; // Store scene names and step counts
 
     $('#addScenes').click(addScenes);
     $('#removeScenes').click(removeScenes);
@@ -100,6 +104,12 @@ $(document).ready(function() {
                 console.log(`Scenes fetched successfully:`, scenes);
                 if (Array.isArray(scenes)) {
                     console.log(`Number of scenes fetched: ${scenes.length}`);
+                    scenes.forEach(scene => {
+                        sceneDetails[scene.id] = {
+                            name: scene.scene_name,
+                            stepCount: scene.steps.length
+                        };
+                    });
                 } else {
                     console.error('Fetched scenes is not an array:', scenes);
                 }
@@ -171,6 +181,7 @@ $(document).ready(function() {
         $('#disarmButton').prop('disabled', false);
         $('#armStatus').text('ARMED').removeClass('disarmed').addClass('armed');
         logArmedModeOutput('System armed. Starting Active Mode.');
+        resetSystemInfo();
         startActiveModeLoop();
     }
 
@@ -180,6 +191,7 @@ $(document).ready(function() {
         $('#disarmButton').prop('disabled', true);
         $('#armStatus').text('DISARMED').removeClass('armed').addClass('disarmed');
         logArmedModeOutput('System disarmed. Active Mode stopped.');
+        resetSystemInfo();
         stopCurrentScene();
     }
 
@@ -197,6 +209,7 @@ $(document).ready(function() {
             logArmedModeOutput('No current scene to stop.');
         }
         currentSceneId = null;
+        updateCurrentScene('None');
     }
 
     function startActiveModeLoop() {
@@ -214,27 +227,39 @@ $(document).ready(function() {
             if (index >= scenes.length) {
                 logArmedModeOutput('All scenes completed. Restarting from the first scene.');
                 index = 0; // Reset index to loop from the beginning
+                resetConsecutiveFailures();
             }
 
             const sceneId = scenes[index];
             currentSceneId = sceneId; // Set currentSceneId when starting a scene
-            logArmedModeOutput(`Starting execution of scene ${sceneId}`);
+            updateCurrentScene(sceneId);
+            const sceneName = sceneDetails[sceneId].name;
+            const stepCount = sceneDetails[sceneId].stepCount;
+            logArmedModeOutput(`Starting execution of scene ${sceneId}: ${sceneName}, ${stepCount} steps`);
             
             runScene(sceneId).then(() => {
-                logArmedModeOutput(`Completed execution of scene ${sceneId}`);
+                logArmedModeOutput(`Completed execution of scene ${sceneId}: ${sceneName}`);
                 retryCount = 0;
+                resetConsecutiveFailures();
                 if (isArmed) {
+                    logArmedModeOutput(`Waiting ${delay/1000} seconds before starting next scene.`);
                     setTimeout(() => runNextScene(index + 1), delay);
                 }
             }).catch((error) => {
-                logArmedModeOutput(`Error executing scene ${sceneId}: ${error.message}`, 'error');
+                logArmedModeOutput(`Error executing scene ${sceneId}: ${sceneName}: ${error.message}`, 'error');
+                incrementConsecutiveFailures();
+                if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+                    logArmedModeOutput(`Max consecutive failures (${MAX_CONSECUTIVE_FAILURES}) reached. Stopping Active Mode.`, 'error');
+                    disarmSystem();
+                    return;
+                }
                 if (retryCount < MAX_RETRIES) {
                     retryCount++;
-                    logArmedModeOutput(`Retrying scene ${sceneId} (Attempt ${retryCount} of ${MAX_RETRIES})`, 'warning');
+                    logArmedModeOutput(`Retrying scene ${sceneId}: ${sceneName} (Attempt ${retryCount} of ${MAX_RETRIES})`, 'warning');
                     setTimeout(() => runNextScene(index), delay);
                 } else {
                     retryCount = 0;
-                    logArmedModeOutput(`Max retries reached for scene ${sceneId}. Moving to next scene.`, 'warning');
+                    logArmedModeOutput(`Max retries reached for scene ${sceneId}: ${sceneName}. Moving to next scene.`, 'warning');
                     setTimeout(() => runNextScene(index + 1), delay);
                 }
             });
@@ -251,14 +276,14 @@ $(document).ready(function() {
             });
 
             let sceneTimeout = setTimeout(() => {
-                logArmedModeOutput(`Scene ${sceneId} timed out. Moving to next scene.`, 'warning');
+                logArmedModeOutput(`Scene ${sceneId}: ${sceneDetails[sceneId].name} timed out after ${SCENE_TIMEOUT/1000} seconds. Moving to next scene.`, 'warning');
                 eventSource.close();
-                resolve(); // Resolve the promise to move to the next scene
-            }, 60000); // 60 seconds timeout
+                reject(new Error(`Scene ${sceneId}: ${sceneDetails[sceneId].name} timed out`));
+            }, SCENE_TIMEOUT);
 
             eventSource.onopen = function(event) {
                 console.log(`SSE connection opened for scene ${sceneId}`);
-                logArmedModeOutput(`SSE connection opened for scene ${sceneId}`);
+                logArmedModeOutput(`SSE connection opened for scene ${sceneId}: ${sceneDetails[sceneId].name}`);
             };
 
             eventSource.onmessage = function(event) {
@@ -268,7 +293,7 @@ $(document).ready(function() {
                     handleSceneUpdate(data);
                 } catch (error) {
                     console.error(`Error parsing SSE data for scene ${sceneId}:`, error);
-                    logArmedModeOutput(`Error parsing SSE data for scene ${sceneId}: ${error.message}`, 'error');
+                    logArmedModeOutput(`Error parsing SSE data for scene ${sceneId}: ${sceneDetails[sceneId].name}: ${error.message}`, 'error');
                 }
             };
 
@@ -278,13 +303,13 @@ $(document).ready(function() {
                 console.error(`SSE URL: ${eventSource.url}`);
                 eventSource.close();
                 clearTimeout(sceneTimeout);
-                logArmedModeOutput(`SSE Error for scene ${sceneId}: ${error.type}`, 'error');
-                reject(new Error(`SSE Error for scene ${sceneId}: ${error.type}`));
+                logArmedModeOutput(`SSE Error for scene ${sceneId}: ${sceneDetails[sceneId].name}: ${error.type}`, 'error');
+                reject(new Error(`SSE Error for scene ${sceneId}: ${sceneDetails[sceneId].name}: ${error.type}`));
             };
 
             eventSource.addEventListener('scene_end', function(event) {
                 console.log(`Scene ${sceneId} completed`);
-                logArmedModeOutput(`Scene ${sceneId} completed`);
+                logArmedModeOutput(`Scene ${sceneId}: ${sceneDetails[sceneId].name} completed`);
                 eventSource.close();
                 clearTimeout(sceneTimeout);
                 resolve();
@@ -324,5 +349,27 @@ $(document).ready(function() {
         }
         $('#armedModeOutput').append(`<p class="${cssClass}">[${timestamp}] ${message}</p>`);
         $('#armedModeOutput').scrollTop($('#armedModeOutput')[0].scrollHeight);
+    }
+
+    function updateCurrentScene(sceneId) {
+        const sceneName = sceneId === 'None' ? 'None' : `${sceneId}: ${sceneDetails[sceneId].name}`;
+        $('#currentScene').text(sceneName);
+    }
+
+    function incrementConsecutiveFailures() {
+        consecutiveFailures++;
+        $('#consecutiveFailures').text(consecutiveFailures);
+    }
+
+    function resetConsecutiveFailures() {
+        consecutiveFailures = 0;
+        $('#consecutiveFailures').text(consecutiveFailures);
+    }
+
+    function resetSystemInfo() {
+        updateCurrentScene('None');
+        resetConsecutiveFailures();
+        $('#maxRetries').text(MAX_RETRIES);
+        $('#sceneTimeout').text(SCENE_TIMEOUT / 1000);
     }
 });
