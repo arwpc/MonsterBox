@@ -156,9 +156,11 @@ const sceneController = {
                 throw new Error('Invalid character ID');
             }
 
-            logger.info(`Attempting to update scene with data:`, JSON.stringify(req.body));
+            logger.info(`Received request body:`, JSON.stringify(req.body));
 
             let steps = req.body.steps;
+            logger.info(`Raw steps data:`, JSON.stringify(steps));
+
             if (typeof steps === 'string') {
                 try {
                     steps = JSON.parse(steps);
