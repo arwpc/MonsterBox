@@ -8,7 +8,7 @@ const sceneRoutes = require('../routes/sceneRoutes');
 
 chai.use(chaiHttp);
 
-describe('Scene Creation and Saving', () => {
+describe('Scene Management', () => {
   const testDataPath = path.join(__dirname, '../data/scenes.json');
   let originalData;
   let createdSceneId;
@@ -92,7 +92,7 @@ describe('Scene Creation and Saving', () => {
           expect(res.body.steps[1]).to.deep.include({ type: 'sound', name: 'Test Sound 2', sound_id: '2' });
           expect(res.body.steps[2]).to.deep.include({ type: 'pause', name: 'Test Pause', duration: '1000' });
 
-          createdSceneId = res.body.id; // Save the ID for cleanup
+          createdSceneId = res.body.id; // Save the ID for cleanup and next test
 
           // Verify the scene was actually saved to the file
           fs.readFile(testDataPath, 'utf8')
@@ -110,6 +110,37 @@ describe('Scene Creation and Saving', () => {
               console.error('Error reading scenes file:', error);
               done(error);
             });
+        } catch (assertionError) {
+          console.error('Assertion error:', assertionError);
+          done(assertionError);
+        }
+      });
+  });
+
+  it('should display saved scenes in the Scenes form', (done) => {
+    chai.request(app)
+      .get('/scenes')
+      .query({ characterId: 1 })
+      .end((err, res) => {
+        if (err) {
+          console.error('Test error:', err);
+          return done(err);
+        }
+        try {
+          expect(res).to.have.status(200);
+          expect(res.body).to.be.an('object');
+          expect(res.body.scenes).to.be.an('array');
+          
+          const createdScene = res.body.scenes.find(scene => scene.id === createdSceneId);
+          expect(createdScene).to.exist;
+          expect(createdScene.scene_name).to.equal('Test Scene');
+          expect(createdScene.character_id).to.equal(1);
+          expect(createdScene.steps).to.be.an('array').with.lengthOf(3);
+          expect(createdScene.steps[0]).to.deep.include({ type: 'sound', name: 'Test Sound 1', sound_id: '1' });
+          expect(createdScene.steps[1]).to.deep.include({ type: 'sound', name: 'Test Sound 2', sound_id: '2' });
+          expect(createdScene.steps[2]).to.deep.include({ type: 'pause', name: 'Test Pause', duration: '1000' });
+
+          done();
         } catch (assertionError) {
           console.error('Assertion error:', assertionError);
           done(assertionError);
