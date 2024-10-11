@@ -108,6 +108,19 @@ const sceneController = {
                     logger.error('Error parsing steps:', error);
                     steps = [];
                 }
+            } else if (!Array.isArray(steps)) {
+                steps = [];
+                for (let key in req.body) {
+                    if (key.startsWith('steps[')) {
+                        const match = key.match(/steps\[(\d+)\]\[(\w+)\]/);
+                        if (match) {
+                            const index = parseInt(match[1]);
+                            const prop = match[2];
+                            if (!steps[index]) steps[index] = {};
+                            steps[index][prop] = req.body[key];
+                        }
+                    }
+                }
             }
             
             logger.info(`Parsed steps:`, JSON.stringify(steps));
@@ -152,6 +165,19 @@ const sceneController = {
                 } catch (error) {
                     logger.error('Error parsing steps:', error);
                     steps = [];
+                }
+            } else if (!Array.isArray(steps)) {
+                steps = [];
+                for (let key in req.body) {
+                    if (key.startsWith('steps[')) {
+                        const match = key.match(/steps\[(\d+)\]\[(\w+)\]/);
+                        if (match) {
+                            const index = parseInt(match[1]);
+                            const prop = match[2];
+                            if (!steps[index]) steps[index] = {};
+                            steps[index][prop] = req.body[key];
+                        }
+                    }
                 }
             }
 
