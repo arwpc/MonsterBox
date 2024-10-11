@@ -17,9 +17,6 @@ $(document).ready(function() {
     }).selectable();
     $('#armButton').click(armSystem);
     $('#disarmButton').click(disarmSystem);
-    $('#loopAllScenes').change(function() {
-        logArmedModeOutput(`Loop All Scenes ${this.checked ? 'enabled' : 'disabled'}`);
-    });
 
     $('#sceneSelectionArea').show();
 
@@ -176,7 +173,6 @@ $(document).ready(function() {
         $('#disarmButton').prop('disabled', false);
         $('#armStatus').text('ARMED').removeClass('disarmed').addClass('armed');
         logArmedModeOutput('System armed. Starting Active Mode.');
-        logArmedModeOutput(`Loop All Scenes is ${$('#loopAllScenes').is(':checked') ? 'enabled' : 'disabled'}`);
         startActiveModeLoop();
     }
 
@@ -216,13 +212,8 @@ $(document).ready(function() {
             }
             
             if (index >= scenes.length) {
-                if ($('#loopAllScenes').is(':checked')) {
-                    logArmedModeOutput('All scenes completed. Loop All Scenes is enabled. Restarting from the beginning.');
-                    setTimeout(() => runNextScene(0), delay);
-                } else {
-                    logArmedModeOutput('All scenes completed. Loop All Scenes is disabled. Disarming system.');
-                    disarmSystem();
-                }
+                logArmedModeOutput('All scenes completed. Disarming system.');
+                disarmSystem();
                 return;
             }
 
