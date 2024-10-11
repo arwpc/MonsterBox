@@ -183,13 +183,14 @@ async function executeScene(scene, startStep, res) {
         
         // Send final SSE update
         sendSSEMessage(res, { message: completionMessage, event: 'scene_end' });
-        logger.info('Sent final SSE update');
+        logger.info('Sent final SSE update with scene_end event');
     } catch (error) {
         logger.error(`Error during scene ${scene.id} execution:`, error);
         currentSceneState.error = `Scene execution failed: ${error.message}`;
         
         // Send error SSE update
-        sendSSEMessage(res, { error: currentSceneState.error });
+        sendSSEMessage(res, { error: currentSceneState.error, event: 'scene_end' });
+        logger.info('Sent error SSE update with scene_end event');
     } finally {
         isExecuting = false;
         try {
@@ -203,8 +204,8 @@ async function executeScene(scene, startStep, res) {
         currentSceneState.messages.push(cleanupMessage);
         
         // Send final cleanup SSE update
-        sendSSEMessage(res, { message: cleanupMessage });
-        logger.info('Sent cleanup SSE update');
+        sendSSEMessage(res, { message: cleanupMessage, event: 'scene_end' });
+        logger.info('Sent cleanup SSE update with scene_end event');
     }
 }
 
