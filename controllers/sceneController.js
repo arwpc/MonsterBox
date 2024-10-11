@@ -93,16 +93,31 @@ const sceneController = {
 
     createScene: async (req, res, next) => {
         try {
-            const characterId = parseInt(req.body.character_id);
+            const characterId = parseInt(req.body.character_id || req.query.characterId);
             if (isNaN(characterId)) {
                 throw new Error('Invalid character ID');
             }
             
             logger.info(`Attempting to create new scene with data:`, JSON.stringify(req.body));
-            const newScene = await sceneService.createScene({
-                ...req.body,
-                character_id: characterId
-            });
+            
+            // Ensure steps are properly formatted
+            let steps = req.body.steps;
+            if (typeof steps === 'string') {
+                try {
+                    steps = JSON.parse(steps);
+                } catch (error) {
+                    logger.error('Error parsing steps:', error);
+                    steps = [];
+                }
+            }
+            
+            const sceneData = {
+                character_id: characterId,
+                scene_name: req.body.scene_name,
+                steps: steps
+            };
+            
+            const newScene = await sceneService.createScene(sceneData);
             logger.info(`Created new scene with ID ${newScene.id} for character ${newScene.character_id}`);
             res.redirect(`/scenes?characterId=${newScene.character_id}`);
         } catch (error) {
