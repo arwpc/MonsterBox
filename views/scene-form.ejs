@@ -166,7 +166,7 @@
 
             // Send form data via AJAX
             $.ajax({
-                url: this.action,
+                url: `${this.action}?characterId=${characterId}`,
                 method: 'POST',
                 data: formData,
                 processData: false,
