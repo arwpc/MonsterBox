@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title %></title>
+    <title><%= typeof title !== 'undefined' ? title : 'Error' %></title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-    <h1><%= title %></h1>
-    <p><%= message %></p>
-    <% if (error) { %>
+    <h1><%= typeof title !== 'undefined' ? title : 'Error' %></h1>
+    <p><%= typeof message !== 'undefined' ? message : 'An error occurred' %></p>
+    <% if (typeof error !== 'undefined' && error.stack) { %>
         <pre><%= error.stack %></pre>
     <% } %>
     <a href="/" class="button">Back to Home</a>
