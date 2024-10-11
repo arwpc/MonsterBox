@@ -110,14 +110,24 @@ const sceneController = {
                 }
             }
             
+            logger.info(`Parsed steps:`, JSON.stringify(steps));
+
             const sceneData = {
                 character_id: characterId,
                 scene_name: req.body.scene_name,
                 steps: steps
             };
             
+            logger.info(`Scene data being sent to service:`, JSON.stringify(sceneData));
+
             const newScene = await sceneService.createScene(sceneData);
-            logger.info(`Created new scene with ID ${newScene.id} for character ${newScene.character_id}`);
+            
+            logger.info(`Created new scene:`, JSON.stringify(newScene));
+
+            if (!newScene.scene_name || newScene.steps.length === 0) {
+                logger.warn(`Created scene is missing name or steps`);
+            }
+
             res.redirect(`/scenes?characterId=${newScene.character_id}`);
         } catch (error) {
             logger.error('Error creating new scene:', error);
@@ -145,15 +155,19 @@ const sceneController = {
                 }
             }
 
+            logger.info(`Parsed steps:`, JSON.stringify(steps));
+
             const sceneData = {
                 character_id: characterId,
                 scene_name: req.body.scene_name,
                 steps: steps
             };
 
+            logger.info(`Scene data being sent to service:`, JSON.stringify(sceneData));
+
             const updatedScene = await sceneService.updateScene(req.params.id, sceneData);
             if (updatedScene) {
-                logger.info(`Updated scene with ID ${req.params.id} for character ${updatedScene.character_id}`);
+                logger.info(`Updated scene:`, JSON.stringify(updatedScene));
                 res.redirect(`/scenes?characterId=${updatedScene.character_id}`);
             } else {
                 logger.warn(`Attempt to update non-existent scene with ID ${req.params.id}`);
