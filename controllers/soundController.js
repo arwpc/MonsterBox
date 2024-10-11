@@ -21,7 +21,7 @@ function setupAudioEnvironment() {
 
     env.XDG_RUNTIME_DIR = xdgRuntimeDir;
     env.PULSE_SERVER = pulseServer;
-    env.SDL_AUDIODRIVER = 'pulseaudio';
+    env.SDL_AUDIODRIVER = 'alsa'; // Change to ALSA
     env.PYTHONUNBUFFERED = '1';
 
     return env;
