@@ -87,5 +87,10 @@
         "sound_id": "3"
       }
     ]
+  },
+  {
+    "id": 4,
+    "character_id": 2,
+    "steps": []
   }
 ]
