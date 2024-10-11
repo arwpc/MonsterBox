@@ -48,11 +48,6 @@
     "characterId": "1"
   },
   {
-    "id": 2,
-    "character_id": 2,
-    "steps": []
-  },
-  {
     "id": 3,
     "character_id": 2,
     "scene_name": "Next Scene",
@@ -66,6 +61,11 @@
   },
   {
     "id": 4,
+    "character_id": 2,
+    "steps": []
+  },
+  {
+    "id": 5,
     "character_id": 2,
     "steps": []
   }
