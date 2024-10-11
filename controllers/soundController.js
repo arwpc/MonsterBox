@@ -4,7 +4,8 @@ const logger = require('../scripts/logger');
 
 let soundPlayerProcess = null;
 let soundPlayerRetries = 0;
-const MAX_SOUND_PLAYER_RETRIES = 3;
+const MAX_SOUND_PLAYER_RETRIES = 5;
+const RETRY_DELAY = 2000; // 2 seconds
 
 function startSoundPlayer() {
     return new Promise((resolve, reject) => {
@@ -15,23 +16,37 @@ function startSoundPlayer() {
                 stdio: ['pipe', 'pipe', 'pipe']
             });
 
+            let stdoutBuffer = '';
+            let stderrBuffer = '';
+
             soundPlayerProcess.stdout.on('data', (data) => {
-                logger.info(`Sound player output: ${data}`);
-                try {
-                    const jsonOutput = JSON.parse(data);
-                    if (jsonOutput.status === 'ready') {
-                        logger.info('Sound player is ready');
-                        resolve();
-                    } else if (jsonOutput.status === 'finished') {
-                        handleSoundCompletion(jsonOutput);
+                stdoutBuffer += data.toString();
+                let lines = stdoutBuffer.split('\n');
+                while (lines.length > 1) {
+                    let line = lines.shift();
+                    logger.info(`Sound player output: ${line}`);
+                    try {
+                        const jsonOutput = JSON.parse(line);
+                        if (jsonOutput.status === 'ready') {
+                            logger.info('Sound player is ready');
+                            resolve();
+                        } else if (jsonOutput.status === 'finished') {
+                            handleSoundCompletion(jsonOutput);
+                        }
+                    } catch (error) {
+                        logger.debug(`Non-JSON output from sound player: ${line}`);
                     }
-                } catch (error) {
-                    logger.debug(`Non-JSON output from sound player: ${data}`);
                 }
+                stdoutBuffer = lines.join('\n');
             });
 
             soundPlayerProcess.stderr.on('data', (data) => {
-                logger.error(`Sound player error: ${data}`);
+                stderrBuffer += data.toString();
+                let lines = stderrBuffer.split('\n');
+                while (lines.length > 1) {
+                    logger.error(`Sound player error: ${lines.shift()}`);
+                }
+                stderrBuffer = lines.join('\n');
             });
 
             soundPlayerProcess.on('error', (error) => {
@@ -41,11 +56,16 @@ function startSoundPlayer() {
 
             soundPlayerProcess.on('close', (code) => {
                 logger.info(`Sound player exited with code ${code}`);
+                if (stderrBuffer) {
+                    logger.error(`Sound player stderr: ${stderrBuffer}`);
+                }
                 soundPlayerProcess = null;
                 if (soundPlayerRetries < MAX_SOUND_PLAYER_RETRIES) {
                     soundPlayerRetries++;
-                    logger.info(`Retrying to start sound player (Attempt ${soundPlayerRetries})`);
-                    startSoundPlayer().then(resolve).catch(reject);
+                    logger.info(`Retrying to start sound player (Attempt ${soundPlayerRetries}/${MAX_SOUND_PLAYER_RETRIES})`);
+                    setTimeout(() => {
+                        startSoundPlayer().then(resolve).catch(reject);
+                    }, RETRY_DELAY);
                 } else {
                     logger.error('Max retries reached. Unable to start sound player.');
                     reject(new Error('Unable to start sound player after max retries'));
