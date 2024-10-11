@@ -8,7 +8,7 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
-    <h1><%= title %> for <%= character.char_name %></h1>
+    <h1><%= title %> for <%= character.name %></h1>
     <a href="/scenes/new?characterId=<%= character.id %>" class="button">Add New Scene</a>
     <% if (scenes.length === 0) { %>
         <p>No scenes found for this character.</p>
