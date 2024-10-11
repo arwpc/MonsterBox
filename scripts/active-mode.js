@@ -227,14 +227,14 @@ $(document).ready(function() {
                     setTimeout(() => runNextScene(index + 1), delay);
                 }
             }).catch((error) => {
-                logArmedModeOutput(`Error executing scene ${sceneId}: ${error.message}`);
+                logArmedModeOutput(`Error executing scene ${sceneId}: ${error.message}`, 'error');
                 if (retryCount < MAX_RETRIES) {
                     retryCount++;
-                    logArmedModeOutput(`Retrying scene ${sceneId} (Attempt ${retryCount} of ${MAX_RETRIES})`);
+                    logArmedModeOutput(`Retrying scene ${sceneId} (Attempt ${retryCount} of ${MAX_RETRIES})`, 'warning');
                     setTimeout(() => runNextScene(index), delay);
                 } else {
                     retryCount = 0;
-                    logArmedModeOutput(`Max retries reached for scene ${sceneId}. Moving to next scene.`);
+                    logArmedModeOutput(`Max retries reached for scene ${sceneId}. Moving to next scene.`, 'warning');
                     setTimeout(() => runNextScene(index + 1), delay);
                 }
             });
@@ -249,6 +249,12 @@ $(document).ready(function() {
             const eventSource = new EventSource(`/scenes/${sceneId}/play?characterId=${characterId}&_=${Date.now()}`, {
                 withCredentials: true
             });
+
+            let sceneTimeout = setTimeout(() => {
+                logArmedModeOutput(`Scene ${sceneId} timed out. Moving to next scene.`, 'warning');
+                eventSource.close();
+                resolve(); // Resolve the promise to move to the next scene
+            }, 60000); // 60 seconds timeout
 
             eventSource.onopen = function(event) {
                 console.log(`SSE connection opened for scene ${sceneId}`);
@@ -271,6 +277,7 @@ $(document).ready(function() {
                 console.error(`SSE ReadyState: ${eventSource.readyState}`);
                 console.error(`SSE URL: ${eventSource.url}`);
                 eventSource.close();
+                clearTimeout(sceneTimeout);
                 logArmedModeOutput(`SSE Error for scene ${sceneId}: ${error.type}`, 'error');
                 reject(new Error(`SSE Error for scene ${sceneId}: ${error.type}`));
             };
@@ -279,6 +286,7 @@ $(document).ready(function() {
                 console.log(`Scene ${sceneId} completed`);
                 logArmedModeOutput(`Scene ${sceneId} completed`);
                 eventSource.close();
+                clearTimeout(sceneTimeout);
                 resolve();
             });
 
