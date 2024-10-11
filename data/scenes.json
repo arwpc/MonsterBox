@@ -50,7 +50,8 @@
   {
     "id": 3,
     "character_id": 2,
-    "steps": []
+    "steps": [],
+    "scene_name": "Untitled Scene"
   },
   {
     "id": 4,
