@@ -74,12 +74,14 @@ const sceneController = {
 
     createScene: async (req, res) => {
         try {
+            logger.info('Attempting to create new scene with data:', JSON.stringify(req.body));
             const newScene = await sceneService.createScene(req.body);
             logger.info(`Created new scene with ID ${newScene.id} for character ${newScene.character_id}`);
             res.redirect('/scenes');
         } catch (error) {
             logger.error('Error creating new scene:', error);
-            res.status(500).render('error', { error: 'Failed to create new scene' });
+            logger.error('Request body:', JSON.stringify(req.body));
+            res.status(500).render('error', { error: 'Failed to create new scene', details: error.message });
         }
     },
 
