@@ -53,12 +53,12 @@ const createScene = async (sceneData) => {
     const newScene = {
         id: getNextId(scenes),
         character_id: parseInt(sceneData.character_id),
-        scene_name: sceneData.scene_name,
+        scene_name: sceneData.scene_name || 'Untitled Scene',
         steps: sceneData.steps || []
     };
     scenes.push(newScene);
     await fs.writeFile(dataPath, JSON.stringify(scenes, null, 2));
-    logger.info(`Created new scene with id ${newScene.id}`);
+    logger.info(`Created new scene with id ${newScene.id}, name: ${newScene.scene_name}, steps: ${newScene.steps.length}`);
     return newScene;
 };
 
@@ -71,10 +71,11 @@ const updateScene = async (id, sceneData) => {
             ...sceneData,
             id: parseInt(id),
             character_id: parseInt(sceneData.character_id),
-            steps: sceneData.steps || scenes[index].steps
+            scene_name: sceneData.scene_name || scenes[index].scene_name || 'Untitled Scene',
+            steps: sceneData.steps || scenes[index].steps || []
         };
         await fs.writeFile(dataPath, JSON.stringify(scenes, null, 2));
-        logger.info(`Updated scene with id ${id}`);
+        logger.info(`Updated scene with id ${id}, name: ${scenes[index].scene_name}, steps: ${scenes[index].steps.length}`);
         return scenes[index];
     }
     logger.warn(`Attempt to update non-existent scene with id ${id}`);

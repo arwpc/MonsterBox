@@ -26,15 +26,17 @@
             <tbody>
                 <% scenes.forEach(function(scene) { %>
                     <tr>
-                        <td><%= scene.scene_name %></td>
+                        <td><%= scene.scene_name || 'Untitled Scene' %> (ID: <%= scene.id %>)</td>
                         <td><%= scene.steps ? scene.steps.length : 0 %></td>
                         <td>
-                            <% if (scene.steps) { %>
+                            <% if (scene.steps && scene.steps.length > 0) { %>
                                 <ul>
                                     <% scene.steps.forEach(function(step) { %>
-                                        <li><%= step.name %></li>
+                                        <li><%= step.name || 'Unnamed Step' %></li>
                                     <% }); %>
                                 </ul>
+                            <% } else { %>
+                                <p>No steps</p>
                             <% } %>
                         </td>
                         <td>
@@ -91,5 +93,11 @@
             });
         });
     </script>
+
+    <div style="margin-top: 50px; border-top: 1px solid #ccc; padding-top: 20px;">
+        <h2>Debug Information</h2>
+        <h3>All Scenes Data:</h3>
+        <pre><%= JSON.stringify(scenes, null, 2) %></pre>
+    </div>
 </body>
 </html>

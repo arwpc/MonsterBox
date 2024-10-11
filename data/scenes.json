@@ -50,14 +50,7 @@
   {
     "id": 3,
     "character_id": 2,
-    "scene_name": "Next Scene",
-    "steps": [
-      {
-        "type": "sound",
-        "name": "santos",
-        "sound_id": "3"
-      }
-    ]
+    "steps": []
   },
   {
     "id": 4,
