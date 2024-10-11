@@ -48,22 +48,6 @@
     "characterId": "1"
   },
   {
-    "id": 3,
-    "character_id": 2,
-    "steps": [],
-    "scene_name": "Untitled Scene"
-  },
-  {
-    "id": 4,
-    "character_id": 2,
-    "steps": []
-  },
-  {
-    "id": 5,
-    "character_id": 2,
-    "steps": []
-  },
-  {
     "id": 6,
     "character_id": 1,
     "scene_name": "Test Scene",
@@ -74,11 +58,5 @@
         "sound_id": "1"
       }
     ]
-  },
-  {
-    "id": 7,
-    "character_id": 2,
-    "scene_name": "Untitled Scene",
-    "steps": []
   }
 ]
