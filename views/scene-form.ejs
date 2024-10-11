@@ -13,8 +13,8 @@
     <form id="sceneForm" action="<%= action %>" method="POST">
         <input type="hidden" name="character_id" value="<%= character.id %>">
         
-        <label for="name">Scene Name:</label>
-        <input type="text" id="name" name="name" value="<%= scene.name || '' %>" required>
+        <label for="scene_name">Scene Name:</label>
+        <input type="text" id="scene_name" name="scene_name" value="<%= scene.scene_name || '' %>" required>
 
         <h2>Steps</h2>
         <div id="steps" class="sortable">
