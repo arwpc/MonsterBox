@@ -12,9 +12,15 @@ function startSoundPlayer() {
         if (!soundPlayerProcess) {
             const scriptPath = path.resolve(__dirname, '..', 'scripts', 'sound_player.py');
             logger.info(`Starting sound player: ${scriptPath}`);
+            logger.info(`Current working directory: ${process.cwd()}`);
+            logger.info(`Environment: ${JSON.stringify(process.env)}`);
+            
             soundPlayerProcess = spawn('python3', [scriptPath], {
-                stdio: ['pipe', 'pipe', 'pipe']
+                stdio: ['pipe', 'pipe', 'pipe'],
+                env: { ...process.env, PYTHONUNBUFFERED: '1' }
             });
+
+            logger.info(`Sound player process PID: ${soundPlayerProcess.pid}`);
 
             let stdoutBuffer = '';
             let stderrBuffer = '';
