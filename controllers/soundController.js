@@ -9,16 +9,22 @@ let soundPlayerRetries = 0;
 const MAX_SOUND_PLAYER_RETRIES = 5;
 const RETRY_DELAY = 2000; // 2 seconds
 
-function setupPulseAudioEnvironment() {
-    const uid = process.getuid();
+function setupAudioEnvironment() {
+    const env = { ...process.env };
+    const isRoot = process.getuid() === 0;
+
+    // Get the UID of the original user, even when running with sudo
+    const uid = isRoot ? parseInt(process.env.SUDO_UID || process.getuid()) : process.getuid();
+
     const xdgRuntimeDir = `/run/user/${uid}`;
     const pulseServer = `unix:${xdgRuntimeDir}/pulse/native`;
 
-    return {
-        ...process.env,
-        XDG_RUNTIME_DIR: xdgRuntimeDir,
-        PULSE_SERVER: pulseServer,
-    };
+    env.XDG_RUNTIME_DIR = xdgRuntimeDir;
+    env.PULSE_SERVER = pulseServer;
+    env.SDL_AUDIODRIVER = 'pulseaudio';
+    env.PYTHONUNBUFFERED = '1';
+
+    return env;
 }
 
 function startSoundPlayer() {
@@ -28,14 +34,7 @@ function startSoundPlayer() {
             logger.info(`Starting sound player: ${scriptPath}`);
             logger.info(`Current working directory: ${process.cwd()}`);
             
-            const isRoot = process.geteuid && process.geteuid() === 0;
-            logger.info(`Running as root: ${isRoot}`);
-            
-            const env = {
-                ...setupPulseAudioEnvironment(),
-                PYTHONUNBUFFERED: '1',
-                IS_ROOT: isRoot ? '1' : '0'
-            };
+            const env = setupAudioEnvironment();
             logger.info(`Environment: ${JSON.stringify(env)}`);
             
             let spawnOptions = {
@@ -43,8 +42,8 @@ function startSoundPlayer() {
                 env: env
             };
 
-            // If running as root, try to switch to the original user
-            if (isRoot && process.env.SUDO_UID && process.env.SUDO_GID) {
+            // If running as root, switch to the original user
+            if (process.getuid() === 0 && process.env.SUDO_UID && process.env.SUDO_GID) {
                 spawnOptions.uid = parseInt(process.env.SUDO_UID);
                 spawnOptions.gid = parseInt(process.env.SUDO_GID);
             }
