@@ -8,7 +8,7 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
-    <h1><%= title %> for <%= character ? (character.name || 'Unknown Character') : 'Unknown Character' %></h1>
+    <h1><%= title %> for <%= character ? (character.char_name || 'Unknown Character') : 'Unknown Character' %></h1>
     <p>Debug: Character object: <%= JSON.stringify(character) %></p>
     <a href="/scenes/new?characterId=<%= character ? character.id : '' %>" class="button">Add New Scene</a>
     <% if (scenes.length === 0) { %>
