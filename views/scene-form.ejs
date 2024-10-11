@@ -158,11 +158,23 @@
             const formData = new FormData(this);
             
             // Add steps data
+            const steps = [];
             $('#steps > div').each(function(index) {
+                const step = {};
                 $(this).find('input, select').each(function() {
-                    formData.append(`steps[${index}][${this.name.match(/\[([^\]]+)\]$/)[1]}]`, this.value);
+                    const key = this.name.match(/\[([^\]]+)\]$/)[1];
+                    step[key] = this.value;
                 });
+                steps.push(step);
             });
+            
+            formData.append('steps', JSON.stringify(steps));
+
+            // Log the form data
+            console.log('Form data before sending:');
+            for (let [key, value] of formData.entries()) {
+                console.log(key, value);
+            }
 
             // Send form data via AJAX
             $.ajax({

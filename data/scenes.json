@@ -50,31 +50,7 @@
   {
     "id": 2,
     "character_id": 2,
-    "scene_name": "Moe One",
-    "steps": [
-      {
-        "type": "motor",
-        "name": "asd",
-        "part_id": "12",
-        "duration": "2500",
-        "direction": "forward",
-        "speed": "100"
-      },
-      {
-        "type": "sound",
-        "name": "asdasd",
-        "sound_id": "7",
-        "concurrent": "on"
-      },
-      {
-        "type": "motor",
-        "name": "Otherway",
-        "part_id": "12",
-        "duration": "5000",
-        "direction": "backward",
-        "speed": "50"
-      }
-    ]
+    "steps": []
   },
   {
     "id": 3,
