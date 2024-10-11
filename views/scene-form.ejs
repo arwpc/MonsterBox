@@ -172,11 +172,14 @@
                 processData: false,
                 contentType: false,
                 success: function(response) {
+                    console.log('Scene saved successfully:', response);
                     window.location.href = `/scenes?characterId=${characterId}`;
                 },
                 error: function(xhr, status, error) {
                     console.error('Error saving scene:', error);
-                    alert('Failed to save scene. Please try again.');
+                    console.error('Status:', status);
+                    console.error('Response:', xhr.responseText);
+                    alert('Failed to save scene. Please check the console for more details.');
                 }
             });
 
