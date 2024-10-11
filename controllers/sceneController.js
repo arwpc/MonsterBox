@@ -100,7 +100,6 @@ const sceneController = {
             
             logger.info(`Attempting to create new scene with data:`, JSON.stringify(req.body));
             
-            // Ensure steps are properly formatted
             let steps = req.body.steps;
             if (typeof steps === 'string') {
                 try {
@@ -129,7 +128,30 @@ const sceneController = {
 
     updateScene: async (req, res) => {
         try {
-            const updatedScene = await sceneService.updateScene(req.params.id, req.body);
+            const characterId = parseInt(req.body.character_id || req.query.characterId);
+            if (isNaN(characterId)) {
+                throw new Error('Invalid character ID');
+            }
+
+            logger.info(`Attempting to update scene with data:`, JSON.stringify(req.body));
+
+            let steps = req.body.steps;
+            if (typeof steps === 'string') {
+                try {
+                    steps = JSON.parse(steps);
+                } catch (error) {
+                    logger.error('Error parsing steps:', error);
+                    steps = [];
+                }
+            }
+
+            const sceneData = {
+                character_id: characterId,
+                scene_name: req.body.scene_name,
+                steps: steps
+            };
+
+            const updatedScene = await sceneService.updateScene(req.params.id, sceneData);
             if (updatedScene) {
                 logger.info(`Updated scene with ID ${req.params.id} for character ${updatedScene.character_id}`);
                 res.redirect(`/scenes?characterId=${updatedScene.character_id}`);
@@ -139,7 +161,7 @@ const sceneController = {
             }
         } catch (error) {
             logger.error(`Error updating scene ${req.params.id}:`, error);
-            res.status(500).render('error', { error: 'Failed to update scene' });
+            res.status(500).render('error', { error: 'Failed to update scene', details: error.message });
         }
     },
 
