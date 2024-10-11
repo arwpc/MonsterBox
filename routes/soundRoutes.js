@@ -2,9 +2,9 @@
 
 const express = require('express');
 const path = require('path');
-const { spawn } = require('child_process');
 const soundService = require('../services/soundService');
 const characterService = require('../services/characterService');
+const soundController = require('../controllers/soundController');
 const multer = require('multer');
 const fs = require('fs').promises;
 const router = express.Router();
@@ -20,28 +20,6 @@ const storage = multer.diskStorage({
     }
 });
 const upload = multer({ storage: storage });
-
-let soundPlayerProcess = null;
-
-function startSoundPlayer() {
-    if (!soundPlayerProcess) {
-        const scriptPath = path.resolve(__dirname, '..', 'scripts', 'sound_player.py');
-        soundPlayerProcess = spawn('python3', [scriptPath]);
-
-        soundPlayerProcess.stdout.on('data', (data) => {
-            logger.info(`Sound player output: ${data}`);
-        });
-
-        soundPlayerProcess.stderr.on('data', (data) => {
-            logger.error(`Sound player error: ${data}`);
-        });
-
-        soundPlayerProcess.on('close', (code) => {
-            logger.info(`Sound player exited with code ${code}`);
-            soundPlayerProcess = null;
-        });
-    }
-}
 
 router.get('/', async (req, res) => {
     try {
@@ -151,19 +129,15 @@ router.post('/:id/play', async (req, res) => {
             return res.status(404).json({ error: 'Sound file not accessible', details: error.message, filePath });
         }
 
-        startSoundPlayer();
-
-        if (!soundPlayerProcess) {
-            return res.status(500).json({ error: 'Failed to start sound player' });
-        }
-
-        const command = `PLAY|${sound.id}|${filePath}\n`;
-        soundPlayerProcess.stdin.write(command);
+        // Use soundController to play the sound
+        await soundController.startSoundPlayer();
+        const result = await soundController.playSound(sound.id, filePath);
 
         res.status(200).json({ 
             message: 'Playing sound on character',
             sound: sound.name,
-            file: sound.filename
+            file: sound.filename,
+            result: result
         });
 
     } catch (error) {
