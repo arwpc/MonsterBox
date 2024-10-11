@@ -92,6 +92,13 @@ class SoundPlayer:
             channel.stop()
             del self.sounds[sound_id]
             log_message({"status": "stopped", "sound_id": sound_id})
+        else:
+            log_message({"status": "warning", "message": f"Sound {sound_id} not found or already stopped"})
+
+    def stop_all_sounds(self):
+        pygame.mixer.stop()
+        self.sounds.clear()
+        log_message({"status": "info", "message": "All sounds stopped"})
 
 def signal_handler(signum, frame):
     log_message({"status": "info", "message": f"Received signal {signum}. Exiting gracefully."})
@@ -115,11 +122,29 @@ if __name__ == "__main__":
                 if command == "EXIT":
                     break
 
-                cmd, sound_id, file_path = command.split("|")
+                parts = command.split("|")
+                if len(parts) < 2:
+                    log_message({"status": "error", "message": f"Invalid command format: {command}"})
+                    continue
+
+                cmd = parts[0]
                 if cmd == "PLAY":
+                    if len(parts) != 3:
+                        log_message({"status": "error", "message": f"Invalid PLAY command format: {command}"})
+                        continue
+                    sound_id, file_path = parts[1], parts[2]
                     player.play_sound(sound_id, file_path)
                 elif cmd == "STOP":
+                    if len(parts) != 2:
+                        log_message({"status": "error", "message": f"Invalid STOP command format: {command}"})
+                        continue
+                    sound_id = parts[1]
                     player.stop_sound(sound_id)
+                elif cmd == "STOP_ALL":
+                    player.stop_all_sounds()
+                else:
+                    log_message({"status": "error", "message": f"Unknown command: {cmd}"})
+
             except EOFError:
                 log_message({"status": "info", "message": "Received EOF. Waiting for more input."})
                 time.sleep(1)  # Wait a bit before trying to read input again

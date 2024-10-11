@@ -1,5 +1,6 @@
-const { spawn } = require('child_process');
+const { spawn, execSync } = require('child_process');
 const path = require('path');
+const fs = require('fs');
 const logger = require('../scripts/logger');
 const os = require('os');
 
@@ -7,6 +8,25 @@ let soundPlayerProcess = null;
 let soundPlayerRetries = 0;
 const MAX_SOUND_PLAYER_RETRIES = 5;
 const RETRY_DELAY = 2000; // 2 seconds
+
+function copyPulseAudioCookie() {
+    try {
+        const userHome = os.homedir();
+        const rootHome = '/root';
+        const cookieSource = path.join(userHome, '.config', 'pulse', 'cookie');
+        const cookieDestination = path.join(rootHome, '.config', 'pulse', 'cookie');
+
+        if (fs.existsSync(cookieSource)) {
+            execSync(`sudo mkdir -p ${path.dirname(cookieDestination)}`);
+            execSync(`sudo cp ${cookieSource} ${cookieDestination}`);
+            logger.info('PulseAudio cookie copied successfully');
+        } else {
+            logger.warn('PulseAudio cookie not found in user directory');
+        }
+    } catch (error) {
+        logger.error(`Error copying PulseAudio cookie: ${error.message}`);
+    }
+}
 
 function startSoundPlayer() {
     return new Promise((resolve, reject) => {
@@ -18,6 +38,10 @@ function startSoundPlayer() {
             const isRoot = process.geteuid && process.geteuid() === 0;
             logger.info(`Running as root: ${isRoot}`);
             
+            if (isRoot) {
+                copyPulseAudioCookie();
+            }
+
             const env = {
                 ...process.env,
                 PYTHONUNBUFFERED: '1',
