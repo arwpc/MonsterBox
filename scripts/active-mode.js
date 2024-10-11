@@ -13,11 +13,10 @@ $(document).ready(function() {
     $('#addScenes').click(addScenes);
     $('#removeScenes').click(removeScenes);
     $('#activatedScenes').sortable({
-        update: updateSceneTimeline
+        update: updateArmButtonState
     }).selectable();
     $('#armButton').click(armSystem);
     $('#disarmButton').click(disarmSystem);
-    $('#sceneDelay').on('input', updateSceneTimeline);
     $('#loopAllScenes').change(function() {
         logArmedModeOutput(`Loop All Scenes ${this.checked ? 'enabled' : 'disabled'}`);
     });
@@ -149,7 +148,6 @@ $(document).ready(function() {
             $('#activatedScenes').append(`<li data-id="${sceneId}">${sceneName}</li>`);
             $(this).remove();
         });
-        updateSceneTimeline();
         updateArmButtonState();
     }
 
@@ -160,30 +158,7 @@ $(document).ready(function() {
             $('#availableScenes').append(`<option value="${sceneId}">${sceneName}</option>`);
             $(this).remove();
         });
-        updateSceneTimeline();
         updateArmButtonState();
-    }
-
-    function updateSceneTimeline() {
-        const delay = parseInt($('#sceneDelay').val()) || 5;
-        let totalTime = 0;
-        const timelineHtml = $('#activatedScenes li').map(function(index) {
-            const sceneName = $(this).text();
-            const startTime = totalTime;
-            totalTime += delay;
-            return `<div class="timeline-item">
-                        <strong>${sceneName}</strong><br>
-                        Start: ${formatTime(startTime)}, End: ${formatTime(totalTime)}
-                    </div>`;
-        }).get().join('');
-        
-        $('#sceneTimeline').html(timelineHtml);
-    }
-
-    function formatTime(seconds) {
-        const minutes = Math.floor(seconds / 60);
-        const remainingSeconds = seconds % 60;
-        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
     }
 
     function updateArmButtonState() {
