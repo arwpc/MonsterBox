@@ -1,6 +1,7 @@
 const { spawn } = require('child_process');
 const path = require('path');
 const logger = require('../scripts/logger');
+const os = require('os');
 
 let soundPlayerProcess = null;
 let soundPlayerRetries = 0;
@@ -24,10 +25,18 @@ function startSoundPlayer() {
             };
             logger.info(`Environment: ${JSON.stringify(env)}`);
             
-            soundPlayerProcess = spawn('python3', [scriptPath], {
+            let spawnOptions = {
                 stdio: ['pipe', 'pipe', 'pipe'],
                 env: env
-            });
+            };
+
+            // If running as root, try to switch to the original user
+            if (isRoot && process.env.SUDO_UID && process.env.SUDO_GID) {
+                spawnOptions.uid = parseInt(process.env.SUDO_UID);
+                spawnOptions.gid = parseInt(process.env.SUDO_GID);
+            }
+            
+            soundPlayerProcess = spawn('python3', [scriptPath], spawnOptions);
 
             logger.info(`Sound player process PID: ${soundPlayerProcess.pid}`);
 
