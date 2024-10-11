@@ -13,11 +13,20 @@ function startSoundPlayer() {
             const scriptPath = path.resolve(__dirname, '..', 'scripts', 'sound_player.py');
             logger.info(`Starting sound player: ${scriptPath}`);
             logger.info(`Current working directory: ${process.cwd()}`);
-            logger.info(`Environment: ${JSON.stringify(process.env)}`);
+            
+            const isRoot = process.geteuid && process.geteuid() === 0;
+            logger.info(`Running as root: ${isRoot}`);
+            
+            const env = {
+                ...process.env,
+                PYTHONUNBUFFERED: '1',
+                IS_ROOT: isRoot ? '1' : '0'
+            };
+            logger.info(`Environment: ${JSON.stringify(env)}`);
             
             soundPlayerProcess = spawn('python3', [scriptPath], {
                 stdio: ['pipe', 'pipe', 'pipe'],
-                env: { ...process.env, PYTHONUNBUFFERED: '1' }
+                env: env
             });
 
             logger.info(`Sound player process PID: ${soundPlayerProcess.pid}`);
