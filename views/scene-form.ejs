@@ -7,6 +7,23 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
     <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .form-actions {
+            display: flex;
+            justify-content: flex-start;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .form-actions .button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            min-width: 150px;
+        }
+    </style>
 </head>
 <body>
     <h1><%= title %></h1>
@@ -92,7 +109,7 @@
             // Update the name attribute of all inputs and selects
             newStep.querySelectorAll('input, select').forEach(element => {
                 if (element.name) {
-                    element.name = element.name.replace(`steps[${index}]`, `steps[${newIndex}]`);
+                    element.name = element.name.replace(/steps\[\d+\]/, `steps[${newIndex}]`);
                 }
             });
 
@@ -133,9 +150,42 @@
         }
 
         // Ensure all steps are included when submitting the form
-        document.getElementById('sceneForm').onsubmit = function() {
+        document.getElementById('sceneForm').onsubmit = function(event) {
+            event.preventDefault();
             updateStepNumbers();
-            return true;
+            
+            // Serialize form data
+            const formData = new FormData(this);
+            
+            // Add steps data
+            const steps = [];
+            $('#steps > div').each(function(index) {
+                const step = {};
+                $(this).find('input, select').each(function() {
+                    const name = this.name.match(/\[([^\]]+)\]$/)[1];
+                    step[name] = this.value;
+                });
+                steps.push(step);
+            });
+            formData.append('steps', JSON.stringify(steps));
+
+            // Send form data via AJAX
+            $.ajax({
+                url: this.action,
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    window.location.href = `/scenes?characterId=${characterId}`;
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error saving scene:', error);
+                    alert('Failed to save scene. Please try again.');
+                }
+            });
+
+            return false;
         };
     </script>
 </body>
