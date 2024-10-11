@@ -161,12 +161,16 @@ function initializeApp() {
         logger.error('Error starting audio stream:', error);
     }
 
-    // Start the server
-    startServer();
+    // Start the server only if not in test environment
+    if (process.env.NODE_ENV !== 'test') {
+        startServer();
+    }
 }
 
-// Start the application
-initializeApp();
+// Start the application if this file is run directly
+if (require.main === module) {
+    initializeApp();
+}
 
 // Global error handlers
 process.on('uncaughtException', (error) => {

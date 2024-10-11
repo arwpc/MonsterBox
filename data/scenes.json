@@ -62,5 +62,23 @@
     "id": 5,
     "character_id": 2,
     "steps": []
+  },
+  {
+    "id": 6,
+    "character_id": 1,
+    "scene_name": "Test Scene",
+    "steps": [
+      {
+        "type": "sound",
+        "name": "Test Sound",
+        "sound_id": "1"
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "character_id": 2,
+    "scene_name": "Untitled Scene",
+    "steps": []
   }
 ]
