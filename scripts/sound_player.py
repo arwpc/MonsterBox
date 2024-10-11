@@ -24,6 +24,7 @@ if 'XDG_RUNTIME_DIR' not in os.environ:
     log_message({"status": "info", "message": f"Set XDG_RUNTIME_DIR to {runtime_dir}"})
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+os.environ['SDL_AUDIODRIVER'] = 'pulseaudio'  # Use PulseAudio as the audio driver
 
 class SoundPlayer:
     def __init__(self):
@@ -35,16 +36,11 @@ class SoundPlayer:
     def init_pygame_mixer(self, retries=3):
         for attempt in range(retries):
             try:
-                if os.geteuid() == 0:  # If running as root
-                    os.environ['SDL_AUDIODRIVER'] = 'alsa'
-                else:
-                    os.environ['SDL_AUDIODRIVER'] = 'pulseaudio'
-                
-                log_message({"status": "info", "message": f"Using audio driver: {os.environ['SDL_AUDIODRIVER']}"})
-                
+                pygame.init()
                 pygame.mixer.init()
                 log_message({"status": "info", "message": "pygame.mixer initialized successfully"})
                 
+                log_message({"status": "info", "message": f"SDL_AUDIODRIVER: {os.environ.get('SDL_AUDIODRIVER', 'Not set')}"})
                 log_message({"status": "info", "message": f"Pygame audio driver: {pygame.mixer.get_init()}"})
                 
                 pygame.mixer.set_num_channels(32)  # Set a higher number of channels for concurrent playback
