@@ -1,7 +1,6 @@
 const request = require('supertest');
 const { expect } = require('chai');
 const app = require('../app');
-const Part = require('../models/part'); // Add this line to import the Part model
 
 describe('Parts Menu Navigation', function() {
   let agent;
@@ -10,12 +9,22 @@ describe('Parts Menu Navigation', function() {
     agent = request.agent(app);
   });
 
-  // Add this afterEach hook for cleanup
+  // Modified afterEach hook for cleanup
   afterEach(async function() {
     console.log('Starting cleanup process');
     try {
-      const deletedParts = await Part.deleteMany({ name: /Test/i });
-      console.log(`Cleaned up ${deletedParts.deletedCount} test parts`);
+      const mockCharacterId = '1';
+      const response = await agent.get(`/parts?characterId=${mockCharacterId}`);
+      const parts = response.body.parts || [];
+      
+      for (const part of parts) {
+        if (part.name.toLowerCase().includes('test')) {
+          await agent.delete(`/parts/${part._id}`);
+          console.log(`Deleted test part: ${part.name}`);
+        }
+      }
+      
+      console.log('Cleanup process completed');
     } catch (error) {
       console.error('Error during cleanup:', error);
     }
