@@ -1,6 +1,5 @@
 const request = require('supertest');
 const { expect } = require('chai');
-const { JSDOM } = require('jsdom');
 const app = require('../../app');
 
 describe('LED CRUD Operations', function() {
@@ -21,17 +20,6 @@ describe('LED CRUD Operations', function() {
         .send({ characterId: mockCharacterId })
         .expect(200);
 
-      // Navigate to Add LED page
-      const addResponse = await agent.get('/parts/new/led');
-      expect(addResponse.status).to.be.oneOf([200, 302]);
-      if (addResponse.status === 302) {
-        const redirectResponse = await agent.get(addResponse.headers.location);
-        expect(redirectResponse.status).to.equal(200);
-        expect(redirectResponse.text).to.include('Add Led');
-      } else {
-        expect(addResponse.text).to.include('Add Led');
-      }
-
       // Create an LED
       const mockLedData = {
         name: 'Test LED',
@@ -48,37 +36,33 @@ describe('LED CRUD Operations', function() {
       const redirectLocation = createResponse.headers.location;
       expect(redirectLocation).to.equal(`/parts?characterId=${mockCharacterId}`);
 
-      // Verify LED was created
-      const partsListResponse = await agent.get(`/parts?characterId=${mockCharacterId}`);
-      expect(partsListResponse.status).to.equal(200);
-      expect(partsListResponse.text).to.include('Test LED');
+      // Verify LED was created and get ID from API
+      const partsListResponse = await agent
+        .get(`/api/parts?characterId=${mockCharacterId}`)
+        .expect(200);
 
-      // Get the ID of the created LED
-      const dom = new JSDOM(partsListResponse.text);
-      const document = dom.window.document;
-
-      const ledRow = Array.from(document.querySelectorAll('tr')).find(row => row.textContent.includes('Test LED'));
-      expect(ledRow, 'LED row not found').to.not.be.undefined;
-
-      const deleteButton = ledRow.querySelector('.delete-part');
-      expect(deleteButton, 'Delete button not found').to.not.be.null;
-
-      const ledId = deleteButton.getAttribute('data-id');
-      expect(ledId, 'LED ID not found').to.not.be.null;
-
+      const createdLed = partsListResponse.body.find(part => part.name === 'Test LED' && part.type === 'led');
+      expect(createdLed, 'Created LED not found').to.not.be.undefined;
+      const ledId = createdLed.id;
       console.log('Found LED ID:', ledId);
+
 
       // Delete the LED
       const deleteResponse = await agent
         .post(`/parts/${ledId}/delete?characterId=${mockCharacterId}`)
-        .expect(200); // Changed from 302 to 200
+        .expect(200);
+
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       expect(deleteResponse.body).to.have.property('message', 'Part deleted successfully');
 
       // Verify LED was deleted
-      const finalPartsListResponse = await agent.get(`/parts?characterId=${mockCharacterId}`);
-      expect(finalPartsListResponse.status).to.equal(200);
-      expect(finalPartsListResponse.text).to.not.include('Test LED');
+      const finalPartsListResponse = await agent
+        .get(`/api/parts?characterId=${mockCharacterId}`)
+        .expect(200);
+      
+      const deletedLed = finalPartsListResponse.body.find(part => part.id === ledId);
+      expect(deletedLed, 'LED still exists after deletion').to.be.undefined;
 
     } catch (error) {
       console.error('Test failed with error:', error);

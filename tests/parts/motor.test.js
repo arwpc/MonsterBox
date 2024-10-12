@@ -1,6 +1,5 @@
 const request = require('supertest');
 const { expect } = require('chai');
-const { JSDOM } = require('jsdom');
 const app = require('../../app');
 
 describe('Motor CRUD Operations', function() {
@@ -38,24 +37,14 @@ describe('Motor CRUD Operations', function() {
       const redirectLocation = createResponse.headers.location;
       expect(redirectLocation).to.equal(`/parts?characterId=${mockCharacterId}`);
 
-      // Verify Motor was created
-      const partsListResponse = await agent.get(`/parts?characterId=${mockCharacterId}`);
-      expect(partsListResponse.status).to.equal(200);
-      expect(partsListResponse.text).to.include('Test Motor');
+      // Verify Motor was created and get ID from API
+      const partsListResponse = await agent
+        .get(`/api/parts?characterId=${mockCharacterId}`)
+        .expect(200);
 
-      // Get the ID of the created Motor
-      const dom = new JSDOM(partsListResponse.text);
-      const document = dom.window.document;
-
-      const motorRow = Array.from(document.querySelectorAll('tr')).find(row => row.textContent.includes('Test Motor'));
-      expect(motorRow, 'Motor row not found').to.not.be.undefined;
-
-      const deleteButton = motorRow.querySelector('.delete-part');
-      expect(deleteButton, 'Delete button not found').to.not.be.null;
-
-      const motorId = deleteButton.getAttribute('data-id');
-      expect(motorId, 'Motor ID not found').to.not.be.null;
-
+      const createdMotor = partsListResponse.body.find(part => part.name === 'Test Motor' && part.type === 'motor');
+      expect(createdMotor, 'Created motor not found').to.not.be.undefined;
+      const motorId = createdMotor.id;
       console.log('Found Motor ID:', motorId);
 
       // Delete the Motor
@@ -63,24 +52,18 @@ describe('Motor CRUD Operations', function() {
         .post(`/parts/${motorId}/delete?characterId=${mockCharacterId}`)
         .expect(200);
 
-      console.log('Delete response:', deleteResponse.body);
+      await new Promise(resolve => setTimeout(resolve, 500));
 
+      console.log('Delete response:', deleteResponse.body);
       expect(deleteResponse.body).to.have.property('message', 'Part deleted successfully');
 
-      // Wait for a short time to allow the page to update
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
       // Verify Motor was deleted
-      const finalPartsListResponse = await agent.get(`/parts?characterId=${mockCharacterId}`);
-      expect(finalPartsListResponse.status).to.equal(200);
+      const finalPartsListResponse = await agent
+        .get(`/api/parts?characterId=${mockCharacterId}`)
+        .expect(200);
       
-      console.log('Final parts list HTML:', finalPartsListResponse.text);
-      
-      const finalDom = new JSDOM(finalPartsListResponse.text);
-      const finalDocument = finalDom.window.document;
-      const finalMotorRow = Array.from(finalDocument.querySelectorAll('tr')).find(row => row.textContent.includes('Test Motor'));
-      
-      expect(finalMotorRow, 'Motor still exists after deletion').to.be.undefined;
+      const deletedMotor = finalPartsListResponse.body.find(part => part.id === motorId);
+      expect(deletedMotor, 'Motor still exists after deletion').to.be.undefined;
 
     } catch (error) {
       console.error('Test failed with error:', error);
