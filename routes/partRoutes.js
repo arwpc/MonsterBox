@@ -24,10 +24,12 @@ function getPartDetails(part) {
 }
 
 const checkCharacterSelected = (req, res, next) => {
-    if (!req.query.characterId) {
+    if (!req.characterId) {
+        req.characterId = req.query.characterId || req.session.characterId;
+    }
+    if (!req.characterId) {
         return res.redirect('/');
     }
-    req.characterId = req.query.characterId;
     next();
 };
 
@@ -113,15 +115,14 @@ router.get('/:id/edit', async (req, res) => {
     }
 });
 
-router.post('/:type', async (req, res) => {
+router.post('/:type', checkCharacterSelected, async (req, res) => {
     try {
         const { type } = req.params;
         const partData = req.body;
         partData.type = type;
         partData.characterId = req.characterId;
         await partService.createPart(partData);
-        const returnTo = req.query.returnTo || `/parts?characterId=${req.characterId}`;
-        res.redirect(returnTo);
+        res.redirect(`/parts?characterId=${req.characterId}`);
     } catch (error) {
         logger.error('Error creating part:', error);
         res.status(500).send('An error occurred while creating the part');

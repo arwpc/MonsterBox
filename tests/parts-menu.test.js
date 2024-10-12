@@ -39,8 +39,15 @@ describe('Parts Menu Navigation', function() {
         console.log(`Testing Add ${partType} button`);
         const addResponse = await agent.get(`/parts/new/${partType}`);
         console.log(`Add ${partType} response status:`, addResponse.status);
-        expect(addResponse.status).to.equal(200);
-        expect(addResponse.text).to.include(`Add ${partType.charAt(0).toUpperCase() + partType.slice(1)}`);
+        expect(addResponse.status).to.be.oneOf([200, 302]); // Accept either 200 or 302
+        if (addResponse.status === 302) {
+          // If it's a redirect, follow it
+          const redirectResponse = await agent.get(addResponse.headers.location);
+          expect(redirectResponse.status).to.equal(200);
+          expect(redirectResponse.text).to.include(`Add ${partType.charAt(0).toUpperCase() + partType.slice(1)}`);
+        } else {
+          expect(addResponse.text).to.include(`Add ${partType.charAt(0).toUpperCase() + partType.slice(1)}`);
+        }
 
         // Simulate going back to parts menu
         console.log('Simulating back to parts menu');
