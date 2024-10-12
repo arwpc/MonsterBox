@@ -3,6 +3,12 @@ const { expect } = require('chai');
 const app = require('../app');
 
 describe('Parts Menu Navigation', function() {
+  let agent;
+
+  beforeEach(function() {
+    agent = request.agent(app);
+  });
+
   it('should navigate through all Add Part buttons and return to Parts menu', async function() {
     this.timeout(10000); // Increase timeout for slower systems
 
@@ -12,9 +18,15 @@ describe('Parts Menu Navigation', function() {
     const mockCharacterId = '1';
 
     try {
+      // Set up session
+      await agent
+        .post('/set-character')
+        .send({ characterId: mockCharacterId })
+        .expect(200);
+
       // Get the initial parts page
       console.log('Requesting initial parts page');
-      const initialResponse = await request(app).get(`/parts?characterId=${mockCharacterId}`);
+      const initialResponse = await agent.get(`/parts?characterId=${mockCharacterId}`);
       console.log('Initial response status:', initialResponse.status);
       expect(initialResponse.status).to.equal(200);
       expect(initialResponse.text).to.include('Parts for Baphomet 2024');
@@ -25,14 +37,14 @@ describe('Parts Menu Navigation', function() {
       // Click each "Add <part type>" button
       for (const partType of partTypes) {
         console.log(`Testing Add ${partType} button`);
-        const addResponse = await request(app).get(`/parts/new/${partType}?characterId=${mockCharacterId}`);
+        const addResponse = await agent.get(`/parts/new/${partType}`);
         console.log(`Add ${partType} response status:`, addResponse.status);
         expect(addResponse.status).to.equal(200);
         expect(addResponse.text).to.include(`Add ${partType.charAt(0).toUpperCase() + partType.slice(1)}`);
 
         // Simulate going back to parts menu
         console.log('Simulating back to parts menu');
-        const backResponse = await request(app).get(`/parts?characterId=${mockCharacterId}`);
+        const backResponse = await agent.get(`/parts`);
         console.log('Back to parts menu response status:', backResponse.status);
         expect(backResponse.status).to.equal(200);
         expect(backResponse.text).to.include('Parts for Baphomet 2024');
@@ -55,6 +67,12 @@ describe('Parts Menu Navigation', function() {
     const mockCharacterId = '1';
 
     try {
+      // Set up session
+      await agent
+        .post('/set-character')
+        .send({ characterId: mockCharacterId })
+        .expect(200);
+
       // List of part types to test
       const partTypes = ['motor', 'linear-actuator', 'light', 'led', 'servo', 'sensor'];
 
@@ -70,8 +88,8 @@ describe('Parts Menu Navigation', function() {
         };
 
         // Simulate saving a part
-        const saveResponse = await request(app)
-          .post(`/parts/${partType}?returnTo=/parts?characterId=${mockCharacterId}`)
+        const saveResponse = await agent
+          .post(`/parts/${partType}`)
           .send(mockPartData);
 
         console.log(`Save ${partType} response status:`, saveResponse.status);
@@ -84,7 +102,7 @@ describe('Parts Menu Navigation', function() {
         expect(redirectLocation).to.equal(`/parts?characterId=${mockCharacterId}`);
 
         // Follow the redirect
-        const redirectResponse = await request(app).get(redirectLocation);
+        const redirectResponse = await agent.get(redirectLocation);
         console.log('Redirect response status:', redirectResponse.status);
         expect(redirectResponse.status).to.equal(200);
         expect(redirectResponse.text).to.include('Parts for Baphomet 2024');
