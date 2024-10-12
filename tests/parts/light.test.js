@@ -31,20 +31,22 @@ describe('Light CRUD Operations', function() {
       const createResponse = await agent
         .post('/parts/light')
         .send(mockLightData)
-        .expect(302);
+        .expect(200);
 
-      const redirectLocation = createResponse.headers.location;
-      expect(redirectLocation).to.equal(`/parts?characterId=${mockCharacterId}`);
+      expect(createResponse.body).to.have.property('message', 'Light created successfully');
+      const createdLight = createResponse.body.light;
+      expect(createdLight).to.not.be.undefined;
+      const lightId = createdLight.id;
+      console.log('Found Light ID:', lightId);
 
       // Verify Light was created and get ID from API
       const partsListResponse = await agent
         .get(`/api/parts?characterId=${mockCharacterId}`)
         .expect(200);
 
-      const createdLight = partsListResponse.body.find(part => part.name === 'Test Light' && part.type === 'light');
-      expect(createdLight, 'Created light not found').to.not.be.undefined;
-      const lightId = createdLight.id;
-      console.log('Found Light ID:', lightId);
+      const createdLight2 = partsListResponse.body.find(part => part.name === 'Test Light' && part.type === 'light');
+      expect(createdLight2, 'Created light not found').to.not.be.undefined;
+
 
       // Delete the Light
       const deleteResponse = await agent
@@ -53,7 +55,6 @@ describe('Light CRUD Operations', function() {
 
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      console.log('Delete response:', deleteResponse.body);
       expect(deleteResponse.body).to.have.property('message', 'Part deleted successfully');
 
       // Verify Light was deleted

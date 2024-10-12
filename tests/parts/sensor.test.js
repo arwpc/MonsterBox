@@ -25,28 +25,30 @@ describe('Sensor CRUD Operations', function() {
         name: 'Test Sensor',
         characterId: mockCharacterId,
         type: 'sensor',
-        sensorType: 'motion',
         gpioPin: 5,
-        active: false
+        active: false,
+        sensorType: 'motion'
       };
 
       const createResponse = await agent
         .post('/parts/sensor')
         .send(mockSensorData)
-        .expect(302);
+        .expect(200);
 
-      const redirectLocation = createResponse.headers.location;
-      expect(redirectLocation).to.equal(`/parts?characterId=${mockCharacterId}`);
+      expect(createResponse.body).to.have.property('message', 'Sensor created successfully');
+      const createdSensor = createResponse.body.sensor;
+      expect(createdSensor).to.not.be.undefined;
+      const sensorId = createdSensor.id;
+      console.log('Found Sensor ID:', sensorId);
 
       // Verify Sensor was created and get ID from API
       const partsListResponse = await agent
         .get(`/api/parts?characterId=${mockCharacterId}`)
         .expect(200);
 
-      const createdSensor = partsListResponse.body.find(part => part.name === 'Test Sensor' && part.type === 'sensor');
-      expect(createdSensor, 'Created sensor not found').to.not.be.undefined;
-      const sensorId = createdSensor.id;
-      console.log('Found Sensor ID:', sensorId);
+      const createdSensor2 = partsListResponse.body.find(part => part.name === 'Test Sensor' && part.type === 'sensor');
+      expect(createdSensor2, 'Created sensor not found').to.not.be.undefined;
+
 
       // Delete the Sensor
       const deleteResponse = await agent
@@ -55,7 +57,6 @@ describe('Sensor CRUD Operations', function() {
 
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      console.log('Delete response:', deleteResponse.body);
       expect(deleteResponse.body).to.have.property('message', 'Part deleted successfully');
 
       // Verify Sensor was deleted

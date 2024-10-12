@@ -32,20 +32,23 @@ describe('Motor CRUD Operations', function() {
       const createResponse = await agent
         .post('/parts/motor')
         .send(mockMotorData)
-        .expect(302);
+        .expect(200);
 
-      const redirectLocation = createResponse.headers.location;
-      expect(redirectLocation).to.equal(`/parts?characterId=${mockCharacterId}`);
+      expect(createResponse.body).to.have.property('message', 'Motor created successfully');
+      const createdMotor = createResponse.body.motor;
+      expect(createdMotor).to.not.be.undefined;
+      const motorId = createdMotor.id;
+      console.log('Found Motor ID:', motorId);
+
 
       // Verify Motor was created and get ID from API
       const partsListResponse = await agent
         .get(`/api/parts?characterId=${mockCharacterId}`)
         .expect(200);
 
-      const createdMotor = partsListResponse.body.find(part => part.name === 'Test Motor' && part.type === 'motor');
-      expect(createdMotor, 'Created motor not found').to.not.be.undefined;
-      const motorId = createdMotor.id;
-      console.log('Found Motor ID:', motorId);
+      const createdMotor2 = partsListResponse.body.find(part => part.name === 'Test Motor' && part.type === 'motor');
+      expect(createdMotor2, 'Created motor not found').to.not.be.undefined;
+
 
       // Delete the Motor
       const deleteResponse = await agent
