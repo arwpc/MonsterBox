@@ -9,7 +9,18 @@ const logger = require('../scripts/logger');
 router.get('/new', async (req, res) => {
     try {
         const characters = await characterService.getAllCharacters();
-        res.render('part-forms/light', { title: 'Add Light', action: '/parts/light', part: {}, characters, character: {} });
+        const characterId = req.query.characterId;
+        let character = null;
+        if (characterId) {
+            character = await characterService.getCharacterById(characterId);
+        }
+        res.render('part-forms/light', { 
+            title: 'Add Light', 
+            action: '/parts/light', 
+            part: {}, 
+            characters, 
+            character 
+        });
     } catch (error) {
         logger.error('Error fetching characters:', error);
         res.status(500).send('An error occurred while fetching characters: ' + error.message);
@@ -25,8 +36,14 @@ router.get('/:id/edit', async (req, res) => {
         }
         const part = await partService.getPartById(id);
         const characters = await characterService.getAllCharacters();
-        const character = characters.find(char => char.id === part.characterId) || {};
-        res.render('part-forms/light', { title: 'Edit Light', action: `/parts/light/${part.id}`, part, characters, character });
+        const character = await characterService.getCharacterById(part.characterId);
+        res.render('part-forms/light', { 
+            title: 'Edit Light', 
+            action: `/parts/light/${part.id}`, 
+            part, 
+            characters, 
+            character 
+        });
     } catch (error) {
         logger.error('Error fetching light:', error);
         res.status(500).send('An error occurred while fetching the light: ' + error.message);
@@ -43,7 +60,7 @@ router.post('/', async (req, res) => {
         };
         const createdLight = await partService.createPart(newLight);
         logger.info('Created light:', createdLight);
-        res.redirect('/parts');
+        res.redirect(`/parts?characterId=${createdLight.characterId}`);
     } catch (error) {
         logger.error('Error creating light:', error);
         res.status(500).send('An error occurred while creating the light: ' + error.message);
@@ -129,7 +146,7 @@ router.post('/:id', async (req, res) => {
         logger.debug('Updated Light data:', updatedLight);
         const result = await partService.updatePart(id, updatedLight);
         logger.info('Updated light:', result);
-        res.redirect('/parts');
+        res.redirect(`/parts?characterId=${result.characterId}`);
     } catch (error) {
         logger.error('Error updating light:', error);
         res.status(500).send('An error occurred while updating the light: ' + error.message);
