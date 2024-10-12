@@ -1,5 +1,3 @@
-// File: routes/partRoutes.js
-
 const express = require('express');
 const router = express.Router();
 const partService = require('../services/partService');
@@ -50,19 +48,46 @@ router.get('/', async (req, res) => {
     }
 });
 
+const servoTypes = ['Standard', 'Continuous', 'Digital', 'Linear', 'FS90R'];
+
+function getServoDefaults(type) {
+    switch (type) {
+        case 'Standard':
+            return { minPulse: 500, maxPulse: 2500, defaultAngle: 90 };
+        case 'Continuous':
+            return { minPulse: 500, maxPulse: 2500, defaultAngle: 90 };
+        case 'Digital':
+            return { minPulse: 500, maxPulse: 2500, defaultAngle: 90 };
+        case 'Linear':
+            return { minPulse: 500, maxPulse: 2500, defaultAngle: 90 };
+        case 'FS90R':
+            return { minPulse: 500, maxPulse: 2500, defaultAngle: 90 };
+        default:
+            return { minPulse: 500, maxPulse: 2500, defaultAngle: 90 };
+    }
+}
+
 router.get('/new/:type', async (req, res) => {
     try {
         const { type } = req.params;
         const character = await characterService.getCharacterById(req.characterId);
         const characters = await characterService.getAllCharacters();
         const part = { type, characterId: req.characterId };
-        res.render(`part-forms/${type}`, { 
+        
+        const renderData = { 
             title: `Add ${type.charAt(0).toUpperCase() + type.slice(1)}`, 
             action: `/parts/${type}`, 
             part,
             character,
             characters
-        });
+        };
+
+        if (type === 'servo') {
+            renderData.servoTypes = servoTypes;
+            renderData.getServoDefaults = getServoDefaults;
+        }
+
+        res.render(`part-forms/${type}`, renderData);
     } catch (error) {
         logger.error('Error rendering new part form:', error);
         res.status(500).send('An error occurred while loading the new part form');
