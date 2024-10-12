@@ -7,8 +7,30 @@ const logDir = path.join(__dirname, '..', 'log');
 
 // Ensure log directory exists
 if (!fs.existsSync(logDir)) {
-  fs.mkdirSync(logDir, { recursive: true });
+  try {
+    fs.mkdirSync(logDir, { recursive: true });
+  } catch (error) {
+    console.warn(`Unable to create log directory: ${error.message}`);
+  }
 }
+
+const fileTransport = new winston.transports.DailyRotateFile({
+  filename: path.join(logDir, 'MonsterBox-%DATE%.log'),
+  datePattern: 'YYYY-MM-DD',
+  zippedArchive: true,
+  maxSize: '20m',
+  maxFiles: '14d',
+  handleExceptions: true,
+});
+
+fileTransport.on('error', (error) => {
+  console.error(`Error with file logging: ${error.message}`);
+});
+
+const consoleTransport = new winston.transports.Console({
+  format: winston.format.simple(),
+  handleExceptions: true,
+});
 
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
@@ -19,22 +41,15 @@ const logger = winston.createLogger({
     })
   ),
   transports: [
-    new winston.transports.DailyRotateFile({
-      filename: path.join(logDir, 'MonsterBox-%DATE%.log'),
-      datePattern: 'YYYY-MM-DD',
-      zippedArchive: true,
-      maxSize: '20m',
-      maxFiles: '14d',
-      createSymlink: true,
-      symlinkName: 'MonsterBox-current.log',
-      // Set a more permissive file mode
-      options: { mode: 0o666 }
-    }),
-    new winston.transports.Console({
-      format: winston.format.simple(),
-      level: 'error'
-    })
-  ]
+    fileTransport,
+    consoleTransport
+  ],
+  exitOnError: false
+});
+
+// Catch any errors that occur during logging
+logger.on('error', (error) => {
+  console.error('Logging error:', error);
 });
 
 module.exports = logger;
