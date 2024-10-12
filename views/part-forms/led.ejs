@@ -48,12 +48,12 @@
         </div>
         <button onclick="testPart()">Test Light</button>
     </div>
-    <a href="/parts" class="button">Back to Parts</a>
+    <a href="/" class="button">Back to Parts</a>
 
     <script>
         function testPart() {
             const partData = {
-                part_id: <%= part.id || 'null' %>,
+                part_id: "<%= part.id ? part.id : 'null' %>",
                 type: 'light',
                 state: document.getElementById('state').value,
                 duration: parseInt(document.getElementById('duration').value),
