@@ -120,7 +120,8 @@ router.post('/:type', async (req, res) => {
         partData.type = type;
         partData.characterId = req.characterId;
         await partService.createPart(partData);
-        res.redirect(`/parts?characterId=${req.characterId}`);
+        const returnTo = req.query.returnTo || `/parts?characterId=${req.characterId}`;
+        res.redirect(returnTo);
     } catch (error) {
         logger.error('Error creating part:', error);
         res.status(500).send('An error occurred while creating the part');
@@ -133,7 +134,8 @@ router.post('/:id/update', async (req, res) => {
         const partData = req.body;
         partData.characterId = req.characterId;
         await partService.updatePart(id, partData);
-        res.redirect(`/parts?characterId=${req.characterId}`);
+        const returnTo = req.query.returnTo || `/parts?characterId=${req.characterId}`;
+        res.redirect(returnTo);
     } catch (error) {
         logger.error('Error updating part:', error);
         res.status(500).send('An error occurred while updating the part');

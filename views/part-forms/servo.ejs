@@ -41,7 +41,7 @@
 </head>
 <body>
     <h1><%= title %></h1>
-    <form action="<%= action %>" method="POST" id="servoForm">
+    <form action="<%= action %>?returnTo=/parts?characterId=<%= character ? character.id : (part ? part.characterId : '') %>" method="POST" id="servoForm">
         <input type="hidden" name="type" value="servo">
         <% if (part && part.id) { %>
             <input type="hidden" name="id" value="<%= part.id %>">
