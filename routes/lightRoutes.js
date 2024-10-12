@@ -9,7 +9,7 @@ const logger = require('../scripts/logger');
 router.get('/new', async (req, res) => {
     try {
         const characters = await characterService.getAllCharacters();
-        res.render('part-forms/light', { title: 'Add Light', action: '/parts/light', part: {}, characters });
+        res.render('part-forms/light', { title: 'Add Light', action: '/parts/light', part: {}, characters, character: {} });
     } catch (error) {
         logger.error('Error fetching characters:', error);
         res.status(500).send('An error occurred while fetching characters: ' + error.message);
@@ -25,7 +25,8 @@ router.get('/:id/edit', async (req, res) => {
         }
         const part = await partService.getPartById(id);
         const characters = await characterService.getAllCharacters();
-        res.render('part-forms/light', { title: 'Edit Light', action: `/parts/light/${part.id}`, part, characters });
+        const character = characters.find(char => char.id === part.characterId) || {};
+        res.render('part-forms/light', { title: 'Edit Light', action: `/parts/light/${part.id}`, part, characters, character });
     } catch (error) {
         logger.error('Error fetching light:', error);
         res.status(500).send('An error occurred while fetching the light: ' + error.message);
