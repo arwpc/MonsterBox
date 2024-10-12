@@ -35,7 +35,7 @@ router.post('/', async (req, res) => {
         };
         const createdSensor = await partService.createPart(newSensor);
         logger.info('Created sensor:', createdSensor);
-        res.redirect('/parts');
+        res.redirect(`/parts?characterId=${newSensor.characterId}`);
     } catch (error) {
         logger.error('Error creating sensor:', error);
         res.status(500).send('An error occurred while creating the sensor: ' + error.message);
@@ -59,7 +59,7 @@ router.post('/:id', async (req, res) => {
         };
         const result = await partService.updatePart(id, updatedSensor);
         logger.info('Updated sensor:', result);
-        res.redirect('/parts');
+        res.redirect(`/parts?characterId=${updatedSensor.characterId}`);
     } catch (error) {
         logger.error('Error updating sensor:', error);
         res.status(500).send('An error occurred while updating the sensor: ' + error.message);
