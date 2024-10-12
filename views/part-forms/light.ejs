@@ -47,9 +47,9 @@
         <div>
             <label for="characterId">Character:</label>
             <select id="characterId" name="characterId" required>
-                <% characters.forEach(function(character) { %>
-                    <option value="<%= character.id %>" <%= (part.characterId === character.id) ? 'selected' : '' %>>
-                        <%= character.char_name %>
+                <% characters.forEach(function(char) { %>
+                    <option value="<%= char.id %>" <%= (part.characterId === char.id) ? 'selected' : '' %>>
+                        <%= char.char_name %>
                     </option>
                 <% }); %>
             </select>
@@ -70,7 +70,7 @@
 
     <div id="debugInfo"></div>
 
-    <a href="/parts?characterId=<%= part.characterId %>" class="button">Back to Parts</a>
+    <a href="/parts?characterId=<%= character.id %>" class="button">Back to Parts</a>
 
     <script>
         var partId = '<%= part.id || "null" %>';

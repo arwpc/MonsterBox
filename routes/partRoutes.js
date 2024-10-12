@@ -55,22 +55,14 @@ router.get('/new/:type', async (req, res) => {
         const { type } = req.params;
         const character = await characterService.getCharacterById(req.characterId);
         const characters = await characterService.getAllCharacters();
-        if (type === 'motor') {
-            res.render('part-forms/motor', { 
-                title: 'Add Motor', 
-                action: `/parts/${type}`, 
-                part: { type }, 
-                character,
-                characters
-            });
-        } else {
-            res.render('part-form', { 
-                title: `Add ${type.charAt(0).toUpperCase() + type.slice(1)}`, 
-                action: `/parts/${type}`, 
-                part: { type }, 
-                character 
-            });
-        }
+        const part = { type, characterId: req.characterId };
+        res.render(`part-forms/${type}`, { 
+            title: `Add ${type.charAt(0).toUpperCase() + type.slice(1)}`, 
+            action: `/parts/${type}`, 
+            part,
+            character,
+            characters
+        });
     } catch (error) {
         logger.error('Error rendering new part form:', error);
         res.status(500).send('An error occurred while loading the new part form');
@@ -83,30 +75,13 @@ router.get('/:id/edit', async (req, res) => {
         const part = await partService.getPartById(id);
         const character = await characterService.getCharacterById(req.characterId);
         const characters = await characterService.getAllCharacters();
-        if (part.type === 'sensor') {
-            res.render('part-forms/sensor', {
-                title: 'Edit Sensor',
-                action: `/parts/sensor/${part.id}`,
-                part,
-                characters,
-                character
-            });
-        } else if (part.type === 'motor') {
-            res.render('part-forms/motor', {
-                title: 'Edit Motor',
-                action: `/parts/${part.id}/update`,
-                part,
-                characters,
-                character
-            });
-        } else {
-            res.render('part-form', {
-                title: `Edit ${part.type.charAt(0).toUpperCase() + part.type.slice(1)}`,
-                action: `/parts/${part.id}/update`,
-                part,
-                character
-            });
-        }
+        res.render(`part-forms/${part.type}`, {
+            title: `Edit ${part.type.charAt(0).toUpperCase() + part.type.slice(1)}`,
+            action: `/parts/${part.id}/update`,
+            part,
+            character,
+            characters
+        });
     } catch (error) {
         logger.error('Error fetching part for edit:', error);
         res.status(500).send('An error occurred while fetching the part');
