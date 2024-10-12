@@ -55,9 +55,9 @@ describe('Light CRUD Operations', function() {
 
       // Get the ID of the created light
       const dom = new JSDOM(partsListResponse.text);
-      const lightRow = dom.window.document.querySelector('tr[data-name="Test Light"]');
+      const lightRow = dom.window.document.querySelector('tr:last-child');
       expect(lightRow).to.not.be.null;
-      const lightId = lightRow.getAttribute('data-id');
+      const lightId = lightRow.querySelector('.delete-part').getAttribute('data-id');
       expect(lightId).to.not.be.null;
 
       // Delete the light

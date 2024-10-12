@@ -56,9 +56,9 @@ describe('Sensor CRUD Operations', function() {
 
       // Get the ID of the created sensor
       const dom = new JSDOM(partsListResponse.text);
-      const sensorRow = dom.window.document.querySelector('tr[data-name="Test Sensor"]');
+      const sensorRow = dom.window.document.querySelector('tr:last-child');
       expect(sensorRow).to.not.be.null;
-      const sensorId = sensorRow.getAttribute('data-id');
+      const sensorId = sensorRow.querySelector('.delete-part').getAttribute('data-id');
       expect(sensorId).to.not.be.null;
 
       // Delete the sensor

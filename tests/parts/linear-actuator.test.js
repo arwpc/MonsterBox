@@ -56,9 +56,9 @@ describe('Linear Actuator CRUD Operations', function() {
 
       // Get the ID of the created linear actuator
       const dom = new JSDOM(partsListResponse.text);
-      const linearActuatorRow = dom.window.document.querySelector('tr[data-name="Test Linear Actuator"]');
+      const linearActuatorRow = dom.window.document.querySelector('tr:last-child');
       expect(linearActuatorRow).to.not.be.null;
-      const linearActuatorId = linearActuatorRow.getAttribute('data-id');
+      const linearActuatorId = linearActuatorRow.querySelector('.delete-part').getAttribute('data-id');
       expect(linearActuatorId).to.not.be.null;
 
       // Delete the linear actuator

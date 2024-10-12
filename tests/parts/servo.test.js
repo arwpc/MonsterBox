@@ -57,9 +57,9 @@ describe('Servo CRUD Operations', function() {
 
       // Get the ID of the created servo
       const dom = new JSDOM(partsListResponse.text);
-      const servoRow = dom.window.document.querySelector('tr[data-name="Test Servo"]');
+      const servoRow = dom.window.document.querySelector('tr:last-child');
       expect(servoRow).to.not.be.null;
-      const servoId = servoRow.getAttribute('data-id');
+      const servoId = servoRow.querySelector('.delete-part').getAttribute('data-id');
       expect(servoId).to.not.be.null;
 
       // Delete the servo
