@@ -135,8 +135,7 @@ router.post('/:id/update', async (req, res) => {
         const partData = req.body;
         partData.characterId = req.characterId;
         await partService.updatePart(id, partData);
-        const returnTo = req.query.returnTo || `/parts?characterId=${req.characterId}`;
-        res.redirect(returnTo);
+        res.redirect(`/parts?characterId=${req.characterId}`);
     } catch (error) {
         logger.error('Error updating part:', error);
         res.status(500).send('An error occurred while updating the part');
