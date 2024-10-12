@@ -139,7 +139,7 @@ router.post('/', async (req, res) => {
         };
         const createdLinearActuator = await partService.createPart(newLinearActuator);
         logger.info('Created linear actuator:', createdLinearActuator);
-        res.redirect('/parts');
+        res.redirect(`/parts?characterId=${newLinearActuator.characterId}`);
     } catch (error) {
         logger.error('Error creating linear actuator:', error);
         res.status(500).send('An error occurred while creating the linear actuator: ' + error.message);
@@ -166,7 +166,7 @@ router.post('/:id', async (req, res) => {
         logger.debug('Updated Linear Actuator data:', updatedLinearActuator);
         const result = await partService.updatePart(id, updatedLinearActuator);
         logger.info('Updated linear actuator:', result);
-        res.redirect('/parts');
+        res.redirect(`/parts?characterId=${updatedLinearActuator.characterId}`);
     } catch (error) {
         logger.error('Error updating linear actuator:', error);
         res.status(500).send('An error occurred while updating the linear actuator: ' + error.message);
