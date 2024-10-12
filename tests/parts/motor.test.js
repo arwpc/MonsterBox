@@ -56,9 +56,9 @@ describe('Motor CRUD Operations', function() {
 
       // Get the ID of the created motor
       const dom = new JSDOM(partsListResponse.text);
-      const motorRow = dom.window.document.querySelector('tr[data-name="Test Motor"]');
+      const motorRow = dom.window.document.querySelector('tr:last-child');
       expect(motorRow).to.not.be.null;
-      const motorId = motorRow.getAttribute('data-id');
+      const motorId = motorRow.querySelector('.delete-part').getAttribute('data-id');
       expect(motorId).to.not.be.null;
 
       // Delete the motor

@@ -53,18 +53,13 @@ describe('LED CRUD Operations', function() {
       expect(partsListResponse.status).to.equal(200);
       expect(partsListResponse.text).to.include('Test LED');
 
-      // Log the HTML content
-      console.log('HTML Content:', partsListResponse.text);
-
       // Get the ID of the created LED
       const dom = new JSDOM(partsListResponse.text);
-      const ledRow = dom.window.document.querySelector('tr[data-name="Test LED"]');
-      
-      // Log the ledRow
+      const ledRow = dom.window.document.querySelector('tr:last-child');
       console.log('LED Row:', ledRow ? ledRow.outerHTML : 'Not found');
 
       expect(ledRow).to.not.be.null;
-      const ledId = ledRow.getAttribute('data-id');
+      const ledId = ledRow.querySelector('.delete-part').getAttribute('data-id');
       expect(ledId).to.not.be.null;
 
       // Delete the LED
