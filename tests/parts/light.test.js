@@ -1,5 +1,6 @@
 const request = require('supertest');
 const { expect } = require('chai');
+const { JSDOM } = require('jsdom');
 const app = require('../../app');
 
 describe('Light CRUD Operations', function() {
@@ -53,9 +54,11 @@ describe('Light CRUD Operations', function() {
       expect(partsListResponse.text).to.include('Test Light');
 
       // Get the ID of the created light
-      const lightMatch = partsListResponse.text.match(/data-id="([^"]*)".*>Test Light<\/td>/);
-      expect(lightMatch).to.not.be.null;
-      const lightId = lightMatch[1];
+      const dom = new JSDOM(partsListResponse.text);
+      const lightRow = dom.window.document.querySelector('tr[data-name="Test Light"]');
+      expect(lightRow).to.not.be.null;
+      const lightId = lightRow.getAttribute('data-id');
+      expect(lightId).to.not.be.null;
 
       // Delete the light
       const deleteResponse = await agent
