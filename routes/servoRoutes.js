@@ -9,11 +9,17 @@ router.get('/new', async (req, res) => {
     try {
         const characters = await characterService.getAllCharacters();
         const servoTypes = servoController.getServoTypes();
+        const characterId = req.query.characterId;
+        let character = null;
+        if (characterId) {
+            character = await characterService.getCharacterById(characterId);
+        }
         res.render('part-forms/servo', { 
             title: 'New Servo', 
             action: '/parts/servo', 
             part: null, 
             characters,
+            character,
             servoTypes,
             getServoDefaults: servoController.getServoDefaults
         });
@@ -35,12 +41,14 @@ router.get('/:id/edit', async (req, res) => {
             throw new Error('Part not found');
         }
         const characters = await characterService.getAllCharacters();
+        const character = await characterService.getCharacterById(part.characterId);
         const servoTypes = servoController.getServoTypes();
         res.render('part-forms/servo', { 
             title: 'Edit Servo', 
             action: `/parts/servo/${part.id}`, 
             part, 
             characters,
+            character,
             servoTypes,
             getServoDefaults: servoController.getServoDefaults
         });
