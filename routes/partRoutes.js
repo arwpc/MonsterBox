@@ -24,12 +24,16 @@ function getPartDetails(part) {
 }
 
 const checkCharacterSelected = (req, res, next) => {
+    logger.info(`checkCharacterSelected - Initial characterId: ${req.characterId}`);
     if (!req.characterId) {
         req.characterId = req.query.characterId || req.session.characterId;
+        logger.info(`checkCharacterSelected - Updated characterId: ${req.characterId}`);
     }
     if (!req.characterId) {
+        logger.warn('checkCharacterSelected - No characterId found, redirecting to root');
         return res.redirect('/');
     }
+    logger.info(`checkCharacterSelected - Final characterId: ${req.characterId}`);
     next();
 };
 
@@ -121,8 +125,11 @@ router.post('/:type', checkCharacterSelected, async (req, res) => {
         const partData = req.body;
         partData.type = type;
         partData.characterId = req.characterId;
+        logger.info(`Creating new part - characterId: ${req.characterId}, type: ${type}`);
         await partService.createPart(partData);
-        res.redirect(`/parts?characterId=${req.characterId}`);
+        const redirectUrl = `/parts?characterId=${req.characterId}`;
+        logger.info(`Redirecting to: ${redirectUrl}`);
+        res.redirect(redirectUrl);
     } catch (error) {
         logger.error('Error creating part:', error);
         res.status(500).send('An error occurred while creating the part');
