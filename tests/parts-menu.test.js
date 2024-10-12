@@ -45,4 +45,56 @@ describe('Parts Menu Navigation', function() {
       throw error;
     }
   });
+
+  it('should redirect to Parts menu after saving a part', async function() {
+    this.timeout(10000); // Increase timeout for slower systems
+
+    console.log('Starting Save Part Redirection test');
+
+    // Mock characterId for testing
+    const mockCharacterId = '1';
+
+    try {
+      // List of part types to test
+      const partTypes = ['motor', 'linear-actuator', 'light', 'led', 'servo', 'sensor'];
+
+      for (const partType of partTypes) {
+        console.log(`Testing Save ${partType} redirection`);
+
+        // Prepare mock part data
+        const mockPartData = {
+          name: `Test ${partType}`,
+          characterId: mockCharacterId,
+          type: partType,
+          // Add any other required fields based on part type
+        };
+
+        // Simulate saving a part
+        const saveResponse = await request(app)
+          .post(`/parts/${partType}?returnTo=/parts?characterId=${mockCharacterId}`)
+          .send(mockPartData);
+
+        console.log(`Save ${partType} response status:`, saveResponse.status);
+        
+        // Check if the response is a redirect
+        expect(saveResponse.status).to.be.oneOf([302, 303]);
+        
+        // Check if the redirect location is correct
+        const redirectLocation = saveResponse.headers.location;
+        expect(redirectLocation).to.equal(`/parts?characterId=${mockCharacterId}`);
+
+        // Follow the redirect
+        const redirectResponse = await request(app).get(redirectLocation);
+        console.log('Redirect response status:', redirectResponse.status);
+        expect(redirectResponse.status).to.equal(200);
+        expect(redirectResponse.text).to.include('Parts for Baphomet 2024');
+        expect(redirectResponse.text).to.include('Back to Main Menu');
+      }
+
+      console.log('Save Part Redirection test completed successfully');
+    } catch (error) {
+      console.error('Test failed with error:', error);
+      throw error;
+    }
+  });
 });

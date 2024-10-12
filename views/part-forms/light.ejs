@@ -35,7 +35,7 @@
 </head>
 <body>
     <h1><%= title %></h1>
-    <form action="<%= action %>" method="POST">
+    <form action="<%= action %>?returnTo=/parts?characterId=<%= character ? character.id : (part ? part.characterId : '') %>" method="POST">
         <input type="hidden" name="type" value="light">
         <% if (part.id) { %>
             <input type="hidden" name="id" value="<%= part.id %>">
