@@ -1,5 +1,6 @@
 const request = require('supertest');
 const { expect } = require('chai');
+const { JSDOM } = require('jsdom');
 const app = require('../../app');
 
 describe('LED CRUD Operations', function() {
@@ -26,9 +27,9 @@ describe('LED CRUD Operations', function() {
       if (addResponse.status === 302) {
         const redirectResponse = await agent.get(addResponse.headers.location);
         expect(redirectResponse.status).to.equal(200);
-        expect(redirectResponse.text).to.include('Add Led'); // Changed from 'Add LED' to 'Add Led'
+        expect(redirectResponse.text).to.include('Add Led');
       } else {
-        expect(addResponse.text).to.include('Add Led'); // Changed from 'Add LED' to 'Add Led'
+        expect(addResponse.text).to.include('Add Led');
       }
 
       // Create an LED
@@ -53,9 +54,11 @@ describe('LED CRUD Operations', function() {
       expect(partsListResponse.text).to.include('Test LED');
 
       // Get the ID of the created LED
-      const ledMatch = partsListResponse.text.match(/data-id="([^"]*)".*>Test LED<\/td>/);
-      expect(ledMatch).to.not.be.null;
-      const ledId = ledMatch[1];
+      const dom = new JSDOM(partsListResponse.text);
+      const ledRow = dom.window.document.querySelector('tr[data-name="Test LED"]');
+      expect(ledRow).to.not.be.null;
+      const ledId = ledRow.getAttribute('data-id');
+      expect(ledId).to.not.be.null;
 
       // Delete the LED
       const deleteResponse = await agent

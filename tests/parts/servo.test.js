@@ -1,5 +1,6 @@
 const request = require('supertest');
 const { expect } = require('chai');
+const { JSDOM } = require('jsdom');
 const app = require('../../app');
 
 describe('Servo CRUD Operations', function() {
@@ -55,9 +56,11 @@ describe('Servo CRUD Operations', function() {
       expect(partsListResponse.text).to.include('Test Servo');
 
       // Get the ID of the created servo
-      const servoMatch = partsListResponse.text.match(/data-id="([^"]*)".*>Test Servo<\/td>/);
-      expect(servoMatch).to.not.be.null;
-      const servoId = servoMatch[1];
+      const dom = new JSDOM(partsListResponse.text);
+      const servoRow = dom.window.document.querySelector('tr[data-name="Test Servo"]');
+      expect(servoRow).to.not.be.null;
+      const servoId = servoRow.getAttribute('data-id');
+      expect(servoId).to.not.be.null;
 
       // Delete the servo
       const deleteResponse = await agent

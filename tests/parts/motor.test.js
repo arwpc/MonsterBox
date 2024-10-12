@@ -1,5 +1,6 @@
 const request = require('supertest');
 const { expect } = require('chai');
+const { JSDOM } = require('jsdom');
 const app = require('../../app');
 
 describe('Motor CRUD Operations', function() {
@@ -54,9 +55,11 @@ describe('Motor CRUD Operations', function() {
       expect(partsListResponse.text).to.include('Test Motor');
 
       // Get the ID of the created motor
-      const motorMatch = partsListResponse.text.match(/data-id="([^"]*)".*>Test Motor<\/td>/);
-      expect(motorMatch).to.not.be.null;
-      const motorId = motorMatch[1];
+      const dom = new JSDOM(partsListResponse.text);
+      const motorRow = dom.window.document.querySelector('tr[data-name="Test Motor"]');
+      expect(motorRow).to.not.be.null;
+      const motorId = motorRow.getAttribute('data-id');
+      expect(motorId).to.not.be.null;
 
       // Delete the motor
       const deleteResponse = await agent
