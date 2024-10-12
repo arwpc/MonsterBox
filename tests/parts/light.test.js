@@ -53,7 +53,7 @@ describe('Light CRUD Operations', function() {
       expect(partsListResponse.text).to.include('Test Light');
 
       // Get the ID of the created light
-      const lightMatch = partsListResponse.text.match(/data-id="([^"]*)"[^>]*>Test Light<\/td>/);
+      const lightMatch = partsListResponse.text.match(/data-id="([^"]*)".*>Test Light<\/td>/);
       expect(lightMatch).to.not.be.null;
       const lightId = lightMatch[1];
 

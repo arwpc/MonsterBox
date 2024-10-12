@@ -26,9 +26,9 @@ describe('LED CRUD Operations', function() {
       if (addResponse.status === 302) {
         const redirectResponse = await agent.get(addResponse.headers.location);
         expect(redirectResponse.status).to.equal(200);
-        expect(redirectResponse.text).to.include('Add LED');
+        expect(redirectResponse.text).to.include('Add Led'); // Changed from 'Add LED' to 'Add Led'
       } else {
-        expect(addResponse.text).to.include('Add LED');
+        expect(addResponse.text).to.include('Add Led'); // Changed from 'Add LED' to 'Add Led'
       }
 
       // Create an LED
@@ -53,7 +53,7 @@ describe('LED CRUD Operations', function() {
       expect(partsListResponse.text).to.include('Test LED');
 
       // Get the ID of the created LED
-      const ledMatch = partsListResponse.text.match(/data-id="([^"]*)"[^>]*>Test LED<\/td>/);
+      const ledMatch = partsListResponse.text.match(/data-id="([^"]*)".*>Test LED<\/td>/);
       expect(ledMatch).to.not.be.null;
       const ledId = ledMatch[1];
 

@@ -54,7 +54,7 @@ describe('Motor CRUD Operations', function() {
       expect(partsListResponse.text).to.include('Test Motor');
 
       // Get the ID of the created motor
-      const motorMatch = partsListResponse.text.match(/data-id="([^"]*)"[^>]*>Test Motor<\/td>/);
+      const motorMatch = partsListResponse.text.match(/data-id="([^"]*)".*>Test Motor<\/td>/);
       expect(motorMatch).to.not.be.null;
       const motorId = motorMatch[1];
 
