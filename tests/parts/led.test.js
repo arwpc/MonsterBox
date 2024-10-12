@@ -53,24 +53,11 @@ describe('LED CRUD Operations', function() {
       expect(partsListResponse.status).to.equal(200);
       expect(partsListResponse.text).to.include('Test LED');
 
-      // Log the entire HTML content
-      console.log('Full HTML content:', partsListResponse.text);
-
       // Get the ID of the created LED
       const dom = new JSDOM(partsListResponse.text);
       const document = dom.window.document;
 
-      // Log all table rows
-      const allRows = document.querySelectorAll('tr');
-      console.log('All table rows:', allRows.length);
-      allRows.forEach((row, index) => {
-        console.log(`Row ${index}:`, row.outerHTML);
-      });
-
-      // Find the LED row
-      const ledRow = Array.from(allRows).find(row => row.textContent.includes('Test LED'));
-      console.log('LED Row:', ledRow ? ledRow.outerHTML : 'Not found');
-
+      const ledRow = Array.from(document.querySelectorAll('tr')).find(row => row.textContent.includes('Test LED'));
       expect(ledRow, 'LED row not found').to.not.be.undefined;
 
       const deleteButton = ledRow.querySelector('.delete-part');
@@ -84,7 +71,9 @@ describe('LED CRUD Operations', function() {
       // Delete the LED
       const deleteResponse = await agent
         .post(`/parts/${ledId}/delete?characterId=${mockCharacterId}`)
-        .expect(302);
+        .expect(200); // Changed from 302 to 200
+
+      expect(deleteResponse.body).to.have.property('message', 'Part deleted successfully');
 
       // Verify LED was deleted
       const finalPartsListResponse = await agent.get(`/parts?characterId=${mockCharacterId}`);
