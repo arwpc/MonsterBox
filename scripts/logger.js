@@ -5,32 +5,34 @@ require('winston-daily-rotate-file');
 
 const logDir = path.join(__dirname, '..', 'log');
 
-// Ensure log directory exists
-if (!fs.existsSync(logDir)) {
-  try {
-    fs.mkdirSync(logDir, { recursive: true });
-  } catch (error) {
-    console.warn(`Unable to create log directory: ${error.message}`);
-  }
+// Check if we have write permissions
+let canWriteToLogDir = false;
+try {
+  fs.accessSync(logDir, fs.constants.W_OK);
+  canWriteToLogDir = true;
+} catch (error) {
+  console.warn(`No write access to log directory: ${error.message}`);
 }
 
-const fileTransport = new winston.transports.DailyRotateFile({
-  filename: path.join(logDir, 'MonsterBox-%DATE%.log'),
-  datePattern: 'YYYY-MM-DD',
-  zippedArchive: true,
-  maxSize: '20m',
-  maxFiles: '14d',
-  handleExceptions: true,
-});
+let transports = [
+  new winston.transports.Console({
+    format: winston.format.simple(),
+    handleExceptions: true,
+  })
+];
 
-fileTransport.on('error', (error) => {
-  console.error(`Error with file logging: ${error.message}`);
-});
-
-const consoleTransport = new winston.transports.Console({
-  format: winston.format.simple(),
-  handleExceptions: true,
-});
+if (canWriteToLogDir) {
+  transports.push(
+    new winston.transports.DailyRotateFile({
+      filename: path.join(logDir, 'MonsterBox-%DATE%.log'),
+      datePattern: 'YYYY-MM-DD',
+      zippedArchive: true,
+      maxSize: '20m',
+      maxFiles: '14d',
+      handleExceptions: true,
+    })
+  );
+}
 
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
@@ -40,10 +42,7 @@ const logger = winston.createLogger({
       return `${timestamp} ${level}: ${message}`;
     })
   ),
-  transports: [
-    fileTransport,
-    consoleTransport
-  ],
+  transports: transports,
   exitOnError: false
 });
 
