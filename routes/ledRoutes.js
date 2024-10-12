@@ -32,7 +32,7 @@ router.post('/', async (req, res) => {
         };
         const createdLed = await partService.createPart(newLed);
         logger.info('Created LED:', createdLed);
-        res.redirect('/parts');
+        res.redirect(`/parts?characterId=${newLed.characterId}`);
     } catch (error) {
         logger.error('Error creating LED:', error);
         res.status(500).send('An error occurred while creating the LED: ' + error.message);
@@ -100,7 +100,7 @@ router.post('/:id', async (req, res) => {
         logger.debug('Updated LED data:', updatedLed);
         const result = await partService.updatePart(id, updatedLed);
         logger.info('Updated LED:', result);
-        res.redirect('/parts');
+        res.redirect(`/parts?characterId=${updatedLed.characterId}`);
     } catch (error) {
         logger.error('Error updating LED:', error);
         res.status(500).send('An error occurred while updating the LED: ' + error.message);
