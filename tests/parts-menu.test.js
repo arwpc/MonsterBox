@@ -14,16 +14,34 @@ describe('Parts Menu Navigation', function() {
     console.log('Starting cleanup process');
     try {
       const mockCharacterId = '1';
-      const response = await agent.get(`/parts?characterId=${mockCharacterId}`);
-      const parts = response.body.parts || [];
-      
+      const response = await agent
+        .get(`/parts?characterId=${mockCharacterId}`)
+        .expect(200);
+
+      let parts;
+      try {
+        parts = JSON.parse(response.text).parts;
+      } catch (parseError) {
+        console.error('Error parsing response:', parseError);
+        console.log('Response text:', response.text);
+        return;
+      }
+
+      if (!Array.isArray(parts)) {
+        console.error('Parts is not an array:', parts);
+        return;
+      }
+
       for (const part of parts) {
-        if (part.name.toLowerCase().includes('test')) {
-          await agent.delete(`/parts/${part._id}`);
-          console.log(`Deleted test part: ${part.name}`);
+        if (part.name && part.name.toLowerCase().includes('test')) {
+          console.log(`Attempting to delete test part: ${part.name} (ID: ${part._id})`);
+          const deleteResponse = await agent
+            .delete(`/parts/${part._id}`)
+            .expect(200);
+          console.log(`Delete response for ${part.name}:`, deleteResponse.body);
         }
       }
-      
+
       console.log('Cleanup process completed');
     } catch (error) {
       console.error('Error during cleanup:', error);
