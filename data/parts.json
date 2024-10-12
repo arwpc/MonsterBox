@@ -52,5 +52,17 @@
     "sensorType": "motion",
     "gpioPin": 16,
     "active": true
+  },
+  {
+    "id": 23,
+    "name": "Test Servo",
+    "type": "servo",
+    "characterId": 1,
+    "servoType": "standard",
+    "usePCA9685": false,
+    "pin": 17,
+    "minPulse": 500,
+    "maxPulse": 2500,
+    "defaultAngle": 90
   }
 ]
