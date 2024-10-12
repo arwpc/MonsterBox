@@ -80,12 +80,13 @@ const updatePart = async (id, partData) => {
 const deletePart = async (id) => {
     logger.info(`Attempting to delete part with ID: ${id}`);
     const parts = await getAllParts();
-    const filteredParts = parts.filter(part => part.id !== parseInt(id, 10));
-    if (filteredParts.length === parts.length) {
+    const index = parts.findIndex(part => part.id === parseInt(id, 10));
+    if (index === -1) {
         logger.warn(`Part not found with id: ${id}`);
         throw new Error(`Part not found with id: ${id}`);
     }
-    await fs.writeFile(dataPath, JSON.stringify(filteredParts, null, 2));
+    parts.splice(index, 1);
+    await fs.writeFile(dataPath, JSON.stringify(parts, null, 2));
     logger.info(`Part with ID ${id} deleted successfully`);
 };
 

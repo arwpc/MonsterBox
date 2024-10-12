@@ -6,20 +6,19 @@ describe('LED CRUD Operations', function() {
   let agent;
   const mockCharacterId = '1';
 
-  beforeEach(function() {
+  beforeEach(async function() {
     agent = request.agent(app);
+    // Set up session before each test
+    await agent
+      .post('/set-character')
+      .send({ characterId: mockCharacterId })
+      .expect(200);
   });
 
   it('should create, read, and delete an LED', async function() {
     this.timeout(5000);
 
     try {
-      // Set up session
-      await agent
-        .post('/set-character')
-        .send({ characterId: mockCharacterId })
-        .expect(200);
-
       // Create an LED
       const mockLedData = {
         name: 'Test LED',
@@ -31,6 +30,7 @@ describe('LED CRUD Operations', function() {
       const createResponse = await agent
         .post('/parts/led')
         .send(mockLedData)
+        .query({ characterId: mockCharacterId })
         .expect(200);
 
       expect(createResponse.body).to.have.property('message', 'LED created successfully');
@@ -41,25 +41,25 @@ describe('LED CRUD Operations', function() {
 
       // Verify LED was created and get ID from API
       const partsListResponse = await agent
-        .get(`/api/parts?characterId=${mockCharacterId}`)
+        .get(`/api/parts`)
+        .query({ characterId: mockCharacterId })
         .expect(200);
 
       const createdLed2 = partsListResponse.body.find(part => part.name === 'Test LED' && part.type === 'led');
       expect(createdLed2, 'Created LED not found').to.not.be.undefined;
 
-
       // Delete the LED
       const deleteResponse = await agent
-        .post(`/parts/${ledId}/delete?characterId=${mockCharacterId}`)
+        .post(`/parts/${ledId}/delete`)
+        .query({ characterId: mockCharacterId })
         .expect(200);
-
-      await new Promise(resolve => setTimeout(resolve, 500));
 
       expect(deleteResponse.body).to.have.property('message', 'Part deleted successfully');
 
       // Verify LED was deleted
       const finalPartsListResponse = await agent
-        .get(`/api/parts?characterId=${mockCharacterId}`)
+        .get(`/api/parts`)
+        .query({ characterId: mockCharacterId })
         .expect(200);
       
       const deletedLed = finalPartsListResponse.body.find(part => part.id === ledId);
