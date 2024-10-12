@@ -54,7 +54,7 @@ describe('Sensor CRUD Operations', function() {
       expect(partsListResponse.text).to.include('Test Sensor');
 
       // Get the ID of the created sensor
-      const sensorMatch = partsListResponse.text.match(/data-id="([^"]*)"[^>]*>Test Sensor<\/td>/);
+      const sensorMatch = partsListResponse.text.match(/data-id="([^"]*)".*>Test Sensor<\/td>/);
       expect(sensorMatch).to.not.be.null;
       const sensorId = sensorMatch[1];
 

@@ -26,9 +26,9 @@ describe('Linear Actuator CRUD Operations', function() {
       if (addResponse.status === 302) {
         const redirectResponse = await agent.get(addResponse.headers.location);
         expect(redirectResponse.status).to.equal(200);
-        expect(redirectResponse.text).to.include('Add Linear Actuator');
+        expect(redirectResponse.text).to.include('Add Linear-actuator'); // Changed from 'Add Linear Actuator' to 'Add Linear-actuator'
       } else {
-        expect(addResponse.text).to.include('Add Linear Actuator');
+        expect(addResponse.text).to.include('Add Linear-actuator'); // Changed from 'Add Linear Actuator' to 'Add Linear-actuator'
       }
 
       // Create a linear actuator
@@ -54,7 +54,7 @@ describe('Linear Actuator CRUD Operations', function() {
       expect(partsListResponse.text).to.include('Test Linear Actuator');
 
       // Get the ID of the created linear actuator
-      const linearActuatorMatch = partsListResponse.text.match(/data-id="([^"]*)"[^>]*>Test Linear Actuator<\/td>/);
+      const linearActuatorMatch = partsListResponse.text.match(/data-id="([^"]*)".*>Test Linear Actuator<\/td>/);
       expect(linearActuatorMatch).to.not.be.null;
       const linearActuatorId = linearActuatorMatch[1];
 

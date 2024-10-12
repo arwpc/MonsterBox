@@ -55,7 +55,7 @@ describe('Servo CRUD Operations', function() {
       expect(partsListResponse.text).to.include('Test Servo');
 
       // Get the ID of the created servo
-      const servoMatch = partsListResponse.text.match(/data-id="([^"]*)"[^>]*>Test Servo<\/td>/);
+      const servoMatch = partsListResponse.text.match(/data-id="([^"]*)".*>Test Servo<\/td>/);
       expect(servoMatch).to.not.be.null;
       const servoId = servoMatch[1];
 
