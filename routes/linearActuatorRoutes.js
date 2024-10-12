@@ -1,13 +1,11 @@
-// File: routes/linearActuatorRoutes.js
-
 const express = require('express');
 const router = express.Router();
 const partService = require('../services/partService');
+const characterService = require('../services/characterService');
 const { spawn } = require('child_process');
 const path = require('path');
 const logger = require('../scripts/logger');
 
-// Function to execute testfire
 function executeTestfire(res, params) {
     const { direction, speed, duration, directionPin, pwmPin, maxExtension, maxRetraction } = params;
     const scriptPath = path.join(__dirname, '..', 'scripts', 'linear_actuator_control.py');
@@ -41,18 +39,27 @@ function executeTestfire(res, params) {
         });
 }
 
-// GET route for linear actuator creation page
 router.get('/new', async (req, res) => {
     try {
-        const characters = await require('../services/characterService').getAllCharacters();
-        res.render('part-forms/linear-actuator', { title: 'Create Linear Actuator', action: '/parts/linear-actuator', part: {}, characters });
+        const characters = await characterService.getAllCharacters();
+        const characterId = req.query.characterId;
+        let character = null;
+        if (characterId) {
+            character = await characterService.getCharacterById(characterId);
+        }
+        res.render('part-forms/linear-actuator', { 
+            title: 'Create Linear Actuator', 
+            action: '/parts/linear-actuator', 
+            part: {}, 
+            characters,
+            character
+        });
     } catch (error) {
         logger.error('Error fetching characters:', error);
         res.status(500).send('An error occurred while fetching the characters: ' + error.message);
     }
 });
 
-// GET route for linear actuator edit page
 router.get('/:id/edit', async (req, res) => {
     try {
         const id = parseInt(req.params.id, 10);
@@ -61,15 +68,21 @@ router.get('/:id/edit', async (req, res) => {
             throw new Error('Invalid part ID');
         }
         const part = await partService.getPartById(id);
-        const characters = await require('../services/characterService').getAllCharacters();
-        res.render('part-forms/linear-actuator', { title: 'Edit Linear Actuator', action: `/parts/linear-actuator/${part.id}`, part, characters });
+        const characters = await characterService.getAllCharacters();
+        const character = await characterService.getCharacterById(part.characterId);
+        res.render('part-forms/linear-actuator', { 
+            title: 'Edit Linear Actuator', 
+            action: `/parts/linear-actuator/${part.id}`, 
+            part, 
+            characters,
+            character
+        });
     } catch (error) {
         logger.error('Error fetching linear actuator:', error);
         res.status(500).send('An error occurred while fetching the linear actuator: ' + error.message);
     }
 });
 
-// GET route for testfire with parameters (for unsaved actuators)
 router.get('/testfire', (req, res) => {
     const { direction = 'forward', speed = '50', duration = '1000', directionPin, pwmPin, maxExtension, maxRetraction } = req.query;
     logger.info(`Received GET testfire request for unsaved linear actuator with params: direction=${direction}, speed=${speed}, duration=${duration}, directionPin=${directionPin}, pwmPin=${pwmPin}, maxExtension=${maxExtension}, maxRetraction=${maxRetraction}`);
@@ -85,7 +98,6 @@ router.get('/testfire', (req, res) => {
     });
 });
 
-// GET route for testfire with parameters (for saved actuators)
 router.get('/:id/testfire', (req, res) => {
     const id = parseInt(req.params.id, 10);
     const { direction = 'forward', speed = '50', duration = '1000' } = req.query;
@@ -114,7 +126,6 @@ router.get('/:id/testfire', (req, res) => {
         });
 });
 
-// POST route for creating a new linear actuator
 router.post('/', async (req, res) => {
     try {
         const newLinearActuator = {
@@ -135,7 +146,6 @@ router.post('/', async (req, res) => {
     }
 });
 
-// POST route for updating an existing linear actuator
 router.post('/:id', async (req, res) => {
     try {
         const id = parseInt(req.params.id, 10);
