@@ -24,6 +24,7 @@ router.get('/:id/edit', async (req, res) => {
 
 router.post('/', async (req, res) => {
     try {
+        logger.info('Received POST request to create LED:', req.body);
         const newLed = {
             name: req.body.name,
             type: 'led',
@@ -32,7 +33,7 @@ router.post('/', async (req, res) => {
         };
         const createdLed = await partService.createPart(newLed);
         logger.info('Created LED:', createdLed);
-        res.status(200).json({ message: 'LED created successfully', led: createdLed });
+        res.redirect(`/parts?characterId=${createdLed.characterId}`);
     } catch (error) {
         logger.error('Error creating LED:', error);
         res.status(500).send('An error occurred while creating the LED: ' + error.message);

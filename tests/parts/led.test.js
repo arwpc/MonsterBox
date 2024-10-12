@@ -31,13 +31,11 @@ describe('LED CRUD Operations', function() {
         .post('/parts/led')
         .send(mockLedData)
         .query({ characterId: mockCharacterId })
-        .expect(200);
+        .expect(302);  // Expect a redirect
 
-      expect(createResponse.body).to.have.property('message', 'LED created successfully');
-      const createdLed = createResponse.body.led;
-      expect(createdLed).to.not.be.undefined;
-      const ledId = createdLed.id;
-      console.log('Found LED ID:', ledId);
+      // Get the redirected URL
+      const redirectUrl = createResponse.header['location'];
+      expect(redirectUrl).to.include('/parts');
 
       // Verify LED was created and get ID from API
       const partsListResponse = await agent
@@ -45,8 +43,10 @@ describe('LED CRUD Operations', function() {
         .query({ characterId: mockCharacterId })
         .expect(200);
 
-      const createdLed2 = partsListResponse.body.find(part => part.name === 'Test LED' && part.type === 'led');
-      expect(createdLed2, 'Created LED not found').to.not.be.undefined;
+      const createdLed = partsListResponse.body.find(part => part.name === 'Test LED' && part.type === 'led');
+      expect(createdLed, 'Created LED not found').to.not.be.undefined;
+      const ledId = createdLed.id;
+      console.log('Found LED ID:', ledId);
 
       // Delete the LED
       const deleteResponse = await agent
