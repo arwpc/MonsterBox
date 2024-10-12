@@ -118,7 +118,7 @@
         <button onclick="stopServo()">Stop Test</button>
         <div id="testResult"></div>
     </div>
-    <a href="/parts?characterId=<%= character.id %>" class="button">Back to Parts</a>
+    <a href="/parts?characterId=<%= part.characterId %>" class="button">Back to Parts</a>
 
     <script>
         const servoDefaults = JSON.parse('<%= JSON.stringify(servoTypes.reduce((acc, type) => ({ ...acc, [type]: getServoDefaults(type) }), {})) %>');
