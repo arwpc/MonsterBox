@@ -1,12 +1,24 @@
 const request = require('supertest');
 const { expect } = require('chai');
 const app = require('../app');
+const Part = require('../models/part'); // Add this line to import the Part model
 
 describe('Parts Menu Navigation', function() {
   let agent;
 
   beforeEach(function() {
     agent = request.agent(app);
+  });
+
+  // Add this afterEach hook for cleanup
+  afterEach(async function() {
+    console.log('Starting cleanup process');
+    try {
+      const deletedParts = await Part.deleteMany({ name: /Test/i });
+      console.log(`Cleaned up ${deletedParts.deletedCount} test parts`);
+    } catch (error) {
+      console.error('Error during cleanup:', error);
+    }
   });
 
   it('should navigate through all Add Part buttons and return to Parts menu', async function() {
