@@ -61,83 +61,60 @@
     <div id="sensorControl" style="margin-top: 20px;">
         <h2>Sensor Control</h2>
         <p id="statusText">Sensor status: Not active</p>
-        <button id="sensorOn">Sensor On</button>
-        <button id="sensorOff" disabled>Sensor Off</button>
+        <button id="testSensor">Test Sensor</button>
         <div id="testResults" style="margin-top: 10px;"></div>
     </div>
 
-    <a href="/parts" class="button">Back to Parts</a>
+    <a href="/parts?characterId=<%= character.id %>" class="button">Back to Parts</a>
 
     <script>
-        let eventSource;
-
         function updateSensorStatus(status) {
             const statusText = $('#statusText');
             statusText.text('Sensor status: ' + status);
 
-            if (status.includes('Motion detected')) {
+            if (status.includes('Motion detected') || status.includes('Sound detected')) {
                 statusText.addClass('motion-detected');
             } else {
                 statusText.removeClass('motion-detected');
             }
         }
 
-        function startSensor() {
+        function testSensor() {
             const gpioPin = $('#gpioPin').val();
+            const sensorType = $('#sensorType').val();
 
-            eventSource = new EventSource(`/parts/sensor/control?id=${<%= part.id || 'null' %>}&gpioPin=${gpioPin}&action=start`);
+            $('#testSensor').prop('disabled', true);
+            $('#testResults').text('Testing sensor...');
 
-            eventSource.onmessage = function(event) {
-                const data = JSON.parse(event.data);
-                if (data.status) {
-                    updateSensorStatus(data.status);
-                    $('#testResults').text(data.status);
-                } else if (data.error) {
-                    console.error('Error:', data.error);
-                    updateSensorStatus('Error: ' + data.error);
-                    $('#testResults').text('Sensor control failed: ' + data.error);
-                    stopSensor();
+            $.ajax({
+                url: '/parts/execute-python-script',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    script: 'test_sensor.py',
+                    args: [sensorType, gpioPin, '10']  // 10 seconds test duration
+                }),
+                success: function(data) {
+                    if (data.success) {
+                        updateSensorStatus(data.result);
+                        $('#testResults').text('Test completed: ' + data.result);
+                    } else {
+                        updateSensorStatus('Error: ' + data.error);
+                        $('#testResults').text('Test failed: ' + data.error);
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    console.error('Error testing sensor:', errorThrown);
+                    updateSensorStatus('Error testing sensor');
+                    $('#testResults').text('Failed to test sensor: ' + errorThrown);
+                },
+                complete: function() {
+                    $('#testSensor').prop('disabled', false);
                 }
-            };
-
-            eventSource.onerror = function(event) {
-                console.error('EventSource failed:', event);
-                updateSensorStatus('Error: EventSource failed');
-                $('#testResults').text('Sensor control failed: EventSource error');
-                stopSensor();
-            };
-
-            $('#sensorOn').prop('disabled', true);
-            $('#sensorOff').prop('disabled', false);
-        }
-
-        function stopSensor() {
-            if (eventSource) {
-                eventSource.close();
-            }
-
-            $.post('/parts/sensor/control', { 
-                id: <%= part.id || 'null' %>, 
-                gpioPin: $('#gpioPin').val(),
-                action: 'stop'
-            })
-            .done(function(data) {
-                updateSensorStatus('Sensor stopped');
-                $('#testResults').text('Sensor stopped successfully');
-            })
-            .fail(function(jqXHR, textStatus, errorThrown) {
-                console.error('Error stopping sensor:', errorThrown);
-                updateSensorStatus('Error stopping sensor');
-                $('#testResults').text('Failed to stop sensor: ' + errorThrown);
-            })
-            .always(function() {
-                $('#sensorOn').prop('disabled', false);
-                $('#sensorOff').prop('disabled', true);
             });
         }
 
-        $('#sensorOn').click(startSensor);
-        $('#sensorOff').click(stopSensor);
+        $('#testSensor').click(testSensor);
 
         $('#sensorType').change(function() {
             if ($(this).val() === 'sound') {
@@ -150,11 +127,11 @@
         // Trigger change event on page load
         $('#sensorType').change();
 
-        // Disable sensor control buttons if GPIO pin is not set (for new sensors)
+        // Disable sensor control button if GPIO pin is not set (for new sensors)
         function updateSensorControlButtonState() {
             const gpioPin = $('#gpioPin').val();
             const isSoundSensor = $('#sensorType').val() === 'sound';
-            $('#sensorOn').prop('disabled', !gpioPin || isSoundSensor);
+            $('#testSensor').prop('disabled', !gpioPin && !isSoundSensor);
         }
 
         $('#gpioPin').on('input', updateSensorControlButtonState);
