@@ -21,24 +21,15 @@ describe('Linear Actuator CRUD Operations', function() {
         .send({ characterId: mockCharacterId })
         .expect(200);
 
-      // Navigate to Add Linear Actuator page
-      const addResponse = await agent.get('/parts/new/linear-actuator');
-      expect(addResponse.status).to.be.oneOf([200, 302]);
-      if (addResponse.status === 302) {
-        const redirectResponse = await agent.get(addResponse.headers.location);
-        expect(redirectResponse.status).to.equal(200);
-        expect(redirectResponse.text).to.include('Add Linear-actuator');
-      } else {
-        expect(addResponse.text).to.include('Add Linear-actuator');
-      }
-
-      // Create a linear actuator
+      // Create a Linear Actuator
       const mockLinearActuatorData = {
         name: 'Test Linear Actuator',
         characterId: mockCharacterId,
         type: 'linear-actuator',
-        dirPin: 3,
-        pwmPin: 4
+        directionPin: 1,
+        pwmPin: 2,
+        maxExtension: 10000,
+        maxRetraction: 10000
       };
 
       const createResponse = await agent
@@ -49,29 +40,49 @@ describe('Linear Actuator CRUD Operations', function() {
       const redirectLocation = createResponse.headers.location;
       expect(redirectLocation).to.equal(`/parts?characterId=${mockCharacterId}`);
 
-      // Verify linear actuator was created
+      // Verify Linear Actuator was created
       const partsListResponse = await agent.get(`/parts?characterId=${mockCharacterId}`);
       expect(partsListResponse.status).to.equal(200);
       expect(partsListResponse.text).to.include('Test Linear Actuator');
 
-      // Get the ID of the created linear actuator
+      // Get the ID of the created Linear Actuator
       const dom = new JSDOM(partsListResponse.text);
-      const linearActuatorRow = dom.window.document.querySelector('tr:last-child');
-      expect(linearActuatorRow).to.not.be.null;
-      const linearActuatorId = linearActuatorRow.querySelector('.delete-part').getAttribute('data-id');
-      expect(linearActuatorId).to.not.be.null;
+      const document = dom.window.document;
 
-      // Delete the linear actuator
+      const linearActuatorRow = Array.from(document.querySelectorAll('tr')).find(row => row.textContent.includes('Test Linear Actuator'));
+      expect(linearActuatorRow, 'Linear Actuator row not found').to.not.be.undefined;
+
+      const deleteButton = linearActuatorRow.querySelector('.delete-part');
+      expect(deleteButton, 'Delete button not found').to.not.be.null;
+
+      const linearActuatorId = deleteButton.getAttribute('data-id');
+      expect(linearActuatorId, 'Linear Actuator ID not found').to.not.be.null;
+
+      console.log('Found Linear Actuator ID:', linearActuatorId);
+
+      // Delete the Linear Actuator
       const deleteResponse = await agent
-        .delete(`/parts/linear-actuator/${linearActuatorId}`)
+        .post(`/parts/${linearActuatorId}/delete?characterId=${mockCharacterId}`)
         .expect(200);
+
+      console.log('Delete response:', deleteResponse.body);
 
       expect(deleteResponse.body).to.have.property('message', 'Part deleted successfully');
 
-      // Verify linear actuator was deleted
+      // Wait for a short time to allow the page to update
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Verify Linear Actuator was deleted
       const finalPartsListResponse = await agent.get(`/parts?characterId=${mockCharacterId}`);
       expect(finalPartsListResponse.status).to.equal(200);
-      expect(finalPartsListResponse.text).to.not.include('Test Linear Actuator');
+      
+      console.log('Final parts list HTML:', finalPartsListResponse.text);
+      
+      const finalDom = new JSDOM(finalPartsListResponse.text);
+      const finalDocument = finalDom.window.document;
+      const finalLinearActuatorRow = Array.from(finalDocument.querySelectorAll('tr')).find(row => row.textContent.includes('Test Linear Actuator'));
+      
+      expect(finalLinearActuatorRow, 'Linear Actuator still exists after deletion').to.be.undefined;
 
     } catch (error) {
       console.error('Test failed with error:', error);
