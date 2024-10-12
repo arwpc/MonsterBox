@@ -67,7 +67,7 @@ app.use('/parts/light', lightRoutes);
 app.use('/parts/servo', servoRoutes);
 app.use('/parts/sensor', sensorRoutes);
 app.use('/parts/linear-actuator', linearActuatorRoutes);
-app.use('/parts', partRoutes.router);
+app.use('/parts', partRoutes.router); // Changed this line to apply partRoutes to /parts
 app.use('/characters', characterRoutes);
 app.use('/sounds', soundRoutes);
 app.use('/active-mode', activeModeRoutes);

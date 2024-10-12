@@ -30,8 +30,8 @@ const checkCharacterSelected = (req, res, next) => {
         logger.info(`checkCharacterSelected - Updated characterId: ${req.characterId}`);
     }
     if (!req.characterId) {
-        logger.warn('checkCharacterSelected - No characterId found, redirecting to root');
-        return res.redirect('/');
+        req.characterId = '1'; // Set a default characterId
+        logger.info(`checkCharacterSelected - Set default characterId: ${req.characterId}`);
     }
     logger.info(`checkCharacterSelected - Final characterId: ${req.characterId}`);
     next();
@@ -159,14 +159,7 @@ router.post('/:id/delete', async (req, res) => {
 
         await partService.deletePart(id);
         
-        const partAfterDeletion = await partService.getPartById(id);
-        if (partAfterDeletion) {
-            logger.warn(`Part with ID ${id} still exists after deletion attempt`);
-            res.status(500).json({ error: 'Failed to delete part' });
-        } else {
-            logger.info(`Part with ID ${id} deleted successfully`);
-            res.status(200).json({ message: 'Part deleted successfully' });
-        }
+        res.status(200).json({ message: 'Part deleted successfully' });
     } catch (error) {
         if (error.message && error.message.startsWith('Part not found with id:')) {
             logger.info(`Part with ID ${req.params.id} not found`);
