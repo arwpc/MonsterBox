@@ -506,5 +506,59 @@
     "minPulse": 500,
     "maxPulse": 2500,
     "defaultAngle": 90
+  },
+  {
+    "id": 141,
+    "name": "Test LED",
+    "type": "led",
+    "characterId": 1,
+    "gpioPin": 8
+  },
+  {
+    "id": 142,
+    "name": "Test Light",
+    "type": "light",
+    "characterId": 1,
+    "gpioPin": 7
+  },
+  {
+    "id": 143,
+    "name": "Test Linear Actuator",
+    "type": "linear-actuator",
+    "characterId": 1,
+    "directionPin": 1,
+    "pwmPin": 2,
+    "maxExtension": 10000,
+    "maxRetraction": 10000
+  },
+  {
+    "id": 144,
+    "name": "Test Motor",
+    "characterId": 1,
+    "type": "motor",
+    "dirPin": 1,
+    "pwmPin": 2
+  },
+  {
+    "id": 145,
+    "name": "Test Sensor",
+    "type": "sensor",
+    "characterId": 1,
+    "gpioPin": 5,
+    "active": false,
+    "sensorType": "motion"
+  },
+  {
+    "id": 146,
+    "name": "Test Servo",
+    "type": "servo",
+    "characterId": 1,
+    "pin": 3,
+    "usePCA9685": false,
+    "channel": null,
+    "minPulse": 500,
+    "maxPulse": 2500,
+    "defaultAngle": 90,
+    "servoType": "Standard"
   }
 ]

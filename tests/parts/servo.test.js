@@ -25,31 +25,35 @@ describe('Servo CRUD Operations', function() {
         name: 'Test Servo',
         characterId: mockCharacterId,
         type: 'servo',
+        pin: 3,
         usePCA9685: false,
         channel: null,
-        pin: 3,
         minPulse: 500,
         maxPulse: 2500,
-        defaultAngle: 90
+        defaultAngle: 90,
+        servoType: 'Standard'
       };
 
       const createResponse = await agent
         .post('/parts/servo')
         .send(mockServoData)
-        .expect(302);
+        .expect(200);
 
-      const redirectLocation = createResponse.headers.location;
-      expect(redirectLocation).to.equal(`/parts?characterId=${mockCharacterId}`);
+
+      expect(createResponse.body).to.have.property('message', 'Servo created successfully');
+      const createdServo = createResponse.body.servo;
+      expect(createdServo).to.not.be.undefined;
+      const servoId = createdServo.id;
+      console.log('Found Servo ID:', servoId);
 
       // Verify Servo was created and get ID from API
       const partsListResponse = await agent
         .get(`/api/parts?characterId=${mockCharacterId}`)
         .expect(200);
 
-      const createdServo = partsListResponse.body.find(part => part.name === 'Test Servo' && part.type === 'servo');
-      expect(createdServo, 'Created servo not found').to.not.be.undefined;
-      const servoId = createdServo.id;
-      console.log('Found Servo ID:', servoId);
+      const createdServo2 = partsListResponse.body.find(part => part.name === 'Test Servo' && part.type === 'servo');
+      expect(createdServo2, 'Created servo not found').to.not.be.undefined;
+
 
       // Delete the Servo
       const deleteResponse = await agent
@@ -58,7 +62,6 @@ describe('Servo CRUD Operations', function() {
 
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      console.log('Delete response:', deleteResponse.body);
       expect(deleteResponse.body).to.have.property('message', 'Part deleted successfully');
 
       // Verify Servo was deleted
