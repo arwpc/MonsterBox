@@ -1,6 +1,5 @@
 const request = require('supertest');
 const { expect } = require('chai');
-const { JSDOM } = require('jsdom');
 const app = require('../../app');
 
 describe('Linear Actuator CRUD Operations', function() {
@@ -40,24 +39,14 @@ describe('Linear Actuator CRUD Operations', function() {
       const redirectLocation = createResponse.headers.location;
       expect(redirectLocation).to.equal(`/parts?characterId=${mockCharacterId}`);
 
-      // Verify Linear Actuator was created
-      const partsListResponse = await agent.get(`/parts?characterId=${mockCharacterId}`);
-      expect(partsListResponse.status).to.equal(200);
-      expect(partsListResponse.text).to.include('Test Linear Actuator');
+      // Verify Linear Actuator was created and get ID from API
+      const partsListResponse = await agent
+        .get(`/api/parts?characterId=${mockCharacterId}`)
+        .expect(200);
 
-      // Get the ID of the created Linear Actuator
-      const dom = new JSDOM(partsListResponse.text);
-      const document = dom.window.document;
-
-      const linearActuatorRow = Array.from(document.querySelectorAll('tr')).find(row => row.textContent.includes('Test Linear Actuator'));
-      expect(linearActuatorRow, 'Linear Actuator row not found').to.not.be.undefined;
-
-      const deleteButton = linearActuatorRow.querySelector('.delete-part');
-      expect(deleteButton, 'Delete button not found').to.not.be.null;
-
-      const linearActuatorId = deleteButton.getAttribute('data-id');
-      expect(linearActuatorId, 'Linear Actuator ID not found').to.not.be.null;
-
+      const createdLinearActuator = partsListResponse.body.find(part => part.name === 'Test Linear Actuator' && part.type === 'linear-actuator');
+      expect(createdLinearActuator, 'Created linear actuator not found').to.not.be.undefined;
+      const linearActuatorId = createdLinearActuator.id;
       console.log('Found Linear Actuator ID:', linearActuatorId);
 
       // Delete the Linear Actuator
@@ -65,24 +54,18 @@ describe('Linear Actuator CRUD Operations', function() {
         .post(`/parts/${linearActuatorId}/delete?characterId=${mockCharacterId}`)
         .expect(200);
 
-      console.log('Delete response:', deleteResponse.body);
+      await new Promise(resolve => setTimeout(resolve, 500));
 
+      console.log('Delete response:', deleteResponse.body);
       expect(deleteResponse.body).to.have.property('message', 'Part deleted successfully');
 
-      // Wait for a short time to allow the page to update
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
       // Verify Linear Actuator was deleted
-      const finalPartsListResponse = await agent.get(`/parts?characterId=${mockCharacterId}`);
-      expect(finalPartsListResponse.status).to.equal(200);
+      const finalPartsListResponse = await agent
+        .get(`/api/parts?characterId=${mockCharacterId}`)
+        .expect(200);
       
-      console.log('Final parts list HTML:', finalPartsListResponse.text);
-      
-      const finalDom = new JSDOM(finalPartsListResponse.text);
-      const finalDocument = finalDom.window.document;
-      const finalLinearActuatorRow = Array.from(finalDocument.querySelectorAll('tr')).find(row => row.textContent.includes('Test Linear Actuator'));
-      
-      expect(finalLinearActuatorRow, 'Linear Actuator still exists after deletion').to.be.undefined;
+      const deletedLinearActuator = finalPartsListResponse.body.find(part => part.id === linearActuatorId);
+      expect(deletedLinearActuator, 'Linear Actuator still exists after deletion').to.be.undefined;
 
     } catch (error) {
       console.error('Test failed with error:', error);

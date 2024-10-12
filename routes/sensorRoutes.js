@@ -6,20 +6,35 @@ const { spawn } = require('child_process');
 const path = require('path');
 const logger = require('../scripts/logger');
 
-let activeSensorProcesses = {};
+router.get('/new', async (req, res) => {
+    try {
+        const characters = await characterService.getAllCharacters();
+        const characterId = req.query.characterId;
+        let character = null;
+        if (characterId) {
+            character = await characterService.getCharacterById(characterId);
+        }
+        res.render('part-forms/sensor', { title: 'Create Sensor', action: '/parts/sensor', part: {}, characters, character });
+    } catch (error) {
+        logger.error('Error fetching characters:', error);
+        res.status(500).send('An error occurred while fetching the characters: ' + error.message);
+    }
+});
 
 router.get('/:id/edit', async (req, res) => {
     try {
-        const id = parseInt(req.params.id);
+        const id = parseInt(req.params.id, 10);
+        logger.debug('Editing Sensor with ID:', id, 'Type:', typeof id);
         if (isNaN(id)) {
             throw new Error('Invalid part ID');
         }
         const part = await partService.getPartById(id);
         const characters = await characterService.getAllCharacters();
-        res.render('part-forms/sensor', { title: 'Edit Sensor', action: `/parts/sensor/${part.id}`, part, characters });
+        const character = await characterService.getCharacterById(part.characterId);
+        res.render('part-forms/sensor', { title: 'Edit Sensor', action: `/parts/sensor/${part.id}`, part, characters, character });
     } catch (error) {
-        logger.error('Error fetching sensor:', error);
-        res.status(500).send('An error occurred while fetching the sensor: ' + error.message);
+        logger.error('Error fetching Sensor:', error);
+        res.status(500).send('An error occurred while fetching the Sensor: ' + error.message);
     }
 });
 
@@ -28,110 +43,95 @@ router.post('/', async (req, res) => {
         const newSensor = {
             name: req.body.name,
             type: 'sensor',
-            characterId: parseInt(req.body.characterId),
-            sensorType: req.body.sensorType,
-            gpioPin: parseInt(req.body.gpioPin) || 16,
-            active: req.body.active === 'on'
+            characterId: parseInt(req.body.characterId, 10),
+            gpioPin: parseInt(req.body.gpioPin, 10) || 26,
+            active: req.body.active === 'on',
+            sensorType: req.body.sensorType || 'motion'
         };
+
         const createdSensor = await partService.createPart(newSensor);
         logger.info('Created sensor:', createdSensor);
-        res.redirect(`/parts?characterId=${newSensor.characterId}`);
+
+        res.status(200).json({ message: 'Sensor created successfully', sensor: createdSensor });
     } catch (error) {
-        logger.error('Error creating sensor:', error);
-        res.status(500).send('An error occurred while creating the sensor: ' + error.message);
+        logger.error('Error creating Sensor:', error);
+        res.status(500).send('An error occurred while creating the Sensor: ' + error.message);
     }
 });
 
+
 router.post('/:id', async (req, res) => {
     try {
-        const id = parseInt(req.params.id);
+        logger.debug('Update Sensor Route - Request params:', req.params);
+        logger.debug('Update Sensor Route - Request body:', req.body);
+
+        const id = parseInt(req.params.id, 10);
+        logger.debug('Updating Sensor with ID:', id, 'Type:', typeof id);
+
         if (isNaN(id)) {
             throw new Error('Invalid part ID');
         }
+
         const updatedSensor = {
             id: id,
             name: req.body.name,
             type: 'sensor',
-            characterId: parseInt(req.body.characterId),
-            sensorType: req.body.sensorType,
-            gpioPin: parseInt(req.body.gpioPin) || 16,
-            active: req.body.active === 'on'
+            characterId: parseInt(req.body.characterId, 10),
+            gpioPin: parseInt(req.body.gpioPin, 10) || 26,
+            active: req.body.active === 'on',
+            sensorType: req.body.sensorType || 'motion'
         };
+
+        logger.debug('Updated Sensor data:', updatedSensor);
+
         const result = await partService.updatePart(id, updatedSensor);
-        logger.info('Updated sensor:', result);
+        logger.info('Updated Sensor:', result);
+
         res.redirect(`/parts?characterId=${updatedSensor.characterId}`);
     } catch (error) {
-        logger.error('Error updating sensor:', error);
-        res.status(500).send('An error occurred while updating the sensor: ' + error.message);
+        logger.error('Error updating Sensor:', error);
+        res.status(500).send('An error occurred while updating the Sensor: ' + error.message);
     }
 });
 
-router.get('/control', (req, res) => {
-    const sensorId = parseInt(req.query.id);
-    const gpioPin = parseInt(req.query.gpioPin);
-    const action = req.query.action;
+router.post('/test', async (req, res) => {
+    try {
+        const scriptPath = path.join(__dirname, '..', 'scripts', 'test_sensor.py');
 
-    if (isNaN(sensorId) || isNaN(gpioPin)) {
-        return res.status(400).json({ error: 'Invalid sensor ID or GPIO pin' });
-    }
+        const { gpioPin, sensorType, expectedValue, duration } = req.body;
 
-    if (action !== 'start') {
-        return res.status(400).json({ error: 'Invalid action' });
-    }
+        const process = spawn('python3', [
+            scriptPath,
+            gpioPin.toString(),
+            sensorType,
+            expectedValue.toString(),
+            duration.toString()
+        ]);
 
-    res.writeHead(200, {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive'
-    });
+        let stdout = '';
+        let stderr = '';
 
-    const scriptPath = path.join(__dirname, '..', 'scripts', 'sensor_control.py');
-    const process = spawn('python3', [scriptPath, gpioPin.toString()]);
+        process.stdout.on('data', (data) => {
+            stdout += data.toString();
+            logger.debug(`Python script output: ${data}`);
+        });
 
-    activeSensorProcesses[sensorId] = process;
+        process.stderr.on('data', (data) => {
+            stderr += data.toString();
+            logger.error(`Python script error: ${data}`);
+        });
 
-    process.stdout.on('data', (data) => {
-        res.write(`data: ${data}\n\n`);
-    });
-
-    process.stderr.on('data', (data) => {
-        logger.error(`Sensor control script error: ${data}`);
-        res.write(`data: ${JSON.stringify({ error: data.toString() })}\n\n`);
-    });
-
-    process.on('close', (code) => {
-        logger.info(`Sensor control script exited with code ${code}`);
-        res.write(`data: ${JSON.stringify({ status: 'Sensor monitoring stopped' })}\n\n`);
-        delete activeSensorProcesses[sensorId];
-        res.end();
-    });
-
-    req.on('close', () => {
-        if (activeSensorProcesses[sensorId]) {
-            activeSensorProcesses[sensorId].kill();
-            delete activeSensorProcesses[sensorId];
-        }
-    });
-});
-
-router.post('/control', (req, res) => {
-    const sensorId = parseInt(req.body.id);
-    const action = req.body.action;
-
-    if (isNaN(sensorId)) {
-        return res.status(400).json({ error: 'Invalid sensor ID' });
-    }
-
-    if (action !== 'stop') {
-        return res.status(400).json({ error: 'Invalid action' });
-    }
-
-    if (activeSensorProcesses[sensorId]) {
-        activeSensorProcesses[sensorId].kill();
-        delete activeSensorProcesses[sensorId];
-        res.json({ status: 'Sensor monitoring stopped' });
-    } else {
-        res.status(404).json({ error: 'No active sensor process found' });
+        process.on('close', (code) => {
+            logger.debug(`Python script exited with code ${code}`);
+            if (code === 0) {
+                res.json({ success: true, message: 'Sensor test completed successfully', output: stdout });
+            } else {
+                res.status(500).json({ success: false, message: 'Sensor test failed', error: stderr });
+            }
+        });
+    } catch (error) {
+        logger.error('Error testing sensor:', error);
+        res.status(500).json({ success: false, message: 'An error occurred while testing the sensor', error: error.message });
     }
 });
 

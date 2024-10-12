@@ -6,27 +6,6 @@ const { spawn } = require('child_process');
 const path = require('path');
 const logger = require('../scripts/logger');
 
-router.get('/new', async (req, res) => {
-    try {
-        const characters = await characterService.getAllCharacters();
-        const characterId = req.query.characterId;
-        let character = null;
-        if (characterId) {
-            character = await characterService.getCharacterById(characterId);
-        }
-        res.render('part-forms/light', { 
-            title: 'Add Light', 
-            action: '/parts/light', 
-            part: {}, 
-            characters, 
-            character 
-        });
-    } catch (error) {
-        logger.error('Error fetching characters:', error);
-        res.status(500).send('An error occurred while fetching characters: ' + error.message);
-    }
-});
-
 router.get('/:id/edit', async (req, res) => {
     try {
         const id = parseInt(req.params.id, 10);
@@ -36,17 +15,10 @@ router.get('/:id/edit', async (req, res) => {
         }
         const part = await partService.getPartById(id);
         const characters = await characterService.getAllCharacters();
-        const character = await characterService.getCharacterById(part.characterId);
-        res.render('part-forms/light', { 
-            title: 'Edit Light', 
-            action: `/parts/light/${part.id}`, 
-            part, 
-            characters, 
-            character 
-        });
+        res.render('part-forms/light', { title: 'Edit Light', action: `/parts/light/${part.id}`, part, characters });
     } catch (error) {
-        logger.error('Error fetching light:', error);
-        res.status(500).send('An error occurred while fetching the light: ' + error.message);
+        logger.error('Error fetching Light:', error);
+        res.status(500).send('An error occurred while fetching the Light: ' + error.message);
     }
 });
 
@@ -60,44 +32,26 @@ router.post('/', async (req, res) => {
         };
         const createdLight = await partService.createPart(newLight);
         logger.info('Created light:', createdLight);
-        res.redirect(`/parts?characterId=${createdLight.characterId}`);
+        res.status(200).json({ message: 'Light created successfully', light: createdLight });
     } catch (error) {
-        logger.error('Error creating light:', error);
-        res.status(500).send('An error occurred while creating the light: ' + error.message);
+        logger.error('Error creating Light:', error);
+        res.status(500).send('An error occurred while creating the Light: ' + error.message);
     }
 });
 
+
 router.post('/test', async (req, res) => {
-    logger.info('Light Test Route Hit');
     try {
-        logger.debug('Light Test Route - Request body:', req.body);
-        const { part_id, gpioPin, state } = req.body;
-        
-        if (!gpioPin || !state) {
-            throw new Error('Missing required parameters for light test');
-        }
+        const { gpioPin, brightness, duration } = req.body;
 
         const scriptPath = path.join(__dirname, '..', 'scripts', 'light_control.py');
-        logger.debug('Light test script path:', scriptPath);
-
-        const scriptArgs = [
+        const process = spawn('python3', [
             scriptPath,
             gpioPin.toString(),
-            state
-        ];
-
-        // Add duration for both on and off states
-        if (state === 'on') {
-            scriptArgs.push('5000');  // 5 seconds for on state
-        } else {
-            scriptArgs.push('100');   // 100ms for off state
-        }
-
-        logger.debug('Executing light test with parameters:', scriptArgs);
-
-        logger.debug('Executing command:', 'sudo', 'python3', ...scriptArgs);
-
-        const process = spawn('sudo', ['python3', ...scriptArgs], { stdio: 'pipe' });
+            'on',
+            duration.toString(),
+            brightness.toString()
+        ]);
 
         let stdout = '';
         let stderr = '';
@@ -115,16 +69,18 @@ router.post('/test', async (req, res) => {
         process.on('close', (code) => {
             logger.debug(`Python script exited with code ${code}`);
             if (code === 0) {
-                res.json({ success: true, message: `Light turned ${state} successfully`, output: stdout });
+                res.json({ success: true, message: 'Light test completed successfully', output: stdout });
             } else {
                 res.status(500).json({ success: false, message: 'Light test failed', error: stderr });
             }
         });
+
     } catch (error) {
         logger.error('Error testing light:', error);
         res.status(500).json({ success: false, message: 'An error occurred while testing the light', error: error.message });
     }
 });
+
 
 router.post('/:id', async (req, res) => {
     try {
@@ -136,6 +92,7 @@ router.post('/:id', async (req, res) => {
         if (isNaN(id)) {
             throw new Error('Invalid part ID');
         }
+
         const updatedLight = {
             id: id,
             name: req.body.name,
@@ -143,14 +100,18 @@ router.post('/:id', async (req, res) => {
             characterId: parseInt(req.body.characterId, 10),
             gpioPin: parseInt(req.body.gpioPin, 10) || 26
         };
+
         logger.debug('Updated Light data:', updatedLight);
         const result = await partService.updatePart(id, updatedLight);
-        logger.info('Updated light:', result);
-        res.redirect(`/parts?characterId=${result.characterId}`);
+        logger.info('Updated Light:', result);
+
+        res.redirect(`/parts?characterId=${updatedLight.characterId}`);
+
     } catch (error) {
-        logger.error('Error updating light:', error);
-        res.status(500).send('An error occurred while updating the light: ' + error.message);
+        logger.error('Error updating Light:', error);
+        res.status(500).send('An error occurred while updating the Light: ' + error.message);
     }
 });
+
 
 module.exports = router;

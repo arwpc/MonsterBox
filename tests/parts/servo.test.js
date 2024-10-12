@@ -1,6 +1,5 @@
 const request = require('supertest');
 const { expect } = require('chai');
-const { JSDOM } = require('jsdom');
 const app = require('../../app');
 
 describe('Servo CRUD Operations', function() {
@@ -26,6 +25,8 @@ describe('Servo CRUD Operations', function() {
         name: 'Test Servo',
         characterId: mockCharacterId,
         type: 'servo',
+        usePCA9685: false,
+        channel: null,
         pin: 3,
         minPulse: 500,
         maxPulse: 2500,
@@ -40,24 +41,14 @@ describe('Servo CRUD Operations', function() {
       const redirectLocation = createResponse.headers.location;
       expect(redirectLocation).to.equal(`/parts?characterId=${mockCharacterId}`);
 
-      // Verify Servo was created
-      const partsListResponse = await agent.get(`/parts?characterId=${mockCharacterId}`);
-      expect(partsListResponse.status).to.equal(200);
-      expect(partsListResponse.text).to.include('Test Servo');
+      // Verify Servo was created and get ID from API
+      const partsListResponse = await agent
+        .get(`/api/parts?characterId=${mockCharacterId}`)
+        .expect(200);
 
-      // Get the ID of the created Servo
-      const dom = new JSDOM(partsListResponse.text);
-      const document = dom.window.document;
-
-      const servoRow = Array.from(document.querySelectorAll('tr')).find(row => row.textContent.includes('Test Servo'));
-      expect(servoRow, 'Servo row not found').to.not.be.undefined;
-
-      const deleteButton = servoRow.querySelector('.delete-part');
-      expect(deleteButton, 'Delete button not found').to.not.be.null;
-
-      const servoId = deleteButton.getAttribute('data-id');
-      expect(servoId, 'Servo ID not found').to.not.be.null;
-
+      const createdServo = partsListResponse.body.find(part => part.name === 'Test Servo' && part.type === 'servo');
+      expect(createdServo, 'Created servo not found').to.not.be.undefined;
+      const servoId = createdServo.id;
       console.log('Found Servo ID:', servoId);
 
       // Delete the Servo
@@ -65,24 +56,18 @@ describe('Servo CRUD Operations', function() {
         .post(`/parts/${servoId}/delete?characterId=${mockCharacterId}`)
         .expect(200);
 
-      console.log('Delete response:', deleteResponse.body);
+      await new Promise(resolve => setTimeout(resolve, 500));
 
+      console.log('Delete response:', deleteResponse.body);
       expect(deleteResponse.body).to.have.property('message', 'Part deleted successfully');
 
-      // Wait for a short time to allow the page to update
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
       // Verify Servo was deleted
-      const finalPartsListResponse = await agent.get(`/parts?characterId=${mockCharacterId}`);
-      expect(finalPartsListResponse.status).to.equal(200);
+      const finalPartsListResponse = await agent
+        .get(`/api/parts?characterId=${mockCharacterId}`)
+        .expect(200);
       
-      console.log('Final parts list HTML:', finalPartsListResponse.text);
-      
-      const finalDom = new JSDOM(finalPartsListResponse.text);
-      const finalDocument = finalDom.window.document;
-      const finalServoRow = Array.from(finalDocument.querySelectorAll('tr')).find(row => row.textContent.includes('Test Servo'));
-      
-      expect(finalServoRow, 'Servo still exists after deletion').to.be.undefined;
+      const deletedServo = finalPartsListResponse.body.find(part => part.id === servoId);
+      expect(deletedServo, 'Servo still exists after deletion').to.be.undefined;
 
     } catch (error) {
       console.error('Test failed with error:', error);

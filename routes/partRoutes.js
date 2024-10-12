@@ -154,13 +154,11 @@ router.post('/:id/delete', async (req, res) => {
         const id = parseInt(req.params.id);
         logger.info(`Attempting to delete part with ID: ${id}`);
         
-        // Log the part before deletion
         const partBeforeDeletion = await partService.getPartById(id);
         logger.info(`Part to be deleted: ${JSON.stringify(partBeforeDeletion)}`);
 
         await partService.deletePart(id);
         
-        // Verify deletion
         const partAfterDeletion = await partService.getPartById(id);
         if (partAfterDeletion) {
             logger.warn(`Part with ID ${id} still exists after deletion attempt`);
@@ -170,12 +168,11 @@ router.post('/:id/delete', async (req, res) => {
             res.status(200).json({ message: 'Part deleted successfully' });
         }
     } catch (error) {
-        logger.error(`Error deleting part: ${error}`);
-        // If the error is due to the part not being found, consider it a successful deletion
-        if (error.message === `Part not found with id: ${req.params.id}`) {
-            logger.info(`Part with ID ${req.params.id} not found, considering it as deleted`);
-            res.status(200).json({ message: 'Part deleted successfully' });
+        if (error.message && error.message.startsWith('Part not found with id:')) {
+            logger.info(`Part with ID ${req.params.id} not found`);
+            res.status(404).json({ error: 'Part not found' });
         } else {
+            logger.error(`Error deleting part: ${error}`);
             res.status(500).json({ error: 'An error occurred while deleting the part' });
         }
     }
@@ -279,6 +276,20 @@ const executePythonScript = (req, res) => {
 };
 
 router.post('/execute-python-script', executePythonScript);
+
+router.get('/api/parts', async (req, res) => {
+    try {
+        const parts = await partService.getPartsByCharacter(req.characterId);
+        const partsWithDetails = parts.map(part => ({
+            ...part,
+            details: getPartDetails(part)
+        }));
+        res.json(partsWithDetails);
+    } catch (error) {
+        logger.error('Error fetching parts for API:', error);
+        res.status(500).json({ error: 'An error occurred while fetching parts' });
+    }
+});
 
 module.exports = {
     router: router,

@@ -137,9 +137,11 @@ router.post('/', async (req, res) => {
             maxExtension: parseInt(req.body.maxExtension, 10) || 10000,
             maxRetraction: parseInt(req.body.maxRetraction, 10) || 10000
         };
+
         const createdLinearActuator = await partService.createPart(newLinearActuator);
         logger.info('Created linear actuator:', createdLinearActuator);
-        res.redirect(`/parts?characterId=${newLinearActuator.characterId}`);
+        res.status(200).json({ message: 'Linear actuator created successfully', linearActuator: createdLinearActuator });
+
     } catch (error) {
         logger.error('Error creating linear actuator:', error);
         res.status(500).send('An error occurred while creating the linear actuator: ' + error.message);
