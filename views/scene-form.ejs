@@ -157,6 +157,9 @@
             // Serialize form data
             const formData = new FormData(this);
             
+            // Log the scene_name
+            console.log('Scene Name:', formData.get('scene_name'));
+            
             // Add steps data
             const steps = [];
             $('#steps > div').each(function(index) {
