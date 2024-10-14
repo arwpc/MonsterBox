@@ -110,6 +110,7 @@ const deleteScene = async (id) => {
 };
 
 module.exports = {
+    validateSceneData,
     getAllScenes,
     getSceneById,
     getScenesByCharacter,
