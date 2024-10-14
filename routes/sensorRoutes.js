@@ -52,13 +52,12 @@ router.post('/', async (req, res) => {
         const createdSensor = await partService.createPart(newSensor);
         logger.info('Created sensor:', createdSensor);
 
-        res.status(200).json({ message: 'Sensor created successfully', sensor: createdSensor });
+        res.redirect(`/parts?characterId=${createdSensor.characterId}`);
     } catch (error) {
         logger.error('Error creating Sensor:', error);
         res.status(500).send('An error occurred while creating the Sensor: ' + error.message);
     }
 });
-
 
 router.post('/:id', async (req, res) => {
     try {
