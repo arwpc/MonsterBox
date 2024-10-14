@@ -62,17 +62,20 @@
         <h2>Sensor Control</h2>
         <p id="statusText">Sensor status: Not active</p>
         <button id="testSensor">Test Sensor</button>
+        <button id="stopTest" style="display: none;">Stop Test</button>
         <div id="testResults" style="margin-top: 10px;"></div>
     </div>
 
     <a href="/parts?characterId=<%= character.id %>" class="button">Back to Parts</a>
 
     <script>
+        let socket;
+
         function updateSensorStatus(status) {
             const statusText = document.getElementById('statusText');
             statusText.textContent = 'Sensor status: ' + status;
 
-            if (status.includes('Motion detected') || status.includes('Sound detected')) {
+            if (status === 'Motion Detected') {
                 statusText.classList.add('motion-detected');
             } else {
                 statusText.classList.remove('motion-detected');
@@ -83,39 +86,49 @@
             const gpioPin = document.getElementById('gpioPin').value;
             const sensorType = document.getElementById('sensorType').value;
 
-            document.getElementById('testSensor').disabled = true;
+            document.getElementById('testSensor').style.display = 'none';
+            document.getElementById('stopTest').style.display = 'inline-block';
             document.getElementById('testResults').textContent = 'Testing sensor...';
 
-            axios({
-                method: 'post',
-                url: '/parts/execute-python-script',
-                headers: {'Content-Type': 'application/json'},
-                data: JSON.stringify({
-                    script: 'test_sensor.py',
-                    args: [sensorType, gpioPin, '10']  // 10 seconds test duration
-                })
-            })
-            .then(function(response) {
-                const data = response.data;
-                if (data.success) {
-                    updateSensorStatus(data.result);
-                    document.getElementById('testResults').textContent = 'Test completed: ' + data.result;
-                } else {
-                    updateSensorStatus('Error: ' + data.error);
-                    document.getElementById('testResults').textContent = 'Test failed: ' + data.error;
+            // Establish WebSocket connection
+            socket = new WebSocket(`ws://${window.location.host}/parts/sensor/test`);
+
+            socket.onopen = function() {
+                console.log('WebSocket connection established');
+                // Send sensor configuration
+                socket.send(JSON.stringify({ gpioPin, sensorType }));
+            };
+
+            socket.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                if (data.type === 'output') {
+                    updateSensorStatus(data.data);
+                } else if (data.type === 'error') {
+                    document.getElementById('testResults').textContent = 'Error: ' + data.data;
                 }
-            })
-            .catch(function(error) {
-                console.error('Error testing sensor:', error);
-                updateSensorStatus('Error testing sensor');
-                document.getElementById('testResults').textContent = 'Failed to test sensor: ' + error.message;
-            })
-            .finally(function() {
-                document.getElementById('testSensor').disabled = false;
-            });
+            };
+
+            socket.onclose = function() {
+                console.log('WebSocket connection closed');
+                document.getElementById('testSensor').style.display = 'inline-block';
+                document.getElementById('stopTest').style.display = 'none';
+                document.getElementById('testResults').textContent = 'Test completed';
+            };
+
+            socket.onerror = function(error) {
+                console.error('WebSocket error:', error);
+                document.getElementById('testResults').textContent = 'WebSocket error occurred';
+            };
+        }
+
+        function stopTest() {
+            if (socket) {
+                socket.close();
+            }
         }
 
         document.getElementById('testSensor').addEventListener('click', testSensor);
+        document.getElementById('stopTest').addEventListener('click', stopTest);
 
         document.getElementById('sensorType').addEventListener('change', function() {
             updateSensorControlButtonState();
@@ -127,8 +140,6 @@
             }
         });
 
-
-        // Disable sensor control button if GPIO pin is not set (for new sensors)
         function updateSensorControlButtonState() {
             const gpioPin = document.getElementById('gpioPin').value;
             const isSoundSensor = document.getElementById('sensorType').value === 'sound';
