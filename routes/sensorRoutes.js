@@ -5,6 +5,7 @@ const characterService = require('../services/characterService');
 const { spawn } = require('child_process');
 const path = require('path');
 const logger = require('../scripts/logger');
+const WebSocket = require('ws');
 
 router.get('/new', async (req, res) => {
     try {
@@ -96,38 +97,40 @@ router.post('/:id', async (req, res) => {
 router.post('/test', async (req, res) => {
     try {
         const scriptPath = path.join(__dirname, '..', 'scripts', 'test_sensor.py');
+        const { gpioPin, sensorType } = req.body;
 
-        const { gpioPin, sensorType, expectedValue, duration } = req.body;
+        const wss = new WebSocket.Server({ noServer: true });
 
-        const process = spawn('python3', [
-            scriptPath,
-            gpioPin.toString(),
-            sensorType,
-            expectedValue.toString(),
-            duration.toString()
-        ]);
+        wss.on('connection', (ws) => {
+            const process = spawn('python3', [
+                scriptPath,
+                gpioPin.toString(),
+                sensorType
+            ]);
 
-        let stdout = '';
-        let stderr = '';
+            process.stdout.on('data', (data) => {
+                const output = data.toString().trim();
+                logger.debug(`Python script output: ${output}`);
+                ws.send(JSON.stringify({ type: 'output', data: output }));
+            });
 
-        process.stdout.on('data', (data) => {
-            stdout += data.toString();
-            logger.debug(`Python script output: ${data}`);
+            process.stderr.on('data', (data) => {
+                const error = data.toString().trim();
+                logger.error(`Python script error: ${error}`);
+                ws.send(JSON.stringify({ type: 'error', data: error }));
+            });
+
+            process.on('close', (code) => {
+                logger.debug(`Python script exited with code ${code}`);
+                ws.close();
+            });
+
+            ws.on('close', () => {
+                process.kill();
+            });
         });
 
-        process.stderr.on('data', (data) => {
-            stderr += data.toString();
-            logger.error(`Python script error: ${data}`);
-        });
-
-        process.on('close', (code) => {
-            logger.debug(`Python script exited with code ${code}`);
-            if (code === 0) {
-                res.json({ success: true, message: 'Sensor test completed successfully', output: stdout });
-            } else {
-                res.status(500).json({ success: false, message: 'Sensor test failed', error: stderr });
-            }
-        });
+        res.json({ success: true, message: 'WebSocket connection established' });
     } catch (error) {
         logger.error('Error testing sensor:', error);
         res.status(500).json({ success: false, message: 'An error occurred while testing the sensor', error: error.message });
