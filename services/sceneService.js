@@ -9,7 +9,7 @@ const validateSceneData = (sceneData) => {
         logger.error('Invalid character_id');
         throw new Error('Invalid character_id');
     }
-    if (!sceneData.scene_name || typeof sceneData.scene_name !== 'string' || sceneData.scene_name.trim() === '') {
+    if (typeof sceneData.scene_name !== 'string' || sceneData.scene_name.trim() === '') {
         logger.error('Invalid scene_name');
         throw new Error('Invalid scene_name');
     }
