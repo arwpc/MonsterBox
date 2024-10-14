@@ -6,6 +6,7 @@
     <title><%= title %></title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <link rel="stylesheet" href="/css/style.css">
     <style>
         .form-actions {
@@ -122,7 +123,10 @@
 
             // Update the step name to indicate it's a copy
             const nameInput = newStep.querySelector('input[name$="[name]"]');
-            nameInput.value = nameInput.value + ' (Copy)';
+            if (nameInput) {
+                nameInput.value = nameInput.value + ' (Copy)';
+            }
+
 
             updateStepNumbers();
         }
@@ -149,62 +153,31 @@
             });
         }
 
-        // Ensure all steps are included when submitting the form
+        // Form submission using Axios
         document.getElementById('sceneForm').onsubmit = function(event) {
             event.preventDefault();
             updateStepNumbers();
-            
+
             // Serialize form data
             const formData = new FormData(this);
-            
-            // Log the scene_name
-            console.log('Scene Name:', formData.get('scene_name'));
-            
-            // Add steps data
-            const steps = [];
-            $('#steps > div').each(function(index) {
-                const step = {};
-                $(this).find('input, select').each(function() {
-                    const key = this.name.match(/\[([^\]]+)\]$/)[1];
-                    step[key] = this.value;
-                });
-                steps.push(step);
-            });
-            
-            // Remove any existing 'steps' field from formData
-            formData.delete('steps');
-            
-            // Append each step as a separate field
-            steps.forEach((step, index) => {
-                Object.keys(step).forEach(key => {
-                    formData.append(`steps[${index}][${key}]`, step[key]);
-                });
+
+            // Convert FormData to plain object
+            const data = {};
+            formData.forEach((value, key) => {
+                data[key] = value;
             });
 
-            // Log the form data
-            console.log('Form data before sending:');
-            for (let [key, value] of formData.entries()) {
-                console.log(key, value);
-            }
+            console.log('Scene Name:', data.scene_name);
 
-            // Send form data via AJAX
-            $.ajax({
-                url: `${this.action}?characterId=${characterId}`,
-                method: 'POST',
-                data: formData,
-                processData: false,
-                contentType: false,
-                success: function(response) {
-                    console.log('Scene saved successfully:', response);
+            axios.post(`${this.action}?characterId=${characterId}`, data)
+                .then(response => {
+                    console.log('Scene saved successfully:', response.data);
                     window.location.href = `/scenes?characterId=${characterId}`;
-                },
-                error: function(xhr, status, error) {
+                })
+                .catch(error => {
                     console.error('Error saving scene:', error);
-                    console.error('Status:', status);
-                    console.error('Response:', xhr.responseText);
                     alert('Failed to save scene. Please check the console for more details.');
-                }
-            });
+                });
 
             return false;
         };
