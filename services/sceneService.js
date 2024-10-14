@@ -1,10 +1,23 @@
-// File: services/sceneService.js
-
 const fs = require('fs').promises;
 const path = require('path');
 const logger = require('../scripts/logger');
 
 const dataPath = path.join(__dirname, '../data/scenes.json');
+
+const validateSceneData = (sceneData) => {
+    if (!sceneData.character_id || isNaN(parseInt(sceneData.character_id))) {
+        logger.error('Invalid character_id');
+        throw new Error('Invalid character_id');
+    }
+    if (!sceneData.scene_name || typeof sceneData.scene_name !== 'string' || sceneData.scene_name.trim() === '') {
+        logger.error('Invalid scene_name');
+        throw new Error('Invalid scene_name');
+    }
+    if (!Array.isArray(sceneData.steps)) {
+        logger.error('Invalid steps');
+        throw new Error('Invalid steps');
+    }
+};
 
 const getAllScenes = async () => {
     try {
@@ -49,6 +62,7 @@ const getNextId = (scenes) => {
 };
 
 const createScene = async (sceneData) => {
+    validateSceneData(sceneData);
     const scenes = await getAllScenes();
     const newScene = {
         id: getNextId(scenes),
@@ -63,6 +77,7 @@ const createScene = async (sceneData) => {
 };
 
 const updateScene = async (id, sceneData) => {
+    validateSceneData(sceneData);
     const scenes = await getAllScenes();
     const index = scenes.findIndex(scene => scene.id === parseInt(id));
     if (index !== -1) {
