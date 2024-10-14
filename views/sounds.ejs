@@ -6,6 +6,7 @@
     <title><%- title %></title>
     <link rel="stylesheet" href="/css/style.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 <body>
     <h1><%- title %></h1>
@@ -100,25 +101,18 @@
 
         function playOnCharacters(soundId) {
             console.log('Attempting to play sound with ID:', soundId);
-            fetch(`/sounds/${soundId}/play`, {
-                method: 'POST',
+            axios.post(`/sounds/${soundId}/play`, {
                 headers: {
                     'Content-Type': 'application/json',
                 },
             })
             .then(response => {
-                if (!response.ok) {
-                    return response.json().then(err => { throw err; });
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Server response:', data);
+                console.log('Server response:', response.data);
                 const soundInfo = `
                     <h3>Sound Details:</h3>
-                    <p>Message: ${data.message}</p>
-                    <p>Sound: ${data.sound}</p>
-                    <p>File: ${data.file}</p>
+                    <p>Message: ${response.data.message}</p>
+                    <p>Sound: ${response.data.sound}</p>
+                    <p>File: ${response.data.file}</p>
                 `;
                 document.getElementById('soundInfo').innerHTML = soundInfo;
                 document.getElementById('errorInfo').innerHTML = '';
@@ -126,9 +120,9 @@
             .catch(error => {
                 console.error('Error playing sound on characters:', error);
                 let errorMessage = 'Error playing sound on characters: ';
-                if (error.error) {
-                    errorMessage += error.error;
-                    if (error.details) errorMessage += ' - ' + error.details;
+                if (error.response && error.response.data) {
+                    errorMessage += error.response.data.error;
+                    if (error.response.data.details) errorMessage += ' - ' + error.response.data.details;
                 } else {
                     errorMessage += error.toString();
                 }
@@ -138,23 +132,17 @@
 
         function deleteSound(id) {
             if (confirm('Are you sure you want to delete this sound?')) {
-                fetch(`/sounds/${id}/delete`, { method: 'POST' })
+                axios.post(`/sounds/${id}/delete`)
                 .then(response => {
-                    if (!response.ok) {
-                        return response.json().then(err => { throw err; });
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('Delete sound response:', data);
+                    console.log('Delete sound response:', response.data);
                     location.reload();
                 })
                 .catch(error => {
                     console.error('Error deleting sound:', error);
                     let errorMessage = 'Error deleting sound: ';
-                    if (error.error) {
-                        errorMessage += error.error;
-                        if (error.details) errorMessage += ' - ' + error.details;
+                    if (error.response && error.response.data) {
+                        errorMessage += error.response.data.error;
+                        if (error.response.data.details) errorMessage += ' - ' + error.response.data.details;
                     } else {
                         errorMessage += error.toString();
                     }

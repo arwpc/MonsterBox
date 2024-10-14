@@ -32,6 +32,7 @@
             cursor: pointer;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 <body>
     <h1><%= title %></h1>
@@ -92,30 +93,23 @@
             console.log('Sending test data:', partData);
             debugInfoElement.innerHTML += `Sending test data: ${JSON.stringify(partData, null, 2)}\n\n`;
 
-            fetch('/parts/light/test', {
-                method: 'POST',
+            axios.post('/parts/light/test', {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(partData)
+                data: partData
             })
             .then(response => {
                 debugInfoElement.innerHTML += `Response status: ${response.status}\n`;
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Received response:', data);
-                debugInfoElement.innerHTML += `Received response: ${JSON.stringify(data, null, 2)}\n`;
-                if (data.success) {
-                    console.log('Light test successful:', data.message);
-                    testResultElement.innerHTML = `Test successful: ${data.message}`;
+                console.log('Received response:', response.data);
+                debugInfoElement.innerHTML += `Received response: ${JSON.stringify(response.data, null, 2)}\n`;
+                if (response.data.success) {
+                    console.log('Light test successful:', response.data.message);
+                    testResultElement.innerHTML = `Test successful: ${response.data.message}`;
                     testResultElement.style.color = '#00ff00';
                 } else {
-                    console.error('Light test failed:', data.message);
-                    testResultElement.innerHTML = `Test failed: ${data.message}`;
+                    console.error('Light test failed:', response.data.message);
+                    testResultElement.innerHTML = `Test failed: ${response.data.message}`;
                     testResultElement.style.color = '#ff0000';
                 }
             })
