@@ -103,6 +103,9 @@ const sceneController = {
                 throw new Error('Invalid character ID');
             }
             
+            // Log the scene_name from the request body
+            logger.info(`Received scene_name: ${req.body.scene_name}`);
+            
             logger.info(`Attempting to create new scene with data:`, JSON.stringify(req.body));
             
             // Parse steps from the new format
