@@ -75,7 +75,7 @@
             const statusText = document.getElementById('statusText');
             statusText.textContent = 'Sensor status: ' + status;
 
-            if (status.includes('Motion detected') || status.includes('Sound detected')) {
+            if (status === 'Motion Detected') {
                 statusText.classList.add('motion-detected');
             } else {
                 statusText.classList.remove('motion-detected');
@@ -89,15 +89,19 @@
             eventSource = new EventSource(`/parts/sensor/control?id=<%= part.id || 'null' %>&gpioPin=${gpioPin}&sensorType=${sensorType}&action=start`);
 
             eventSource.onmessage = function(event) {
-                const data = JSON.parse(event.data);
-                if (data.status) {
-                    updateSensorStatus(data.status);
-                    document.getElementById('testResults').textContent = data.status;
-                } else if (data.error) {
-                    console.error('Error:', data.error);
-                    updateSensorStatus('Error: ' + data.error);
-                    document.getElementById('testResults').textContent = 'Sensor control failed: ' + data.error;
-                    stopSensor();
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.status) {
+                        updateSensorStatus(data.status);
+                        document.getElementById('testResults').textContent = data.status;
+                    } else if (data.error) {
+                        console.error('Error:', data.error);
+                        updateSensorStatus('Error: ' + data.error);
+                        document.getElementById('testResults').textContent = 'Sensor control failed: ' + data.error;
+                        stopSensor();
+                    }
+                } catch (error) {
+                    console.error('Error parsing event data:', error);
                 }
             };
 

@@ -6,13 +6,17 @@ import time
 def test_motion_sensor(pin, duration=None):
     pir = MotionSensor(pin)
     start_time = time.time()
+    last_state = None
 
     while duration is None or time.time() - start_time < duration:
-        if pir.motion_detected:
-            print(json.dumps({"status": "Motion Detected"}), flush=True)
-        else:
-            print(json.dumps({"status": "No Motion"}), flush=True)
-        time.sleep(0.5)
+        current_state = pir.motion_detected
+        if current_state != last_state:
+            if current_state:
+                print(json.dumps({"status": "Motion Detected"}), flush=True)
+            else:
+                print(json.dumps({"status": "No Motion"}), flush=True)
+            last_state = current_state
+        time.sleep(0.1)  # Reduced sleep time for more responsive detection
 
 if __name__ == "__main__":
     if len(sys.argv) < 2 or len(sys.argv) > 3:

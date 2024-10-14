@@ -134,13 +134,18 @@ router.get('/control', (req, res) => {
 
 router.post('/control', (req, res) => {
     const { id, gpioPin, action } = req.body;
+    logger.debug(`Received POST /control request: ${JSON.stringify(req.body)}`);
 
     if (action === 'stop') {
-        // In a real implementation, you would need to keep track of running processes
-        // and terminate the correct one based on the sensor id or GPIO pin.
-        // For now, we'll just send a success response.
-        res.json({ success: true, message: 'Sensor monitoring stopped' });
+        try {
+            logger.info('Received stop request for sensor monitoring');
+            res.json({ success: true, message: 'Stop request received for sensor monitoring' });
+        } catch (error) {
+            logger.error('Error handling stop request:', error);
+            res.status(500).json({ success: false, error: 'Failed to process stop request' });
+        }
     } else {
+        logger.warn(`Invalid action received: ${action}`);
         res.status(400).json({ error: 'Invalid action' });
     }
 });
