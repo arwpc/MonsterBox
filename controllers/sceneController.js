@@ -127,6 +127,9 @@ const sceneController = {
                 steps: steps
             };
             
+            // Validate scene data
+            sceneService.validateSceneData(sceneData);
+
             logger.info(`Scene data being sent to service:`, JSON.stringify(sceneData));
 
             const newScene = await sceneService.createScene(sceneData);
@@ -179,6 +182,9 @@ const sceneController = {
                 scene_name: req.body.scene_name,
                 steps: steps
             };
+
+            // Validate scene data
+            sceneService.validateSceneData(sceneData);
 
             logger.info(`Scene data being sent to service:`, JSON.stringify(sceneData));
 
