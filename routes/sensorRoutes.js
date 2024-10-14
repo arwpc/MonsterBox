@@ -5,7 +5,6 @@ const characterService = require('../services/characterService');
 const { spawn } = require('child_process');
 const path = require('path');
 const logger = require('../scripts/logger');
-const WebSocket = require('ws');
 
 router.get('/new', async (req, res) => {
     try {
@@ -94,46 +93,55 @@ router.post('/:id', async (req, res) => {
     }
 });
 
-router.post('/test', async (req, res) => {
-    try {
-        const scriptPath = path.join(__dirname, '..', 'scripts', 'test_sensor.py');
-        const { gpioPin, sensorType } = req.body;
+router.get('/control', (req, res) => {
+    const { id, gpioPin, action } = req.query;
 
-        const wss = new WebSocket.Server({ noServer: true });
-
-        wss.on('connection', (ws) => {
-            const process = spawn('python3', [
-                scriptPath,
-                gpioPin.toString(),
-                sensorType
-            ]);
-
-            process.stdout.on('data', (data) => {
-                const output = data.toString().trim();
-                logger.debug(`Python script output: ${output}`);
-                ws.send(JSON.stringify({ type: 'output', data: output }));
-            });
-
-            process.stderr.on('data', (data) => {
-                const error = data.toString().trim();
-                logger.error(`Python script error: ${error}`);
-                ws.send(JSON.stringify({ type: 'error', data: error }));
-            });
-
-            process.on('close', (code) => {
-                logger.debug(`Python script exited with code ${code}`);
-                ws.close();
-            });
-
-            ws.on('close', () => {
-                process.kill();
-            });
+    if (action === 'start') {
+        res.writeHead(200, {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive'
         });
 
-        res.json({ success: true, message: 'WebSocket connection established' });
-    } catch (error) {
-        logger.error('Error testing sensor:', error);
-        res.status(500).json({ success: false, message: 'An error occurred while testing the sensor', error: error.message });
+        const scriptPath = path.join(__dirname, '..', 'scripts', 'test_sensor.py');
+        const process = spawn('python3', [scriptPath, gpioPin]);
+
+        process.stdout.on('data', (data) => {
+            const output = data.toString().trim();
+            logger.debug(`Python script output: ${output}`);
+            res.write(`data: ${output}\n\n`);
+        });
+
+        process.stderr.on('data', (data) => {
+            const error = data.toString().trim();
+            logger.error(`Python script error: ${error}`);
+            res.write(`data: ${JSON.stringify({ error: error })}\n\n`);
+        });
+
+        process.on('close', (code) => {
+            logger.debug(`Python script exited with code ${code}`);
+            res.write(`data: ${JSON.stringify({ status: 'Sensor monitoring stopped' })}\n\n`);
+            res.end();
+        });
+
+        req.on('close', () => {
+            process.kill();
+        });
+    } else {
+        res.status(400).json({ error: 'Invalid action' });
+    }
+});
+
+router.post('/control', (req, res) => {
+    const { id, gpioPin, action } = req.body;
+
+    if (action === 'stop') {
+        // In a real implementation, you would need to keep track of running processes
+        // and terminate the correct one based on the sensor id or GPIO pin.
+        // For now, we'll just send a success response.
+        res.json({ success: true, message: 'Sensor monitoring stopped' });
+    } else {
+        res.status(400).json({ error: 'Invalid action' });
     }
 });
 

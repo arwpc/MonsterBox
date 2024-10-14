@@ -3,10 +3,11 @@ import json
 import sys
 import time
 
-def test_motion_sensor(pin):
+def test_motion_sensor(pin, duration=None):
     pir = MotionSensor(pin)
+    start_time = time.time()
 
-    while True:
+    while duration is None or time.time() - start_time < duration:
         if pir.motion_detected:
             print(json.dumps({"status": "Motion Detected"}), flush=True)
         else:
@@ -14,15 +15,16 @@ def test_motion_sensor(pin):
         time.sleep(0.5)
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print(json.dumps({"error": "Usage: python test_sensor.py <pin>"}), file=sys.stderr)
+    if len(sys.argv) < 2 or len(sys.argv) > 3:
+        print(json.dumps({"error": "Usage: python test_sensor.py <pin> [duration]"}), file=sys.stderr)
         sys.exit(1)
     
     try:
         pin = int(sys.argv[1])
-        test_motion_sensor(pin)
+        duration = int(sys.argv[2]) if len(sys.argv) == 3 else None
+        test_motion_sensor(pin, duration)
     except ValueError:
-        print(json.dumps({"error": "Invalid GPIO pin number"}), file=sys.stderr)
+        print(json.dumps({"error": "Invalid GPIO pin number or duration"}), file=sys.stderr)
         sys.exit(1)
     except Exception as e:
         print(json.dumps({"error": str(e)}), file=sys.stderr)
