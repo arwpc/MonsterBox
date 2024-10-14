@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
     <link rel="stylesheet" href="/css/style.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 <body>
     <h1><%= title %> for <%= character ? (character.char_name || 'Unknown Character') : 'Unknown Character' %></h1>
@@ -57,19 +57,16 @@
         function deleteScene(id) {
             console.log('Attempting to delete scene:', id);
             if (confirm('Are you sure you want to delete this scene?')) {
-                $.ajax({
-                    url: '/scenes/' + id + '?characterId=' + characterId,
-                    type: 'DELETE',
-                    success: function(result) {
+                axios.delete('/scenes/' + id + '?characterId=' + characterId)
+                    .then(function(result) {
                         console.log('Scene deleted successfully');
                         location.reload();
-                    },
-                    error: function(xhr, status, error) {
+                    })
+                    .catch(function(error) {
                         console.error('Error deleting scene:', error);
-                        console.error('Server response:', xhr.responseText);
-                        alert('Error deleting scene: ' + error);
-                    }
-                });
+                        console.error('Server response:', error.response.data);
+                        alert('Error deleting scene: ' + error.message);
+                    });
             }
         }
 
