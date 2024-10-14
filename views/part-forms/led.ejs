@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
     <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 <body>
     <h1><%= title %></h1>
@@ -50,7 +51,6 @@
     </div>
     <a href="/parts?characterId=<%= character.id %>" class="button">Back to Parts</a>
 
-
     <script>
         function testPart() {
             const partData = {
@@ -61,19 +61,17 @@
                 gpioPin: parseInt(document.getElementById('gpioPin').value)
             };
 
-            fetch('/parts/light/test', {
-                method: 'POST',
+            axios.post('/parts/light/test', {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(partData)
+                data: partData
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    console.log('Light test successful:', data.message);
+            .then(response => {
+                if (response.data.success) {
+                    console.log('Light test successful:', response.data.message);
                 } else {
-                    console.error('Light test failed:', data.message);
+                    console.error('Light test failed:', response.data.message);
                 }
             })
             .catch((error) => {

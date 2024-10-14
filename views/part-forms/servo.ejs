@@ -38,6 +38,7 @@
             color: #a94442;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 <body>
     <h1><%= title %></h1>
@@ -222,12 +223,11 @@
             const usePCA9685 = document.getElementById('usePCA9685').checked;
             const channel = document.getElementById('channel').value;
             const pin = document.getElementById('pin').value;
-            fetch('/parts/servo/test', {
-                method: 'POST',
+            axios.post('/parts/servo/test', {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
+                data: {
                     angle: parseInt(angle),
                     usePCA9685: usePCA9685,
                     channel: parseInt(channel),
@@ -235,19 +235,18 @@
                     servoType: document.getElementById('servoType').value,
                     minPulse: parseInt(document.getElementById('minPulse').value),
                     maxPulse: parseInt(document.getElementById('maxPulse').value)
-                })
+                }
             })
-            .then(response => response.json())
-            .then(data => {
+            .then(response => {
                 const resultDiv = document.getElementById('testResult');
-                if (data.success) {
-                    resultDiv.textContent = 'Servo test successful: ' + data.message;
+                if (response.data.success) {
+                    resultDiv.textContent = 'Servo test successful: ' + response.data.message;
                     resultDiv.className = 'success';
                 } else {
-                    resultDiv.textContent = 'Servo test failed: ' + data.message;
+                    resultDiv.textContent = 'Servo test failed: ' + response.data.message;
                     resultDiv.className = 'error';
                 }
-                console.log('Servo Test Result:', data.message);
+                console.log('Servo Test Result:', response.data.message);
             })
             .catch(error => {
                 console.error('Error:', error);
@@ -261,29 +260,27 @@
             const usePCA9685 = document.getElementById('usePCA9685').checked;
             const channel = document.getElementById('channel').value;
             const pin = document.getElementById('pin').value;
-            fetch('/parts/servo/stop', {
-                method: 'POST',
+            axios.post('/parts/servo/stop', {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
+                data: {
                     usePCA9685: usePCA9685,
                     channel: parseInt(channel),
                     pin: parseInt(pin),
                     servoType: document.getElementById('servoType').value
-                })
+                }
             })
-            .then(response => response.json())
-            .then(data => {
+            .then(response => {
                 const resultDiv = document.getElementById('testResult');
-                if (data.success) {
-                    resultDiv.textContent = 'Servo stopped successfully: ' + data.message;
+                if (response.data.success) {
+                    resultDiv.textContent = 'Servo stopped successfully: ' + response.data.message;
                     resultDiv.className = 'success';
                 } else {
-                    resultDiv.textContent = 'Failed to stop servo: ' + data.message;
+                    resultDiv.textContent = 'Failed to stop servo: ' + response.data.message;
                     resultDiv.className = 'error';
                 }
-                console.log('Servo Stop Result:', data.message);
+                console.log('Servo Stop Result:', response.data.message);
             })
             .catch(error => {
                 console.error('Error:', error);
