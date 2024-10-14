@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
     <link rel="stylesheet" href="/css/style.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Creepster&display=swap');
 
@@ -69,73 +69,76 @@
 
     <script>
         function updateSensorStatus(status) {
-            const statusText = $('#statusText');
-            statusText.text('Sensor status: ' + status);
+            const statusText = document.getElementById('statusText');
+            statusText.textContent = 'Sensor status: ' + status;
 
             if (status.includes('Motion detected') || status.includes('Sound detected')) {
-                statusText.addClass('motion-detected');
+                statusText.classList.add('motion-detected');
             } else {
-                statusText.removeClass('motion-detected');
+                statusText.classList.remove('motion-detected');
             }
         }
 
         function testSensor() {
-            const gpioPin = $('#gpioPin').val();
-            const sensorType = $('#sensorType').val();
+            const gpioPin = document.getElementById('gpioPin').value;
+            const sensorType = document.getElementById('sensorType').value;
 
-            $('#testSensor').prop('disabled', true);
-            $('#testResults').text('Testing sensor...');
+            document.getElementById('testSensor').disabled = true;
+            document.getElementById('testResults').textContent = 'Testing sensor...';
 
-            $.ajax({
+            axios({
+                method: 'post',
                 url: '/parts/execute-python-script',
-                method: 'POST',
-                contentType: 'application/json',
+                headers: {'Content-Type': 'application/json'},
                 data: JSON.stringify({
                     script: 'test_sensor.py',
                     args: [sensorType, gpioPin, '10']  // 10 seconds test duration
-                }),
-                success: function(data) {
-                    if (data.success) {
-                        updateSensorStatus(data.result);
-                        $('#testResults').text('Test completed: ' + data.result);
-                    } else {
-                        updateSensorStatus('Error: ' + data.error);
-                        $('#testResults').text('Test failed: ' + data.error);
-                    }
-                },
-                error: function(jqXHR, textStatus, errorThrown) {
-                    console.error('Error testing sensor:', errorThrown);
-                    updateSensorStatus('Error testing sensor');
-                    $('#testResults').text('Failed to test sensor: ' + errorThrown);
-                },
-                complete: function() {
-                    $('#testSensor').prop('disabled', false);
+                })
+            })
+            .then(function(response) {
+                const data = response.data;
+                if (data.success) {
+                    updateSensorStatus(data.result);
+                    document.getElementById('testResults').textContent = 'Test completed: ' + data.result;
+                } else {
+                    updateSensorStatus('Error: ' + data.error);
+                    document.getElementById('testResults').textContent = 'Test failed: ' + data.error;
                 }
+            })
+            .catch(function(error) {
+                console.error('Error testing sensor:', error);
+                updateSensorStatus('Error testing sensor');
+                document.getElementById('testResults').textContent = 'Failed to test sensor: ' + error.message;
+            })
+            .finally(function() {
+                document.getElementById('testSensor').disabled = false;
             });
         }
 
-        $('#testSensor').click(testSensor);
+        document.getElementById('testSensor').addEventListener('click', testSensor);
 
-        $('#sensorType').change(function() {
-            if ($(this).val() === 'sound') {
-                $('#gpioPin').prop('disabled', true);
+        document.getElementById('sensorType').addEventListener('change', function() {
+            updateSensorControlButtonState();
+
+            if (this.value === 'sound') {
+                document.getElementById('gpioPin').disabled = true;
             } else {
-                $('#gpioPin').prop('disabled', false);
+                document.getElementById('gpioPin').disabled = false;
             }
         });
 
-        // Trigger change event on page load
-        $('#sensorType').change();
 
         // Disable sensor control button if GPIO pin is not set (for new sensors)
         function updateSensorControlButtonState() {
-            const gpioPin = $('#gpioPin').val();
-            const isSoundSensor = $('#sensorType').val() === 'sound';
-            $('#testSensor').prop('disabled', !gpioPin && !isSoundSensor);
+            const gpioPin = document.getElementById('gpioPin').value;
+            const isSoundSensor = document.getElementById('sensorType').value === 'sound';
+            document.getElementById('testSensor').disabled = !gpioPin && !isSoundSensor;
         }
 
-        $('#gpioPin').on('input', updateSensorControlButtonState);
-        $('#sensorType').change(updateSensorControlButtonState);
+        document.getElementById('gpioPin').addEventListener('input', updateSensorControlButtonState);
+
+        // Trigger change event on page load to set initial state
+        document.getElementById('sensorType').dispatchEvent(new Event('change'));
 
         // Initial state
         updateSensorControlButtonState();

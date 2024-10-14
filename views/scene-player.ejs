@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
     <link rel="stylesheet" href="/css/style.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <style>
         #log-box {
             border: 1px solid #00ff00;
@@ -88,80 +88,85 @@
         let isExecuting = false;
         let eventSource = null;
 
-        function logMessage(message, isError = false) {
-            const logBox = $("#log-box");
+        function logMessage(message, isError) {
+            const logBox = document.getElementById('log-box');
             const className = isError ? 'error-message' : '';
-            logBox.append(`<p class="${className}">${new Date().toLocaleTimeString()} - ${message}</p>`);
-            logBox.scrollTop(logBox[0].scrollHeight);
+            const p = document.createElement('p');
+            p.className = className;
+            p.textContent = new Date().toLocaleTimeString() + ' - ' + message;
+            logBox.appendChild(p);
+            logBox.scrollTop = logBox.scrollHeight;
             console.log(message);
         }
 
         function updateCurrentStep(index) {
-            $(".step").removeClass("current-step");
-            $(`#step-${index}`).addClass("current-step");
+            const steps = document.querySelectorAll('.step');
+            steps.forEach(step => step.classList.remove('current-step'));
+            document.getElementById('step-' + index).classList.add('current-step');
             updateProgressBar(index);
         }
 
         function updateProgressBar(index) {
             const progress = ((index + 1) / sceneData.steps.length) * 100;
-            $("#progress").css("width", `${progress}%`);
-            $("#progress").text(`${Math.round(progress)}%`);
+            const progressElement = document.getElementById('progress');
+            progressElement.style.width = progress + '%';
+            progressElement.textContent = Math.round(progress) + '%';
         }
 
-        $(document).ready(function() {
+        document.addEventListener('DOMContentLoaded', function() {
             logMessage('Scene player initialized');
 
-            $("#backward-btn").on("click", function() {
+            document.getElementById('backward-btn').addEventListener('click', function() {
                 if (currentStep > 0) {
                     currentStep--;
                     updateCurrentStep(currentStep);
-                    logMessage(`Moved to step ${currentStep + 1}`);
+                    logMessage('Moved to step ' + (currentStep + 1));
                 }
             });
 
-            $("#forward-btn").on("click", function() {
+            document.getElementById('forward-btn').addEventListener('click', function() {
                 if (currentStep < sceneData.steps.length - 1) {
                     currentStep++;
                     updateCurrentStep(currentStep);
-                    logMessage(`Moved to step ${currentStep + 1}`);
+                    logMessage('Moved to step ' + (currentStep + 1));
                 }
             });
 
-            $("#run-btn").on("click", function() {
-                logMessage("Starting scene execution");
+            document.getElementById('run-btn').addEventListener('click', function() {
+                logMessage('Starting scene execution');
                 runScene();
             });
 
-            $("#stop-btn").on("click", function() {
-                logMessage("Stopping scene execution");
+            document.getElementById('stop-btn').addEventListener('click', function() {
+                logMessage('Stopping scene execution');
                 stopScene();
             });
 
             // Initial scene overview
-            logMessage(`Scene Overview: "${sceneData.scene_name}"`);
-            logMessage(`Total steps: ${sceneData.steps.length}`);
-            sceneData.steps.forEach((step, index) => {
-                logMessage(`Step ${index + 1}: ${step.name} (Type: ${step.type}${step.concurrent ? ', Concurrent' : ''})`);
+            logMessage('Scene Overview: "' + sceneData.scene_name + '"');
+            logMessage('Total steps: ' + sceneData.steps.length);
+            sceneData.steps.forEach(function(step, index) {
+                logMessage('Step ' + (index + 1) + ': ' + step.name + ' (Type: ' + step.type + (step.concurrent ? ', Concurrent' : '') + ')');
             });
         });
 
         function runScene() {
             if (isExecuting) {
-                logMessage("Scene is already executing", true);
+                logMessage('Scene is already executing', true);
                 return;
             }
 
             isExecuting = true;
-            $("#run-btn").prop('disabled', true);
-            $("#backward-btn").prop('disabled', true);
-            $("#forward-btn").prop('disabled', true);
-            $("#stop-btn").prop('disabled', false);
+            document.getElementById('run-btn').disabled = true;
+            document.getElementById('backward-btn').disabled = true;
+            document.getElementById('forward-btn').disabled = true;
+            document.getElementById('stop-btn').disabled = false;
 
             if (eventSource) {
                 eventSource.close();
             }
 
-            const url = `/scenes/${sceneData.id}/play?characterId=${characterId}&startStep=${currentStep}`;
+            const url = '/scenes/' + sceneData.id + '/play?characterId=' + characterId + '&startStep=' + currentStep;
             eventSource = new EventSource(url);
 
             eventSource.onmessage = function(event) {
@@ -174,17 +179,17 @@
                     updateCurrentStep(currentStep);
                 }
                 if (data.error) {
-                    logMessage(`Error: ${data.error}`, true);
+                    logMessage('Error: ' + data.error, true);
                     stopScene();
                 }
                 if (data.event === 'scene_end') {
-                    logMessage("Scene execution completed");
+                    logMessage('Scene execution completed');
                     stopScene();
                 }
             };
 
             eventSource.onerror = function(error) {
-                logMessage(`EventSource error: ${error.message || 'Unknown error'}`, true);
+                logMessage('EventSource error: ' + (error.message || 'Unknown error'), true);
                 stopScene();
             };
         }
@@ -194,23 +199,20 @@
                 eventSource.close();
             }
 
-            $.ajax({
-                url: `/scenes/${sceneData.id}/stop?characterId=${characterId}`,
-                method: 'POST',
-                success: function(response) {
-                    logMessage("Scene execution stopped");
-                },
-                error: function(xhr, status, error) {
-                    logMessage(`Error stopping scene: ${error}`, true);
-                },
-                complete: function() {
+            axios.post('/scenes/' + sceneData.id + '/stop?characterId=' + characterId)
+                .then(function(response) {
+                    logMessage('Scene execution stopped');
+                })
+                .catch(function(error) {
+                    logMessage('Error stopping scene: ' + error.message, true);
+                })
+                .finally(function() {
                     isExecuting = false;
-                    $("#run-btn").prop('disabled', false);
-                    $("#backward-btn").prop('disabled', false);
-                    $("#forward-btn").prop('disabled', false);
-                    $("#stop-btn").prop('disabled', true);
-                }
-            });
+                    document.getElementById('run-btn').disabled = false;
+                    document.getElementById('backward-btn').disabled = false;
+                    document.getElementById('forward-btn').disabled = false;
+                    document.getElementById('stop-btn').disabled = true;
+                });
         }
     </script>
 </body>
