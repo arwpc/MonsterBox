@@ -1,8 +1,8 @@
 // File: scripts/scene-player.js
 
 function logToServer(message) {
-    $.post('/log', { message: message })
-        .fail(function(xhr, status, error) {
+    axios.post('/log', { message: message })
+        .catch(function(error) {
             console.error('Failed to log to server:', error);
         });
 }
@@ -125,20 +125,17 @@ $(document).ready(function() {
             eventSource.close();
         }
 
-        $.ajax({
-            url: `/scenes/${sceneData.id}/stop?characterId=${characterId}`,
-            method: 'POST',
-            success: function(response) {
-                logToServer("Stop request successful: " + JSON.stringify(response));
+        axios.post(`/scenes/${sceneData.id}/stop?characterId=${characterId}`)
+            .then(function(response) {
+                logToServer("Stop request successful: " + JSON.stringify(response.data));
                 logMessage("All steps stopped");
                 resetControlButtons();
-            },
-            error: function(xhr, status, error) {
+            })
+            .catch(function(error) {
                 logToServer('Error stopping steps: ' + error);
                 logMessage(`Error stopping steps: ${error}`, true);
                 resetControlButtons();
-            }
-        });
+            });
     }
 
     function resetControlButtons() {
