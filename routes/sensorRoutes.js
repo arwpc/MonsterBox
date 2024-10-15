@@ -138,17 +138,21 @@ router.get('/control', (req, res) => {
     }
 });
 
-router.post('/control', (req, res) => {
+router.post('/control', async (req, res) => {
     const { id, gpioPin, action } = req.body;
     logger.debug(`Received POST /control request: ${JSON.stringify(req.body)}`);
 
     if (action === 'stop') {
         try {
-            logger.info('Received stop request for sensor monitoring');
+            logger.info(`Received stop request for sensor monitoring. ID: ${id}, GPIO Pin: ${gpioPin}`);
+            
+            // We don't need to update the part when stopping the sensor
+            // Just log the stop request and send a success response
+            
             res.json({ success: true, message: 'Stop request received for sensor monitoring' });
         } catch (error) {
             logger.error('Error handling stop request:', error);
-            res.status(500).json({ success: false, error: 'Failed to process stop request' });
+            res.status(500).json({ success: false, error: 'Failed to process stop request: ' + error.message });
         }
     } else {
         logger.warn(`Invalid action received: ${action}`);
