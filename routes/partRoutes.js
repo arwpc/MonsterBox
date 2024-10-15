@@ -170,16 +170,21 @@ router.post('/:id/delete', async (req, res) => {
         
         logger.info(`Part to be deleted: ${JSON.stringify(partToDelete)}`);
 
-        await partService.deletePart(id);
-        
-        // Log all parts after deletion
-        const allPartsAfter = await partService.getAllParts();
-        logger.info(`All parts after deletion: ${JSON.stringify(allPartsAfter)}`);
-        
-        res.status(200).json({ message: 'Part deleted successfully' });
+        try {
+            await partService.deletePart(id);
+            
+            // Log all parts after deletion
+            const allPartsAfter = await partService.getAllParts();
+            logger.info(`All parts after deletion: ${JSON.stringify(allPartsAfter)}`);
+            
+            res.status(200).json({ message: 'Part deleted successfully' });
+        } catch (deleteError) {
+            logger.error(`Error in partService.deletePart: ${deleteError}`);
+            res.status(500).json({ error: 'An error occurred while deleting the part' });
+        }
     } catch (error) {
-        logger.error(`Error deleting part: ${error}`);
-        res.status(500).json({ error: 'An error occurred while deleting the part' });
+        logger.error(`Error in delete route: ${error}`);
+        res.status(500).json({ error: 'An unexpected error occurred' });
     }
 });
 
