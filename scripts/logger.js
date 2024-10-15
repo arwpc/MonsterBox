@@ -51,4 +51,29 @@ logger.on('error', (error) => {
   console.error('Logging error:', error);
 });
 
+// Store original console methods
+const originalConsole = {
+  log: console.log,
+  warn: console.warn,
+  error: console.error
+};
+
+// Override console methods
+console.log = function(...args) {
+  const message = args.join(' ');
+  if (message.startsWith('info:') || message === 'Ready for Halloween, Sir.') {
+    originalConsole.log.apply(console, args);
+  } else {
+    logger.info(message);
+  }
+};
+
+console.warn = function(...args) {
+  logger.warn(args.join(' '));
+};
+
+console.error = function(...args) {
+  logger.error(args.join(' '));
+};
+
 module.exports = logger;

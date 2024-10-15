@@ -1,10 +1,14 @@
 // File: scripts/scene-player.js
 
-function logToServer(message) {
-    axios.post('/log', { message: message })
-        .catch(function(error) {
+function clientLog(level, message) {
+    $.post('/log', { level: level, message: message })
+        .fail(function(xhr, status, error) {
             console.error('Failed to log to server:', error);
         });
+}
+
+function logToServer(message, level = 'info') {
+    clientLog(level, message);
 }
 
 logToServer("Scene player script loaded");
@@ -22,7 +26,7 @@ $(document).ready(function() {
         const className = isError ? 'error-message' : '';
         logBox.append(`<p class="${className}">${new Date().toLocaleTimeString()} - ${message}</p>`);
         logBox.scrollTop(logBox[0].scrollHeight);
-        logToServer(message);
+        logToServer(message, isError ? 'error' : 'info');
     }
 
     function updateCurrentStep(index) {
@@ -102,13 +106,13 @@ $(document).ready(function() {
                     resetControlButtons();
                 }
             } catch (error) {
-                logToServer('Error parsing event data: ' + error.message);
+                logToServer('Error parsing event data: ' + error.message, 'error');
                 logMessage(`Error parsing event data: ${error.message}`, true);
             }
         };
 
         eventSource.onerror = function(error) {
-            logToServer('EventSource error: ' + error);
+            logToServer('EventSource error: ' + error, 'error');
             if (eventSource.readyState === EventSource.CLOSED) {
                 logMessage("Scene execution ended", true);
             } else {
@@ -125,14 +129,14 @@ $(document).ready(function() {
             eventSource.close();
         }
 
-        axios.post(`/scenes/${sceneData.id}/stop?characterId=${characterId}`)
-            .then(function(response) {
-                logToServer("Stop request successful: " + JSON.stringify(response.data));
+        $.post(`/scenes/${sceneData.id}/stop?characterId=${characterId}`)
+            .done(function(response) {
+                logToServer("Stop request successful: " + JSON.stringify(response));
                 logMessage("All steps stopped");
                 resetControlButtons();
             })
-            .catch(function(error) {
-                logToServer('Error stopping steps: ' + error);
+            .fail(function(xhr, status, error) {
+                logToServer('Error stopping steps: ' + error, 'error');
                 logMessage(`Error stopping steps: ${error}`, true);
                 resetControlButtons();
             });
