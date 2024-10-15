@@ -12,7 +12,7 @@ const RETRY_DELAY = 2000; // 2 seconds
 const messageQueue = new Map();
 let messageId = 0;
 
-const COMMAND_TIMEOUT = 15000; // Increase timeout to 15 seconds
+const COMMAND_TIMEOUT = 30000; // 30 seconds timeout
 
 function setupAudioEnvironment() {
     const env = { ...process.env };
