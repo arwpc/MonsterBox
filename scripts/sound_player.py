@@ -107,6 +107,14 @@ class SoundPlayer:
         self.sounds.clear()
         log_message({"status": "info", "message": "All sounds stopped"})
 
+    def get_sound_status(self, sound_id):
+        if sound_id in self.sounds:
+            _, channel, channel_id = self.sounds[sound_id]
+            is_playing = channel.get_busy()
+            return {"status": "playing" if is_playing else "stopped", "sound_id": sound_id, "channel": channel_id}
+        else:
+            return {"status": "not_found", "sound_id": sound_id}
+
 def signal_handler(signum, frame):
     log_message({"status": "info", "message": f"Received signal {signum}. Exiting gracefully."})
     pygame.mixer.quit()
@@ -130,23 +138,46 @@ if __name__ == "__main__":
                     break
 
                 parts = command.split("|")
-                cmd = parts[0]
+                message_id = parts[0]
+                cmd = parts[1]
+
+                response = {"messageId": message_id}
+
                 if cmd == "PLAY":
-                    if len(parts) != 3:
-                        log_message({"status": "error", "message": f"Invalid PLAY command format: {command}"})
-                        continue
-                    sound_id, file_path = parts[1], parts[2]
-                    player.play_sound(sound_id, file_path)
+                    if len(parts) != 4:
+                        response["status"] = "error"
+                        response["message"] = f"Invalid PLAY command format: {command}"
+                    else:
+                        sound_id, file_path = parts[2], parts[3]
+                        player.play_sound(sound_id, file_path)
+                        response["status"] = "success"
+                        response["message"] = "Sound playback started"
                 elif cmd == "STOP":
-                    if len(parts) != 2:
-                        log_message({"status": "error", "message": f"Invalid STOP command format: {command}"})
-                        continue
-                    sound_id = parts[1]
-                    player.stop_sound(sound_id)
+                    if len(parts) != 3:
+                        response["status"] = "error"
+                        response["message"] = f"Invalid STOP command format: {command}"
+                    else:
+                        sound_id = parts[2]
+                        player.stop_sound(sound_id)
+                        response["status"] = "success"
+                        response["message"] = "Sound stopped"
                 elif cmd == "STOP_ALL":
                     player.stop_all_sounds()
+                    response["status"] = "success"
+                    response["message"] = "All sounds stopped"
+                elif cmd == "STATUS":
+                    if len(parts) != 3:
+                        response["status"] = "error"
+                        response["message"] = f"Invalid STATUS command format: {command}"
+                    else:
+                        sound_id = parts[2]
+                        status = player.get_sound_status(sound_id)
+                        response.update(status)
                 else:
-                    log_message({"status": "error", "message": f"Unknown command: {cmd}"})
+                    response["status"] = "error"
+                    response["message"] = f"Unknown command: {cmd}"
+
+                log_message(response)
 
             except EOFError:
                 log_message({"status": "info", "message": "Received EOF. Waiting for more input."})

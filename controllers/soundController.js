@@ -9,6 +9,9 @@ let soundPlayerRetries = 0;
 const MAX_SOUND_PLAYER_RETRIES = 5;
 const RETRY_DELAY = 2000; // 2 seconds
 
+const messageQueue = new Map();
+let messageId = 0;
+
 function setupAudioEnvironment() {
     const env = { ...process.env };
     const isRoot = process.getuid() === 0;
@@ -70,6 +73,10 @@ function startSoundPlayer() {
                             handleSoundCompletion(jsonOutput);
                         } else if (jsonOutput.status === 'error') {
                             logger.error(`Sound player error: ${JSON.stringify(jsonOutput)}`);
+                        } else if (jsonOutput.messageId) {
+                            const { resolve, reject } = messageQueue.get(jsonOutput.messageId);
+                            messageQueue.delete(jsonOutput.messageId);
+                            resolve(jsonOutput);
                         }
                     } catch (error) {
                         logger.debug(`Non-JSON output from sound player: ${line}`);
@@ -111,7 +118,7 @@ function startSoundPlayer() {
     });
 }
 
-function playSound(soundId, filePath) {
+function sendCommand(command) {
     return new Promise((resolve, reject) => {
         if (!soundPlayerProcess) {
             logger.error('Sound player is not running');
@@ -119,17 +126,44 @@ function playSound(soundId, filePath) {
             return;
         }
 
-        const command = `PLAY|${soundId}|${filePath}\n`;
-        logger.info(`Sending play command: ${command.trim()}`);
-        soundPlayerProcess.stdin.write(command, (error) => {
+        const id = messageId++;
+        const fullCommand = `${id}|${command}\n`;
+        logger.info(`Sending command: ${fullCommand.trim()}`);
+        
+        messageQueue.set(id, { resolve, reject });
+        
+        soundPlayerProcess.stdin.write(fullCommand, (error) => {
             if (error) {
-                logger.error(`Error sending play command: ${error.message}`);
+                logger.error(`Error sending command: ${error.message}`);
+                messageQueue.delete(id);
                 reject(error);
-            } else {
-                resolve({ success: true, message: 'Play command sent successfully' });
             }
         });
+
+        // Set a timeout for the command
+        setTimeout(() => {
+            if (messageQueue.has(id)) {
+                messageQueue.delete(id);
+                reject(new Error('Command timed out'));
+            }
+        }, 5000); // 5 second timeout
     });
+}
+
+function playSound(soundId, filePath) {
+    return sendCommand(`PLAY|${soundId}|${filePath}`);
+}
+
+function stopSound(soundId) {
+    return sendCommand(`STOP|${soundId}`);
+}
+
+function stopAllSounds() {
+    return sendCommand('STOP_ALL');
+}
+
+function getSoundStatus(soundId) {
+    return sendCommand(`STATUS|${soundId}`);
 }
 
 function handleSoundCompletion(jsonOutput) {
@@ -138,49 +172,10 @@ function handleSoundCompletion(jsonOutput) {
     // Here you can add any additional logic for when a sound completes playing
 }
 
-function stopSound(soundId) {
-    return new Promise((resolve, reject) => {
-        if (!soundPlayerProcess) {
-            logger.error('Sound player is not running');
-            reject(new Error('Sound player is not running'));
-            return;
-        }
-
-        const command = `STOP|${soundId}\n`;
-        logger.info(`Sending stop command: ${command.trim()}`);
-        soundPlayerProcess.stdin.write(command, (error) => {
-            if (error) {
-                logger.error(`Error sending stop command: ${error.message}`);
-                reject(error);
-            } else {
-                resolve({ success: true, message: 'Stop command sent successfully' });
-            }
-        });
-    });
-}
-
-function stopAllSounds() {
-    return new Promise((resolve, reject) => {
-        if (soundPlayerProcess) {
-            logger.info('Stopping all sounds');
-            soundPlayerProcess.stdin.write("STOP_ALL\n", (error) => {
-                if (error) {
-                    logger.error(`Error sending stop all command: ${error.message}`);
-                    reject(error);
-                } else {
-                    resolve({ success: true, message: 'Stop all command sent successfully' });
-                }
-            });
-        } else {
-            logger.info('No sound player running, consider it stopped');
-            resolve({ success: true, message: 'No sound player running' });
-        }
-    });
-}
-
 module.exports = {
     startSoundPlayer,
     playSound,
     stopSound,
-    stopAllSounds
+    stopAllSounds,
+    getSoundStatus
 };
