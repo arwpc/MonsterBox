@@ -71,6 +71,12 @@ router.post('/:id', async (req, res) => {
             throw new Error('Invalid part ID');
         }
 
+        // Check if the part exists before updating
+        const existingPart = await partService.getPartById(id);
+        if (!existingPart) {
+            throw new Error('Sensor not found');
+        }
+
         const updatedSensor = {
             id: id,
             name: req.body.name,
@@ -89,7 +95,7 @@ router.post('/:id', async (req, res) => {
         res.redirect(`/parts?characterId=${updatedSensor.characterId}`);
     } catch (error) {
         logger.error('Error updating Sensor:', error);
-        res.status(500).send('An error occurred while updating the Sensor: ' + error.message);
+        res.status(500).json({ error: 'An error occurred while updating the Sensor: ' + error.message });
     }
 });
 

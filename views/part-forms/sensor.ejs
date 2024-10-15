@@ -121,20 +121,31 @@
                 eventSource.close();
             }
 
+            const gpioPin = document.getElementById('gpioPin').value;
+            const sensorType = document.getElementById('sensorType').value;
+
             axios.post('/parts/sensor/control', {
                 id: '<%= part.id || "null" %>',
-                gpioPin: document.getElementById('gpioPin').value,
-                sensorType: document.getElementById('sensorType').value,
+                gpioPin: gpioPin,
+                sensorType: sensorType,
                 action: 'stop'
             })
             .then(function(response) {
+                console.log('Sensor stop response:', response.data);
                 updateSensorStatus('Sensor stopped');
                 document.getElementById('testResults').textContent = 'Sensor stopped successfully';
             })
             .catch(function(error) {
                 console.error('Error stopping sensor:', error);
+                console.error('Error response:', error.response);
+                let errorMessage = 'Failed to stop sensor';
+                if (error.response && error.response.data && error.response.data.error) {
+                    errorMessage += ': ' + error.response.data.error;
+                } else if (error.message) {
+                    errorMessage += ': ' + error.message;
+                }
                 updateSensorStatus('Error stopping sensor');
-                document.getElementById('testResults').textContent = 'Failed to stop sensor: ' + error.message;
+                document.getElementById('testResults').textContent = errorMessage;
             })
             .finally(function() {
                 document.getElementById('sensorOn').disabled = false;
