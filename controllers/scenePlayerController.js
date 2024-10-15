@@ -10,7 +10,7 @@ let isExecuting = false;
 let currentSceneState = {};
 let res = null;
 
-const STEP_TIMEOUT = 60000; // 60 seconds timeout for each step
+const STEP_TIMEOUT = 120000; // Increase timeout to 120 seconds
 const SOUND_CHECK_INTERVAL = 100; // 100ms interval for checking sound status
 
 const stopAllParts = async () => {
@@ -140,15 +140,6 @@ async function executeScene(scene, startStep, res) {
         await soundController.startSoundPlayer();
         logger.info('Sound player started successfully');
 
-        // Play test sound
-        const testSoundPath = path.resolve(__dirname, '..', 'public', 'sounds', 'test-sound.mp3');
-        const testSoundResult = await soundController.playSound('test-sound', testSoundPath);
-        logger.info(`Test sound playback result: ${JSON.stringify(testSoundResult)}`);
-        sendSSEMessage(res, { message: 'Playing test sound' });
-
-        // Wait for 3 seconds to allow the test sound to play
-        await new Promise(resolve => setTimeout(resolve, 3000));
-
         for (let i = startStep; i < scene.steps.length && isExecuting; i++) {
             const step = scene.steps[i];
             currentSceneState.currentStep = i;
@@ -254,6 +245,8 @@ async function executeSound(step) {
             throw new Error(`Sound not found for ID: ${step.sound_id}`);
         }
         const filePath = path.resolve(__dirname, '..', 'public', 'sounds', sound.filename);
+        logger.debug(`Sound file path: ${filePath}`);
+        
         const playResult = await soundController.playSound(sound.id, filePath);
         logger.info(`Sound started playing: ${sound.name}, Result: ${JSON.stringify(playResult)}`);
 
@@ -309,7 +302,7 @@ async function waitForSoundCompletion(soundId, expectedDuration) {
                 logger.error(`Error stopping sound after timeout: ${error.message}`);
             });
             resolve(); // Resolve anyway to continue with the next step
-        }, (expectedDuration + 1) * 1000); // Add 1 second buffer
+        }, (expectedDuration + 5) * 1000); // Add 5 seconds buffer
     });
 }
 
