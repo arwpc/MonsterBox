@@ -1,8 +1,9 @@
 $(document).ready(function() {
     function log(level, message) {
-        $.post('/client-log', { level: level, message: message })
-            .fail(function(xhr, status, error) {
-                console.error('Failed to log to server:', error);
+        axios.post('/client-log', { level, message })
+            .catch(function(error) {
+                // Replace console.error with another axios call to log the error
+                axios.post('/client-log', { level: 'error', message: 'Failed to log to server: ' + error.message });
             });
     }
 
@@ -88,16 +89,15 @@ $(document).ready(function() {
 
     function fetchCharacterParts(characterId) {
         log('info', 'Fetching character parts for ID: ' + characterId);
-        $.get(`/active-mode/character/${characterId}/parts`)
-            .done(function(data) {
-                log('info', 'Character parts fetched successfully: ' + JSON.stringify(data));
-                displayCharacterParts(data);
+        axios.get(`/active-mode/character/${characterId}/parts`)
+            .then(function(response) {
+                log('info', 'Character parts fetched successfully: ' + JSON.stringify(response.data));
+                displayCharacterParts(response.data);
             })
-            .fail(function(jqXHR, textStatus, errorThrown) {
-                log('error', "Error fetching character parts: " + textStatus + " - " + errorThrown);
-                log('error', "Response text: " + jqXHR.responseText);
+            .catch(function(error) {
+                log('error', "Error fetching character parts: " + error.message);
                 $('#characterParts').html('<p>Failed to load character parts information. Please try again.</p>');
-                $('#debugInfo').append(`<p>Error fetching character parts: ${textStatus} - ${errorThrown}</p>`);
+                $('#debugInfo').append(`<p>Error fetching character parts: ${error.message}</p>`);
             });
     }
 
@@ -127,8 +127,9 @@ $(document).ready(function() {
 
     function fetchScenes(characterId) {
         log('info', `Fetching scenes for character ID: ${characterId}`);
-        $.get(`/active-mode/character/${characterId}/scenes`)
-            .done(function(scenes) {
+        axios.get(`/active-mode/character/${characterId}/scenes`)
+            .then(function(response) {
+                const scenes = response.data;
                 log('info', `Scenes fetched successfully: ${JSON.stringify(scenes)}`);
                 if (Array.isArray(scenes)) {
                     log('info', `Number of scenes fetched: ${scenes.length}`);
@@ -143,10 +144,9 @@ $(document).ready(function() {
                 }
                 displayScenes(scenes);
             })
-            .fail(function(jqXHR, textStatus, errorThrown) {
-                log('error', "Error fetching scenes: " + textStatus + " - " + errorThrown);
-                log('error', "Response text: " + jqXHR.responseText);
-                handleSceneFetchError(jqXHR, textStatus, errorThrown);
+            .catch(function(error) {
+                log('error', "Error fetching scenes: " + error.message);
+                handleSceneFetchError(error);
             });
     }
 
@@ -168,10 +168,10 @@ $(document).ready(function() {
         log('debug', 'Available scenes HTML: ' + $('#availableScenes').html());
     }
 
-    function handleSceneFetchError(jqXHR, textStatus, errorThrown) {
-        log('error', "Error fetching scenes: " + textStatus + " - " + errorThrown);
+    function handleSceneFetchError(error) {
+        log('error', "Error fetching scenes: " + error.message);
         $('#availableScenes').html('<option>Failed to load scenes</option>');
-        $('#debugInfo').append(`<p>Error fetching scenes: ${textStatus} - ${errorThrown}</p>`);
+        $('#debugInfo').append(`<p>Error fetching scenes: ${error.message}</p>`);
     }
 
     function addScenes() {
@@ -231,13 +231,13 @@ $(document).ready(function() {
 
     function stopCurrentScene() {
         if (currentSceneId) {
-            $.post(`/scenes/${currentSceneId}/stop`)
-                .done(function(response) {
-                    logArmedModeOutput('Current scene stopped: ' + response.message);
+            axios.post(`/scenes/${currentSceneId}/stop`)
+                .then(function(response) {
+                    logArmedModeOutput('Current scene stopped: ' + response.data.message);
                 })
-                .fail(function(xhr, status, error) {
-                    log('error', 'Error stopping current scene: ' + error);
-                    logArmedModeOutput('Error stopping current scene: ' + error);
+                .catch(function(error) {
+                    log('error', 'Error stopping current scene: ' + error.message);
+                    logArmedModeOutput('Error stopping current scene: ' + error.message);
                 });
         } else {
             logArmedModeOutput('No current scene to stop.');
