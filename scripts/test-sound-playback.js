@@ -1,59 +1,54 @@
-const axios = require('axios');
-
-const BASE_URL = 'http://localhost:3000'; // Adjust this if your server runs on a different port
-const CHARACTER_ID = 2; // Adjust this to match an existing character ID in your system
+const soundController = require('../controllers/soundController');
+const path = require('path');
 
 async function testSoundPlayback() {
     try {
-        // 1. Fetch available scenes for the character
-        const scenesResponse = await axios.get(`${BASE_URL}/active-mode/character/${CHARACTER_ID}/scenes`);
-        const scenes = scenesResponse.data;
+        await soundController.startSoundPlayer();
+        console.log('Sound player started successfully');
 
-        if (scenes.length === 0) {
-            console.log('No scenes available for this character. Please create a scene first.');
-            return;
-        }
+        // Test 1: Play a short sound and let it complete naturally
+        const shortSoundPath = path.resolve(__dirname, '..', 'public', 'sounds', 'test-sound-short.mp3');
+        console.log('Test 1: Playing short sound');
+        await playSoundAndWait('short-sound', shortSoundPath, 3000);
 
-        const sceneId = scenes[0].id; // Select the first available scene
+        // Test 2: Play a longer sound and stop it prematurely
+        const longSoundPath = path.resolve(__dirname, '..', 'public', 'sounds', 'test-sound-long.mp3');
+        console.log('Test 2: Playing long sound and stopping it prematurely');
+        const longSoundPromise = playSoundAndWait('long-sound', longSoundPath, 10000);
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        await soundController.stopSound('long-sound');
+        await longSoundPromise;
 
-        // 2. Arm the system (simulating the armSystem function)
-        await axios.post(`${BASE_URL}/active-mode/arm`, { characterId: CHARACTER_ID });
-        console.log('System armed');
+        // Test 3: Play multiple sounds simultaneously
+        console.log('Test 3: Playing multiple sounds simultaneously');
+        const sound1Promise = playSoundAndWait('sound1', shortSoundPath, 3000);
+        const sound2Promise = playSoundAndWait('sound2', longSoundPath, 5000);
+        await Promise.all([sound1Promise, sound2Promise]);
 
-        // 3. Start scene execution
-        const eventSource = new EventSource(`${BASE_URL}/scenes/${sceneId}/play?characterId=${CHARACTER_ID}`);
-
-        eventSource.onopen = () => {
-            console.log('SSE connection opened');
-        };
-
-        eventSource.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            console.log('Received message:', data);
-
-            if (data.message === 'Playing test sound') {
-                console.log('Test sound is being played');
-            }
-        };
-
-        eventSource.onerror = (error) => {
-            console.error('SSE Error:', error);
-            eventSource.close();
-        };
-
-        eventSource.addEventListener('scene_end', (event) => {
-            console.log('Scene execution completed');
-            eventSource.close();
-        });
-
-        // Keep the script running for a while to allow the scene to execute
-        setTimeout(() => {
-            console.log('Test completed');
-            process.exit(0);
-        }, 30000); // Adjust this timeout as needed
-
+        console.log('All tests completed successfully');
     } catch (error) {
-        console.error('Error:', error.message);
+        console.error('Error during sound playback test:', error);
+    } finally {
+        process.exit(0);
+    }
+}
+
+async function playSoundAndWait(soundId, filePath, duration) {
+    try {
+        const playResult = await soundController.playSound(soundId, filePath);
+        console.log(`Sound ${soundId} started playing:`, playResult);
+
+        await new Promise(resolve => setTimeout(resolve, duration));
+
+        const status = await soundController.getSoundStatus(soundId);
+        console.log(`Sound ${soundId} status after ${duration}ms:`, status);
+
+        if (status.status !== 'stopped' && status.status !== 'finished') {
+            await soundController.stopSound(soundId);
+            console.log(`Sound ${soundId} stopped manually`);
+        }
+    } catch (error) {
+        console.error(`Error playing sound ${soundId}:`, error);
     }
 }
 

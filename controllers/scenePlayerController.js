@@ -262,7 +262,7 @@ async function executeSound(step) {
         }
 
         // Wait for the sound to finish playing
-        await waitForSoundCompletion(sound.id);
+        await waitForSoundCompletion(sound.id, sound.duration);
 
         logger.info(`Sound step completed: ${step.name}`);
         return true;
@@ -272,15 +272,26 @@ async function executeSound(step) {
     }
 }
 
-async function waitForSoundCompletion(soundId) {
+async function waitForSoundCompletion(soundId, expectedDuration) {
     return new Promise((resolve, reject) => {
+        const startTime = Date.now();
         const checkInterval = setInterval(async () => {
             try {
                 const status = await soundController.getSoundStatus(soundId);
                 logger.debug(`Sound status for ${soundId}: ${JSON.stringify(status)}`);
-                if (status.status === 'stopped' || status.status === 'finished') {
+                const elapsedTime = (Date.now() - startTime) / 1000; // Convert to seconds
+
+                if (status.status === 'stopped' || status.status === 'finished' || elapsedTime >= expectedDuration) {
                     clearInterval(checkInterval);
-                    logger.info(`Sound finished playing: ${soundId}`);
+                    logger.info(`Sound finished playing: ${soundId}, Elapsed time: ${elapsedTime.toFixed(2)}s`);
+                    
+                    // If the sound stopped prematurely, log a warning
+                    if (elapsedTime < expectedDuration) {
+                        logger.warn(`Sound ${soundId} stopped earlier than expected. Expected: ${expectedDuration}s, Actual: ${elapsedTime.toFixed(2)}s`);
+                    }
+                    
+                    // Ensure the sound is stopped if it's still playing
+                    await soundController.stopSound(soundId);
                     resolve();
                 }
             } catch (error) {
@@ -294,8 +305,11 @@ async function waitForSoundCompletion(soundId) {
         setTimeout(() => {
             clearInterval(checkInterval);
             logger.warn(`Sound playback timed out: ${soundId}`);
+            soundController.stopSound(soundId).catch(error => {
+                logger.error(`Error stopping sound after timeout: ${error.message}`);
+            });
             resolve(); // Resolve anyway to continue with the next step
-        }, STEP_TIMEOUT);
+        }, (expectedDuration + 1) * 1000); // Add 1 second buffer
     });
 }
 
