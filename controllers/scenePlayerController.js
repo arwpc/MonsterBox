@@ -139,6 +139,15 @@ async function executeScene(scene, startStep, res) {
         await soundController.startSoundPlayer();
         logger.info('Sound player started successfully');
 
+        // Play test sound
+        const testSoundPath = path.resolve(__dirname, '..', 'public', 'sounds', 'test-sound.mp3');
+        const testSoundResult = await soundController.playSound('test-sound', testSoundPath);
+        logger.info(`Test sound playback result: ${JSON.stringify(testSoundResult)}`);
+        sendSSEMessage(res, { message: 'Playing test sound' });
+
+        // Wait for 3 seconds to allow the test sound to play
+        await new Promise(resolve => setTimeout(resolve, 3000));
+
         const concurrentPromises = [];
 
         for (let i = startStep; i < scene.steps.length && isExecuting; i++) {

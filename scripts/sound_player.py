@@ -59,14 +59,17 @@ class SoundPlayer:
             
             log_message({"status": "info", "message": f"Loading sound file: {file_path}"})
             sound = pygame.mixer.Sound(file_path)
+            log_message({"status": "info", "message": f"Sound file loaded. Length: {sound.get_length()} seconds"})
+            
             channel = pygame.mixer.find_channel()
             if channel is None:
                 log_message({"status": "error", "message": "No available channel to play sound"})
                 return
             
+            log_message({"status": "info", "message": f"Playing sound on channel {channel.get_id()}"})
             channel.play(sound)
             self.sounds[sound_id] = (sound, channel)
-            log_message({"status": "playing", "sound_id": sound_id, "file": file_path})
+            log_message({"status": "playing", "sound_id": sound_id, "file": file_path, "channel": channel.get_id()})
             
             # Start a new thread to wait for the sound to finish
             Thread(target=self._wait_for_sound_end, args=(sound_id, channel)).start()
@@ -82,7 +85,7 @@ class SoundPlayer:
             time.sleep(0.1)
         end_time = time.time()
         duration = end_time - start_time
-        log_message({"status": "finished", "sound_id": sound_id, "duration": duration})
+        log_message({"status": "finished", "sound_id": sound_id, "duration": duration, "channel": channel.get_id()})
         if sound_id in self.sounds:
             del self.sounds[sound_id]
 
@@ -91,7 +94,7 @@ class SoundPlayer:
             _, channel = self.sounds[sound_id]
             channel.stop()
             del self.sounds[sound_id]
-            log_message({"status": "stopped", "sound_id": sound_id})
+            log_message({"status": "stopped", "sound_id": sound_id, "channel": channel.get_id()})
         else:
             log_message({"status": "warning", "message": f"Sound {sound_id} not found or already stopped"})
 
