@@ -31,6 +31,7 @@ class SoundPlayer:
         log_message({"status": "info", "message": "Initializing SoundPlayer"})
         self.init_pygame_mixer(retries=3)
         self.sounds = {}
+        self.next_channel_id = 0
         log_message({"status": "ready", "message": "SoundPlayer initialized and ready"})
 
     def init_pygame_mixer(self, retries=3):
@@ -66,35 +67,38 @@ class SoundPlayer:
                 log_message({"status": "error", "message": "No available channel to play sound"})
                 return
             
-            log_message({"status": "info", "message": f"Playing sound on channel {channel.get_id()}"})
+            channel_id = self.next_channel_id
+            self.next_channel_id += 1
+            
+            log_message({"status": "info", "message": f"Playing sound on channel {channel_id}"})
             channel.play(sound)
-            self.sounds[sound_id] = (sound, channel)
-            log_message({"status": "playing", "sound_id": sound_id, "file": file_path, "channel": channel.get_id()})
+            self.sounds[sound_id] = (sound, channel, channel_id)
+            log_message({"status": "playing", "sound_id": sound_id, "file": file_path, "channel": channel_id})
             
             # Start a new thread to wait for the sound to finish
-            Thread(target=self._wait_for_sound_end, args=(sound_id, channel)).start()
+            Thread(target=self._wait_for_sound_end, args=(sound_id, channel, channel_id)).start()
             
         except FileNotFoundError as e:
             log_message({"status": "error", "sound_id": sound_id, "file": file_path, "message": str(e)})
         except Exception as e:
             log_message({"status": "error", "sound_id": sound_id, "file": file_path, "message": str(e)})
 
-    def _wait_for_sound_end(self, sound_id, channel):
+    def _wait_for_sound_end(self, sound_id, channel, channel_id):
         start_time = time.time()
         while channel.get_busy():
             time.sleep(0.1)
         end_time = time.time()
         duration = end_time - start_time
-        log_message({"status": "finished", "sound_id": sound_id, "duration": duration, "channel": channel.get_id()})
+        log_message({"status": "finished", "sound_id": sound_id, "duration": duration, "channel": channel_id})
         if sound_id in self.sounds:
             del self.sounds[sound_id]
 
     def stop_sound(self, sound_id):
         if sound_id in self.sounds:
-            _, channel = self.sounds[sound_id]
+            _, channel, channel_id = self.sounds[sound_id]
             channel.stop()
             del self.sounds[sound_id]
-            log_message({"status": "stopped", "sound_id": sound_id, "channel": channel.get_id()})
+            log_message({"status": "stopped", "sound_id": sound_id, "channel": channel_id})
         else:
             log_message({"status": "warning", "message": f"Sound {sound_id} not found or already stopped"})
 
