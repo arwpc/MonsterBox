@@ -11,7 +11,8 @@ def log_message(message):
     print(json.dumps(message), flush=True)
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
-os.environ['SDL_AUDIODRIVER'] = 'pipewire'  # Use PipeWire as the audio driver
+# Use the SDL_AUDIODRIVER from the environment, defaulting to 'pipewire'
+os.environ['SDL_AUDIODRIVER'] = os.environ.get('SDL_AUDIODRIVER', 'pipewire')
 
 class SoundPlayer:
     def __init__(self):
@@ -25,11 +26,17 @@ class SoundPlayer:
         for attempt in range(retries):
             try:
                 pygame.init()
-                pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=2048)
+                frequency = int(os.environ.get('PYGAME_MIXER_INIT_FREQUENCY', '44100'))
+                size = int(os.environ.get('PYGAME_MIXER_INIT_SIZE', '-16'))
+                channels = int(os.environ.get('PYGAME_MIXER_INIT_CHANNELS', '2'))
+                buffer = int(os.environ.get('PYGAME_MIXER_INIT_BUFFER', '2048'))
+                
+                pygame.mixer.init(frequency=frequency, size=size, channels=channels, buffer=buffer)
                 log_message({"status": "info", "message": "pygame.mixer initialized successfully"})
                 
                 log_message({"status": "info", "message": f"SDL_AUDIODRIVER: {os.environ.get('SDL_AUDIODRIVER', 'Not set')}"})
                 log_message({"status": "info", "message": f"Pygame audio driver: {pygame.mixer.get_init()}"})
+                log_message({"status": "info", "message": f"Mixer settings: frequency={frequency}, size={size}, channels={channels}, buffer={buffer}"})
                 
                 pygame.mixer.set_num_channels(32)  # Set a higher number of channels for concurrent playback
                 pygame.mixer.music.set_volume(1.0)
