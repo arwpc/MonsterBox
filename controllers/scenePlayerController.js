@@ -252,13 +252,24 @@ async function executeSound(step) {
         const playResult = await soundController.playSound(sound.id, filePath);
         logger.info(`Sound started playing: ${sound.name}, Result: ${JSON.stringify(playResult)}`);
 
-        // Always wait for the entire duration of the sound
-        if (playResult.success && playResult.duration) {
-            await new Promise(resolve => setTimeout(resolve, playResult.duration * 1000));
-        }
+        // Wait for the sound to finish playing
+        return new Promise((resolve, reject) => {
+            const checkInterval = setInterval(async () => {
+                const status = await soundController.getSoundStatus(sound.id);
+                if (status.isPlaying === false) {
+                    clearInterval(checkInterval);
+                    logger.info(`Sound finished playing: ${sound.name}`);
+                    resolve(true);
+                }
+            }, 500); // Check every 500ms
 
-        logger.info(`Sound step completed: ${step.name}`);
-        return true;
+            // Set a timeout for the maximum duration of the sound
+            setTimeout(() => {
+                clearInterval(checkInterval);
+                logger.warn(`Sound playback timed out: ${sound.name}`);
+                resolve(true); // Resolve anyway to continue with the next step
+            }, (playResult.duration + 5) * 1000); // Add 5 seconds buffer
+        });
     } catch (error) {
         logger.error(`Error executing sound step: ${error.message}`);
         throw error;
