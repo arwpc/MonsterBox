@@ -133,7 +133,7 @@ function startServer() {
         console.log(`info: Local IP address: ${localIp}, system name ${hostname} {"timestamp":"${new Date().toISOString()}"}`);
         console.log(`info: Audio stream server started {"timestamp":"${new Date().toISOString()}"}`);
         console.log(`info: Audio stream started successfully {"timestamp":"${new Date().toISOString()}"}`);
-        console.log('Ready for Halloween, Sir.')
+        console.log('Ready for Halloween, Sir.');
     });
 
     server.on('error', (error) => {
