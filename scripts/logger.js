@@ -16,6 +16,7 @@ try {
 
 let transports = [
   new winston.transports.Console({
+    level: 'error', // Only log errors to console
     format: winston.format.simple(),
     handleExceptions: true,
   })
@@ -51,21 +52,9 @@ logger.on('error', (error) => {
   console.error('Logging error:', error);
 });
 
-// Store original console methods
-const originalConsole = {
-  log: console.log,
-  warn: console.warn,
-  error: console.error
-};
-
 // Override console methods
 console.log = function(...args) {
-  const message = args.join(' ');
-  if (message.startsWith('info:') || message === 'Ready for Halloween, Sir.') {
-    originalConsole.log.apply(console, args);
-  } else {
-    logger.info(message);
-  }
+  logger.info(args.join(' '));
 };
 
 console.warn = function(...args) {

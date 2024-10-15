@@ -1,9 +1,10 @@
 // File: scripts/scene-player.js
 
 function clientLog(level, message) {
-    $.post('/log', { level: level, message: message })
-        .fail(function(xhr, status, error) {
-            console.error('Failed to log to server:', error);
+    axios.post('/log', { level: level, message: message })
+        .catch(function(error) {
+            // Use clientLog instead of console.error
+            clientLog('error', 'Failed to log to server: ' + error.message);
         });
 }
 
@@ -13,8 +14,8 @@ function logToServer(message, level = 'info') {
 
 logToServer("Scene player script loaded");
 
-$(document).ready(function() {
-    logToServer("jQuery document ready function executing");
+document.addEventListener('DOMContentLoaded', function() {
+    logToServer("DOM content loaded");
     let currentStep = 0;
     let eventSource = null;
     const steps = sceneData.steps || [];
@@ -22,22 +23,25 @@ $(document).ready(function() {
     logToServer("Total steps: " + steps.length);
 
     function logMessage(message, isError = false) {
-        const logBox = $("#log-box");
+        const logBox = document.getElementById("log-box");
         const className = isError ? 'error-message' : '';
-        logBox.append(`<p class="${className}">${new Date().toLocaleTimeString()} - ${message}</p>`);
-        logBox.scrollTop(logBox[0].scrollHeight);
+        const logEntry = document.createElement('p');
+        logEntry.className = className;
+        logEntry.textContent = `${new Date().toLocaleTimeString()} - ${message}`;
+        logBox.appendChild(logEntry);
+        logBox.scrollTop = logBox.scrollHeight;
         logToServer(message, isError ? 'error' : 'info');
     }
 
     function updateCurrentStep(index) {
         logToServer("Updating current step to: " + index);
-        $(".step").removeClass("current-step");
+        document.querySelectorAll(".step").forEach(el => el.classList.remove("current-step"));
         if (index >= 0 && index < steps.length) {
-            $(`#step-${index}`).addClass("current-step");
+            document.getElementById(`step-${index}`).classList.add("current-step");
         }
     }
 
-    $("#backward-btn").on("click", function() {
+    document.getElementById("backward-btn").addEventListener("click", function() {
         logToServer("Backward button clicked");
         if (currentStep > 0) {
             currentStep--;
@@ -48,7 +52,7 @@ $(document).ready(function() {
         }
     });
 
-    $("#forward-btn").on("click", function() {
+    document.getElementById("forward-btn").addEventListener("click", function() {
         logToServer("Forward button clicked");
         if (currentStep < steps.length - 1) {
             currentStep++;
@@ -59,17 +63,17 @@ $(document).ready(function() {
         }
     });
 
-    $("#run-btn").on("click", function() {
+    document.getElementById("run-btn").addEventListener("click", function() {
         logToServer("Run button clicked");
-        $(this).prop('disabled', true);
-        $("#backward-btn").prop('disabled', true);
-        $("#forward-btn").prop('disabled', true);
-        $("#stop-btn").prop('disabled', false);
+        this.disabled = true;
+        document.getElementById("backward-btn").disabled = true;
+        document.getElementById("forward-btn").disabled = true;
+        document.getElementById("stop-btn").disabled = false;
         logMessage(`Running scene from step ${currentStep + 1}`);
         runScene();
     });
 
-    $("#stop-btn").on("click", function() {
+    document.getElementById("stop-btn").addEventListener("click", function() {
         logToServer("Stop button clicked");
         stopAllSteps();
     });
@@ -129,25 +133,25 @@ $(document).ready(function() {
             eventSource.close();
         }
 
-        $.post(`/scenes/${sceneData.id}/stop?characterId=${characterId}`)
-            .done(function(response) {
-                logToServer("Stop request successful: " + JSON.stringify(response));
+        axios.post(`/scenes/${sceneData.id}/stop?characterId=${characterId}`)
+            .then(function(response) {
+                logToServer("Stop request successful: " + JSON.stringify(response.data));
                 logMessage("All steps stopped");
                 resetControlButtons();
             })
-            .fail(function(xhr, status, error) {
-                logToServer('Error stopping steps: ' + error, 'error');
-                logMessage(`Error stopping steps: ${error}`, true);
+            .catch(function(error) {
+                logToServer('Error stopping steps: ' + error.message, 'error');
+                logMessage(`Error stopping steps: ${error.message}`, true);
                 resetControlButtons();
             });
     }
 
     function resetControlButtons() {
         logToServer("Resetting control buttons");
-        $("#run-btn").prop('disabled', false);
-        $("#backward-btn").prop('disabled', false);
-        $("#forward-btn").prop('disabled', false);
-        $("#stop-btn").prop('disabled', true);
+        document.getElementById("run-btn").disabled = false;
+        document.getElementById("backward-btn").disabled = false;
+        document.getElementById("forward-btn").disabled = false;
+        document.getElementById("stop-btn").disabled = true;
     }
 
     // Initial scene overview
@@ -158,7 +162,7 @@ $(document).ready(function() {
     });
 
     // Disable stop button initially
-    $("#stop-btn").prop('disabled', true);
+    document.getElementById("stop-btn").disabled = true;
 
     logToServer("Scene player initialization complete");
 });

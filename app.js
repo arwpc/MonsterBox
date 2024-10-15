@@ -134,8 +134,9 @@ function startServer() {
     server.listen(port, () => {
         const localIp = getLocalIpAddress();
         const hostname = os.hostname();
-        logger.info(`MonsterBox server running at http://localhost:${port}`);
-        logger.info(`Local IP address: ${localIp}, system name ${hostname}`);
+        // Keep these console.log calls for IP and host information
+        console.log(`MonsterBox server running at http://localhost:${port}`);
+        console.log(`Local IP address: ${localIp}, system name ${hostname}`);
         logger.info('Audio stream server started');
         logger.info('Audio stream started successfully');
         logger.info('Ready for Halloween, Sir.');
