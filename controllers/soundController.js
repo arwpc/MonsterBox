@@ -213,10 +213,16 @@ function handleSoundError(jsonOutput) {
     }
 }
 
+// New function to check if sound player is running
+function isSoundPlayerRunning() {
+    return soundPlayerProcess !== null;
+}
+
 module.exports = {
     startSoundPlayer,
     playSound,
     stopSound,
     stopAllSounds,
-    getSoundStatus
+    getSoundStatus,
+    isSoundPlayerRunning
 };
