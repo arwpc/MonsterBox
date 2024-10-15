@@ -127,8 +127,13 @@ function getLocalIpAddress() {
 // Wrap server startup in a function
 function startServer() {
     server.listen(port, () => {
-        logger.info(`MonsterBox server running at http://localhost:${port}`);
-        logger.info(`Local IP address: ${getLocalIpAddress()}`);
+        const localIp = getLocalIpAddress();
+        const hostname = os.hostname();
+        console.log(`info: MonsterBox server running at http://localhost:${port} {"timestamp":"${new Date().toISOString()}"}`);
+        console.log(`info: Local IP address: ${localIp}, system name ${hostname} {"timestamp":"${new Date().toISOString()}"}`);
+        console.log(`info: Audio stream server started {"timestamp":"${new Date().toISOString()}"}`);
+        console.log(`info: Audio stream started successfully {"timestamp":"${new Date().toISOString()}"}`);
+        console.log('Ready for Halloween, Sir.')
     });
 
     server.on('error', (error) => {
@@ -156,7 +161,6 @@ function initializeApp() {
     // Start the audio stream
     try {
         audio.startStream(server);
-        logger.info('Audio stream started successfully');
     } catch (error) {
         logger.error('Error starting audio stream:', error);
     }

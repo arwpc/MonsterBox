@@ -1,5 +1,12 @@
 $(document).ready(function() {
-    console.log('Document ready');
+    function clientLog(level, message) {
+        $.post('/log', { level: level, message: message })
+            .fail(function(xhr, status, error) {
+                console.error('Failed to log to server:', error);
+            });
+    }
+
+    clientLog('info', 'Document ready');
 
     let isArmed = false;
     let currentSceneId = null;
@@ -25,23 +32,23 @@ $(document).ready(function() {
     loadSavedSettings();
 
     function loadCharacterInfo() {
-        console.log('Loading character info');
+        clientLog('info', 'Loading character info');
         try {
             const characterData = $('#characterData').text();
-            console.log('Character data from hidden element:', characterData);
+            clientLog('debug', 'Character data from hidden element: ' + characterData);
             const character = JSON.parse(characterData);
-            console.log('Parsed character data:', character);
+            clientLog('debug', 'Parsed character data: ' + JSON.stringify(character));
             if (character && character.id) {
                 characterId = character.id;
                 displayCharacterInfo(character);
                 fetchScenes(character.id);
                 fetchCharacterParts(character.id);
             } else {
-                console.error('Invalid character data:', character);
+                clientLog('error', 'Invalid character data: ' + JSON.stringify(character));
                 $('#debugInfo').append('<p>Error: Invalid character data</p>');
             }
         } catch (error) {
-            console.error('Error parsing character data:', error);
+            clientLog('error', 'Error parsing character data: ' + error.message);
             $('#debugInfo').append(`<p>Error parsing character data: ${error.message}</p>`);
         }
     }
@@ -67,7 +74,7 @@ $(document).ready(function() {
     }
 
     function displayCharacterInfo(character) {
-        console.log('Displaying character info');
+        clientLog('info', 'Displaying character info');
         let infoHtml = `<h3>${character.char_name}</h3><p>${character.char_description}</p>`;
         $('#characterInfo').html(infoHtml);
         
@@ -79,30 +86,30 @@ $(document).ready(function() {
     }
 
     function fetchCharacterParts(characterId) {
-        console.log('Fetching character parts for ID:', characterId);
+        clientLog('info', 'Fetching character parts for ID: ' + characterId);
         $.get(`/active-mode/character/${characterId}/parts`)
             .done(function(data) {
-                console.log('Character parts fetched successfully:', data);
+                clientLog('info', 'Character parts fetched successfully: ' + JSON.stringify(data));
                 displayCharacterParts(data);
             })
             .fail(function(jqXHR, textStatus, errorThrown) {
-                console.error("Error fetching character parts:", textStatus, errorThrown);
-                console.error("Response text:", jqXHR.responseText);
+                clientLog('error', "Error fetching character parts: " + textStatus + " - " + errorThrown);
+                clientLog('error', "Response text: " + jqXHR.responseText);
                 $('#characterParts').html('<p>Failed to load character parts information. Please try again.</p>');
                 $('#debugInfo').append(`<p>Error fetching character parts: ${textStatus} - ${errorThrown}</p>`);
             });
     }
 
     function displayCharacterParts(parts) {
-        console.log('Displaying character parts:', parts);
+        clientLog('info', 'Displaying character parts: ' + JSON.stringify(parts));
         let partsHtml = '<h4>Character Parts:</h4>';
         if (!Array.isArray(parts) || parts.length === 0) {
-            console.log('No parts to display');
+            clientLog('info', 'No parts to display');
             partsHtml += '<p>No parts assigned to this character.</p>';
         } else {
             partsHtml += '<ul>';
             parts.forEach(part => {
-                console.log('Processing part:', part);
+                clientLog('debug', 'Processing part: ' + JSON.stringify(part));
                 partsHtml += `<li>
                     <strong>${part.name || 'Unnamed Part'}</strong> (${part.type || 'Unknown Type'})
                     <br>Description: ${part.description || 'N/A'}
@@ -113,17 +120,17 @@ $(document).ready(function() {
             partsHtml += '</ul>';
         }
 
-        console.log('Final parts HTML:', partsHtml);
+        clientLog('debug', 'Final parts HTML: ' + partsHtml);
         $('#characterParts').html(partsHtml);
     }
 
     function fetchScenes(characterId) {
-        console.log(`Fetching scenes for character ID: ${characterId}`);
+        clientLog('info', `Fetching scenes for character ID: ${characterId}`);
         $.get(`/active-mode/character/${characterId}/scenes`)
             .done(function(scenes) {
-                console.log(`Scenes fetched successfully:`, scenes);
+                clientLog('info', `Scenes fetched successfully: ${JSON.stringify(scenes)}`);
                 if (Array.isArray(scenes)) {
-                    console.log(`Number of scenes fetched: ${scenes.length}`);
+                    clientLog('info', `Number of scenes fetched: ${scenes.length}`);
                     scenes.forEach(scene => {
                         sceneDetails[scene.id] = {
                             name: scene.scene_name,
@@ -131,37 +138,37 @@ $(document).ready(function() {
                         };
                     });
                 } else {
-                    console.error('Fetched scenes is not an array:', scenes);
+                    clientLog('error', 'Fetched scenes is not an array: ' + JSON.stringify(scenes));
                 }
                 displayScenes(scenes);
             })
             .fail(function(jqXHR, textStatus, errorThrown) {
-                console.error("Error fetching scenes:", textStatus, errorThrown);
-                console.error("Response text:", jqXHR.responseText);
+                clientLog('error', "Error fetching scenes: " + textStatus + " - " + errorThrown);
+                clientLog('error', "Response text: " + jqXHR.responseText);
                 handleSceneFetchError(jqXHR, textStatus, errorThrown);
             });
     }
 
     function displayScenes(scenes) {
-        console.log(`Displaying scenes:`, scenes);
+        clientLog('info', `Displaying scenes: ${JSON.stringify(scenes)}`);
         $('#availableScenes').empty();
         if (!Array.isArray(scenes) || scenes.length === 0) {
-            console.log('No scenes to display');
+            clientLog('info', 'No scenes to display');
             $('#availableScenes').append('<option value="">No available scenes</option>');
         } else {
             scenes.forEach(function(scene) {
-                console.log(`Adding scene to select: ID ${scene.id}, Name: ${scene.scene_name}`);
+                clientLog('debug', `Adding scene to select: ID ${scene.id}, Name: ${scene.scene_name}`);
                 $('#availableScenes').append(`<option value="${scene.id}">${scene.scene_name}</option>`);
             });
         }
         $('#sceneSelectionArea').show();
-        console.log('Scene selection area should now be visible');
-        console.log('Scene selection area display style:', $('#sceneSelectionArea').css('display'));
-        console.log('Available scenes HTML:', $('#availableScenes').html());
+        clientLog('debug', 'Scene selection area should now be visible');
+        clientLog('debug', 'Scene selection area display style: ' + $('#sceneSelectionArea').css('display'));
+        clientLog('debug', 'Available scenes HTML: ' + $('#availableScenes').html());
     }
 
     function handleSceneFetchError(jqXHR, textStatus, errorThrown) {
-        console.error("Error fetching scenes:", textStatus, errorThrown);
+        clientLog('error', "Error fetching scenes: " + textStatus + " - " + errorThrown);
         $('#availableScenes').html('<option>Failed to load scenes</option>');
         $('#debugInfo').append(`<p>Error fetching scenes: ${textStatus} - ${errorThrown}</p>`);
     }
@@ -228,7 +235,7 @@ $(document).ready(function() {
                     logArmedModeOutput('Current scene stopped: ' + response.message);
                 })
                 .fail(function(xhr, status, error) {
-                    console.error('Error stopping current scene:', error);
+                    clientLog('error', 'Error stopping current scene: ' + error);
                     logArmedModeOutput('Error stopping current scene: ' + error);
                 });
         } else {
@@ -296,7 +303,7 @@ $(document).ready(function() {
 
     function runScene(sceneId) {
         return new Promise((resolve, reject) => {
-            console.log(`Starting execution of scene ${sceneId}`);
+            clientLog('info', `Starting execution of scene ${sceneId}`);
             const eventSource = new EventSource(`/scenes/${sceneId}/play?characterId=${characterId}&_=${Date.now()}`, {
                 withCredentials: true
             });
@@ -308,25 +315,25 @@ $(document).ready(function() {
             }, SCENE_TIMEOUT);
 
             eventSource.onopen = function(event) {
-                console.log(`SSE connection opened for scene ${sceneId}`);
+                clientLog('info', `SSE connection opened for scene ${sceneId}`);
                 logArmedModeOutput(`SSE connection opened for scene ${sceneId}: ${sceneDetails[sceneId].name}`);
             };
 
             eventSource.onmessage = function(event) {
-                console.log(`Received SSE data for scene ${sceneId}:`, event.data);
+                clientLog('debug', `Received SSE data for scene ${sceneId}: ${event.data}`);
                 try {
                     const data = JSON.parse(event.data);
                     handleSceneUpdate(data);
                 } catch (error) {
-                    console.error(`Error parsing SSE data for scene ${sceneId}:`, error);
+                    clientLog('error', `Error parsing SSE data for scene ${sceneId}: ${error}`);
                     logArmedModeOutput(`Error parsing SSE data for scene ${sceneId}: ${sceneDetails[sceneId].name}: ${error.message}`, 'error');
                 }
             };
 
             eventSource.onerror = function(error) {
-                console.error(`SSE Error for scene ${sceneId}:`, error);
-                console.error(`SSE ReadyState: ${eventSource.readyState}`);
-                console.error(`SSE URL: ${eventSource.url}`);
+                clientLog('error', `SSE Error for scene ${sceneId}: ${error}`);
+                clientLog('error', `SSE ReadyState: ${eventSource.readyState}`);
+                clientLog('error', `SSE URL: ${eventSource.url}`);
                 eventSource.close();
                 clearTimeout(sceneTimeout);
                 logArmedModeOutput(`SSE Error for scene ${sceneId}: ${sceneDetails[sceneId].name}: ${error.type}`, 'error');
@@ -334,7 +341,7 @@ $(document).ready(function() {
             };
 
             eventSource.addEventListener('scene_end', function(event) {
-                console.log(`Scene ${sceneId} completed`);
+                clientLog('info', `Scene ${sceneId} completed`);
                 logArmedModeOutput(`Scene ${sceneId}: ${sceneDetails[sceneId].name} completed`);
                 eventSource.close();
                 clearTimeout(sceneTimeout);
@@ -375,6 +382,7 @@ $(document).ready(function() {
         }
         $('#armedModeOutput').append(`<p class="${cssClass}">[${timestamp}] ${message}</p>`);
         $('#armedModeOutput').scrollTop($('#armedModeOutput')[0].scrollHeight);
+        clientLog(type, message);
     }
 
     function updateCurrentScene(sceneId) {
