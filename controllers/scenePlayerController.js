@@ -11,6 +11,7 @@ let currentSceneState = {};
 let res = null;
 
 const STEP_TIMEOUT = 60000; // 60 seconds timeout for each step
+const SOUND_CHECK_INTERVAL = 100; // 100ms interval for checking sound status
 
 const stopAllParts = async () => {
     logger.info('Stopping all parts');
@@ -252,28 +253,45 @@ async function executeSound(step) {
         const playResult = await soundController.playSound(sound.id, filePath);
         logger.info(`Sound started playing: ${sound.name}, Result: ${JSON.stringify(playResult)}`);
 
-        // Wait for the sound to finish playing
-        return new Promise((resolve, reject) => {
-            const checkInterval = setInterval(async () => {
-                const status = await soundController.getSoundStatus(sound.id);
-                if (status.isPlaying === false) {
-                    clearInterval(checkInterval);
-                    logger.info(`Sound finished playing: ${sound.name}`);
-                    resolve(true);
-                }
-            }, 500); // Check every 500ms
+        if (!playResult.success) {
+            throw new Error(`Failed to start sound playback: ${playResult.message}`);
+        }
 
-            // Set a timeout for the maximum duration of the sound
-            setTimeout(() => {
-                clearInterval(checkInterval);
-                logger.warn(`Sound playback timed out: ${sound.name}`);
-                resolve(true); // Resolve anyway to continue with the next step
-            }, (playResult.duration + 5) * 1000); // Add 5 seconds buffer
-        });
+        // Wait for the sound to finish playing
+        await waitForSoundCompletion(sound.id);
+
+        logger.info(`Sound step completed: ${step.name}`);
+        return true;
     } catch (error) {
         logger.error(`Error executing sound step: ${error.message}`);
         throw error;
     }
+}
+
+async function waitForSoundCompletion(soundId) {
+    return new Promise((resolve, reject) => {
+        const checkInterval = setInterval(async () => {
+            try {
+                const status = await soundController.getSoundStatus(soundId);
+                if (status.isPlaying === false) {
+                    clearInterval(checkInterval);
+                    logger.info(`Sound finished playing: ${soundId}`);
+                    resolve();
+                }
+            } catch (error) {
+                clearInterval(checkInterval);
+                logger.error(`Error checking sound status: ${error.message}`);
+                reject(error);
+            }
+        }, SOUND_CHECK_INTERVAL);
+
+        // Set a timeout for the maximum duration of the sound
+        setTimeout(() => {
+            clearInterval(checkInterval);
+            logger.warn(`Sound playback timed out: ${soundId}`);
+            resolve(); // Resolve anyway to continue with the next step
+        }, STEP_TIMEOUT);
+    });
 }
 
 async function executeMotor(step) {
