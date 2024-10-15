@@ -19,7 +19,29 @@ const stopAllParts = async () => {
 };
 
 const scenePlayerController = {
-    // ... (keep existing methods)
+    getScenePlayer: async (req, res) => {
+        try {
+            const sceneId = req.params.id;
+            const characterId = req.query.characterId;
+            logger.info(`Getting scene player for scene ${sceneId}, character ${characterId}`);
+            const scene = await sceneService.getSceneById(sceneId);
+            if (scene) {
+                if (scene.character_id.toString() !== characterId) {
+                    logger.warn(`Scene ${sceneId} does not belong to character ${characterId}`);
+                    return res.status(403).json({ error: 'Scene does not belong to this character' });
+                }
+                logger.info(`Rendering scene player for scene ${sceneId}`);
+                logger.debug(`Scene data: ${JSON.stringify(scene)}`);
+                res.render('scene-player', { title: 'Scene Player', scene, characterId });
+            } else {
+                logger.warn(`Scene ${sceneId} not found`);
+                res.status(404).render('error', { error: 'Scene not found' });
+            }
+        } catch (error) {
+            logger.error('Error getting scene by ID:', error);
+            res.status(500).render('error', { error: 'Failed to retrieve scene' });
+        }
+    },
 
     playScene: async (req, res) => {
         const sceneId = req.params.id;
@@ -87,7 +109,22 @@ const scenePlayerController = {
         });
     },
 
-    // ... (keep other existing methods)
+    getSceneStatus: (req, res) => {
+        res.json(currentSceneState);
+    },
+
+    stopScene: async (req, res) => {
+        logger.info('Stopping all steps and terminating processes');
+        isExecuting = false;
+        try {
+            await soundController.stopAllSounds();
+            await stopAllParts();
+            res.json({ message: 'All steps stopped and processes terminated' });
+        } catch (error) {
+            logger.error('Error stopping all steps:', error);
+            res.status(500).json({ error: 'Failed to stop all steps', details: error.message });
+        }
+    }
 };
 
 function sendSSEMessage(res, data) {
@@ -215,8 +252,8 @@ async function executeSound(step) {
         const playResult = await soundController.playSound(sound.id, filePath);
         logger.info(`Sound started playing: ${sound.name}, Result: ${JSON.stringify(playResult)}`);
 
-        if (!step.concurrent && playResult.success && playResult.duration) {
-            // For non-concurrent steps, wait for the entire duration of the sound
+        // Always wait for the entire duration of the sound
+        if (playResult.success && playResult.duration) {
             await new Promise(resolve => setTimeout(resolve, playResult.duration * 1000));
         }
 
