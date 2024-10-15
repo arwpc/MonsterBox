@@ -5,23 +5,10 @@ import json
 from threading import Thread
 import os
 import signal
-import pwd
+import traceback
 
 def log_message(message):
     print(json.dumps(message), flush=True)
-
-def get_user_runtime_dir():
-    user = pwd.getpwuid(os.getuid()).pw_name
-    runtime_dir = f"/run/user/{os.getuid()}"
-    if not os.path.exists(runtime_dir):
-        runtime_dir = f"/tmp/runtime-{user}"
-        os.makedirs(runtime_dir, exist_ok=True)
-    return runtime_dir
-
-if 'XDG_RUNTIME_DIR' not in os.environ:
-    runtime_dir = get_user_runtime_dir()
-    os.environ['XDG_RUNTIME_DIR'] = runtime_dir
-    log_message({"status": "info", "message": f"Set XDG_RUNTIME_DIR to {runtime_dir}"})
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 os.environ['SDL_AUDIODRIVER'] = 'pipewire'  # Use PipeWire as the audio driver
@@ -38,7 +25,7 @@ class SoundPlayer:
         for attempt in range(retries):
             try:
                 pygame.init()
-                pygame.mixer.init()
+                pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=2048)
                 log_message({"status": "info", "message": "pygame.mixer initialized successfully"})
                 
                 log_message({"status": "info", "message": f"SDL_AUDIODRIVER: {os.environ.get('SDL_AUDIODRIVER', 'Not set')}"})
@@ -81,7 +68,7 @@ class SoundPlayer:
         except FileNotFoundError as e:
             log_message({"status": "error", "sound_id": sound_id, "file": file_path, "message": str(e)})
         except Exception as e:
-            log_message({"status": "error", "sound_id": sound_id, "file": file_path, "message": str(e)})
+            log_message({"status": "error", "sound_id": sound_id, "file": file_path, "message": str(e), "traceback": traceback.format_exc()})
 
     def _wait_for_sound_end(self, sound_id, channel, channel_id):
         start_time = time.time()
@@ -183,10 +170,10 @@ if __name__ == "__main__":
                 log_message({"status": "info", "message": "Received EOF. Waiting for more input."})
                 time.sleep(1)  # Wait a bit before trying to read input again
             except Exception as e:
-                log_message({"status": "error", "message": f"Command processing error: {str(e)}", "traceback": str(sys.exc_info())})
+                log_message({"status": "error", "message": f"Command processing error: {str(e)}", "traceback": traceback.format_exc()})
 
     except Exception as e:
-        log_message({"status": "error", "message": f"Failed to initialize or run SoundPlayer: {str(e)}", "traceback": str(sys.exc_info())})
+        log_message({"status": "error", "message": f"Failed to initialize or run SoundPlayer: {str(e)}", "traceback": traceback.format_exc()})
     finally:
         log_message({"status": "info", "message": "Quitting pygame mixer"})
         pygame.mixer.quit()
