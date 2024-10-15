@@ -10,7 +10,7 @@ let isExecuting = false;
 let currentSceneState = {};
 let res = null;
 
-const STEP_TIMEOUT = 120000; // Increase timeout to 120 seconds
+const STEP_TIMEOUT = 60000; // 60 seconds timeout
 const SOUND_CHECK_INTERVAL = 100; // 100ms interval for checking sound status
 
 const stopAllParts = async () => {
@@ -146,7 +146,6 @@ async function executeScene(scene, startStep, res) {
             const message = `Executing step ${i + 1}: ${step.name}`;
             currentSceneState.messages.push(message);
             
-            // Send SSE update
             sendSSEMessage(res, { message, currentStep: i });
             logger.debug(`Sent SSE update for step ${i + 1}`);
 
@@ -168,14 +167,12 @@ async function executeScene(scene, startStep, res) {
         const completionMessage = 'Scene execution completed';
         currentSceneState.messages.push(completionMessage);
         
-        // Send final SSE update
         sendSSEMessage(res, { message: completionMessage, event: 'scene_end' });
         logger.info('Sent final SSE update with scene_end event');
     } catch (error) {
         logger.error(`Error during scene ${scene.id} execution:`, error);
         currentSceneState.error = `Scene execution failed: ${error.message}`;
         
-        // Send error SSE update
         sendSSEMessage(res, { error: currentSceneState.error, event: 'scene_end' });
         logger.info('Sent error SSE update with scene_end event');
     } finally {
@@ -190,7 +187,6 @@ async function executeScene(scene, startStep, res) {
         const cleanupMessage = 'Scene cleanup completed';
         currentSceneState.messages.push(cleanupMessage);
         
-        // Send final cleanup SSE update
         sendSSEMessage(res, { message: cleanupMessage, event: 'scene_end' });
         logger.info('Sent cleanup SSE update with scene_end event');
     }
@@ -278,12 +274,10 @@ async function waitForSoundCompletion(soundId, expectedDuration) {
                     clearInterval(checkInterval);
                     logger.info(`Sound finished playing: ${soundId}, Elapsed time: ${elapsedTime.toFixed(2)}s`);
                     
-                    // If the sound stopped prematurely, log a warning
                     if (elapsedTime < expectedDuration) {
                         logger.warn(`Sound ${soundId} stopped earlier than expected. Expected: ${expectedDuration}s, Actual: ${elapsedTime.toFixed(2)}s`);
                     }
                     
-                    // Ensure the sound is stopped if it's still playing
                     await soundController.stopSound(soundId);
                     resolve();
                 }
@@ -302,7 +296,7 @@ async function waitForSoundCompletion(soundId, expectedDuration) {
                 logger.error(`Error stopping sound after timeout: ${error.message}`);
             });
             resolve(); // Resolve anyway to continue with the next step
-        }, (expectedDuration + 5) * 1000); // Add 5 seconds buffer
+        }, (expectedDuration + 2) * 1000); // Add 2 seconds buffer
     });
 }
 
