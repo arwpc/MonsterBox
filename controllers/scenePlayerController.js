@@ -148,8 +148,6 @@ async function executeScene(scene, startStep, res) {
         // Wait for 3 seconds to allow the test sound to play
         await new Promise(resolve => setTimeout(resolve, 3000));
 
-        const concurrentPromises = [];
-
         for (let i = startStep; i < scene.steps.length && isExecuting; i++) {
             const step = scene.steps[i];
             currentSceneState.currentStep = i;
@@ -161,29 +159,13 @@ async function executeScene(scene, startStep, res) {
             logger.debug(`Sent SSE update for step ${i + 1}`);
 
             try {
-                const stepPromise = executeStepWithTimeout(scene.id, step);
-                
-                if (step.concurrent) {
-                    concurrentPromises.push(stepPromise);
-                } else {
-                    // Wait for all concurrent steps to finish before executing the next non-concurrent step
-                    if (concurrentPromises.length > 0) {
-                        await Promise.all(concurrentPromises);
-                        concurrentPromises.length = 0;
-                    }
-                    await stepPromise;
-                }
+                await executeStepWithTimeout(scene.id, step);
             } catch (stepError) {
                 logger.error(`Error executing step ${i + 1}: ${stepError.message}`);
                 sendSSEMessage(res, { error: `Error in step ${i + 1}: ${stepError.message}` });
                 // Continue with the next step instead of stopping the entire scene
                 continue;
             }
-        }
-
-        // Wait for any remaining concurrent steps to finish
-        if (concurrentPromises.length > 0) {
-            await Promise.all(concurrentPromises);
         }
 
         currentSceneState.isCompleted = true;
@@ -271,9 +253,7 @@ async function executeSound(step) {
         logger.info(`Sound started playing: ${sound.name}, Result: ${JSON.stringify(playResult)}`);
 
         if (!step.concurrent && playResult.success && playResult.duration) {
-            // For non-concurrent steps, we'll wait for the duration of the sound
-            // This is just to ensure the step doesn't complete immediately
-            // The actual sound will continue playing in the background
+            // For non-concurrent steps, wait for the entire duration of the sound
             await new Promise(resolve => setTimeout(resolve, playResult.duration * 1000));
         }
 
