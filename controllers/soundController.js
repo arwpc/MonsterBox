@@ -12,7 +12,11 @@ const RETRY_DELAY = 2000; // 2 seconds
 const messageQueue = new Map();
 let messageId = 0;
 
-const COMMAND_TIMEOUT = 30000; // 30 seconds timeout
+// Configuration options
+const PYGAME_MIXER_INIT_FREQUENCY = 44100;
+const PYGAME_MIXER_INIT_SIZE = -16;
+const PYGAME_MIXER_INIT_CHANNELS = 2;
+const PYGAME_MIXER_INIT_BUFFER = 2048;
 
 function setupAudioEnvironment() {
     const env = { ...process.env };
@@ -28,11 +32,18 @@ function setupAudioEnvironment() {
 
             env.XDG_RUNTIME_DIR = xdgRuntimeDir;
             env.PULSE_SERVER = pulseServer;
-            env.SDL_AUDIODRIVER = 'pipewire'; // Use PipeWire as the audio driver
+            
+            // Allow flexibility in audio driver selection
+            env.SDL_AUDIODRIVER = env.SDL_AUDIODRIVER || 'pipewire';
         }
     }
 
     env.PYTHONUNBUFFERED = '1';
+    env.PYGAME_MIXER_INIT_FREQUENCY = PYGAME_MIXER_INIT_FREQUENCY.toString();
+    env.PYGAME_MIXER_INIT_SIZE = PYGAME_MIXER_INIT_SIZE.toString();
+    env.PYGAME_MIXER_INIT_CHANNELS = PYGAME_MIXER_INIT_CHANNELS.toString();
+    env.PYGAME_MIXER_INIT_BUFFER = PYGAME_MIXER_INIT_BUFFER.toString();
+
     return env;
 }
 
@@ -79,6 +90,7 @@ function startSoundPlayer() {
                             handleSoundCompletion(jsonOutput);
                         } else if (jsonOutput.status === 'error') {
                             logger.error(`Sound player error: ${JSON.stringify(jsonOutput)}`);
+                            handleSoundError(jsonOutput);
                         } else if (jsonOutput.messageId !== undefined) {
                             const queueItem = messageQueue.get(jsonOutput.messageId);
                             if (queueItem) {
@@ -150,15 +162,6 @@ function sendCommand(command) {
                 reject(error);
             }
         });
-
-        // Set a timeout for the command
-        setTimeout(() => {
-            if (messageQueue.has(id)) {
-                logger.error(`Command timed out: ${fullCommand.trim()}`);
-                messageQueue.delete(id);
-                reject(new Error('Command timed out'));
-            }
-        }, COMMAND_TIMEOUT);
     });
 }
 
@@ -169,22 +172,7 @@ function playSound(soundId, filePath) {
 
 function stopSound(soundId) {
     logger.info(`Attempting to stop sound: ${soundId}`);
-    return new Promise((resolve, reject) => {
-        sendCommand(`STOP|${soundId}`)
-            .then(response => {
-                if (response.success) {
-                    logger.info(`Successfully stopped sound: ${soundId}`);
-                    resolve(response);
-                } else {
-                    logger.warn(`Failed to stop sound: ${soundId}. Reason: ${response.message}`);
-                    reject(new Error(`Failed to stop sound: ${response.message}`));
-                }
-            })
-            .catch(error => {
-                logger.error(`Error stopping sound ${soundId}: ${error.message}`);
-                reject(error);
-            });
-    });
+    return sendCommand(`STOP|${soundId}`);
 }
 
 function stopAllSounds() {
@@ -200,7 +188,29 @@ function getSoundStatus(soundId) {
 function handleSoundCompletion(jsonOutput) {
     const { sound_id, duration } = jsonOutput;
     logger.info(`Sound finished playing: ${sound_id}, duration: ${duration}`);
-    // Here you can add any additional logic for when a sound completes playing
+    
+    // Find the corresponding message in the queue and resolve it
+    for (const [id, queueItem] of messageQueue.entries()) {
+        if (queueItem.soundId === sound_id) {
+            queueItem.resolve({ status: 'finished', sound_id, duration });
+            messageQueue.delete(id);
+            break;
+        }
+    }
+}
+
+function handleSoundError(jsonOutput) {
+    const { sound_id, error } = jsonOutput;
+    logger.error(`Error playing sound: ${sound_id}, error: ${error}`);
+    
+    // Find the corresponding message in the queue and reject it
+    for (const [id, queueItem] of messageQueue.entries()) {
+        if (queueItem.soundId === sound_id) {
+            queueItem.reject(new Error(error));
+            messageQueue.delete(id);
+            break;
+        }
+    }
 }
 
 module.exports = {
