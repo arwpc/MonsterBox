@@ -9,7 +9,6 @@ $(document).ready(function() {
 
     log('info', 'Document ready');
 
-    // Rest of the file remains unchanged
     let isArmed = false;
     let currentSceneId = null;
     let retryCount = 0;
@@ -251,6 +250,7 @@ $(document).ready(function() {
             return $(this).data('id');
         }).get();
         const delay = parseInt($('#sceneDelay').val()) * 1000 || 5000;
+        let loopCount = 0;
 
         function runNextScene(index) {
             if (!isArmed) {
@@ -259,7 +259,8 @@ $(document).ready(function() {
             }
             
             if (index >= scenes.length) {
-                logArmedModeOutput('All scenes completed. Restarting from the first scene.');
+                loopCount++;
+                logArmedModeOutput(`Playlist loop #${loopCount} completed. Restarting from the first scene.`);
                 index = 0; // Reset index to loop from the beginning
                 resetConsecutiveFailures();
             }
@@ -269,10 +270,10 @@ $(document).ready(function() {
             updateCurrentScene(sceneId);
             const sceneName = sceneDetails[sceneId].name;
             const stepCount = sceneDetails[sceneId].stepCount;
-            logArmedModeOutput(`Starting execution of scene ${sceneId}: ${sceneName}, ${stepCount} steps`);
+            logArmedModeOutput(`Starting execution of scene ${index + 1}/${scenes.length}: ${sceneId}: ${sceneName}, ${stepCount} steps`);
             
             runScene(sceneId).then(() => {
-                logArmedModeOutput(`Completed execution of scene ${sceneId}: ${sceneName}`);
+                logArmedModeOutput(`Completed execution of scene ${index + 1}/${scenes.length}: ${sceneId}: ${sceneName}`);
                 retryCount = 0;
                 resetConsecutiveFailures();
                 if (isArmed) {
@@ -280,7 +281,7 @@ $(document).ready(function() {
                     setTimeout(() => runNextScene(index + 1), delay);
                 }
             }).catch((error) => {
-                logArmedModeOutput(`Error executing scene ${sceneId}: ${sceneName}: ${error.message}`, 'error');
+                logArmedModeOutput(`Error executing scene ${index + 1}/${scenes.length}: ${sceneId}: ${sceneName}: ${error.message}`, 'error');
                 incrementConsecutiveFailures();
                 if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
                     logArmedModeOutput(`Max consecutive failures (${MAX_CONSECUTIVE_FAILURES}) reached. Stopping Active Mode.`, 'error');
@@ -289,11 +290,11 @@ $(document).ready(function() {
                 }
                 if (retryCount < MAX_RETRIES) {
                     retryCount++;
-                    logArmedModeOutput(`Retrying scene ${sceneId}: ${sceneName} (Attempt ${retryCount} of ${MAX_RETRIES})`, 'warning');
+                    logArmedModeOutput(`Retrying scene ${index + 1}/${scenes.length}: ${sceneId}: ${sceneName} (Attempt ${retryCount} of ${MAX_RETRIES})`, 'warning');
                     setTimeout(() => runNextScene(index), delay);
                 } else {
                     retryCount = 0;
-                    logArmedModeOutput(`Max retries reached for scene ${sceneId}: ${sceneName}. Moving to next scene.`, 'warning');
+                    logArmedModeOutput(`Max retries reached for scene ${index + 1}/${scenes.length}: ${sceneId}: ${sceneName}. Moving to next scene.`, 'warning');
                     setTimeout(() => runNextScene(index + 1), delay);
                 }
             });
