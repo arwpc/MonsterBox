@@ -46,17 +46,5 @@
       }
     ],
     "characterId": "1"
-  },
-  {
-    "id": 6,
-    "character_id": 1,
-    "scene_name": "Test Scene",
-    "steps": [
-      {
-        "type": "sound",
-        "name": "Test Sound",
-        "sound_id": "1"
-      }
-    ]
   }
 ]
