@@ -144,6 +144,11 @@ router.post('/control', async (req, res) => {
 
     if (action === 'stop') {
         try {
+            if (!id) {
+                logger.warn('Received stop request with missing or invalid sensor ID');
+                return res.status(400).json({ success: false, error: 'Missing or invalid sensor ID' });
+            }
+
             logger.info(`Received stop request for sensor monitoring. ID: ${id}, GPIO Pin: ${gpioPin}`);
             
             // We don't need to update the part when stopping the sensor

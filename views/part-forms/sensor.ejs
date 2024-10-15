@@ -86,7 +86,7 @@
             const gpioPin = document.getElementById('gpioPin').value;
             const sensorType = document.getElementById('sensorType').value;
 
-            eventSource = new EventSource(`/parts/sensor/control?id=<%= part.id || 'null' %>&gpioPin=${gpioPin}&sensorType=${sensorType}&action=start`);
+            eventSource = new EventSource(`/parts/sensor/control?id=<%= part.id || '' %>&gpioPin=${gpioPin}&sensorType=${sensorType}&action=start`);
 
             eventSource.onmessage = function(event) {
                 try {
@@ -121,14 +121,16 @@
                 eventSource.close();
             }
 
-            const sensorId = '<%= part.id || "null" %>';
+            const sensorId = '<%= part.id || "" %>';
             const gpioPin = document.getElementById('gpioPin').value;
             const sensorType = document.getElementById('sensorType').value;
 
-            if (sensorId === "null") {
+            if (!sensorId) {
                 console.error('Cannot stop sensor: Invalid sensor ID');
                 updateSensorStatus('Error: Invalid sensor ID');
                 document.getElementById('testResults').textContent = 'Failed to stop sensor: Invalid sensor ID';
+                document.getElementById('sensorOn').disabled = false;
+                document.getElementById('sensorOff').disabled = true;
                 return;
             }
 
