@@ -16,19 +16,23 @@ const COMMAND_TIMEOUT = 15000; // Increase timeout to 15 seconds
 
 function setupAudioEnvironment() {
     const env = { ...process.env };
-    const isRoot = process.getuid() === 0;
 
-    // Get the UID of the original user, even when running with sudo
-    const uid = isRoot ? parseInt(process.env.SUDO_UID || process.getuid()) : process.getuid();
+    if (os.platform() !== 'win32') {
+        // Unix-like systems
+        const isRoot = process.getuid && process.getuid() === 0;
+        const uid = isRoot ? parseInt(process.env.SUDO_UID || process.getuid()) : (process.getuid && process.getuid());
 
-    const xdgRuntimeDir = `/run/user/${uid}`;
-    const pulseServer = `unix:${xdgRuntimeDir}/pulse/native`;
+        if (uid) {
+            const xdgRuntimeDir = `/run/user/${uid}`;
+            const pulseServer = `unix:${xdgRuntimeDir}/pulse/native`;
 
-    env.XDG_RUNTIME_DIR = xdgRuntimeDir;
-    env.PULSE_SERVER = pulseServer;
-    env.SDL_AUDIODRIVER = 'pipewire'; // Use PipeWire as the audio driver
+            env.XDG_RUNTIME_DIR = xdgRuntimeDir;
+            env.PULSE_SERVER = pulseServer;
+            env.SDL_AUDIODRIVER = 'pipewire'; // Use PipeWire as the audio driver
+        }
+    }
+
     env.PYTHONUNBUFFERED = '1';
-
     return env;
 }
 
@@ -47,8 +51,8 @@ function startSoundPlayer() {
                 env: env
             };
 
-            // If running as root, switch to the original user
-            if (process.getuid() === 0 && process.env.SUDO_UID && process.env.SUDO_GID) {
+            // If running as root on Unix-like systems, switch to the original user
+            if (os.platform() !== 'win32' && process.getuid && process.getuid() === 0 && process.env.SUDO_UID && process.env.SUDO_GID) {
                 spawnOptions.uid = parseInt(process.env.SUDO_UID);
                 spawnOptions.gid = parseInt(process.env.SUDO_GID);
             }
@@ -165,7 +169,22 @@ function playSound(soundId, filePath) {
 
 function stopSound(soundId) {
     logger.info(`Attempting to stop sound: ${soundId}`);
-    return sendCommand(`STOP|${soundId}`);
+    return new Promise((resolve, reject) => {
+        sendCommand(`STOP|${soundId}`)
+            .then(response => {
+                if (response.success) {
+                    logger.info(`Successfully stopped sound: ${soundId}`);
+                    resolve(response);
+                } else {
+                    logger.warn(`Failed to stop sound: ${soundId}. Reason: ${response.message}`);
+                    reject(new Error(`Failed to stop sound: ${response.message}`));
+                }
+            })
+            .catch(error => {
+                logger.error(`Error stopping sound ${soundId}: ${error.message}`);
+                reject(error);
+            });
+    });
 }
 
 function stopAllSounds() {
