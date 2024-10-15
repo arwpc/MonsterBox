@@ -121,11 +121,19 @@
                 eventSource.close();
             }
 
+            const sensorId = '<%= part.id || "null" %>';
             const gpioPin = document.getElementById('gpioPin').value;
             const sensorType = document.getElementById('sensorType').value;
 
+            if (sensorId === "null") {
+                console.error('Cannot stop sensor: Invalid sensor ID');
+                updateSensorStatus('Error: Invalid sensor ID');
+                document.getElementById('testResults').textContent = 'Failed to stop sensor: Invalid sensor ID';
+                return;
+            }
+
             axios.post('/parts/sensor/control', {
-                id: '<%= part.id || "null" %>',
+                id: sensorId,
                 gpioPin: gpioPin,
                 sensorType: sensorType,
                 action: 'stop'
