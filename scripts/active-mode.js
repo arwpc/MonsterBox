@@ -2,7 +2,6 @@ $(document).ready(function() {
     function log(level, message) {
         axios.post('/client-log', { level, message })
             .catch(function(error) {
-                // Replace console.error with another axios call to log the error
                 axios.post('/client-log', { level: 'error', message: 'Failed to log to server: ' + error.message });
             });
     }
@@ -14,7 +13,7 @@ $(document).ready(function() {
     let retryCount = 0;
     let characterId = null;
     let MAX_RETRIES = 3;
-    let SCENE_TIMEOUT = 120000; // 2 minutes timeout for each scene
+    let SCENE_TIMEOUT = 60000; // 60 seconds timeout for each scene
     let consecutiveFailures = 0;
     const MAX_CONSECUTIVE_FAILURES = 5;
     let sceneDetails = {}; // Store scene names and step counts
@@ -66,6 +65,8 @@ $(document).ready(function() {
         if (savedSceneTimeout) {
             $('#sceneTimeout').val(savedSceneTimeout);
             SCENE_TIMEOUT = parseInt(savedSceneTimeout) * 1000; // Convert to milliseconds
+        } else {
+            $('#sceneTimeout').val(60); // Set default to 60 seconds
         }
     }
 
@@ -326,6 +327,15 @@ $(document).ready(function() {
                 try {
                     const data = JSON.parse(event.data);
                     handleSceneUpdate(data);
+                    
+                    // Check if the scene has completed
+                    if (data.event === 'scene_end') {
+                        log('info', `Scene ${sceneId} completed`);
+                        logArmedModeOutput(`Scene ${sceneId}: ${sceneDetails[sceneId].name} completed`);
+                        eventSource.close();
+                        clearTimeout(sceneTimeout);
+                        resolve();
+                    }
                 } catch (error) {
                     log('error', `Error parsing SSE data for scene ${sceneId}: ${error}`);
                     logArmedModeOutput(`Error parsing SSE data for scene ${sceneId}: ${sceneDetails[sceneId].name}: ${error.message}`, 'error');
@@ -341,14 +351,6 @@ $(document).ready(function() {
                 logArmedModeOutput(`SSE Error for scene ${sceneId}: ${sceneDetails[sceneId].name}: ${error.type}`, 'error');
                 reject(new Error(`SSE Error for scene ${sceneId}: ${sceneDetails[sceneId].name}: ${error.type}`));
             };
-
-            eventSource.addEventListener('scene_end', function(event) {
-                log('info', `Scene ${sceneId} completed`);
-                logArmedModeOutput(`Scene ${sceneId}: ${sceneDetails[sceneId].name} completed`);
-                eventSource.close();
-                clearTimeout(sceneTimeout);
-                resolve();
-            });
 
             currentSceneId = sceneId;
         });
