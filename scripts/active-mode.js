@@ -2,12 +2,13 @@ $(document).ready(function() {
     function clientLog(level, message) {
         $.post('/log', { level: level, message: message })
             .fail(function(xhr, status, error) {
-                console.error('Failed to log to server:', error);
+                clientLog('error', 'Failed to log to server: ' + error);
             });
     }
 
     clientLog('info', 'Document ready');
 
+    // Rest of the file remains unchanged
     let isArmed = false;
     let currentSceneId = null;
     let retryCount = 0;
