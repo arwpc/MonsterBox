@@ -99,9 +99,14 @@ app.post('/set-character', (req, res) => {
     res.json({ success: true, message: 'Character updated successfully' });
 });
 
-// New route for client-side logging
-app.post('/log', (req, res) => {
-    logger.info(`Client log: ${req.body.message}`);
+// Updated route for client-side logging
+app.post('/client-log', (req, res) => {
+    const { level, message } = req.body;
+    if (logger[level]) {
+        logger[level](`Client log: ${message}`);
+    } else {
+        logger.info(`Client log (unknown level ${level}): ${message}`);
+    }
     res.sendStatus(200);
 });
 
