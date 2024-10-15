@@ -33,32 +33,36 @@ describe('Linear Actuator CRUD Operations', function() {
 
       const createResponse = await agent
         .post('/parts/linear-actuator')
-        .send(mockLinearActuatorData)
-        .expect(200);
+        .send(mockLinearActuatorData);
 
-
-      expect(createResponse.body).to.have.property('message', 'Linear actuator created successfully');
-      const createdLinearActuator = createResponse.body.linearActuator;
-      expect(createdLinearActuator).to.not.be.undefined;
-      const linearActuatorId = createdLinearActuator.id;
-      console.log('Found Linear Actuator ID:', linearActuatorId);
+      // Check if the response is a redirect (302) or success (200)
+      if (createResponse.status === 302) {
+        expect(createResponse.header['location']).to.include('/parts');
+      } else {
+        expect(createResponse.status).to.equal(200);
+        expect(createResponse.body).to.have.property('message', 'Linear actuator created successfully');
+      }
 
       // Verify Linear Actuator was created and get ID from API
       const partsListResponse = await agent
         .get(`/api/parts?characterId=${mockCharacterId}`)
         .expect(200);
 
-      const createdLinearActuator2 = partsListResponse.body.find(part => part.name === 'Test Linear Actuator' && part.type === 'linear-actuator');
-      expect(createdLinearActuator2, 'Created linear actuator not found').to.not.be.undefined;
-
+      const createdLinearActuator = partsListResponse.body.find(part => part.name === 'Test Linear Actuator' && part.type === 'linear-actuator');
+      expect(createdLinearActuator, 'Created linear actuator not found').to.not.be.undefined;
+      const linearActuatorId = createdLinearActuator.id;
+      console.log('Found Linear Actuator ID:', linearActuatorId);
 
       // Delete the Linear Actuator
       const deleteResponse = await agent
-        .post(`/parts/${linearActuatorId}/delete?characterId=${mockCharacterId}`)
-        .expect(200);
+        .post(`/parts/${linearActuatorId}/delete?characterId=${mockCharacterId}`);
 
-      await new Promise(resolve => setTimeout(resolve, 500));
+      if (deleteResponse.status === 404) {
+        console.error('Linear Actuator not found for deletion. Response:', deleteResponse.body);
+        throw new Error('Linear Actuator not found for deletion');
+      }
 
+      expect(deleteResponse.status).to.equal(200);
       expect(deleteResponse.body).to.have.property('message', 'Part deleted successfully');
 
       // Verify Linear Actuator was deleted

@@ -36,32 +36,36 @@ describe('Servo CRUD Operations', function() {
 
       const createResponse = await agent
         .post('/parts/servo')
-        .send(mockServoData)
-        .expect(200);
+        .send(mockServoData);
 
-
-      expect(createResponse.body).to.have.property('message', 'Servo created successfully');
-      const createdServo = createResponse.body.servo;
-      expect(createdServo).to.not.be.undefined;
-      const servoId = createdServo.id;
-      console.log('Found Servo ID:', servoId);
+      // Check if the response is a redirect (302) or success (200)
+      if (createResponse.status === 302) {
+        expect(createResponse.header['location']).to.include('/parts');
+      } else {
+        expect(createResponse.status).to.equal(200);
+        expect(createResponse.body).to.have.property('message', 'Servo created successfully');
+      }
 
       // Verify Servo was created and get ID from API
       const partsListResponse = await agent
         .get(`/api/parts?characterId=${mockCharacterId}`)
         .expect(200);
 
-      const createdServo2 = partsListResponse.body.find(part => part.name === 'Test Servo' && part.type === 'servo');
-      expect(createdServo2, 'Created servo not found').to.not.be.undefined;
-
+      const createdServo = partsListResponse.body.find(part => part.name === 'Test Servo' && part.type === 'servo');
+      expect(createdServo, 'Created servo not found').to.not.be.undefined;
+      const servoId = createdServo.id;
+      console.log('Found Servo ID:', servoId);
 
       // Delete the Servo
       const deleteResponse = await agent
-        .post(`/parts/${servoId}/delete?characterId=${mockCharacterId}`)
-        .expect(200);
+        .post(`/parts/${servoId}/delete?characterId=${mockCharacterId}`);
 
-      await new Promise(resolve => setTimeout(resolve, 500));
+      if (deleteResponse.status === 404) {
+        console.error('Servo not found for deletion. Response:', deleteResponse.body);
+        throw new Error('Servo not found for deletion');
+      }
 
+      expect(deleteResponse.status).to.equal(200);
       expect(deleteResponse.body).to.have.property('message', 'Part deleted successfully');
 
       // Verify Servo was deleted

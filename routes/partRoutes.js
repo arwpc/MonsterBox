@@ -153,21 +153,33 @@ router.post('/:id/delete', async (req, res) => {
     try {
         const id = parseInt(req.params.id);
         logger.info(`Attempting to delete part with ID: ${id}`);
+        logger.info(`Request params: ${JSON.stringify(req.params)}`);
+        logger.info(`Request query: ${JSON.stringify(req.query)}`);
+        logger.info(`Request body: ${JSON.stringify(req.body)}`);
         
-        const partBeforeDeletion = await partService.getPartById(id);
-        logger.info(`Part to be deleted: ${JSON.stringify(partBeforeDeletion)}`);
+        // Log all parts before deletion
+        const allParts = await partService.getAllParts();
+        logger.info(`All parts before deletion: ${JSON.stringify(allParts)}`);
+        
+        // Check if the part exists before attempting to delete
+        const partToDelete = allParts.find(part => part.id === id);
+        if (!partToDelete) {
+            logger.warn(`Part with ID ${id} not found before deletion attempt`);
+            return res.status(404).json({ error: 'Part not found' });
+        }
+        
+        logger.info(`Part to be deleted: ${JSON.stringify(partToDelete)}`);
 
         await partService.deletePart(id);
         
+        // Log all parts after deletion
+        const allPartsAfter = await partService.getAllParts();
+        logger.info(`All parts after deletion: ${JSON.stringify(allPartsAfter)}`);
+        
         res.status(200).json({ message: 'Part deleted successfully' });
     } catch (error) {
-        if (error.message && error.message.startsWith('Part not found with id:')) {
-            logger.info(`Part with ID ${req.params.id} not found`);
-            res.status(404).json({ error: 'Part not found' });
-        } else {
-            logger.error(`Error deleting part: ${error}`);
-            res.status(500).json({ error: 'An error occurred while deleting the part' });
-        }
+        logger.error(`Error deleting part: ${error}`);
+        res.status(500).json({ error: 'An error occurred while deleting the part' });
     }
 });
 

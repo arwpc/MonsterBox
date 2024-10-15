@@ -51,9 +51,14 @@ describe('LED CRUD Operations', function() {
       // Delete the LED
       const deleteResponse = await agent
         .post(`/parts/${ledId}/delete`)
-        .query({ characterId: mockCharacterId })
-        .expect(200);
+        .query({ characterId: mockCharacterId });
 
+      if (deleteResponse.status === 404) {
+        console.error('LED not found for deletion. Response:', deleteResponse.body);
+        throw new Error('LED not found for deletion');
+      }
+
+      expect(deleteResponse.status).to.equal(200);
       expect(deleteResponse.body).to.have.property('message', 'Part deleted successfully');
 
       // Verify LED was deleted
