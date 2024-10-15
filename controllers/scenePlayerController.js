@@ -296,7 +296,7 @@ async function waitForSoundCompletion(soundId, expectedDuration) {
                 logger.error(`Error stopping sound after timeout: ${error.message}`);
             });
             resolve(); // Resolve anyway to continue with the next step
-        }, (expectedDuration + 1) * 1000); // Add 1 second buffer
+        }, (expectedDuration + 2) * 1000); // Add 2 seconds buffer
     });
 }
 
