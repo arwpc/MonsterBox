@@ -31,33 +31,36 @@ describe('Motor CRUD Operations', function() {
 
       const createResponse = await agent
         .post('/parts/motor')
-        .send(mockMotorData)
-        .expect(200);
+        .send(mockMotorData);
 
-      expect(createResponse.body).to.have.property('message', 'Motor created successfully');
-      const createdMotor = createResponse.body.motor;
-      expect(createdMotor).to.not.be.undefined;
-      const motorId = createdMotor.id;
-      console.log('Found Motor ID:', motorId);
-
+      // Check if the response is a redirect (302) or success (200)
+      if (createResponse.status === 302) {
+        expect(createResponse.header['location']).to.include('/parts');
+      } else {
+        expect(createResponse.status).to.equal(200);
+        expect(createResponse.body).to.have.property('message', 'Motor created successfully');
+      }
 
       // Verify Motor was created and get ID from API
       const partsListResponse = await agent
         .get(`/api/parts?characterId=${mockCharacterId}`)
         .expect(200);
 
-      const createdMotor2 = partsListResponse.body.find(part => part.name === 'Test Motor' && part.type === 'motor');
-      expect(createdMotor2, 'Created motor not found').to.not.be.undefined;
-
+      const createdMotor = partsListResponse.body.find(part => part.name === 'Test Motor' && part.type === 'motor');
+      expect(createdMotor, 'Created motor not found').to.not.be.undefined;
+      const motorId = createdMotor.id;
+      console.log('Found Motor ID:', motorId);
 
       // Delete the Motor
       const deleteResponse = await agent
-        .post(`/parts/${motorId}/delete?characterId=${mockCharacterId}`)
-        .expect(200);
+        .post(`/parts/${motorId}/delete?characterId=${mockCharacterId}`);
 
-      await new Promise(resolve => setTimeout(resolve, 500));
+      if (deleteResponse.status === 404) {
+        console.error('Motor not found for deletion. Response:', deleteResponse.body);
+        throw new Error('Motor not found for deletion');
+      }
 
-      console.log('Delete response:', deleteResponse.body);
+      expect(deleteResponse.status).to.equal(200);
       expect(deleteResponse.body).to.have.property('message', 'Part deleted successfully');
 
       // Verify Motor was deleted

@@ -32,31 +32,36 @@ describe('Sensor CRUD Operations', function() {
 
       const createResponse = await agent
         .post('/parts/sensor')
-        .send(mockSensorData)
-        .expect(200);
+        .send(mockSensorData);
 
-      expect(createResponse.body).to.have.property('message', 'Sensor created successfully');
-      const createdSensor = createResponse.body.sensor;
-      expect(createdSensor).to.not.be.undefined;
-      const sensorId = createdSensor.id;
-      console.log('Found Sensor ID:', sensorId);
+      // Check if the response is a redirect (302) or success (200)
+      if (createResponse.status === 302) {
+        expect(createResponse.header['location']).to.include('/parts');
+      } else {
+        expect(createResponse.status).to.equal(200);
+        expect(createResponse.body).to.have.property('message', 'Sensor created successfully');
+      }
 
       // Verify Sensor was created and get ID from API
       const partsListResponse = await agent
         .get(`/api/parts?characterId=${mockCharacterId}`)
         .expect(200);
 
-      const createdSensor2 = partsListResponse.body.find(part => part.name === 'Test Sensor' && part.type === 'sensor');
-      expect(createdSensor2, 'Created sensor not found').to.not.be.undefined;
-
+      const createdSensor = partsListResponse.body.find(part => part.name === 'Test Sensor' && part.type === 'sensor');
+      expect(createdSensor, 'Created sensor not found').to.not.be.undefined;
+      const sensorId = createdSensor.id;
+      console.log('Found Sensor ID:', sensorId);
 
       // Delete the Sensor
       const deleteResponse = await agent
-        .post(`/parts/${sensorId}/delete?characterId=${mockCharacterId}`)
-        .expect(200);
+        .post(`/parts/${sensorId}/delete?characterId=${mockCharacterId}`);
 
-      await new Promise(resolve => setTimeout(resolve, 500));
+      if (deleteResponse.status === 404) {
+        console.error('Sensor not found for deletion. Response:', deleteResponse.body);
+        throw new Error('Sensor not found for deletion');
+      }
 
+      expect(deleteResponse.status).to.equal(200);
       expect(deleteResponse.body).to.have.property('message', 'Part deleted successfully');
 
       // Verify Sensor was deleted

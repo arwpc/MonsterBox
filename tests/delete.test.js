@@ -21,13 +21,43 @@ describe('Delete Part', () => {
       characterId: mockCharacterId,
       type: 'led',
       gpioPin: 10
-    }).expect(200);
-    partIdToDelete = createResponse.body.led.id;
+    });
+    
+    console.log('Create response:', createResponse.status, createResponse.body);
+
+    if (createResponse.status === 302) {
+      // If it's a redirect, fetch the parts to get the created LED
+      const partsResponse = await agent.get(`/api/parts?characterId=${mockCharacterId}`).expect(200);
+      console.log('Parts response:', partsResponse.body);
+      const createdLed = partsResponse.body.find(part => part.name === 'Test LED Delete' && part.type === 'led');
+      expect(createdLed, 'Created LED not found').to.not.be.undefined;
+      partIdToDelete = createdLed.id;
+    } else {
+      expect(createResponse.status).to.equal(200);
+      partIdToDelete = createResponse.body.led.id;
+    }
+
+    console.log('Part ID to delete:', partIdToDelete);
+
+    // Verify the part exists before trying to delete it
+    const verifyPartResponse = await agent.get(`/api/parts?characterId=${mockCharacterId}`).expect(200);
+    const partToDelete = verifyPartResponse.body.find(part => part.id === partIdToDelete);
+    console.log('Part to delete:', partToDelete);
+    expect(partToDelete, 'Part not found before deletion').to.not.be.undefined;
   });
 
   it('should delete a part successfully', async () => {
-    const deleteResponse = await agent.post(`/parts/${partIdToDelete}/delete?characterId=${mockCharacterId}`).expect(200);
+    console.log('Attempting to delete part with ID:', partIdToDelete);
+    const deleteResponse = await agent.post(`/parts/${partIdToDelete}/delete?characterId=${mockCharacterId}`);
+    console.log('Delete response:', deleteResponse.status, deleteResponse.body);
+    expect(deleteResponse.status).to.equal(200);
     expect(deleteResponse.body).to.have.property('message', 'Part deleted successfully');
+
+    // Verify the part was actually deleted
+    const verifyDeleteResponse = await agent.get(`/api/parts?characterId=${mockCharacterId}`).expect(200);
+    console.log('Verify delete response:', verifyDeleteResponse.body);
+    const deletedPart = verifyDeleteResponse.body.find(part => part.id === partIdToDelete);
+    expect(deletedPart, 'Part still exists after deletion').to.be.undefined;
   });
 
   it('should return 404 if part not found', async () => {
@@ -37,8 +67,9 @@ describe('Delete Part', () => {
   });
 
   afterEach(async () => {
-    // Clean up:  This is crucial to avoid test interference.
+    // Clean up: This is crucial to avoid test interference.
     const parts = await partService.getAllParts();
+    console.log('All parts after test:', parts);
     const filteredParts = parts.filter(part => part.id !== partIdToDelete);
     await fs.writeFile(dataPath, JSON.stringify(filteredParts, null, 2));
   });

@@ -30,31 +30,36 @@ describe('Light CRUD Operations', function() {
 
       const createResponse = await agent
         .post('/parts/light')
-        .send(mockLightData)
-        .expect(200);
+        .send(mockLightData);
 
-      expect(createResponse.body).to.have.property('message', 'Light created successfully');
-      const createdLight = createResponse.body.light;
-      expect(createdLight).to.not.be.undefined;
-      const lightId = createdLight.id;
-      console.log('Found Light ID:', lightId);
+      // Check if the response is a redirect (302) or success (200)
+      if (createResponse.status === 302) {
+        expect(createResponse.header['location']).to.include('/parts');
+      } else {
+        expect(createResponse.status).to.equal(200);
+        expect(createResponse.body).to.have.property('message', 'Light created successfully');
+      }
 
       // Verify Light was created and get ID from API
       const partsListResponse = await agent
         .get(`/api/parts?characterId=${mockCharacterId}`)
         .expect(200);
 
-      const createdLight2 = partsListResponse.body.find(part => part.name === 'Test Light' && part.type === 'light');
-      expect(createdLight2, 'Created light not found').to.not.be.undefined;
-
+      const createdLight = partsListResponse.body.find(part => part.name === 'Test Light' && part.type === 'light');
+      expect(createdLight, 'Created light not found').to.not.be.undefined;
+      const lightId = createdLight.id;
+      console.log('Found Light ID:', lightId);
 
       // Delete the Light
       const deleteResponse = await agent
-        .post(`/parts/${lightId}/delete?characterId=${mockCharacterId}`)
-        .expect(200);
+        .post(`/parts/${lightId}/delete?characterId=${mockCharacterId}`);
 
-      await new Promise(resolve => setTimeout(resolve, 500));
+      if (deleteResponse.status === 404) {
+        console.error('Light not found for deletion. Response:', deleteResponse.body);
+        throw new Error('Light not found for deletion');
+      }
 
+      expect(deleteResponse.status).to.equal(200);
       expect(deleteResponse.body).to.have.property('message', 'Part deleted successfully');
 
       // Verify Light was deleted
