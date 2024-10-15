@@ -300,9 +300,27 @@ async function executeMotor(step) {
         ];
         logger.debug(`Executing Python script: ${scriptPath} with args: ${args.join(', ')}`);
         const result = await new Promise((resolve, reject) => {
+            logger.debug(`Spawning motor control process: ${scriptPath} ${args.join(' ')}`);
             const process = spawn('python3', [scriptPath, ...args]);
             let output = '';
             let errorOutput = '';
+
+            const motorControlTimeout = setTimeout(() => {
+                logger.error('Motor control process timed out');
+                process.kill();
+                reject(new Error('Motor control process timed out'));
+            }, 30000); // 30 seconds timeout, adjust as needed
+
+            process.on('spawn', () => {
+                logger.debug('Motor control process spawned');
+            });
+
+            process.on('error', (err) => {
+                clearTimeout(motorControlTimeout);
+                logger.error(`Error spawning motor control process: ${err}`);
+                reject(new Error(`Failed to start motor control process: ${err}`));
+            });
+
             process.stdout.on('data', (data) => {
                 output += data.toString();
                 logger.debug(`Motor control output: ${data}`);
@@ -312,8 +330,12 @@ async function executeMotor(step) {
                 logger.error(`Motor control error: ${data}`);
             });
             process.on('close', (code) => {
+                clearTimeout(motorControlTimeout);
                 logger.info(`Python script exited with code ${code}`);
-                if (code === 0) {
+                if (code === null) {
+                    logger.error('Motor control process exited with code null');
+                    reject(new Error('Motor control process exited with code null'));
+                } else if (code === 0) {
                     logger.debug(`Raw motor control output: ${output}`);
                     try {
                         const jsonOutput = JSON.parse(output);
