@@ -161,12 +161,16 @@ async function executeScene(scene, startStep, res) {
 
             try {
                 await executeStepWithTimeout(scene.id, step);
+                logger.info(`Step ${i + 1} executed successfully`);
             } catch (stepError) {
                 logger.error(`Error executing step ${i + 1}: ${stepError.message}`);
                 sendSSEMessage(res, { error: `Error in step ${i + 1}: ${stepError.message}` });
                 // Continue with the next step instead of stopping the entire scene
                 continue;
             }
+
+            // Add a small delay between steps
+            await new Promise(resolve => setTimeout(resolve, 500));
         }
 
         currentSceneState.isCompleted = true;
@@ -273,7 +277,8 @@ async function waitForSoundCompletion(soundId) {
         const checkInterval = setInterval(async () => {
             try {
                 const status = await soundController.getSoundStatus(soundId);
-                if (status.isPlaying === false) {
+                logger.debug(`Sound status for ${soundId}: ${JSON.stringify(status)}`);
+                if (status.status === 'stopped' || status.status === 'finished') {
                     clearInterval(checkInterval);
                     logger.info(`Sound finished playing: ${soundId}`);
                     resolve();

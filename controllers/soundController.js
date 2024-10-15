@@ -12,6 +12,8 @@ const RETRY_DELAY = 2000; // 2 seconds
 const messageQueue = new Map();
 let messageId = 0;
 
+const COMMAND_TIMEOUT = 15000; // Increase timeout to 15 seconds
+
 function setupAudioEnvironment() {
     const env = { ...process.env };
     const isRoot = process.getuid() === 0;
@@ -73,10 +75,15 @@ function startSoundPlayer() {
                             handleSoundCompletion(jsonOutput);
                         } else if (jsonOutput.status === 'error') {
                             logger.error(`Sound player error: ${JSON.stringify(jsonOutput)}`);
-                        } else if (jsonOutput.messageId) {
-                            const { resolve, reject } = messageQueue.get(jsonOutput.messageId);
-                            messageQueue.delete(jsonOutput.messageId);
-                            resolve(jsonOutput);
+                        } else if (jsonOutput.messageId !== undefined) {
+                            const queueItem = messageQueue.get(jsonOutput.messageId);
+                            if (queueItem) {
+                                const { resolve } = queueItem;
+                                messageQueue.delete(jsonOutput.messageId);
+                                resolve(jsonOutput);
+                            } else {
+                                logger.warn(`Received response for unknown messageId: ${jsonOutput.messageId}`);
+                            }
                         }
                     } catch (error) {
                         logger.debug(`Non-JSON output from sound player: ${line}`);
@@ -143,26 +150,31 @@ function sendCommand(command) {
         // Set a timeout for the command
         setTimeout(() => {
             if (messageQueue.has(id)) {
+                logger.error(`Command timed out: ${fullCommand.trim()}`);
                 messageQueue.delete(id);
                 reject(new Error('Command timed out'));
             }
-        }, 5000); // 5 second timeout
+        }, COMMAND_TIMEOUT);
     });
 }
 
 function playSound(soundId, filePath) {
+    logger.info(`Attempting to play sound: ${soundId}, file: ${filePath}`);
     return sendCommand(`PLAY|${soundId}|${filePath}`);
 }
 
 function stopSound(soundId) {
+    logger.info(`Attempting to stop sound: ${soundId}`);
     return sendCommand(`STOP|${soundId}`);
 }
 
 function stopAllSounds() {
+    logger.info('Attempting to stop all sounds');
     return sendCommand('STOP_ALL');
 }
 
 function getSoundStatus(soundId) {
+    logger.info(`Checking status of sound: ${soundId}`);
     return sendCommand(`STATUS|${soundId}`);
 }
 
