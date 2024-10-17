@@ -11,7 +11,8 @@ let currentSceneState = {};
 let res = null;
 
 const STEP_TIMEOUT = 60000; // 60 seconds timeout
-const SOUND_CHECK_INTERVAL = 100; // 100ms interval for checking sound status
+const SOUND_CHECK_INTERVAL = 50; // Reduced from 100ms to 50ms
+const INTER_STEP_DELAY = 100; // Reduced from 500ms to 100ms
 
 const stopAllParts = async () => {
     logger.info('Stopping all parts');
@@ -140,6 +141,7 @@ async function executeScene(scene, startStep, res) {
         await soundController.startSoundPlayer();
         logger.info('Sound player started successfully');
 
+        const concurrentSteps = [];
         for (let i = startStep; i < scene.steps.length && isExecuting; i++) {
             const step = scene.steps[i];
             currentSceneState.currentStep = i;
@@ -149,18 +151,23 @@ async function executeScene(scene, startStep, res) {
             sendSSEMessage(res, { message, currentStep: i });
             logger.debug(`Sent SSE update for step ${i + 1}`);
 
-            try {
+            if (step.concurrent === "on") {
+                concurrentSteps.push(executeStepWithTimeout(scene.id, step));
+            } else {
+                if (concurrentSteps.length > 0) {
+                    await Promise.all(concurrentSteps);
+                    concurrentSteps.length = 0;
+                }
                 await executeStepWithTimeout(scene.id, step);
-                logger.info(`Step ${i + 1} executed successfully`);
-            } catch (stepError) {
-                logger.error(`Error executing step ${i + 1}: ${stepError.message}`);
-                sendSSEMessage(res, { error: `Error in step ${i + 1}: ${stepError.message}` });
-                // Continue with the next step instead of stopping the entire scene
-                continue;
             }
 
             // Add a small delay between steps
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise(resolve => setTimeout(resolve, INTER_STEP_DELAY));
+        }
+
+        // Wait for any remaining concurrent steps
+        if (concurrentSteps.length > 0) {
+            await Promise.all(concurrentSteps);
         }
 
         currentSceneState.isCompleted = true;
