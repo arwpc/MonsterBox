@@ -1,111 +1,74 @@
 import sys
-import pygame # type: ignore
 import time
 import json
 from threading import Thread
 import os
 import signal
 import traceback
+import subprocess
 
 def log_message(message):
     print(json.dumps(message), flush=True)
 
-os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
-# Use the SDL_AUDIODRIVER from the environment, defaulting to 'pipewire'
-os.environ['SDL_AUDIODRIVER'] = os.environ.get('SDL_AUDIODRIVER', 'pipewire')
-
 class SoundPlayer:
     def __init__(self):
         log_message({"status": "info", "message": "Initializing SoundPlayer"})
-        self.init_pygame_mixer(retries=3)
         self.sounds = {}
-        self.next_channel_id = 0
+        self.next_sound_id = 0
         log_message({"status": "ready", "message": "SoundPlayer initialized and ready"})
-
-    def init_pygame_mixer(self, retries=3):
-        for attempt in range(retries):
-            try:
-                pygame.init()
-                frequency = int(os.environ.get('PYGAME_MIXER_INIT_FREQUENCY', '44100'))
-                size = int(os.environ.get('PYGAME_MIXER_INIT_SIZE', '-16'))
-                channels = int(os.environ.get('PYGAME_MIXER_INIT_CHANNELS', '2'))
-                buffer = int(os.environ.get('PYGAME_MIXER_INIT_BUFFER', '2048'))
-                
-                pygame.mixer.init(frequency=frequency, size=size, channels=channels, buffer=buffer)
-                log_message({"status": "info", "message": "pygame.mixer initialized successfully"})
-                
-                log_message({"status": "info", "message": f"SDL_AUDIODRIVER: {os.environ.get('SDL_AUDIODRIVER', 'Not set')}"})
-                log_message({"status": "info", "message": f"Pygame audio driver: {pygame.mixer.get_init()}"})
-                log_message({"status": "info", "message": f"Mixer settings: frequency={frequency}, size={size}, channels={channels}, buffer={buffer}"})
-                
-                pygame.mixer.set_num_channels(32)  # Set a higher number of channels for concurrent playback
-                pygame.mixer.music.set_volume(1.0)
-                log_message({"status": "info", "message": f"Volume set to: {pygame.mixer.music.get_volume()}"})
-                return
-            except pygame.error as e:
-                log_message({"status": "error", "message": f"Failed to initialize pygame mixer (attempt {attempt + 1}): {str(e)}"})
-                if attempt == retries - 1:
-                    raise
 
     def play_sound(self, sound_id, file_path):
         try:
             if not os.path.exists(file_path):
                 raise FileNotFoundError(f"Sound file not found: {file_path}")
             
-            log_message({"status": "info", "message": f"Loading sound file: {file_path}"})
-            sound = pygame.mixer.Sound(file_path)
-            log_message({"status": "info", "message": f"Sound file loaded. Length: {sound.get_length()} seconds"})
+            log_message({"status": "info", "message": f"Playing sound file: {file_path}"})
             
-            channel = pygame.mixer.find_channel()
-            if channel is None:
-                log_message({"status": "error", "message": "No available channel to play sound"})
-                return
+            # Use MPG123 to play the MP3 file
+            process = subprocess.Popen(['mpg123', file_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             
-            channel_id = self.next_channel_id
-            self.next_channel_id += 1
-            
-            log_message({"status": "info", "message": f"Playing sound on channel {channel_id}"})
-            channel.play(sound)
-            self.sounds[sound_id] = (sound, channel, channel_id)
-            log_message({"status": "playing", "sound_id": sound_id, "file": file_path, "channel": channel_id})
+            self.sounds[sound_id] = process
+            log_message({"status": "playing", "sound_id": sound_id, "file": file_path})
             
             # Start a new thread to wait for the sound to finish
-            Thread(target=self._wait_for_sound_end, args=(sound_id, channel, channel_id)).start()
+            Thread(target=self._wait_for_sound_end, args=(sound_id, process)).start()
             
         except FileNotFoundError as e:
             log_message({"status": "error", "sound_id": sound_id, "file": file_path, "message": str(e)})
         except Exception as e:
             log_message({"status": "error", "sound_id": sound_id, "file": file_path, "message": str(e), "traceback": traceback.format_exc()})
 
-    def _wait_for_sound_end(self, sound_id, channel, channel_id):
+    def _wait_for_sound_end(self, sound_id, process):
         start_time = time.time()
-        while channel.get_busy():
-            time.sleep(0.05)  # Reduced sleep time for more responsive detection of sound end
+        process.wait()
         end_time = time.time()
         duration = end_time - start_time
-        log_message({"status": "finished", "sound_id": sound_id, "duration": duration, "channel": channel_id})
+        log_message({"status": "finished", "sound_id": sound_id, "duration": duration})
         if sound_id in self.sounds:
             del self.sounds[sound_id]
 
     def stop_sound(self, sound_id):
         if sound_id in self.sounds:
-            _, channel, channel_id = self.sounds[sound_id]
-            channel.stop()
+            process = self.sounds[sound_id]
+            process.terminate()
+            process.wait()
             del self.sounds[sound_id]
-            log_message({"status": "stopped", "sound_id": sound_id, "channel": channel_id})
+            log_message({"status": "stopped", "sound_id": sound_id})
         else:
             log_message({"status": "warning", "message": f"Sound {sound_id} not found or already stopped"})
 
     def stop_all_sounds(self):
-        pygame.mixer.stop()
+        for sound_id, process in self.sounds.items():
+            process.terminate()
+            process.wait()
         self.sounds.clear()
         log_message({"status": "info", "message": "All sounds stopped"})
 
     def get_sound_status(self, sound_id):
         if sound_id in self.sounds:
-            _, channel, channel_id = self.sounds[sound_id]
-            is_playing = channel.get_busy()
-            return {"status": "playing" if is_playing else "stopped", "sound_id": sound_id, "channel": channel_id}
+            process = self.sounds[sound_id]
+            is_playing = process.poll() is None
+            return {"status": "playing" if is_playing else "stopped", "sound_id": sound_id}
         else:
             return {"status": "not_found", "sound_id": sound_id}
 
@@ -114,16 +77,16 @@ class SoundPlayer:
             if not os.path.exists(file_path):
                 raise FileNotFoundError(f"Sound file not found: {file_path}")
             
-            sound = pygame.mixer.Sound(file_path)
-            duration = sound.get_length()
+            # Use MPG123 to get the duration of the MP3 file
+            result = subprocess.run(['mpg123', '-t', file_path], capture_output=True, text=True)
+            duration_line = [line for line in result.stderr.split('\n') if 'Time:' in line][0]
+            duration = float(duration_line.split()[-1])
             return {"status": "success", "duration": duration}
         except Exception as e:
             return {"status": "error", "message": str(e)}
 
 def signal_handler(signum, frame):
     log_message({"status": "info", "message": f"Received signal {signum}. Exiting gracefully."})
-    pygame.mixer.quit()
-    pygame.quit()
     sys.exit(0)
 
 if __name__ == "__main__":
@@ -201,7 +164,4 @@ if __name__ == "__main__":
     except Exception as e:
         log_message({"status": "error", "message": f"Failed to initialize or run SoundPlayer: {str(e)}", "traceback": traceback.format_exc()})
     finally:
-        log_message({"status": "info", "message": "Quitting pygame mixer"})
-        pygame.mixer.quit()
-        pygame.quit()
         log_message({"status": "exit", "message": "SoundPlayer exiting"})

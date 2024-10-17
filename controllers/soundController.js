@@ -8,12 +8,6 @@ let soundPlayerProcess = null;
 const messageQueue = new Map();
 let messageId = 0;
 
-// Configuration options
-const PYGAME_MIXER_INIT_FREQUENCY = 44100;
-const PYGAME_MIXER_INIT_SIZE = -16;
-const PYGAME_MIXER_INIT_CHANNELS = 2;
-const PYGAME_MIXER_INIT_BUFFER = 2048;
-
 function setupAudioEnvironment() {
     const env = { ...process.env };
 
@@ -24,21 +18,14 @@ function setupAudioEnvironment() {
 
         if (uid) {
             const xdgRuntimeDir = `/run/user/${uid}`;
-            const pulseServer = `unix:${xdgRuntimeDir}/pulse/native`;
-
             env.XDG_RUNTIME_DIR = xdgRuntimeDir;
-            env.PULSE_SERVER = pulseServer;
             
-            // Allow flexibility in audio driver selection
-            env.SDL_AUDIODRIVER = env.SDL_AUDIODRIVER || 'pipewire';
+            // Set ALSA as the default audio driver
+            env.SDL_AUDIODRIVER = 'alsa';
         }
     }
 
     env.PYTHONUNBUFFERED = '1';
-    env.PYGAME_MIXER_INIT_FREQUENCY = PYGAME_MIXER_INIT_FREQUENCY.toString();
-    env.PYGAME_MIXER_INIT_SIZE = PYGAME_MIXER_INIT_SIZE.toString();
-    env.PYGAME_MIXER_INIT_CHANNELS = PYGAME_MIXER_INIT_CHANNELS.toString();
-    env.PYGAME_MIXER_INIT_BUFFER = PYGAME_MIXER_INIT_BUFFER.toString();
 
     return env;
 }
