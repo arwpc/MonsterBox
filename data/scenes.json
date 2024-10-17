@@ -46,5 +46,87 @@
       }
     ],
     "characterId": "1"
+  },
+  {
+    "id": 2,
+    "character_id": 2,
+    "scene_name": "fixing scene execution -  two sound step",
+    "steps": [
+      {
+        "type": "sound",
+        "name": "rore",
+        "sound_id": "8"
+      },
+      {
+        "type": "sound",
+        "name": "santos",
+        "sound_id": "3"
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "character_id": 2,
+    "scene_name": "Sound + motor",
+    "steps": [
+      {
+        "type": "sound",
+        "name": "Santos!",
+        "sound_id": "3"
+      },
+      {
+        "type": "motor",
+        "name": "Swing Axe Up",
+        "part_id": "12",
+        "duration": "1000",
+        "direction": "forward",
+        "speed": "100"
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "character_id": 2,
+    "scene_name": "Just Sounds But Concurrent",
+    "steps": [
+      {
+        "type": "sound",
+        "name": "sas",
+        "sound_id": "6",
+        "concurrent": "on"
+      },
+      {
+        "type": "sound",
+        "name": "rore",
+        "sound_id": "8"
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "character_id": 2,
+    "scene_name": "One Sound",
+    "steps": [
+      {
+        "type": "sound",
+        "name": "as",
+        "sound_id": "3"
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "character_id": 2,
+    "scene_name": "One Motort",
+    "steps": [
+      {
+        "type": "motor",
+        "name": "as",
+        "part_id": "12",
+        "duration": "1000",
+        "direction": "backward",
+        "speed": "100"
+      }
+    ]
   }
 ]
