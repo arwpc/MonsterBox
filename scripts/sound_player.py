@@ -27,6 +27,11 @@ class SoundPlayer:
             # Use MPG123 to play the MP3 file
             process = subprocess.Popen(['mpg123', file_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             
+            # Capture any error output
+            _, stderr = process.communicate()
+            if process.returncode != 0:
+                raise Exception(f"MPG123 error: {stderr.decode('utf-8')}")
+            
             self.sounds[sound_id] = process
             log_message({"status": "playing", "sound_id": sound_id, "file": file_path})
             
