@@ -13,6 +13,7 @@ let res = null;
 const STEP_TIMEOUT = 60000; // 60 seconds timeout
 const SOUND_CHECK_INTERVAL = 50; // Reduced from 100ms to 50ms
 const INTER_STEP_DELAY = 100; // Reduced from 500ms to 100ms
+const MAX_SOUND_WAIT_TIME = 30000; // Maximum wait time for sound completion (30 seconds)
 
 const stopAllParts = async () => {
     logger.info('Stopping all parts');
@@ -257,8 +258,10 @@ async function executeSound(step) {
             throw new Error(`Failed to start sound playback: ${playResult.message}`);
         }
 
-        // Wait for the sound to finish playing
-        await waitForSoundCompletion(sound.id);
+        if (step.concurrent !== "on") {
+            // Wait for the sound to finish playing only if it's not concurrent
+            await waitForSoundCompletion(sound.id);
+        }
 
         logger.info(`Sound step completed: ${step.name}`);
         return true;
@@ -270,6 +273,7 @@ async function executeSound(step) {
 
 async function waitForSoundCompletion(soundId) {
     return new Promise((resolve, reject) => {
+        const startTime = Date.now();
         const checkInterval = setInterval(async () => {
             try {
                 const status = await soundController.getSoundStatus(soundId);
@@ -280,6 +284,13 @@ async function waitForSoundCompletion(soundId) {
                     logger.info(`Sound finished playing: ${soundId}`);
                     await soundController.stopSound(soundId);
                     resolve();
+                } else if (Date.now() - startTime > MAX_SOUND_WAIT_TIME) {
+                    clearInterval(checkInterval);
+                    logger.warn(`Sound ${soundId} exceeded maximum wait time of ${MAX_SOUND_WAIT_TIME}ms`);
+                    await soundController.stopSound(soundId);
+                    resolve();
+                } else {
+                    logger.debug(`Waiting for sound ${soundId} to complete. Elapsed time: ${Date.now() - startTime}ms`);
                 }
             } catch (error) {
                 clearInterval(checkInterval);
