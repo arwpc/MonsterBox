@@ -80,7 +80,7 @@ class SoundPlayer:
     def _wait_for_sound_end(self, sound_id, channel, channel_id):
         start_time = time.time()
         while channel.get_busy():
-            time.sleep(0.1)
+            time.sleep(0.05)  # Reduced sleep time for more responsive detection of sound end
         end_time = time.time()
         duration = end_time - start_time
         log_message({"status": "finished", "sound_id": sound_id, "duration": duration, "channel": channel_id})
@@ -108,6 +108,17 @@ class SoundPlayer:
             return {"status": "playing" if is_playing else "stopped", "sound_id": sound_id, "channel": channel_id}
         else:
             return {"status": "not_found", "sound_id": sound_id}
+
+    def get_sound_duration(self, file_path):
+        try:
+            if not os.path.exists(file_path):
+                raise FileNotFoundError(f"Sound file not found: {file_path}")
+            
+            sound = pygame.mixer.Sound(file_path)
+            duration = sound.get_length()
+            return {"status": "success", "duration": duration}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
 
 def signal_handler(signum, frame):
     log_message({"status": "info", "message": f"Received signal {signum}. Exiting gracefully."})
@@ -167,6 +178,14 @@ if __name__ == "__main__":
                         sound_id = parts[2]
                         status = player.get_sound_status(sound_id)
                         response.update(status)
+                elif cmd == "DURATION":
+                    if len(parts) != 3:
+                        response["status"] = "error"
+                        response["message"] = f"Invalid DURATION command format: {command}"
+                    else:
+                        file_path = parts[2]
+                        duration_info = player.get_sound_duration(file_path)
+                        response.update(duration_info)
                 else:
                     response["status"] = "error"
                     response["message"] = f"Unknown command: {cmd}"
@@ -174,8 +193,8 @@ if __name__ == "__main__":
                 log_message(response)
 
             except EOFError:
-                log_message({"status": "info", "message": "Received EOF. Waiting for more input."})
-                time.sleep(1)  # Wait a bit before trying to read input again
+                log_message({"status": "info", "message": "Received EOF. Exiting."})
+                break
             except Exception as e:
                 log_message({"status": "error", "message": f"Command processing error: {str(e)}", "traceback": traceback.format_exc()})
 

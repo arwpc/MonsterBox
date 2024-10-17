@@ -5,10 +5,6 @@ const logger = require('../scripts/logger');
 const os = require('os');
 
 let soundPlayerProcess = null;
-let soundPlayerRetries = 0;
-const MAX_SOUND_PLAYER_RETRIES = 5;
-const RETRY_DELAY = 2000; // 2 seconds
-
 const messageQueue = new Map();
 let messageId = 0;
 
@@ -124,16 +120,7 @@ function startSoundPlayer() {
                     logger.error(`Sound player stderr buffer: ${stderrBuffer}`);
                 }
                 soundPlayerProcess = null;
-                if (soundPlayerRetries < MAX_SOUND_PLAYER_RETRIES) {
-                    soundPlayerRetries++;
-                    logger.info(`Retrying to start sound player (Attempt ${soundPlayerRetries}/${MAX_SOUND_PLAYER_RETRIES})`);
-                    setTimeout(() => {
-                        startSoundPlayer().then(resolve).catch(reject);
-                    }, RETRY_DELAY);
-                } else {
-                    logger.error('Max retries reached. Unable to start sound player.');
-                    reject(new Error('Unable to start sound player after max retries'));
-                }
+                reject(new Error(`Sound player process exited unexpectedly with code ${code}`));
             });
         } else {
             resolve();
@@ -213,7 +200,7 @@ function handleSoundError(jsonOutput) {
     }
 }
 
-// New function to check if sound player is running
+// Function to check if sound player is running
 function isSoundPlayerRunning() {
     return soundPlayerProcess !== null;
 }

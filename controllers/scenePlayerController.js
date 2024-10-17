@@ -10,10 +10,8 @@ let isExecuting = false;
 let currentSceneState = {};
 let res = null;
 
-const STEP_TIMEOUT = 60000; // 60 seconds timeout
-const SOUND_CHECK_INTERVAL = 50; // Reduced from 100ms to 50ms
-const INTER_STEP_DELAY = 100; // Reduced from 500ms to 100ms
-const MAX_SOUND_WAIT_TIME = 30000; // Maximum wait time for sound completion (30 seconds)
+const SOUND_CHECK_INTERVAL = 50; // 50ms interval for checking sound status
+const INTER_STEP_DELAY = 100; // 100ms delay between steps
 
 const stopAllParts = async () => {
     logger.info('Stopping all parts');
@@ -153,13 +151,13 @@ async function executeScene(scene, startStep, res) {
             logger.debug(`Sent SSE update for step ${i + 1}`);
 
             if (step.concurrent === "on") {
-                concurrentSteps.push(executeStepWithTimeout(scene.id, step));
+                concurrentSteps.push(executeStep(scene.id, step));
             } else {
                 if (concurrentSteps.length > 0) {
                     await Promise.all(concurrentSteps);
                     concurrentSteps.length = 0;
                 }
-                await executeStepWithTimeout(scene.id, step);
+                await executeStep(scene.id, step);
             }
 
             // Add a small delay between steps
@@ -198,23 +196,6 @@ async function executeScene(scene, startStep, res) {
         sendSSEMessage(res, { message: cleanupMessage, event: 'scene_end' });
         logger.info('Sent cleanup SSE update with scene_end event');
     }
-}
-
-async function executeStepWithTimeout(sceneId, step) {
-    return new Promise(async (resolve, reject) => {
-        const timeoutId = setTimeout(() => {
-            reject(new Error(`Step ${step.name} timed out after ${STEP_TIMEOUT / 1000} seconds`));
-        }, STEP_TIMEOUT);
-
-        try {
-            await executeStep(sceneId, step);
-            clearTimeout(timeoutId);
-            resolve();
-        } catch (error) {
-            clearTimeout(timeoutId);
-            reject(error);
-        }
-    });
 }
 
 async function executeStep(sceneId, step) {
@@ -273,7 +254,6 @@ async function executeSound(step) {
 
 async function waitForSoundCompletion(soundId) {
     return new Promise((resolve, reject) => {
-        const startTime = Date.now();
         const checkInterval = setInterval(async () => {
             try {
                 const status = await soundController.getSoundStatus(soundId);
@@ -284,13 +264,6 @@ async function waitForSoundCompletion(soundId) {
                     logger.info(`Sound finished playing: ${soundId}`);
                     await soundController.stopSound(soundId);
                     resolve();
-                } else if (Date.now() - startTime > MAX_SOUND_WAIT_TIME) {
-                    clearInterval(checkInterval);
-                    logger.warn(`Sound ${soundId} exceeded maximum wait time of ${MAX_SOUND_WAIT_TIME}ms`);
-                    await soundController.stopSound(soundId);
-                    resolve();
-                } else {
-                    logger.debug(`Waiting for sound ${soundId} to complete. Elapsed time: ${Date.now() - startTime}ms`);
                 }
             } catch (error) {
                 clearInterval(checkInterval);
@@ -330,18 +303,11 @@ async function executeMotor(step) {
             let output = '';
             let errorOutput = '';
 
-            const motorControlTimeout = setTimeout(() => {
-                logger.error('Motor control process timed out');
-                process.kill();
-                reject(new Error('Motor control process timed out'));
-            }, 30000); // 30 seconds timeout, adjust as needed
-
             process.on('spawn', () => {
                 logger.debug('Motor control process spawned');
             });
 
             process.on('error', (err) => {
-                clearTimeout(motorControlTimeout);
                 logger.error(`Error spawning motor control process: ${err}`);
                 reject(new Error(`Failed to start motor control process: ${err}`));
             });
@@ -355,7 +321,6 @@ async function executeMotor(step) {
                 logger.error(`Motor control error: ${data}`);
             });
             process.on('close', (code) => {
-                clearTimeout(motorControlTimeout);
                 logger.info(`Python script exited with code ${code}`);
                 if (code === null) {
                     logger.error('Motor control process exited with code null');
