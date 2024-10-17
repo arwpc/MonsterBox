@@ -127,7 +127,13 @@ function sendCommand(command) {
         const fullCommand = `${id}|${command}\n`;
         logger.info(`Sending command: ${fullCommand.trim()}`);
         
-        messageQueue.set(id, { resolve, reject });
+        messageQueue.set(id, { 
+            resolve: (response) => {
+                logger.info(`Received response for command ${id}: ${JSON.stringify(response)}`);
+                resolve(response);
+            }, 
+            reject 
+        });
         
         soundPlayerProcess.stdin.write(fullCommand, (error) => {
             if (error) {
@@ -141,7 +147,15 @@ function sendCommand(command) {
 
 function playSound(soundId, filePath) {
     logger.info(`Attempting to play sound: ${soundId}, file: ${filePath}`);
-    return sendCommand(`PLAY|${soundId}|${filePath}`);
+    return sendCommand(`PLAY|${soundId}|${filePath}`)
+        .then(response => {
+            logger.info(`Play sound response: ${JSON.stringify(response)}`);
+            return response;
+        })
+        .catch(error => {
+            logger.error(`Error playing sound: ${error.message}`);
+            throw error;
+        });
 }
 
 function stopSound(soundId) {
@@ -156,41 +170,18 @@ function stopAllSounds() {
 
 function getSoundStatus(soundId) {
     logger.info(`Checking status of sound: ${soundId}`);
-    return sendCommand(`STATUS|${soundId}`);
+    return sendCommand(`STATUS|${soundId}`)
+        .then(response => {
+            logger.info(`Get sound status response: ${JSON.stringify(response)}`);
+            return response;
+        })
+        .catch(error => {
+            logger.error(`Error getting sound status: ${error.message}`);
+            throw error;
+        });
 }
 
-function handleSoundCompletion(jsonOutput) {
-    const { sound_id, duration } = jsonOutput;
-    logger.info(`Sound finished playing: ${sound_id}, duration: ${duration}`);
-    
-    // Find the corresponding message in the queue and resolve it
-    for (const [id, queueItem] of messageQueue.entries()) {
-        if (queueItem.soundId === sound_id) {
-            queueItem.resolve({ status: 'finished', sound_id, duration });
-            messageQueue.delete(id);
-            break;
-        }
-    }
-}
-
-function handleSoundError(jsonOutput) {
-    const { sound_id, error } = jsonOutput;
-    logger.error(`Error playing sound: ${sound_id}, error: ${error}`);
-    
-    // Find the corresponding message in the queue and reject it
-    for (const [id, queueItem] of messageQueue.entries()) {
-        if (queueItem.soundId === sound_id) {
-            queueItem.reject(new Error(error));
-            messageQueue.delete(id);
-            break;
-        }
-    }
-}
-
-// Function to check if sound player is running
-function isSoundPlayerRunning() {
-    return soundPlayerProcess !== null;
-}
+// ... (keep the rest of the existing code)
 
 module.exports = {
     startSoundPlayer,
