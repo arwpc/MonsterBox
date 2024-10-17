@@ -181,6 +181,9 @@ function getSoundStatus(soundId) {
         });
 }
 
+function isSoundPlayerRunning() {
+    return soundPlayerProcess !== null && !soundPlayerProcess.killed;
+}
 
 module.exports = {
     startSoundPlayer,
