@@ -4,14 +4,16 @@ const path = require('path');
 const fs = require('fs');
 
 describe('Sound Playback Tests', function() {
-    this.timeout(60000); // Increase timeout to 60 seconds
+    this.timeout(60000); // 60 seconds timeout
 
     before(async function() {
         console.log('Starting sound player...');
         try {
             await soundController.startSoundPlayer();
             console.log('Sound player started successfully');
-            console.log('Is sound player running:', soundController.isSoundPlayerRunning());
+            const isRunning = soundController.isSoundPlayerRunning();
+            console.log('Is sound player running:', isRunning);
+            expect(isRunning).to.be.true;
         } catch (error) {
             console.error('Error starting sound player:', error);
             throw error;
@@ -41,6 +43,13 @@ describe('Sound Playback Tests', function() {
             console.log('Status result:', statusResult);
             expect(statusResult.status).to.equal('playing');
 
+            console.log('Waiting for sound to finish...');
+            await new Promise(resolve => setTimeout(resolve, 5000)); // Wait for 5 seconds
+
+            console.log('Checking sound status again...');
+            const finalStatusResult = await soundController.getSoundStatus('test-sound');
+            console.log('Final status result:', finalStatusResult);
+
             console.log('Test completed successfully');
         } catch (error) {
             console.error('Error during test:', error);
@@ -56,7 +65,12 @@ describe('Sound Playback Tests', function() {
         } catch (error) {
             console.error('Error stopping all sounds:', error);
         } finally {
-            console.log('Is sound player still running:', soundController.isSoundPlayerRunning());
+            const isStillRunning = soundController.isSoundPlayerRunning();
+            console.log('Is sound player still running:', isStillRunning);
+            if (isStillRunning) {
+                console.log('Attempting to forcefully stop the sound player...');
+                // Add code here to forcefully stop the sound player if needed
+            }
         }
     });
 });
