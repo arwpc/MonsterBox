@@ -191,14 +191,32 @@ function isSoundPlayerRunning() {
 }
 
 function waitForSoundToFinish(soundId) {
-    return new Promise((resolve) => {
-        console.log(`Waiting for sound ${soundId} to finish...`);
-        eventEmitter.once('soundFinished', (finishedSoundId) => {
-            console.log(`Received soundFinished event for ${finishedSoundId}`);
+    return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+            eventEmitter.removeListener('soundFinished', finishListener);
+            reject(new Error(`Timeout waiting for sound ${soundId} to finish`));
+        }, 10000); // 10 second timeout
+
+        const finishListener = (finishedSoundId) => {
             if (finishedSoundId === soundId) {
-                console.log(`Sound ${soundId} finished playing`);
+                clearTimeout(timeout);
                 resolve();
             }
+        };
+
+        eventEmitter.on('soundFinished', finishListener);
+
+        // Check if the sound has already finished
+        getSoundStatus(soundId).then(status => {
+            if (status.status !== 'playing') {
+                clearTimeout(timeout);
+                eventEmitter.removeListener('soundFinished', finishListener);
+                resolve();
+            }
+        }).catch(error => {
+            clearTimeout(timeout);
+            eventEmitter.removeListener('soundFinished', finishListener);
+            reject(error);
         });
     });
 }
