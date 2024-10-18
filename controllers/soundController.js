@@ -2,10 +2,12 @@ const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const EventEmitter = require('events');
 
 let soundPlayerProcess = null;
 const messageQueue = new Map();
 let messageId = 0;
+const eventEmitter = new EventEmitter();
 
 function setupAudioEnvironment() {
     const env = { ...process.env };
@@ -31,10 +33,6 @@ function setupAudioEnvironment() {
 
 function startSoundPlayer() {
     return new Promise((resolve, reject) => {
-        const startTimeout = setTimeout(() => {
-            reject(new Error('Timeout: Sound player failed to start within 30 seconds'));
-        }, 30000);
-
         if (!soundPlayerProcess) {
             const scriptPath = path.resolve(__dirname, '..', 'scripts', 'sound_player.py');
             console.log(`Starting sound player: ${scriptPath}`);
@@ -73,13 +71,11 @@ function startSoundPlayer() {
                         const jsonOutput = JSON.parse(line);
                         if (jsonOutput.status === 'ready') {
                             console.log('Sound player is ready');
-                            clearTimeout(startTimeout);
                             resolve();
                         } else if (jsonOutput.status === 'finished') {
-                            handleSoundCompletion(jsonOutput);
+                            eventEmitter.emit('soundFinished', jsonOutput.sound_id);
                         } else if (jsonOutput.status === 'error') {
                             console.error(`Sound player error: ${JSON.stringify(jsonOutput)}`);
-                            handleSoundError(jsonOutput);
                         } else if (jsonOutput.messageId !== undefined) {
                             const queueItem = messageQueue.get(jsonOutput.messageId);
                             if (queueItem) {
@@ -104,7 +100,6 @@ function startSoundPlayer() {
 
             soundPlayerProcess.on('error', (error) => {
                 console.error(`Failed to start sound player: ${error.message}`);
-                clearTimeout(startTimeout);
                 reject(error);
             });
 
@@ -114,11 +109,9 @@ function startSoundPlayer() {
                     console.error(`Sound player stderr buffer: ${stderrBuffer}`);
                 }
                 soundPlayerProcess = null;
-                clearTimeout(startTimeout);
                 reject(new Error(`Sound player process exited unexpectedly with code ${code}`));
             });
         } else {
-            clearTimeout(startTimeout);
             resolve();
         }
     });
@@ -196,11 +189,22 @@ function isSoundPlayerRunning() {
     return isRunning;
 }
 
+function waitForSoundToFinish(soundId) {
+    return new Promise((resolve) => {
+        eventEmitter.once('soundFinished', (finishedSoundId) => {
+            if (finishedSoundId === soundId) {
+                resolve();
+            }
+        });
+    });
+}
+
 module.exports = {
     startSoundPlayer,
     playSound,
     stopSound,
     stopAllSounds,
     getSoundStatus,
-    isSoundPlayerRunning
+    isSoundPlayerRunning,
+    waitForSoundToFinish
 };
