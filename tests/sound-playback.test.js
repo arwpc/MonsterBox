@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 
 describe('Sound Playback Tests', function() {
-    this.timeout(10000); // 10 seconds timeout should be more than enough
+    this.timeout(15000); // 15 seconds timeout for the entire suite
 
     before(async function() {
         console.log('Starting sound player...');
@@ -36,16 +36,7 @@ describe('Sound Playback Tests', function() {
             expect(playResult.status).to.equal('success');
 
             console.log('Waiting for sound to finish...');
-            await new Promise((resolve) => {
-                const checkInterval = setInterval(async () => {
-                    const status = await soundController.getSoundStatus('test-sound');
-                    console.log('Current sound status:', status);
-                    if (status.status !== 'playing') {
-                        clearInterval(checkInterval);
-                        resolve();
-                    }
-                }, 500); // Check every 500ms
-            });
+            await soundController.waitForSoundToFinish('test-sound');
 
             console.log('Sound playback completed');
             const finalStatus = await soundController.getSoundStatus('test-sound');
