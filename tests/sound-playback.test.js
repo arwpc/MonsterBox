@@ -37,8 +37,9 @@ describe('Sound Playback Tests', function() {
 
             console.log('Waiting for sound to finish...');
             await soundController.waitForSoundToFinish('test-sound');
+            console.log('Sound finished playing');
 
-            console.log('Sound playback completed');
+            console.log('Checking final sound status...');
             const finalStatus = await soundController.getSoundStatus('test-sound');
             console.log('Final sound status:', finalStatus);
             expect(finalStatus.status).to.equal('not_found');
