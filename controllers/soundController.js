@@ -32,6 +32,10 @@ function setupAudioEnvironment() {
 
 function startSoundPlayer() {
     return new Promise((resolve, reject) => {
+        const startTimeout = setTimeout(() => {
+            reject(new Error('Timeout: Sound player failed to start within 30 seconds'));
+        }, 30000);
+
         if (!soundPlayerProcess) {
             const scriptPath = path.resolve(__dirname, '..', 'scripts', 'sound_player.py');
             logger.info(`Starting sound player: ${scriptPath}`);
@@ -51,6 +55,7 @@ function startSoundPlayer() {
                 spawnOptions.gid = parseInt(process.env.SUDO_GID);
             }
             
+            logger.info('Spawning sound player process...');
             soundPlayerProcess = spawn('python3', [scriptPath], spawnOptions);
 
             logger.info(`Sound player process PID: ${soundPlayerProcess.pid}`);
@@ -60,6 +65,7 @@ function startSoundPlayer() {
 
             soundPlayerProcess.stdout.on('data', (data) => {
                 stdoutBuffer += data.toString();
+                logger.info(`Raw stdout: ${data.toString()}`);
                 let lines = stdoutBuffer.split('\n');
                 while (lines.length > 1) {
                     let line = lines.shift();
@@ -68,6 +74,7 @@ function startSoundPlayer() {
                         const jsonOutput = JSON.parse(line);
                         if (jsonOutput.status === 'ready') {
                             logger.info('Sound player is ready');
+                            clearTimeout(startTimeout);
                             resolve();
                         } else if (jsonOutput.status === 'finished') {
                             handleSoundCompletion(jsonOutput);
@@ -98,6 +105,7 @@ function startSoundPlayer() {
 
             soundPlayerProcess.on('error', (error) => {
                 logger.error(`Failed to start sound player: ${error.message}`);
+                clearTimeout(startTimeout);
                 reject(error);
             });
 
@@ -107,9 +115,11 @@ function startSoundPlayer() {
                     logger.error(`Sound player stderr buffer: ${stderrBuffer}`);
                 }
                 soundPlayerProcess = null;
+                clearTimeout(startTimeout);
                 reject(new Error(`Sound player process exited unexpectedly with code ${code}`));
             });
         } else {
+            clearTimeout(startTimeout);
             resolve();
         }
     });
