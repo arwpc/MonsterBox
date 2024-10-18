@@ -73,6 +73,7 @@ function startSoundPlayer() {
                             console.log('Sound player is ready');
                             resolve();
                         } else if (jsonOutput.status === 'finished') {
+                            console.log(`Emitting soundFinished event for ${jsonOutput.sound_id}`);
                             eventEmitter.emit('soundFinished', jsonOutput.sound_id);
                         } else if (jsonOutput.status === 'error') {
                             console.error(`Sound player error: ${JSON.stringify(jsonOutput)}`);
@@ -191,8 +192,11 @@ function isSoundPlayerRunning() {
 
 function waitForSoundToFinish(soundId) {
     return new Promise((resolve) => {
+        console.log(`Waiting for sound ${soundId} to finish...`);
         eventEmitter.once('soundFinished', (finishedSoundId) => {
+            console.log(`Received soundFinished event for ${finishedSoundId}`);
             if (finishedSoundId === soundId) {
+                console.log(`Sound ${soundId} finished playing`);
                 resolve();
             }
         });
