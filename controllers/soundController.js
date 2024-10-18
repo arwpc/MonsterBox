@@ -182,7 +182,9 @@ function getSoundStatus(soundId) {
 }
 
 function isSoundPlayerRunning() {
-    return soundPlayerProcess !== null && !soundPlayerProcess.killed;
+    const isRunning = soundPlayerProcess !== null && !soundPlayerProcess.killed;
+    logger.info(`Checking if sound player is running: ${isRunning}`);
+    return isRunning;
 }
 
 module.exports = {
