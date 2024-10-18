@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 
 describe('Sound Playback Tests', function() {
-    this.timeout(60000); // 60 seconds timeout
+    this.timeout(10000); // 10 seconds timeout should be more than enough
 
     before(async function() {
         console.log('Starting sound player...');
@@ -20,7 +20,7 @@ describe('Sound Playback Tests', function() {
         }
     });
 
-    it('should start playing a sound file', async function() {
+    it('should play a sound file and detect its completion', async function() {
         try {
             const testSoundFile = path.join(__dirname, '..', 'public', 'sounds', 'test-sound.mp3');
             
@@ -35,20 +35,22 @@ describe('Sound Playback Tests', function() {
             console.log('Play result:', playResult);
             expect(playResult.status).to.equal('success');
 
-            console.log('Waiting for a short duration...');
-            await new Promise(resolve => setTimeout(resolve, 2000)); // Wait for 2 seconds
-
-            console.log('Checking sound status...');
-            const statusResult = await soundController.getSoundStatus('test-sound');
-            console.log('Status result:', statusResult);
-            expect(statusResult.status).to.equal('playing');
-
             console.log('Waiting for sound to finish...');
-            await new Promise(resolve => setTimeout(resolve, 5000)); // Wait for 5 seconds
+            await new Promise((resolve) => {
+                const checkInterval = setInterval(async () => {
+                    const status = await soundController.getSoundStatus('test-sound');
+                    console.log('Current sound status:', status);
+                    if (status.status !== 'playing') {
+                        clearInterval(checkInterval);
+                        resolve();
+                    }
+                }, 500); // Check every 500ms
+            });
 
-            console.log('Checking sound status again...');
-            const finalStatusResult = await soundController.getSoundStatus('test-sound');
-            console.log('Final status result:', finalStatusResult);
+            console.log('Sound playback completed');
+            const finalStatus = await soundController.getSoundStatus('test-sound');
+            console.log('Final sound status:', finalStatus);
+            expect(finalStatus.status).to.equal('not_found');
 
             console.log('Test completed successfully');
         } catch (error) {
@@ -67,10 +69,6 @@ describe('Sound Playback Tests', function() {
         } finally {
             const isStillRunning = soundController.isSoundPlayerRunning();
             console.log('Is sound player still running:', isStillRunning);
-            if (isStillRunning) {
-                console.log('Attempting to forcefully stop the sound player...');
-                // Add code here to forcefully stop the sound player if needed
-            }
         }
     });
 });
