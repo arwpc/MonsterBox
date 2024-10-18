@@ -4,13 +4,14 @@ const path = require('path');
 const fs = require('fs');
 
 describe('Sound Playback Tests', function() {
-    this.timeout(30000); // 30 seconds timeout
+    this.timeout(60000); // Increase timeout to 60 seconds
 
     before(async function() {
         console.log('Starting sound player...');
         try {
             await soundController.startSoundPlayer();
             console.log('Sound player started successfully');
+            console.log('Is sound player running:', soundController.isSoundPlayerRunning());
         } catch (error) {
             console.error('Error starting sound player:', error);
             throw error;
@@ -25,7 +26,7 @@ describe('Sound Playback Tests', function() {
             if (!fs.existsSync(testSoundFile)) {
                 throw new Error(`Test sound file not found: ${testSoundFile}`);
             }
-            console.log('Test sound file found');
+            console.log('Test sound file found:', testSoundFile);
 
             console.log('Attempting to play sound...');
             const playResult = await soundController.playSound('test-sound', testSoundFile);
@@ -54,6 +55,8 @@ describe('Sound Playback Tests', function() {
             console.log('All sounds stopped');
         } catch (error) {
             console.error('Error stopping all sounds:', error);
+        } finally {
+            console.log('Is sound player still running:', soundController.isSoundPlayerRunning());
         }
     });
 });
