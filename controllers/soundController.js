@@ -164,6 +164,7 @@ function sendCommand(command) {
 }
 
 function playSound(soundId, filePath) {
+    stopAllSounds();
     console.log(`Attempting to play sound: ${soundId}, file: ${filePath}`);
     return sendCommand(`PLAY|${soundId}|${filePath}`)
         .then(response => {
