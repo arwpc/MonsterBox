@@ -137,6 +137,17 @@ function sendCommand(command) {
             }, 
             reject 
         });
+
+        soundPlayerProcess.stdout.on('data', (data) => {
+            try {
+                if (messageQueue.has(id)) {
+                    messageQueue.delete(id);
+                    resolve();
+                }
+            } catch (error) {
+                console.error('Error parsing response:', error.message);
+            }
+        });
         
         soundPlayerProcess.stdin.write(fullCommand, (error) => {
             if (error) {
