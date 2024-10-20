@@ -137,6 +137,21 @@ function sendCommand(command) {
             }, 
             reject 
         });
+
+        soundPlayerProcess.stdout.on('data', (data) => {
+            try {
+                if (messageQueue.has(id)) {
+                    messageQueue.delete(id);
+                    resolve({
+                        success: 'success',
+                        status: 200,
+                        message: 'Command sent successfully'
+                    });
+                }
+            } catch (error) {
+                console.error('Error parsing response:', error.message);
+            }
+        });
         
         soundPlayerProcess.stdin.write(fullCommand, (error) => {
             if (error) {
