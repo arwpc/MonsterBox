@@ -5,7 +5,7 @@
   "main": "app.js",
   "scripts": {
     "start": "node --no-deprecation app.js",
-    "dev": "nodemon --no-deprecation app.js",
+    "dev": "nodemon --no-deprecation --trace-warnings app.js",
     "test": "mocha --require ./tests/setupTests.js tests --recursive",
     "test:sound": "mocha tests/sound-playback.test.js"
   },

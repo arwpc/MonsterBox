@@ -138,7 +138,7 @@ function sendCommand(command) {
             reject 
         });
 
-        soundPlayerProcess.stdout.on('data', (data) => {
+        soundPlayerProcess.stdout.once('data', (data) => {
             try {
                 if (messageQueue.has(id)) {
                     messageQueue.delete(id);
