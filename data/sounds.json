@@ -66,15 +66,6 @@
     "characterId": 2
   },
   {
-    "id": 11,
-    "name": "Roar",
-    "filename": "1727971773054-Roar.mp3",
-    "characterId": null,
-    "characterIds": [
-      1
-    ]
-  },
-  {
     "id": 12,
     "name": "Coffin Door",
     "filename": "1728146577509-coffin_door_creaking.mp3",
