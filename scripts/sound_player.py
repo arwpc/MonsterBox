@@ -85,6 +85,7 @@ class SoundPlayer:
         if sound_id in self.sounds:
             process = self.sounds[sound_id]
             is_playing = process.poll() is None
+            log_message({"status": "playing" if is_playing else "stopped", "message": "All sounds stopped"})
             return {"status": "playing" if is_playing else "stopped", "sound_id": sound_id}
         else:
             return {"status": "not_found", "sound_id": sound_id}
