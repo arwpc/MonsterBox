@@ -235,10 +235,6 @@ async function executeSound(step) {
         const playResult = await soundController.playSound(sound.id, filePath);
         logger.info(`Sound started playing: ${sound.name}, Result: ${JSON.stringify(playResult)}`);
 
-        if (!playResult.success) {
-            throw new Error(`Failed to start sound playback: ${playResult.message}`);
-        }
-
         if (step.concurrent !== "on") {
             // Wait for the sound to finish playing only if it's not concurrent
             await waitForSoundCompletion(sound.id);
