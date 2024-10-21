@@ -89,7 +89,6 @@ const scenePlayerController = {
             'Cache-Control': 'no-cache',
             'Connection': 'keep-alive'
         });
-        logger.log(`Response headers: ${JSON.stringify(res._headers)}`);
 
         // Send initial message to establish SSE connection
         sendSSEMessage(res, { message: 'SSE connection established' });
