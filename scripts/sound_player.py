@@ -50,7 +50,6 @@ class SoundPlayer:
         duration = end_time - start_time
         
         log_message({"status": "info", "message": f"MPG123 stdout: {stdout.decode('utf-8')}"})
-        log_message({"status": "info", "message": f"MPG123 stderr: {stderr.decode('utf-8')}"})
         
         if process.returncode != 0:
             log_message({"status": "error", "sound_id": sound_id, "file": file_path, "message": f"MPG123 error: {stderr.decode('utf-8')}"})
