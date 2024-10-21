@@ -64,7 +64,7 @@ app.use((req, res, next) => {
 // Use other routes
 app.use('/parts/led', ledRoutes);
 app.use('/parts/light', lightRoutes);
-// app.use('/parts/servo', servoRoutes);
+app.use('/parts/servo', servoRoutes);
 app.use('/parts/sensor', sensorRoutes);
 app.use('/parts/linear-actuator', linearActuatorRoutes);
 app.use('/parts', partRoutes.router); // Changed this line to apply partRoutes to /parts
