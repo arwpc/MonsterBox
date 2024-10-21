@@ -73,5 +73,14 @@
       3
     ],
     "characterId": null
+  },
+  {
+    "id": 13,
+    "name": "testsound",
+    "filename": "1729488781086-STREAMING-monster-roars-smartsound-fx-long-2-00-11.mp3",
+    "characterIds": [
+      2
+    ],
+    "characterId": null
   }
 ]
