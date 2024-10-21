@@ -137,27 +137,33 @@ function sendCommand(command) {
             }, 
             reject 
         });
-
-        soundPlayerProcess.stdout.once('data', (data) => {
-            try {
-                if (messageQueue.has(id)) {
-                    messageQueue.delete(id);
-                    resolve({
-                        success: 'success',
-                        status: 200,
-                        message: 'Command sent successfully'
-                    });
-                }
-            } catch (error) {
-                console.error('Error parsing response:', error.message);
-            }
-        });
         
         soundPlayerProcess.stdin.write(fullCommand, (error) => {
             if (error) {
                 console.error(`Error sending command: ${error.message}`);
                 messageQueue.delete(id);
                 reject(error);
+            } else {
+                soundPlayerProcess.stdout.once('data', (data) => {
+                    let stdoutBuffer = data.toString();
+                    try {
+                        if (messageQueue.has(id)) {
+                            messageQueue.delete(id);
+                            let lines = stdoutBuffer.split('\n');
+                            while (lines.length > 1) {
+                                let line = lines.shift();
+                                console.log(`Sound player output from Command: ${line}`);
+                                const jsonOutput = JSON.parse(line);
+                                resolve(jsonOutput);
+                            }
+                        }
+                    } catch (error) {
+                        resolve({
+                            status: 'error',
+                            message: `Command output Err: ${error.message}`
+                        });
+                    }
+                });
             }
         });
     });
