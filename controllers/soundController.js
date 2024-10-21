@@ -8,6 +8,7 @@ let soundPlayerProcess = null;
 const messageQueue = new Map();
 let messageId = 0;
 const eventEmitter = new EventEmitter();
+let playStatus = '';
 
 function setupAudioEnvironment() {
     const env = { ...process.env };
@@ -33,6 +34,7 @@ function setupAudioEnvironment() {
 
 function startSoundPlayer() {
     return new Promise((resolve, reject) => {
+        playStatus = '';
         if (!soundPlayerProcess) {
             const scriptPath = path.resolve(__dirname, '..', 'scripts', 'sound_player.py');
             console.log(`Starting sound player: ${scriptPath}`);
@@ -74,6 +76,7 @@ function startSoundPlayer() {
                             resolve();
                         } else if (jsonOutput.status === 'finished') {
                             console.log(`Emitting soundFinished event for ${jsonOutput.sound_id}`);
+                            playStatus = jsonOutput.status;
                             eventEmitter.emit('soundFinished', jsonOutput.sound_id);
                         } else if (jsonOutput.status === 'error') {
                             console.error(`Sound player error: ${JSON.stringify(jsonOutput)}`);
@@ -88,7 +91,7 @@ function startSoundPlayer() {
                             }
                         }
                     } catch (error) {
-                        console.debug(`Non-JSON output from sound player: ${line}`);
+                        console.log(`Non-JSON output from sound player: ${line}`);
                     }
                 }
                 stdoutBuffer = lines.join('\n');
@@ -154,6 +157,9 @@ function sendCommand(command) {
                                 let line = lines.shift();
                                 console.log(`Sound player output from Command: ${line}`);
                                 const jsonOutput = JSON.parse(line);
+                                if(jsonOutput.status === 'stopped' || jsonOutput.status === 'finished' || jsonOutput.status === 'not_found') {
+                                    playStatus = jsonOutput.status;
+                                }
                                 resolve(jsonOutput);
                             }
                         }
@@ -194,15 +200,19 @@ function stopAllSounds() {
 
 function getSoundStatus(soundId) {
     console.log(`Checking status of sound: ${soundId}`);
-    return sendCommand(`STATUS|${soundId}`)
-        .then(response => {
-            console.log(`Get sound status response: ${JSON.stringify(response)}`);
-            return response;
-        })
-        .catch(error => {
-            console.error(`Error getting sound status: ${error.message}`);
-            throw error;
-        });
+    // return sendCommand(`STATUS|${soundId}`)
+    //     .then(response => {
+    //         console.log(`Get sound status response: ${JSON.stringify(response)}`);
+    //         return response;
+    //     })
+    //     .catch(error => {
+    //         console.error(`Error getting sound status: ${error.message}`);
+    //         throw error;
+    //     });
+    sendCommand(`STATUS|${soundId}`);
+    return {
+        status: playStatus
+    };
 }
 
 function isSoundPlayerRunning() {
