@@ -92,45 +92,6 @@ router.post('/', async (req, res) => {
 });
 
 
-router.post('/:id', async (req, res) => {
-    try {
-        logger.debug('Update Servo Route - Request params:', req.params);
-        logger.debug('Update Servo Route - Request body:', req.body);
-
-        const id = parseInt(req.params.id, 10);
-        logger.debug('Updating Servo with ID:', id, 'Type:', typeof id);
-        if (isNaN(id)) {
-            throw new Error('Invalid part ID');
-        }
-
-        const updatedServo = {
-            id: id,
-            name: req.body.name,
-            type: 'servo',
-            characterId: parseInt(req.body.characterId, 10),
-            pin: parseInt(req.body.pin, 10) || 3,
-            usePCA9685: req.body.usePCA9685 === 'on',
-            channel: parseInt(req.body.channel, 10) || null,
-            minPulse: parseInt(req.body.minPulse, 10) || 500,
-            maxPulse: parseInt(req.body.maxPulse, 10) || 2500,
-            defaultAngle: parseInt(req.body.defaultAngle, 10) || 90,
-            servoType: req.body.servoType || 'Standard'
-        };
-
-
-        logger.debug('Updated Servo data:', updatedServo);
-        const result = await partService.updatePart(id, updatedServo);
-        logger.info('Updated Servo:', result);
-
-        res.redirect(`/parts?characterId=${updatedServo.characterId}`);
-
-    } catch (error) {
-        logger.error('Error updating Servo:', error);
-        res.status(500).send('An error occurred while updating the Servo: ' + error.message);
-    }
-});
-
-
 router.post('/test', async (req, res) => {
     try {
         const { pin, angle, duration, usePCA9685, channel, minPulse, maxPulse } = req.body;
@@ -173,6 +134,44 @@ router.post('/test', async (req, res) => {
     } catch (error) {
         logger.error('Error testing servo:', error);
         res.status(500).json({ success: false, message: 'An error occurred while testing the servo', error: error.message });
+    }
+});
+
+router.post('/:id', async (req, res) => {
+    try {
+        logger.debug('Update Servo Route - Request params:', req.params);
+        logger.debug('Update Servo Route - Request body:', req.body);
+
+        const id = parseInt(req.params.id, 10);
+        logger.debug('Updating Servo with ID:', id, 'Type:', typeof id);
+        if (isNaN(id)) {
+            throw new Error('Invalid part ID');
+        }
+
+        const updatedServo = {
+            id: id,
+            name: req.body.name,
+            type: 'servo',
+            characterId: parseInt(req.body.characterId, 10),
+            pin: parseInt(req.body.pin, 10) || 3,
+            usePCA9685: req.body.usePCA9685 === 'on',
+            channel: parseInt(req.body.channel, 10) || null,
+            minPulse: parseInt(req.body.minPulse, 10) || 500,
+            maxPulse: parseInt(req.body.maxPulse, 10) || 2500,
+            defaultAngle: parseInt(req.body.defaultAngle, 10) || 90,
+            servoType: req.body.servoType || 'Standard'
+        };
+
+
+        logger.debug('Updated Servo data:', updatedServo);
+        const result = await partService.updatePart(id, updatedServo);
+        logger.info('Updated Servo:', result);
+
+        res.redirect(`/parts?characterId=${updatedServo.characterId}`);
+
+    } catch (error) {
+        logger.error('Error updating Servo:', error);
+        res.status(500).send('An error occurred while updating the Servo: ' + error.message);
     }
 });
 
