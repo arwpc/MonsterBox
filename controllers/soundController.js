@@ -8,7 +8,7 @@ let soundPlayerProcess = null;
 const messageQueue = new Map();
 let messageId = 0;
 const eventEmitter = new EventEmitter();
-let playStatus = '';
+let playStatus = {};
 
 function setupAudioEnvironment() {
     const env = { ...process.env };
@@ -34,7 +34,6 @@ function setupAudioEnvironment() {
 
 function startSoundPlayer() {
     return new Promise((resolve, reject) => {
-        playStatus = '';
         if (!soundPlayerProcess) {
             const scriptPath = path.resolve(__dirname, '..', 'scripts', 'sound_player.py');
             console.log(`Starting sound player: ${scriptPath}`);
@@ -76,7 +75,9 @@ function startSoundPlayer() {
                             resolve();
                         } else if (jsonOutput.status === 'finished') {
                             console.log(`Emitting soundFinished event for ${jsonOutput.sound_id}`);
-                            playStatus = jsonOutput.status;
+                            playStatus = {
+                                [jsonOutput.sound_id]: jsonOutput.status
+                            };
                             eventEmitter.emit('soundFinished', jsonOutput.sound_id);
                         } else if (jsonOutput.status === 'error') {
                             console.error(`Sound player error: ${JSON.stringify(jsonOutput)}`);
@@ -158,7 +159,9 @@ function sendCommand(command) {
                                 console.log(`Sound player output from Command: ${line}`);
                                 const jsonOutput = JSON.parse(line);
                                 if(jsonOutput.status === 'stopped' || jsonOutput.status === 'finished' || jsonOutput.status === 'not_found') {
-                                    playStatus = jsonOutput.status;
+                                    playStatus = {
+                                        [jsonOutput.sound_id]: jsonOutput.status
+                                    }
                                 }
                                 resolve(jsonOutput);
                             }
@@ -176,6 +179,7 @@ function sendCommand(command) {
 }
 
 function playSound(soundId, filePath) {
+    playStatus = {[soundId]: ''};
     console.log(`Attempting to play sound: ${soundId}, file: ${filePath}`);
     return sendCommand(`PLAY|${soundId}|${filePath}`)
         .then(response => {
@@ -211,7 +215,7 @@ function getSoundStatus(soundId) {
     //     });
     sendCommand(`STATUS|${soundId}`);
     return {
-        status: playStatus
+        status: playStatus[soundId]
     };
 }
 
