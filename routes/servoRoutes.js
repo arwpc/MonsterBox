@@ -99,13 +99,13 @@ router.post('/test', async (req, res) => {
         const scriptPath = path.join(__dirname, '..', 'scripts', 'servo_control.py');
 
         const args = [
-            pin.toString(),
-            angle.toString(),
-            duration.toString(),
+            String(pin),
+            String(angle),
+            String(duration),
             usePCA9685 ? 'true' : 'false',
-            (channel || '').toString(),
-            minPulse.toString(),
-            maxPulse.toString()
+            String(channel || ''),
+            String(minPulse),
+            String(maxPulse)
         ];
 
         const process = spawn('python3', [scriptPath, ...args]);
