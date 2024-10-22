@@ -91,6 +91,46 @@ router.post('/', async (req, res) => {
     }
 });
 
+/**
+ * @params
+ * command: start | stop
+ * pcaChannel: number
+ */
+router.post('/head-track', async (req, res) => {
+    try {
+        const { command, pcaChannel } = req.body;
+
+        const scriptPath = path.join(__dirname, '..', 'scripts', 'head_track.py');
+        const args = [command, pcaChannel.toString()];
+
+        const process = spawn('python3', [scriptPath, ...args]);
+
+        let stdout = '';
+        let stderr = '';
+
+        process.stdout.on('data', (data) => {
+            stdout += data.toString();
+            logger.log(`Python script output: ${data}`);
+        });
+
+        process.stderr.on('data', (data) => {
+            stderr += data.toString();
+            logger.error(`Python script error: ${data}`);
+        });
+
+        process.on('close', (code) => {
+            logger.log(`Python script exited with code ${code}`);
+            if (code === 0) {
+                res.json({ success: true, message: 'Head tracking process completed', output: stdout });
+            } else {
+                res.status(500).json({ success: false, message: 'Head tracking process failed', error: stderr });
+            }
+        });
+    } catch (error) {
+        logger.debug('Error executing head tracking script:', error);
+        res.status(500).json({ success: false, message: 'An error occurred during head tracking', error: error.message });
+    }
+});
 
 router.post('/test', async (req, res) => {
     try {
