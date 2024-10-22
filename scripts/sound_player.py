@@ -30,7 +30,7 @@ class SoundPlayer:
             
             # Use MPG123 to play the MP3 file
             log_message({"status": "info", "message": f"Executing mpg123 command for file: {file_path}"})
-            process = subprocess.Popen(['mpg123', '-v', file_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            process = subprocess.Popen(['mpg123', '-v', '-k 10', '-a hw:0,0', file_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             
             self.sounds[sound_id] = process
             log_message({"status": "playing", "sound_id": sound_id, "file": file_path})
@@ -95,7 +95,7 @@ class SoundPlayer:
                 raise FileNotFoundError(f"Sound file not found: {file_path}")
             
             # Use MPG123 to get the duration of the MP3 file
-            result = subprocess.run(['mpg123', '-t', file_path], capture_output=True, text=True)
+            result = subprocess.run(['mpg123', '-t', '-k 10', file_path], capture_output=True, text=True)
             duration_line = [line for line in result.stderr.split('\n') if 'Time:' in line][0]
             duration = float(duration_line.split()[-1])
             return {"status": "success", "duration": duration}
