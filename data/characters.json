@@ -1,39 +1,26 @@
 [
   {
     "id": 1,
-    "char_name": "Baphomet 2024",
-    "char_description": "The Dark Lord of the Underworld",
-    "parts": [
-      12,
-      13,
-      14,
-      18,
-      19
-    ],
-    "sounds": [
-      1,
-      2,
-      3
-    ],
-    "image": "7e9bc5165bff51ce65c4c2e63ab2f26b"
+    "char_name": "Baphomet",
+    "char_description": "The dark lord of the underworld, Baphomet is here to test your faith",
+    "parts": [],
+    "sounds": [],
+    "image": "86f4a8289c05a5456813a5f107fd1aac"
   },
   {
     "id": 2,
+    "char_name": "Coffin Breaker",
+    "char_description": "Our spanish lady has been trapped in the coffin for a thousand years, and now she's breaking out!",
+    "parts": [],
+    "sounds": [],
+    "image": "4bb0547f2f26bef028a80b9071365227"
+  },
+  {
+    "id": 3,
     "char_name": "PumpkinHead",
-    "char_description": "Scary monster who owns the pumpkin patch",
-    "parts": [
-      12
-    ],
-    "sounds": [
-      4,
-      5,
-      6,
-      7,
-      8,
-      9,
-      10,
-      11
-    ],
-    "image": "c5081cacd8c3bf8f75722278190bcdcb"
+    "char_description": "The pumpkin patch has been full of the little guys, but who minds them? Pumpkinhead!",
+    "parts": [],
+    "sounds": [],
+    "image": "c61727bf720f20508d93c2c0af5aa498"
   }
 ]
