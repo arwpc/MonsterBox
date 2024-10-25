@@ -373,7 +373,7 @@
             // Audio preview controls
             document.getElementById('previewPlay').onclick = async function() {
                 const settings = {
-                    voiceId: document.getElementById('voiceSelect').value,
+                    speaker_id: document.getElementById('voiceSelect').value,
                     text: document.getElementById('testText').value,
                     pitch: parseInt(document.getElementById('pitch').value),
                     speed: parseFloat(document.getElementById('speed').value),
@@ -415,7 +415,7 @@
                 const characterId = document.querySelector('input[name="id"]').value;
                 const settings = {
                     characterId,
-                    voiceId: document.getElementById('voiceSelect').value,
+                    speaker_id: document.getElementById('voiceSelect').value,
                     settings: {
                         pitch: parseInt(document.getElementById('pitch').value),
                         speed: parseFloat(document.getElementById('speed').value),
@@ -445,7 +445,7 @@
                 const characterId = document.querySelector('input[name="id"]').value;
                 const settings = {
                     characterId,
-                    voiceId: document.getElementById('voiceSelect').value,
+                    speaker_id: document.getElementById('voiceSelect').value,
                     text: document.getElementById('testText').value,
                     name: `${document.getElementById('char_name').value} - Voice Sample`,
                     pitch: parseInt(document.getElementById('pitch').value),
@@ -483,7 +483,7 @@
                     characterId,
                     presetName,
                     settings: {
-                        voiceId: document.getElementById('voiceSelect').value,
+                        speaker_id: document.getElementById('voiceSelect').value,
                         pitch: parseInt(document.getElementById('pitch').value),
                         speed: parseFloat(document.getElementById('speed').value),
                         volume: parseInt(document.getElementById('volume').value),
@@ -544,7 +544,7 @@
                     const voice = await response.json();
                     if (voice && voice.presets && voice.presets[presetName]) {
                         const settings = voice.presets[presetName];
-                        document.getElementById('voiceSelect').value = settings.voiceId;
+                        document.getElementById('voiceSelect').value = settings.speaker_id;
                         document.getElementById('pitch').value = settings.pitch;
                         document.getElementById('speed').value = settings.speed;
                         document.getElementById('volume').value = settings.volume;
