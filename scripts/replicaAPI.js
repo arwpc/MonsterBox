@@ -31,10 +31,18 @@ class ReplicaAPI {
             }
 
             const response = await this.axiosInstance.get('/library/voices');
+            console.log('Replica API voice response:', JSON.stringify(response.data, null, 2));
 
             if (response.data && response.data.items) {
-                this.voicesCache = response.data.items;
-                return response.data.items;
+                // Transform the voice items to include both uuid and speaker_id
+                const transformedVoices = response.data.items.map(voice => ({
+                    ...voice,
+                    id: voice.uuid, // Keep uuid as id for compatibility
+                    speaker_id: voice.default_style?.speaker_id || voice.uuid
+                }));
+
+                this.voicesCache = transformedVoices;
+                return transformedVoices;
             } else {
                 throw new Error('Invalid API response format');
             }
@@ -65,28 +73,34 @@ class ReplicaAPI {
         try {
             // Get the voice details to ensure we're using a valid speaker_id
             const voices = await this.getVoices();
-            const voice = voices.find(v => v.uuid === params.voiceId);
+            console.log('Looking for voice with ID:', params.voiceId);
             
-            // If no voice found with that UUID, try matching by speaker_id
-            if (!voice && !voices.some(v => v.default_style?.speaker_id === params.voiceId)) {
+            const voice = voices.find(v => v.uuid === params.voiceId);
+            if (!voice) {
                 throw new Error(`Voice not found with ID: ${params.voiceId}`);
             }
 
+            // Ensure bitrate is one of the supported values
+            const bitRate = params.options?.bitRate || 128;
+            if (![48, 128, 320].includes(bitRate)) {
+                throw new Error('Wrong bit rate. Supported values: 48, 128, 320.');
+            }
+
             const requestBody = {
-                speaker_id: voice ? voice.default_style?.speaker_id || voice.uuid : params.voiceId,
+                speaker_id: voice.default_style?.speaker_id || voice.uuid,
                 text: params.text,
                 model_chain: params.options?.modelChain || 'vox_1_0',
                 language_code: params.options?.languageCode || 'en',
                 extensions: ['mp3'],
-                sample_rate: 44100,
-                bit_rate: 128,
-                global_pace: 1,
-                global_pitch: 0,
-                global_volume: 0,
-                auto_pitch: true
+                sample_rate: params.options?.sampleRate || 44100,
+                bit_rate: bitRate,
+                global_pace: params.options?.globalPace || 1,
+                global_pitch: params.options?.globalPitch || 0,
+                global_volume: params.options?.globalVolume || 0,
+                auto_pitch: params.options?.autoPitch ?? true
             };
 
-            // Add optional metadata and tags if provided
+            // Add optional metadata and tags
             if (params.options?.userMetadata) {
                 requestBody.user_metadata = params.options.userMetadata;
             }
@@ -94,11 +108,6 @@ class ReplicaAPI {
             if (params.options?.userTags) {
                 requestBody.user_tags = params.options.userTags;
             }
-
-            if (params.options?.globalPace != null) requestBody.global_pace = params.options.globalPace;
-            if (params.options?.globalPitch != null) requestBody.global_pitch = params.options.globalPitch;
-            if (params.options?.globalVolume != null) requestBody.global_volume = params.options.globalVolume;
-            if (params.options?.autoPitch != null) requestBody.auto_pitch = params.options.autoPitch;
 
             console.log('Making TTS request with body:', JSON.stringify(requestBody, null, 2));
 
@@ -112,13 +121,11 @@ class ReplicaAPI {
 
             return response.data;
         } catch (error) {
-            const errorMsg = error.response?.data?.error || error.message;
-            console.error(`Error generating text to speech: ${errorMsg}`);
-
-            if (error.response?.data) {
+            // Check if it's an API error with specific error message
+            if (error.response?.data?.error) {
                 console.error('Full error response:', JSON.stringify(error.response.data, null, 2));
+                throw new Error(error.response.data.error);
             }
-
             throw error;
         }
     }

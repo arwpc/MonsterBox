@@ -1,0 +1,396 @@
+<!-- Voice Selector Modal -->
+<div id="voiceModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Select a voice</h2>
+        
+        <!-- Recently Used Section -->
+        <div class="recently-used">
+            <label>Recently used</label>
+            <div class="voice-chips" id="recentlyUsedVoices">
+                <!-- Recently used voices will be populated here -->
+            </div>
+        </div>
+
+        <!-- Search and Filters -->
+        <div class="search-filters">
+            <div class="search-bar">
+                <input type="text" id="voiceSearch" placeholder="Search...">
+            </div>
+            <div class="filters">
+                <button class="filter-btn" data-filter="gender">
+                    <i class="fas fa-venus-mars"></i> Gender
+                </button>
+                <button class="filter-btn" data-filter="style">
+                    <i class="fas fa-theater-masks"></i> Style
+                </button>
+                <button class="filter-btn" data-filter="accent">
+                    <i class="fas fa-globe"></i> Accent
+                </button>
+                <button class="filter-btn" data-filter="age">
+                    <i class="fas fa-user"></i> Age
+                </button>
+            </div>
+        </div>
+
+        <!-- Filter Dropdowns -->
+        <div class="filter-dropdowns">
+            <div class="filter-dropdown" id="genderFilter">
+                <div class="filter-option"><input type="checkbox" value="male"> Male</div>
+                <div class="filter-option"><input type="checkbox" value="female"> Female</div>
+                <div class="filter-option"><input type="checkbox" value="neutral"> Neutral</div>
+            </div>
+            <div class="filter-dropdown" id="styleFilter">
+                <div class="filter-option"><input type="checkbox" value="neutral"> Neutral</div>
+                <div class="filter-option"><input type="checkbox" value="happy"> Happy</div>
+                <div class="filter-option"><input type="checkbox" value="sad"> Sad</div>
+                <div class="filter-option"><input type="checkbox" value="angry"> Angry</div>
+                <div class="filter-option"><input type="checkbox" value="fearful"> Fearful</div>
+            </div>
+            <div class="filter-dropdown" id="accentFilter">
+                <div class="filter-option"><input type="checkbox" value="american"> American</div>
+                <div class="filter-option"><input type="checkbox" value="british"> British</div>
+                <div class="filter-option"><input type="checkbox" value="australian"> Australian</div>
+                <div class="filter-option"><input type="checkbox" value="indian"> Indian</div>
+            </div>
+            <div class="filter-dropdown" id="ageFilter">
+                <div class="filter-option"><input type="checkbox" value="young"> Young (18-34)</div>
+                <div class="filter-option"><input type="checkbox" value="middle"> Middle-aged (35-54)</div>
+                <div class="filter-option"><input type="checkbox" value="senior"> Senior (55+)</div>
+            </div>
+        </div>
+
+        <!-- Voice List -->
+        <div class="voice-list">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name <i class="fas fa-sort"></i></th>
+                        <th>Gender <i class="fas fa-sort"></i></th>
+                        <th>Age <i class="fas fa-sort"></i></th>
+                        <th>Accent <i class="fas fa-sort"></i></th>
+                        <th>Styles</th>
+                    </tr>
+                </thead>
+                <tbody id="voiceTableBody">
+                    <!-- Voice entries will be populated here -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Voice Preview Section -->
+        <div class="voice-preview">
+            <div class="preview-controls">
+                <textarea id="previewText" placeholder="Type text to preview...">I am your monster, hear me roar!</textarea>
+                <button id="previewPlay" class="preview-btn">
+                    <i class="fas fa-play"></i> Preview
+                </button>
+                <div id="waveform"></div>
+            </div>
+        </div>
+
+        <div class="modal-actions">
+            <button id="selectVoice" class="primary-btn">Select Voice</button>
+            <button class="secondary-btn close-btn">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Base Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+.modal-content {
+    background-color: #1a1a1a;
+    color: #ffffff;
+    margin: 2% auto;
+    padding: 20px;
+    width: 90%;
+    max-width: 1200px;
+    border-radius: 8px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* Close Button */
+.close {
+    color: #fff;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.close:hover {
+    color: #ddd;
+}
+
+/* Recently Used Section */
+.recently-used {
+    margin: 20px 0;
+    padding: 10px 0;
+    border-bottom: 1px solid #333;
+}
+
+.voice-chips {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.voice-chip {
+    background: #333;
+    padding: 5px 15px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.voice-chip:hover {
+    background: #444;
+}
+
+/* Search and Filters */
+.search-filters {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    margin: 20px 0;
+}
+
+.search-bar {
+    flex: 1;
+}
+
+.search-bar input {
+    width: 100%;
+    padding: 10px 15px;
+    background: #333;
+    border: none;
+    border-radius: 4px;
+    color: #fff;
+}
+
+.filters {
+    display: flex;
+    gap: 10px;
+}
+
+.filter-btn {
+    background: #333;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.filter-btn:hover {
+    background: #444;
+}
+
+/* Filter Dropdowns */
+.filter-dropdowns {
+    margin: 10px 0;
+}
+
+.filter-dropdown {
+    display: none;
+    background: #333;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+.filter-option {
+    padding: 5px 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Voice List */
+.voice-list {
+    margin: 20px 0;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #262626;
+}
+
+th {
+    background: #333;
+    padding: 12px;
+    text-align: left;
+    cursor: pointer;
+}
+
+th i {
+    margin-left: 5px;
+    font-size: 0.8em;
+}
+
+td {
+    padding: 12px;
+    border-bottom: 1px solid #333;
+}
+
+tr:hover {
+    background: #2a2a2a;
+}
+
+/* Style Buttons */
+.style-btn {
+    background: #444;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    color: #fff;
+    margin-right: 5px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.style-btn i {
+    font-size: 0.8em;
+}
+
+.style-btn:hover {
+    background: #555;
+}
+
+/* Voice Preview Section */
+.voice-preview {
+    margin: 20px 0;
+    padding: 20px;
+    background: #262626;
+    border-radius: 4px;
+}
+
+.preview-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#previewText {
+    width: 100%;
+    padding: 10px;
+    background: #333;
+    border: none;
+    border-radius: 4px;
+    color: #fff;
+    min-height: 80px;
+    resize: vertical;
+}
+
+.preview-btn {
+    background: #007bff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    width: fit-content;
+}
+
+.preview-btn:hover {
+    background: #0069d9;
+}
+
+#waveform {
+    width: 100%;
+    height: 60px;
+    background: #333;
+    border-radius: 4px;
+}
+
+/* Modal Actions */
+.modal-actions {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.primary-btn {
+    background: #007bff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    color: #fff;
+    cursor: pointer;
+}
+
+.primary-btn:hover {
+    background: #0069d9;
+}
+
+.secondary-btn {
+    background: #6c757d;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    color: #fff;
+    cursor: pointer;
+}
+
+.secondary-btn:hover {
+    background: #5a6268;
+}
+
+/* Accessibility and Focus Styles */
+input:focus,
+button:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px #007bff;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .search-filters {
+        flex-direction: column;
+    }
+    
+    .filters {
+        width: 100%;
+        overflow-x: auto;
+        padding-bottom: 10px;
+    }
+    
+    .voice-list {
+        overflow-x: auto;
+    }
+    
+    table {
+        min-width: 600px;
+    }
+}
+</style>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">

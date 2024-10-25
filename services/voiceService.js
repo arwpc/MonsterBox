@@ -54,19 +54,23 @@ class VoiceService {
         }
     }
 
-    async generateSpeech(voiceId, text, options = {}) {
+    async generateSpeech(speaker_id, text, options = {}) {
         try {
+            if (!speaker_id || typeof speaker_id !== 'string') {
+                throw new Error('speaker_id parameter is required and must be a string');
+            }
+
             const params = {
                 text,
-                voiceId,
+                voiceId: speaker_id, // Map speaker_id to voiceId for Replica API
                 options: {
-                    modelChain: 'vox_1_0',
-                    extensions: ['mp3'], 
-                    sampleRate: 44100,
-                    bitRate: 128,
-                    speed: options.speed || 1.0,
-                    pitch: options.pitch || 0,
-                    volume: options.volume || 0,
+                    modelChain: options.modelId || 'vox_1_0',
+                    extensions: ['mp3'],
+                    sampleRate: options.sampleRate || 44100,
+                    bitRate: options.bitRate || 128,
+                    globalPace: options.speed || 1.0,
+                    globalPitch: options.pitch || 0,
+                    globalVolume: options.volume || 0,
                     autoPitch: options.autoPitch !== undefined ? options.autoPitch : true,
                     languageCode: options.languageCode || 'en',
                     userMetadata: options.userMetadata,
@@ -74,7 +78,10 @@ class VoiceService {
                 }
             };
 
+            logger.info(`Generating speech with params: ${JSON.stringify(params)}`);
             const response = await this.replicaAPI.textToSpeech(params);
+            
+            logger.info(`Speech generated successfully: ${JSON.stringify(response)}`);
             return {
                 url: response.url,
                 jobId: response.uuid,

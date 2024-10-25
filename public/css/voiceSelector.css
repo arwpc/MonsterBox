@@ -1,0 +1,323 @@
+/* Base Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+.modal-content {
+    background-color: #1a1a1a;
+    color: #ffffff;
+    margin: 2% auto;
+    padding: 20px;
+    width: 90%;
+    max-width: 1200px;
+    border-radius: 8px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* Close Button */
+.close {
+    color: #fff;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.close:hover {
+    color: #ddd;
+}
+
+/* Voice Configuration */
+.voice-config {
+    margin: 20px 0;
+}
+
+.voice-select-container {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin: 10px 0;
+}
+
+.voice-select-container select {
+    flex: 1;
+    padding: 8px;
+    background: #333;
+    color: #fff;
+    border: 1px solid #555;
+    border-radius: 4px;
+}
+
+#selectVoiceBtn {
+    white-space: nowrap;
+    background: #444;
+    color: #fff;
+    border: 1px solid #555;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+#selectVoiceBtn:hover {
+    background: #555;
+}
+
+/* Recently Used Section */
+.recently-used {
+    margin: 20px 0;
+    padding: 10px 0;
+    border-bottom: 1px solid #333;
+}
+
+.voice-chips {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.voice-chip {
+    background: #333;
+    padding: 5px 15px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.voice-chip:hover {
+    background: #444;
+}
+
+/* Search and Filters */
+.search-filters {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    margin: 20px 0;
+}
+
+.search-bar {
+    flex: 1;
+}
+
+.search-bar input {
+    width: 100%;
+    padding: 10px 15px;
+    background: #333;
+    border: none;
+    border-radius: 4px;
+    color: #fff;
+}
+
+.filters {
+    display: flex;
+    gap: 10px;
+}
+
+.filter-btn {
+    background: #333;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.filter-btn:hover {
+    background: #444;
+}
+
+/* Filter Dropdowns */
+.filter-dropdowns {
+    margin: 10px 0;
+}
+
+.filter-dropdown {
+    display: none;
+    background: #333;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+.filter-option {
+    padding: 5px 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Voice List */
+.voice-list {
+    margin: 20px 0;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #262626;
+}
+
+th {
+    background: #333;
+    padding: 12px;
+    text-align: left;
+    cursor: pointer;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+th i {
+    margin-left: 5px;
+    font-size: 0.8em;
+}
+
+td {
+    padding: 12px;
+    border-bottom: 1px solid #333;
+}
+
+tr {
+    transition: background-color 0.2s;
+}
+
+tr:hover {
+    background: #2a2a2a;
+}
+
+tr.selected {
+    background: #1a3f5f;
+}
+
+/* Style Buttons */
+.style-btn {
+    background: #444;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    color: #fff;
+    margin-right: 5px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: background-color 0.2s;
+}
+
+.style-btn i {
+    font-size: 0.8em;
+}
+
+.style-btn:hover {
+    background: #555;
+}
+
+.style-btn.playing {
+    background: #007bff;
+}
+
+/* Voice Preview Section */
+.voice-preview {
+    margin: 20px 0;
+    padding: 20px;
+    background: #262626;
+    border-radius: 4px;
+}
+
+.preview-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#previewText {
+    width: 100%;
+    padding: 10px;
+    background: #333;
+    border: none;
+    border-radius: 4px;
+    color: #fff;
+    min-height: 80px;
+    resize: vertical;
+}
+
+.preview-btn {
+    background: #007bff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    width: fit-content;
+    transition: background-color 0.2s;
+}
+
+.preview-btn:hover {
+    background: #0069d9;
+}
+
+#waveform {
+    width: 100%;
+    height: 60px;
+    background: #333;
+    border-radius: 4px;
+}
+
+/* Modal Actions */
+.modal-actions {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #333;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.primary-btn {
+    background: #007bff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.primary-btn:hover {
+    background: #0069d9;
+}
+
+.secondary-btn {
+    background: #6c757d;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.secondary-btn:hover {
+    background: #5a6268;
+}

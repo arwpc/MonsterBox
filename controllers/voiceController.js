@@ -1,96 +1,89 @@
 const voiceService = require('../services/voiceService');
-const soundService = require('../services/soundService');
 const logger = require('../scripts/logger');
 
-class VoiceController {
-    async getAvailableVoices(req, res) {
-        try {
-            const voices = await voiceService.getAvailableVoices();
-            res.json(voices);
-        } catch (error) {
-            logger.error(`Error fetching available voices: ${error.message}`);
-            res.status(500).json({ error: error.message });
-        }
+exports.getAvailableVoices = async (req, res) => {
+    try {
+        const voices = await voiceService.getAvailableVoices();
+        res.json(voices);
+    } catch (error) {
+        logger.error(`Error fetching available voices: ${error.message}`);
+        res.status(500).json({ error: error.message });
     }
+};
 
-    async getVoiceSettings(req, res) {
-        try {
-            const { characterId } = req.params;
-            const voice = await voiceService.getVoiceByCharacterId(characterId);
-            res.json(voice || {});
-        } catch (error) {
-            logger.error(`Error fetching voice settings: ${error.message}`);
-            res.status(500).json({ error: error.message });
-        }
+exports.getVoiceSettings = async (req, res) => {
+    try {
+        const { characterId } = req.params;
+        const voice = await voiceService.getVoiceByCharacterId(characterId);
+        res.json(voice || {});
+    } catch (error) {
+        logger.error(`Error fetching voice settings: ${error.message}`);
+        res.status(500).json({ error: error.message });
     }
+};
 
-    async saveVoiceSettings(req, res) {
-        try {
-            const voiceData = req.body;
-            const savedVoice = await voiceService.saveVoice(voiceData);
-            res.json(savedVoice);
-        } catch (error) {
-            logger.error(`Error saving voice settings: ${error.message}`);
-            res.status(500).json({ error: error.message });
-        }
+exports.saveVoiceSettings = async (req, res) => {
+    try {
+        const voiceData = {
+            characterId: req.body.characterId,
+            speaker_id: req.body.speaker_id,
+            settings: req.body.settings
+        };
+        const savedVoice = await voiceService.saveVoice(voiceData);
+        res.json(savedVoice);
+    } catch (error) {
+        logger.error(`Error saving voice settings: ${error.message}`);
+        res.status(500).json({ error: error.message });
     }
+};
 
-    async generateSpeech(req, res) {
-        try {
-            const { speaker_id, text, characterId, ...options } = req.body;
-            
-            // Add session metadata
-            options.userMetadata = {
-                session_id: req.session?.id || 'default',
-                character_id: characterId
-            };
+exports.generateSpeech = async (req, res) => {
+    try {
+        const { speaker_id, text, options, style } = req.body;
+        console.log('Generating speech with options:', { speaker_id, text, options, style });
 
-            const speech = await voiceService.generateSpeech(speaker_id, text, options);
-            res.json(speech);
-        } catch (error) {
-            logger.error(`Error generating speech: ${error.message}`);
-            res.status(500).json({ error: error.message });
-        }
+        // Transform style into options object expected by voiceService
+        const speechOptions = {
+            ...options,
+            modelChain: options?.modelId || 'vox_2_0',
+            globalPace: options?.speed || 1.0,
+            globalPitch: options?.pitch || 0,
+            globalVolume: options?.volume || 0,
+            style
+        };
+
+        const result = await voiceService.generateSpeech(speaker_id, text, speechOptions);
+        console.log('Speech generation result:', result);
+        res.json(result);
+    } catch (error) {
+        logger.error(`Error generating speech: ${error.message}`);
+        res.status(500).json({ error: error.message });
     }
+};
 
-    async saveToSoundLibrary(req, res) {
-        try {
-            const { speaker_id, text, characterId, name, ...options } = req.body;
-            
-            // Add session and sound library metadata
-            options.userMetadata = {
-                session_id: req.session?.id || 'default',
-                character_id: characterId,
-                sound_name: name,
-                library_save: true
-            };
-
-            const speech = await voiceService.generateSpeech(speaker_id, text, options);
-            
-            // Save the generated speech to the sound library
-            const sound = await soundService.saveSound({
-                name,
-                file: speech.url,
-                characterId
-            });
-
-            res.json(sound);
-        } catch (error) {
-            logger.error(`Error saving to sound library: ${error.message}`);
-            res.status(500).json({ error: error.message });
-        }
+exports.saveToLibrary = async (req, res) => {
+    try {
+        const { speaker_id, text, name, options } = req.body;
+        const result = await voiceService.saveToLibrary({
+            speaker_id,
+            text,
+            name,
+            options
+        });
+        res.json(result);
+    } catch (error) {
+        logger.error(`Error saving to library: ${error.message}`);
+        res.status(500).json({ error: error.message });
     }
+};
 
-    async saveVoicePreset(req, res) {
-        try {
-            const { characterId, presetName, settings } = req.body;
-            const voice = await voiceService.saveVoicePreset(characterId, presetName, settings);
-            res.json(voice);
-        } catch (error) {
-            logger.error(`Error saving voice preset: ${error.message}`);
-            res.status(500).json({ error: error.message });
-        }
+exports.savePreset = async (req, res) => {
+    try {
+        const { characterId, presetName, settings } = req.body;
+        const voice = await voiceService.saveVoicePreset(characterId, presetName, settings);
+        res.json(voice);
+    } catch (error) {
+        logger.error(`Error saving voice preset: ${error.message}`);
+        res.status(500).json({ error: error.message });
     }
-}
-
-module.exports = new VoiceController();
+};
