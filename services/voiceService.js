@@ -54,22 +54,33 @@ class VoiceService {
         }
     }
 
-    async generateSpeech(voiceId, text, params = {}) {
+    async generateSpeech(voiceId, text, options = {}) {
         try {
-            const response = await this.replicaAPI.textToSpeech({
+            const params = {
                 text,
                 voiceId,
                 options: {
-                    speaking_rate: params.speed || 1.0,
-                    pitch: params.pitch || 0,
-                    volume: params.volume || 0,
-                    sample_rate: params.sampleRate || 44100,
-                    bit_rate: params.bitRate || 192,
-                    model_id: params.modelId || 'vox_2_0',
-                    output_format: params.outputFormat || 'mp3'
+                    modelChain: 'vox_1_0',
+                    extensions: ['mp3'], 
+                    sampleRate: 44100,
+                    bitRate: 128,
+                    speed: options.speed || 1.0,
+                    pitch: options.pitch || 0,
+                    volume: options.volume || 0,
+                    autoPitch: options.autoPitch !== undefined ? options.autoPitch : true,
+                    languageCode: options.languageCode || 'en',
+                    userMetadata: options.userMetadata,
+                    userTags: options.userTags
                 }
-            });
-            return response;
+            };
+
+            const response = await this.replicaAPI.textToSpeech(params);
+            return {
+                url: response.url,
+                jobId: response.uuid,
+                state: response.state,
+                duration: response.duration
+            };
         } catch (error) {
             logger.error(`Error generating speech: ${error.message}`);
             throw error;

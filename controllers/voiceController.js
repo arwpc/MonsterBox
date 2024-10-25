@@ -37,8 +37,15 @@ class VoiceController {
 
     async generateSpeech(req, res) {
         try {
-            const { voiceId, text, ...params } = req.body;
-            const speech = await voiceService.generateSpeech(voiceId, text, params);
+            const { speaker_id, text, characterId, ...options } = req.body;
+            
+            // Add session metadata
+            options.userMetadata = {
+                session_id: req.session?.id || 'default',
+                character_id: characterId
+            };
+
+            const speech = await voiceService.generateSpeech(speaker_id, text, options);
             res.json(speech);
         } catch (error) {
             logger.error(`Error generating speech: ${error.message}`);
@@ -48,8 +55,17 @@ class VoiceController {
 
     async saveToSoundLibrary(req, res) {
         try {
-            const { voiceId, text, characterId, name, ...params } = req.body;
-            const speech = await voiceService.generateSpeech(voiceId, text, params);
+            const { speaker_id, text, characterId, name, ...options } = req.body;
+            
+            // Add session and sound library metadata
+            options.userMetadata = {
+                session_id: req.session?.id || 'default',
+                character_id: characterId,
+                sound_name: name,
+                library_save: true
+            };
+
+            const speech = await voiceService.generateSpeech(speaker_id, text, options);
             
             // Save the generated speech to the sound library
             const sound = await soundService.saveSound({
