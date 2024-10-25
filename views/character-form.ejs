@@ -46,9 +46,6 @@
                             <label for="voiceSelect">Voice:</label>
                             <div class="voice-select-container">
                                 <select id="voiceSelect" required></select>
-                                <button type="button" id="selectVoiceBtn" class="button">
-                                    <i class="fas fa-microphone"></i> Select Voice
-                                </button>
                             </div>
                         </div>
 
@@ -289,10 +286,6 @@
             flex: 1;
         }
 
-        .voice-select-container button {
-            white-space: nowrap;
-        }
-
         .setting-group select,
         .setting-group input[type="range"],
         .setting-group input[type="text"],
@@ -346,93 +339,122 @@
         }
     </style>
 
-    <!-- Include VoiceSelector script -->
     <script src="/scripts/voiceSelector.js"></script>
 
     <script>
-        // Voice configuration modal functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            const modal = document.getElementById('voiceModal');
-            const configureBtn = document.getElementById('configureVoice');
-            const closeBtn = document.getElementsByClassName('close')[0];
-            const selectVoiceBtn = document.getElementById('selectVoiceBtn');
-            const wavesurfer = WaveSurfer.create({
-                container: '#waveform',
-                waveColor: '#4a9eff',
-                progressColor: '#1976d2',
-                height: 50
-            });
+        // Define updateAvailableOptions globally
+        window.updateAvailableOptions = function() {
+            const availableParts = document.getElementById('available-parts-select');
+            const selectedParts = document.getElementById('selected-parts-select');
+            const availableSounds = document.getElementById('available-sounds-select');
+            const selectedSounds = document.getElementById('selected-sounds-select');
 
-            // Open voice selector when the select voice button is clicked
-            selectVoiceBtn.addEventListener('click', () => {
-                window.voiceSelector.openModal();
-            });
-
-            // Listen for voice selected event
-            document.addEventListener('voiceSelected', (event) => {
-                const voice = event.detail;
-                const voiceSelect = document.getElementById('voiceSelect');
-                
-                // Update the voice dropdown
-                let option = voiceSelect.querySelector(`option[value="${voice.uuid}"]`);
-                if (!option) {
-                    option = document.createElement('option');
-                    option.value = voice.uuid;
-                    option.textContent = `${voice.name} (${voice.uuid})`;
-                    voiceSelect.appendChild(option);
+            if (availableParts && selectedParts) {
+                for (let option of availableParts.options) {
+                    option.disabled = Array.from(selectedParts.options).some(o => o.value === option.value);
                 }
-                voiceSelect.value = voice.uuid;
-            });
+            }
 
-            // Helper functions for voice selector
-            function moveOptions(fromId, toId) {
-                const fromSelect = document.getElementById(fromId);
-                const toSelect = document.getElementById(toId);
-                
+            if (availableSounds && selectedSounds) {
+                for (let option of availableSounds.options) {
+                    option.disabled = Array.from(selectedSounds.options).some(o => o.value === option.value);
+                }
+            }
+        };
+
+        // Helper functions for voice selector
+        window.addPart = function() {
+            moveOptions('available-parts-select', 'selected-parts-select');
+        };
+
+        window.removePart = function() {
+            moveOptions('selected-parts-select', 'available-parts-select');
+        };
+
+        window.addSound = function() {
+            moveOptions('available-sounds-select', 'selected-sounds-select');
+        };
+
+        window.removeSound = function() {
+            moveOptions('selected-sounds-select', 'available-sounds-select');
+        };
+
+        function moveOptions(fromId, toId) {
+            const fromSelect = document.getElementById(fromId);
+            const toSelect = document.getElementById(toId);
+            
+            if (fromSelect && toSelect) {
                 for (let option of Array.from(fromSelect.selectedOptions)) {
                     toSelect.add(option);
                     option.selected = false;
                 }
                 updateAvailableOptions();
             }
+        }
 
-            function updateAvailableOptions() {
-                const availableParts = document.getElementById('available-parts-select');
-                const selectedParts = document.getElementById('selected-parts-select');
-                const availableSounds = document.getElementById('available-sounds-select');
-                const selectedSounds = document.getElementById('selected-sounds-select');
+        // Voice configuration modal functionality
+        document.addEventListener('DOMContentLoaded', async function() {
+            const modal = document.getElementById('voiceModal');
+            const configureBtn = document.getElementById('configureVoice');
+            const closeBtn = document.getElementsByClassName('close')[0];
+            let wavesurfer = null;
 
-                for (let option of availableParts.options) {
-                    option.disabled = Array.from(selectedParts.options).some(o => o.value === option.value);
+            // Initialize WaveSurfer only after user interaction
+            async function initWaveSurfer() {
+                if (!wavesurfer) {
+                    wavesurfer = WaveSurfer.create({
+                        container: '#waveform',
+                        waveColor: '#4a9eff',
+                        progressColor: '#1976d2',
+                        height: 50
+                    });
                 }
+                return wavesurfer;
+            }
 
-                for (let option of availableSounds.options) {
-                    option.disabled = Array.from(selectedSounds.options).some(o => o.value === option.value);
+            // Listen for voice selected event
+            document.addEventListener('voiceSelected', (event) => {
+                const voice = event.detail;
+                const voiceSelect = document.getElementById('voiceSelect');
+                
+                if (voiceSelect) {
+                    // Update the voice dropdown
+                    let option = voiceSelect.querySelector(`option[value="${voice.uuid}"]`);
+                    if (!option) {
+                        option = document.createElement('option');
+                        option.value = voice.uuid;
+                        option.textContent = `${voice.name} (${voice.uuid})`;
+                        voiceSelect.appendChild(option);
+                    }
+                    voiceSelect.value = voice.uuid;
                 }
-            }
+            });
 
-            window.addPart = function() {
-                moveOptions('available-parts-select', 'selected-parts-select');
-            }
+            // Voice settings controls
+            const updateValue = (elementId, value, suffix = '') => {
+                const element = document.getElementById(elementId + 'Value');
+                if (element) {
+                    element.textContent = value + suffix;
+                }
+            };
 
-            window.removePart = function() {
-                moveOptions('selected-parts-select', 'available-parts-select');
-            }
-
-            window.addSound = function() {
-                moveOptions('available-sounds-select', 'selected-sounds-select');
-            }
-
-            window.removeSound = function() {
-                moveOptions('selected-sounds-select', 'available-sounds-select');
-            }
+            ['pitch', 'speed', 'volume'].forEach(param => {
+                const element = document.getElementById(param);
+                if (element) {
+                    element.oninput = () => updateValue(param, element.value, 
+                        param === 'speed' ? 'x' : 
+                        param === 'volume' ? ' dB' : '');
+                }
+            });
 
             // Initialize voice selection
-            fetch('/api/voice/available')
-                .then(response => response.json())
-                .then(voices => {
-                    console.log('Available voices:', voices);
-                    const voiceSelect = document.getElementById('voiceSelect');
+            try {
+                const response = await fetch('/api/voice/available');
+                const voices = await response.json();
+                console.log('Available voices:', voices);
+                
+                const voiceSelect = document.getElementById('voiceSelect');
+                if (voiceSelect) {
                     voiceSelect.innerHTML = '<option value="">Select a voice</option>';
                     voices.forEach(voice => {
                         const option = document.createElement('option');
@@ -443,316 +465,134 @@
                     if (voices.length > 0 && !voiceSelect.value) {
                         voiceSelect.value = voices[0].uuid;
                     }
-                })
-                .catch(error => {
-                    console.error('Error loading voices:', error);
-                    alert('Error loading available voices');
-                });
-
-            // Modal controls
-            configureBtn.onclick = function() {
-                modal.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error loading voices:', error);
             }
 
-            closeBtn.onclick = function() {
-                modal.style.display = 'none';
+            // Modal controls
+            if (configureBtn) {
+                configureBtn.onclick = function() {
+                    if (modal) {
+                        modal.style.display = 'block';
+                    }
+                };
+            }
+
+            if (closeBtn) {
+                closeBtn.onclick = function() {
+                    if (modal) {
+                        modal.style.display = 'none';
+                    }
+                };
             }
 
             window.onclick = function(event) {
                 if (event.target == modal) {
                     modal.style.display = 'none';
                 }
-            }
-
-            // Voice settings controls
-            const updateValue = (elementId, value, suffix = '') => {
-                document.getElementById(elementId + 'Value').textContent = value + suffix;
             };
-
-            ['pitch', 'speed', 'volume'].forEach(param => {
-                const element = document.getElementById(param);
-                element.oninput = () => updateValue(param, element.value, 
-                    param === 'speed' ? 'x' : 
-                    param === 'volume' ? ' dB' : '');
-            });
 
             // Audio preview controls
-            document.getElementById('previewPlay').onclick = async function() {
-                const voiceId = document.getElementById('voiceSelect').value;
-                if (!voiceId) {
-                    alert('Please select a voice first');
-                    return;
-                }
-
-                console.log('Selected voice ID:', voiceId);
-                const settings = {
-                    speaker_id: voiceId,
-                    text: document.getElementById('testText').value,
-                    pitch: parseInt(document.getElementById('pitch').value),
-                    speed: parseFloat(document.getElementById('speed').value),
-                    volume: parseInt(document.getElementById('volume').value),
-                    sampleRate: parseInt(document.getElementById('sampleRate').value),
-                    bitRate: parseInt(document.getElementById('bitRate').value),
-                    modelId: document.getElementById('modelSelect').value,
-                    outputFormat: document.getElementById('outputFormat').value,
-                    languageCode: document.getElementById('languageSelect').value,
-                    style: document.getElementById('styleSelect').value
-                };
-
-                console.log('Sending speech generation request with settings:', settings);
-                document.getElementById('loadingIndicator').style.display = 'block';
-
-                try {
-                    const response = await fetch('/api/voice/generate', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(settings)
-                    });
-                    const data = await response.json();
-                    
-                    if (data.error) {
-                        throw new Error(data.error);
+            const previewPlayBtn = document.getElementById('previewPlay');
+            if (previewPlayBtn) {
+                previewPlayBtn.onclick = async function() {
+                    const voiceSelect = document.getElementById('voiceSelect');
+                    if (!voiceSelect || !voiceSelect.value) {
+                        alert('Please select a voice first');
+                        return;
                     }
-                    
-                    console.log('Received response:', data);
-                    wavesurfer.load(data.url);
-                    wavesurfer.on('ready', function() {
-                        wavesurfer.play();
-                    });
-                } catch (error) {
-                    console.error('Error generating speech:', error);
-                    alert('Error generating speech preview: ' + error.message);
-                } finally {
-                    document.getElementById('loadingIndicator').style.display = 'none';
-                }
-            };
 
-            document.getElementById('previewStop').onclick = function() {
-                wavesurfer.stop();
-            };
+                    const voiceId = voiceSelect.value;
+                    console.log('Selected voice ID:', voiceId);
 
-            // Save voice settings
-            document.getElementById('saveVoiceSettings').onclick = async function() {
-                const characterId = document.querySelector('input[name="id"]').value;
-                const voiceId = document.getElementById('voiceSelect').value;
-                if (!voiceId) {
-                    alert('Please select a voice first');
-                    return;
-                }
+                    // Initialize WaveSurfer on first user interaction
+                    await initWaveSurfer();
 
-                const settings = {
-                    characterId,
-                    speaker_id: voiceId,
-                    settings: {
-                        pitch: parseInt(document.getElementById('pitch').value),
-                        speed: parseFloat(document.getElementById('speed').value),
-                        volume: parseInt(document.getElementById('volume').value),
-                        sampleRate: parseInt(document.getElementById('sampleRate').value),
-                        bitRate: parseInt(document.getElementById('bitRate').value),
-                        modelId: document.getElementById('modelSelect').value,
-                        outputFormat: document.getElementById('outputFormat').value,
-                        languageCode: document.getElementById('languageSelect').value,
-                        style: document.getElementById('styleSelect').value
-                    }
-                };
-
-                try {
-                    await fetch('/api/voice/settings', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(settings)
-                    });
-                    alert('Voice settings saved successfully');
-                } catch (error) {
-                    console.error('Error saving voice settings:', error);
-                    alert('Error saving voice settings: ' + error.message);
-                }
-            };
-
-            // Save to sounds library
-            document.getElementById('saveToSounds').onclick = async function() {
-                const characterId = document.querySelector('input[name="id"]').value;
-                const voiceId = document.getElementById('voiceSelect').value;
-                if (!voiceId) {
-                    alert('Please select a voice first');
-                    return;
-                }
-
-                const settings = {
-                    characterId,
-                    speaker_id: voiceId,
-                    text: document.getElementById('testText').value,
-                    name: `${document.getElementById('char_name').value} - Voice Sample`,
-                    pitch: parseInt(document.getElementById('pitch').value),
-                    speed: parseFloat(document.getElementById('speed').value),
-                    volume: parseInt(document.getElementById('volume').value),
-                    sampleRate: parseInt(document.getElementById('sampleRate').value),
-                    bitRate: parseInt(document.getElementById('bitRate').value),
-                    modelId: document.getElementById('modelSelect').value,
-                    outputFormat: 'mp3',
-                    languageCode: document.getElementById('languageSelect').value,
-                    style: document.getElementById('styleSelect').value
-                };
-
-                try {
-                    await fetch('/api/voice/save-to-library', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(settings)
-                    });
-                    alert('Voice saved to sound library');
-                } catch (error) {
-                    console.error('Error saving to sound library:', error);
-                    alert('Error saving to sound library: ' + error.message);
-                }
-            };
-
-            // Preset management
-            document.getElementById('savePreset').onclick = async function() {
-                const characterId = document.querySelector('input[name="id"]').value;
-                const voiceId = document.getElementById('voiceSelect').value;
-                if (!voiceId) {
-                    alert('Please select a voice first');
-                    return;
-                }
-
-                const presetName = document.getElementById('presetName').value;
-                if (!presetName) {
-                    alert('Please enter a preset name');
-                    return;
-                }
-
-                const settings = {
-                    characterId,
-                    presetName,
-                    settings: {
+                    const testText = document.getElementById('testText');
+                    const settings = {
                         speaker_id: voiceId,
-                        pitch: parseInt(document.getElementById('pitch').value),
-                        speed: parseFloat(document.getElementById('speed').value),
-                        volume: parseInt(document.getElementById('volume').value),
-                        sampleRate: parseInt(document.getElementById('sampleRate').value),
-                        bitRate: parseInt(document.getElementById('bitRate').value),
-                        modelId: document.getElementById('modelSelect').value,
-                        outputFormat: document.getElementById('outputFormat').value,
-                        languageCode: document.getElementById('languageSelect').value,
-                        style: document.getElementById('styleSelect').value
+                        text: testText ? testText.value : 'Hello world',
+                        modelId: document.getElementById('modelSelect')?.value || 'vox_2_0',
+                        pitch: parseInt(document.getElementById('pitch')?.value || 0),
+                        speed: parseFloat(document.getElementById('speed')?.value || 1.0),
+                        volume: parseInt(document.getElementById('volume')?.value || 0),
+                        sampleRate: parseInt(document.getElementById('sampleRate')?.value || 44100),
+                        bitRate: parseInt(document.getElementById('bitRate')?.value || 128),
+                        outputFormat: document.getElementById('outputFormat')?.value || 'mp3',
+                        languageCode: document.getElementById('languageSelect')?.value || 'en',
+                        style: document.getElementById('styleSelect')?.value || 'neutral'
+                    };
+
+                    console.log('Sending speech generation request with settings:', settings);
+                    const loadingIndicator = document.getElementById('loadingIndicator');
+                    if (loadingIndicator) {
+                        loadingIndicator.style.display = 'block';
+                    }
+
+                    try {
+                        const response = await fetch('/api/voice/generate', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(settings)
+                        });
+                        const data = await response.json();
+                        
+                        if (data.error) {
+                            throw new Error(data.error);
+                        }
+                        
+                        console.log('Received response:', data);
+                        wavesurfer.load(data.url);
+                        wavesurfer.on('ready', function() {
+                            wavesurfer.play();
+                        });
+                    } catch (error) {
+                        console.error('Error generating speech:', error);
+                        alert('Error generating speech preview: ' + error.message);
+                    } finally {
+                        if (loadingIndicator) {
+                            loadingIndicator.style.display = 'none';
+                        }
                     }
                 };
+            }
 
-                try {
-                    await fetch('/api/voice/preset', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(settings)
-                    });
-                    alert('Preset saved successfully');
-                    loadPresets();
-                } catch (error) {
-                    console.error('Error saving preset:', error);
-                    alert('Error saving preset: ' + error.message);
-                }
-            };
+            const previewStopBtn = document.getElementById('previewStop');
+            if (previewStopBtn) {
+                previewStopBtn.onclick = function() {
+                    if (wavesurfer) {
+                        wavesurfer.stop();
+                    }
+                };
+            }
 
-            // Load presets for the character
-            async function loadPresets() {
-                const characterId = document.querySelector('input[name="id"]').value;
-                try {
-                    const response = await fetch(`/api/voice/${characterId}`);
-                    const voice = await response.json();
-                    const presetSelect = document.getElementById('presetSelect');
-                    presetSelect.innerHTML = '<option value="">Select Preset Fx Setting</option>';
+            // Form submission handling
+            const form = document.querySelector('form');
+            if (form) {
+                form.onsubmit = function() {
+                    const selectedParts = document.getElementById('selected-parts-select');
+                    const selectedSounds = document.getElementById('selected-sounds-select');
                     
-                    if (voice && voice.presets) {
-                        Object.keys(voice.presets).forEach(presetName => {
-                            const option = document.createElement('option');
-                            option.value = presetName;
-                            option.textContent = presetName;
-                            presetSelect.appendChild(option);
-                        });
+                    if (selectedParts) {
+                        for (let option of selectedParts.options) {
+                            option.selected = true;
+                        }
                     }
-                } catch (error) {
-                    console.error('Error loading presets:', error);
-                }
+                    
+                    if (selectedSounds) {
+                        for (let option of selectedSounds.options) {
+                            option.selected = true;
+                        }
+                    }
+                    
+                    return true;
+                };
             }
 
-            // Load preset
-            document.getElementById('loadPreset').onclick = async function() {
-                const characterId = document.querySelector('input[name="id"]').value;
-                const presetName = document.getElementById('presetSelect').value;
-                if (!presetName) {
-                    alert('Please select a preset');
-                    return;
-                }
-
-                try {
-                    const response = await fetch(`/api/voice/${characterId}`);
-                    const voice = await response.json();
-                    if (voice && voice.presets && voice.presets[presetName]) {
-                        const settings = voice.presets[presetName];
-                        document.getElementById('voiceSelect').value = settings.speaker_id;
-                        document.getElementById('pitch').value = settings.pitch;
-                        document.getElementById('speed').value = settings.speed;
-                        document.getElementById('volume').value = settings.volume;
-                        document.getElementById('sampleRate').value = settings.sampleRate;
-                        document.getElementById('bitRate').value = settings.bitRate;
-                        document.getElementById('modelSelect').value = settings.modelId;
-                        document.getElementById('outputFormat').value = settings.outputFormat;
-                        document.getElementById('languageSelect').value = settings.languageCode;
-                        document.getElementById('styleSelect').value = settings.style;
-
-                        // Update display values
-                        updateValue('pitch', settings.pitch);
-                        updateValue('speed', settings.speed, 'x');
-                        updateValue('volume', settings.volume, ' dB');
-                    }
-                } catch (error) {
-                    console.error('Error loading preset:', error);
-                    alert('Error loading preset: ' + error.message);
-                }
-            };
-
-            // Reset to defaults
-            document.getElementById('resetDefaults').onclick = function() {
-                document.getElementById('pitch').value = 0;
-                document.getElementById('speed').value = 1.0;
-                document.getElementById('volume').value = 0;
-                document.getElementById('sampleRate').value = 44100;
-                document.getElementById('bitRate').value = 128;
-                document.getElementById('modelSelect').value = 'vox_2_0';
-                document.getElementById('outputFormat').value = 'mp3';
-                document.getElementById('languageSelect').value = 'en';
-                document.getElementById('styleSelect').value = 'neutral';
-                document.getElementById('testText').value = 'I am your monster, hear me roar!';
-
-                updateValue('pitch', 0);
-                updateValue('speed', 1.0, 'x');
-                updateValue('volume', 0, ' dB');
-            };
-
-            // Load initial presets
-            if (document.querySelector('input[name="id"]')) {
-                loadPresets();
-            }
+            // Initialize available options
+            updateAvailableOptions();
         });
-
-        // Ensure all options are selected before form submission
-        document.querySelector('form').onsubmit = function() {
-            const selectedParts = document.getElementById('selected-parts-select');
-            const selectedSounds = document.getElementById('selected-sounds-select');
-            
-            for (let option of selectedParts.options) {
-                option.selected = true;
-            }
-            
-            for (let option of selectedSounds.options) {
-                option.selected = true;
-            }
-            
-            return true;
-        };
-
-        // Initialize available options
-        updateAvailableOptions();
     </script>
 </body>
 </html>
