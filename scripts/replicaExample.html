@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Text Playback</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #statusMessage {
+            color: #666;
+            margin: 10px 0;
+        }
+        #audioContainer {
+            margin-top: 20px;
+        }
+        audio {
+            width: 100%;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Simple Text Playback</h1>
+    <div class="container">
+        <div>
+            <label for="textInput">Enter Text:</label>
+            <textarea id="textInput" placeholder="Enter your text here..."></textarea>
+        </div>
+
+        <audio id="defaultAudio" controls>
+            <source src="https://www2.cs.uic.edu/~i101/SoundFiles/BabyElephantWalk60.wav" type="audio/wav">
+            Your browser does not support the audio element.
+        </audio>
+
+        <button id="playButton">Play Audio</button>
+        
+        <div id="statusMessage"></div>
+        <div id="history"></div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const textInput = document.getElementById('textInput');
+            const playButton = document.getElementById('playButton');
+            const statusMessage = document.getElementById('statusMessage');
+            const history = document.getElementById('history');
+            const audio = document.getElementById('defaultAudio');
+
+            function addToHistory(text) {
+                const entry = document.createElement('div');
+                entry.style.margin = '10px 0';
+                entry.style.padding = '10px';
+                entry.style.border = '1px solid #ddd';
+                
+                const timestamp = new Date().toLocaleTimeString();
+                const preview = text.substring(0, 50) + (text.length > 50 ? '...' : '');
+                
+                entry.innerHTML = `
+                    <div style="font-size: 0.9em; color: #666;">${timestamp}</div>
+                    <div style="margin-top: 5px;">"${preview}"</div>
+                `;
+                
+                history.insertBefore(entry, history.firstChild);
+            }
+
+            function playAudio() {
+                const text = textInput.value.trim();
+                
+                if (!text) {
+                    statusMessage.textContent = 'Please enter some text first';
+                    return;
+                }
+
+                statusMessage.textContent = 'Playing audio...';
+                audio.play()
+                    .then(() => {
+                        statusMessage.textContent = 'Playing complete';
+                        addToHistory(text);
+                    })
+                    .catch(error => {
+                        statusMessage.textContent = 'Error playing audio: ' + error.message;
+                    });
+            }
+
+            playButton.addEventListener('click', playAudio);
+            
+            textInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && e.ctrlKey) {
+                    playAudio();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
