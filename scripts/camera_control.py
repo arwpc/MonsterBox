@@ -27,34 +27,25 @@ except ImportError as e:
     logger.error(f"Failed to import required libraries: {e}")
     sys.exit(1)
 
-def find_camera_device():
-    """Find the first available USB camera device."""
+def find_usb_camera():
+    """Find the USB camera device."""
     try:
-        # List all video devices
-        devices = glob.glob('/dev/video*')
-        if not devices:
-            logger.error("No video devices found")
-            return None
+        # First try video0 and video1 as they are typically USB cameras
+        primary_devices = ['/dev/video0', '/dev/video1']
+        for device in primary_devices:
+            if os.path.exists(device) and os.access(device, os.R_OK):
+                try:
+                    cap = cv2.VideoCapture(int(device.replace('/dev/video', '')), cv2.CAP_V4L2)
+                    if cap.isOpened():
+                        ret, frame = cap.read()
+                        if ret and frame is not None and frame.size > 0:
+                            cap.release()
+                            return int(device.replace('/dev/video', ''))
+                    cap.release()
+                except Exception:
+                    continue
 
-        # Try to identify USB camera
-        for device in devices:
-            # Check if device exists and is readable
-            if not os.path.exists(device) or not os.access(device, os.R_OK):
-                continue
-
-            # Try to open the device
-            try:
-                cap = cv2.VideoCapture(int(device.replace('/dev/video', '')), cv2.CAP_V4L2)
-                if cap.isOpened():
-                    ret, frame = cap.read()
-                    if ret and frame is not None and frame.size > 0:
-                        cap.release()
-                        return int(device.replace('/dev/video', ''))
-                cap.release()
-            except Exception:
-                continue
-
-        logger.error("No working camera found")
+        logger.error("No USB camera found")
         return None
     except Exception as e:
         logger.error(f"Error finding camera: {e}")
@@ -115,9 +106,9 @@ class CameraController:
     """Handles camera operations and head tracking control."""
     
     def __init__(self, camera_id: Optional[int] = None, width: int = 640, height: int = 480):
-        self.camera_id = camera_id if camera_id is not None else find_camera_device()
+        self.camera_id = camera_id if camera_id is not None else find_usb_camera()
         if self.camera_id is None:
-            raise RuntimeError("No camera device found")
+            raise RuntimeError("No USB camera found")
             
         self.width = width
         self.height = height
