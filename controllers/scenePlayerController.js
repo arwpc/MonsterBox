@@ -373,7 +373,9 @@ async function executeLinearActuator(step) {
             step.speed.toString(),
             step.duration.toString(),
             part.directionPin.toString(),
-            part.pwmPin.toString()
+            part.pwmPin.toString(),
+            part.maxExtension.toString(),  // Added maxExtension parameter
+            part.maxRetraction.toString()  // Added maxRetraction parameter
         ];
         const result = await new Promise((resolve, reject) => {
             const process = spawn('python3', [scriptPath, ...args]);
@@ -390,8 +392,12 @@ async function executeLinearActuator(step) {
             process.on('close', (code) => {
                 if (code === 0) {
                     try {
-                        const jsonOutput = JSON.parse(output);
-                        resolve(jsonOutput);
+                        if (output.includes('SUCCESS:')) {
+                            resolve({ success: true });
+                        } else {
+                            const jsonOutput = JSON.parse(output);
+                            resolve(jsonOutput);
+                        }
                     } catch (error) {
                         reject(new Error(`Failed to parse linear actuator control output: ${output}`));
                     }
@@ -401,7 +407,7 @@ async function executeLinearActuator(step) {
             });
         });
         if (!result.success) {
-            throw new Error(`Linear actuator control failed: ${result.error}`);
+            throw new Error(`Linear actuator control failed: ${result.error || 'Unknown error'}`);
         }
         logger.info(`Linear actuator step executed successfully: ${step.name}`);
         return true;
