@@ -4,90 +4,90 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
     <link rel="stylesheet" href="/css/style.css">
-    <style>
-        #testfireSection {
-            margin-top: 20px;
-            padding: 20px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        #testfireResult {
-            margin-top: 10px;
-            padding: 10px;
-            border-radius: 5px;
-        }
-        .success {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        .error {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-        .loading {
-            display: none;
-            margin-top: 10px;
-        }
-    </style>
 </head>
 <body>
-    <h1><%= title %></h1>
-    <form id="motorForm" action="<%= action %>" method="POST">
-        <input type="hidden" name="type" value="motor">
-        <% if (part && part.id) { %>
-            <input type="hidden" name="id" value="<%= part.id %>">
-        <% } %>
-        <div>
-            <label for="name">Part Name:</label>
-            <input type="text" id="name" name="name" value="<%= part && part.name || '' %>" required>
-        </div>
-        <div>
-            <label for="characterId">Character:</label>
-            <select id="characterId" name="characterId" required>
-                <% characters.forEach(function(character) { %>
-                    <option value="<%= character.id %>" <%= (part && part.characterId === character.id) ? 'selected' : '' %>>
-                        <%= character.char_name %>
-                    </option>
-                <% }); %>
-            </select>
-        </div>
-        <div>
-            <label for="directionPin">Direction GPIO Pin:</label>
-            <input type="number" id="directionPin" name="directionPin" value="<%= part && part.directionPin || 18 %>" required>
-        </div>
-        <div>
-            <label for="pwmPin">PWM Pin:</label>
-            <input type="number" id="pwmPin" name="pwmPin" value="<%= part && part.pwmPin || 13 %>" required>
-        </div>
-        <button type="submit">Save Part</button>
-    </form>
+    <header>
+        <h1 class="landing-title"><%= title %></h1>
+    </header>
 
-    <div id="testfireSection">
-        <h2>Testfire Motor</h2>
-        <div>
-            <label for="testDirection">Direction:</label>
-            <select id="testDirection">
-                <option value="forward">Forward</option>
-                <option value="backward">Backward</option>
-            </select>
-        </div>
-        <div>
-            <label for="testSpeed">Speed:</label>
-            <input type="range" id="testSpeed" min="0" max="100" value="50">
-            <span id="speedValue">50</span>
-        </div>
-        <div>
-            <label for="testDuration">Duration (ms):</label>
-            <input type="range" id="testDuration" min="100" max="5000" value="1000" step="100">
-            <span id="durationValue">1000</span>
-        </div>
-        <button onclick="executeTestfire()">Testfire</button>
-        <div class="loading" id="loadingIndicator">Testing motor...</div>
-        <div id="testfireResult"></div>
-    </div>
+    <main>
+        <form id="motorForm" action="<%= action %>" method="POST">
+            <input type="hidden" name="type" value="motor">
+            <% if (part && part.id) { %>
+                <input type="hidden" name="id" value="<%= part.id %>">
+            <% } %>
+            
+            <div class="form-group">
+                <label for="name">Part Name:</label>
+                <input type="text" id="name" name="name" value="<%= part && part.name || '' %>" required>
+            </div>
 
-    <a href="/parts?characterId=<%= character.id %>" class="button">Back to Parts</a>
+            <div class="form-group">
+                <label for="characterId">Character:</label>
+                <select id="characterId" name="characterId" required>
+                    <% characters.forEach(function(character) { %>
+                        <option value="<%= character.id %>" <%= (part && part.characterId === character.id) ? 'selected' : '' %>>
+                            <%= character.char_name %>
+                        </option>
+                    <% }); %>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="directionPin">Direction GPIO Pin:</label>
+                <input type="number" id="directionPin" name="directionPin" value="<%= part && part.directionPin || 18 %>" required>
+            </div>
+
+            <div class="form-group">
+                <label for="pwmPin">PWM Pin:</label>
+                <input type="number" id="pwmPin" name="pwmPin" value="<%= part && part.pwmPin || 13 %>" required>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="button primary-btn">Save Part</button>
+            </div>
+        </form>
+
+        <div class="config-section">
+            <h2>Testfire Motor</h2>
+            <div class="form-group">
+                <label for="testDirection">Direction:</label>
+                <select id="testDirection">
+                    <option value="forward">Forward</option>
+                    <option value="backward">Backward</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="testSpeed">Speed:</label>
+                <input type="range" id="testSpeed" min="0" max="100" value="50">
+                <span id="speedValue">50</span>
+            </div>
+
+            <div class="form-group">
+                <label for="testDuration">Duration (ms):</label>
+                <input type="range" id="testDuration" min="100" max="5000" value="1000" step="100">
+                <span id="durationValue">1000</span>
+            </div>
+
+            <div class="button-group">
+                <button onclick="executeTestfire()" class="button">Testfire</button>
+            </div>
+
+            <div class="loading-overlay" id="loadingIndicator">
+                <div class="spinner"></div>
+                <div class="loading-text">Testing motor...</div>
+            </div>
+
+            <div id="testfireResult"></div>
+        </div>
+
+        <div class="button-group">
+            <a href="/parts?characterId=<%= character.id %>" class="button secondary-btn">Back to Parts</a>
+        </div>
+    </main>
 
     <script>
         document.getElementById('testSpeed').addEventListener('input', function() {
@@ -106,7 +106,7 @@
             const loadingIndicator = document.getElementById('loadingIndicator');
             const testfireResult = document.getElementById('testfireResult');
 
-            loadingIndicator.style.display = 'block';
+            loadingIndicator.classList.add('active');
             testfireResult.innerHTML = '';
             testfireResult.className = '';
 
@@ -127,20 +127,19 @@
                 }
 
                 const result = await response.json();
-                loadingIndicator.style.display = 'none';
+                loadingIndicator.classList.remove('active');
 
                 if (result.success) {
-                    testfireResult.innerHTML = `<p>Success: ${result.message}</p>`;
-                    testfireResult.className = 'success';
+                    testfireResult.innerHTML = `<p>${result.message}</p>`;
                 } else {
-                    testfireResult.innerHTML = `<p>Error: ${result.error || 'Unknown error occurred'}</p>`;
-                    testfireResult.className = 'error';
+                    testfireResult.innerHTML = `<p>${result.error || 'Unknown error occurred'}</p>`;
+                    testfireResult.classList.add('error-message');
                 }
             } catch (error) {
-                loadingIndicator.style.display = 'none';
+                loadingIndicator.classList.remove('active');
                 console.error('Error:', error);
-                testfireResult.innerHTML = `<p>Error: ${error.message}</p>`;
-                testfireResult.className = 'error';
+                testfireResult.innerHTML = `<p>${error.message}</p>`;
+                testfireResult.classList.add('error-message');
             }
         }
     </script>

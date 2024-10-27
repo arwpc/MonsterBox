@@ -4,74 +4,63 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
     <link rel="stylesheet" href="/css/style.css">
-    <style>
-        #lightTest {
-            margin-top: 20px;
-            padding: 10px;
-            border: 1px solid #ccc;
-            background-color: #000000;
-            color: #00ff00;
-        }
-        #testResult {
-            margin-top: 10px;
-            font-weight: bold;
-        }
-        #debugInfo {
-            margin-top: 20px;
-            padding: 10px;
-            border: 1px solid #ccc;
-            background-color: #000000;
-            color: #00ff00;
-            white-space: pre-wrap;
-        }
-        .test-button {
-            margin: 5px;
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-    </style>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 <body>
-    <h1><%= title %></h1>
-    <form action="<%= action %>?returnTo=/parts?characterId=<%= character ? character.id : (part ? part.characterId : '') %>" method="POST">
-        <input type="hidden" name="type" value="light">
-        <% if (part.id) { %>
-            <input type="hidden" name="id" value="<%= part.id %>">
-        <% } %>
-        <div>
-            <label for="name">Part Name:</label>
-            <input type="text" id="name" name="name" value="<%= part.name || '' %>" required>
-        </div>
-        <div>
-            <label for="characterId">Character:</label>
-            <select id="characterId" name="characterId" required>
-                <% characters.forEach(function(char) { %>
-                    <option value="<%= char.id %>" <%= (part.characterId === char.id) ? 'selected' : '' %>>
-                        <%= char.char_name %>
-                    </option>
-                <% }); %>
-            </select>
-        </div>
-        <div>
-            <label for="gpioPin">GPIO Pin:</label>
-            <input type="number" id="gpioPin" name="gpioPin" value="<%= part.gpioPin || 26 %>" required>
-        </div>
-        <button type="submit">Save Part</button>
-    </form>
+    <header>
+        <h1 class="landing-title"><%= title %></h1>
+    </header>
 
-    <div id="lightTest">
-        <h2>Test Light</h2>
-        <button onclick="testLight('on')" class="test-button">Light On</button>
-        <button onclick="testLight('off')" class="test-button">Light Off</button>
-        <div id="testResult"></div>
-    </div>
+    <main>
+        <form action="<%= action %>?returnTo=/parts?characterId=<%= character ? character.id : (part ? part.characterId : '') %>" method="POST">
+            <input type="hidden" name="type" value="light">
+            <% if (part.id) { %>
+                <input type="hidden" name="id" value="<%= part.id %>">
+            <% } %>
+            
+            <div class="form-group">
+                <label for="name">Part Name:</label>
+                <input type="text" id="name" name="name" value="<%= part.name || '' %>" required>
+            </div>
 
-    <div id="debugInfo"></div>
+            <div class="form-group">
+                <label for="characterId">Character:</label>
+                <select id="characterId" name="characterId" required>
+                    <% characters.forEach(function(char) { %>
+                        <option value="<%= char.id %>" <%= (part.characterId === char.id) ? 'selected' : '' %>>
+                            <%= char.char_name %>
+                        </option>
+                    <% }); %>
+                </select>
+            </div>
 
-    <a href="/parts?characterId=<%= character ? character.id : (part ? part.characterId : '') %>" class="button">Back to Parts</a>
+            <div class="form-group">
+                <label for="gpioPin">GPIO Pin:</label>
+                <input type="number" id="gpioPin" name="gpioPin" value="<%= part.gpioPin || 26 %>" required>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="button primary-btn">Save Part</button>
+            </div>
+        </form>
+
+        <div class="config-section">
+            <h2>Test Light</h2>
+            <div class="button-group">
+                <button onclick="testLight('on')" class="button">Light On</button>
+                <button onclick="testLight('off')" class="button">Light Off</button>
+            </div>
+            <div id="testResult" class="info-list"></div>
+        </div>
+
+        <div id="debugInfo" class="config-section"></div>
+
+        <div class="button-group">
+            <a href="/parts?characterId=<%= character ? character.id : (part ? part.characterId : '') %>" class="button secondary-btn">Back to Parts</a>
+        </div>
+    </main>
 
     <script>
         var partId = '<%= part.id || "null" %>';
@@ -106,18 +95,17 @@
                 if (response.data.success) {
                     console.log('Light test successful:', response.data.message);
                     testResultElement.innerHTML = `Test successful: ${response.data.message}`;
-                    testResultElement.style.color = '#00ff00';
                 } else {
                     console.error('Light test failed:', response.data.message);
                     testResultElement.innerHTML = `Test failed: ${response.data.message}`;
-                    testResultElement.style.color = '#ff0000';
+                    testResultElement.classList.add('error-message');
                 }
             })
             .catch((error) => {
                 console.error('Error during light test:', error);
                 debugInfoElement.innerHTML += `Error: ${error.message}\n`;
                 testResultElement.innerHTML = `Error: ${error.message}`;
-                testResultElement.style.color = '#ff0000';
+                testResultElement.classList.add('error-message');
             });
         }
     </script>
