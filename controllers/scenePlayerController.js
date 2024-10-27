@@ -544,20 +544,42 @@ async function executeServo(step) {
                 }
             };
 
-            process.stdout.on('data', (data) => {
-                const dataStr = data.toString();
-                output += dataStr;
-                logger.debug(`Servo control output: ${dataStr}`);
-                
-                if (dataStr.includes('Movement started')) {
-                    movementStarted = true;
-                }
-                if (dataStr.includes('Movement completed')) {
-                    movementCompleted = true;
-                    cleanup();
-                    resolve({ success: true });
-                }
-            });
+            // Parse JSON output and check for status messages
+            const processOutput = (data) => {
+                const lines = data.toString().split('\n');
+                lines.forEach(line => {
+                    if (line.trim()) {
+                        try {
+                            const jsonData = JSON.parse(line);
+                            if (jsonData.status === 'info' && jsonData.message === 'Movement started') {
+                                movementStarted = true;
+                                logger.debug('Servo movement started');
+                            }
+                            if (jsonData.status === 'info' && jsonData.message === 'Movement completed') {
+                                movementCompleted = true;
+                                logger.debug('Servo movement completed');
+                                cleanup();
+                                resolve({ success: true });
+                            }
+                            if (jsonData.status === 'success' && !movementCompleted) {
+                                movementCompleted = true;
+                                logger.debug('Servo movement succeeded');
+                                cleanup();
+                                resolve({ success: true });
+                            }
+                            if (jsonData.status === 'error') {
+                                cleanup();
+                                reject(new Error(jsonData.message));
+                            }
+                        } catch (e) {
+                            // Not JSON or incomplete JSON, append to output
+                            output += line + '\n';
+                        }
+                    }
+                });
+            };
+
+            process.stdout.on('data', processOutput);
             
             process.stderr.on('data', (data) => {
                 errorOutput += data.toString();
@@ -587,7 +609,7 @@ async function executeServo(step) {
                     cleanup();
                     reject(new Error('Servo movement failed to start within timeout'));
                 }
-            }, SERVO_MOVEMENT_TIMEOUT); // Use the 15 second timeout constant
+            }, SERVO_MOVEMENT_TIMEOUT);
         });
 
         if (!result.success) {
