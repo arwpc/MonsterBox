@@ -30,9 +30,28 @@ except ImportError as e:
 def find_usb_camera():
     """Find the USB camera device."""
     try:
-        # First try video0 and video1 as they are typically USB cameras
-        primary_devices = ['/dev/video0', '/dev/video1']
-        for device in primary_devices:
+        # Run v4l2-ctl to list devices
+        result = subprocess.run(['v4l2-ctl', '--list-devices'], 
+                              capture_output=True, text=True)
+        
+        if result.returncode == 0:
+            output = result.stdout
+            # Look for USB camera section
+            if 'USB 2.0 Camera' in output:
+                # Get the first video device listed under USB camera
+                lines = output.split('\n')
+                for i, line in enumerate(lines):
+                    if 'USB 2.0 Camera' in line:
+                        # Next line should contain the video device
+                        for j in range(i + 1, min(i + 4, len(lines))):
+                            if 'video' in lines[j]:
+                                device = lines[j].strip()
+                                device_num = int(device.replace('/dev/video', ''))
+                                return device_num
+        
+        # Fallback to checking common video devices
+        devices = ['/dev/video0', '/dev/video1']
+        for device in devices:
             if os.path.exists(device) and os.access(device, os.R_OK):
                 try:
                     cap = cv2.VideoCapture(int(device.replace('/dev/video', '')), cv2.CAP_V4L2)
