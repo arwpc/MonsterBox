@@ -465,14 +465,22 @@ async function executeServo(step) {
         ];
 
         logger.debug(`Executing servo_control.py with args: ${args.join(', ')}`);
+        
+        // Execute the servo control and wait for completion
         const result = await new Promise((resolve, reject) => {
             const process = spawn('python3', [scriptPath, ...args]);
             let output = '';
             let errorOutput = '';
+            let movementStarted = false;
             
             process.stdout.on('data', (data) => {
-                output += data.toString();
-                logger.debug(`Servo control output: ${data}`);
+                const dataStr = data.toString();
+                output += dataStr;
+                logger.debug(`Servo control output: ${dataStr}`);
+                
+                if (dataStr.includes('Movement started')) {
+                    movementStarted = true;
+                }
             });
             
             process.stderr.on('data', (data) => {
@@ -480,19 +488,25 @@ async function executeServo(step) {
                 logger.error(`Servo control error: ${data}`);
             });
             
+            // Set a timeout for the entire movement duration plus a small buffer
+            const timeout = setTimeout(() => {
+                if (!movementStarted) {
+                    process.kill();
+                    reject(new Error('Servo movement failed to start'));
+                }
+            }, 5000); // 5 second timeout for movement to start
+            
             process.on('close', (code) => {
+                clearTimeout(timeout);
+                
                 if (code === 0) {
-                    try {
-                        // Try to parse the output as JSON
-                        const jsonOutput = JSON.parse(output);
-                        resolve(jsonOutput);
-                    } catch (error) {
-                        // If output is not JSON but process exited successfully
-                        if (output.includes('Servo test successful')) {
+                    if (movementStarted) {
+                        // Wait for the full duration of the movement
+                        setTimeout(() => {
                             resolve({ success: true });
-                        } else {
-                            reject(new Error(`Failed to parse servo control output: ${output}`));
-                        }
+                        }, duration * 1000); // Convert duration to milliseconds
+                    } else {
+                        reject(new Error('Servo movement did not start properly'));
                     }
                 } else {
                     reject(new Error(`Servo control process exited with code ${code}. Error: ${errorOutput}`));
