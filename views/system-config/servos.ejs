@@ -5,74 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Servo Configuration</title>
     <link rel="stylesheet" href="/css/style.css">
-    <style>
-        .servo-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-            margin: 20px 0;
-        }
-        .servo-card {
-            border: 1px solid #00ff00;
-            padding: 15px;
-            background-color: #003300;
-            border-radius: 5px;
-        }
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        .form-group {
-            margin-bottom: 10px;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            color: #00ff00;
-        }
-        .form-group input[type="text"],
-        .form-group input[type="number"],
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #00ff00;
-            background-color: #002200;
-            color: #00ff00;
-            border-radius: 4px;
-        }
-        .form-group select[multiple] {
-            height: 100px;
-        }
-        .button-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        .edit-button, .delete-button {
-            padding: 5px 10px;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-        }
-        .edit-button {
-            background-color: #004400;
-            color: #00ff00;
-        }
-        .delete-button {
-            background-color: #440000;
-            color: #ff0000;
-        }
-        #newServoForm {
-            margin-top: 20px;
-            padding: 20px;
-            border: 1px solid #00ff00;
-            border-radius: 5px;
-            background-color: #002200;
-        }
-    </style>
 </head>
 <body>
     <h1>Servo Configuration</h1>
@@ -184,8 +116,10 @@
             <label for="notes">Notes:</label>
             <textarea id="notes" name="notes" rows="3"></textarea>
         </div>
-        <button type="submit" class="button" id="submitButton">Add Servo Configuration</button>
-        <button type="button" class="button" onclick="resetForm()" style="display: none;" id="cancelButton">Cancel</button>
+        <div class="button-group">
+            <button type="submit" class="button" id="submitButton">Add Servo Configuration</button>
+            <button type="button" class="button" onclick="resetForm()" style="display: none;" id="cancelButton">Cancel</button>
+        </div>
     </form>
 
     <a href="/system-config" class="button">Back to System Config</a>

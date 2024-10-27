@@ -4,58 +4,65 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%- title %></title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-    <h1><%- title %></h1>
-    <form action="<%- action %>" method="POST" enctype="multipart/form-data">
-        <% if (sound && sound.id) { %>
-            <input type="hidden" name="id" value="<%- sound.id %>">
-        <% } %>
-        
-        <div>
-            <label for="characterIds">Characters:</label>
-            <select id="characterIds" name="characterIds" multiple required>
-                <% characters.forEach(function(character) { %>
-                    <option value="<%- character.id %>" 
-                        <% if (sound && (
-                            (Array.isArray(sound.characterIds) && sound.characterIds.includes(character.id)) || 
-                            (sound.characterId !== undefined && sound.characterId === character.id)
-                        )) { %>
-                            selected
-                        <% } %>
-                    >
-                        <%- character.char_name %>
-                    </option>
-                <% }); %>
-            </select>
-        </div>
+    <header>
+        <h1 class="landing-title"><%- title %></h1>
+    </header>
 
-        <div>
-            <label for="name">Sound Name:</label>
-            <input type="text" id="name" name="name" value="<%- sound ? sound.name : '' %>" required>
-        </div>
-
-        <div>
-            <label for="sound_files">Sound File:</label>
-            <% if (sound && sound.filename) { %>
-                <p>Current file: <%- sound.filename %></p>
-                <label>
-                    <input type="radio" name="file_option" value="keep" checked> Keep current file
-                </label>
-                <label>
-                    <input type="radio" name="file_option" value="replace"> Replace file
-                </label>
-                <input type="file" id="sound_files" name="sound_files" accept=".mp3,.wav" style="display: none;">
-            <% } else { %>
-                <input type="file" id="sound_files" name="sound_files" accept=".mp3,.wav" required>
+    <main>
+        <form action="<%- action %>" method="POST" enctype="multipart/form-data">
+            <% if (sound && sound.id) { %>
+                <input type="hidden" name="id" value="<%- sound.id %>">
             <% } %>
-        </div>
+            
+            <div class="form-group">
+                <label for="characterIds">Characters:</label>
+                <select id="characterIds" name="characterIds" multiple required>
+                    <% characters.forEach(function(character) { %>
+                        <option value="<%- character.id %>" 
+                            <% if (sound && (
+                                (Array.isArray(sound.characterIds) && sound.characterIds.includes(character.id)) || 
+                                (sound.characterId !== undefined && sound.characterId === character.id)
+                            )) { %>
+                                selected
+                            <% } %>
+                        >
+                            <%- character.char_name %>
+                        </option>
+                    <% }); %>
+                </select>
+            </div>
 
-        <button type="submit">Save Sound</button>
-    </form>
+            <div class="form-group">
+                <label for="name">Sound Name:</label>
+                <input type="text" id="name" name="name" value="<%- sound ? sound.name : '' %>" required>
+            </div>
 
-    <a href="/sounds" class="button">Back to Sounds</a>
+            <div class="form-group">
+                <label for="sound_files">Sound File:</label>
+                <% if (sound && sound.filename) { %>
+                    <p>Current file: <%- sound.filename %></p>
+                    <div class="checkbox-label">
+                        <input type="radio" name="file_option" value="keep" checked> Keep current file
+                    </div>
+                    <div class="checkbox-label">
+                        <input type="radio" name="file_option" value="replace"> Replace file
+                    </div>
+                    <input type="file" id="sound_files" name="sound_files" accept=".mp3,.wav" style="display: none;">
+                <% } else { %>
+                    <input type="file" id="sound_files" name="sound_files" accept=".mp3,.wav" required>
+                <% } %>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="button primary-btn">Save Sound</button>
+                <a href="/sounds" class="button secondary-btn">Back to Sounds</a>
+            </div>
+        </form>
+    </main>
 
     <script>
         // Show/hide file input based on radio button selection

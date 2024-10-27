@@ -4,51 +4,65 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
     <link rel="stylesheet" href="/css/style.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 <body>
-    <h1><%= title %> for <%= character ? (character.char_name || 'Unknown Character') : 'Unknown Character' %></h1>
-    <a href="/scenes/new?characterId=<%= character ? character.id : '' %>" class="button">Add New Scene</a>
-    <% if (scenes.length === 0) { %>
-        <p>No scenes found for this character.</p>
-    <% } else { %>
-        <table>
-            <thead>
-                <tr>
-                    <th>Scene Name</th>
-                    <th>Steps</th>
-                    <th>Actions</th>
-                    <th>Operations</th>
-                </tr>
-            </thead>
-            <tbody>
-                <% scenes.forEach(function(scene) { %>
-                    <tr>
-                        <td><%= scene.scene_name || 'Untitled Scene' %> (ID: <%= scene.id %>)</td>
-                        <td><%= scene.steps ? scene.steps.length : 0 %></td>
-                        <td>
-                            <% if (scene.steps && scene.steps.length > 0) { %>
-                                <ul>
-                                    <% scene.steps.forEach(function(step) { %>
-                                        <li><%= step.name || 'Unnamed Step' %></li>
-                                    <% }); %>
-                                </ul>
-                            <% } else { %>
-                                <p>No steps</p>
-                            <% } %>
-                        </td>
-                        <td>
-                            <a href="/scenes/<%= scene.id %>/edit?characterId=<%= character ? character.id : '' %>" class="button edit-scene" data-id="<%= scene.id %>">Edit</a>
-                            <button onclick="deleteScene('<%= scene.id %>')" class="button">Delete</button>
-                            <a href="/scenes/<%= scene.id %>?characterId=<%= character ? character.id : '' %>" class="button play-scene" data-id="<%= scene.id %>">Run</a>
-                        </td>
-                    </tr>
-                <% }); %>
-            </tbody>
-        </table>
-    <% } %>
-    <a href="/?characterId=<%= character ? character.id : '' %>" class="button">Back to Main Menu</a>
+    <header>
+        <h1 class="landing-title"><%= title %> for <%= character ? (character.char_name || 'Unknown Character') : 'Unknown Character' %></h1>
+    </header>
+
+    <main>
+        <div class="button-group">
+            <a href="/scenes/new?characterId=<%= character ? character.id : '' %>" class="button primary-btn">Add New Scene</a>
+            <a href="/?characterId=<%= character ? character.id : '' %>" class="button secondary-btn">Back to Main Menu</a>
+        </div>
+
+        <% if (scenes.length === 0) { %>
+            <p>No scenes found for this character.</p>
+        <% } else { %>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Scene Name</th>
+                            <th>Steps</th>
+                            <th>Actions</th>
+                            <th>Operations</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% scenes.forEach(function(scene) { %>
+                            <tr>
+                                <td><%= scene.scene_name || 'Untitled Scene' %> (ID: <%= scene.id %>)</td>
+                                <td><%= scene.steps ? scene.steps.length : 0 %></td>
+                                <td>
+                                    <% if (scene.steps && scene.steps.length > 0) { %>
+                                        <ul class="info-list">
+                                            <% scene.steps.forEach(function(step) { %>
+                                                <li><%= step.name || 'Unnamed Step' %></li>
+                                            <% }); %>
+                                        </ul>
+                                    <% } else { %>
+                                        <p>No steps</p>
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <div class="button-group">
+                                        <a href="/scenes/<%= scene.id %>/edit?characterId=<%= character ? character.id : '' %>" class="button edit-scene" data-id="<%= scene.id %>">Edit</a>
+                                        <button onclick="deleteScene('<%= scene.id %>')" class="button">Delete</button>
+                                        <a href="/scenes/<%= scene.id %>?characterId=<%= character ? character.id : '' %>" class="button play-scene" data-id="<%= scene.id %>">Run</a>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        <% } %>
+    </main>
 
     <script>
         const characterId = '<%= character ? character.id : "" %>';

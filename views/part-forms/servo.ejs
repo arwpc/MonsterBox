@@ -85,23 +85,6 @@
             gap: 10px;
             margin-bottom: 15px;
         }
-        .form-group {
-            margin-bottom: 10px;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-        }
-        .form-group input[type="text"],
-        .form-group input[type="number"],
-        .form-group select {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #00ff00;
-            background-color: #001100;
-            color: #00ff00;
-            border-radius: 4px;
-        }
         .servo-type-container {
             display: flex;
             align-items: center;
@@ -127,11 +110,13 @@
         <% if (part && part.id) { %>
             <input type="hidden" name="id" value="<%= part.id %>">
         <% } %>
-        <div>
+        
+        <div class="form-group">
             <label for="name">Part Name:</label>
             <input type="text" id="name" name="name" value="<%= part ? part.name : '' %>" required>
         </div>
-        <div>
+
+        <div class="form-group">
             <label for="characterId">Character:</label>
             <select id="characterId" name="characterId" required>
                 <% characters.forEach(function(character) { %>
@@ -141,7 +126,8 @@
                 <% }); %>
             </select>
         </div>
-        <div>
+
+        <div class="form-group">
             <label for="servoType">Servo Type:</label>
             <div class="servo-type-container">
                 <select id="servoType" name="servoType" required onchange="updateServoParameters()">
@@ -176,16 +162,19 @@
             <p id="servoNotes"></p>
         </div>
 
-        <div>
-            <label for="usePCA9685">Use PCA9685:</label>
-            <input type="checkbox" id="usePCA9685" name="usePCA9685" <%= (part && part.usePCA9685) ? 'checked' : '' %> onchange="togglePCA9685()">
+        <div class="form-group">
+            <label class="checkbox-label" for="usePCA9685">
+                <input type="checkbox" id="usePCA9685" name="usePCA9685" <%= (part && part.usePCA9685) ? 'checked' : '' %> onchange="togglePCA9685()">
+                Use PCA9685
+            </label>
         </div>
+
         <div id="pca9685Fields" style="display: none;">
-            <div>
+            <div class="form-group">
                 <label for="channel">PCA9685 Channel:</label>
                 <input type="number" id="channel" name="channel" value="<%= part ? part.channel : 0 %>" min="0" max="15" required>
             </div>
-            <div>
+            <div class="form-group">
                 <label>Channel Position:</label>
                 <div class="channel-grid">
                     <% for (let i = 0; i < 16; i++) { %>
@@ -196,7 +185,8 @@
                 </div>
             </div>
         </div>
-        <div id="gpioField" style="display: none;">
+
+        <div id="gpioField" class="form-group" style="display: none;">
             <label for="pin">GPIO Pin:</label>
             <input type="number" id="pin" name="pin" value="<%= part ? part.pin : '' %>" min="0" max="27" required>
         </div>
@@ -206,7 +196,9 @@
         <input type="hidden" id="defaultAngle" name="defaultAngle" value="<%= part ? part.defaultAngle : 90 %>">
         <input type="hidden" id="customSettings" name="customSettings" value="<%= part && part.customSettings ? JSON.stringify(part.customSettings) : '' %>">
 
-        <button type="submit">Save Part</button>
+        <div class="form-group">
+            <button type="submit">Save Part</button>
+        </div>
     </form>
 
     <!-- Customize Modal -->
@@ -240,19 +232,23 @@
 
     <div id="servoTest">
         <h2>Test Servo</h2>
-        <div>
+        <div class="form-group">
             <label for="testAngle">Angle (0-180):</label>
             <input type="range" id="testAngle" min="0" max="180" value="90">
             <span id="angleValue">90</span>
         </div>
         <p id="servoDescription"></p>
-        <button onclick="testServo()">Test Servo</button>
-        <button onclick="stopServo()">Stop Test</button>
+        <div class="form-group">
+            <button onclick="testServo()">Test Servo</button>
+            <button onclick="stopServo()">Stop Test</button>
+        </div>
         <div id="testResult"></div>
     </div>
 
-    <a href="/parts?characterId=<%= character ? character.id : (part ? part.characterId : '') %>" class="button">Back to Parts</a>
-    <a href="/system-config/servos" class="button">Manage Servo Configurations</a>
+    <div class="form-group">
+        <a href="/parts?characterId=<%= character ? character.id : (part ? part.characterId : '') %>" class="button">Back to Parts</a>
+        <a href="/system-config/servos" class="button">Manage Servo Configurations</a>
+    </div>
 
     <script>
         function updateServoParameters() {
