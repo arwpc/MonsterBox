@@ -74,20 +74,14 @@
 
             const partData = {
                 part_id: partId,
-                type: 'light',
-                state: state,
-                gpioPin: parseInt(document.getElementById('gpioPin').value)
+                gpioPin: parseInt(document.getElementById('gpioPin').value),
+                state: state
             };
 
             console.log('Sending test data:', partData);
             debugInfoElement.innerHTML += `Sending test data: ${JSON.stringify(partData, null, 2)}\n\n`;
 
-            axios.post('/parts/light/test', {
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                data: partData
-            })
+            axios.post('/parts/light/test', partData)
             .then(response => {
                 debugInfoElement.innerHTML += `Response status: ${response.status}\n`;
                 console.log('Received response:', response.data);

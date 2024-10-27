@@ -42,15 +42,17 @@ router.post('/', async (req, res) => {
 
 router.post('/test', async (req, res) => {
     try {
-        const { gpioPin, brightness, duration } = req.body;
+        const { gpioPin, state } = req.body;
+        
+        if (!gpioPin || !state) {
+            throw new Error('Missing required parameters: gpioPin and state are required');
+        }
 
         const scriptPath = path.join(__dirname, '..', 'scripts', 'light_control.py');
         const process = spawn('python3', [
             scriptPath,
             gpioPin.toString(),
-            'on',
-            duration.toString(),
-            brightness.toString()
+            state.toString()
         ]);
 
         let stdout = '';
