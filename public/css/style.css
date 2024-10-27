@@ -63,6 +63,36 @@ footer {
     font-style: italic;
 }
 
+/* Character Form Layout */
+.character-form-container {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 20px;
+    align-items: start;
+}
+
+.image-preview-container {
+    background-color: #001100;
+    border: 1px solid #00ff00;
+    border-radius: 5px;
+    padding: 20px;
+    text-align: center;
+}
+
+.image-preview {
+    width: 100%;
+    height: 300px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #00ff00;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+    margin-bottom: 15px;
+}
+
+.form-content {
+    flex: 1;
+}
+
 /* Character Select */
 #character-select {
     margin-bottom: 20px;
@@ -127,6 +157,7 @@ footer {
     gap: 10px;
     margin-top: 15px;
     flex-wrap: wrap;
+    justify-content: center;
 }
 
 button:disabled {
@@ -151,7 +182,7 @@ form {
     border-radius: 5px;
     border: 1px solid #00ff00;
     box-shadow: 0 0 10px rgba(0, 255, 0, 0.1);
-    max-width: 800px;
+    max-width: 1200px;
     margin: 0 auto;
 }
 
@@ -159,8 +190,62 @@ form {
     margin-bottom: 15px;
     padding: 5px 0;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 15px;
+}
+
+/* Dual Select Styles */
+.dual-select {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    flex: 1;
+}
+
+.select-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.select-label {
+    color: #00ff00;
+    font-size: 0.9em;
+    text-align: left;
+    margin-bottom: 5px;
+}
+
+.dual-select select {
+    width: 100%;
+    min-height: 200px;
+    padding: 8px;
+    border: 1px solid #00ff00;
+    border-radius: 4px;
+    background-color: #001100;
+    color: #00ff00;
+}
+
+.dual-select-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 20px 5px;
+}
+
+.dual-select-controls button {
+    padding: 5px 10px;
+    background-color: #003300;
+    color: #00ff00;
+    border: 1px solid #00ff00;
+    border-radius: 4px;
+    cursor: pointer;
+    width: 30px;
+}
+
+.dual-select-controls button:hover {
+    background-color: #004400;
+    box-shadow: 0 0 5px #00ff00;
 }
 
 label {
@@ -194,7 +279,7 @@ select {
     color: #00ff00;
     box-sizing: border-box;
     font-family: inherit;
-    min-width: 0; /* Prevents flex items from overflowing */
+    min-width: 0;
 }
 
 select[multiple] {
@@ -425,6 +510,10 @@ tr:hover {
 
 /* Responsive Design */
 @media (max-width: 768px) {
+    .character-form-container {
+        grid-template-columns: 1fr;
+    }
+
     .form-grid {
         grid-template-columns: 1fr;
     }
@@ -461,5 +550,16 @@ tr:hover {
     input[type="range"],
     input[type="file"] {
         width: 100%;
+    }
+
+    .dual-select {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .dual-select-controls {
+        flex-direction: row;
+        justify-content: center;
+        padding: 5px;
     }
 }

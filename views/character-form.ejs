@@ -20,82 +20,103 @@
                 <input type="hidden" name="id" value="<%= character.id %>">
             <% } %>
 
-            <div class="form-group">
-                <label for="char_name">Name:</label>
-                <input type="text" id="char_name" name="char_name" value="<%= character ? character.char_name : '' %>" required>
-            </div>
-
-            <div class="form-group">
-                <label for="char_description">Description:</label>
-                <textarea id="char_description" name="char_description" required><%= character ? character.char_description : '' %></textarea>
-            </div>
-
-            <div class="form-group">
-                <label for="image">Image:</label>
-                <input type="file" id="image" name="image" accept="image/*">
-                <% if (character && character.image) { %>
-                    <img src="/images/characters/<%= character.image %>" alt="Current image" style="max-width: 200px;">
-                <% } %>
-            </div>
-
-            <div class="form-group">
-                <label>Parts:</label>
-                <div class="dual-select">
-                    <select id="available-parts-select" multiple>
-                        <% parts.forEach(function(part) { %>
-                            <% if (!part.characterId || (character && character.id && part.characterId !== character.id)) { %>
-                                <option value="<%= part.id %>"><%= part.name %></option>
-                            <% } %>
-                        <% }); %>
-                    </select>
-                    <div class="dual-select-controls">
-                        <button type="button" onclick="moveSelectedOptions('available-parts-select', 'selected-parts-select')">></button>
-                        <button type="button" onclick="moveSelectedOptions('selected-parts-select', 'available-parts-select')"><</button>
+            <div class="character-form-container">
+                <div class="image-preview-container">
+                    <% if (character && character.image) { %>
+                        <img src="/images/characters/<%= character.image %>" alt="Character image" class="image-preview">
+                    <% } else { %>
+                        <div class="image-preview" style="background-color: #002200; display: flex; align-items: center; justify-content: center;">
+                            <span>No Image Selected</span>
+                        </div>
+                    <% } %>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <input type="file" id="image" name="image" accept="image/*" style="width: 100%;">
                     </div>
-                    <select id="selected-parts-select" name="parts[]" multiple>
-                        <% if (character && character.id) { %>
-                            <% parts.forEach(function(part) { %>
-                                <% if (part.characterId === character.id) { %>
-                                    <option value="<%= part.id %>" selected><%= part.name %></option>
-                                <% } %>
-                            <% }); %>
-                        <% } %>
-                    </select>
                 </div>
-            </div>
 
-            <div class="form-group">
-                <label>Sounds:</label>
-                <div class="dual-select">
-                    <select id="available-sounds-select" multiple>
-                        <% sounds.forEach(function(sound) { %>
-                            <% if (!sound.characterIds || !sound.characterIds.includes(character ? character.id : null)) { %>
-                                <option value="<%= sound.id %>"><%= sound.name %></option>
-                            <% } %>
-                        <% }); %>
-                    </select>
-                    <div class="dual-select-controls">
-                        <button type="button" onclick="moveSelectedOptions('available-sounds-select', 'selected-sounds-select')">></button>
-                        <button type="button" onclick="moveSelectedOptions('selected-sounds-select', 'available-sounds-select')"><</button>
+                <div class="form-content">
+                    <div class="form-group">
+                        <label for="char_name">Name:</label>
+                        <input type="text" id="char_name" name="char_name" value="<%= character ? character.char_name : '' %>" required>
                     </div>
-                    <select id="selected-sounds-select" name="sounds[]" multiple>
-                        <% if (character && character.id) { %>
-                            <% sounds.forEach(function(sound) { %>
-                                <% if (sound.characterIds && sound.characterIds.includes(character.id)) { %>
-                                    <option value="<%= sound.id %>" selected><%= sound.name %></option>
-                                <% } %>
-                            <% }); %>
-                        <% } %>
-                    </select>
-                </div>
-            </div>
 
-            <div class="button-group">
-                <button type="submit" class="button primary-btn">Save Character</button>
-                <a href="/characters" class="button secondary-btn">Cancel</a>
-                <% if (character && character.id) { %>
-                    <button type="button" id="configureVoice" class="button">Configure Voice</button>
-                <% } %>
+                    <div class="form-group">
+                        <label for="char_description">Description:</label>
+                        <textarea id="char_description" name="char_description" required><%= character ? character.char_description : '' %></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Parts:</label>
+                        <div class="dual-select">
+                            <div class="select-container">
+                                <label class="select-label">Available Parts</label>
+                                <select id="available-parts" multiple>
+                                    <% parts.forEach(function(part) { %>
+                                        <% if (!part.characterId || (character && character.id && part.characterId !== character.id)) { %>
+                                            <option value="<%= part.id %>"><%= part.name %></option>
+                                        <% } %>
+                                    <% }); %>
+                                </select>
+                            </div>
+                            <div class="dual-select-controls">
+                                <button type="button" onclick="moveSelectedOptions('available-parts', 'assigned-parts')">></button>
+                                <button type="button" onclick="moveSelectedOptions('assigned-parts', 'available-parts')"><</button>
+                            </div>
+                            <div class="select-container">
+                                <label class="select-label">Assigned Parts</label>
+                                <select id="assigned-parts" name="parts[]" multiple>
+                                    <% if (character && character.id) { %>
+                                        <% parts.forEach(function(part) { %>
+                                            <% if (part.characterId === character.id) { %>
+                                                <option value="<%= part.id %>" selected><%= part.name %></option>
+                                            <% } %>
+                                        <% }); %>
+                                    <% } %>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Sounds:</label>
+                        <div class="dual-select">
+                            <div class="select-container">
+                                <label class="select-label">Available Sounds</label>
+                                <select id="available-sounds" multiple>
+                                    <% sounds.forEach(function(sound) { %>
+                                        <% if (!sound.characterIds || !sound.characterIds.includes(character ? character.id : null)) { %>
+                                            <option value="<%= sound.id %>"><%= sound.name %></option>
+                                        <% } %>
+                                    <% }); %>
+                                </select>
+                            </div>
+                            <div class="dual-select-controls">
+                                <button type="button" onclick="moveSelectedOptions('available-sounds', 'assigned-sounds')">></button>
+                                <button type="button" onclick="moveSelectedOptions('assigned-sounds', 'available-sounds')"><</button>
+                            </div>
+                            <div class="select-container">
+                                <label class="select-label">Assigned Sounds</label>
+                                <select id="assigned-sounds" name="sounds[]" multiple>
+                                    <% if (character && character.id) { %>
+                                        <% sounds.forEach(function(sound) { %>
+                                            <% if (sound.characterIds && sound.characterIds.includes(character.id)) { %>
+                                                <option value="<%= sound.id %>" selected><%= sound.name %></option>
+                                            <% } %>
+                                        <% }); %>
+                                    <% } %>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button type="submit" class="button primary-btn">Save Character</button>
+                        <a href="/characters" class="button secondary-btn">Cancel</a>
+                        <% if (character && character.id) { %>
+                            <button type="button" id="configureVoice" class="button">Configure Voice</button>
+                        <% } %>
+                    </div>
+                </div>
             </div>
         </form>
 
@@ -191,6 +212,29 @@
     </main>
 
     <script>
+        // Add preview functionality for image upload
+        const imageInput = document.getElementById('image');
+        const imagePreview = document.querySelector('.image-preview');
+
+        imageInput.addEventListener('change', function(e) {
+            if (e.target.files && e.target.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    if (imagePreview.tagName.toLowerCase() === 'img') {
+                        imagePreview.src = e.target.result;
+                    } else {
+                        // Replace the div with an img element
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.className = 'image-preview';
+                        img.alt = 'Character image';
+                        imagePreview.parentNode.replaceChild(img, imagePreview);
+                    }
+                }
+                reader.readAsDataURL(e.target.files[0]);
+            }
+        });
+
         function moveSelectedOptions(fromSelectId, toSelectId) {
             const fromSelect = document.getElementById(fromSelectId);
             const toSelect = document.getElementById(toSelectId);
@@ -201,47 +245,21 @@
             }
         }
 
-        function updateAvailableOptions() {
-            const selectedParts = document.getElementById('selected-parts-select');
-            const availableParts = document.getElementById('available-parts-select');
-            const selectedSounds = document.getElementById('selected-sounds-select');
-            const availableSounds = document.getElementById('available-sounds-select');
-
-            // Remove duplicates from available lists
-            if (selectedParts && availableParts) {
-                for (let option of selectedParts.options) {
-                    const duplicate = availableParts.querySelector(`option[value="${option.value}"]`);
-                    if (duplicate) {
-                        availableParts.removeChild(duplicate);
-                    }
-                }
-            }
-
-            if (selectedSounds && availableSounds) {
-                for (let option of selectedSounds.options) {
-                    const duplicate = availableSounds.querySelector(`option[value="${option.value}"]`);
-                    if (duplicate) {
-                        availableSounds.removeChild(duplicate);
-                    }
-                }
-            }
-        }
-
         // Form submission handling
         const form = document.querySelector('form');
         if (form) {
             form.onsubmit = function() {
-                const selectedParts = document.getElementById('selected-parts-select');
-                const selectedSounds = document.getElementById('selected-sounds-select');
+                const assignedParts = document.getElementById('assigned-parts');
+                const assignedSounds = document.getElementById('assigned-sounds');
                 
-                if (selectedParts) {
-                    for (let option of selectedParts.options) {
+                if (assignedParts) {
+                    for (let option of assignedParts.options) {
                         option.selected = true;
                     }
                 }
                 
-                if (selectedSounds) {
-                    for (let option of selectedSounds.options) {
+                if (assignedSounds) {
+                    for (let option of assignedSounds.options) {
                         option.selected = true;
                     }
                 }
@@ -250,11 +268,6 @@
             };
         }
 
-        // Initialize available options
-        updateAvailableOptions();
-    </script>
-
-    <script>
         // Voice configuration modal functionality
         document.addEventListener('DOMContentLoaded', async function() {
             const modal = document.getElementById('voiceModal');
@@ -379,8 +392,6 @@
                         updateValue(param, element.value, 
                             param === 'speed' ? 'x' : 
                             param === 'volume' ? ' dB' : '');
-                        // Keep preview button enabled
-                        document.getElementById('previewPlay').disabled = false;
                     };
                 }
             });
@@ -389,7 +400,6 @@
             try {
                 const response = await fetch('/api/voice/available');
                 const voices = await response.json();
-                console.log('Available voices:', voices);
                 
                 const voiceSelect = document.getElementById('voiceSelect');
                 if (voiceSelect) {
@@ -443,17 +453,14 @@
                         return;
                     }
 
-                    const voiceId = voiceSelect.value;
-                    console.log('Selected voice ID:', voiceId);
-
                     // Initialize WaveSurfer on first user interaction
                     await initWaveSurfer();
 
                     const testText = document.getElementById('testText');
                     const settings = {
-                        speaker_id: voiceId,
+                        speaker_id: voiceSelect.value,
                         text: testText ? testText.value : 'Hello world',
-                        modelId: 'vox_1_0', // Always use vox_1_0
+                        modelId: 'vox_1_0',
                         pitch: parseInt(document.getElementById('pitch')?.value || 0),
                         speed: parseFloat(document.getElementById('speed')?.value || 1.0),
                         volume: parseInt(document.getElementById('volume')?.value || 0),
@@ -464,7 +471,6 @@
                         style: document.getElementById('styleSelect')?.value || 'neutral'
                     };
 
-                    console.log('Sending speech generation request with settings:', settings);
                     const loadingIndicator = document.getElementById('loadingIndicator');
                     if (loadingIndicator) {
                         loadingIndicator.style.display = 'block';
@@ -482,7 +488,6 @@
                             throw new Error(data.error);
                         }
                         
-                        console.log('Received response:', data);
                         lastGeneratedAudioUrl = data.url;
                         wavesurfer.load(data.url);
                         wavesurfer.on('ready', function() {
@@ -519,9 +524,6 @@
                     alert('Please generate audio first');
                 }
             };
-
-            // Initialize available options
-            updateAvailableOptions();
         });
     </script>
 </body>

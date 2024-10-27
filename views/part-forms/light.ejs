@@ -14,7 +14,7 @@
     </header>
 
     <main>
-        <form action="<%= action %>?returnTo=/parts?characterId=<%= character ? character.id : (part ? part.characterId : '') %>" method="POST">
+        <form action="<%= action %>?returnTo=/parts?characterId=<%= part && part.characterId ? part.characterId : '' %>" method="POST">
             <input type="hidden" name="type" value="light">
             <% if (part.id) { %>
                 <input type="hidden" name="id" value="<%= part.id %>">
@@ -58,7 +58,7 @@
         <div id="debugInfo" class="config-section"></div>
 
         <div class="button-group">
-            <a href="/parts?characterId=<%= character ? character.id : (part ? part.characterId : '') %>" class="button secondary-btn">Back to Parts</a>
+            <a href="/parts?characterId=<%= part && part.characterId ? part.characterId : '' %>" class="button secondary-btn">Back to Parts</a>
         </div>
     </main>
 
