@@ -1,6 +1,3 @@
-Create a new file at `views/camera.ejs` with the following content:
-
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -122,6 +119,16 @@ Create a new file at `views/camera.ejs` with the following content:
             text-align: center;
             margin: 10px 0;
         }
+
+        .error-message {
+            color: #ff0000;
+            background-color: #330000;
+            border: 1px solid #ff0000;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -133,6 +140,7 @@ Create a new file at `views/camera.ejs` with the following content:
                 <img id="cameraStream" alt="Camera Stream">
                 <div id="motionIndicator" class="motion-indicator"></div>
             </div>
+            <div id="errorMessage" class="error-message"></div>
         </div>
         
         <div class="camera-controls">
@@ -184,17 +192,33 @@ Create a new file at `views/camera.ejs` with the following content:
         let motionDetectionActive = false;
         let headTrackingActive = false;
         let motionInterval = null;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 3;
 
         // Initialize camera stream
         const streamImg = document.getElementById('cameraStream');
-        streamImg.src = `/camera/stream?t=${Date.now()}`;
         const streamStatus = document.getElementById('streamStatus');
         const streamStatusText = document.getElementById('streamStatusText');
         const motionIndicator = document.getElementById('motionIndicator');
+        const errorMessage = document.getElementById('errorMessage');
+
+        function initializeStream() {
+            streamImg.src = `/camera/stream?t=${Date.now()}`;
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            setTimeout(() => {
+                errorMessage.style.display = 'none';
+            }, 5000);
+        }
 
         streamImg.onload = function() {
             streamStatus.className = 'status-indicator status-active';
             streamStatusText.textContent = 'Connected';
+            reconnectAttempts = 0;
+            errorMessage.style.display = 'none';
         };
 
         streamImg.onerror = function() {
@@ -202,7 +226,18 @@ Create a new file at `views/camera.ejs` with the following content:
             streamStatusText.textContent = 'Disconnected';
             stopMotionDetection();
             stopHeadTracking();
+
+            if (reconnectAttempts < maxReconnectAttempts) {
+                reconnectAttempts++;
+                showError(`Connection lost. Reconnecting... (Attempt ${reconnectAttempts}/${maxReconnectAttempts})`);
+                setTimeout(initializeStream, 2000);
+            } else {
+                showError('Failed to connect to camera after multiple attempts. Please refresh the page to try again.');
+            }
         };
+
+        // Initialize stream
+        initializeStream();
 
         // Motion detection controls
         document.getElementById('toggleMotion').addEventListener('click', function() {
@@ -229,35 +264,47 @@ Create a new file at `views/camera.ejs` with the following content:
             motionIndicator.style.top = `${(y / 100) * imgRect.height}px`;
         }
 
-        function startMotionDetection() {
-            motionDetectionActive = true;
-            document.getElementById('toggleMotion').textContent = 'Stop Motion Detection';
-            
-            motionInterval = setInterval(async () => {
-                try {
-                    const response = await fetch('/camera/control', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            command: 'motion'
-                        })
-                    });
-                    const data = await response.json();
-                    
-                    if (data.motion_detected) {
-                        updateMotionIndicator(data.center_x, data.center_y);
-                    } else {
-                        motionIndicator.style.display = 'none';
+        async function startMotionDetection() {
+            try {
+                motionDetectionActive = true;
+                document.getElementById('toggleMotion').textContent = 'Stop Motion Detection';
+                
+                motionInterval = setInterval(async () => {
+                    try {
+                        const response = await fetch('/camera/control', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                command: 'motion'
+                            })
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Motion detection failed');
+                        }
+
+                        const data = await response.json();
+                        
+                        if (data.motion_detected) {
+                            updateMotionIndicator(data.center_x, data.center_y);
+                        } else {
+                            motionIndicator.style.display = 'none';
+                        }
+                        
+                        document.getElementById('motionData').textContent = JSON.stringify(data, null, 2);
+                    } catch (error) {
+                        console.error('Motion detection error:', error);
+                        showError('Motion detection error: ' + error.message);
+                        stopMotionDetection();
                     }
-                    
-                    document.getElementById('motionData').textContent = JSON.stringify(data, null, 2);
-                } catch (error) {
-                    console.error('Motion detection error:', error);
-                    stopMotionDetection();
-                }
-            }, 100);
+                }, 100);
+            } catch (error) {
+                console.error('Failed to start motion detection:', error);
+                showError('Failed to start motion detection: ' + error.message);
+                stopMotionDetection();
+            }
         }
 
         function stopMotionDetection() {
@@ -271,75 +318,117 @@ Create a new file at `views/camera.ejs` with the following content:
             document.getElementById('motionData').textContent = 'No motion data';
         }
 
-        function startHeadTracking() {
+        async function startHeadTracking() {
             const servoId = document.getElementById('servoSelect').value;
-            const sensitivity = document.getElementById('trackingSensitivity').value;
-            headTrackingActive = true;
-            document.getElementById('toggleTracking').textContent = 'Stop Head Tracking';
-            
-            fetch('/camera/control', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    command: 'head_track',
-                    action: 'start',
-                    params: {
-                        servoId: servoId,
-                        sensitivity: sensitivity
-                    }
-                })
-            }).catch(error => {
+            if (!servoId) {
+                showError('Please select a servo first');
+                return;
+            }
+
+            try {
+                const sensitivity = document.getElementById('trackingSensitivity').value;
+                const response = await fetch('/camera/control', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        command: 'head_track',
+                        params: {
+                            action: 'start',
+                            servo_id: parseInt(servoId),
+                            sensitivity: parseInt(sensitivity)
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to start head tracking');
+                }
+
+                const data = await response.json();
+                if (data.success) {
+                    headTrackingActive = true;
+                    document.getElementById('toggleTracking').textContent = 'Stop Head Tracking';
+                } else {
+                    throw new Error(data.error || 'Failed to start head tracking');
+                }
+            } catch (error) {
                 console.error('Head tracking error:', error);
+                showError('Head tracking error: ' + error.message);
                 stopHeadTracking();
-            });
+            }
         }
 
-        function stopHeadTracking() {
-            headTrackingActive = false;
-            document.getElementById('toggleTracking').textContent = 'Start Head Tracking';
-            
-            fetch('/camera/control', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    command: 'head_track',
-                    action: 'stop'
-                })
-            }).catch(console.error);
+        async function stopHeadTracking() {
+            try {
+                const response = await fetch('/camera/control', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        command: 'head_track',
+                        params: {
+                            action: 'stop'
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to stop head tracking');
+                }
+
+                headTrackingActive = false;
+                document.getElementById('toggleTracking').textContent = 'Start Head Tracking';
+            } catch (error) {
+                console.error('Failed to stop head tracking:', error);
+                showError('Failed to stop head tracking: ' + error.message);
+            }
         }
 
-        function updateSettings() {
+        async function updateSettings() {
             const [width, height] = document.getElementById('resolution').value.split(',');
             
-            fetch('/camera/control', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    command: 'settings',
-                    params: {
-                        width: parseInt(width),
-                        height: parseInt(height)
-                    }
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    streamImg.src = `/camera/stream?t=${Date.now()}`;
+            try {
+                const response = await fetch('/camera/control', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        command: 'settings',
+                        params: {
+                            width: parseInt(width),
+                            height: parseInt(height)
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to update camera settings');
                 }
-            })
-            .catch(console.error);
+
+                const data = await response.json();
+                if (data.success) {
+                    initializeStream();
+                } else {
+                    throw new Error(data.error || 'Failed to update settings');
+                }
+            } catch (error) {
+                console.error('Settings update error:', error);
+                showError('Failed to update settings: ' + error.message);
+            }
         }
 
         // Load available servos
         fetch('/parts/api/parts')
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch servos');
+                }
+                return response.json();
+            })
             .then(parts => {
                 const servoSelect = document.getElementById('servoSelect');
                 const servos = parts.filter(part => part.type === 'servo');
@@ -352,9 +441,24 @@ Create a new file at `views/camera.ejs` with the following content:
                 });
                 
                 document.getElementById('toggleTracking').disabled = servos.length === 0;
+                if (servos.length === 0) {
+                    showError('No servos available for head tracking');
+                }
             })
-            .catch(console.error);
+            .catch(error => {
+                console.error('Failed to load servos:', error);
+                showError('Failed to load servos: ' + error.message);
+            });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (headTrackingActive) {
+                stopHeadTracking();
+            }
+            if (motionDetectionActive) {
+                stopMotionDetection();
+            }
+        });
     </script>
 </body>
 </html>
-```

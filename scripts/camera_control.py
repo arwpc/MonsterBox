@@ -28,43 +28,51 @@ class CameraController:
             varThreshold=10
         )
         self.head_tracking_process = None
+        self.last_frame_time = 0
+        self.frame_count = 0
 
     def initialize(self) -> bool:
         """Initialize camera with specified settings."""
         try:
-            # Try V4L2 backend first
-            self.cap = cv2.VideoCapture(self.camera_id + cv2.CAP_V4L2)
-            if not self.cap.isOpened():
-                logger.warning("V4L2 failed, trying default backend")
-                self.cap = cv2.VideoCapture(self.camera_id)
-                if not self.cap.isOpened():
-                    raise RuntimeError("Failed to open camera with any backend")
+            # Try different backends in order of preference
+            backends = [
+                (cv2.CAP_V4L2, "V4L2"),
+                (cv2.CAP_V4L, "V4L"),
+                (cv2.CAP_GSTREAMER, "GStreamer"),
+                (cv2.CAP_ANY, "Default")
+            ]
 
-            # Set resolution first
-            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
-            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
-            
-            # Set MJPG format
-            self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
-            
-            # Minimize buffer size
-            self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+            for backend, name in backends:
+                logger.info(f"Trying {name} backend...")
+                self.cap = cv2.VideoCapture(self.camera_id + backend)
+                
+                if self.cap.isOpened():
+                    # Configure camera settings
+                    self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
+                    self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
+                    self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+                    self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+                    self.cap.set(cv2.CAP_PROP_FPS, 30)
 
-            # Verify settings
-            ret, frame = self.cap.read()
-            if not ret or frame is None:
-                raise RuntimeError("Failed to capture test frame")
-
-            actual_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-            actual_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-            
-            logger.info(f"Camera initialized: {actual_width}x{actual_height}")
-            
-            # Update internal dimensions to match actual camera output
-            self.width = actual_width
-            self.height = actual_height
-
-            return True
+                    # Verify settings with multiple attempts
+                    for _ in range(3):
+                        ret, frame = self.cap.read()
+                        if ret and frame is not None:
+                            actual_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                            actual_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                            actual_fps = int(self.cap.get(cv2.CAP_PROP_FPS))
+                            
+                            logger.info(f"Camera initialized: {actual_width}x{actual_height} @{actual_fps}fps using {name}")
+                            
+                            # Update internal dimensions to match actual camera output
+                            self.width = actual_width
+                            self.height = actual_height
+                            return True
+                        time.sleep(0.1)
+                    
+                    self.release()
+                    
+            raise RuntimeError("Failed to initialize camera with any backend")
 
         except Exception as e:
             logger.error(f"Camera initialization error: {e}")
@@ -83,7 +91,13 @@ class CameraController:
             return {"success": False, "error": "Failed to initialize camera"}
 
         try:
-            ret, frame = self.cap.read()
+            # Multiple frame capture attempts
+            for _ in range(3):
+                ret, frame = self.cap.read()
+                if ret and frame is not None:
+                    break
+                time.sleep(0.1)
+            
             if not ret or frame is None:
                 return {"success": False, "error": "Failed to capture frame"}
 
@@ -91,6 +105,14 @@ class CameraController:
             actual_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             actual_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
             actual_fps = int(self.cap.get(cv2.CAP_PROP_FPS))
+
+            # Calculate actual FPS
+            current_time = time.time()
+            if current_time - self.last_frame_time >= 1:
+                measured_fps = self.frame_count
+                self.frame_count = 0
+                self.last_frame_time = current_time
+            self.frame_count += 1
 
             # Test frame encoding
             ret, _ = cv2.imencode('.jpg', frame)
@@ -117,14 +139,29 @@ class CameraController:
                 return {"success": False, "error": "Failed to initialize camera"}
 
         try:
-            ret, frame = self.cap.read()
+            # Multiple frame capture attempts
+            for _ in range(3):
+                ret, frame = self.cap.read()
+                if ret and frame is not None:
+                    break
+                time.sleep(0.1)
+            
             if not ret or frame is None:
                 return {"success": False, "error": "Failed to capture frame"}
 
+            # Convert to grayscale for better motion detection
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            gray = cv2.GaussianBlur(gray, (21, 21), 0)
+
             # Apply background subtraction
-            mask = self.background_subtractor.apply(frame)
+            mask = self.background_subtractor.apply(gray)
+            
+            # Clean up the mask
             mask = cv2.erode(mask, None, iterations=2)
             mask = cv2.dilate(mask, None, iterations=2)
+            
+            # Apply threshold to get binary image
+            _, mask = cv2.threshold(mask, 25, 255, cv2.THRESH_BINARY)
 
             # Find contours
             contours, _ = cv2.findContours(
@@ -181,17 +218,24 @@ class CameraController:
         """Start head tracking with the specified servo."""
         try:
             # Kill any existing head tracking process
-            if self.head_tracking_process:
-                self.head_tracking_process.terminate()
-                self.head_tracking_process = None
+            self.stop_head_tracking()
 
             # Start the head tracking script
-            script_path = 'scripts/hd3.py'
+            script_path = 'scripts/head_track.py'
             self.head_tracking_process = subprocess.Popen(
                 ['python3', script_path, 'start', str(servo_id)],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE
             )
+            
+            # Wait briefly to check if process started successfully
+            time.sleep(2)  # Increased wait time to allow for camera initialization
+            if self.head_tracking_process.poll() is not None:
+                # Process has already terminated
+                stdout, stderr = self.head_tracking_process.communicate()
+                error_msg = stderr.decode() if stderr else stdout.decode() if stdout else "Unknown error"
+                return {"success": False, "error": f"Head tracking failed to start: {error_msg}"}
+                
             return {"success": True, "message": "Head tracking started"}
         except Exception as e:
             logger.error(f"Head tracking error: {e}")
@@ -201,8 +245,23 @@ class CameraController:
         """Stop head tracking."""
         try:
             if self.head_tracking_process:
+                # Try graceful termination first
                 self.head_tracking_process.terminate()
+                try:
+                    self.head_tracking_process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    # Force kill if not terminated
+                    logger.warning("Force killing head tracking process")
+                    self.head_tracking_process.kill()
+                    self.head_tracking_process.wait()
+                
+                # Check for any error output
+                stdout, stderr = self.head_tracking_process.communicate()
+                if stderr:
+                    logger.warning(f"Head tracking stderr: {stderr.decode()}")
+                
                 self.head_tracking_process = None
+                
             return {"success": True, "message": "Head tracking stopped"}
         except Exception as e:
             logger.error(f"Error stopping head tracking: {e}")
@@ -233,7 +292,7 @@ def main():
             if args.action == 'start' and args.servo_id is not None:
                 result = controller.start_head_tracking(args.servo_id)
             elif args.action == 'stop':
-                result = controller.stop_head_tracking()
+                result = controller.stop_tracking()
             else:
                 result = {"success": False, "error": "Invalid head tracking parameters"}
 

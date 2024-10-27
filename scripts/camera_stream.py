@@ -183,10 +183,18 @@ class CameraStream:
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
             self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
             self.cap.set(cv2.CAP_PROP_FPS, 30)
+            self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
 
-            # Verify camera is working
-            ret, frame = self.cap.read()
-            if not ret or frame is None:
+            # Multiple frame capture attempts
+            success = False
+            for _ in range(3):
+                ret, frame = self.cap.read()
+                if ret and frame is not None:
+                    success = True
+                    break
+                time.sleep(0.1)
+
+            if not success:
                 logger.warning(f"{name} backend failed to capture test frame")
                 self.release()
                 return False
@@ -216,10 +224,17 @@ class CameraStream:
                 self.start_time = current_time
                 self.frame_count = 0
 
-            # Capture frame
-            ret, frame = self.cap.read()
-            if not ret or frame is None:
-                logger.error("Failed to capture frame")
+            # Multiple frame capture attempts
+            success = False
+            for _ in range(3):
+                ret, frame = self.cap.read()
+                if ret and frame is not None:
+                    success = True
+                    break
+                time.sleep(0.1)
+
+            if not success:
+                logger.error("Failed to capture frame after multiple attempts")
                 return None
 
             # Resize if necessary
@@ -227,22 +242,23 @@ class CameraStream:
             if actual_size != (self.width, self.height):
                 frame = cv2.resize(frame, (self.width, self.height))
 
-            # Add timestamp
+            # Add timestamp and FPS
             timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
             cv2.putText(frame, f"FPS: {self.fps:.1f}", (10, 20),
                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
             cv2.putText(frame, timestamp, (10, frame.shape[0] - 10),
                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
 
-            # Encode frame
-            ret, jpeg = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
-            if not ret:
-                logger.error("Failed to encode frame")
-                return None
+            # Encode frame with quality adjustment
+            for quality in [85, 75, 65]:  # Try different compression levels
+                ret, jpeg = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, quality])
+                if ret:
+                    self.frame_count += 1
+                    self.last_frame_time = current_time
+                    return jpeg.tobytes()
 
-            self.frame_count += 1
-            self.last_frame_time = current_time
-            return jpeg.tobytes()
+            logger.error("Failed to encode frame at any quality level")
+            return None
 
         except Exception as e:
             logger.error(f"Frame capture error: {str(e)}")
