@@ -3,13 +3,38 @@ const router = express.Router();
 const { spawn } = require('child_process');
 const path = require('path');
 const logger = require('../scripts/logger');
+const fs = require('fs').promises;
+
+// Path to store camera settings
+const CAMERA_SETTINGS_PATH = path.join(__dirname, '..', 'data', 'camera-settings.json');
+
+// Load camera settings
+async function loadCameraSettings() {
+    try {
+        const data = await fs.readFile(CAMERA_SETTINGS_PATH, 'utf8');
+        return JSON.parse(data);
+    } catch (error) {
+        return { selectedCamera: null };
+    }
+}
+
+// Save camera settings
+async function saveCameraSettings(settings) {
+    try {
+        await fs.writeFile(CAMERA_SETTINGS_PATH, JSON.stringify(settings, null, 2));
+    } catch (error) {
+        logger.error('Error saving camera settings:', error);
+    }
+}
 
 router.get('/', async (req, res) => {
     try {
         const characterId = req.query.characterId || req.session.characterId;
+        const settings = await loadCameraSettings();
         res.render('camera', { 
             title: 'Camera Control',
-            characterId: characterId || null
+            characterId: characterId || null,
+            selectedCamera: settings.selectedCamera
         });
     } catch (error) {
         logger.error('Error rendering camera view:', error);
@@ -20,74 +45,116 @@ router.get('/', async (req, res) => {
     }
 });
 
-router.get('/stream', (req, res) => {
-    // Use more standard default resolution
+router.get('/list', async (req, res) => {
+    try {
+        const result = await new Promise((resolve, reject) => {
+            const process = spawn('v4l2-ctl', ['--list-devices']);
+            let output = '';
+            let error = '';
+
+            process.stdout.on('data', (data) => {
+                output += data.toString();
+            });
+
+            process.stderr.on('data', (data) => {
+                error += data.toString();
+            });
+
+            process.on('close', (code) => {
+                if (code === 0) {
+                    const cameras = [];
+                    const lines = output.split('\n');
+                    let currentCamera = null;
+
+                    for (const line of lines) {
+                        if (line.includes('(usb-')) {
+                            currentCamera = {
+                                name: line.split('(')[0].trim(),
+                                devices: []
+                            };
+                        } else if (currentCamera && line.includes('/dev/video')) {
+                            currentCamera.devices.push({
+                                path: line.trim(),
+                                id: parseInt(line.trim().replace('/dev/video', ''))
+                            });
+                        } else if (currentCamera && currentCamera.devices.length > 0) {
+                            cameras.push(currentCamera);
+                            currentCamera = null;
+                        }
+                    }
+                    if (currentCamera && currentCamera.devices.length > 0) {
+                        cameras.push(currentCamera);
+                    }
+                    resolve(cameras);
+                } else {
+                    reject(new Error(error || 'Failed to list cameras'));
+                }
+            });
+        });
+
+        res.json(result);
+    } catch (error) {
+        logger.error('Error listing cameras:', error);
+        res.status(500).json({ error: 'Failed to list cameras' });
+    }
+});
+
+router.post('/select', async (req, res) => {
+    try {
+        const { cameraId } = req.body;
+        if (typeof cameraId !== 'number') {
+            throw new Error('Invalid camera ID');
+        }
+        await saveCameraSettings({ selectedCamera: cameraId });
+        res.json({ success: true });
+    } catch (error) {
+        logger.error('Error selecting camera:', error);
+        res.status(500).json({ error: 'Failed to select camera' });
+    }
+});
+
+router.get('/stream', async (req, res) => {
     const width = parseInt(req.query.width) || 640;
     const height = parseInt(req.query.height) || 480;
 
-    res.writeHead(200, {
-        'Content-Type': 'multipart/x-mixed-replace; boundary=frame',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-        'Pragma': 'no-cache'
-    });
+    try {
+        const settings = await loadCameraSettings();
+        if (!settings.selectedCamera) {
+            throw new Error('No camera selected');
+        }
 
-    const streamScript = path.join(__dirname, '..', 'scripts', 'camera_stream.py');
-    const pythonProcess = spawn('python3', [
-        streamScript, 
-        '--width', width.toString(), 
-        '--height', height.toString()
-    ]);
+        res.writeHead(200, {
+            'Content-Type': 'multipart/x-mixed-replace; boundary=frame',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'Pragma': 'no-cache'
+        });
 
-    let hasError = false;
+        const streamScript = path.join(__dirname, '..', 'scripts', 'camera_stream.py');
+        const pythonProcess = spawn('python3', [
+            streamScript, 
+            '--width', width.toString(), 
+            '--height', height.toString(),
+            '--camera-id', settings.selectedCamera.toString()
+        ]);
 
-    pythonProcess.stdout.on('data', (data) => {
-        try {
+        pythonProcess.stdout.on('data', (data) => {
             res.write(data);
-        } catch (error) {
-            logger.error(`Error writing camera stream data: ${error}`);
-            if (!res.headersSent) {
-                res.status(500).end();
-            }
+        });
+
+        pythonProcess.stderr.on('data', (data) => {
+            logger.error(`Camera stream error: ${data}`);
+        });
+
+        req.on('close', () => {
             pythonProcess.kill();
-        }
-    });
+            logger.info('Camera stream connection closed');
+        });
 
-    pythonProcess.stderr.on('data', (data) => {
-        const errorMsg = data.toString();
-        logger.error(`Camera stream error: ${errorMsg}`);
-        hasError = true;
-    });
-
-    pythonProcess.on('error', (error) => {
-        logger.error(`Failed to start camera stream process: ${error}`);
-        if (!res.headersSent) {
-            res.status(500).json({
-                success: false,
-                error: 'Failed to start camera stream'
-            });
-        }
-    });
-
-    pythonProcess.on('exit', (code) => {
-        if (code !== 0 && !res.headersSent) {
-            res.status(500).json({
-                success: false,
-                error: 'Camera stream process exited unexpectedly'
-            });
-        }
-    });
-
-    req.on('close', () => {
-        pythonProcess.kill();
-        logger.info('Camera stream connection closed');
-    });
-
-    // Handle response errors
-    res.on('error', (error) => {
-        logger.error(`Response error in camera stream: ${error}`);
-        pythonProcess.kill();
-    });
+    } catch (error) {
+        logger.error('Camera stream error:', error);
+        res.status(500).json({ error: 'Failed to start camera stream' });
+    }
 });
 
 router.post('/control', async (req, res) => {
@@ -95,7 +162,12 @@ router.post('/control', async (req, res) => {
     const controlScript = path.join(__dirname, '..', 'scripts', 'camera_control.py');
     
     try {
-        const args = [controlScript, command];
+        const settings = await loadCameraSettings();
+        if (!settings.selectedCamera) {
+            throw new Error('No camera selected');
+        }
+
+        const args = [controlScript, command, '--camera-id', settings.selectedCamera.toString()];
 
         if (command === 'head_track') {
             if (params.action) {
