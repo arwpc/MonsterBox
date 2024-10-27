@@ -113,46 +113,26 @@ router.post('/', async (req, res) => {
     }
 });
 
-router.post('/head-track', async (req, res) => {
-    try {
-        const { command, pcaChannel } = req.body;
-
-        const scriptPath = path.join(__dirname, '..', 'scripts', 'head_track.py');
-        const args = [command, pcaChannel.toString()];
-
-        const process = spawn('python3', [scriptPath, ...args]);
-
-        let stdout = '';
-        let stderr = '';
-
-        process.stdout.on('data', (data) => {
-            stdout += data.toString();
-            logger.log(`Python script output: ${data}`);
-        });
-
-        process.stderr.on('data', (data) => {
-            stderr += data.toString();
-            logger.error(`Python script error: ${data}`);
-        });
-
-        process.on('close', (code) => {
-            logger.log(`Python script exited with code ${code}`);
-            if (code === 0) {
-                res.json({ success: true, message: 'Head tracking process completed', output: stdout });
-            } else {
-                res.status(500).json({ success: false, message: 'Head tracking process failed', error: stderr });
-            }
-        });
-    } catch (error) {
-        logger.debug('Error executing head tracking script:', error);
-        res.status(500).json({ success: false, message: 'An error occurred during head tracking', error: error.message });
-    }
-});
-
 router.post('/test', async (req, res) => {
     try {
-        const { pin, angle, duration, usePCA9685, channel, servoType } = req.body;
+        const { angle, usePCA9685, channel, pin, servoType, duration } = req.body;
         const controlType = usePCA9685 ? 'pca9685' : 'gpio';
+
+        // Check if running on development environment
+        if (process.env.NODE_ENV === 'development') {
+            logger.debug('Development environment detected - simulating servo test');
+            // Simulate a delay to mimic the servo movement
+            await new Promise(resolve => setTimeout(resolve, 500));
+            res.json({ 
+                success: true, 
+                message: 'Servo test simulated (Development Mode)',
+                details: {
+                    note: 'Running in development mode - servo control is simulated',
+                    params: { angle, controlType, channel, pin, servoType, duration }
+                }
+            });
+            return;
+        }
 
         const scriptPath = path.join(__dirname, '..', 'scripts', 'servo_control.py');
         const pinOrChannel = usePCA9685 ? (channel || '0') : (pin || '3');
@@ -188,12 +168,26 @@ router.post('/test', async (req, res) => {
             if (code === 0) {
                 res.json({ success: true, message: 'Servo test completed successfully', output: stdout });
             } else {
-                res.status(500).json({ success: false, message: 'Servo test failed', error: stderr });
+                res.status(500).json({ 
+                    success: false, 
+                    message: 'Servo test failed', 
+                    error: stderr,
+                    details: {
+                        exitCode: code,
+                        stdout: stdout,
+                        stderr: stderr
+                    }
+                });
             }
         });
     } catch (error) {
         logger.error('Error testing servo:', error);
-        res.status(500).json({ success: false, message: 'An error occurred while testing the servo', error: error.message });
+        res.status(500).json({ 
+            success: false, 
+            message: 'An error occurred while testing the servo', 
+            error: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
     }
 });
 
