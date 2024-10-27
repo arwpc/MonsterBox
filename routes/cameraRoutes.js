@@ -4,7 +4,6 @@ const { spawn } = require('child_process');
 const path = require('path');
 const logger = require('../scripts/logger');
 
-// Main camera control interface
 router.get('/', async (req, res) => {
     try {
         const characterId = req.query.characterId || req.session.characterId;
@@ -21,7 +20,6 @@ router.get('/', async (req, res) => {
     }
 });
 
-// Camera stream endpoint
 router.get('/stream', (req, res) => {
     const width = parseInt(req.query.width) || 160;
     const height = parseInt(req.query.height) || 120;
@@ -34,16 +32,14 @@ router.get('/stream', (req, res) => {
     });
 
     const streamScript = path.join(__dirname, '..', 'scripts', 'camera_stream.py');
-    const pythonProcess = spawn('python3', ['-u', streamScript, 
+    const pythonProcess = spawn('python3', [
+        streamScript, 
         '--width', width.toString(), 
         '--height', height.toString()
     ]);
 
     pythonProcess.stdout.on('data', (data) => {
-        res.write('--frame\r\n');
-        res.write('Content-Type: image/jpeg\r\n\r\n');
         res.write(data);
-        res.write('\r\n');
     });
 
     pythonProcess.stderr.on('data', (data) => {
@@ -56,16 +52,35 @@ router.get('/stream', (req, res) => {
     });
 });
 
-// Camera control endpoint
 router.post('/control', async (req, res) => {
     const { command, params = {} } = req.body;
     const controlScript = path.join(__dirname, '..', 'scripts', 'camera_control.py');
     
     try {
         const args = [controlScript, command];
-        Object.entries(params).forEach(([key, value]) => {
-            args.push(`--${key}`, value.toString());
-        });
+
+        if (command === 'head_track') {
+            if (params.action) {
+                args.push('--action', params.action);
+            }
+            if (params['servo-id'] !== undefined) {
+                args.push('--servo-id', params['servo-id'].toString());
+            }
+        } else if (command === 'settings') {
+            if (params.width !== undefined) {
+                args.push('--width', params.width.toString());
+            }
+            if (params.height !== undefined) {
+                args.push('--height', params.height.toString());
+            }
+        } else if (command === 'motion') {
+            // No additional parameters needed for motion detection
+        } else {
+            return res.status(400).json({
+                success: false,
+                error: `Unknown command: ${command}`
+            });
+        }
 
         const process = spawn('python3', args);
         let output = '';
@@ -81,7 +96,7 @@ router.post('/control', async (req, res) => {
         });
 
         process.on('close', (code) => {
-            if (code === 0) {
+            if (code === 0 && output) {
                 try {
                     const result = JSON.parse(output);
                     res.json({ success: true, ...result });
@@ -95,6 +110,15 @@ router.post('/control', async (req, res) => {
                 });
             }
         });
+
+        process.on('error', (err) => {
+            logger.error('Failed to start camera control process:', err);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to start camera control process'
+            });
+        });
+
     } catch (error) {
         logger.error('Camera control error:', error);
         res.status(500).json({ 

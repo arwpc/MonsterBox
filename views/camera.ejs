@@ -195,7 +195,6 @@
         let reconnectAttempts = 0;
         const maxReconnectAttempts = 3;
 
-        // Initialize camera stream
         const streamImg = document.getElementById('cameraStream');
         const streamStatus = document.getElementById('streamStatus');
         const streamStatusText = document.getElementById('streamStatusText');
@@ -236,10 +235,8 @@
             }
         };
 
-        // Initialize stream
         initializeStream();
 
-        // Motion detection controls
         document.getElementById('toggleMotion').addEventListener('click', function() {
             if (motionDetectionActive) {
                 stopMotionDetection();
@@ -248,7 +245,6 @@
             }
         });
 
-        // Head tracking controls
         document.getElementById('toggleTracking').addEventListener('click', function() {
             if (headTrackingActive) {
                 stopHeadTracking();
@@ -326,7 +322,6 @@
             }
 
             try {
-                const sensitivity = document.getElementById('trackingSensitivity').value;
                 const response = await fetch('/camera/control', {
                     method: 'POST',
                     headers: {
@@ -335,9 +330,8 @@
                     body: JSON.stringify({
                         command: 'head_track',
                         params: {
-                            action: 'start',
-                            servo_id: parseInt(servoId),
-                            sensitivity: parseInt(sensitivity)
+                            'servo-id': parseInt(servoId),
+                            'action': 'start'
                         }
                     })
                 });
@@ -370,7 +364,7 @@
                     body: JSON.stringify({
                         command: 'head_track',
                         params: {
-                            action: 'stop'
+                            'action': 'stop'
                         }
                     })
                 });
@@ -421,7 +415,6 @@
             }
         }
 
-        // Load available servos
         fetch('/parts/api/parts')
             .then(response => {
                 if (!response.ok) {
@@ -450,7 +443,6 @@
                 showError('Failed to load servos: ' + error.message);
             });
 
-        // Cleanup on page unload
         window.addEventListener('beforeunload', () => {
             if (headTrackingActive) {
                 stopHeadTracking();

@@ -18,21 +18,34 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class CameraController:
+    """Handles camera operations and head tracking control."""
+    
     def __init__(self, camera_id: int = 0, width: int = 160, height: int = 120):
+        """Initialize camera controller with specified settings.
+        
+        Args:
+            camera_id: Camera device ID (default: 0)
+            width: Desired frame width (default: 160)
+            height: Desired frame height (default: 120)
+        """
         self.camera_id = camera_id
         self.width = width
         self.height = height
         self.cap: Optional[cv2.VideoCapture] = None
         self.background_subtractor = cv2.createBackgroundSubtractorMOG2(
-            history=100,
-            varThreshold=10
+            history=100,  # Number of frames to build background model
+            varThreshold=10  # Threshold for detecting foreground
         )
         self.head_tracking_process = None
         self.last_frame_time = 0
         self.frame_count = 0
 
     def initialize(self) -> bool:
-        """Initialize camera with specified settings."""
+        """Initialize camera with specified settings.
+        
+        Returns:
+            bool: True if initialization successful, False otherwise
+        """
         try:
             # Try different backends in order of preference
             backends = [
@@ -86,7 +99,11 @@ class CameraController:
             self.cap = None
 
     def capture_frame(self) -> Dict[str, Any]:
-        """Capture a single frame and return its properties."""
+        """Capture a single frame and return its properties.
+        
+        Returns:
+            dict: Frame properties including width, height, and fps
+        """
         if not self.initialize():
             return {"success": False, "error": "Failed to initialize camera"}
 
@@ -133,7 +150,11 @@ class CameraController:
             self.release()
 
     def detect_motion(self) -> Dict[str, Any]:
-        """Detect motion in current frame."""
+        """Detect motion in current frame.
+        
+        Returns:
+            dict: Motion detection results including position and area
+        """
         if not self.cap or not self.cap.isOpened():
             if not self.initialize():
                 return {"success": False, "error": "Failed to initialize camera"}
@@ -203,7 +224,15 @@ class CameraController:
             return {"success": False, "error": str(e)}
 
     def update_settings(self, width: int, height: int) -> Dict[str, Any]:
-        """Update camera settings."""
+        """Update camera resolution settings.
+        
+        Args:
+            width: New frame width
+            height: New frame height
+            
+        Returns:
+            dict: Updated settings status
+        """
         self.width = width
         self.height = height
         if self.initialize():
@@ -215,7 +244,14 @@ class CameraController:
         return {"success": False, "error": "Failed to update camera settings"}
 
     def start_head_tracking(self, servo_id: int) -> Dict[str, Any]:
-        """Start head tracking with the specified servo."""
+        """Start head tracking with specified servo.
+        
+        Args:
+            servo_id: ID of servo to use for tracking
+            
+        Returns:
+            dict: Head tracking start status
+        """
         try:
             # Kill any existing head tracking process
             self.stop_head_tracking()
@@ -229,7 +265,7 @@ class CameraController:
             )
             
             # Wait briefly to check if process started successfully
-            time.sleep(2)  # Increased wait time to allow for camera initialization
+            time.sleep(2)
             if self.head_tracking_process.poll() is not None:
                 # Process has already terminated
                 stdout, stderr = self.head_tracking_process.communicate()
@@ -242,7 +278,11 @@ class CameraController:
             return {"success": False, "error": str(e)}
 
     def stop_head_tracking(self) -> Dict[str, Any]:
-        """Stop head tracking."""
+        """Stop head tracking.
+        
+        Returns:
+            dict: Head tracking stop status
+        """
         try:
             if self.head_tracking_process:
                 # Try graceful termination first
@@ -268,16 +308,23 @@ class CameraController:
             return {"success": False, "error": str(e)}
 
 def main():
+    """Main entry point for camera control script."""
+    # Set up argument parser
     parser = argparse.ArgumentParser(description='Camera Control Script')
-    parser.add_argument('command', choices=['capture', 'motion', 'settings', 'head_track'])
-    parser.add_argument('--width', type=int, default=160)
-    parser.add_argument('--height', type=int, default=120)
-    parser.add_argument('--camera-id', type=int, default=0)
-    parser.add_argument('--servo-id', type=int)
-    parser.add_argument('--action', choices=['start', 'stop'])
+    parser.add_argument('command', choices=['capture', 'motion', 'settings', 'head_track'],
+                       help='Command to execute')
+    parser.add_argument('--width', type=int, default=160,
+                       help='Frame width (default: 160)')
+    parser.add_argument('--height', type=int, default=120,
+                       help='Frame height (default: 120)')
+    parser.add_argument('--camera-id', type=int, default=0,
+                       help='Camera device ID (default: 0)')
+    parser.add_argument('--servo-id', type=int,
+                       help='Servo ID for head tracking')
+    parser.add_argument('--action', choices=['start', 'stop'],
+                       help='Action for head tracking')
     
     args = parser.parse_args()
-
     controller = CameraController(args.camera_id, args.width, args.height)
 
     try:
@@ -292,7 +339,7 @@ def main():
             if args.action == 'start' and args.servo_id is not None:
                 result = controller.start_head_tracking(args.servo_id)
             elif args.action == 'stop':
-                result = controller.stop_tracking()
+                result = controller.stop_head_tracking()
             else:
                 result = {"success": False, "error": "Invalid head tracking parameters"}
 
