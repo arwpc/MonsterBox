@@ -9,8 +9,24 @@
         "name": "Turn Head",
         "part_id": "11",
         "duration": "1000",
-        "angle": "90",
-        "speed": "50"
+        "angle": "110",
+        "speed": "100"
+      },
+      {
+        "type": "servo",
+        "name": "Turn Head (Copy)",
+        "part_id": "11",
+        "duration": "2000",
+        "angle": "70",
+        "speed": "100"
+      },
+      {
+        "type": "servo",
+        "name": "Turn Head (Copy)",
+        "part_id": "11",
+        "duration": "1000",
+        "angle": "110",
+        "speed": "100"
       }
     ]
   },
