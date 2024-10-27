@@ -56,33 +56,46 @@ def move_servo_gradually(control_type, pin_or_channel, start_angle, end_angle, d
     step_time = 0.02  # Step time for smooth movement
     steps = int(duration / step_time)
     step_angle = (end_angle - start_angle) / steps
+    gpio_used = False
 
-    if control_type == 'pca9685':
-        pca = PCA9685()
-        pca.set_pwm_freq(50)
-        for step in range(steps + 1):
-            current_angle = start_angle + step_angle * step
-            pulse = int(angle_to_duty_cycle(current_angle) / 100 * 4096)
-            pca.set_pwm(int(pin_or_channel), 0, pulse)
-            time.sleep(step_time)
-    else:  # GPIO control
-        pwm = setup_gpio(int(pin_or_channel))
-        pwm.start(angle_to_duty_cycle(start_angle))
-        try:
+    try:
+        if control_type == 'pca9685':
+            pca = PCA9685()
+            pca.set_pwm_freq(50)
+            for step in range(steps + 1):
+                current_angle = start_angle + step_angle * step
+                pulse = int(angle_to_duty_cycle(current_angle) / 100 * 4096)
+                pca.set_pwm(int(pin_or_channel), 0, pulse)
+                time.sleep(step_time)
+        else:  # GPIO control
+            gpio_used = True
+            pwm = setup_gpio(int(pin_or_channel))
+            pwm.start(angle_to_duty_cycle(start_angle))
             for step in range(steps + 1):
                 current_angle = start_angle + step_angle * step
                 pwm.ChangeDutyCycle(angle_to_duty_cycle(current_angle))
                 time.sleep(step_time)
-        finally:
             pwm.stop()
+    finally:
+        if gpio_used:
             GPIO.cleanup(int(pin_or_channel))
 
 def stop_servo(control_type, pin_or_channel):
-    if control_type == 'pca9685':
-        pca = PCA9685()
-        pca.set_pwm(int(pin_or_channel), 0, 0)
-    else:  # GPIO control
-        GPIO.cleanup(int(pin_or_channel))
+    gpio_used = False
+    try:
+        if control_type == 'pca9685':
+            pca = PCA9685()
+            pca.set_pwm(int(pin_or_channel), 0, 0)
+        else:  # GPIO control
+            gpio_used = True
+            GPIO.setmode(GPIO.BCM)
+            GPIO.setup(int(pin_or_channel), GPIO.OUT)
+            pwm = GPIO.PWM(int(pin_or_channel), 50)
+            pwm.start(0)
+            pwm.stop()
+    finally:
+        if gpio_used:
+            GPIO.cleanup(int(pin_or_channel))
 
 if __name__ == "__main__":
     if len(sys.argv) < 6:
@@ -92,6 +105,7 @@ if __name__ == "__main__":
     command = sys.argv[1]
     control_type = sys.argv[2]
     pin_or_channel = sys.argv[3]
+    gpio_used = False
 
     try:
         if command == "test":
@@ -112,6 +126,3 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"Error controlling servo: {str(e)}")
         sys.exit(1)
-    finally:
-        if control_type != 'pca9685':
-            GPIO.cleanup()
