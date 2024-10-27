@@ -32,7 +32,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <% characters.forEach(function(character) { %>
+                    <% for(let character of characters) { %>
                         <tr>
                             <td>
                                 <% if (character.image) { %>
@@ -44,19 +44,47 @@
                             <td><%= character.char_name %></td>
                             <td><%= character.char_description %></td>
                             <td>
-                                <% character.parts.forEach(function(partId) { %>
-                                    <% const part = parts.find(p => p.id === partId); %>
-                                    <% if (part) { %>
-                                        <%= part.name %><br>
-                                    <% } %>
+                                <% 
+                                let displayParts = [];
+                                // Check parts with characterId
+                                parts.forEach(function(part) {
+                                    if (part.characterId === character.id) {
+                                        displayParts.push(part);
+                                    }
+                                });
+                                // Check character's parts array
+                                if (character.parts && character.parts.length > 0) {
+                                    parts.forEach(function(part) {
+                                        if (character.parts.includes(part.id) && !displayParts.find(p => p.id === part.id)) {
+                                            displayParts.push(part);
+                                        }
+                                    });
+                                }
+                                displayParts.forEach(function(part) { 
+                                %>
+                                    <%= part.name %><br>
                                 <% }); %>
                             </td>
                             <td>
-                                <% character.sounds.forEach(function(soundId) { %>
-                                    <% const sound = sounds.find(s => s.id === soundId); %>
-                                    <% if (sound) { %>
-                                        <%= sound.name %><br>
-                                    <% } %>
+                                <% 
+                                let displaySounds = [];
+                                // Check sounds with characterIds array
+                                sounds.forEach(function(sound) {
+                                    if (sound.characterIds && sound.characterIds.includes(character.id)) {
+                                        displaySounds.push(sound);
+                                    }
+                                });
+                                // Check character's sounds array
+                                if (character.sounds && character.sounds.length > 0) {
+                                    sounds.forEach(function(sound) {
+                                        if (character.sounds.includes(sound.id) && !displaySounds.find(s => s.id === sound.id)) {
+                                            displaySounds.push(sound);
+                                        }
+                                    });
+                                }
+                                displaySounds.forEach(function(sound) { 
+                                %>
+                                    <%= sound.name %><br>
                                 <% }); %>
                             </td>
                             <td>
@@ -66,7 +94,7 @@
                                 </div>
                             </td>
                         </tr>
-                    <% }); %>
+                    <% } %>
                 </tbody>
             </table>
         </div>

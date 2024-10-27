@@ -23,15 +23,9 @@ const getAllSounds = async (characterId = null) => {
         
         if (characterId !== null) {
             sounds = sounds.filter(sound => {
-                if (sound.characterIds) {
-                    // If characterIds exists, use it (future-proofing)
-                    return Array.isArray(sound.characterIds) && sound.characterIds.includes(parseInt(characterId));
-                } else if (sound.characterId !== undefined) {
-                    // If characterId exists, use it (current format)
-                    return sound.characterId === parseInt(characterId) || sound.characterId === null;
-                }
-                // If neither exists, include the sound (assume it's available for all characters)
-                return true;
+                return sound.characterIds && 
+                       Array.isArray(sound.characterIds) && 
+                       sound.characterIds.includes(parseInt(characterId));
             });
             logger.debug(`Filtered to ${sounds.length} sounds for character ${characterId}`);
         }
@@ -85,7 +79,9 @@ const createSound = async (soundData) => {
         const newSound = {
             id: getNextId(sounds),
             ...soundData,
-            characterId: soundData.characterId ? parseInt(soundData.characterId) : null
+            characterIds: soundData.characterIds ? 
+                soundData.characterIds.map(id => parseInt(id)) : [],
+            characterId: null // Keep this for backward compatibility but set to null
         };
         sounds.push(newSound);
         await fs.writeFile(dataPath, JSON.stringify(sounds, null, 2));
@@ -106,7 +102,9 @@ const createMultipleSounds = async (soundDataArray) => {
                 return {
                     id: nextId++,
                     ...soundData,
-                    characterId: soundData.characterId ? parseInt(soundData.characterId) : null
+                    characterIds: soundData.characterIds ? 
+                        soundData.characterIds.map(id => parseInt(id)) : [],
+                    characterId: null // Keep this for backward compatibility but set to null
                 };
             } catch (error) {
                 logger.error(`Error creating sound object: ${JSON.stringify(soundData)}`, error);
@@ -133,7 +131,10 @@ const updateSound = async (id, soundData) => {
                 ...sounds[index], 
                 ...soundData, 
                 id: parseInt(id),
-                characterId: soundData.characterId ? parseInt(soundData.characterId) : null
+                characterIds: soundData.characterIds ? 
+                    soundData.characterIds.map(id => parseInt(id)) : 
+                    (sounds[index].characterIds || []),
+                characterId: null // Keep this for backward compatibility but set to null
             };
             await fs.writeFile(dataPath, JSON.stringify(sounds, null, 2));
             logger.info(`Updated sound with id ${id}`);

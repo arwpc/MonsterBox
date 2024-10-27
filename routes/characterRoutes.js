@@ -26,9 +26,20 @@ router.get('/', async (req, res) => {
 
 router.get('/new', async (req, res) => {
     try {
-        const parts = await partService.getAllParts();
-        const sounds = await soundService.getAllSounds();
-        res.render('character-form', { title: 'Add New Character', action: '/characters', character: {}, parts, sounds });
+        // For new character, only show unassigned parts and sounds
+        const allParts = await partService.getAllParts();
+        const allSounds = await soundService.getAllSounds();
+        
+        const parts = allParts.filter(part => !part.characterId);
+        const sounds = allSounds.filter(sound => !sound.characterIds || sound.characterIds.length === 0);
+        
+        res.render('character-form', { 
+            title: 'Add New Character', 
+            action: '/characters', 
+            character: {}, 
+            parts, 
+            sounds 
+        });
     } catch (error) {
         logger.error('Error rendering new character form:', error);
         res.status(500).send('An error occurred while loading the new character form');
@@ -37,30 +48,99 @@ router.get('/new', async (req, res) => {
 
 router.get('/:id/edit', async (req, res) => {
     try {
-        const character = await characterService.getCharacterById(parseInt(req.params.id));
-        const parts = await partService.getAllParts();
-        const sounds = await soundService.getAllSounds();
-        if (character) {
-            res.render('character-form', { title: 'Edit Character', action: `/characters/${character.id}`, character, parts, sounds });
-        } else {
-            res.status(404).send('Character not found');
+        const characterId = parseInt(req.params.id);
+        const character = await characterService.getCharacterById(characterId);
+        if (!character) {
+            return res.status(404).send('Character not found');
         }
+
+        // Get all parts and sounds
+        const allParts = await partService.getAllParts();
+        const allSounds = await soundService.getAllSounds();
+
+        // Filter parts to show only unassigned parts and parts assigned to this character
+        const parts = allParts.filter(part => 
+            !part.characterId || part.characterId === characterId
+        );
+
+        // Filter sounds to show only unassigned sounds and sounds assigned to this character
+        const sounds = allSounds.filter(sound => 
+            !sound.characterIds || 
+            sound.characterIds.length === 0 || 
+            sound.characterIds.includes(characterId)
+        );
+
+        res.render('character-form', { 
+            title: 'Edit Character', 
+            action: `/characters/${character.id}`, 
+            character, 
+            parts, 
+            sounds 
+        });
     } catch (error) {
         logger.error('Error fetching character:', error);
         res.status(500).send('An error occurred while fetching the character');
     }
 });
 
+async function updatePartsAndSounds(characterId, selectedPartIds, selectedSoundIds) {
+    // Get all current parts and sounds
+    const allParts = await partService.getAllParts();
+    const allSounds = await soundService.getAllSounds();
+
+    // Update parts
+    for (const part of allParts) {
+        if (selectedPartIds.includes(part.id)) {
+            // Part should be associated with this character
+            if (part.characterId !== characterId) {
+                await partService.updatePart(part.id, { ...part, characterId });
+            }
+        } else if (part.characterId === characterId) {
+            // Part should no longer be associated with this character
+            await partService.updatePart(part.id, { ...part, characterId: null });
+        }
+    }
+
+    // Update sounds
+    for (const sound of allSounds) {
+        const characterIds = sound.characterIds || [];
+        if (selectedSoundIds.includes(sound.id)) {
+            // Sound should be associated with this character
+            if (!characterIds.includes(characterId)) {
+                await soundService.updateSound(sound.id, {
+                    ...sound,
+                    characterIds: [...characterIds, characterId]
+                });
+            }
+        } else if (characterIds.includes(characterId)) {
+            // Sound should no longer be associated with this character
+            await soundService.updateSound(sound.id, {
+                ...sound,
+                characterIds: characterIds.filter(id => id !== characterId)
+            });
+        }
+    }
+}
+
 router.post('/', upload.single('character_image'), async (req, res) => {
     try {
         const newCharacter = {
             char_name: req.body.char_name,
             char_description: req.body.char_description,
-            parts: req.body.parts ? (Array.isArray(req.body.parts) ? req.body.parts.map(Number) : [Number(req.body.parts)]) : [],
-            sounds: req.body.sounds ? (Array.isArray(req.body.sounds) ? req.body.sounds.map(Number) : [Number(req.body.sounds)]) : [],
+            parts: [],
+            sounds: [],
             image: req.file ? req.file.filename : null
         };
-        await characterService.createCharacter(newCharacter);
+
+        const character = await characterService.createCharacter(newCharacter);
+
+        const selectedPartIds = req.body.parts ? 
+            (Array.isArray(req.body.parts) ? req.body.parts.map(Number) : [Number(req.body.parts)]) : [];
+        const selectedSoundIds = req.body.sounds ? 
+            (Array.isArray(req.body.sounds) ? req.body.sounds.map(Number) : [Number(req.body.sounds)]) : [];
+
+        await updatePartsAndSounds(character.id, selectedPartIds, selectedSoundIds);
+
         res.redirect('/characters');
     } catch (error) {
         logger.error('Error creating character:', error);
@@ -74,9 +154,10 @@ router.post('/:id', upload.single('character_image'), async (req, res) => {
         const updatedCharacter = {
             char_name: req.body.char_name,
             char_description: req.body.char_description,
-            parts: req.body.parts ? (Array.isArray(req.body.parts) ? req.body.parts.map(Number) : [Number(req.body.parts)]) : [],
-            sounds: req.body.sounds ? (Array.isArray(req.body.sounds) ? req.body.sounds.map(Number) : [Number(req.body.sounds)]) : []
+            parts: [],
+            sounds: []
         };
+
         if (req.file) {
             const character = await characterService.getCharacterById(id);
             if (character.image) {
@@ -85,7 +166,16 @@ router.post('/:id', upload.single('character_image'), async (req, res) => {
             }
             updatedCharacter.image = req.file.filename;
         }
+
         await characterService.updateCharacter(id, updatedCharacter);
+
+        const selectedPartIds = req.body.parts ? 
+            (Array.isArray(req.body.parts) ? req.body.parts.map(Number) : [Number(req.body.parts)]) : [];
+        const selectedSoundIds = req.body.sounds ? 
+            (Array.isArray(req.body.sounds) ? req.body.sounds.map(Number) : [Number(req.body.sounds)]) : [];
+
+        await updatePartsAndSounds(id, selectedPartIds, selectedSoundIds);
+
         res.redirect('/characters');
     } catch (error) {
         logger.error('Error updating character:', error);
@@ -97,6 +187,10 @@ router.post('/:id/delete', async (req, res) => {
     try {
         const id = parseInt(req.params.id);
         const character = await characterService.getCharacterById(id);
+
+        // Remove character associations from parts and sounds
+        await updatePartsAndSounds(id, [], []);
+
         if (character.image) {
             const imagePath = path.join(__dirname, '../public/images/characters', character.image);
             await fs.unlink(imagePath).catch(err => logger.error('Error deleting character image:', err));
@@ -112,16 +206,8 @@ router.post('/:id/delete', async (req, res) => {
 router.get('/:id/parts', async (req, res) => {
     try {
         const characterId = parseInt(req.params.id);
-        const character = await characterService.getCharacterById(characterId);
-        
-        if (!character) {
-            logger.warn(`Character not found for ID: ${characterId}`);
-            return res.status(404).json({ error: 'Character not found' });
-        }
-
         const allParts = await partService.getAllParts();
-        const characterParts = allParts.filter(part => character.parts.includes(part.id));
-
+        const characterParts = allParts.filter(part => part.characterId === characterId);
         res.json(characterParts);
     } catch (error) {
         logger.error('Error in GET /characters/:id/parts route:', error);
