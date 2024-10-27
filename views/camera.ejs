@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+<!-- Previous head section unchanged -->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
     <link rel="stylesheet" href="/css/style.css">
     <style>
+        /* Previous styles unchanged */
         .camera-container {
             display: flex;
             gap: 20px;
@@ -214,6 +216,7 @@
         let headTrackingActive = false;
         let motionInterval = null;
         let reconnectAttempts = 0;
+        let manuallyDisconnected = false;
         const maxReconnectAttempts = 3;
 
         const streamImg = document.getElementById('cameraStream');
@@ -224,8 +227,10 @@
         const disconnectButton = document.getElementById('disconnectStream');
 
         function initializeStream() {
-            const [width, height] = document.getElementById('resolution').value.split(',');
-            streamImg.src = `/camera/stream?width=${width}&height=${height}&t=${Date.now()}`;
+            if (!manuallyDisconnected) {
+                const [width, height] = document.getElementById('resolution').value.split(',');
+                streamImg.src = `/camera/stream?width=${width}&height=${height}&t=${Date.now()}`;
+            }
         }
 
         function showError(message) {
@@ -251,16 +256,18 @@
             stopMotionDetection();
             stopHeadTracking();
 
-            if (reconnectAttempts < maxReconnectAttempts) {
+            if (!manuallyDisconnected && reconnectAttempts < maxReconnectAttempts) {
                 reconnectAttempts++;
                 showError(`Connection lost. Reconnecting... (Attempt ${reconnectAttempts}/${maxReconnectAttempts})`);
                 setTimeout(initializeStream, 2000);
-            } else {
+            } else if (!manuallyDisconnected) {
                 showError('Failed to connect to camera after multiple attempts. Please refresh the page to try again.');
             }
         };
 
         disconnectButton.addEventListener('click', function() {
+            manuallyDisconnected = true;
+            
             // Stop all active features
             stopMotionDetection();
             stopHeadTracking();
@@ -277,6 +284,7 @@
             showError('Camera disconnected. Refresh the page to reconnect.');
         });
 
+        // Rest of the script unchanged
         document.getElementById('toggleMotion').addEventListener('click', function() {
             if (motionDetectionActive) {
                 stopMotionDetection();
