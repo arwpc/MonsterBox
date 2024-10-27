@@ -4,57 +4,52 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
+    <link rel="stylesheet" href="/css/style.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <link rel="stylesheet" href="/css/style.css">
-    <style>
-        .form-actions {
-            display: flex;
-            justify-content: flex-start;
-            gap: 10px;
-            margin-top: 20px;
-        }
-        .form-actions .button {
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            text-align: center;
-            min-width: 150px;
-        }
-    </style>
 </head>
 <body>
-    <h1><%= title %></h1>
-    <form id="sceneForm" action="<%= action %>" method="POST">
-        <input type="hidden" name="character_id" value="<%= character.id %>">
-        
-        <label for="scene_name">Scene Name:</label>
-        <input type="text" id="scene_name" name="scene_name" value="<%= scene.scene_name || '' %>" required>
+    <header>
+        <h1 class="landing-title"><%= title %></h1>
+    </header>
 
-        <h2>Steps</h2>
-        <div id="steps" class="sortable">
-            <% (scene.steps || []).forEach(function(step, index) { %>
-                <%- include('partials/step', { step, index, parts, sounds }) %>
-            <% }); %>
-        </div>
-        
-        <button type="button" onclick="addStep('motor')">Add Motor</button>
-        <button type="button" onclick="addStep('linear-actuator')">Add Linear Actuator</button>
-        <button type="button" onclick="addStep('servo')">Add Servo</button>
-        <button type="button" onclick="addStep('led')">Add LED</button>
-        <button type="button" onclick="addStep('light')">Add Light</button>
-        <button type="button" onclick="addStep('sensor')">Add Sensor</button>
-        <button type="button" onclick="addStep('sound')">Add Sound</button>
-        <button type="button" onclick="addStep('pause')">Add Pause</button>
-        
-        <div class="form-actions">
-            <button type="submit" class="button">Save Scene</button>
-            <a href="/scenes?characterId=<%= character.id %>" class="button">Back to Scenes</a>
-        </div>
-    </form>
+    <main>
+        <form id="sceneForm" action="<%= action %>" method="POST">
+            <input type="hidden" name="character_id" value="<%= character.id %>">
+            
+            <div class="form-group">
+                <label for="scene_name">Scene Name:</label>
+                <input type="text" id="scene_name" name="scene_name" value="<%= scene.scene_name || '' %>" required>
+            </div>
+
+            <div class="config-section">
+                <h2>Steps</h2>
+                <div id="steps" class="sortable">
+                    <% (scene.steps || []).forEach(function(step, index) { %>
+                        <%- include('partials/step', { step, index, parts, sounds }) %>
+                    <% }); %>
+                </div>
+                
+                <div class="button-group">
+                    <button type="button" onclick="addStep('motor')" class="button">Add Motor</button>
+                    <button type="button" onclick="addStep('linear-actuator')" class="button">Add Linear Actuator</button>
+                    <button type="button" onclick="addStep('servo')" class="button">Add Servo</button>
+                    <button type="button" onclick="addStep('led')" class="button">Add LED</button>
+                    <button type="button" onclick="addStep('light')" class="button">Add Light</button>
+                    <button type="button" onclick="addStep('sensor')" class="button">Add Sensor</button>
+                    <button type="button" onclick="addStep('sound')" class="button">Add Sound</button>
+                    <button type="button" onclick="addStep('pause')" class="button">Add Pause</button>
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button type="submit" class="button primary-btn">Save Scene</button>
+                <a href="/scenes?characterId=<%= character.id %>" class="button secondary-btn">Back to Scenes</a>
+            </div>
+        </form>
+    </main>
 
     <script>
         const characterId = '<%= character.id %>';
@@ -126,7 +121,6 @@
             if (nameInput) {
                 nameInput.value = nameInput.value + ' (Copy)';
             }
-
 
             updateStepNumbers();
         }

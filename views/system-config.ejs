@@ -5,99 +5,72 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>System Config</title>
     <link rel="stylesheet" href="/css/style.css">
-    <style>
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            margin-bottom: 20px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-        .button {
-            display: inline-block;
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            margin-right: 10px;
-        }
-        .config-section {
-            margin-bottom: 30px;
-            padding: 20px;
-            border: 1px solid #00ff00;
-            border-radius: 5px;
-            background-color: #002200;
-        }
-    </style>
 </head>
 <body>
     <h1>System Config</h1>
 
     <div class="config-section">
         <h2>Quick Links</h2>
-        <a href="/system-config/servos" class="button">Servo Configurations</a>
-        <a href="/logs" class="button">View Logs</a>
-        <a href="/" class="button">Back to Main Menu</a>
+        <div class="button-group">
+            <a href="/system-config/servos" class="button">Servo Configurations</a>
+            <a href="/logs" class="button">View Logs</a>
+            <a href="/" class="button">Back to Main Menu</a>
+        </div>
     </div>
 
     <div class="config-section">
         <h2>System Information</h2>
-        <ul>
-            <li>Platform: <%= systemInfo.platform %></li>
-            <li>Architecture: <%= systemInfo.arch %></li>
-            <li>Hostname: <%= systemInfo.hostname %></li>
-            <li>Total Memory: <%= systemInfo.totalMem %></li>
-            <li>Free Memory: <%= systemInfo.freeMem %></li>
-            <li>CPUs: <%= systemInfo.cpus %></li>
-            <li>Uptime: <%= systemInfo.uptime %></li>
+        <ul class="info-list">
+            <li><strong>Platform:</strong> <%= systemInfo.platform %></li>
+            <li><strong>Architecture:</strong> <%= systemInfo.arch %></li>
+            <li><strong>Hostname:</strong> <%= systemInfo.hostname %></li>
+            <li><strong>Total Memory:</strong> <%= systemInfo.totalMem %></li>
+            <li><strong>Free Memory:</strong> <%= systemInfo.freeMem %></li>
+            <li><strong>CPUs:</strong> <%= systemInfo.cpus %></li>
+            <li><strong>Uptime:</strong> <%= systemInfo.uptime %></li>
         </ul>
     </div>
 
     <div class="config-section">
         <h2>Network Information</h2>
-        <ul>
-            <li>IP Address: <%= ipAddress %></li>
-            <li>Wi-Fi Signal Strength: <%= wifiSignal %></li>
+        <ul class="info-list">
+            <li><strong>IP Address:</strong> <%= ipAddress %></li>
+            <li><strong>Wi-Fi Signal Strength:</strong> <%= wifiSignal %></li>
         </ul>
     </div>
 
     <div class="config-section">
         <h2>Power Information</h2>
-        <ul>
-            <li>Current Power: <%= power %></li>
+        <ul class="info-list">
+            <li><strong>Current Power:</strong> <%= power %></li>
         </ul>
     </div>
 
     <div class="config-section">
         <h2>Drive Space Information</h2>
         <% if (driveInfo.length > 0 && !driveInfo[0].error) { %>
-            <table>
-                <tr>
-                    <th>Filesystem</th>
-                    <th>Size</th>
-                    <th>Used</th>
-                    <th>Available</th>
-                    <th>Mount Point</th>
-                </tr>
-                <% driveInfo.forEach(function(drive) { %>
+            <div class="table-container">
+                <table>
                     <tr>
-                        <td><%= drive.filesystem %></td>
-                        <td><%= drive.size %></td>
-                        <td><%= drive.used %></td>
-                        <td><%= drive.available %></td>
-                        <td><%= drive.mountpoint %></td>
+                        <th>Filesystem</th>
+                        <th>Size</th>
+                        <th>Used</th>
+                        <th>Available</th>
+                        <th>Mount Point</th>
                     </tr>
-                <% }); %>
-            </table>
+                    <% driveInfo.forEach(function(drive) { %>
+                        <tr>
+                            <td><%= drive.filesystem %></td>
+                            <td><%= drive.size %></td>
+                            <td><%= drive.used %></td>
+                            <td><%= drive.available %></td>
+                            <td><%= drive.mountpoint %></td>
+                        </tr>
+                    <% }); %>
+                </table>
+            </div>
         <% } else { %>
-            <p>Unable to retrieve drive information.</p>
+            <p class="error-message">Unable to retrieve drive information.</p>
         <% } %>
     </div>
 </body>

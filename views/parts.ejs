@@ -1,83 +1,74 @@
-<!-- File: views/parts.ejs -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
     <link rel="stylesheet" href="/css/style.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <style>
-        .button {
-            display: inline-block;
-            padding: 10px 20px;
-            margin: 5px;
-            background-color: #4CAF50;
-            color: white;
-            text-align: center;
-            text-decoration: none;
-            font-size: 16px;
-            border: none;
-            cursor: pointer;
-            width: 150px;
-        }
-        .button:hover {
-            background-color: #45a049;
-        }
-    </style>
 </head>
 <body>
-    <h1><%= title %> for <%= character.char_name %></h1>
+    <header>
+        <h1 class="landing-title"><%= title %> for <%= character.char_name %></h1>
+    </header>
     
-    <div id="partButtons">
-        <a href="/parts/new/motor?characterId=<%= character.id %>" class="button">Add Motor</a>
-        <a href="/parts/linear-actuator/new?characterId=<%= character.id %>" class="button">Add Linear Actuator</a>
-        <a href="/parts/new/light?characterId=<%= character.id %>" class="button">Add Light</a>
-        <a href="/parts/new/led?characterId=<%= character.id %>" class="button">Add LED</a>
-        <a href="/parts/servo/new?characterId=<%= character.id %>" class="button">Add Servo</a>
-        <a href="/parts/new/sensor?characterId=<%= character.id %>" class="button">Add Sensor</a>
-    </div>
+    <main>
+        <div class="button-group">
+            <a href="/parts/new/motor?characterId=<%= character.id %>" class="button">Add Motor</a>
+            <a href="/parts/linear-actuator/new?characterId=<%= character.id %>" class="button">Add Linear Actuator</a>
+            <a href="/parts/new/light?characterId=<%= character.id %>" class="button">Add Light</a>
+            <a href="/parts/new/led?characterId=<%= character.id %>" class="button">Add LED</a>
+            <a href="/parts/servo/new?characterId=<%= character.id %>" class="button">Add Servo</a>
+            <a href="/parts/new/sensor?characterId=<%= character.id %>" class="button">Add Sensor</a>
+        </div>
 
-    <div id="partsContainer">
-        <% if (parts.length === 0) { %>
-            <p>No parts found for this character.</p>
-        <% } else { %>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Type</th>
-                        <th>Details</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <% parts.forEach(function(part) { %>
-                        <tr>
-                            <td><%= part.name %></td>
-                            <td><%= part.type %></td>
-                            <td><%= part.details %></td>
-                            <td>
-                                <% if (part.type === 'linear-actuator') { %>
-                                    <a href="/parts/linear-actuator/<%= part.id %>/edit?characterId=<%= character.id %>" class="button">Edit</a>
-                                <% } else if (part.type === 'servo') { %>
-                                    <a href="/parts/servo/<%= part.id %>/edit?characterId=<%= character.id %>" class="button">Edit</a>
-                                <% } else if (part.type === 'light') { %>
-                                    <a href="/parts/light/<%= part.id %>/edit?characterId=<%= character.id %>" class="button">Edit</a>
-                                <% } else { %>
-                                    <a href="/parts/<%= part.id %>/edit?characterId=<%= character.id %>" class="button">Edit</a>
-                                <% } %>
-                                <button class="button delete-part" data-id="<%= part.id %>">Delete</button>
-                            </td>
-                        </tr>
-                    <% }); %>
-                </tbody>
-            </table>
-        <% } %>
-    </div>
+        <div id="partsContainer">
+            <% if (parts.length === 0) { %>
+                <p>No parts found for this character.</p>
+            <% } else { %>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Details</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% parts.forEach(function(part) { %>
+                                <tr>
+                                    <td><%= part.name %></td>
+                                    <td><%= part.type %></td>
+                                    <td><%= part.details %></td>
+                                    <td>
+                                        <div class="button-group">
+                                            <% if (part.type === 'linear-actuator') { %>
+                                                <a href="/parts/linear-actuator/<%= part.id %>/edit?characterId=<%= character.id %>" class="button">Edit</a>
+                                            <% } else if (part.type === 'servo') { %>
+                                                <a href="/parts/servo/<%= part.id %>/edit?characterId=<%= character.id %>" class="button">Edit</a>
+                                            <% } else if (part.type === 'light') { %>
+                                                <a href="/parts/light/<%= part.id %>/edit?characterId=<%= character.id %>" class="button">Edit</a>
+                                            <% } else { %>
+                                                <a href="/parts/<%= part.id %>/edit?characterId=<%= character.id %>" class="button">Edit</a>
+                                            <% } %>
+                                            <button class="button delete-part" data-id="<%= part.id %>">Delete</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+            <% } %>
+        </div>
 
-    <a href="/?characterId=<%= character.id %>" class="button">Back to Main Menu</a>
+        <div class="button-group">
+            <a href="/?characterId=<%= character.id %>" class="button secondary-btn">Back to Main Menu</a>
+        </div>
+    </main>
 
     <script>
         $(document).ready(function() {

@@ -4,85 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MonsterBox Control Panel</title>
-    <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
-    <style>
-        body {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-        header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        h1 {
-            font-family: 'Creepster', cursive;
-            font-size: 3em;
-            margin: 0;
-            color: #00ff00;
-            text-shadow: 0 0 10px #00ff00;
-        }
-        main {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        nav {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .button {
-            display: inline-block;
-            background-color: #003300;
-            color: #00ff00;
-            padding: 10px 15px;
-            margin: 10px;
-            border: 1px solid #00ff00;
-            border-radius: 5px;
-            cursor: pointer;
-            text-decoration: none;
-            font-size: 1.2em;
-            width: 200px;
-            text-align: center;
-            transition: all 0.3s ease;
-        }
-        .button:hover {
-            background-color: #004400;
-            box-shadow: 0 0 10px #00ff00;
-        }
-        footer {
-            margin-top: 20px;
-            text-align: center;
-            font-style: italic;
-        }
-        #character-select {
-            margin-bottom: 20px;
-            padding: 10px;
-            font-size: 1em;
-            background-color: #003300;
-            color: #00ff00;
-            border: 1px solid #00ff00;
-            border-radius: 5px;
-        }
-        #character-select:focus {
-            outline: none;
-            box-shadow: 0 0 10px #00ff00;
-        }
-        .error-message {
-            color: #ff0000;
-            margin-bottom: 20px;
-        }
-    </style>
+    <link rel="stylesheet" href="/css/style.css">
 </head>
-<body>
+<body class="landing-page">
     <header>
-        <h1>MonsterBox™</h1>
+        <h1 class="landing-title">MonsterBox™</h1>
     </header>
     <main>
         <h2>Welcome to the MonsterBox Control Panel</h2>
@@ -101,12 +28,12 @@
     </main>
 
     <nav id="navigation">
-        <a href="/characters" class="button">Characters</a>
-        <a href="/scenes" class="button">Scenes</a>
-        <a href="/parts" class="button">Parts</a>
-        <a href="/sounds" class="button">Sounds</a>
-        <a href="/active-mode" class="button">Active Mode</a>
-        <a href="/system-config" class="button">System Config</a>
+        <a href="/characters" class="nav-button">Characters</a>
+        <a href="/scenes" class="nav-button">Scenes</a>
+        <a href="/parts" class="nav-button">Parts</a>
+        <a href="/sounds" class="nav-button">Sounds</a>
+        <a href="/active-mode" class="nav-button">Active Mode</a>
+        <a href="/system-config" class="nav-button">System Config</a>
     </nav>
     
     <footer>
@@ -122,7 +49,7 @@
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ characterId: characterId }), // Ensure we're sending characterId
+                body: JSON.stringify({ characterId: characterId }),
             })
             .then(response => response.json())
             .then(data => {
@@ -157,7 +84,7 @@
             if (savedCharacter) {
                 document.getElementById('character-select').value = savedCharacter;
                 updateNavigation(savedCharacter);
-                updateCharacter(savedCharacter); // Ensure the server is updated with the saved character
+                updateCharacter(savedCharacter);
             }
         }
     </script>
