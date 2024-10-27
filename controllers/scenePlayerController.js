@@ -475,12 +475,10 @@ async function executeLinearActuator(step) {
 async function executeServo(step) {
     logger.info(`Executing servo step: ${step.name}`);
     try {
-        // Validate step parameters
         if (!step.part_id) {
             throw new Error('Part ID is missing in the servo step');
         }
         
-        // Get the part details
         let part;
         try {
             part = await partService.getPartById(step.part_id);
@@ -491,7 +489,6 @@ async function executeServo(step) {
             throw new Error(`Part not found for ID: ${step.part_id}`);
         }
 
-        // Validate required parameters
         if (typeof step.angle === 'undefined' || step.angle === null) {
             throw new Error('Angle is required for servo control');
         }
@@ -499,9 +496,8 @@ async function executeServo(step) {
             throw new Error('Duration is required for servo control');
         }
 
-        // Convert parameters to appropriate types and validate
         const angle = parseFloat(step.angle);
-        const duration = parseFloat(step.duration);
+        const duration = parseFloat(step.duration) / 1000;
 
         if (isNaN(angle)) {
             throw new Error('Invalid angle value');
@@ -515,18 +511,17 @@ async function executeServo(step) {
         const pinOrChannel = part.usePCA9685 ? part.channel.toString() : part.pin.toString();
 
         const args = [
-            'test',                    // command
-            controlType,               // control_type
-            pinOrChannel,              // pin_or_channel
-            angle.toString(),          // angle
-            duration.toString(),       // duration
-            part.servoType || 'Standard',  // servo_type
-            step.part_id.toString()    // part_id for PCA9685 settings
+            'test',
+            controlType,
+            pinOrChannel,
+            angle.toString(),
+            duration.toString(),
+            part.servoType || 'Standard',
+            step.part_id.toString()
         ];
 
         logger.debug(`Executing servo_control.py with args: ${args.join(', ')}`);
         
-        // Execute the servo control and wait for completion
         const result = await new Promise((resolve, reject) => {
             const process = spawn('python3', [scriptPath, ...args]);
             activeProcesses.add(process);
@@ -534,7 +529,7 @@ async function executeServo(step) {
             let errorOutput = '';
             let movementStarted = false;
             let movementCompleted = false;
-            
+
             const cleanup = () => {
                 activeProcesses.delete(process);
                 try {
@@ -544,48 +539,44 @@ async function executeServo(step) {
                 }
             };
 
-            // Parse JSON output and check for status messages
-            const processOutput = (data) => {
+            process.stdout.on('data', (data) => {
                 const lines = data.toString().split('\n');
                 lines.forEach(line => {
-                    if (line.trim()) {
-                        try {
-                            const jsonData = JSON.parse(line);
-                            if (jsonData.status === 'info' && jsonData.message === 'Movement started') {
+                    if (!line.trim()) return;
+                    
+                    try {
+                        const jsonData = JSON.parse(line);
+                        logger.debug(`Servo JSON output: ${JSON.stringify(jsonData)}`);
+                        
+                        if (jsonData.status === 'info') {
+                            if (jsonData.message === 'Movement started') {
                                 movementStarted = true;
-                                logger.debug('Servo movement started');
-                            }
-                            if (jsonData.status === 'info' && jsonData.message === 'Movement completed') {
+                            } else if (jsonData.message === 'Movement completed') {
                                 movementCompleted = true;
-                                logger.debug('Servo movement completed');
                                 cleanup();
                                 resolve({ success: true });
                             }
-                            if (jsonData.status === 'success' && !movementCompleted) {
+                        } else if (jsonData.status === 'success') {
+                            if (!movementCompleted) {
                                 movementCompleted = true;
-                                logger.debug('Servo movement succeeded');
                                 cleanup();
                                 resolve({ success: true });
                             }
-                            if (jsonData.status === 'error') {
-                                cleanup();
-                                reject(new Error(jsonData.message));
-                            }
-                        } catch (e) {
-                            // Not JSON or incomplete JSON, append to output
-                            output += line + '\n';
+                        } else if (jsonData.status === 'error') {
+                            cleanup();
+                            reject(new Error(jsonData.message));
                         }
+                    } catch (e) {
+                        output += line + '\n';
                     }
                 });
-            };
+            });
 
-            process.stdout.on('data', processOutput);
-            
             process.stderr.on('data', (data) => {
                 errorOutput += data.toString();
                 logger.error(`Servo control error: ${data}`);
             });
-            
+
             process.on('error', (error) => {
                 cleanup();
                 reject(new Error(`Servo process error: ${error.message}`));
@@ -594,16 +585,14 @@ async function executeServo(step) {
             process.on('close', (code) => {
                 cleanup();
                 if (code === 0 && (movementStarted || movementCompleted)) {
-                    resolve({ success: true });
-                } else if (code === null && (movementStarted || movementCompleted)) {
-                    // Process was terminated but movement started/completed, consider it successful
-                    resolve({ success: true });
-                } else {
+                    if (!movementCompleted) {
+                        resolve({ success: true });
+                    }
+                } else if (!movementStarted && !movementCompleted) {
                     reject(new Error(`Servo control process exited with code ${code}. Error: ${errorOutput}`));
                 }
             });
 
-            // Set a timeout for the entire operation
             setTimeout(() => {
                 if (!movementStarted) {
                     cleanup();
@@ -638,9 +627,9 @@ async function executeLight(step) {
         }
         const scriptPath = path.resolve(__dirname, '..', 'scripts', 'light_control.py');
         const args = [
-            part.gpioPin.toString(),  // First argument must be the GPIO pin number
-            step.state,               // Second argument is the state (on/off)
-            step.duration ? step.duration.toString() : '0'  // Third argument is duration (optional)
+            part.gpioPin.toString(),
+            step.state,
+            step.duration ? step.duration.toString() : '0'
         ];
         if (step.type === 'led') {
             args.push(step.brightness.toString());
