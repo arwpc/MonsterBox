@@ -65,26 +65,42 @@ router.get('/list', async (req, res) => {
                     const cameras = [];
                     const lines = output.split('\n');
                     let currentCamera = null;
+                    let devices = [];
 
                     for (const line of lines) {
-                        if (line.includes('(usb-')) {
-                            currentCamera = {
-                                name: line.split('(')[0].trim(),
-                                devices: []
-                            };
-                        } else if (currentCamera && line.includes('/dev/video')) {
-                            currentCamera.devices.push({
-                                path: line.trim(),
-                                id: parseInt(line.trim().replace('/dev/video', ''))
-                            });
-                        } else if (currentCamera && currentCamera.devices.length > 0) {
-                            cameras.push(currentCamera);
-                            currentCamera = null;
+                        const trimmedLine = line.trim();
+                        if (!trimmedLine) continue;
+
+                        if (line.includes('USB 2.0 Camera')) {
+                            // If we have a previous camera, add it to the list
+                            if (currentCamera && devices.length > 0) {
+                                cameras.push({
+                                    name: currentCamera,
+                                    devices: devices
+                                });
+                            }
+                            // Start a new camera
+                            currentCamera = 'USB Camera';
+                            devices = [];
+                        } else if (trimmedLine.startsWith('/dev/video')) {
+                            const deviceId = parseInt(trimmedLine.replace('/dev/video', ''));
+                            if (!isNaN(deviceId)) {
+                                devices.push({
+                                    id: deviceId,
+                                    path: trimmedLine
+                                });
+                            }
                         }
                     }
-                    if (currentCamera && currentCamera.devices.length > 0) {
-                        cameras.push(currentCamera);
+
+                    // Add the last camera if we have one
+                    if (currentCamera && devices.length > 0) {
+                        cameras.push({
+                            name: currentCamera,
+                            devices: devices
+                        });
                     }
+
                     resolve(cameras);
                 } else {
                     reject(new Error(error || 'Failed to list cameras'));
@@ -119,7 +135,7 @@ router.get('/stream', async (req, res) => {
 
     try {
         const settings = await loadCameraSettings();
-        if (!settings.selectedCamera) {
+        if (!settings.selectedCamera && settings.selectedCamera !== 0) {
             throw new Error('No camera selected');
         }
 
@@ -163,7 +179,7 @@ router.post('/control', async (req, res) => {
     
     try {
         const settings = await loadCameraSettings();
-        if (!settings.selectedCamera) {
+        if (!settings.selectedCamera && settings.selectedCamera !== 0) {
             throw new Error('No camera selected');
         }
 
