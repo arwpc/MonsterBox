@@ -4,69 +4,87 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
     <link rel="stylesheet" href="/css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Creepster&display=swap');
-
         .motion-detected {
-            color: red;
+            color: #ff0000;
+            text-shadow: 0 0 5px #ff0000;
             font-family: 'Creepster', cursive;
             font-size: 1.2em;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
         }
     </style>
 </head>
 <body>
-    <h1><%= title %></h1>
-    <form action="<%= action %>" method="POST">
-        <input type="hidden" name="type" value="sensor">
-        <% if (part.id) { %>
-            <input type="hidden" name="id" value="<%= part.id %>">
-        <% } %>
-        <div>
-            <label for="name">Part Name:</label>
-            <input type="text" id="name" name="name" value="<%= part.name || '' %>" required>
-        </div>
-        <div>
-            <label for="characterId">Character:</label>
-            <select id="characterId" name="characterId" required>
-                <% characters.forEach(function(character) { %>
-                    <option value="<%= character.id %>" <%= (part.characterId === character.id) ? 'selected' : '' %>>
-                        <%= character.char_name %>
-                    </option>
-                <% }); %>
-            </select>
-        </div>
-        <div>
-            <label for="sensorType">Sensor Type:</label>
-            <select id="sensorType" name="sensorType" required>
-                <option value="motion" <%= part.sensorType === 'motion' ? 'selected' : '' %>>Motion</option>
-                <option value="sound" <%= part.sensorType === 'sound' ? 'selected' : '' %>>Sound</option>
-            </select>
-        </div>
-        <div>
-            <label for="gpioPin">GPIO Pin:</label>
-            <input type="number" id="gpioPin" name="gpioPin" value="<%= part.gpioPin || '' %>" required>
-        </div>
-        <div>
-            <label for="active">
-                <input type="checkbox" id="active" name="active" <%= part.active ? 'checked' : '' %>>
-                Active
-            </label>
-        </div>
-        <button type="submit">Save Part</button>
-    </form>
+    <header>
+        <h1 class="landing-title"><%= title %></h1>
+    </header>
 
-    <div id="sensorControl" style="margin-top: 20px;">
-        <h2>Sensor Control</h2>
-        <p id="statusText">Sensor status: Not active</p>
-        <button id="sensorOn">Sensor On</button>
-        <button id="sensorOff" disabled>Sensor Off</button>
-        <div id="testResults" style="margin-top: 10px;"></div>
-    </div>
+    <main>
+        <form action="<%= action %>" method="POST">
+            <input type="hidden" name="type" value="sensor">
+            <% if (part.id) { %>
+                <input type="hidden" name="id" value="<%= part.id %>">
+            <% } %>
+            
+            <div class="form-group">
+                <label for="name">Part Name:</label>
+                <input type="text" id="name" name="name" value="<%= part.name || '' %>" required>
+            </div>
 
-    <a href="/parts?characterId=<%= character.id %>" class="button">Back to Parts</a>
+            <div class="form-group">
+                <label for="characterId">Character:</label>
+                <select id="characterId" name="characterId" required>
+                    <% characters.forEach(function(character) { %>
+                        <option value="<%= character.id %>" <%= (part.characterId === character.id) ? 'selected' : '' %>>
+                            <%= character.char_name %>
+                        </option>
+                    <% }); %>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="sensorType">Sensor Type:</label>
+                <select id="sensorType" name="sensorType" required>
+                    <option value="motion" <%= part.sensorType === 'motion' ? 'selected' : '' %>>Motion</option>
+                    <option value="sound" <%= part.sensorType === 'sound' ? 'selected' : '' %>>Sound</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="gpioPin">GPIO Pin:</label>
+                <input type="number" id="gpioPin" name="gpioPin" value="<%= part.gpioPin || '' %>" required>
+            </div>
+
+            <div class="form-group">
+                <label class="checkbox-label" for="active">
+                    <input type="checkbox" id="active" name="active" <%= part.active ? 'checked' : '' %>>
+                    Active
+                </label>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="button primary-btn">Save Part</button>
+            </div>
+        </form>
+
+        <div id="sensorControl" class="config-section">
+            <h2>Sensor Control</h2>
+            <p id="statusText">Sensor status: Not active</p>
+            
+            <div class="button-group">
+                <button id="sensorOn" class="button">Sensor On</button>
+                <button id="sensorOff" class="button" disabled>Sensor Off</button>
+            </div>
+
+            <div id="testResults" class="info-list"></div>
+        </div>
+
+        <div class="button-group">
+            <a href="/parts?characterId=<%= character.id %>" class="button secondary-btn">Back to Parts</a>
+        </div>
+    </main>
 
     <script>
         let eventSource;
@@ -98,6 +116,7 @@
                         console.error('Error:', data.error);
                         updateSensorStatus('Error: ' + data.error);
                         document.getElementById('testResults').textContent = 'Sensor control failed: ' + data.error;
+                        document.getElementById('testResults').classList.add('error-message');
                         stopSensor();
                     }
                 } catch (error) {
@@ -109,6 +128,7 @@
                 console.error('EventSource failed:', event);
                 updateSensorStatus('Error: EventSource failed');
                 document.getElementById('testResults').textContent = 'Sensor control failed: EventSource error';
+                document.getElementById('testResults').classList.add('error-message');
                 stopSensor();
             };
 
@@ -129,6 +149,7 @@
                 console.error('Cannot stop sensor: Invalid sensor ID');
                 updateSensorStatus('Error: Invalid sensor ID');
                 document.getElementById('testResults').textContent = 'Failed to stop sensor: Invalid sensor ID';
+                document.getElementById('testResults').classList.add('error-message');
                 document.getElementById('sensorOn').disabled = false;
                 document.getElementById('sensorOff').disabled = true;
                 return;
@@ -144,6 +165,7 @@
                 console.log('Sensor stop response:', response.data);
                 updateSensorStatus('Sensor stopped');
                 document.getElementById('testResults').textContent = 'Sensor stopped successfully';
+                document.getElementById('testResults').classList.remove('error-message');
             })
             .catch(function(error) {
                 console.error('Error stopping sensor:', error);
@@ -156,6 +178,7 @@
                 }
                 updateSensorStatus('Error stopping sensor');
                 document.getElementById('testResults').textContent = errorMessage;
+                document.getElementById('testResults').classList.add('error-message');
             })
             .finally(function() {
                 document.getElementById('sensorOn').disabled = false;
