@@ -21,7 +21,7 @@
             <label for="part_id_<%- index %>">Part:</label>
             <select id="part_id_<%- index %>" name="steps[<%- index %>][part_id]" required>
                 <% parts.filter(part => part.type === step.type).forEach(function(part) { %>
-                    <option value="<%- part.id %>" <%- (step.part_id === part.id) ? 'selected' : '' %>><%- part.name %></option>
+                    <option value="<%- part.id %>" <%- (step.part_id == part.id) ? 'selected' : '' %>><%- part.name %></option>
                 <% }); %>
             </select>
         </div>
@@ -71,7 +71,7 @@
             <label for="part_id_<%- index %>">Sensor:</label>
             <select id="part_id_<%- index %>" name="steps[<%- index %>][part_id]" required>
                 <% parts.filter(part => part.type === 'sensor').forEach(function(part) { %>
-                    <option value="<%- part.id %>" <%- (step.part_id === part.id) ? 'selected' : '' %>><%- part.name %></option>
+                    <option value="<%- part.id %>" <%- (step.part_id == part.id) ? 'selected' : '' %>><%- part.name %></option>
                 <% }); %>
             </select>
         </div>
