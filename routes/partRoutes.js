@@ -15,7 +15,11 @@ function getPartDetails(part) {
         case 'led':
             return `GPIO Pin: ${part.gpioPin}`;
         case 'servo':
-            return `GPIO Pin: ${part.gpioPin}, Frequency: ${part.pwmFrequency}Hz, Duty Cycle: ${part.dutyCycle}%`;
+            if (part.usePCA9685) {
+                return `PCA9685 Channel: ${part.channel}, Type: ${part.servoType}, Min Pulse: ${part.minPulse}μs, Max Pulse: ${part.maxPulse}μs`;
+            } else {
+                return `GPIO Pin: ${part.pin}, Type: ${part.servoType}, Min Pulse: ${part.minPulse}μs, Max Pulse: ${part.maxPulse}μs`;
+            }
         case 'sensor':
             return `Type: ${part.sensorType}, GPIO Pin: ${part.gpioPin}, Active: ${part.active ? 'Yes' : 'No'}`;
         default:
