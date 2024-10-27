@@ -31,7 +31,7 @@ const linearActuatorRoutes = require('./routes/linearActuatorRoutes');
 const activeModeRoutes = require('./routes/activeModeRoutes');
 const systemConfigRoutes = require('./routes/systemConfigRoutes');
 const logRoutes = require('./routes/logRoutes');
-const voiceRoutes = require('./routes/voiceRoutes');
+const cameraRoutes = require('./routes/cameraRoutes');
 
 // Import services
 const characterService = require('./services/characterService');
@@ -65,19 +65,19 @@ app.use((req, res, next) => {
     next();
 });
 
-// Use other routes
+// Use routes
 app.use('/parts/led', ledRoutes);
 app.use('/parts/light', lightRoutes);
 app.use('/parts/servo', servoRoutes);
 app.use('/parts/sensor', sensorRoutes);
 app.use('/parts/linear-actuator', linearActuatorRoutes);
-app.use('/parts', partRoutes.router); // Changed this line to apply partRoutes to /parts
+app.use('/parts', partRoutes.router);
 app.use('/characters', characterRoutes);
 app.use('/sounds', soundRoutes);
 app.use('/active-mode', activeModeRoutes);
 app.use('/system-config', systemConfigRoutes);
 app.use('/logs', logRoutes);
-app.use('/api/voice', voiceRoutes);
+app.use('/camera', cameraRoutes);
 
 // Root route
 app.get('/', async (req, res) => {

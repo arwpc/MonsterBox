@@ -1,0 +1,360 @@
+Create a new file at `views/camera.ejs` with the following content:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .camera-container {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .camera-feed {
+            flex: 1;
+            min-width: 0;
+            position: relative;
+        }
+
+        .camera-controls {
+            flex: 0 0 300px;
+            padding: 20px;
+            background-color: #001100;
+            border: 1px solid #00ff00;
+            border-radius: 5px;
+        }
+
+        #cameraStream {
+            width: 100%;
+            max-width: 640px;
+            border: 2px solid #00ff00;
+            background-color: #000;
+            display: block;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #003300;
+            border-radius: 5px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+
+        .status-active {
+            background-color: #00ff00;
+            box-shadow: 0 0 5px #00ff00;
+        }
+
+        .status-inactive {
+            background-color: #ff0000;
+            box-shadow: 0 0 5px #ff0000;
+        }
+
+        #motionData {
+            font-family: monospace;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #000000;
+            border: 1px solid #00ff00;
+            height: 150px;
+            overflow-y: auto;
+            color: #00ff00;
+        }
+
+        .motion-indicator {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: #ff0000;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            opacity: 0.7;
+            display: none;
+        }
+
+        select, input[type="range"] {
+            background-color: #001100;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 5px;
+            margin: 5px 0;
+            width: 100%;
+        }
+
+        button {
+            background-color: #003300;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 8px 16px;
+            margin: 5px 0;
+            cursor: pointer;
+            width: 100%;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            background-color: #004400;
+            box-shadow: 0 0 5px #00ff00;
+        }
+
+        button:disabled {
+            background-color: #001100;
+            color: #004400;
+            border-color: #004400;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            color: #00ff00;
+            text-align: center;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1><%= title %></h1>
+
+    <div class="camera-container">
+        <div class="camera-feed">
+            <div style="position: relative;">
+                <img id="cameraStream" alt="Camera Stream">
+                <div id="motionIndicator" class="motion-indicator"></div>
+            </div>
+        </div>
+        
+        <div class="camera-controls">
+            <div class="control-group">
+                <h3>Camera Status</h3>
+                <div>
+                    <span class="status-indicator" id="streamStatus"></span>
+                    Stream Status: <span id="streamStatusText">Connecting...</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Motion Detection</h3>
+                <button id="toggleMotion">Start Motion Detection</button>
+                <div id="motionData">No motion data</div>
+            </div>
+
+            <div class="control-group">
+                <h3>Camera Settings</h3>
+                <label for="resolution">Resolution:</label>
+                <select id="resolution">
+                    <option value="160,120">160x120</option>
+                    <option value="320,240">320x240</option>
+                    <option value="640,480">640x480</option>
+                </select>
+                <button onclick="updateSettings()">Apply Settings</button>
+            </div>
+
+            <div class="control-group">
+                <h3>Head Tracking</h3>
+                <div>
+                    <label for="servoSelect">Servo:</label>
+                    <select id="servoSelect">
+                        <option value="">Select Servo...</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="trackingSensitivity">Sensitivity:</label>
+                    <input type="range" id="trackingSensitivity" min="1" max="10" value="5">
+                </div>
+                <button id="toggleTracking" disabled>Start Head Tracking</button>
+            </div>
+        </div>
+    </div>
+
+    <a href="/" class="button">Back to Main Menu</a>
+
+    <script>
+        let motionDetectionActive = false;
+        let headTrackingActive = false;
+        let motionInterval = null;
+
+        // Initialize camera stream
+        const streamImg = document.getElementById('cameraStream');
+        streamImg.src = `/camera/stream?t=${Date.now()}`;
+        const streamStatus = document.getElementById('streamStatus');
+        const streamStatusText = document.getElementById('streamStatusText');
+        const motionIndicator = document.getElementById('motionIndicator');
+
+        streamImg.onload = function() {
+            streamStatus.className = 'status-indicator status-active';
+            streamStatusText.textContent = 'Connected';
+        };
+
+        streamImg.onerror = function() {
+            streamStatus.className = 'status-indicator status-inactive';
+            streamStatusText.textContent = 'Disconnected';
+            stopMotionDetection();
+            stopHeadTracking();
+        };
+
+        // Motion detection controls
+        document.getElementById('toggleMotion').addEventListener('click', function() {
+            if (motionDetectionActive) {
+                stopMotionDetection();
+            } else {
+                startMotionDetection();
+            }
+        });
+
+        // Head tracking controls
+        document.getElementById('toggleTracking').addEventListener('click', function() {
+            if (headTrackingActive) {
+                stopHeadTracking();
+            } else {
+                startHeadTracking();
+            }
+        });
+
+        function updateMotionIndicator(x, y) {
+            const imgRect = streamImg.getBoundingClientRect();
+            motionIndicator.style.display = 'block';
+            motionIndicator.style.left = `${(x / 100) * imgRect.width}px`;
+            motionIndicator.style.top = `${(y / 100) * imgRect.height}px`;
+        }
+
+        function startMotionDetection() {
+            motionDetectionActive = true;
+            document.getElementById('toggleMotion').textContent = 'Stop Motion Detection';
+            
+            motionInterval = setInterval(async () => {
+                try {
+                    const response = await fetch('/camera/control', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            command: 'motion'
+                        })
+                    });
+                    const data = await response.json();
+                    
+                    if (data.motion_detected) {
+                        updateMotionIndicator(data.center_x, data.center_y);
+                    } else {
+                        motionIndicator.style.display = 'none';
+                    }
+                    
+                    document.getElementById('motionData').textContent = JSON.stringify(data, null, 2);
+                } catch (error) {
+                    console.error('Motion detection error:', error);
+                    stopMotionDetection();
+                }
+            }, 100);
+        }
+
+        function stopMotionDetection() {
+            motionDetectionActive = false;
+            document.getElementById('toggleMotion').textContent = 'Start Motion Detection';
+            if (motionInterval) {
+                clearInterval(motionInterval);
+                motionInterval = null;
+            }
+            motionIndicator.style.display = 'none';
+            document.getElementById('motionData').textContent = 'No motion data';
+        }
+
+        function startHeadTracking() {
+            const servoId = document.getElementById('servoSelect').value;
+            const sensitivity = document.getElementById('trackingSensitivity').value;
+            headTrackingActive = true;
+            document.getElementById('toggleTracking').textContent = 'Stop Head Tracking';
+            
+            fetch('/camera/control', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    command: 'head_track',
+                    action: 'start',
+                    params: {
+                        servoId: servoId,
+                        sensitivity: sensitivity
+                    }
+                })
+            }).catch(error => {
+                console.error('Head tracking error:', error);
+                stopHeadTracking();
+            });
+        }
+
+        function stopHeadTracking() {
+            headTrackingActive = false;
+            document.getElementById('toggleTracking').textContent = 'Start Head Tracking';
+            
+            fetch('/camera/control', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    command: 'head_track',
+                    action: 'stop'
+                })
+            }).catch(console.error);
+        }
+
+        function updateSettings() {
+            const [width, height] = document.getElementById('resolution').value.split(',');
+            
+            fetch('/camera/control', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    command: 'settings',
+                    params: {
+                        width: parseInt(width),
+                        height: parseInt(height)
+                    }
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    streamImg.src = `/camera/stream?t=${Date.now()}`;
+                }
+            })
+            .catch(console.error);
+        }
+
+        // Load available servos
+        fetch('/parts/api/parts')
+            .then(response => response.json())
+            .then(parts => {
+                const servoSelect = document.getElementById('servoSelect');
+                const servos = parts.filter(part => part.type === 'servo');
+                
+                servos.forEach(servo => {
+                    const option = document.createElement('option');
+                    option.value = servo.id;
+                    option.textContent = servo.name;
+                    servoSelect.appendChild(option);
+                });
+                
+                document.getElementById('toggleTracking').disabled = servos.length === 0;
+            })
+            .catch(console.error);
+    </script>
+</body>
+</html>
+```
