@@ -12,10 +12,31 @@ class VoiceSelector {
         this.wavesurfer = null;
         this.isPlaying = false;
         this.currentPreviewVoice = null;
+        this.characterId = null;
 
         this.initializeWaveSurfer();
         this.setupEventListeners();
         this.loadVoices();
+    }
+
+    showLoading(message = 'Loading...') {
+        const overlay = document.querySelector('#loadingOverlay');
+        const text = overlay.querySelector('.loading-text');
+        text.textContent = message;
+        overlay.classList.add('active');
+    }
+
+    hideLoading() {
+        document.querySelector('#loadingOverlay').classList.remove('active');
+    }
+
+    showError(message) {
+        const errorElement = document.querySelector('#errorMessage');
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
+        setTimeout(() => {
+            errorElement.style.display = 'none';
+        }, 5000);
     }
 
     initializeWaveSurfer() {
@@ -25,19 +46,27 @@ class VoiceSelector {
             progressColor: '#1976d2',
             height: 60,
             barWidth: 2,
-            barGap: 1
+            barGap: 1,
+            responsive: true,
+            normalize: true
         });
 
         this.wavesurfer.on('finish', () => {
             this.isPlaying = false;
             this.updatePlayButtonState();
         });
+
+        this.wavesurfer.on('error', error => {
+            console.error('WaveSurfer error:', error);
+            this.showError('Error loading audio preview');
+        });
     }
 
     setupEventListeners() {
         // Modal controls
-        document.querySelector('#selectVoiceBtn').addEventListener('click', () => {
-            this.openModal();
+        document.querySelector('#selectVoiceBtn')?.addEventListener('click', () => this.openModal());
+        document.querySelectorAll('.close, .close-btn').forEach(el => {
+            el.addEventListener('click', () => this.closeModal());
         });
 
         // Filter buttons
@@ -60,10 +89,22 @@ class VoiceSelector {
             header.addEventListener('click', (e) => this.sortVoices(e.target));
         });
 
+        // Voice settings controls
+        ['speed', 'pitch', 'volume'].forEach(setting => {
+            const input = document.querySelector(`#${setting}`);
+            const value = input.nextElementSibling;
+            input.addEventListener('input', (e) => {
+                value.textContent = e.target.value;
+                this.updatePreviewButtonState();
+            });
+        });
+
         // Preview button
         document.querySelector('#previewPlay').addEventListener('click', () => {
-            if (this.currentPreviewVoice) {
-                this.playPreview(this.currentPreviewVoice);
+            if (this.isPlaying) {
+                this.stopPreview();
+            } else if (this.currentPreviewVoice) {
+                this.playPreview();
             }
         });
 
@@ -84,24 +125,30 @@ class VoiceSelector {
 
     async loadVoices() {
         try {
+            this.showLoading('Loading voices...');
             const response = await fetch('/api/voice/available');
+            if (!response.ok) throw new Error('Failed to load voices');
+            
             const voices = await response.json();
             this.voices = voices.map(voice => ({
                 ...voice,
                 styles: this.getVoiceStyles(voice)
             }));
+            
             this.populateVoiceTable();
-            this.loadRecentlyUsed();
+            await this.loadRecentlyUsed();
         } catch (error) {
             console.error('Error loading voices:', error);
+            this.showError('Failed to load voices');
+        } finally {
+            this.hideLoading();
         }
     }
 
     getVoiceStyles(voice) {
-        // Define available styles based on voice characteristics
         const baseStyles = ['neutral'];
         if (voice.capabilities?.includes('expressive')) {
-            baseStyles.push('happy', 'sad', 'angry');
+            baseStyles.push('happy', 'sad', 'angry', 'fearful');
         }
         return baseStyles;
     }
@@ -125,6 +172,11 @@ class VoiceSelector {
                         </button>
                     `).join('')}
                 </td>
+                <td>
+                    <button class="action-btn favorite-btn" title="Add to favorites">
+                        <i class="far fa-star"></i>
+                    </button>
+                </td>
             `;
 
             row.addEventListener('click', () => this.selectVoice(voice));
@@ -135,7 +187,11 @@ class VoiceSelector {
             tbody.appendChild(row);
         });
 
-        // Add style button click handlers
+        this.setupVoiceRowHandlers();
+    }
+
+    setupVoiceRowHandlers() {
+        // Style button click handlers
         document.querySelectorAll('.style-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -143,51 +199,82 @@ class VoiceSelector {
                 const style = btn.dataset.style;
                 const voice = this.voices.find(v => v.uuid === voiceId);
                 if (voice) {
-                    this.playPreview(voice, style);
+                    this.currentPreviewVoice = voice;
+                    document.querySelector('#previewPlay').disabled = false;
+                    this.playPreview(style);
                 }
+            });
+        });
+
+        // Favorite button handlers
+        document.querySelectorAll('.favorite-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const row = btn.closest('tr');
+                const voice = this.voices.find(v => v.name === row.cells[0].textContent);
+                this.toggleFavorite(voice, btn);
             });
         });
     }
 
-    async playPreview(voice, style = 'neutral') {
+    async toggleFavorite(voice, button) {
+        try {
+            const isFavorite = button.querySelector('i').classList.contains('fas');
+            const metadata = { favorited: !isFavorite };
+
+            const response = await fetch(`/api/voice/metadata/${this.characterId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ metadata })
+            });
+
+            if (!response.ok) throw new Error('Failed to update favorite status');
+
+            button.querySelector('i').classList.toggle('far');
+            button.querySelector('i').classList.toggle('fas');
+        } catch (error) {
+            console.error('Error updating favorite status:', error);
+            this.showError('Failed to update favorite status');
+        }
+    }
+
+    async playPreview(style = 'neutral') {
         if (this.isPlaying) {
-            this.wavesurfer.stop();
-            this.isPlaying = false;
-            this.updatePlayButtonState();
-            if (this.currentPreviewVoice?.uuid === voice.uuid) {
-                return;
-            }
+            this.stopPreview();
+            return;
         }
 
-        this.currentPreviewVoice = voice;
-        const previewText = document.querySelector('#previewText').value;
-
         try {
+            this.showLoading('Generating preview...');
+            const previewText = document.querySelector('#previewText').value;
+
             const response = await fetch('/api/voice/generate', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    speaker_id: voice.uuid,
+                    speaker_id: this.currentPreviewVoice.uuid,
                     text: previewText,
-                    style: style,
+                    style,
+                    characterId: this.characterId,
                     options: {
-                        modelId: 'vox_2_0',
-                        pitch: parseInt(document.querySelector('#pitch').value || 0),
-                        speed: parseFloat(document.querySelector('#speed').value || 1.0),
-                        volume: parseInt(document.querySelector('#volume').value || 0),
-                        sampleRate: 44100,
-                        bitRate: 128
+                        speed: parseFloat(document.querySelector('#speed').value),
+                        pitch: parseInt(document.querySelector('#pitch').value),
+                        volume: parseInt(document.querySelector('#volume').value)
                     }
                 })
             });
 
-            const data = await response.json();
-            if (data.error) {
-                throw new Error(data.error);
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to generate preview');
             }
 
+            const data = await response.json();
+            
             if (data.url) {
                 this.wavesurfer.load(data.url);
                 this.wavesurfer.on('ready', () => {
@@ -198,8 +285,16 @@ class VoiceSelector {
             }
         } catch (error) {
             console.error('Error generating preview:', error);
-            alert('Error generating preview: ' + error.message);
+            this.showError(error.message);
+        } finally {
+            this.hideLoading();
         }
+    }
+
+    stopPreview() {
+        this.wavesurfer.stop();
+        this.isPlaying = false;
+        this.updatePlayButtonState();
     }
 
     updatePlayButtonState() {
@@ -207,22 +302,38 @@ class VoiceSelector {
         playButton.innerHTML = this.isPlaying ? 
             '<i class="fas fa-stop"></i> Stop' : 
             '<i class="fas fa-play"></i> Preview';
+        playButton.disabled = !this.currentPreviewVoice;
+    }
+
+    updatePreviewButtonState() {
+        document.querySelector('#previewPlay').disabled = !this.currentPreviewVoice;
     }
 
     selectVoice(voice) {
         this.selectedVoice = voice;
+        this.currentPreviewVoice = voice;
+        
         document.querySelectorAll('#voiceTableBody tr').forEach(row => {
             row.classList.toggle('selected', row.cells[0].textContent === voice.name);
         });
-        this.currentPreviewVoice = voice;
+        
         document.querySelector('#selectVoice').disabled = false;
+        this.updatePreviewButtonState();
     }
 
     confirmVoiceSelection() {
         if (this.selectedVoice) {
-            // Create a custom event with the selected voice data
+            const settings = {
+                speed: parseFloat(document.querySelector('#speed').value),
+                pitch: parseInt(document.querySelector('#pitch').value),
+                volume: parseInt(document.querySelector('#volume').value)
+            };
+
             const event = new CustomEvent('voiceSelected', {
-                detail: this.selectedVoice
+                detail: {
+                    voice: this.selectedVoice,
+                    settings
+                }
             });
             document.dispatchEvent(event);
             this.addToRecentlyUsed(this.selectedVoice);
@@ -281,10 +392,8 @@ class VoiceSelector {
     }
 
     applyFilters() {
-        // Reset filters
         Object.keys(this.filters).forEach(key => this.filters[key].clear());
 
-        // Collect active filters
         document.querySelectorAll('.filter-option input:checked').forEach(checkbox => {
             const filterType = checkbox.closest('.filter-dropdown').id.replace('Filter', '');
             this.filters[filterType].add(checkbox.value);
@@ -297,17 +406,14 @@ class VoiceSelector {
         const column = header.textContent.toLowerCase().trim();
         const currentDirection = header.dataset.sortDirection === 'asc' ? 'desc' : 'asc';
         
-        // Reset all sort indicators
         document.querySelectorAll('th').forEach(th => {
             th.dataset.sortDirection = '';
             th.querySelector('i').className = 'fas fa-sort';
         });
 
-        // Update sort indicator
         header.dataset.sortDirection = currentDirection;
         header.querySelector('i').className = `fas fa-sort-${currentDirection === 'asc' ? 'up' : 'down'}`;
 
-        // Sort voices
         const sortedVoices = [...this.voices].sort((a, b) => {
             let valueA = a[column] || '';
             let valueB = b[column] || '';
@@ -317,30 +423,22 @@ class VoiceSelector {
                 valueB = b.styles.length;
             }
 
-            if (currentDirection === 'asc') {
-                return valueA > valueB ? 1 : -1;
-            } else {
-                return valueA < valueB ? 1 : -1;
-            }
+            return currentDirection === 'asc' ? 
+                (valueA > valueB ? 1 : -1) : 
+                (valueA < valueB ? 1 : -1);
         });
 
         this.populateVoiceTable(sortedVoices);
     }
 
-    addToRecentlyUsed(voice) {
-        // Get stored recently used voices
+    async addToRecentlyUsed(voice) {
         let recent = JSON.parse(localStorage.getItem('recentlyUsedVoices') || '[]');
-        
-        // Add new voice to the beginning
         recent = [voice, ...recent.filter(v => v.uuid !== voice.uuid)].slice(0, 5);
-        
-        // Save back to localStorage
         localStorage.setItem('recentlyUsedVoices', JSON.stringify(recent));
-        
-        this.loadRecentlyUsed();
+        await this.loadRecentlyUsed();
     }
 
-    loadRecentlyUsed() {
+    async loadRecentlyUsed() {
         const recentContainer = document.querySelector('#recentlyUsedVoices');
         const recent = JSON.parse(localStorage.getItem('recentlyUsedVoices') || '[]');
         
@@ -350,7 +448,6 @@ class VoiceSelector {
             </div>
         `).join('');
 
-        // Add click handlers
         document.querySelectorAll('.voice-chip').forEach(chip => {
             chip.addEventListener('click', () => {
                 const voice = this.voices.find(v => v.uuid === chip.dataset.voiceId);
@@ -362,24 +459,18 @@ class VoiceSelector {
     }
 
     openModal() {
-        const voiceSelectorModal = document.getElementById('voiceModal');
-        if (voiceSelectorModal) {
-            voiceSelectorModal.style.display = 'block';
-        } else {
-            console.error('Voice selector modal not found');
-        }
+        document.getElementById('voiceModal').style.display = 'block';
     }
 
     closeModal() {
-        const voiceSelectorModal = document.getElementById('voiceModal');
-        if (voiceSelectorModal) {
-            voiceSelectorModal.style.display = 'none';
-        }
+        document.getElementById('voiceModal').style.display = 'none';
         if (this.isPlaying) {
-            this.wavesurfer.stop();
-            this.isPlaying = false;
-            this.updatePlayButtonState();
+            this.stopPreview();
         }
+    }
+
+    setCharacterId(id) {
+        this.characterId = id;
     }
 }
 
