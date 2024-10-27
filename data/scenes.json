@@ -1,0 +1,17 @@
+[
+  {
+    "id": 1,
+    "character_id": 1,
+    "scene_name": "Turn Head Right",
+    "steps": [
+      {
+        "type": "servo",
+        "name": "Turn Head",
+        "part_id": "11",
+        "duration": "1000",
+        "angle": "90",
+        "speed": "50"
+      }
+    ]
+  }
+]
