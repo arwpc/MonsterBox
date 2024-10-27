@@ -315,7 +315,12 @@ async function executeMotor(step) {
         if (!step.part_id) {
             throw new Error('Part ID is missing in the motor step');
         }
-        const part = await partService.getPartById(step.part_id);
+        let part;
+        try {
+            part = await partService.getPartById(step.part_id);
+        } catch (error) {
+            throw new Error(`Failed to get part: ${error.message}`);
+        }
         if (!part) {
             throw new Error(`Part not found for ID: ${step.part_id}`);
         }
@@ -405,7 +410,12 @@ async function executeMotor(step) {
 async function executeLinearActuator(step) {
     logger.info(`Executing linear actuator step: ${step.name}`);
     try {
-        const part = await partService.getPartById(step.part_id);
+        let part;
+        try {
+            part = await partService.getPartById(step.part_id);
+        } catch (error) {
+            throw new Error(`Failed to get part: ${error.message}`);
+        }
         if (!part) {
             throw new Error(`Part not found for ID: ${step.part_id}`);
         }
@@ -470,7 +480,12 @@ async function executeServo(step) {
         }
         
         // Get the part details
-        const part = await partService.getPartById(step.part_id);
+        let part;
+        try {
+            part = await partService.getPartById(step.part_id);
+        } catch (error) {
+            throw new Error(`Failed to get part: ${error.message}`);
+        }
         if (!part) {
             throw new Error(`Part not found for ID: ${step.part_id}`);
         }
@@ -591,7 +606,12 @@ async function executeServo(step) {
 async function executeLight(step) {
     logger.info(`Executing light step: ${step.name}`);
     try {
-        const part = await partService.getPartById(step.part_id);
+        let part;
+        try {
+            part = await partService.getPartById(step.part_id);
+        } catch (error) {
+            throw new Error(`Failed to get part: ${error.message}`);
+        }
         if (!part) {
             throw new Error(`Part not found for ID: ${step.part_id}`);
         }
@@ -645,7 +665,12 @@ async function executeLight(step) {
 async function executeSensor(step) {
     logger.info(`Executing sensor step: ${step.name}`);
     try {
-        const part = await partService.getPartById(step.part_id);
+        let part;
+        try {
+            part = await partService.getPartById(step.part_id);
+        } catch (error) {
+            throw new Error(`Failed to get part: ${error.message}`);
+        }
         if (!part) {
             throw new Error(`Part not found for ID: ${step.part_id}`);
         }
