@@ -51,6 +51,18 @@
             background-color: rgba(255, 0, 0, 0.1);
             color: #ff0000;
         }
+        .test-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .test-buttons button {
+            flex: 1;
+        }
+        .test-buttons button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -194,9 +206,9 @@
                 <span id="angleValue">90</span>
             </div>
             <p id="servoDescription"></p>
-            <div class="button-group">
-                <button type="button" onclick="testServo()" class="button">Test Servo</button>
-                <button type="button" onclick="stopServo()" class="button">Stop Test</button>
+            <div class="test-buttons">
+                <button type="button" onclick="testServo()" class="button" id="testButton">Test Servo</button>
+                <button type="button" onclick="stopServo()" class="button" id="stopButton">Stop Test</button>
             </div>
             <div id="testResult"></div>
         </div>
@@ -208,6 +220,8 @@
     </main>
 
     <script>
+        let isTestingServo = false;
+
         // Initialize the page
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Page initialized');
@@ -307,9 +321,21 @@
             resultDiv.className = isError ? 'error' : 'success';
         }
 
+        // Update button states
+        function updateButtonStates(testing) {
+            const testButton = document.getElementById('testButton');
+            const stopButton = document.getElementById('stopButton');
+            testButton.disabled = testing;
+            stopButton.disabled = !testing;
+            isTestingServo = testing;
+        }
+
         // Test servo functionality
         async function testServo() {
+            if (isTestingServo) return;
+            
             console.log('Testing servo');
+            updateButtonStates(true);
             const angle = document.getElementById('testAngle').value;
             const usePCA9685 = document.getElementById('usePCA9685').checked;
             const channel = document.getElementById('channel').value;
@@ -326,25 +352,28 @@
             };
 
             console.log('Test data:', testData);
+            showTestResult('Testing servo...');
 
             try {
-                showTestResult('Sending test command...');
                 const response = await axios.post('/parts/servo/test', testData);
                 console.log('Test response:', response);
 
                 if (response.data.success) {
-                    showTestResult('Test successful');
+                    showTestResult(response.data.message);
                 } else {
-                    showTestResult('Test failed: ' + response.data.message, true);
+                    showTestResult(response.data.message || 'Test failed', true);
                 }
             } catch (error) {
                 console.error('Error testing servo:', error);
                 showTestResult('Error testing servo: ' + (error.response?.data?.message || error.message), true);
+                updateButtonStates(false);
             }
         }
 
         // Stop servo test
         async function stopServo() {
+            if (!isTestingServo) return;
+            
             console.log('Stopping servo');
             const usePCA9685 = document.getElementById('usePCA9685').checked;
             const channel = document.getElementById('channel').value;
@@ -361,9 +390,9 @@
             };
 
             console.log('Stop data:', stopData);
+            showTestResult('Stopping servo...');
 
             try {
-                showTestResult('Sending stop command...');
                 const response = await axios.post('/parts/servo/test', stopData);
                 console.log('Stop response:', response);
 
@@ -375,6 +404,8 @@
             } catch (error) {
                 console.error('Error stopping servo:', error);
                 showTestResult('Error stopping servo: ' + (error.response?.data?.message || error.message), true);
+            } finally {
+                updateButtonStates(false);
             }
         }
 
