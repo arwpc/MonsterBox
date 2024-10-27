@@ -43,10 +43,19 @@
     "pin": 3,
     "usePCA9685": true,
     "channel": 1,
-    "minPulse": 250,
+    "minPulse": 500,
     "maxPulse": 2500,
     "defaultAngle": 90,
-    "servoType": "Standard"
+    "servoType": "Hooyij 40kg DS3240MG",
+    "mode": [
+      "Standard",
+      "Continuous"
+    ],
+    "feedback": false,
+    "controlType": [
+      "PWM"
+    ],
+    "customSettings": null
   },
   {
     "id": 6,
@@ -59,7 +68,16 @@
     "minPulse": 500,
     "maxPulse": 2500,
     "defaultAngle": 90,
-    "servoType": "Standard"
+    "servoType": "Hooyij 40kg DS3240MG",
+    "mode": [
+      "Standard",
+      "Continuous"
+    ],
+    "feedback": false,
+    "controlType": [
+      "PWM"
+    ],
+    "customSettings": null
   },
   {
     "id": 7,
@@ -94,5 +112,30 @@
     "gpioPin": 16,
     "active": true,
     "sensorType": "motion"
+  },
+  {
+    "id": 11,
+    "name": "Head on a Swivel",
+    "type": "servo",
+    "characterId": 1,
+    "pin": 3,
+    "usePCA9685": true,
+    "channel": null,
+    "servoType": "GoBilda Stingray 2 Servo",
+    "minPulse": 500,
+    "maxPulse": 2500,
+    "defaultAngle": 90,
+    "mode": [
+      "Feedback",
+      "Continuous",
+      "Standard",
+      "Digital"
+    ],
+    "feedback": true,
+    "controlType": [
+      "PWM",
+      "Digital"
+    ],
+    "customSettings": null
   }
 ]
