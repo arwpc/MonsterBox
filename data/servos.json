@@ -1,0 +1,73 @@
+{
+    "servos": [
+      {
+        "name": "Hooyij 40kg DS3240MG",
+        "model": "DS3240MG",
+        "manufacturer": "Hooyij",
+        "mode": [
+          "Standard",
+          "Continuous"
+        ],
+        "max_torque_kg_cm": 40,
+        "waterproof": true,
+        "gear_material": "Full Metal",
+        "min_pulse_width_us": 500,
+        "max_pulse_width_us": 2500,
+        "neutral_pulse_us": 1500,
+        "default_angle_deg": 90,
+        "rotation_range_deg": 180,
+        "feedback": false,
+        "control_type": [
+          "PWM"
+        ],
+        "notes": "High torque; ideal for steering or applications requiring high power."
+      },
+      {
+        "name": "Miuzei MG90S",
+        "model": "MG90S",
+        "manufacturer": "Miuzei",
+        "mode": [
+          "Standard"
+        ],
+        "max_torque_kg_cm": 2.2,
+        "waterproof": false,
+        "gear_material": "Metal",
+        "min_pulse_width_us": 500,
+        "max_pulse_width_us": 2400,
+        "neutral_pulse_us": 1500,
+        "default_angle_deg": 90,
+        "rotation_range_deg": 180,
+        "feedback": false,
+        "control_type": [
+          "PWM"
+        ],
+        "notes": "Compact and lightweight; suitable for small applications like RC models."
+      },
+      {
+        "name": "GoBilda Stingray 2 Servo",
+        "model": "Stingray 2",
+        "manufacturer": "GoBilda",
+        "mode": [
+          "Feedback",
+          "Continuous",
+          "Standard",
+          "Digital"
+        ],
+        "max_torque_oz_in": 700,
+        "max_speed_rpm": 30,
+        "gear_material": "Metal",
+        "min_pulse_width_us": 500,
+        "max_pulse_width_us": 2500,
+        "neutral_pulse_us": 1500,
+        "default_angle_deg": 90,
+        "rotation_range_deg": 900,
+        "feedback": true,
+        "control_type": [
+          "PWM",
+          "Digital"
+        ],
+        "notes": "High power with extensive rotation, suitable for animatronics and robotics with multiple operation modes."
+      }
+    ]
+  }
+  

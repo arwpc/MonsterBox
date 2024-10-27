@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+<!-- Previous head section remains the same -->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -37,6 +38,17 @@
             background-color: #f2dede;
             color: #a94442;
         }
+        .servo-info {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #00ff00;
+            background-color: #002200;
+            border-radius: 4px;
+        }
+        .servo-info p {
+            margin: 5px 0;
+            color: #00ff00;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
@@ -63,12 +75,36 @@
         </div>
         <div>
             <label for="servoType">Servo Type:</label>
-            <select id="servoType" name="servoType" required onchange="updateServoDefaults()">
-                <% servoTypes.forEach(function(type) { %>
-                    <option value="<%= type %>" <%= (part && part.servoType === type) ? 'selected' : '' %>><%= type %></option>
+            <select id="servoType" name="servoType" required onchange="updateServoParameters()">
+                <option value="">Select a Servo Type</option>
+                <% servoConfigs.forEach(function(servo) { %>
+                    <option value="<%= servo.name %>" 
+                            data-min-pulse="<%= servo.min_pulse_width_us %>"
+                            data-max-pulse="<%= servo.max_pulse_width_us %>"
+                            data-default-angle="<%= servo.default_angle_deg %>"
+                            data-model="<%= servo.model %>"
+                            data-manufacturer="<%= servo.manufacturer %>"
+                            data-modes="<%= servo.mode.join(',') %>"
+                            data-torque="<%= servo.max_torque_kg_cm %>"
+                            data-rotation="<%= servo.rotation_range_deg %>"
+                            data-feedback="<%= servo.feedback %>"
+                            data-notes="<%= servo.notes || '' %>"
+                            <%= (part && part.servoType === servo.name) ? 'selected' : '' %>>
+                        <%= servo.name %>
+                    </option>
                 <% }); %>
             </select>
         </div>
+
+        <div id="servoInfo" class="servo-info" style="display: none;">
+            <p id="servoModel"></p>
+            <p id="servoModes"></p>
+            <p id="servoTorque"></p>
+            <p id="servoRotation"></p>
+            <p id="servoFeedback"></p>
+            <p id="servoNotes"></p>
+        </div>
+
         <div>
             <label for="usePCA9685">Use PCA9685:</label>
             <input type="checkbox" id="usePCA9685" name="usePCA9685" <%= (part && part.usePCA9685) ? 'checked' : '' %> onchange="togglePCA9685()">
@@ -93,24 +129,18 @@
             <label for="pin">GPIO Pin:</label>
             <input type="number" id="pin" name="pin" value="<%= part ? part.pin : '' %>" min="0" max="27" required>
         </div>
-        <div>
-            <label for="minPulse">Min Pulse (μs):</label>
-            <input type="number" id="minPulse" name="minPulse" value="<%= part ? part.minPulse : 500 %>" required>
-        </div>
-        <div>
-            <label for="maxPulse">Max Pulse (μs):</label>
-            <input type="number" id="maxPulse" name="maxPulse" value="<%= part ? part.maxPulse : 2500 %>" required>
-        </div>
-        <div>
-            <label for="defaultAngle">Default Angle:</label>
-            <input type="number" id="defaultAngle" name="defaultAngle" value="<%= part ? part.defaultAngle : 90 %>" min="0" max="180" required>
-        </div>
+
+        <input type="hidden" id="minPulse" name="minPulse" value="<%= part ? part.minPulse : 500 %>">
+        <input type="hidden" id="maxPulse" name="maxPulse" value="<%= part ? part.maxPulse : 2500 %>">
+        <input type="hidden" id="defaultAngle" name="defaultAngle" value="<%= part ? part.defaultAngle : 90 %>">
+
         <button type="submit">Save Part</button>
     </form>
+
     <div id="servoTest">
         <h2>Test Servo</h2>
         <div>
-            <label for="testAngle">Angle (0-180) / Speed for FS90R:</label>
+            <label for="testAngle">Angle (0-180):</label>
             <input type="range" id="testAngle" min="0" max="180" value="90">
             <span id="angleValue">90</span>
         </div>
@@ -119,10 +149,36 @@
         <button onclick="stopServo()">Stop Test</button>
         <div id="testResult"></div>
     </div>
+
     <a href="/parts?characterId=<%= character ? character.id : (part ? part.characterId : '') %>" class="button">Back to Parts</a>
+    <a href="/system-config/servos" class="button">Manage Servo Configurations</a>
 
     <script>
-        const servoDefaults = JSON.parse('<%= JSON.stringify(servoTypes.reduce((acc, type) => ({ ...acc, [type]: getServoDefaults(type) }), {})) %>');
+        function updateServoParameters() {
+            const select = document.getElementById('servoType');
+            const selectedOption = select.options[select.selectedIndex];
+            const servoInfo = document.getElementById('servoInfo');
+            
+            if (selectedOption.value) {
+                // Update hidden inputs with servo parameters
+                document.getElementById('minPulse').value = selectedOption.dataset.minPulse;
+                document.getElementById('maxPulse').value = selectedOption.dataset.maxPulse;
+                document.getElementById('defaultAngle').value = selectedOption.dataset.defaultAngle;
+
+                // Update servo info display
+                document.getElementById('servoModel').textContent = `Model: ${selectedOption.dataset.model} (${selectedOption.dataset.manufacturer})`;
+                document.getElementById('servoModes').textContent = `Operating Modes: ${selectedOption.dataset.modes}`;
+                document.getElementById('servoTorque').textContent = `Max Torque: ${selectedOption.dataset.torque} kg/cm`;
+                document.getElementById('servoRotation').textContent = `Rotation Range: ${selectedOption.dataset.rotation}°`;
+                document.getElementById('servoFeedback').textContent = `Position Feedback: ${selectedOption.dataset.feedback === 'true' ? 'Yes' : 'No'}`;
+                document.getElementById('servoNotes').textContent = `Notes: ${selectedOption.dataset.notes || 'None'}`;
+                
+                servoInfo.style.display = 'block';
+                updateServoDescription(document.getElementById('testAngle').value);
+            } else {
+                servoInfo.style.display = 'none';
+            }
+        }
 
         document.addEventListener('DOMContentLoaded', function() {
             const channelButtons = document.querySelectorAll('.channel-button');
@@ -151,22 +207,16 @@
             });
 
             channelInput.addEventListener('change', updateChannelSelection);
-
             usePCA9685Checkbox.addEventListener('change', function() {
                 if (this.checked) {
                     updateChannelSelection();
                 }
             });
 
-            // Set initial selected channel
             updateChannelSelection();
-
-            // Initialize servo description and defaults
-            updateServoDefaults();
-            updateServoDescription(document.getElementById('testAngle').value);
+            updateServoParameters();
             togglePCA9685();
 
-            // Add event listener for form submission
             document.getElementById('servoForm').addEventListener('submit', function(event) {
                 const usePCA9685 = document.getElementById('usePCA9685').checked;
                 
@@ -186,26 +236,24 @@
             updateServoDescription(angle);
         });
 
-        function updateServoDefaults() {
-            const servoType = document.getElementById('servoType').value;
-            const defaults = servoDefaults[servoType];
-            document.getElementById('minPulse').value = defaults.minPulse;
-            document.getElementById('maxPulse').value = defaults.maxPulse;
-            document.getElementById('defaultAngle').value = defaults.defaultAngle;
-            updateServoDescription(document.getElementById('testAngle').value);
-        }
-
         function updateServoDescription(angle) {
-            const servoType = document.getElementById('servoType').value;
-            let description = '';
-            if (servoType === 'FS90R') {
-                if (angle === 90) description = 'Stopped';
-                else if (angle < 90) description = `Clockwise (${100 - Math.round(angle / 90 * 100)}% speed)`;
-                else description = `Counterclockwise (${Math.round((angle - 90) / 90 * 100)}% speed)`;
-            } else {
-                description = `Angle: ${angle}°`;
+            const select = document.getElementById('servoType');
+            const selectedOption = select.options[select.selectedIndex];
+            
+            if (selectedOption.value) {
+                const modes = selectedOption.dataset.modes.split(',');
+                let description = '';
+                
+                if (modes.includes('Continuous')) {
+                    if (angle === 90) description = 'Stopped';
+                    else if (angle < 90) description = `Clockwise (${100 - Math.round(angle / 90 * 100)}% speed)`;
+                    else description = `Counterclockwise (${Math.round((angle - 90) / 90 * 100)}% speed)`;
+                } else {
+                    description = `Angle: ${angle}°`;
+                }
+                
+                document.getElementById('servoDescription').textContent = description;
             }
-            document.getElementById('servoDescription').textContent = description;
         }
 
         function togglePCA9685() {
@@ -213,7 +261,6 @@
             document.getElementById('pca9685Fields').style.display = usePCA9685 ? 'block' : 'none';
             document.getElementById('gpioField').style.display = usePCA9685 ? 'none' : 'block';
             
-            // Toggle required attribute for channel and pin inputs
             document.getElementById('channel').required = usePCA9685;
             document.getElementById('pin').required = !usePCA9685;
         }
@@ -223,6 +270,9 @@
             const usePCA9685 = document.getElementById('usePCA9685').checked;
             const channel = document.getElementById('channel').value;
             const pin = document.getElementById('pin').value;
+            const minPulse = document.getElementById('minPulse').value;
+            const maxPulse = document.getElementById('maxPulse').value;
+
             axios.post('/parts/servo/test', {
                 headers: {
                     'Content-Type': 'application/json',
@@ -232,9 +282,8 @@
                     usePCA9685: usePCA9685,
                     channel: parseInt(channel),
                     pin: parseInt(pin),
-                    servoType: document.getElementById('servoType').value,
-                    minPulse: parseInt(document.getElementById('minPulse').value),
-                    maxPulse: parseInt(document.getElementById('maxPulse').value)
+                    minPulse: parseInt(minPulse),
+                    maxPulse: parseInt(maxPulse)
                 }
             })
             .then(response => {
@@ -246,7 +295,6 @@
                     resultDiv.textContent = 'Servo test failed: ' + response.data.message;
                     resultDiv.className = 'error';
                 }
-                console.log('Servo Test Result:', response.data.message);
             })
             .catch(error => {
                 console.error('Error:', error);
@@ -260,6 +308,7 @@
             const usePCA9685 = document.getElementById('usePCA9685').checked;
             const channel = document.getElementById('channel').value;
             const pin = document.getElementById('pin').value;
+
             axios.post('/parts/servo/stop', {
                 headers: {
                     'Content-Type': 'application/json',
@@ -267,8 +316,7 @@
                 data: {
                     usePCA9685: usePCA9685,
                     channel: parseInt(channel),
-                    pin: parseInt(pin),
-                    servoType: document.getElementById('servoType').value
+                    pin: parseInt(pin)
                 }
             })
             .then(response => {
@@ -280,7 +328,6 @@
                     resultDiv.textContent = 'Failed to stop servo: ' + response.data.message;
                     resultDiv.className = 'error';
                 }
-                console.log('Servo Stop Result:', response.data.message);
             })
             .catch(error => {
                 console.error('Error:', error);
