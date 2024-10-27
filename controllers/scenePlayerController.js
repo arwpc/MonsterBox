@@ -414,9 +414,34 @@ async function executeLinearActuator(step) {
 async function executeServo(step) {
     logger.info(`Executing servo step: ${step.name}`);
     try {
+        // Validate step parameters
+        if (!step.part_id) {
+            throw new Error('Part ID is missing in the servo step');
+        }
+        
+        // Get the part details
         const part = await partService.getPartById(step.part_id);
         if (!part) {
             throw new Error(`Part not found for ID: ${step.part_id}`);
+        }
+
+        // Validate required parameters
+        if (typeof step.angle === 'undefined' || step.angle === null) {
+            throw new Error('Angle is required for servo control');
+        }
+        if (typeof step.duration === 'undefined' || step.duration === null) {
+            throw new Error('Duration is required for servo control');
+        }
+
+        // Convert parameters to appropriate types and validate
+        const angle = parseFloat(step.angle);
+        const duration = parseFloat(step.duration);
+
+        if (isNaN(angle)) {
+            throw new Error('Invalid angle value');
+        }
+        if (isNaN(duration)) {
+            throw new Error('Invalid duration value');
         }
 
         const scriptPath = path.resolve(__dirname, '..', 'scripts', 'servo_control.py');
@@ -427,8 +452,8 @@ async function executeServo(step) {
             'test',                    // command
             controlType,               // control_type
             pinOrChannel,              // pin_or_channel
-            step.angle.toString(),     // angle
-            step.duration.toString(),  // duration
+            angle.toString(),          // angle
+            duration.toString(),       // duration
             part.servoType || 'Standard'  // servo_type
         ];
 
@@ -437,30 +462,41 @@ async function executeServo(step) {
             const process = spawn('python3', [scriptPath, ...args]);
             let output = '';
             let errorOutput = '';
+            
             process.stdout.on('data', (data) => {
                 output += data.toString();
                 logger.debug(`Servo control output: ${data}`);
             });
+            
             process.stderr.on('data', (data) => {
                 errorOutput += data.toString();
                 logger.error(`Servo control error: ${data}`);
             });
+            
             process.on('close', (code) => {
                 if (code === 0) {
                     try {
+                        // Try to parse the output as JSON
                         const jsonOutput = JSON.parse(output);
                         resolve(jsonOutput);
                     } catch (error) {
-                        reject(new Error(`Failed to parse servo control output: ${output}`));
+                        // If output is not JSON but process exited successfully
+                        if (output.includes('Servo test successful')) {
+                            resolve({ success: true });
+                        } else {
+                            reject(new Error(`Failed to parse servo control output: ${output}`));
+                        }
                     }
                 } else {
                     reject(new Error(`Servo control process exited with code ${code}. Error: ${errorOutput}`));
                 }
             });
         });
+
         if (!result.success) {
-            throw new Error(`Servo control failed: ${result.error}`);
+            throw new Error(`Servo control failed: ${result.error || 'Unknown error'}`);
         }
+        
         logger.info(`Servo step executed successfully: ${step.name}`);
         return true;
     } catch (error) {
