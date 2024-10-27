@@ -77,6 +77,15 @@ router.post('/', async (req, res) => {
     try {
         const servoConfigs = getServoConfigs();
         const selectedServo = servoConfigs.find(s => s.name === req.body.servoType);
+        let customSettings = null;
+
+        try {
+            if (req.body.customSettings) {
+                customSettings = JSON.parse(req.body.customSettings);
+            }
+        } catch (error) {
+            logger.error('Error parsing custom settings:', error);
+        }
 
         const newServo = {
             name: req.body.name,
@@ -86,12 +95,13 @@ router.post('/', async (req, res) => {
             usePCA9685: req.body.usePCA9685 === 'on',
             channel: parseInt(req.body.channel, 10) || null,
             servoType: req.body.servoType,
-            minPulse: selectedServo ? selectedServo.min_pulse_width_us : parseInt(req.body.minPulse, 10),
-            maxPulse: selectedServo ? selectedServo.max_pulse_width_us : parseInt(req.body.maxPulse, 10),
-            defaultAngle: selectedServo ? selectedServo.default_angle_deg : parseInt(req.body.defaultAngle, 10),
+            minPulse: customSettings ? customSettings.minPulse : (selectedServo ? selectedServo.min_pulse_width_us : parseInt(req.body.minPulse, 10)),
+            maxPulse: customSettings ? customSettings.maxPulse : (selectedServo ? selectedServo.max_pulse_width_us : parseInt(req.body.maxPulse, 10)),
+            defaultAngle: customSettings ? customSettings.defaultAngle : (selectedServo ? selectedServo.default_angle_deg : parseInt(req.body.defaultAngle, 10)),
             mode: selectedServo ? selectedServo.mode : ['Standard'],
             feedback: selectedServo ? selectedServo.feedback : false,
-            controlType: selectedServo ? selectedServo.control_type : ['PWM']
+            controlType: selectedServo ? selectedServo.control_type : ['PWM'],
+            customSettings: customSettings
         };
 
         const createdServo = await partService.createPart(newServo);
@@ -141,20 +151,23 @@ router.post('/head-track', async (req, res) => {
 
 router.post('/test', async (req, res) => {
     try {
-        const { pin, angle, duration, usePCA9685, channel, minPulse, maxPulse } = req.body;
+        const { pin, angle, duration, usePCA9685, channel, servoType } = req.body;
+        const controlType = usePCA9685 ? 'pca9685' : 'gpio';
 
         const scriptPath = path.join(__dirname, '..', 'scripts', 'servo_control.py');
+        const pinOrChannel = usePCA9685 ? (channel || '0') : (pin || '3');
 
+        // Properly format arguments for servo_control.py
         const args = [
-            String(pin),
-            String(angle),
-            String(duration),
-            usePCA9685 ? 'true' : 'false',
-            String(channel || ''),
-            String(minPulse),
-            String(maxPulse)
+            'test',                    // command
+            controlType,               // control_type
+            pinOrChannel,              // pin_or_channel
+            String(angle || '90'),     // angle
+            String(duration || '1.0'), // duration
+            String(servoType || 'Standard')  // servo_type
         ];
 
+        logger.debug('Executing servo_control.py with args:', args);
         const process = spawn('python3', [scriptPath, ...args]);
 
         let stdout = '';
@@ -197,6 +210,15 @@ router.post('/:id', async (req, res) => {
 
         const servoConfigs = getServoConfigs();
         const selectedServo = servoConfigs.find(s => s.name === req.body.servoType);
+        let customSettings = null;
+
+        try {
+            if (req.body.customSettings) {
+                customSettings = JSON.parse(req.body.customSettings);
+            }
+        } catch (error) {
+            logger.error('Error parsing custom settings:', error);
+        }
 
         const updatedServo = {
             id: id,
@@ -207,12 +229,13 @@ router.post('/:id', async (req, res) => {
             usePCA9685: req.body.usePCA9685 === 'on',
             channel: parseInt(req.body.channel, 10) || null,
             servoType: req.body.servoType,
-            minPulse: selectedServo ? selectedServo.min_pulse_width_us : parseInt(req.body.minPulse, 10),
-            maxPulse: selectedServo ? selectedServo.max_pulse_width_us : parseInt(req.body.maxPulse, 10),
-            defaultAngle: selectedServo ? selectedServo.default_angle_deg : parseInt(req.body.defaultAngle, 10),
+            minPulse: customSettings ? customSettings.minPulse : (selectedServo ? selectedServo.min_pulse_width_us : parseInt(req.body.minPulse, 10)),
+            maxPulse: customSettings ? customSettings.maxPulse : (selectedServo ? selectedServo.max_pulse_width_us : parseInt(req.body.maxPulse, 10)),
+            defaultAngle: customSettings ? customSettings.defaultAngle : (selectedServo ? selectedServo.default_angle_deg : parseInt(req.body.defaultAngle, 10)),
             mode: selectedServo ? selectedServo.mode : ['Standard'],
             feedback: selectedServo ? selectedServo.feedback : false,
-            controlType: selectedServo ? selectedServo.control_type : ['PWM']
+            controlType: selectedServo ? selectedServo.control_type : ['PWM'],
+            customSettings: customSettings
         };
 
         logger.debug('Updated Servo data:', updatedServo);

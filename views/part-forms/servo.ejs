@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-<!-- Previous head section remains the same -->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -49,8 +48,76 @@
             margin: 5px 0;
             color: #00ff00;
         }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+        }
+        .modal-content {
+            background-color: #002200;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #00ff00;
+            width: 80%;
+            max-width: 800px;
+            color: #00ff00;
+            border-radius: 5px;
+        }
+        .close {
+            color: #00ff00;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover {
+            color: #008800;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .form-group {
+            margin-bottom: 10px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .form-group input[type="text"],
+        .form-group input[type="number"],
+        .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #00ff00;
+            background-color: #001100;
+            color: #00ff00;
+            border-radius: 4px;
+        }
+        .servo-type-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .customize-btn {
+            padding: 5px 10px;
+            background-color: #004400;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .customize-btn:hover {
+            background-color: #005500;
+        }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 <body>
     <h1><%= title %></h1>
@@ -75,25 +142,28 @@
         </div>
         <div>
             <label for="servoType">Servo Type:</label>
-            <select id="servoType" name="servoType" required onchange="updateServoParameters()">
-                <option value="">Select a Servo Type</option>
-                <% servoConfigs.forEach(function(servo) { %>
-                    <option value="<%= servo.name %>" 
-                            data-min-pulse="<%= servo.min_pulse_width_us %>"
-                            data-max-pulse="<%= servo.max_pulse_width_us %>"
-                            data-default-angle="<%= servo.default_angle_deg %>"
-                            data-model="<%= servo.model %>"
-                            data-manufacturer="<%= servo.manufacturer %>"
-                            data-modes="<%= servo.mode.join(',') %>"
-                            data-torque="<%= servo.max_torque_kg_cm %>"
-                            data-rotation="<%= servo.rotation_range_deg %>"
-                            data-feedback="<%= servo.feedback %>"
-                            data-notes="<%= servo.notes || '' %>"
-                            <%= (part && part.servoType === servo.name) ? 'selected' : '' %>>
-                        <%= servo.name %>
-                    </option>
-                <% }); %>
-            </select>
+            <div class="servo-type-container">
+                <select id="servoType" name="servoType" required onchange="updateServoParameters()">
+                    <option value="">Select a Servo Type</option>
+                    <% servoConfigs.forEach(function(servo) { %>
+                        <option value="<%= servo.name %>" 
+                                data-min-pulse="<%= servo.min_pulse_width_us %>"
+                                data-max-pulse="<%= servo.max_pulse_width_us %>"
+                                data-default-angle="<%= servo.default_angle_deg %>"
+                                data-model="<%= servo.model %>"
+                                data-manufacturer="<%= servo.manufacturer %>"
+                                data-modes="<%= servo.mode.join(',') %>"
+                                data-torque="<%= servo.max_torque_kg_cm %>"
+                                data-rotation="<%= servo.rotation_range_deg %>"
+                                data-feedback="<%= servo.feedback %>"
+                                data-notes="<%= servo.notes || '' %>"
+                                <%= (part && part.servoType === servo.name) ? 'selected' : '' %>>
+                            <%= servo.name %>
+                        </option>
+                    <% }); %>
+                </select>
+                <button type="button" class="customize-btn" onclick="openCustomizeModal()">Customize</button>
+            </div>
         </div>
 
         <div id="servoInfo" class="servo-info" style="display: none;">
@@ -133,9 +203,39 @@
         <input type="hidden" id="minPulse" name="minPulse" value="<%= part ? part.minPulse : 500 %>">
         <input type="hidden" id="maxPulse" name="maxPulse" value="<%= part ? part.maxPulse : 2500 %>">
         <input type="hidden" id="defaultAngle" name="defaultAngle" value="<%= part ? part.defaultAngle : 90 %>">
+        <input type="hidden" id="customSettings" name="customSettings" value="<%= part && part.customSettings ? JSON.stringify(part.customSettings) : '' %>">
 
         <button type="submit">Save Part</button>
     </form>
+
+    <!-- Customize Modal -->
+    <div id="customizeModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeCustomizeModal()">&times;</span>
+            <h2>Customize Servo Settings</h2>
+            <form id="customizeForm" onsubmit="saveCustomSettings(event)">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="customMinPulse">Min Pulse Width (μs):</label>
+                        <input type="number" id="customMinPulse" name="customMinPulse" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="customMaxPulse">Max Pulse Width (μs):</label>
+                        <input type="number" id="customMaxPulse" name="customMaxPulse" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="customDefaultAngle">Default Angle (degrees):</label>
+                        <input type="number" id="customDefaultAngle" name="customDefaultAngle" min="0" max="180" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="customRotationRange">Rotation Range (degrees):</label>
+                        <input type="number" id="customRotationRange" name="customRotationRange" min="0" max="360" required>
+                    </div>
+                </div>
+                <button type="submit" class="button">Save Settings</button>
+            </form>
+        </div>
+    </div>
 
     <div id="servoTest">
         <h2>Test Servo</h2>
@@ -178,6 +278,55 @@
             } else {
                 servoInfo.style.display = 'none';
             }
+        }
+
+        function openCustomizeModal() {
+            const modal = document.getElementById('customizeModal');
+            const select = document.getElementById('servoType');
+            const selectedOption = select.options[select.selectedIndex];
+            const customSettings = document.getElementById('customSettings').value;
+            
+            if (selectedOption.value) {
+                let settings = {};
+                if (customSettings) {
+                    try {
+                        settings = JSON.parse(customSettings);
+                    } catch (e) {
+                        console.error('Error parsing custom settings:', e);
+                    }
+                }
+
+                document.getElementById('customMinPulse').value = settings.minPulse || selectedOption.dataset.minPulse;
+                document.getElementById('customMaxPulse').value = settings.maxPulse || selectedOption.dataset.maxPulse;
+                document.getElementById('customDefaultAngle').value = settings.defaultAngle || selectedOption.dataset.defaultAngle;
+                document.getElementById('customRotationRange').value = settings.rotationRange || selectedOption.dataset.rotation;
+                
+                modal.style.display = 'block';
+            } else {
+                alert('Please select a servo type first');
+            }
+        }
+
+        function closeCustomizeModal() {
+            document.getElementById('customizeModal').style.display = 'none';
+        }
+
+        function saveCustomSettings(event) {
+            event.preventDefault();
+            
+            const settings = {
+                minPulse: parseInt(document.getElementById('customMinPulse').value),
+                maxPulse: parseInt(document.getElementById('customMaxPulse').value),
+                defaultAngle: parseInt(document.getElementById('customDefaultAngle').value),
+                rotationRange: parseInt(document.getElementById('customRotationRange').value)
+            };
+
+            document.getElementById('minPulse').value = settings.minPulse;
+            document.getElementById('maxPulse').value = settings.maxPulse;
+            document.getElementById('defaultAngle').value = settings.defaultAngle;
+            document.getElementById('customSettings').value = JSON.stringify(settings);
+            
+            closeCustomizeModal();
         }
 
         document.addEventListener('DOMContentLoaded', function() {

@@ -76,9 +76,13 @@ def move_servo_gradually(control_type, pin_or_channel, start_angle, end_angle, d
                 pwm.ChangeDutyCycle(angle_to_duty_cycle(current_angle))
                 time.sleep(step_time)
             pwm.stop()
-    finally:
-        if gpio_used:
+            # Only cleanup the specific pin that was used
             GPIO.cleanup(int(pin_or_channel))
+    except Exception as e:
+        if gpio_used:
+            # Only cleanup the specific pin if it was used and an error occurred
+            GPIO.cleanup(int(pin_or_channel))
+        raise e
 
 def stop_servo(control_type, pin_or_channel):
     gpio_used = False
@@ -93,9 +97,13 @@ def stop_servo(control_type, pin_or_channel):
             pwm = GPIO.PWM(int(pin_or_channel), 50)
             pwm.start(0)
             pwm.stop()
-    finally:
-        if gpio_used:
+            # Only cleanup the specific pin that was used
             GPIO.cleanup(int(pin_or_channel))
+    except Exception as e:
+        if gpio_used:
+            # Only cleanup the specific pin if it was used and an error occurred
+            GPIO.cleanup(int(pin_or_channel))
+        raise e
 
 if __name__ == "__main__":
     if len(sys.argv) < 6:
@@ -105,7 +113,6 @@ if __name__ == "__main__":
     command = sys.argv[1]
     control_type = sys.argv[2]
     pin_or_channel = sys.argv[3]
-    gpio_used = False
 
     try:
         if command == "test":
