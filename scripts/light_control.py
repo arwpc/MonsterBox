@@ -14,11 +14,12 @@ def control_light(gpio_pin, state, duration=None):
     GPIO.setup(gpio_pin, GPIO.OUT)
 
     try:
+        # Invert the logic - set LOW for ON and HIGH for OFF
         if state.lower() == 'on':
-            GPIO.output(gpio_pin, GPIO.HIGH)
+            GPIO.output(gpio_pin, GPIO.LOW)  # Changed from HIGH to LOW
             print(f"Light on GPIO pin {gpio_pin} is ON")
         elif state.lower() == 'off':
-            GPIO.output(gpio_pin, GPIO.LOW)
+            GPIO.output(gpio_pin, GPIO.HIGH)  # Changed from LOW to HIGH
             print(f"Light on GPIO pin {gpio_pin} is OFF")
         else:
             print("Invalid state. Use 'on' or 'off'.")
@@ -26,7 +27,7 @@ def control_light(gpio_pin, state, duration=None):
 
         if duration is not None:
             time.sleep(float(duration) / 1000)  # Convert duration to seconds
-            GPIO.output(gpio_pin, GPIO.LOW)
+            GPIO.output(gpio_pin, GPIO.HIGH)  # Set to HIGH (OFF) after duration
             print(f"Light on GPIO pin {gpio_pin} turned OFF after {duration} ms")
     finally:
         cleanup_gpio()
