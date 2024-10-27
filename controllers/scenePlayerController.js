@@ -9,14 +9,22 @@ const logger = require('../scripts/logger');
 let isExecuting = false;
 let currentSceneState = {};
 let res = null;
+let activeProcesses = new Set();
 
 const SOUND_CHECK_INTERVAL = 50; // 50ms interval for checking sound status
 const INTER_STEP_DELAY = 100; // 100ms delay between steps
 
 const stopAllParts = async () => {
     logger.info('Stopping all parts');
-    // Implement logic to stop all parts
-    // This could involve calling a Python script that stops all motors, actuators, etc.
+    // Gracefully terminate all active processes
+    for (const process of activeProcesses) {
+        try {
+            process.kill('SIGTERM');
+        } catch (error) {
+            logger.error(`Error stopping process: ${error.message}`);
+        }
+    }
+    activeProcesses.clear();
 };
 
 const scenePlayerController = {
@@ -100,12 +108,19 @@ const scenePlayerController = {
             await executeScene(scene, startStep, res);
         } catch (error) {
             logger.error(`Error during scene execution:`, error);
-            sendSSEMessage(res, { error: `Scene execution failed: ${error.message}` });
+            try {
+                sendSSEMessage(res, { error: `Scene execution failed: ${error.message}` });
+            } catch (sendError) {
+                logger.error(`Error sending error message: ${sendError.message}`);
+            }
         }
 
         // Keep the connection open
         req.on('close', () => {
             logger.info('Client closed the connection');
+            stopAllParts().catch(error => {
+                logger.error(`Error stopping parts on connection close: ${error.message}`);
+            });
         });
     },
 
@@ -117,8 +132,10 @@ const scenePlayerController = {
         logger.info('Stopping all steps and terminating processes');
         isExecuting = false;
         try {
-            await soundController.stopAllSounds();
             await stopAllParts();
+            await soundController.stopAllSounds().catch(error => {
+                logger.error(`Error stopping sounds: ${error.message}`);
+            });
             res.json({ message: 'All steps stopped and processes terminated' });
         } catch (error) {
             logger.error('Error stopping all steps:', error);
@@ -128,7 +145,11 @@ const scenePlayerController = {
 };
 
 function sendSSEMessage(res, data) {
-    res.write(`data: ${JSON.stringify(data)}\n\n`);
+    try {
+        res.write(`data: ${JSON.stringify(data)}\n\n`);
+    } catch (error) {
+        logger.error(`Error sending SSE message: ${error.message}`);
+    }
 }
 
 async function executeScene(scene, startStep, res) {
@@ -146,21 +167,26 @@ async function executeScene(scene, startStep, res) {
             const message = `Executing step ${i + 1}: ${step.name}`;
             currentSceneState.messages.push(message);
             
-            sendSSEMessage(res, { message, currentStep: i });
-            logger.debug(`Sent SSE update for step ${i + 1}`);
+            try {
+                sendSSEMessage(res, { message, currentStep: i });
+                logger.debug(`Sent SSE update for step ${i + 1}`);
 
-            if (step.concurrent === "on") {
-                concurrentSteps.push(executeStep(scene.id, step));
-            } else {
-                if (concurrentSteps.length > 0) {
-                    await Promise.all(concurrentSteps);
-                    concurrentSteps.length = 0;
+                if (step.concurrent === "on") {
+                    concurrentSteps.push(executeStep(scene.id, step));
+                } else {
+                    if (concurrentSteps.length > 0) {
+                        await Promise.all(concurrentSteps);
+                        concurrentSteps.length = 0;
+                    }
+                    await executeStep(scene.id, step);
                 }
-                await executeStep(scene.id, step);
-            }
 
-            // Add a small delay between steps
-            await new Promise(resolve => setTimeout(resolve, INTER_STEP_DELAY));
+                // Add a small delay between steps
+                await new Promise(resolve => setTimeout(resolve, INTER_STEP_DELAY));
+            } catch (error) {
+                logger.error(`Error executing step ${i + 1}: ${error.message}`);
+                throw error;
+            }
         }
 
         // Wait for any remaining concurrent steps
@@ -172,28 +198,40 @@ async function executeScene(scene, startStep, res) {
         const completionMessage = 'Scene execution completed';
         currentSceneState.messages.push(completionMessage);
         
-        sendSSEMessage(res, { message: completionMessage, event: 'scene_end' });
-        logger.info('Sent final SSE update with scene_end event');
+        try {
+            sendSSEMessage(res, { message: completionMessage, event: 'scene_end' });
+            logger.info('Sent final SSE update with scene_end event');
+        } catch (error) {
+            logger.error(`Error sending completion message: ${error.message}`);
+        }
     } catch (error) {
         logger.error(`Error during scene ${scene.id} execution:`, error);
         currentSceneState.error = `Scene execution failed: ${error.message}`;
         
-        sendSSEMessage(res, { error: currentSceneState.error, event: 'scene_end' });
-        logger.info('Sent error SSE update with scene_end event');
+        try {
+            sendSSEMessage(res, { error: currentSceneState.error, event: 'scene_end' });
+        } catch (sendError) {
+            logger.error(`Error sending error message: ${sendError.message}`);
+        }
     } finally {
         isExecuting = false;
         try {
             await stopAllParts();
-            await soundController.stopAllSounds();
+            await soundController.stopAllSounds().catch(error => {
+                logger.error(`Error stopping sounds during cleanup: ${error.message}`);
+            });
             logger.info(`Scene ${scene.id} cleanup completed`);
         } catch (error) {
             logger.error(`Error during scene cleanup: ${error.message}`);
         }
-        const cleanupMessage = 'Scene cleanup completed';
-        currentSceneState.messages.push(cleanupMessage);
         
-        sendSSEMessage(res, { message: cleanupMessage, event: 'scene_end' });
-        logger.info('Sent cleanup SSE update with scene_end event');
+        try {
+            const cleanupMessage = 'Scene cleanup completed';
+            currentSceneState.messages.push(cleanupMessage);
+            sendSSEMessage(res, { message: cleanupMessage, event: 'scene_end' });
+        } catch (error) {
+            logger.error(`Error sending cleanup message: ${error.message}`);
+        }
     }
 }
 
@@ -257,7 +295,9 @@ async function waitForSoundCompletion(soundId) {
                 if (status.status === 'stopped' || status.status === 'finished' || status.status === 'not_found') {
                     clearInterval(checkInterval);
                     logger.info(`Sound finished playing: ${soundId}`);
-                    await soundController.stopSound(soundId);
+                    await soundController.stopSound(soundId).catch(error => {
+                        logger.error(`Error stopping sound: ${error.message}`);
+                    });
                     resolve();
                 }
             } catch (error) {
@@ -293,8 +333,8 @@ async function executeMotor(step) {
         ];
         logger.debug(`Executing Python script: ${scriptPath} with args: ${args.join(', ')}`);
         const result = await new Promise((resolve, reject) => {
-            logger.debug(`Spawning motor control process: ${scriptPath} ${args.join(' ')}`);
             const process = spawn('python3', [scriptPath, ...args]);
+            activeProcesses.add(process);
             let output = '';
             let errorOutput = '';
 
@@ -304,6 +344,7 @@ async function executeMotor(step) {
 
             process.on('error', (err) => {
                 logger.error(`Error spawning motor control process: ${err}`);
+                activeProcesses.delete(process);
                 reject(new Error(`Failed to start motor control process: ${err}`));
             });
 
@@ -316,6 +357,7 @@ async function executeMotor(step) {
                 logger.error(`Motor control error: ${data}`);
             });
             process.on('close', (code) => {
+                activeProcesses.delete(process);
                 logger.info(`Python script exited with code ${code}`);
                 if (code === null) {
                     logger.error('Motor control process exited with code null');
@@ -374,11 +416,12 @@ async function executeLinearActuator(step) {
             step.duration.toString(),
             part.directionPin.toString(),
             part.pwmPin.toString(),
-            part.maxExtension.toString(),  // Added maxExtension parameter
-            part.maxRetraction.toString()  // Added maxRetraction parameter
+            part.maxExtension.toString(),
+            part.maxRetraction.toString()
         ];
         const result = await new Promise((resolve, reject) => {
             const process = spawn('python3', [scriptPath, ...args]);
+            activeProcesses.add(process);
             let output = '';
             let errorOutput = '';
             process.stdout.on('data', (data) => {
@@ -390,6 +433,7 @@ async function executeLinearActuator(step) {
                 logger.error(`Linear actuator control error: ${data}`);
             });
             process.on('close', (code) => {
+                activeProcesses.delete(process);
                 if (code === 0) {
                     try {
                         if (output.includes('SUCCESS:')) {
@@ -469,10 +513,20 @@ async function executeServo(step) {
         // Execute the servo control and wait for completion
         const result = await new Promise((resolve, reject) => {
             const process = spawn('python3', [scriptPath, ...args]);
+            activeProcesses.add(process);
             let output = '';
             let errorOutput = '';
             let movementStarted = false;
             
+            const cleanup = () => {
+                activeProcesses.delete(process);
+                try {
+                    process.kill('SIGTERM');
+                } catch (error) {
+                    logger.error(`Error killing servo process: ${error.message}`);
+                }
+            };
+
             process.stdout.on('data', (data) => {
                 const dataStr = data.toString();
                 output += dataStr;
@@ -481,6 +535,10 @@ async function executeServo(step) {
                 if (dataStr.includes('Movement started')) {
                     movementStarted = true;
                 }
+                if (dataStr.includes('Movement completed')) {
+                    cleanup();
+                    resolve({ success: true });
+                }
             });
             
             process.stderr.on('data', (data) => {
@@ -488,30 +546,34 @@ async function executeServo(step) {
                 logger.error(`Servo control error: ${data}`);
             });
             
-            // Set a timeout for the entire movement duration plus a small buffer
-            const timeout = setTimeout(() => {
-                if (!movementStarted) {
-                    process.kill();
-                    reject(new Error('Servo movement failed to start'));
-                }
-            }, 5000); // 5 second timeout for movement to start
-            
+            process.on('error', (error) => {
+                cleanup();
+                reject(new Error(`Servo process error: ${error.message}`));
+            });
+
             process.on('close', (code) => {
-                clearTimeout(timeout);
-                
+                cleanup();
                 if (code === 0) {
                     if (movementStarted) {
-                        // Wait for the full duration of the movement
-                        setTimeout(() => {
-                            resolve({ success: true });
-                        }, duration * 1000); // Convert duration to milliseconds
+                        resolve({ success: true });
                     } else {
                         reject(new Error('Servo movement did not start properly'));
                     }
+                } else if (code === null && movementStarted) {
+                    // Process was terminated but movement started, consider it successful
+                    resolve({ success: true });
                 } else {
                     reject(new Error(`Servo control process exited with code ${code}. Error: ${errorOutput}`));
                 }
             });
+
+            // Set a timeout for the entire operation
+            setTimeout(() => {
+                if (!movementStarted) {
+                    cleanup();
+                    reject(new Error('Servo movement failed to start within timeout'));
+                }
+            }, 5000); // 5 second timeout for movement to start
         });
 
         if (!result.success) {
@@ -544,6 +606,7 @@ async function executeLight(step) {
         }
         const result = await new Promise((resolve, reject) => {
             const process = spawn('python3', [scriptPath, ...args]);
+            activeProcesses.add(process);
             let output = '';
             let errorOutput = '';
             process.stdout.on('data', (data) => {
@@ -555,6 +618,7 @@ async function executeLight(step) {
                 logger.error(`Light control error: ${data}`);
             });
             process.on('close', (code) => {
+                activeProcesses.delete(process);
                 if (code === 0) {
                     try {
                         const jsonOutput = JSON.parse(output);
@@ -592,6 +656,7 @@ async function executeSensor(step) {
         ];
         const result = await new Promise((resolve, reject) => {
             const process = spawn('python3', [scriptPath, ...args]);
+            activeProcesses.add(process);
             let output = '';
             let errorOutput = '';
             process.stdout.on('data', (data) => {
@@ -607,6 +672,7 @@ async function executeSensor(step) {
                 logger.error(`Sensor control error: ${data}`);
             });
             process.on('close', (code) => {
+                activeProcesses.delete(process);
                 if (code === 0) {
                     try {
                         const jsonOutput = JSON.parse(output);
