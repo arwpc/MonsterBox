@@ -129,6 +129,24 @@
             border-radius: 4px;
             display: none;
         }
+
+        .status-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .disconnect-button {
+            background-color: #330000;
+            border-color: #ff0000;
+            color: #ff0000;
+        }
+
+        .disconnect-button:hover {
+            background-color: #440000;
+            box-shadow: 0 0 5px #ff0000;
+        }
     </style>
 </head>
 <body>
@@ -146,9 +164,12 @@
         <div class="camera-controls">
             <div class="control-group">
                 <h3>Camera Status</h3>
-                <div>
-                    <span class="status-indicator" id="streamStatus"></span>
-                    Stream Status: <span id="streamStatusText">Connecting...</span>
+                <div class="status-row">
+                    <div>
+                        <span class="status-indicator" id="streamStatus"></span>
+                        Stream Status: <span id="streamStatusText">Connecting...</span>
+                    </div>
+                    <button id="disconnectStream" class="disconnect-button" style="display: none;">Disconnect</button>
                 </div>
             </div>
 
@@ -200,10 +221,10 @@
         const streamStatusText = document.getElementById('streamStatusText');
         const motionIndicator = document.getElementById('motionIndicator');
         const errorMessage = document.getElementById('errorMessage');
-        const resolutionSelect = document.getElementById('resolution');
+        const disconnectButton = document.getElementById('disconnectStream');
 
         function initializeStream() {
-            const [width, height] = resolutionSelect.value.split(',');
+            const [width, height] = document.getElementById('resolution').value.split(',');
             streamImg.src = `/camera/stream?width=${width}&height=${height}&t=${Date.now()}`;
         }
 
@@ -218,6 +239,7 @@
         streamImg.onload = function() {
             streamStatus.className = 'status-indicator status-active';
             streamStatusText.textContent = 'Connected';
+            disconnectButton.style.display = 'block';
             reconnectAttempts = 0;
             errorMessage.style.display = 'none';
         };
@@ -225,6 +247,7 @@
         streamImg.onerror = function() {
             streamStatus.className = 'status-indicator status-inactive';
             streamStatusText.textContent = 'Disconnected';
+            disconnectButton.style.display = 'none';
             stopMotionDetection();
             stopHeadTracking();
 
@@ -237,7 +260,22 @@
             }
         };
 
-        initializeStream();
+        disconnectButton.addEventListener('click', function() {
+            // Stop all active features
+            stopMotionDetection();
+            stopHeadTracking();
+            
+            // Clear the image source to stop the stream
+            streamImg.src = '';
+            
+            // Update status
+            streamStatus.className = 'status-indicator status-inactive';
+            streamStatusText.textContent = 'Disconnected';
+            disconnectButton.style.display = 'none';
+            
+            // Show reconnect message
+            showError('Camera disconnected. Refresh the page to reconnect.');
+        });
 
         document.getElementById('toggleMotion').addEventListener('click', function() {
             if (motionDetectionActive) {
@@ -453,6 +491,9 @@
                 stopMotionDetection();
             }
         });
+
+        // Initialize stream on page load
+        initializeStream();
     </script>
 </body>
 </html>
