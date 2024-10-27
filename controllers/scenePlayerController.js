@@ -13,6 +13,7 @@ let activeProcesses = new Set();
 
 const SOUND_CHECK_INTERVAL = 50; // 50ms interval for checking sound status
 const INTER_STEP_DELAY = 100; // 100ms delay between steps
+const SERVO_MOVEMENT_TIMEOUT = 15000; // 15 second timeout for servo movement
 
 const stopAllParts = async () => {
     logger.info('Stopping all parts');
@@ -532,6 +533,7 @@ async function executeServo(step) {
             let output = '';
             let errorOutput = '';
             let movementStarted = false;
+            let movementCompleted = false;
             
             const cleanup = () => {
                 activeProcesses.delete(process);
@@ -551,6 +553,7 @@ async function executeServo(step) {
                     movementStarted = true;
                 }
                 if (dataStr.includes('Movement completed')) {
+                    movementCompleted = true;
                     cleanup();
                     resolve({ success: true });
                 }
@@ -568,14 +571,10 @@ async function executeServo(step) {
 
             process.on('close', (code) => {
                 cleanup();
-                if (code === 0) {
-                    if (movementStarted) {
-                        resolve({ success: true });
-                    } else {
-                        reject(new Error('Servo movement did not start properly'));
-                    }
-                } else if (code === null && movementStarted) {
-                    // Process was terminated but movement started, consider it successful
+                if (code === 0 && (movementStarted || movementCompleted)) {
+                    resolve({ success: true });
+                } else if (code === null && (movementStarted || movementCompleted)) {
+                    // Process was terminated but movement started/completed, consider it successful
                     resolve({ success: true });
                 } else {
                     reject(new Error(`Servo control process exited with code ${code}. Error: ${errorOutput}`));
@@ -588,7 +587,7 @@ async function executeServo(step) {
                     cleanup();
                     reject(new Error('Servo movement failed to start within timeout'));
                 }
-            }, 5000); // 5 second timeout for movement to start
+            }, SERVO_MOVEMENT_TIMEOUT); // Use the 15 second timeout constant
         });
 
         if (!result.success) {

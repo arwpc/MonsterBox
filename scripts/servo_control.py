@@ -83,6 +83,8 @@ def move_servo_gradually(control_type, pin_or_channel, target_angle, duration, s
     gpio_used = False
 
     try:
+        print("Initializing servo movement...")
+        
         if control_type == 'pca9685':
             # Get PCA9685 settings from part configuration
             part_config = get_part_config(part_id) if part_id else None
@@ -93,16 +95,20 @@ def move_servo_gradually(control_type, pin_or_channel, target_angle, duration, s
             address = pca9685_settings.get('address', '0x40')
             
             pca = PCA9685(address=address, frequency=frequency)
+            print("Movement started")  # Signal that movement has begun
             
             for step in range(steps + 1):
                 current_angle = start_angle + step_angle * step
                 pulse = int(angle_to_duty_cycle(current_angle) / 100 * 4096)
                 pca.set_pwm(int(pin_or_channel), 0, pulse)
                 time.sleep(step_time)
+                
         else:  # GPIO control
             gpio_used = True
             pwm = setup_gpio(int(pin_or_channel))
             pwm.start(angle_to_duty_cycle(start_angle))
+            print("Movement started")  # Signal that movement has begun
+            
             for step in range(steps + 1):
                 current_angle = start_angle + step_angle * step
                 pwm.ChangeDutyCycle(angle_to_duty_cycle(current_angle))
@@ -113,11 +119,13 @@ def move_servo_gradually(control_type, pin_or_channel, target_angle, duration, s
         
         # Update the current angle after successful movement
         current_angles[pin_key] = target_angle
+        print("Movement completed")
         
     except Exception as e:
         if gpio_used:
             # Only cleanup the specific pin if it was used and an error occurred
             GPIO.cleanup(int(pin_or_channel))
+        print(f"Error during servo movement: {str(e)}")
         raise e
 
 def stop_servo(control_type, pin_or_channel, part_id=None):
@@ -126,6 +134,8 @@ def stop_servo(control_type, pin_or_channel, part_id=None):
     
     gpio_used = False
     try:
+        print("Initializing servo stop...")
+        
         if control_type == 'pca9685':
             # Get PCA9685 settings from part configuration
             part_config = get_part_config(part_id) if part_id else None
@@ -136,19 +146,24 @@ def stop_servo(control_type, pin_or_channel, part_id=None):
             address = pca9685_settings.get('address', '0x40')
             
             pca = PCA9685(address=address, frequency=frequency)
+            print("Movement started")  # Signal that movement has begun
             # Move to center position (90 degrees)
             pulse = int(angle_to_duty_cycle(90) / 100 * 4096)
             pca.set_pwm(int(pin_or_channel), 0, pulse)
+            print("Movement completed")
+            
         else:  # GPIO control
             gpio_used = True
             GPIO.setmode(GPIO.BCM)
             GPIO.setup(int(pin_or_channel), GPIO.OUT)
             pwm = GPIO.PWM(int(pin_or_channel), 50)
+            print("Movement started")  # Signal that movement has begun
             pwm.start(angle_to_duty_cycle(90))  # Move to center position
             time.sleep(0.5)  # Give time to reach position
             pwm.stop()
             # Only cleanup the specific pin that was used
             GPIO.cleanup(int(pin_or_channel))
+            print("Movement completed")
         
         # Update current angle to center position
         current_angles[pin_key] = 90
@@ -157,6 +172,7 @@ def stop_servo(control_type, pin_or_channel, part_id=None):
         if gpio_used:
             # Only cleanup the specific pin if it was used and an error occurred
             GPIO.cleanup(int(pin_or_channel))
+        print(f"Error during servo stop: {str(e)}")
         raise e
 
 if __name__ == "__main__":
@@ -177,15 +193,36 @@ if __name__ == "__main__":
             duration = float(sys.argv[5])
             servo_type = sys.argv[6]
             part_id = sys.argv[7] if len(sys.argv) > 7 else None
+            
+            print(json.dumps({
+                "status": "initializing",
+                "message": "Starting servo movement"
+            }))
+            sys.stdout.flush()
+            
             move_servo_gradually(control_type, pin_or_channel, angle, duration, servo_type, part_id)
-            print("Servo test successful")
+            
+            print(json.dumps({
+                "status": "success",
+                "message": "Servo movement completed successfully"
+            }))
+            
         elif command == "stop":
             part_id = sys.argv[7] if len(sys.argv) > 7 else None
             stop_servo(control_type, pin_or_channel, part_id)
-            print("Servo stopped successfully")
+            print(json.dumps({
+                "status": "success",
+                "message": "Servo stopped successfully"
+            }))
         else:
-            print(f"Unknown command: {command}")
+            print(json.dumps({
+                "status": "error",
+                "message": f"Unknown command: {command}"
+            }))
             sys.exit(1)
     except Exception as e:
-        print(f"Error controlling servo: {str(e)}")
+        print(json.dumps({
+            "status": "error",
+            "message": f"Error controlling servo: {str(e)}"
+        }))
         sys.exit(1)
