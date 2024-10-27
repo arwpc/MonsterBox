@@ -13,6 +13,7 @@
             grid-template-columns: repeat(4, 1fr);
             gap: 10px;
             margin-top: 10px;
+            margin-bottom: 20px;
         }
         .channel-button {
             padding: 10px;
@@ -21,6 +22,10 @@
             color: #00ff00;
             border: 1px solid #00ff00;
             cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .channel-button:hover {
+            background-color: #004400;
         }
         .channel-button.selected {
             background-color: #00ff00;
@@ -30,6 +35,21 @@
             display: flex;
             align-items: center;
             gap: 10px;
+        }
+        #testResult {
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid #00ff00;
+            border-radius: 4px;
+            display: none;
+        }
+        #testResult.success {
+            background-color: rgba(0, 255, 0, 0.1);
+            color: #00ff00;
+        }
+        #testResult.error {
+            background-color: rgba(255, 0, 0, 0.1);
+            color: #ff0000;
         }
     </style>
 </head>
@@ -87,7 +107,7 @@
                 </div>
             </div>
 
-            <div id="servoInfo" class="config-section" style="display: none;">
+            <div id="servoInfo" class="config-section">
                 <p id="servoModel"></p>
                 <p id="servoModes"></p>
                 <p id="servoTorque"></p>
@@ -170,13 +190,13 @@
             <h2>Test Servo</h2>
             <div class="form-group">
                 <label for="testAngle">Angle (0-180):</label>
-                <input type="range" id="testAngle" min="0" max="180" value="90">
+                <input type="range" id="testAngle" min="0" max="180" value="90" oninput="updateTestAngleDisplay()">
                 <span id="angleValue">90</span>
             </div>
             <p id="servoDescription"></p>
             <div class="button-group">
-                <button onclick="testServo()" class="button">Test Servo</button>
-                <button onclick="stopServo()" class="button">Stop Test</button>
+                <button type="button" onclick="testServo()" class="button">Test Servo</button>
+                <button type="button" onclick="stopServo()" class="button">Stop Test</button>
             </div>
             <div id="testResult"></div>
         </div>
@@ -188,7 +208,221 @@
     </main>
 
     <script>
-        // ... (keep all existing JavaScript code unchanged) ...
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Page initialized');
+            togglePCA9685();
+            updateServoParameters();
+            initializeChannelButtons();
+            updateTestAngleDisplay();
+        });
+
+        // Handle PCA9685 checkbox toggle
+        function togglePCA9685() {
+            console.log('Toggling PCA9685');
+            const usePCA9685 = document.getElementById('usePCA9685').checked;
+            const pca9685Fields = document.getElementById('pca9685Fields');
+            const gpioField = document.getElementById('gpioField');
+            
+            if (usePCA9685) {
+                pca9685Fields.style.display = 'block';
+                gpioField.style.display = 'none';
+                document.getElementById('pin').removeAttribute('required');
+                document.getElementById('channel').setAttribute('required', 'required');
+            } else {
+                pca9685Fields.style.display = 'none';
+                gpioField.style.display = 'block';
+                document.getElementById('channel').removeAttribute('required');
+                document.getElementById('pin').setAttribute('required', 'required');
+            }
+        }
+
+        // Initialize channel selection buttons
+        function initializeChannelButtons() {
+            console.log('Initializing channel buttons');
+            const channelInput = document.getElementById('channel');
+            const buttons = document.querySelectorAll('.channel-button');
+            
+            // Set initial selected state
+            const currentChannel = parseInt(channelInput.value);
+            buttons.forEach(button => {
+                const buttonChannel = parseInt(button.dataset.channel);
+                if (buttonChannel === currentChannel) {
+                    button.classList.add('selected');
+                }
+            });
+
+            // Add click handlers
+            buttons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const channel = this.dataset.channel;
+                    channelInput.value = channel;
+                    
+                    // Update visual selection
+                    buttons.forEach(b => b.classList.remove('selected'));
+                    this.classList.add('selected');
+                });
+            });
+        }
+
+        // Update servo parameters when type changes
+        function updateServoParameters() {
+            console.log('Updating servo parameters');
+            const select = document.getElementById('servoType');
+            const option = select.options[select.selectedIndex];
+            const servoInfo = document.getElementById('servoInfo');
+            
+            if (option.value) {
+                document.getElementById('minPulse').value = option.dataset.minPulse;
+                document.getElementById('maxPulse').value = option.dataset.maxPulse;
+                document.getElementById('defaultAngle').value = option.dataset.defaultAngle;
+                
+                // Update info display
+                document.getElementById('servoModel').textContent = `Model: ${option.dataset.model}`;
+                document.getElementById('servoModes').textContent = `Modes: ${option.dataset.modes}`;
+                document.getElementById('servoTorque').textContent = `Torque: ${option.dataset.torque} kg/cm`;
+                document.getElementById('servoRotation').textContent = `Rotation Range: ${option.dataset.rotation}°`;
+                document.getElementById('servoFeedback').textContent = `Feedback: ${option.dataset.feedback}`;
+                if (option.dataset.notes) {
+                    document.getElementById('servoNotes').textContent = `Notes: ${option.dataset.notes}`;
+                }
+                
+                servoInfo.style.display = 'block';
+            } else {
+                servoInfo.style.display = 'none';
+            }
+        }
+
+        // Handle test angle slider
+        function updateTestAngleDisplay() {
+            const angle = document.getElementById('testAngle').value;
+            document.getElementById('angleValue').textContent = angle;
+        }
+
+        // Show test result with status
+        function showTestResult(message, isError = false) {
+            const resultDiv = document.getElementById('testResult');
+            resultDiv.textContent = message;
+            resultDiv.style.display = 'block';
+            resultDiv.className = isError ? 'error' : 'success';
+        }
+
+        // Test servo functionality
+        async function testServo() {
+            console.log('Testing servo');
+            const angle = document.getElementById('testAngle').value;
+            const usePCA9685 = document.getElementById('usePCA9685').checked;
+            const channel = document.getElementById('channel').value;
+            const pin = document.getElementById('pin').value;
+            const servoType = document.getElementById('servoType').value;
+
+            const testData = {
+                angle,
+                usePCA9685,
+                channel,
+                pin,
+                servoType,
+                duration: '1.0'
+            };
+
+            console.log('Test data:', testData);
+
+            try {
+                showTestResult('Sending test command...');
+                const response = await axios.post('/parts/servo/test', testData);
+                console.log('Test response:', response);
+
+                if (response.data.success) {
+                    showTestResult('Test successful');
+                } else {
+                    showTestResult('Test failed: ' + response.data.message, true);
+                }
+            } catch (error) {
+                console.error('Error testing servo:', error);
+                showTestResult('Error testing servo: ' + (error.response?.data?.message || error.message), true);
+            }
+        }
+
+        // Stop servo test
+        async function stopServo() {
+            console.log('Stopping servo');
+            const usePCA9685 = document.getElementById('usePCA9685').checked;
+            const channel = document.getElementById('channel').value;
+            const pin = document.getElementById('pin').value;
+            const servoType = document.getElementById('servoType').value;
+
+            const stopData = {
+                angle: 90, // Return to neutral position
+                usePCA9685,
+                channel,
+                pin,
+                servoType,
+                duration: '0.0' // Immediate stop
+            };
+
+            console.log('Stop data:', stopData);
+
+            try {
+                showTestResult('Sending stop command...');
+                const response = await axios.post('/parts/servo/test', stopData);
+                console.log('Stop response:', response);
+
+                if (response.data.success) {
+                    showTestResult('Servo stopped');
+                } else {
+                    showTestResult('Failed to stop servo: ' + response.data.message, true);
+                }
+            } catch (error) {
+                console.error('Error stopping servo:', error);
+                showTestResult('Error stopping servo: ' + (error.response?.data?.message || error.message), true);
+            }
+        }
+
+        // Modal functionality
+        function openCustomizeModal() {
+            const modal = document.getElementById('customizeModal');
+            const select = document.getElementById('servoType');
+            const option = select.options[select.selectedIndex];
+            
+            // Pre-fill current values
+            document.getElementById('customMinPulse').value = document.getElementById('minPulse').value;
+            document.getElementById('customMaxPulse').value = document.getElementById('maxPulse').value;
+            document.getElementById('customDefaultAngle').value = document.getElementById('defaultAngle').value;
+            document.getElementById('customRotationRange').value = option.dataset.rotation || '180';
+            
+            modal.style.display = 'block';
+        }
+
+        function closeCustomizeModal() {
+            document.getElementById('customizeModal').style.display = 'none';
+        }
+
+        function saveCustomSettings(event) {
+            event.preventDefault();
+            
+            const customSettings = {
+                minPulse: parseInt(document.getElementById('customMinPulse').value),
+                maxPulse: parseInt(document.getElementById('customMaxPulse').value),
+                defaultAngle: parseInt(document.getElementById('customDefaultAngle').value),
+                rotationRange: parseInt(document.getElementById('customRotationRange').value)
+            };
+            
+            // Update hidden inputs
+            document.getElementById('minPulse').value = customSettings.minPulse;
+            document.getElementById('maxPulse').value = customSettings.maxPulse;
+            document.getElementById('defaultAngle').value = customSettings.defaultAngle;
+            document.getElementById('customSettings').value = JSON.stringify(customSettings);
+            
+            closeCustomizeModal();
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('customizeModal');
+            if (event.target === modal) {
+                closeCustomizeModal();
+            }
+        }
     </script>
 </body>
 </html>
