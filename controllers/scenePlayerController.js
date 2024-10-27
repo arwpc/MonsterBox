@@ -616,9 +616,9 @@ async function executeLight(step) {
         }
         const scriptPath = path.resolve(__dirname, '..', 'scripts', 'light_control.py');
         const args = [
-            step.state,
-            step.duration.toString(),
-            part.gpioPin.toString()
+            part.gpioPin.toString(),  // First argument must be the GPIO pin number
+            step.state,               // Second argument is the state (on/off)
+            step.duration ? step.duration.toString() : '0'  // Third argument is duration (optional)
         ];
         if (step.type === 'led') {
             args.push(step.brightness.toString());
@@ -639,19 +639,14 @@ async function executeLight(step) {
             process.on('close', (code) => {
                 activeProcesses.delete(process);
                 if (code === 0) {
-                    try {
-                        const jsonOutput = JSON.parse(output);
-                        resolve(jsonOutput);
-                    } catch (error) {
-                        reject(new Error(`Failed to parse light control output: ${output}`));
-                    }
+                    resolve({ success: true });
                 } else {
                     reject(new Error(`Light control process exited with code ${code}. Error: ${errorOutput}`));
                 }
             });
         });
         if (!result.success) {
-            throw new Error(`Light control failed: ${result.error}`);
+            throw new Error(`Light control failed: ${result.error || 'Unknown error'}`);
         }
         logger.info(`Light step executed successfully: ${step.name}`);
         return true;
