@@ -21,13 +21,20 @@ const getAllParts = async () => {
 const getPartById = async (id) => {
     logger.debug('Getting part by ID:', id, 'Type:', typeof id);
     if (id === undefined || id === null) {
-        throw new Error('Part ID is required');
+        logger.warn('Part ID is undefined or null');
+        return null;
     }
     const parts = await getAllParts();
-    const part = parts.find(part => part.id === parseInt(id, 10));
+    // Convert id to number for comparison since parts.json stores IDs as numbers
+    const parsedId = parseInt(id, 10);
+    if (isNaN(parsedId)) {
+        logger.warn(`Invalid part ID (not a number): ${id}`);
+        return null;
+    }
+    const part = parts.find(part => part.id === parsedId);
     if (!part) {
         logger.warn(`Part not found with id: ${id}`);
-        throw new Error(`Part not found with id: ${id}`);
+        return null;
     }
     logger.debug('Found part:', part);
     return part;
@@ -58,16 +65,21 @@ const updatePart = async (id, partData) => {
     logger.debug('Updating part - Data:', partData);
     const parts = await getAllParts();
     logger.debug('All parts:', parts);
-    const index = parts.findIndex(part => part.id === parseInt(id, 10));
+    const parsedId = parseInt(id, 10);
+    if (isNaN(parsedId)) {
+        logger.warn(`Invalid part ID (not a number): ${id}`);
+        return null;
+    }
+    const index = parts.findIndex(part => part.id === parsedId);
     logger.debug('Found part index:', index);
     if (index === -1) {
         logger.warn(`Part not found with id: ${id}`);
-        throw new Error(`Part not found with id: ${id}`);
+        return null;
     }
     parts[index] = { 
         ...parts[index], 
         ...partData, 
-        id: parseInt(id, 10),
+        id: parsedId,
         characterId: parseInt(partData.characterId, 10)
     };
     await fs.writeFile(dataPath, JSON.stringify(parts, null, 2));
@@ -78,6 +90,10 @@ const updatePart = async (id, partData) => {
 const deletePart = async (id) => {
     logger.info(`Attempting to delete part with ID: ${id}`);
     const parsedId = parseInt(id, 10);
+    if (isNaN(parsedId)) {
+        logger.warn(`Invalid part ID (not a number): ${id}`);
+        return false;
+    }
     logger.debug(`Parsed ID: ${parsedId}`);
     const parts = await getAllParts();
     logger.debug(`All parts before deletion: ${JSON.stringify(parts)}`);
@@ -86,13 +102,14 @@ const deletePart = async (id) => {
     logger.debug(`Part IDs: ${parts.map(part => part.id).join(', ')}`);
     if (index === -1) {
         logger.warn(`Part not found with id: ${id}`);
-        throw new Error(`Part not found with id: ${id}`);
+        return false;
     }
     const deletedPart = parts.splice(index, 1)[0];
     logger.debug(`Deleted part: ${JSON.stringify(deletedPart)}`);
     await fs.writeFile(dataPath, JSON.stringify(parts, null, 2));
     logger.info(`Part with ID ${id} deleted successfully`);
     logger.debug(`All parts after deletion: ${JSON.stringify(parts)}`);
+    return true;
 };
 
 module.exports = {
