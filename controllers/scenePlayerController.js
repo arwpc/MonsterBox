@@ -454,7 +454,8 @@ async function executeServo(step) {
             pinOrChannel,              // pin_or_channel
             angle.toString(),          // angle
             duration.toString(),       // duration
-            part.servoType || 'Standard'  // servo_type
+            part.servoType || 'Standard',  // servo_type
+            step.part_id.toString()    // part_id for PCA9685 settings
         ];
 
         logger.debug(`Executing servo_control.py with args: ${args.join(', ')}`);

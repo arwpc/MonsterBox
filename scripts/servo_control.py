@@ -2,6 +2,7 @@ import RPi.GPIO as GPIO
 import smbus
 import sys
 import time
+import json
 
 # PCA9685 registers
 PCA9685_MODE1 = 0x00
@@ -17,11 +18,13 @@ def setup_gpio(pin):
     return GPIO.PWM(pin, 50)  # 50 Hz PWM frequency
 
 class PCA9685:
-    def __init__(self, address=0x40, bus_number=1):
+    def __init__(self, address=0x40, bus_number=1, frequency=50):
         self.bus = smbus.SMBus(bus_number)
-        self.address = address
+        # Convert hex string to int if needed
+        self.address = int(address, 16) if isinstance(address, str) else address
         self.set_all_pwm(0, 0)
         self.bus.write_byte_data(self.address, PCA9685_MODE1, 0x00)
+        self.set_pwm_freq(frequency)
         self.current_angle = 90  # Initialize at center position
 
     def set_pwm_freq(self, freq_hz):
@@ -50,13 +53,24 @@ class PCA9685:
         self.bus.write_byte_data(self.address, LED0_OFF_L, off & 0xFF)
         self.bus.write_byte_data(self.address, LED0_OFF_H, off >> 8)
 
+def get_part_config(part_id):
+    try:
+        with open('data/parts.json', 'r') as f:
+            parts = json.load(f)
+            for part in parts:
+                if str(part['id']) == str(part_id):
+                    return part
+    except Exception as e:
+        print(f"Error reading parts configuration: {str(e)}")
+        return None
+
 def angle_to_duty_cycle(angle):
     return 2.5 + (angle / 18.0)  # Maps 0-180 degrees to 2.5-12.5% duty cycle
 
 # Dictionary to store current angles for each pin/channel
 current_angles = {}
 
-def move_servo_gradually(control_type, pin_or_channel, target_angle, duration, servo_type):
+def move_servo_gradually(control_type, pin_or_channel, target_angle, duration, servo_type, part_id=None):
     global current_angles
     pin_key = f"{control_type}_{pin_or_channel}"
     
@@ -70,8 +84,16 @@ def move_servo_gradually(control_type, pin_or_channel, target_angle, duration, s
 
     try:
         if control_type == 'pca9685':
-            pca = PCA9685()
-            pca.set_pwm_freq(50)
+            # Get PCA9685 settings from part configuration
+            part_config = get_part_config(part_id) if part_id else None
+            pca9685_settings = part_config.get('pca9685Settings', {}) if part_config else {}
+            
+            # Use settings from config or defaults
+            frequency = pca9685_settings.get('frequency', 50)
+            address = pca9685_settings.get('address', '0x40')
+            
+            pca = PCA9685(address=address, frequency=frequency)
+            
             for step in range(steps + 1):
                 current_angle = start_angle + step_angle * step
                 pulse = int(angle_to_duty_cycle(current_angle) / 100 * 4096)
@@ -98,14 +120,22 @@ def move_servo_gradually(control_type, pin_or_channel, target_angle, duration, s
             GPIO.cleanup(int(pin_or_channel))
         raise e
 
-def stop_servo(control_type, pin_or_channel):
+def stop_servo(control_type, pin_or_channel, part_id=None):
     global current_angles
     pin_key = f"{control_type}_{pin_or_channel}"
     
     gpio_used = False
     try:
         if control_type == 'pca9685':
-            pca = PCA9685()
+            # Get PCA9685 settings from part configuration
+            part_config = get_part_config(part_id) if part_id else None
+            pca9685_settings = part_config.get('pca9685Settings', {}) if part_config else {}
+            
+            # Use settings from config or defaults
+            frequency = pca9685_settings.get('frequency', 50)
+            address = pca9685_settings.get('address', '0x40')
+            
+            pca = PCA9685(address=address, frequency=frequency)
             # Move to center position (90 degrees)
             pulse = int(angle_to_duty_cycle(90) / 100 * 4096)
             pca.set_pwm(int(pin_or_channel), 0, pulse)
@@ -131,7 +161,7 @@ def stop_servo(control_type, pin_or_channel):
 
 if __name__ == "__main__":
     if len(sys.argv) < 6:
-        print("Usage: python servo_control.py <command> <control_type> <pin_or_channel> <angle> <duration> [servo_type]")
+        print("Usage: python servo_control.py <command> <control_type> <pin_or_channel> <angle> <duration> [servo_type] [part_id]")
         sys.exit(1)
 
     command = sys.argv[1]
@@ -140,16 +170,18 @@ if __name__ == "__main__":
 
     try:
         if command == "test":
-            if len(sys.argv) != 7:
-                print("Usage for test: python servo_control.py test <control_type> <pin_or_channel> <angle> <duration> <servo_type>")
+            if len(sys.argv) < 7:
+                print("Usage for test: python servo_control.py test <control_type> <pin_or_channel> <angle> <duration> <servo_type> [part_id]")
                 sys.exit(1)
             angle = float(sys.argv[4])
             duration = float(sys.argv[5])
             servo_type = sys.argv[6]
-            move_servo_gradually(control_type, pin_or_channel, angle, duration, servo_type)
+            part_id = sys.argv[7] if len(sys.argv) > 7 else None
+            move_servo_gradually(control_type, pin_or_channel, angle, duration, servo_type, part_id)
             print("Servo test successful")
         elif command == "stop":
-            stop_servo(control_type, pin_or_channel)
+            part_id = sys.argv[7] if len(sys.argv) > 7 else None
+            stop_servo(control_type, pin_or_channel, part_id)
             print("Servo stopped successfully")
         else:
             print(f"Unknown command: {command}")
