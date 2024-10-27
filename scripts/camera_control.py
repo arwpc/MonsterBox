@@ -13,7 +13,7 @@ from typing import Dict, Any, Optional
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.WARNING,  # Changed from INFO to WARNING
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
@@ -35,21 +35,32 @@ class CameraLock:
         self.lock_file = None
 
     def acquire(self) -> bool:
-        """Acquire lock on camera device.
-        
-        Returns:
-            bool: True if lock acquired, False otherwise
-        """
+        """Acquire lock on camera device."""
         try:
+            # First check if the lock file exists and is stale
+            if os.path.exists(self.lock_path):
+                try:
+                    with open(self.lock_path, 'r') as f:
+                        pid = int(f.read().strip())
+                        # Check if process is still running
+                        os.kill(pid, 0)
+                except (OSError, ValueError):
+                    # Process is not running or invalid PID, remove stale lock
+                    try:
+                        os.remove(self.lock_path)
+                    except OSError:
+                        pass
+
             self.lock_file = open(self.lock_path, 'w')
             fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            # Write current PID to lock file
+            self.lock_file.write(str(os.getpid()))
+            self.lock_file.flush()
             return True
-        except IOError as e:
-            if e.errno == errno.EACCES or e.errno == errno.EAGAIN:
-                return False
-            raise
-        except Exception as e:
-            logger.error(f"Failed to acquire camera lock: {e}")
+        except (IOError, OSError):
+            if self.lock_file:
+                self.lock_file.close()
+                self.lock_file = None
             return False
 
     def release(self):
@@ -59,92 +70,62 @@ class CameraLock:
                 fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_UN)
                 self.lock_file.close()
                 self.lock_file = None
-        except Exception as e:
-            logger.error(f"Failed to release camera lock: {e}")
+                try:
+                    os.remove(self.lock_path)
+                except OSError:
+                    pass
+        except Exception:
+            pass
 
 class CameraController:
     """Handles camera operations and head tracking control."""
     
-    def __init__(self, camera_id: int = 0, width: int = 160, height: int = 120):
-        """Initialize camera controller with specified settings.
-        
-        Args:
-            camera_id: Camera device ID (default: 0)
-            width: Desired frame width (default: 160)
-            height: Desired frame height (default: 120)
-        """
+    def __init__(self, camera_id: int = 0, width: int = 640, height: int = 480):
         self.camera_id = camera_id
         self.width = width
         self.height = height
         self.cap: Optional[cv2.VideoCapture] = None
         self.background_subtractor = cv2.createBackgroundSubtractorMOG2(
-            history=100,  # Number of frames to build background model
-            varThreshold=10  # Threshold for detecting foreground
+            history=100,
+            varThreshold=10
         )
         self.head_tracking_process = None
         self.last_frame_time = 0
         self.frame_count = 0
-        self.camera_lock = CameraLock()
+        self.camera_lock = CameraLock(f"/dev/video{camera_id}")
 
     def initialize(self) -> bool:
-        """Initialize camera with specified settings.
-        
-        Returns:
-            bool: True if initialization successful, False otherwise
-        """
-        # First try to acquire camera lock
+        """Initialize camera with specified settings."""
         if not self.camera_lock.acquire():
-            logger.error("Camera is currently in use by another process")
             return False
 
         try:
             # Release any existing camera instance
             self.release()
             
-            # Try different backends in order of preference
-            backends = [
-                (cv2.CAP_V4L2, "V4L2"),
-                (cv2.CAP_V4L, "V4L"),
-                (cv2.CAP_GSTREAMER, "GStreamer"),
-                (cv2.CAP_ANY, "Default")
-            ]
+            # Try V4L2 backend
+            self.cap = cv2.VideoCapture(self.camera_id, cv2.CAP_V4L2)
+            
+            if not self.cap.isOpened():
+                return False
 
-            for backend, name in backends:
-                logger.info(f"Trying {name} backend...")
-                
-                # Create new capture instance
-                self.cap = cv2.VideoCapture(self.camera_id)
-                
-                if self.cap.isOpened():
-                    # Configure camera settings
-                    self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
-                    self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
-                    self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
-                    self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-                    self.cap.set(cv2.CAP_PROP_FPS, 30)
+            # Configure camera settings
+            self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
+            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
+            self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+            self.cap.set(cv2.CAP_PROP_FPS, 30)
 
-                    # Verify settings with multiple attempts
-                    for _ in range(3):
-                        ret, frame = self.cap.read()
-                        if ret and frame is not None:
-                            actual_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-                            actual_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                            actual_fps = int(self.cap.get(cv2.CAP_PROP_FPS))
-                            
-                            logger.info(f"Camera initialized: {actual_width}x{actual_height} @{actual_fps}fps using {name}")
-                            
-                            # Update internal dimensions to match actual camera output
-                            self.width = actual_width
-                            self.height = actual_height
-                            return True
-                        time.sleep(0.1)
-                    
-                    self.release()
+            # Verify camera is working
+            ret, frame = self.cap.read()
+            if not ret or frame is None or frame.size == 0:
+                self.release()
+                return False
 
-            raise RuntimeError("Failed to initialize camera with any backend")
+            return True
 
         except Exception as e:
-            logger.error(f"Camera initialization error: {e}")
+            logger.warning(f"Camera initialization error: {e}")
             self.release()
             return False
 
@@ -155,41 +136,23 @@ class CameraController:
                 self.cap.release()
                 self.cap = None
             self.camera_lock.release()
-        except Exception as e:
-            logger.error(f"Error releasing camera: {e}")
+        except Exception:
+            pass
 
     def capture_frame(self) -> Dict[str, Any]:
-        """Capture a single frame and return its properties.
-        
-        Returns:
-            dict: Frame properties including width, height, and fps
-        """
+        """Capture a single frame and return its properties."""
         if not self.initialize():
             return {"success": False, "error": "Failed to initialize camera"}
 
         try:
-            # Multiple frame capture attempts
-            for _ in range(3):
-                ret, frame = self.cap.read()
-                if ret and frame is not None:
-                    break
-                time.sleep(0.1)
-            
-            if not ret or frame is None:
+            ret, frame = self.cap.read()
+            if not ret or frame is None or frame.size == 0:
                 return {"success": False, "error": "Failed to capture frame"}
 
             # Get frame properties
             actual_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             actual_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
             actual_fps = int(self.cap.get(cv2.CAP_PROP_FPS))
-
-            # Calculate actual FPS
-            current_time = time.time()
-            if current_time - self.last_frame_time >= 1:
-                measured_fps = self.frame_count
-                self.frame_count = 0
-                self.last_frame_time = current_time
-            self.frame_count += 1
 
             # Test frame encoding
             ret, _ = cv2.imencode('.jpg', frame)
@@ -204,29 +167,18 @@ class CameraController:
             }
 
         except Exception as e:
-            logger.error(f"Capture error: {e}")
             return {"success": False, "error": str(e)}
         finally:
             self.release()
 
     def detect_motion(self) -> Dict[str, Any]:
-        """Detect motion in current frame.
-        
-        Returns:
-            dict: Motion detection results including position and area
-        """
+        """Detect motion in current frame."""
         if not self.initialize():
             return {"success": False, "error": "Failed to initialize camera"}
 
         try:
-            # Multiple frame capture attempts
-            for _ in range(3):
-                ret, frame = self.cap.read()
-                if ret and frame is not None:
-                    break
-                time.sleep(0.1)
-            
-            if not ret or frame is None:
+            ret, frame = self.cap.read()
+            if not ret or frame is None or frame.size == 0:
                 return {"success": False, "error": "Failed to capture frame"}
 
             # Convert to grayscale for better motion detection
@@ -279,21 +231,12 @@ class CameraController:
             return {"success": True, "motion_detected": False}
 
         except Exception as e:
-            logger.error(f"Motion detection error: {e}")
             return {"success": False, "error": str(e)}
         finally:
             self.release()
 
     def update_settings(self, width: int, height: int) -> Dict[str, Any]:
-        """Update camera resolution settings.
-        
-        Args:
-            width: New frame width
-            height: New frame height
-            
-        Returns:
-            dict: Updated settings status
-        """
+        """Update camera resolution settings."""
         self.width = width
         self.height = height
         if self.initialize():
@@ -305,79 +248,54 @@ class CameraController:
         return {"success": False, "error": "Failed to update camera settings"}
 
     def start_head_tracking(self, servo_id: int) -> Dict[str, Any]:
-        """Start head tracking with specified servo.
-        
-        Args:
-            servo_id: ID of servo to use for tracking
-            
-        Returns:
-            dict: Head tracking start status
-        """
+        """Start head tracking with specified servo."""
         try:
             # Kill any existing head tracking process
             self.stop_head_tracking()
 
-            # Start the head tracking script
-            script_path = 'scripts/head_track.py'
+            script_path = os.path.join(os.path.dirname(__file__), 'head_track.py')
             self.head_tracking_process = subprocess.Popen(
                 ['python3', script_path, 'start', str(servo_id)],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE
             )
             
-            # Wait briefly to check if process started successfully
-            time.sleep(2)
+            time.sleep(1)  # Brief wait to check process started
             if self.head_tracking_process.poll() is not None:
-                # Process has already terminated
                 stdout, stderr = self.head_tracking_process.communicate()
-                error_msg = stderr.decode() if stderr else stdout.decode() if stdout else "Unknown error"
-                return {"success": False, "error": f"Head tracking failed to start: {error_msg}"}
+                error_msg = stderr.decode() if stderr else stdout.decode()
+                return {"success": False, "error": error_msg}
                 
             return {"success": True, "message": "Head tracking started"}
         except Exception as e:
-            logger.error(f"Head tracking error: {e}")
             return {"success": False, "error": str(e)}
 
     def stop_head_tracking(self) -> Dict[str, Any]:
-        """Stop head tracking.
-        
-        Returns:
-            dict: Head tracking stop status
-        """
+        """Stop head tracking."""
         try:
             if self.head_tracking_process:
-                # Try graceful termination first
                 self.head_tracking_process.terminate()
                 try:
                     self.head_tracking_process.wait(timeout=5)
                 except subprocess.TimeoutExpired:
-                    # Force kill if not terminated
-                    logger.warning("Force killing head tracking process")
                     self.head_tracking_process.kill()
                     self.head_tracking_process.wait()
-                
-                # Check for any error output
-                stdout, stderr = self.head_tracking_process.communicate()
-                if stderr:
-                    logger.warning(f"Head tracking stderr: {stderr.decode()}")
                 
                 self.head_tracking_process = None
                 
             return {"success": True, "message": "Head tracking stopped"}
         except Exception as e:
-            logger.error(f"Error stopping head tracking: {e}")
             return {"success": False, "error": str(e)}
 
 def main():
     """Main entry point for camera control script."""
-    # Set up argument parser
     parser = argparse.ArgumentParser(description='Camera Control Script')
     parser.add_argument('command', choices=['capture', 'motion', 'settings', 'head_track'],
                        help='Command to execute')
-    parser.add_argument('--width', type=int, default=160,
-                       help='Frame width (default: 160)')
-    parser.add_argument('--height', type=int, default=120,
-                       help='Frame height (default: 120)')
+    parser.add_argument('--width', type=int, default=640,
+                       help='Frame width (default: 640)')
+    parser.add_argument('--height', type=int, default=480,
+                       help='Frame height (default: 480)')
     parser.add_argument('--camera-id', type=int, default=0,
                        help='Camera device ID (default: 0)')
     parser.add_argument('--servo-id', type=int,
