@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
     <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <style>
         .channel-grid {
             display: grid;
@@ -414,28 +415,31 @@
             document.getElementById('pin').required = !usePCA9685;
         }
 
-        function testServo() {
+        async function testServo() {
             const angle = document.getElementById('testAngle').value;
             const usePCA9685 = document.getElementById('usePCA9685').checked;
             const channel = document.getElementById('channel').value;
             const pin = document.getElementById('pin').value;
             const minPulse = document.getElementById('minPulse').value;
             const maxPulse = document.getElementById('maxPulse').value;
+            const servoType = document.getElementById('servoType').value;
 
-            axios.post('/parts/servo/test', {
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                data: {
+            try {
+                const response = await axios.post('/parts/servo/test', {
                     angle: parseInt(angle),
                     usePCA9685: usePCA9685,
                     channel: parseInt(channel),
                     pin: parseInt(pin),
                     minPulse: parseInt(minPulse),
-                    maxPulse: parseInt(maxPulse)
-                }
-            })
-            .then(response => {
+                    maxPulse: parseInt(maxPulse),
+                    duration: 1.0,
+                    servoType: servoType
+                }, {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
                 const resultDiv = document.getElementById('testResult');
                 if (response.data.success) {
                     resultDiv.textContent = 'Servo test successful: ' + response.data.message;
@@ -444,31 +448,33 @@
                     resultDiv.textContent = 'Servo test failed: ' + response.data.message;
                     resultDiv.className = 'error';
                 }
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error('Error:', error);
                 const resultDiv = document.getElementById('testResult');
-                resultDiv.textContent = 'An error occurred while testing the servo: ' + error.message;
+                resultDiv.textContent = 'An error occurred while testing the servo: ' + (error.response?.data?.error || error.message);
                 resultDiv.className = 'error';
-            });
+            }
         }
 
-        function stopServo() {
+        async function stopServo() {
             const usePCA9685 = document.getElementById('usePCA9685').checked;
             const channel = document.getElementById('channel').value;
             const pin = document.getElementById('pin').value;
 
-            axios.post('/parts/servo/stop', {
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                data: {
+            try {
+                const response = await axios.post('/parts/servo/test', {
+                    angle: 90, // Center position to stop
                     usePCA9685: usePCA9685,
                     channel: parseInt(channel),
-                    pin: parseInt(pin)
-                }
-            })
-            .then(response => {
+                    pin: parseInt(pin),
+                    duration: 0.1,
+                    servoType: document.getElementById('servoType').value
+                }, {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
                 const resultDiv = document.getElementById('testResult');
                 if (response.data.success) {
                     resultDiv.textContent = 'Servo stopped successfully: ' + response.data.message;
@@ -477,13 +483,12 @@
                     resultDiv.textContent = 'Failed to stop servo: ' + response.data.message;
                     resultDiv.className = 'error';
                 }
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error('Error:', error);
                 const resultDiv = document.getElementById('testResult');
-                resultDiv.textContent = 'An error occurred while stopping the servo: ' + error.message;
+                resultDiv.textContent = 'An error occurred while stopping the servo: ' + (error.response?.data?.error || error.message);
                 resultDiv.className = 'error';
-            });
+            }
         }
     </script>
 </body>

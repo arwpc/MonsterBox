@@ -22,6 +22,7 @@ class PCA9685:
         self.address = address
         self.set_all_pwm(0, 0)
         self.bus.write_byte_data(self.address, PCA9685_MODE1, 0x00)
+        self.current_angle = 90  # Initialize at center position
 
     def set_pwm_freq(self, freq_hz):
         prescaleval = 25000000.0  # 25MHz
@@ -52,10 +53,19 @@ class PCA9685:
 def angle_to_duty_cycle(angle):
     return 2.5 + (angle / 18.0)  # Maps 0-180 degrees to 2.5-12.5% duty cycle
 
-def move_servo_gradually(control_type, pin_or_channel, start_angle, end_angle, duration, servo_type):
+# Dictionary to store current angles for each pin/channel
+current_angles = {}
+
+def move_servo_gradually(control_type, pin_or_channel, target_angle, duration, servo_type):
+    global current_angles
+    pin_key = f"{control_type}_{pin_or_channel}"
+    
+    # Get current angle, default to center position if not set
+    start_angle = current_angles.get(pin_key, 90)
+    
     step_time = 0.02  # Step time for smooth movement
     steps = int(duration / step_time)
-    step_angle = (end_angle - start_angle) / steps
+    step_angle = (target_angle - start_angle) / steps
     gpio_used = False
 
     try:
@@ -78,6 +88,10 @@ def move_servo_gradually(control_type, pin_or_channel, start_angle, end_angle, d
             pwm.stop()
             # Only cleanup the specific pin that was used
             GPIO.cleanup(int(pin_or_channel))
+        
+        # Update the current angle after successful movement
+        current_angles[pin_key] = target_angle
+        
     except Exception as e:
         if gpio_used:
             # Only cleanup the specific pin if it was used and an error occurred
@@ -85,20 +99,30 @@ def move_servo_gradually(control_type, pin_or_channel, start_angle, end_angle, d
         raise e
 
 def stop_servo(control_type, pin_or_channel):
+    global current_angles
+    pin_key = f"{control_type}_{pin_or_channel}"
+    
     gpio_used = False
     try:
         if control_type == 'pca9685':
             pca = PCA9685()
-            pca.set_pwm(int(pin_or_channel), 0, 0)
+            # Move to center position (90 degrees)
+            pulse = int(angle_to_duty_cycle(90) / 100 * 4096)
+            pca.set_pwm(int(pin_or_channel), 0, pulse)
         else:  # GPIO control
             gpio_used = True
             GPIO.setmode(GPIO.BCM)
             GPIO.setup(int(pin_or_channel), GPIO.OUT)
             pwm = GPIO.PWM(int(pin_or_channel), 50)
-            pwm.start(0)
+            pwm.start(angle_to_duty_cycle(90))  # Move to center position
+            time.sleep(0.5)  # Give time to reach position
             pwm.stop()
             # Only cleanup the specific pin that was used
             GPIO.cleanup(int(pin_or_channel))
+        
+        # Update current angle to center position
+        current_angles[pin_key] = 90
+        
     except Exception as e:
         if gpio_used:
             # Only cleanup the specific pin if it was used and an error occurred
@@ -122,7 +146,7 @@ if __name__ == "__main__":
             angle = float(sys.argv[4])
             duration = float(sys.argv[5])
             servo_type = sys.argv[6]
-            move_servo_gradually(control_type, pin_or_channel, 0, angle, duration, servo_type)
+            move_servo_gradually(control_type, pin_or_channel, angle, duration, servo_type)
             print("Servo test successful")
         elif command == "stop":
             stop_servo(control_type, pin_or_channel)
