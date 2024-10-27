@@ -13,5 +13,113 @@
         "speed": "50"
       }
     ]
+  },
+  {
+    "id": 2,
+    "character_id": 1,
+    "scene_name": "play one sound",
+    "steps": [
+      {
+        "type": "sound",
+        "name": "Santos!",
+        "sound_id": "2"
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "character_id": 1,
+    "scene_name": "Play Two Sounds",
+    "steps": [
+      {
+        "type": "sound",
+        "name": "good eve",
+        "sound_id": "1"
+      },
+      {
+        "type": "sound",
+        "name": "Heya",
+        "sound_id": "3"
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "character_id": 1,
+    "scene_name": "Full Scene - Raise Arm light and lower",
+    "steps": [
+      {
+        "type": "sound",
+        "name": "Santos!",
+        "sound_id": "2"
+      },
+      {
+        "type": "linear-actuator",
+        "name": "Right Arm Up",
+        "part_id": "1",
+        "duration": "4000",
+        "direction": "forward",
+        "speed": "60"
+      },
+      {
+        "type": "light",
+        "name": "Turn on Light",
+        "part_id": "3",
+        "duration": "6000",
+        "state": "on"
+      },
+      {
+        "type": "sound",
+        "name": "Scary Tongues",
+        "sound_id": "4"
+      },
+      {
+        "type": "light",
+        "name": "Turn Off Light",
+        "part_id": "3",
+        "duration": "500",
+        "state": "off"
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "character_id": 1,
+    "scene_name": "Sound and Actuator",
+    "steps": [
+      {
+        "type": "sound",
+        "name": "good eventing",
+        "sound_id": "1"
+      },
+      {
+        "type": "linear-actuator",
+        "name": "Arm Upo",
+        "part_id": "1",
+        "duration": "1000",
+        "direction": "forward",
+        "speed": "100"
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "character_id": 1,
+    "scene_name": "Left Arm Trial with Sound (two moves)",
+    "steps": [
+      {
+        "type": "linear-actuator",
+        "name": "Move Left Up",
+        "part_id": "2",
+        "duration": "2000",
+        "direction": "forward",
+        "speed": "100"
+      },
+      {
+        "type": "sound",
+        "name": "Laff Riot",
+        "sound_id": "3"
+      }
+    ]
   }
 ]
