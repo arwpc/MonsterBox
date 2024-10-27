@@ -1,3 +1,6 @@
+// Load environment variables first
+require('dotenv').config();
+
 // Suppress deprecation warnings
 process.env.NODE_NO_WARNINGS = '1';
 

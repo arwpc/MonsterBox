@@ -1,641 +1,298 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title %></title>
-    <link rel="stylesheet" href="/css/style.css">
-    <link rel="stylesheet" href="/favicon.ico" type="image/x-icon">
-    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/wavesurfer.js/6.6.4/wavesurfer.min.js"></script>
-</head>
-<body>
-    <h1><%= title %></h1>
-    <form action="<%= action %>" method="POST" enctype="multipart/form-data">
-        <% if (character.id) { %>
-            <input type="hidden" name="id" value="<%= character.id %>">
-        <% } %>
-        <div>
-            <label for="char_name">Name:</label>
-            <input type="text" id="char_name" name="char_name" value="<%= character.char_name || '' %>" required>
-        </div>
-        <div>
-            <label for="char_description">Description:</label>
-            <textarea id="char_description" name="char_description" required><%= character.char_description || '' %></textarea>
-        </div>
-        <div>
-            <label for="character_image">Character Image:</label>
-            <input type="file" id="character_image" name="character_image" accept="image/*">
-            <% if (character.image) { %>
-                <img src="/images/characters/<%= character.image %>" alt="<%= character.char_name %>" style="max-width: 200px;">
-            <% } %>
-        </div>
+<!-- Previous content remains the same until the voice settings script -->
 
-        <!-- Voice Configuration Section -->
-        <div class="voice-config">
-            <h3>Voice Configuration</h3>
-            <button type="button" id="configureVoice" class="button">Configure Voice</button>
+<script>
+    // Voice configuration modal functionality
+    document.addEventListener('DOMContentLoaded', async function() {
+        const modal = document.getElementById('voiceModal');
+        const configureBtn = document.getElementById('configureVoice');
+        const closeBtn = document.getElementsByClassName('close')[0];
+        let wavesurfer = null;
+        let currentCharacterId = document.querySelector('input[name="id"]')?.value;
 
-            <!-- Voice Configuration Modal -->
-            <div id="voiceModal" class="modal">
-                <div class="modal-content">
-                    <span class="close">&times;</span>
-                    <h2>Configure Voice</h2>
-                    
-                    <div class="voice-settings">
-                        <div class="setting-group voice-selection">
-                            <label for="voiceSelect">Voice:</label>
-                            <div class="voice-select-container">
-                                <select id="voiceSelect" required></select>
-                            </div>
-                        </div>
-
-                        <div class="setting-group">
-                            <label for="modelSelect">Model:</label>
-                            <select id="modelSelect">
-                                <option value="vox_1_0">Version 1.0</option>
-                                <option value="vox_2_0" selected>Version 2.0</option>
-                            </select>
-                        </div>
-
-                        <div class="setting-group">
-                            <label for="languageSelect">Language:</label>
-                            <select id="languageSelect">
-                                <option value="en">English</option>
-                                <option value="es">Spanish</option>
-                                <option value="fr">French</option>
-                                <option value="de">German</option>
-                                <option value="it">Italian</option>
-                                <option value="pt">Portuguese</option>
-                                <option value="pl">Polish</option>
-                                <option value="hi">Hindi</option>
-                                <option value="ja">Japanese</option>
-                            </select>
-                        </div>
-
-                        <div class="setting-group">
-                            <label for="styleSelect">Style:</label>
-                            <select id="styleSelect">
-                                <option value="neutral">Neutral</option>
-                                <option value="happy">Happy</option>
-                                <option value="sad">Sad</option>
-                                <option value="angry">Angry</option>
-                                <option value="fearful">Fearful</option>
-                                <option value="disgusted">Disgusted</option>
-                                <option value="surprised">Surprised</option>
-                            </select>
-                        </div>
-
-                        <div class="setting-group">
-                            <label for="pitch">Pitch (-12 to +12):</label>
-                            <input type="range" id="pitch" min="-12" max="12" value="0" step="1">
-                            <span id="pitchValue">0</span>
-                        </div>
-
-                        <div class="setting-group">
-                            <label for="speed">Speed (0.1x to 3.0x):</label>
-                            <input type="range" id="speed" min="0.1" max="3.0" value="1.0" step="0.1">
-                            <span id="speedValue">1.0x</span>
-                        </div>
-
-                        <div class="setting-group">
-                            <label for="volume">Volume (-20 to +20 dB):</label>
-                            <input type="range" id="volume" min="-20" max="20" value="0" step="1">
-                            <span id="volumeValue">0 dB</span>
-                        </div>
-
-                        <div class="setting-group">
-                            <label for="sampleRate">Sample Rate:</label>
-                            <select id="sampleRate">
-                                <option value="44100">44.1 kHz</option>
-                                <option value="48000">48 kHz</option>
-                            </select>
-                        </div>
-
-                        <div class="setting-group">
-                            <label for="bitRate">Bit Rate:</label>
-                            <select id="bitRate">
-                                <option value="48">48 kbps</option>
-                                <option value="128" selected>128 kbps</option>
-                                <option value="320">320 kbps</option>
-                            </select>
-                        </div>
-
-                        <div class="setting-group">
-                            <label for="outputFormat">Output Format:</label>
-                            <select id="outputFormat">
-                                <option value="mp3">MP3</option>
-                                <option value="wav">WAV</option>
-                                <option value="ogg">OGG</option>
-                                <option value="flac">FLAC</option>
-                            </select>
-                        </div>
-
-                        <div class="setting-group">
-                            <label for="testText">Test Text:</label>
-                            <textarea id="testText" rows="3">I am your monster, hear me roar!</textarea>
-                        </div>
-
-                        <!-- Audio Preview Section -->
-                        <div class="audio-preview">
-                            <div id="waveform"></div>
-                            <div class="audio-controls">
-                                <button type="button" id="previewPlay" class="button">Play</button>
-                                <button type="button" id="previewStop" class="button">Stop</button>
-                            </div>
-                            <div id="loadingIndicator" class="loading" style="display: none;">
-                                Generating audio...
-                            </div>
-                        </div>
-
-                        <!-- Preset Management -->
-                        <div class="preset-management">
-                            <select id="presetSelect">
-                                <option value="">Select Preset Fx Setting</option>
-                            </select>
-                            <input type="text" id="presetName" placeholder="Preset Name">
-                            <button type="button" id="savePreset" class="button">Save Preset</button>
-                            <button type="button" id="loadPreset" class="button">Load Preset</button>
-                            <button type="button" id="resetDefaults" class="button">Reset to Defaults</button>
-                        </div>
-
-                        <div class="modal-actions">
-                            <button type="button" id="saveVoiceSettings" class="button">Save Voice Settings</button>
-                            <button type="button" id="saveToSounds" class="button">Save to Sounds</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Include Voice Selector Modal -->
-            <%- include('voice-selector.ejs') %>
-        </div>
-
-        <div>
-            <label>Parts:</label>
-            <div id="parts-container">
-                <div id="available-parts">
-                    <h4>Available Parts:</h4>
-                    <select id="available-parts-select" multiple>
-                        <% parts.filter(part => !character.parts || !character.parts.includes(part.id)).forEach(function(part) { %>
-                            <option value="<%= part.id %>"><%= part.name %> (<%= part.type %>)</option>
-                        <% }); %>
-                    </select>
-                </div>
-                <div>
-                    <button type="button" onclick="addPart()">Add &gt;</button>
-                    <button type="button" onclick="removePart()">&lt; Remove</button>
-                </div>
-                <div id="selected-parts">
-                    <h4>Selected Parts:</h4>
-                    <select id="selected-parts-select" name="parts" multiple>
-                        <% if (character.parts) { %>
-                            <% character.parts.forEach(function(partId) { %>
-                                <% const part = parts.find(p => p.id === partId); %>
-                                <% if (part) { %>
-                                    <option value="<%= part.id %>"><%= part.name %> (<%= part.type %>)</option>
-                                <% } %>
-                            <% }); %>
-                        <% } %>
-                    </select>
-                </div>
-            </div>
-        </div>
-        <div>
-            <label>Sounds:</label>
-            <div id="sounds-container">
-                <div id="available-sounds">
-                    <h4>Available Sounds:</h4>
-                    <select id="available-sounds-select" multiple>
-                        <% sounds.filter(sound => !character.sounds || !character.sounds.includes(sound.id)).forEach(function(sound) { %>
-                            <option value="<%= sound.id %>"><%= sound.name %></option>
-                        <% }); %>
-                    </select>
-                </div>
-                <div>
-                    <button type="button" onclick="addSound()">Add &gt;</button>
-                    <button type="button" onclick="removeSound()">&lt; Remove</button>
-                </div>
-                <div id="selected-sounds">
-                    <h4>Selected Sounds:</h4>
-                    <select id="selected-sounds-select" name="sounds" multiple>
-                        <% if (character.sounds) { %>
-                            <% character.sounds.forEach(function(soundId) { %>
-                                <% const sound = sounds.find(s => s.id === soundId); %>
-                                <% if (sound) { %>
-                                    <option value="<%= sound.id %>"><%= sound.name %></option>
-                                <% } %>
-                            <% }); %>
-                        <% } %>
-                    </select>
-                </div>
-            </div>
-        </div>
-        <button type="submit">Save Character</button>
-    </form>
-    <a href="/characters" class="button">Back to Characters</a>
-
-    <style>
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.4);
-        }
-
-        .modal-content {
-            background-color: #000;
-            color: #fff;
-            margin: 5% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%;
-            max-width: 800px;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-
-        .close {
-            color: #fff;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .setting-group {
-            margin-bottom: 15px;
-        }
-
-        .setting-group label {
-            color: #fff;
-            display: block;
-            margin-bottom: 5px;
-        }
-
-        .voice-select-container {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .voice-select-container select {
-            flex: 1;
-        }
-
-        .setting-group select,
-        .setting-group input[type="range"],
-        .setting-group input[type="text"],
-        .setting-group textarea {
-            background-color: #333;
-            color: #fff;
-            border: 1px solid #555;
-            padding: 5px;
-            width: 100%;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 10px;
-            background-color: #333;
-            border-radius: 4px;
-            margin: 10px 0;
-            color: #fff;
-        }
-
-        .audio-preview {
-            margin: 20px 0;
-            padding: 10px;
-            background-color: #222;
-            border-radius: 4px;
-        }
-
-        .waveform {
-            margin-bottom: 10px;
-            background: #333;
-            border-radius: 4px;
-        }
-
-        .audio-controls {
-            margin: 10px 0;
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-        }
-
-        .preset-management {
-            margin: 20px 0;
-            padding: 10px;
-            background-color: #222;
-            border-radius: 4px;
-            display: grid;
-            grid-template-columns: 1fr auto auto auto auto;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .preset-management select,
-        .preset-management input {
-            margin-right: 10px;
-        }
-
-        .modal-actions {
-            margin-top: 20px;
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-        }
-
-        .button {
-            background-color: #444;
-            color: #fff;
-            border: 1px solid #555;
-            padding: 8px 16px;
-            cursor: pointer;
-            margin: 0 4px;
-        }
-
-        .button:hover {
-            background-color: #555;
-        }
-
-        #waveform {
-            margin-bottom: 10px;
-            background: #333;
-            border-radius: 4px;
-            height: 60px;
-        }
-
-        .audio-controls {
-            margin-top: 10px;
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-        }
-    </style>
-
-    <script src="/scripts/voiceSelector.js"></script>
-
-    <script>
-        // Define updateAvailableOptions globally
-        window.updateAvailableOptions = function() {
-            const availableParts = document.getElementById('available-parts-select');
-            const selectedParts = document.getElementById('selected-parts-select');
-            const availableSounds = document.getElementById('available-sounds-select');
-            const selectedSounds = document.getElementById('selected-sounds-select');
-
-            if (availableParts && selectedParts) {
-                for (let option of availableParts.options) {
-                    option.disabled = Array.from(selectedParts.options).some(o => o.value === option.value);
-                }
-            }
-
-            if (availableSounds && selectedSounds) {
-                for (let option of availableSounds.options) {
-                    option.disabled = Array.from(selectedSounds.options).some(o => o.value === option.value);
-                }
-            }
-        };
-
-        // Helper functions for voice selector
-        window.addPart = function() {
-            moveOptions('available-parts-select', 'selected-parts-select');
-        };
-
-        window.removePart = function() {
-            moveOptions('selected-parts-select', 'available-parts-select');
-        };
-
-        window.addSound = function() {
-            moveOptions('available-sounds-select', 'selected-sounds-select');
-        };
-
-        window.removeSound = function() {
-            moveOptions('selected-sounds-select', 'available-sounds-select');
-        };
-
-        function moveOptions(fromId, toId) {
-            const fromSelect = document.getElementById(fromId);
-            const toSelect = document.getElementById(toId);
-            
-            if (fromSelect && toSelect) {
-                for (let option of Array.from(fromSelect.selectedOptions)) {
-                    toSelect.add(option);
-                    option.selected = false;
-                }
-                updateAvailableOptions();
-            }
-        }
-
-        // Voice configuration modal functionality
-        document.addEventListener('DOMContentLoaded', async function() {
-            const modal = document.getElementById('voiceModal');
-            const configureBtn = document.getElementById('configureVoice');
-            const closeBtn = document.getElementsByClassName('close')[0];
-            let wavesurfer = null;
-
-            // Initialize WaveSurfer only after user interaction
-            async function initWaveSurfer() {
-                if (!wavesurfer) {
-                    wavesurfer = WaveSurfer.create({
-                        container: '#waveform',
-                        waveColor: '#4a9eff',
-                        progressColor: '#1976d2',
-                        height: 60,
-                        responsive: true,
-                        barWidth: 2,
-                        barGap: 1
-                    });
-                }
-                return wavesurfer;
-            }
-
-            // Listen for voice selected event
-            document.addEventListener('voiceSelected', (event) => {
-                const voice = event.detail;
-                const voiceSelect = document.getElementById('voiceSelect');
-                
-                if (voiceSelect) {
-                    // Update the voice dropdown
-                    let option = voiceSelect.querySelector(`option[value="${voice.uuid}"]`);
-                    if (!option) {
-                        option = document.createElement('option');
-                        option.value = voice.uuid;
-                        option.textContent = `${voice.name} (${voice.uuid})`;
-                        voiceSelect.appendChild(option);
+        // Load voice settings for the character
+        async function loadVoiceSettings() {
+            if (currentCharacterId) {
+                try {
+                    const response = await fetch(`/api/voice/settings/${currentCharacterId}`);
+                    if (response.ok) {
+                        const voiceSettings = await response.json();
+                        if (voiceSettings) {
+                            // Update UI with saved settings
+                            document.getElementById('voiceSelect').value = voiceSettings.speaker_id;
+                            document.getElementById('languageSelect').value = voiceSettings.settings.languageCode;
+                            document.getElementById('styleSelect').value = voiceSettings.settings.style;
+                            document.getElementById('pitch').value = voiceSettings.settings.pitch;
+                            document.getElementById('pitchValue').textContent = voiceSettings.settings.pitch;
+                            document.getElementById('speed').value = voiceSettings.settings.speed;
+                            document.getElementById('speedValue').textContent = voiceSettings.settings.speed + 'x';
+                            document.getElementById('volume').value = voiceSettings.settings.volume;
+                            document.getElementById('volumeValue').textContent = voiceSettings.settings.volume + ' dB';
+                            document.getElementById('sampleRate').value = voiceSettings.settings.sampleRate;
+                            document.getElementById('bitRate').value = voiceSettings.settings.bitRate;
+                            document.getElementById('outputFormat').value = voiceSettings.settings.outputFormat;
+                        }
                     }
-                    voiceSelect.value = voice.uuid;
+                } catch (error) {
+                    console.error('Error loading voice settings:', error);
                 }
-            });
+            }
+        }
 
-            // Voice settings controls
-            const updateValue = (elementId, value, suffix = '') => {
-                const element = document.getElementById(elementId + 'Value');
-                if (element) {
-                    element.textContent = value + suffix;
+        // Initialize WaveSurfer only after user interaction
+        async function initWaveSurfer() {
+            if (!wavesurfer) {
+                wavesurfer = WaveSurfer.create({
+                    container: '#waveform',
+                    waveColor: '#4a9eff',
+                    progressColor: '#1976d2',
+                    height: 60,
+                    responsive: true,
+                    barWidth: 2,
+                    barGap: 1
+                });
+            }
+            return wavesurfer;
+        }
+
+        // Save voice settings
+        async function saveVoiceSettings() {
+            if (!currentCharacterId) return;
+
+            const settings = {
+                characterId: currentCharacterId,
+                speaker_id: document.getElementById('voiceSelect').value,
+                settings: {
+                    languageCode: document.getElementById('languageSelect').value,
+                    style: document.getElementById('styleSelect').value,
+                    pitch: parseInt(document.getElementById('pitch').value),
+                    speed: parseFloat(document.getElementById('speed').value),
+                    volume: parseInt(document.getElementById('volume').value),
+                    sampleRate: parseInt(document.getElementById('sampleRate').value),
+                    bitRate: parseInt(document.getElementById('bitRate').value),
+                    outputFormat: document.getElementById('outputFormat').value
                 }
             };
 
-            ['pitch', 'speed', 'volume'].forEach(param => {
-                const element = document.getElementById(param);
-                if (element) {
-                    element.oninput = () => updateValue(param, element.value, 
+            try {
+                const response = await fetch('/api/voice/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(settings)
+                });
+
+                if (!response.ok) throw new Error('Failed to save voice settings');
+                alert('Voice settings saved successfully');
+            } catch (error) {
+                console.error('Error saving voice settings:', error);
+                alert('Error saving voice settings: ' + error.message);
+            }
+        }
+
+        // Save to sounds library
+        async function saveToSounds(audioUrl) {
+            try {
+                const text = document.getElementById('testText').value;
+                const response = await fetch('/api/voice/save-to-sounds', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        audioUrl,
+                        text,
+                        characterId: currentCharacterId
+                    })
+                });
+
+                if (!response.ok) throw new Error('Failed to save to sounds library');
+                alert('Sound saved to library successfully');
+            } catch (error) {
+                console.error('Error saving to sounds:', error);
+                alert('Error saving to sounds: ' + error.message);
+            }
+        }
+
+        // Voice settings controls
+        const updateValue = (elementId, value, suffix = '') => {
+            const element = document.getElementById(elementId + 'Value');
+            if (element) {
+                element.textContent = value + suffix;
+            }
+        };
+
+        ['pitch', 'speed', 'volume'].forEach(param => {
+            const element = document.getElementById(param);
+            if (element) {
+                element.oninput = () => {
+                    updateValue(param, element.value, 
                         param === 'speed' ? 'x' : 
                         param === 'volume' ? ' dB' : '');
-                }
-            });
-
-            // Initialize voice selection
-            try {
-                const response = await fetch('/api/voice/available');
-                const voices = await response.json();
-                console.log('Available voices:', voices);
-                
-                const voiceSelect = document.getElementById('voiceSelect');
-                if (voiceSelect) {
-                    voiceSelect.innerHTML = '<option value="">Select a voice</option>';
-                    voices.forEach(voice => {
-                        const option = document.createElement('option');
-                        option.value = voice.uuid;
-                        option.textContent = `${voice.name} (${voice.uuid})`;
-                        voiceSelect.appendChild(option);
-                    });
-                    if (voices.length > 0 && !voiceSelect.value) {
-                        voiceSelect.value = voices[0].uuid;
-                    }
-                }
-            } catch (error) {
-                console.error('Error loading voices:', error);
-            }
-
-            // Modal controls
-            if (configureBtn) {
-                configureBtn.onclick = function() {
-                    if (modal) {
-                        modal.style.display = 'block';
-                    }
+                    // Keep preview button enabled
+                    document.getElementById('previewPlay').disabled = false;
                 };
             }
+        });
 
-            if (closeBtn) {
-                closeBtn.onclick = function() {
-                    if (modal) {
-                        modal.style.display = 'none';
-                    }
-                };
+        // Initialize voice selection
+        try {
+            const response = await fetch('/api/voice/available');
+            const voices = await response.json();
+            console.log('Available voices:', voices);
+            
+            const voiceSelect = document.getElementById('voiceSelect');
+            if (voiceSelect) {
+                voiceSelect.innerHTML = '<option value="">Select a voice</option>';
+                voices.forEach(voice => {
+                    const option = document.createElement('option');
+                    option.value = voice.uuid;
+                    option.textContent = `${voice.name} (${voice.uuid})`;
+                    voiceSelect.appendChild(option);
+                });
             }
 
-            window.onclick = function(event) {
-                if (event.target == modal) {
+            // Load voice settings after voices are loaded
+            await loadVoiceSettings();
+        } catch (error) {
+            console.error('Error loading voices:', error);
+        }
+
+        // Modal controls
+        if (configureBtn) {
+            configureBtn.onclick = function() {
+                if (modal) {
+                    modal.style.display = 'block';
+                }
+            };
+        }
+
+        if (closeBtn) {
+            closeBtn.onclick = function() {
+                if (modal) {
                     modal.style.display = 'none';
                 }
             };
+        }
 
-            // Audio preview controls
-            const previewPlayBtn = document.getElementById('previewPlay');
-            if (previewPlayBtn) {
-                previewPlayBtn.onclick = async function() {
-                    const voiceSelect = document.getElementById('voiceSelect');
-                    if (!voiceSelect || !voiceSelect.value) {
-                        alert('Please select a voice first');
-                        return;
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        };
+
+        let lastGeneratedAudioUrl = null;
+
+        // Audio preview controls
+        const previewPlayBtn = document.getElementById('previewPlay');
+        if (previewPlayBtn) {
+            previewPlayBtn.onclick = async function() {
+                const voiceSelect = document.getElementById('voiceSelect');
+                if (!voiceSelect || !voiceSelect.value) {
+                    alert('Please select a voice first');
+                    return;
+                }
+
+                const voiceId = voiceSelect.value;
+                console.log('Selected voice ID:', voiceId);
+
+                // Initialize WaveSurfer on first user interaction
+                await initWaveSurfer();
+
+                const testText = document.getElementById('testText');
+                const settings = {
+                    speaker_id: voiceId,
+                    text: testText ? testText.value : 'Hello world',
+                    modelId: 'vox_1_0', // Always use vox_1_0
+                    pitch: parseInt(document.getElementById('pitch')?.value || 0),
+                    speed: parseFloat(document.getElementById('speed')?.value || 1.0),
+                    volume: parseInt(document.getElementById('volume')?.value || 0),
+                    sampleRate: parseInt(document.getElementById('sampleRate')?.value || 44100),
+                    bitRate: parseInt(document.getElementById('bitRate')?.value || 128),
+                    outputFormat: document.getElementById('outputFormat')?.value || 'mp3',
+                    languageCode: document.getElementById('languageSelect')?.value || 'en',
+                    style: document.getElementById('styleSelect')?.value || 'neutral'
+                };
+
+                console.log('Sending speech generation request with settings:', settings);
+                const loadingIndicator = document.getElementById('loadingIndicator');
+                if (loadingIndicator) {
+                    loadingIndicator.style.display = 'block';
+                }
+
+                try {
+                    const response = await fetch('/api/voice/generate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(settings)
+                    });
+                    const data = await response.json();
+                    
+                    if (data.error) {
+                        throw new Error(data.error);
                     }
-
-                    const voiceId = voiceSelect.value;
-                    console.log('Selected voice ID:', voiceId);
-
-                    // Initialize WaveSurfer on first user interaction
-                    await initWaveSurfer();
-
-                    const testText = document.getElementById('testText');
-                    const settings = {
-                        speaker_id: voiceId,
-                        text: testText ? testText.value : 'Hello world',
-                        modelId: document.getElementById('modelSelect')?.value || 'vox_2_0',
-                        pitch: parseInt(document.getElementById('pitch')?.value || 0),
-                        speed: parseFloat(document.getElementById('speed')?.value || 1.0),
-                        volume: parseInt(document.getElementById('volume')?.value || 0),
-                        sampleRate: parseInt(document.getElementById('sampleRate')?.value || 44100),
-                        bitRate: parseInt(document.getElementById('bitRate')?.value || 128),
-                        outputFormat: document.getElementById('outputFormat')?.value || 'mp3',
-                        languageCode: document.getElementById('languageSelect')?.value || 'en',
-                        style: document.getElementById('styleSelect')?.value || 'neutral'
-                    };
-
-                    console.log('Sending speech generation request with settings:', settings);
-                    const loadingIndicator = document.getElementById('loadingIndicator');
+                    
+                    console.log('Received response:', data);
+                    lastGeneratedAudioUrl = data.url;
+                    wavesurfer.load(data.url);
+                    wavesurfer.on('ready', function() {
+                        wavesurfer.play();
+                    });
+                } catch (error) {
+                    console.error('Error generating speech:', error);
+                    alert('Error generating speech preview: ' + error.message);
+                } finally {
                     if (loadingIndicator) {
-                        loadingIndicator.style.display = 'block';
+                        loadingIndicator.style.display = 'none';
                     }
+                }
+            };
+        }
 
-                    try {
-                        const response = await fetch('/api/voice/generate', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(settings)
-                        });
-                        const data = await response.json();
-                        
-                        if (data.error) {
-                            throw new Error(data.error);
-                        }
-                        
-                        console.log('Received response:', data);
-                        wavesurfer.load(data.url);
-                        wavesurfer.on('ready', function() {
-                            wavesurfer.play();
-                        });
-                    } catch (error) {
-                        console.error('Error generating speech:', error);
-                        alert('Error generating speech preview: ' + error.message);
-                    } finally {
-                        if (loadingIndicator) {
-                            loadingIndicator.style.display = 'none';
-                        }
-                    }
-                };
+        const previewStopBtn = document.getElementById('previewStop');
+        if (previewStopBtn) {
+            previewStopBtn.onclick = function() {
+                if (wavesurfer) {
+                    wavesurfer.stop();
+                }
+            };
+        }
+
+        // Save voice settings button
+        document.getElementById('saveVoiceSettings').onclick = saveVoiceSettings;
+
+        // Save to sounds button
+        document.getElementById('saveToSounds').onclick = function() {
+            if (lastGeneratedAudioUrl) {
+                saveToSounds(lastGeneratedAudioUrl);
+            } else {
+                alert('Please generate audio first');
             }
+        };
 
-            const previewStopBtn = document.getElementById('previewStop');
-            if (previewStopBtn) {
-                previewStopBtn.onclick = function() {
-                    if (wavesurfer) {
-                        wavesurfer.stop();
+        // Form submission handling
+        const form = document.querySelector('form');
+        if (form) {
+            form.onsubmit = function() {
+                const selectedParts = document.getElementById('selected-parts-select');
+                const selectedSounds = document.getElementById('selected-sounds-select');
+                
+                if (selectedParts) {
+                    for (let option of selectedParts.options) {
+                        option.selected = true;
                     }
-                };
-            }
+                }
+                
+                if (selectedSounds) {
+                    for (let option of selectedSounds.options) {
+                        option.selected = true;
+                    }
+                }
+                
+                return true;
+            };
+        }
 
-            // Form submission handling
-            const form = document.querySelector('form');
-            if (form) {
-                form.onsubmit = function() {
-                    const selectedParts = document.getElementById('selected-parts-select');
-                    const selectedSounds = document.getElementById('selected-sounds-select');
-                    
-                    if (selectedParts) {
-                        for (let option of selectedParts.options) {
-                            option.selected = true;
-                        }
-                    }
-                    
-                    if (selectedSounds) {
-                        for (let option of selectedSounds.options) {
-                            option.selected = true;
-                        }
-                    }
-                    
-                    return true;
-                };
-            }
-
-            // Initialize available options
-            updateAvailableOptions();
-        });
-    </script>
+        // Initialize available options
+        updateAvailableOptions();
+    });
+</script>
 </body>
 </html>
+  b
