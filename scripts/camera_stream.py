@@ -65,7 +65,7 @@ class CameraLock:
 class CameraStream:
     """Handles camera streaming operations with error recovery and status monitoring."""
     
-    def __init__(self, camera_id: int = 0, width: int = 160, height: int = 120):
+    def __init__(self, camera_id: int = 0, width: int = 640, height: int = 480):
         self.camera_id = camera_id
         self.width = width
         self.height = height
@@ -77,11 +77,10 @@ class CameraStream:
         self.last_frame_time = 0
         self.fps = 0
         self.is_initialized = False
-        self.camera_lock = CameraLock()
+        self.camera_lock = CameraLock(f"/dev/video{camera_id}")
 
     def initialize_camera(self) -> bool:
         """Initialize the camera with multiple retry attempts."""
-        # First try to acquire camera lock
         if not self.camera_lock.acquire():
             logger.error("Camera is currently in use by another process")
             return False
@@ -93,23 +92,44 @@ class CameraStream:
                 # Release any existing camera instance
                 self.release()
                 
-                # Try different backend APIs
-                backends = [
-                    (cv2.CAP_V4L2, "V4L2"),
-                    (cv2.CAP_V4L, "V4L"),
-                    (cv2.CAP_GSTREAMER, "GStreamer"),
-                    (cv2.CAP_ANY, "Auto")
-                ]
+                # Try V4L2 backend first
+                logger.info("Trying V4L2 backend...")
+                self.cap = cv2.VideoCapture(self.camera_id, cv2.CAP_V4L2)
                 
-                for backend, name in backends:
-                    if self.try_camera_backend(backend, name):
-                        self.is_initialized = True
-                        self.start_time = time.time()
-                        return True
+                if not self.cap.isOpened():
+                    logger.warning("Failed to open camera with V4L2")
+                    continue
 
-                logger.error(f"Attempt {attempt + 1} failed, waiting {self.retry_delay}s...")
-                time.sleep(self.retry_delay)
+                # Configure camera properties
+                self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
+                self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
+                self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
+                self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+                self.cap.set(cv2.CAP_PROP_FPS, 30)
+
+                # Multiple frame capture attempts
+                success = False
+                for _ in range(3):
+                    ret, frame = self.cap.read()
+                    if ret and frame is not None and frame.size > 0:
+                        success = True
+                        break
+                    time.sleep(0.1)
+
+                if not success:
+                    logger.warning("Failed to capture test frame")
+                    self.release()
+                    continue
+
+                actual_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                actual_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                actual_fps = int(self.cap.get(cv2.CAP_PROP_FPS))
                 
+                logger.info(f"Camera initialized: {actual_width}x{actual_height} @{actual_fps}fps using V4L2")
+                self.is_initialized = True
+                self.start_time = time.time()
+                return True
+
             except Exception as e:
                 logger.error(f"Initialization error: {str(e)}")
                 self.release()
@@ -117,49 +137,6 @@ class CameraStream:
 
         logger.error("Camera initialization failed after all attempts")
         return False
-
-    def try_camera_backend(self, backend: int, name: str) -> bool:
-        """Attempt to initialize camera with specific backend."""
-        try:
-            logger.info(f"Trying {name} backend...")
-            
-            self.cap = cv2.VideoCapture(self.camera_id)
-            if not self.cap.isOpened():
-                logger.warning(f"Failed to open camera with {name}")
-                return False
-
-            # Configure camera properties
-            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
-            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
-            self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-            self.cap.set(cv2.CAP_PROP_FPS, 30)
-            self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
-
-            # Multiple frame capture attempts
-            success = False
-            for _ in range(3):
-                ret, frame = self.cap.read()
-                if ret and frame is not None:
-                    success = True
-                    break
-                time.sleep(0.1)
-
-            if not success:
-                logger.warning(f"{name} backend failed to capture test frame")
-                self.release()
-                return False
-
-            actual_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-            actual_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-            actual_fps = int(self.cap.get(cv2.CAP_PROP_FPS))
-            
-            logger.info(f"Camera initialized: {actual_width}x{actual_height} @{actual_fps}fps using {name}")
-            return True
-
-        except Exception as e:
-            logger.error(f"Error with {name} backend: {str(e)}")
-            self.release()
-            return False
 
     def get_frame(self) -> Optional[bytes]:
         """Capture and encode a frame from the camera."""
@@ -178,7 +155,7 @@ class CameraStream:
             success = False
             for _ in range(3):
                 ret, frame = self.cap.read()
-                if ret and frame is not None:
+                if ret and frame is not None and frame.size > 0:
                     success = True
                     break
                 time.sleep(0.1)
@@ -264,10 +241,10 @@ def stream_camera(args):
 def main():
     """Main entry point with argument parsing."""
     parser = argparse.ArgumentParser(description='Camera Streaming Script')
-    parser.add_argument('--width', type=int, default=160,
-                       help='Stream width (default: 160)')
-    parser.add_argument('--height', type=int, default=120,
-                       help='Stream height (default: 120)')
+    parser.add_argument('--width', type=int, default=640,
+                       help='Stream width (default: 640)')
+    parser.add_argument('--height', type=int, default=480,
+                       help='Stream height (default: 480)')
     parser.add_argument('--camera-id', type=int, default=0,
                        help='Camera device ID (default: 0)')
     
