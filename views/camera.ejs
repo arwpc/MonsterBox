@@ -162,9 +162,9 @@
                 <h3>Camera Settings</h3>
                 <label for="resolution">Resolution:</label>
                 <select id="resolution">
-                    <option value="160,120">160x120</option>
+                    <option value="640,480" selected>640x480</option>
                     <option value="320,240">320x240</option>
-                    <option value="640,480">640x480</option>
+                    <option value="160,120">160x120</option>
                 </select>
                 <button onclick="updateSettings()">Apply Settings</button>
             </div>
@@ -200,9 +200,11 @@
         const streamStatusText = document.getElementById('streamStatusText');
         const motionIndicator = document.getElementById('motionIndicator');
         const errorMessage = document.getElementById('errorMessage');
+        const resolutionSelect = document.getElementById('resolution');
 
         function initializeStream() {
-            streamImg.src = `/camera/stream?t=${Date.now()}`;
+            const [width, height] = resolutionSelect.value.split(',');
+            streamImg.src = `/camera/stream?width=${width}&height=${height}&t=${Date.now()}`;
         }
 
         function showError(message) {

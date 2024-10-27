@@ -21,8 +21,9 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/stream', (req, res) => {
-    const width = parseInt(req.query.width) || 160;
-    const height = parseInt(req.query.height) || 120;
+    // Use more standard default resolution
+    const width = parseInt(req.query.width) || 640;
+    const height = parseInt(req.query.height) || 480;
 
     res.writeHead(200, {
         'Content-Type': 'multipart/x-mixed-replace; boundary=frame',
@@ -38,17 +39,54 @@ router.get('/stream', (req, res) => {
         '--height', height.toString()
     ]);
 
+    let hasError = false;
+
     pythonProcess.stdout.on('data', (data) => {
-        res.write(data);
+        try {
+            res.write(data);
+        } catch (error) {
+            logger.error(`Error writing camera stream data: ${error}`);
+            if (!res.headersSent) {
+                res.status(500).end();
+            }
+            pythonProcess.kill();
+        }
     });
 
     pythonProcess.stderr.on('data', (data) => {
-        logger.error(`Camera stream error: ${data}`);
+        const errorMsg = data.toString();
+        logger.error(`Camera stream error: ${errorMsg}`);
+        hasError = true;
+    });
+
+    pythonProcess.on('error', (error) => {
+        logger.error(`Failed to start camera stream process: ${error}`);
+        if (!res.headersSent) {
+            res.status(500).json({
+                success: false,
+                error: 'Failed to start camera stream'
+            });
+        }
+    });
+
+    pythonProcess.on('exit', (code) => {
+        if (code !== 0 && !res.headersSent) {
+            res.status(500).json({
+                success: false,
+                error: 'Camera stream process exited unexpectedly'
+            });
+        }
     });
 
     req.on('close', () => {
         pythonProcess.kill();
         logger.info('Camera stream connection closed');
+    });
+
+    // Handle response errors
+    res.on('error', (error) => {
+        logger.error(`Response error in camera stream: ${error}`);
+        pythonProcess.kill();
     });
 });
 
