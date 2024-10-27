@@ -5,6 +5,22 @@ const characterService = require('../services/characterService');
 const { spawn } = require('child_process');
 const path = require('path');
 const logger = require('../scripts/logger');
+const fs = require('fs');
+
+// Function to read servo configurations
+const getServoConfigs = () => {
+    const servoConfigPath = path.join(__dirname, '..', 'data', 'servos.json');
+    try {
+        if (fs.existsSync(servoConfigPath)) {
+            const data = fs.readFileSync(servoConfigPath, 'utf8');
+            return JSON.parse(data).servos;
+        }
+        return [];
+    } catch (error) {
+        logger.error('Error reading servo configurations:', error);
+        return [];
+    }
+};
 
 router.get('/new', async (req, res) => {
     try {
@@ -15,11 +31,7 @@ router.get('/new', async (req, res) => {
             character = await characterService.getCharacterById(characterId);
         }
 
-        const servoTypes = ['Standard', 'Continuous', 'Digital', 'Linear', 'FS90R'];
-
-        const getServoDefaults = (type) => {
-            return { minPulse: 500, maxPulse: 2500, defaultAngle: 90 };
-        };
+        const servoConfigs = getServoConfigs();
 
         res.render('part-forms/servo', {
             title: 'Create Servo',
@@ -27,8 +39,7 @@ router.get('/new', async (req, res) => {
             part: {},
             characters,
             character,
-            servoTypes,
-            getServoDefaults
+            servoConfigs
         });
     } catch (error) {
         logger.error('Error fetching characters:', error);
@@ -46,11 +57,7 @@ router.get('/:id/edit', async (req, res) => {
         const part = await partService.getPartById(id);
         const characters = await characterService.getAllCharacters();
         const character = await characterService.getCharacterById(part.characterId);
-        const servoTypes = ['Standard', 'Continuous', 'Digital', 'Linear', 'FS90R'];
-
-        const getServoDefaults = (type) => {
-            return { minPulse: 500, maxPulse: 2500, defaultAngle: 90 };
-        };
+        const servoConfigs = getServoConfigs();
 
         res.render('part-forms/servo', {
             title: 'Edit Servo',
@@ -58,8 +65,7 @@ router.get('/:id/edit', async (req, res) => {
             part,
             characters,
             character,
-            servoTypes,
-            getServoDefaults
+            servoConfigs
         });
     } catch (error) {
         logger.error('Error fetching Servo:', error);
@@ -69,6 +75,9 @@ router.get('/:id/edit', async (req, res) => {
 
 router.post('/', async (req, res) => {
     try {
+        const servoConfigs = getServoConfigs();
+        const selectedServo = servoConfigs.find(s => s.name === req.body.servoType);
+
         const newServo = {
             name: req.body.name,
             type: 'servo',
@@ -76,26 +85,24 @@ router.post('/', async (req, res) => {
             pin: parseInt(req.body.pin, 10) || 3,
             usePCA9685: req.body.usePCA9685 === 'on',
             channel: parseInt(req.body.channel, 10) || null,
-            minPulse: parseInt(req.body.minPulse, 10) || 500,
-            maxPulse: parseInt(req.body.maxPulse, 10) || 2500,
-            defaultAngle: parseInt(req.body.defaultAngle, 10) || 90,
-            servoType: req.body.servoType || 'Standard'
+            servoType: req.body.servoType,
+            minPulse: selectedServo ? selectedServo.min_pulse_width_us : parseInt(req.body.minPulse, 10),
+            maxPulse: selectedServo ? selectedServo.max_pulse_width_us : parseInt(req.body.maxPulse, 10),
+            defaultAngle: selectedServo ? selectedServo.default_angle_deg : parseInt(req.body.defaultAngle, 10),
+            mode: selectedServo ? selectedServo.mode : ['Standard'],
+            feedback: selectedServo ? selectedServo.feedback : false,
+            controlType: selectedServo ? selectedServo.control_type : ['PWM']
         };
 
         const createdServo = await partService.createPart(newServo);
         logger.info('Created servo:', createdServo);
-        res.status(200).json({ message: 'Servo created successfully', servo: createdServo });
+        res.redirect(`/parts?characterId=${newServo.characterId}`);
     } catch (error) {
         logger.error('Error creating Servo:', error);
         res.status(500).send('An error occurred while creating the Servo: ' + error.message);
     }
 });
 
-/**
- * @params
- * command: start | stop
- * pcaChannel: number
- */
 router.post('/head-track', async (req, res) => {
     try {
         const { command, pcaChannel } = req.body;
@@ -188,6 +195,9 @@ router.post('/:id', async (req, res) => {
             throw new Error('Invalid part ID');
         }
 
+        const servoConfigs = getServoConfigs();
+        const selectedServo = servoConfigs.find(s => s.name === req.body.servoType);
+
         const updatedServo = {
             id: id,
             name: req.body.name,
@@ -196,12 +206,14 @@ router.post('/:id', async (req, res) => {
             pin: parseInt(req.body.pin, 10) || 3,
             usePCA9685: req.body.usePCA9685 === 'on',
             channel: parseInt(req.body.channel, 10) || null,
-            minPulse: parseInt(req.body.minPulse, 10) || 500,
-            maxPulse: parseInt(req.body.maxPulse, 10) || 2500,
-            defaultAngle: parseInt(req.body.defaultAngle, 10) || 90,
-            servoType: req.body.servoType || 'Standard'
+            servoType: req.body.servoType,
+            minPulse: selectedServo ? selectedServo.min_pulse_width_us : parseInt(req.body.minPulse, 10),
+            maxPulse: selectedServo ? selectedServo.max_pulse_width_us : parseInt(req.body.maxPulse, 10),
+            defaultAngle: selectedServo ? selectedServo.default_angle_deg : parseInt(req.body.defaultAngle, 10),
+            mode: selectedServo ? selectedServo.mode : ['Standard'],
+            feedback: selectedServo ? selectedServo.feedback : false,
+            controlType: selectedServo ? selectedServo.control_type : ['PWM']
         };
-
 
         logger.debug('Updated Servo data:', updatedServo);
         const result = await partService.updatePart(id, updatedServo);
