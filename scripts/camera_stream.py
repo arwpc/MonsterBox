@@ -8,7 +8,6 @@ import argparse
 import os
 import fcntl
 import errno
-import glob
 from typing import Optional, Dict, Any, List
 
 # Configure logging
@@ -26,45 +25,12 @@ except ImportError as e:
     logger.error(f"Failed to import required libraries: {e}")
     sys.exit(1)
 
-def find_camera_device():
-    """Find the first available USB camera device."""
-    try:
-        # List all video devices
-        devices = glob.glob('/dev/video*')
-        if not devices:
-            logger.error("No video devices found")
-            return None
-
-        # Try to identify USB camera
-        for device in devices:
-            # Check if device exists and is readable
-            if not os.path.exists(device) or not os.access(device, os.R_OK):
-                continue
-
-            # Try to open the device
-            try:
-                cap = cv2.VideoCapture(int(device.replace('/dev/video', '')), cv2.CAP_V4L2)
-                if cap.isOpened():
-                    ret, frame = cap.read()
-                    if ret and frame is not None and frame.size > 0:
-                        cap.release()
-                        return int(device.replace('/dev/video', ''))
-                cap.release()
-            except Exception:
-                continue
-
-        logger.error("No working camera found")
-        return None
-    except Exception as e:
-        logger.error(f"Error finding camera: {e}")
-        return None
-
 class CameraLock:
     """Handle camera device locking to prevent concurrent access."""
     
-    def __init__(self, device_path="/dev/video0"):
-        self.device_path = device_path
-        self.lock_path = f"/tmp/camera_{os.path.basename(device_path)}.lock"
+    def __init__(self, device_id=0):
+        self.device_path = f"/dev/video{device_id}"
+        self.lock_path = f"/tmp/camera_{device_id}.lock"
         self.lock_file = None
 
     def acquire(self) -> bool:
@@ -113,11 +79,8 @@ class CameraLock:
 class CameraStream:
     """Handles camera streaming operations with error recovery and status monitoring."""
     
-    def __init__(self, camera_id: Optional[int] = None, width: int = 640, height: int = 480):
-        self.camera_id = camera_id if camera_id is not None else find_camera_device()
-        if self.camera_id is None:
-            raise RuntimeError("No camera device found")
-            
+    def __init__(self, camera_id: int = 0, width: int = 640, height: int = 480):
+        self.camera_id = camera_id
         self.width = width
         self.height = height
         self.cap: Optional[cv2.VideoCapture] = None
@@ -128,7 +91,7 @@ class CameraStream:
         self.last_frame_time = 0
         self.fps = 0
         self.is_initialized = False
-        self.camera_lock = CameraLock(f"/dev/video{self.camera_id}")
+        self.camera_lock = CameraLock(self.camera_id)
 
     def initialize_camera(self) -> bool:
         """Initialize the camera with multiple retry attempts."""
@@ -232,11 +195,7 @@ class CameraStream:
 
 def stream_camera(args):
     """Main camera streaming function."""
-    try:
-        camera = CameraStream(args.camera_id, args.width, args.height)
-    except RuntimeError as e:
-        logger.error(str(e))
-        sys.exit(1)
+    camera = CameraStream(args.camera_id, args.width, args.height)
     
     try:
         if not camera.initialize_camera():
@@ -274,8 +233,8 @@ def main():
                        help='Stream width (default: 640)')
     parser.add_argument('--height', type=int, default=480,
                        help='Stream height (default: 480)')
-    parser.add_argument('--camera-id', type=int, default=None,
-                       help='Camera device ID (default: auto-detect)')
+    parser.add_argument('--camera-id', type=int, required=True,
+                       help='Camera device ID')
     
     args = parser.parse_args()
     stream_camera(args)

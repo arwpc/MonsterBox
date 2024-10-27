@@ -1,13 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
-<!-- Previous head section unchanged -->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
     <link rel="stylesheet" href="/css/style.css">
     <style>
-        /* Previous styles unchanged */
         .camera-container {
             display: flex;
             gap: 20px;
@@ -149,6 +147,10 @@
             background-color: #440000;
             box-shadow: 0 0 5px #ff0000;
         }
+
+        .camera-select {
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
@@ -164,6 +166,16 @@
         </div>
         
         <div class="camera-controls">
+            <div class="control-group">
+                <h3>Camera Selection</h3>
+                <div class="camera-select">
+                    <select id="cameraSelect" style="margin-bottom: 10px;">
+                        <option value="">Select Camera...</option>
+                    </select>
+                    <button id="applyCameraSelect">Apply Camera Selection</button>
+                </div>
+            </div>
+
             <div class="control-group">
                 <h3>Camera Status</h3>
                 <div class="status-row">
@@ -225,6 +237,74 @@
         const motionIndicator = document.getElementById('motionIndicator');
         const errorMessage = document.getElementById('errorMessage');
         const disconnectButton = document.getElementById('disconnectStream');
+        const cameraSelect = document.getElementById('cameraSelect');
+        const applyCameraSelect = document.getElementById('applyCameraSelect');
+
+        // Load available cameras
+        async function loadCameras() {
+            try {
+                const response = await fetch('/camera/list');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch cameras');
+                }
+                const cameras = await response.json();
+                
+                // Clear existing options except the placeholder
+                while (cameraSelect.options.length > 1) {
+                    cameraSelect.remove(1);
+                }
+
+                // Add camera options
+                cameras.forEach(camera => {
+                    camera.devices.forEach(device => {
+                        const option = document.createElement('option');
+                        option.value = device.id;
+                        option.textContent = `${camera.name} (${device.path})`;
+                        cameraSelect.appendChild(option);
+                    });
+                });
+
+                // Set selected camera if one is saved
+                const selectedCamera = '<%= selectedCamera %>';
+                if (selectedCamera && selectedCamera !== 'null') {
+                    cameraSelect.value = selectedCamera;
+                    initializeStream();
+                }
+            } catch (error) {
+                console.error('Failed to load cameras:', error);
+                showError('Failed to load cameras: ' + error.message);
+            }
+        }
+
+        // Apply camera selection
+        applyCameraSelect.addEventListener('click', async function() {
+            const cameraId = parseInt(cameraSelect.value);
+            if (!cameraId) {
+                showError('Please select a camera');
+                return;
+            }
+
+            try {
+                const response = await fetch('/camera/select', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ cameraId })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to select camera');
+                }
+
+                // Reinitialize stream with new camera
+                manuallyDisconnected = false;
+                initializeStream();
+            } catch (error) {
+                console.error('Failed to select camera:', error);
+                showError('Failed to select camera: ' + error.message);
+            }
+        });
 
         function initializeStream() {
             if (!manuallyDisconnected) {
@@ -281,10 +361,9 @@
             disconnectButton.style.display = 'none';
             
             // Show reconnect message
-            showError('Camera disconnected. Refresh the page to reconnect.');
+            showError('Camera disconnected. Select a camera and click Apply to reconnect.');
         });
 
-        // Rest of the script unchanged
         document.getElementById('toggleMotion').addEventListener('click', function() {
             if (motionDetectionActive) {
                 stopMotionDetection();
@@ -500,8 +579,8 @@
             }
         });
 
-        // Initialize stream on page load
-        initializeStream();
+        // Load cameras on page load
+        loadCameras();
     </script>
 </body>
 </html>
