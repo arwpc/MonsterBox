@@ -1,13 +1,30 @@
 #!/usr/bin/env python3
 
-import numpy as np
-import cv2
-import busio
-import board
-from adafruit_servokit import ServoKit
 import sys
-import datetime
 import time
+import logging
+import os
+import fcntl
+import errno
+import datetime
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+# Import required libraries
+try:
+    import numpy as np
+    import cv2
+    import busio
+    import board
+    from adafruit_servokit import ServoKit
+except ImportError as e:
+    logger.error(f"Failed to import required libraries: {e}")
+    sys.exit(1)
 
 def remap(x, in_min, in_max, out_min, out_max):
     """Map value from one range to another with bounds checking."""
@@ -23,6 +40,38 @@ def remap(x, in_min, in_max, out_min, out_max):
         return max(min(out_max, out_min), min(max(out_max, out_min), temp_out))
     except Exception:
         return (out_max + out_min) / 2  # Return center position if calculation fails
+
+class CameraLock:
+    """Handle camera device locking to prevent concurrent access."""
+    
+    def __init__(self, device_path="/dev/video0"):
+        self.device_path = device_path
+        self.lock_path = f"/tmp/camera_{os.path.basename(device_path)}.lock"
+        self.lock_file = None
+
+    def acquire(self) -> bool:
+        """Acquire lock on camera device."""
+        try:
+            self.lock_file = open(self.lock_path, 'w')
+            fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return True
+        except IOError as e:
+            if e.errno == errno.EACCES or e.errno == errno.EAGAIN:
+                return False
+            raise
+        except Exception as e:
+            logger.error(f"Failed to acquire camera lock: {e}")
+            return False
+
+    def release(self):
+        """Release lock on camera device."""
+        try:
+            if self.lock_file:
+                fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_UN)
+                self.lock_file.close()
+                self.lock_file = None
+        except Exception as e:
+            logger.error(f"Failed to release camera lock: {e}")
 
 class HeadTracker:
     def __init__(self, pca_channel=0):
@@ -61,6 +110,7 @@ class HeadTracker:
             
         self.cap = None
         self.running = False
+        self.camera_lock = CameraLock()
 
     def smooth_move_to(self, target_angle, steps=10):
         """Gradually move servo to position."""
@@ -72,13 +122,22 @@ class HeadTracker:
 
     def setup_camera(self):
         """Initialize the camera with specified resolution."""
-        self.cap = cv2.VideoCapture(0)
-        if not self.cap.isOpened():
-            raise RuntimeError("Failed to open camera")
-            
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 160)
-        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 120)
-        time.sleep(2)  # Allow camera to stabilize
+        if not self.camera_lock.acquire():
+            raise RuntimeError("Camera is currently in use by another process")
+
+        try:
+            self.cap = cv2.VideoCapture(0)
+            if not self.cap.isOpened():
+                raise RuntimeError("Failed to open camera")
+                
+            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 160)
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 120)
+            self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+            self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+            time.sleep(2)  # Allow camera to stabilize
+        except Exception as e:
+            self.release_camera()
+            raise RuntimeError(f"Failed to setup camera: {str(e)}")
 
     def update_servo(self, new_angle):
         """Safely update servo position with rate limiting."""
@@ -98,7 +157,7 @@ class HeadTracker:
             self.kit.servo[self.pca_channel].angle = int(clamped_angle)
             self.last_servo_update = current_time
         except Exception as e:
-            print(f"Servo update failed: {str(e)}")
+            logger.error(f"Servo update failed: {str(e)}")
 
     def track(self):
         """Main tracking loop."""
@@ -112,7 +171,7 @@ class HeadTracker:
             while self.running:
                 ret, frame = self.cap.read()
                 if not ret:
-                    print("Failed to grab frame")
+                    logger.error("Failed to grab frame")
                     break
                     
                 # Use full frame as ROI
@@ -156,23 +215,29 @@ class HeadTracker:
                     # Update servo with safety checks
                     self.update_servo(self.head_angle_ave)
                     
-                    print(f'x: {center_x:.1f}, angle: {self.head_angle_ave:.1f}')
+                    logger.info(f'x: {center_x:.1f}, angle: {self.head_angle_ave:.1f}')
                 
                 # Add a small delay to prevent CPU overload
                 time.sleep(0.01)
                 
         except KeyboardInterrupt:
-            print("\nTracking stopped by user")
+            logger.info("\nTracking stopped by user")
         except Exception as e:
-            print(f"Tracking error: {str(e)}")
+            logger.error(f"Tracking error: {str(e)}")
         finally:
             self.running = False
+
+    def release_camera(self):
+        """Release camera resources."""
+        if self.cap:
+            self.cap.release()
+            self.cap = None
+        self.camera_lock.release()
 
     def stop_tracking(self):
         """Clean up resources."""
         self.running = False
-        if self.cap:
-            self.cap.release()
+        self.release_camera()
         cv2.destroyAllWindows()
         
         # Return to center position smoothly
@@ -181,7 +246,7 @@ class HeadTracker:
         except Exception:
             pass
             
-        print("Tracking stopped.")
+        logger.info("Tracking stopped.")
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
@@ -203,7 +268,7 @@ if __name__ == "__main__":
             print(f"Unknown command: {command}")
             sys.exit(1)
     except Exception as e:
-        print(f"Error occurred: {str(e)}")
+        logger.error(f"Error occurred: {str(e)}")
         sys.exit(1)
     finally:
         tracker.stop_tracking()

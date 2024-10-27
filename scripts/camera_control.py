@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
-import cv2
 import sys
 import json
 import argparse
 import logging
 import subprocess
 import time
-import numpy as np
+import os
+import fcntl
+import errno
 from typing import Dict, Any, Optional
 
 # Configure logging
@@ -16,6 +17,50 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+# Import OpenCV after numpy is properly initialized
+try:
+    import numpy as np
+    import cv2
+except ImportError as e:
+    logger.error(f"Failed to import required libraries: {e}")
+    sys.exit(1)
+
+class CameraLock:
+    """Handle camera device locking to prevent concurrent access."""
+    
+    def __init__(self, device_path="/dev/video0"):
+        self.device_path = device_path
+        self.lock_path = f"/tmp/camera_{os.path.basename(device_path)}.lock"
+        self.lock_file = None
+
+    def acquire(self) -> bool:
+        """Acquire lock on camera device.
+        
+        Returns:
+            bool: True if lock acquired, False otherwise
+        """
+        try:
+            self.lock_file = open(self.lock_path, 'w')
+            fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return True
+        except IOError as e:
+            if e.errno == errno.EACCES or e.errno == errno.EAGAIN:
+                return False
+            raise
+        except Exception as e:
+            logger.error(f"Failed to acquire camera lock: {e}")
+            return False
+
+    def release(self):
+        """Release lock on camera device."""
+        try:
+            if self.lock_file:
+                fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_UN)
+                self.lock_file.close()
+                self.lock_file = None
+        except Exception as e:
+            logger.error(f"Failed to release camera lock: {e}")
 
 class CameraController:
     """Handles camera operations and head tracking control."""
@@ -39,6 +84,7 @@ class CameraController:
         self.head_tracking_process = None
         self.last_frame_time = 0
         self.frame_count = 0
+        self.camera_lock = CameraLock()
 
     def initialize(self) -> bool:
         """Initialize camera with specified settings.
@@ -46,7 +92,15 @@ class CameraController:
         Returns:
             bool: True if initialization successful, False otherwise
         """
+        # First try to acquire camera lock
+        if not self.camera_lock.acquire():
+            logger.error("Camera is currently in use by another process")
+            return False
+
         try:
+            # Release any existing camera instance
+            self.release()
+            
             # Try different backends in order of preference
             backends = [
                 (cv2.CAP_V4L2, "V4L2"),
@@ -57,7 +111,9 @@ class CameraController:
 
             for backend, name in backends:
                 logger.info(f"Trying {name} backend...")
-                self.cap = cv2.VideoCapture(self.camera_id + backend)
+                
+                # Create new capture instance
+                self.cap = cv2.VideoCapture(self.camera_id)
                 
                 if self.cap.isOpened():
                     # Configure camera settings
@@ -84,7 +140,7 @@ class CameraController:
                         time.sleep(0.1)
                     
                     self.release()
-                    
+
             raise RuntimeError("Failed to initialize camera with any backend")
 
         except Exception as e:
@@ -94,9 +150,13 @@ class CameraController:
 
     def release(self):
         """Release camera resources."""
-        if self.cap is not None:
-            self.cap.release()
-            self.cap = None
+        try:
+            if self.cap:
+                self.cap.release()
+                self.cap = None
+            self.camera_lock.release()
+        except Exception as e:
+            logger.error(f"Error releasing camera: {e}")
 
     def capture_frame(self) -> Dict[str, Any]:
         """Capture a single frame and return its properties.
@@ -155,9 +215,8 @@ class CameraController:
         Returns:
             dict: Motion detection results including position and area
         """
-        if not self.cap or not self.cap.isOpened():
-            if not self.initialize():
-                return {"success": False, "error": "Failed to initialize camera"}
+        if not self.initialize():
+            return {"success": False, "error": "Failed to initialize camera"}
 
         try:
             # Multiple frame capture attempts
@@ -222,6 +281,8 @@ class CameraController:
         except Exception as e:
             logger.error(f"Motion detection error: {e}")
             return {"success": False, "error": str(e)}
+        finally:
+            self.release()
 
     def update_settings(self, width: int, height: int) -> Dict[str, Any]:
         """Update camera resolution settings.

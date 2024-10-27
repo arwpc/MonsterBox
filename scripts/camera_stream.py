@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 
-import cv2
 import sys
 import time
 import json
 import logging
 import argparse
 import re
+import os
+import fcntl
+import errno
 from typing import Optional, Dict, Any, List
-import numpy as np
-import subprocess
 
 # Configure logging
 logging.basicConfig(
@@ -18,45 +18,49 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-class CameraInfo:
-    """Stores and parses camera device information."""
+# Import OpenCV after numpy is properly initialized
+try:
+    import numpy as np
+    import cv2
+except ImportError as e:
+    logger.error(f"Failed to import required libraries: {e}")
+    sys.exit(1)
+
+class CameraLock:
+    """Handle camera device locking to prevent concurrent access."""
     
-    @staticmethod
-    def parse_v4l2_devices(output: str) -> List[Dict[str, Any]]:
-        """Parse v4l2-ctl --list-devices output."""
-        devices = []
-        current_device = None
+    def __init__(self, device_path="/dev/video0"):
+        self.device_path = device_path
+        self.lock_path = f"/tmp/camera_{os.path.basename(device_path)}.lock"
+        self.lock_file = None
+
+    def acquire(self) -> bool:
+        """Acquire lock on camera device.
         
-        for line in output.split('\n'):
-            if not line.strip():
-                continue
-                
-            if not line.startswith('\t'):
-                # This is a device name line
-                name_match = re.match(r'^(.*?)((?:\s*\(.*\))*):$', line)
-                if name_match:
-                    current_device = {
-                        'name': name_match.group(1).strip(),
-                        'type': 'USB' if 'USB' in line else 'Platform',
-                        'devices': [],
-                        'is_capture': False
-                    }
-                    # Extract USB location if present
-                    usb_match = re.search(r'usb-([^)]+)', line)
-                    if usb_match:
-                        current_device['usb_path'] = usb_match.group(1)
-            elif current_device:
-                # This is a device path line
-                device_path = line.strip()
-                if 'video' in device_path:
-                    current_device['devices'].append(device_path)
-                    # Mark as capture device if it's video0 or video1
-                    if device_path in ['/dev/video0', '/dev/video1']:
-                        current_device['is_capture'] = True
-                if current_device not in devices:
-                    devices.append(current_device)
-        
-        return devices
+        Returns:
+            bool: True if lock acquired, False otherwise
+        """
+        try:
+            self.lock_file = open(self.lock_path, 'w')
+            fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return True
+        except IOError as e:
+            if e.errno == errno.EACCES or e.errno == errno.EAGAIN:
+                return False
+            raise
+        except Exception as e:
+            logger.error(f"Failed to acquire camera lock: {e}")
+            return False
+
+    def release(self):
+        """Release lock on camera device."""
+        try:
+            if self.lock_file:
+                fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_UN)
+                self.lock_file.close()
+                self.lock_file = None
+        except Exception as e:
+            logger.error(f"Failed to release camera lock: {e}")
 
 class CameraStream:
     """Handles camera streaming operations with error recovery and status monitoring."""
@@ -73,75 +77,21 @@ class CameraStream:
         self.last_frame_time = 0
         self.fps = 0
         self.is_initialized = False
-
-    def get_camera_info(self) -> Dict[str, Any]:
-        """Get information about available cameras."""
-        try:
-            # Get camera info using v4l2-ctl
-            result = subprocess.run(['v4l2-ctl', '--list-devices'], 
-                                 capture_output=True, text=True)
-            if result.returncode == 0:
-                devices = CameraInfo.parse_v4l2_devices(result.stdout)
-                
-                # Get capabilities for each camera device
-                for device in devices:
-                    if device['is_capture']:
-                        for dev_path in device['devices']:
-                            try:
-                                cap = cv2.VideoCapture(int(dev_path.replace('/dev/video', '')))
-                                if cap.isOpened():
-                                    device['capabilities'] = {
-                                        'width': int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
-                                        'height': int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)),
-                                        'fps': int(cap.get(cv2.CAP_PROP_FPS))
-                                    }
-                                cap.release()
-                            except Exception as e:
-                                logger.warning(f"Failed to get capabilities for {dev_path}: {e}")
-                
-                return {
-                    "status": "success",
-                    "cameras": [d for d in devices if d['is_capture']],
-                    "other_devices": [d for d in devices if not d['is_capture']]
-                }
-                
-        except FileNotFoundError:
-            logger.warning("v4l2-ctl not found, falling back to OpenCV detection")
-        except Exception as e:
-            logger.error(f"Error getting camera info: {e}")
-
-        # Fallback to OpenCV detection
-        cameras = []
-        for i in range(5):
-            try:
-                cap = cv2.VideoCapture(i)
-                if cap.isOpened():
-                    cameras.append({
-                        "name": f"Camera {i}",
-                        "type": "Unknown",
-                        "devices": [f"/dev/video{i}"],
-                        "is_capture": True,
-                        "capabilities": {
-                            "width": int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
-                            "height": int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)),
-                            "fps": int(cap.get(cv2.CAP_PROP_FPS))
-                        }
-                    })
-                cap.release()
-            except Exception:
-                continue
-
-        return {
-            "status": "success",
-            "cameras": cameras,
-            "other_devices": []
-        }
+        self.camera_lock = CameraLock()
 
     def initialize_camera(self) -> bool:
         """Initialize the camera with multiple retry attempts."""
+        # First try to acquire camera lock
+        if not self.camera_lock.acquire():
+            logger.error("Camera is currently in use by another process")
+            return False
+
         for attempt in range(self.retries):
             try:
                 logger.info(f"Camera initialization attempt {attempt + 1}/{self.retries}")
+                
+                # Release any existing camera instance
+                self.release()
                 
                 # Try different backend APIs
                 backends = [
@@ -171,9 +121,9 @@ class CameraStream:
     def try_camera_backend(self, backend: int, name: str) -> bool:
         """Attempt to initialize camera with specific backend."""
         try:
-            logger.info(f"Trying camera backend: {name}")
+            logger.info(f"Trying {name} backend...")
             
-            self.cap = cv2.VideoCapture(self.camera_id + backend)
+            self.cap = cv2.VideoCapture(self.camera_id)
             if not self.cap.isOpened():
                 logger.warning(f"Failed to open camera with {name}")
                 return False
@@ -266,10 +216,14 @@ class CameraStream:
 
     def release(self):
         """Release camera resources."""
-        if self.cap:
-            self.cap.release()
-            self.cap = None
-        self.is_initialized = False
+        try:
+            if self.cap:
+                self.cap.release()
+                self.cap = None
+            self.camera_lock.release()
+            self.is_initialized = False
+        except Exception as e:
+            logger.error(f"Error releasing camera: {e}")
 
 def stream_camera(args):
     """Main camera streaming function."""
@@ -316,39 +270,8 @@ def main():
                        help='Stream height (default: 120)')
     parser.add_argument('--camera-id', type=int, default=0,
                        help='Camera device ID (default: 0)')
-    parser.add_argument('--info', action='store_true',
-                       help='Print camera information and exit')
-    parser.add_argument('--json', action='store_true',
-                       help='Print camera information in raw JSON format')
+    
     args = parser.parse_args()
-
-    if args.info:
-        camera = CameraStream(args.camera_id)
-        info = camera.get_camera_info()
-        
-        if args.json:
-            print(json.dumps(info, indent=2))
-        else:
-            print("\nAvailable Cameras:")
-            print("==================")
-            for cam in info['cameras']:
-                print(f"\nName: {cam['name']}")
-                print(f"Type: {cam['type']}")
-                print(f"Devices: {', '.join(cam['devices'])}")
-                if 'capabilities' in cam:
-                    print(f"Capabilities: {cam['capabilities']}")
-                if 'usb_path' in cam:
-                    print(f"USB Path: {cam['usb_path']}")
-            
-            if info['other_devices']:
-                print("\nOther Video Devices:")
-                print("===================")
-                for dev in info['other_devices']:
-                    print(f"\nName: {dev['name']}")
-                    print(f"Type: {dev['type']}")
-                    print(f"Devices: {', '.join(dev['devices'])}")
-        return
-
     stream_camera(args)
 
 if __name__ == "__main__":
