@@ -5,15 +5,14 @@ import time
 import json
 import logging
 import argparse
-import re
 import os
 import fcntl
 import errno
 from typing import Optional, Dict, Any, List
 
-# Configure logging
+# Configure logging - reduce verbosity
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.WARNING,  # Changed from INFO to WARNING
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
@@ -35,21 +34,32 @@ class CameraLock:
         self.lock_file = None
 
     def acquire(self) -> bool:
-        """Acquire lock on camera device.
-        
-        Returns:
-            bool: True if lock acquired, False otherwise
-        """
+        """Acquire lock on camera device."""
         try:
+            # First check if the lock file exists and is stale
+            if os.path.exists(self.lock_path):
+                try:
+                    with open(self.lock_path, 'r') as f:
+                        pid = int(f.read().strip())
+                        # Check if process is still running
+                        os.kill(pid, 0)
+                except (OSError, ValueError):
+                    # Process is not running or invalid PID, remove stale lock
+                    try:
+                        os.remove(self.lock_path)
+                    except OSError:
+                        pass
+
             self.lock_file = open(self.lock_path, 'w')
             fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            # Write current PID to lock file
+            self.lock_file.write(str(os.getpid()))
+            self.lock_file.flush()
             return True
-        except IOError as e:
-            if e.errno == errno.EACCES or e.errno == errno.EAGAIN:
-                return False
-            raise
-        except Exception as e:
-            logger.error(f"Failed to acquire camera lock: {e}")
+        except (IOError, OSError):
+            if self.lock_file:
+                self.lock_file.close()
+                self.lock_file = None
             return False
 
     def release(self):
@@ -59,8 +69,12 @@ class CameraLock:
                 fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_UN)
                 self.lock_file.close()
                 self.lock_file = None
-        except Exception as e:
-            logger.error(f"Failed to release camera lock: {e}")
+                try:
+                    os.remove(self.lock_path)
+                except OSError:
+                    pass
+        except Exception:
+            pass
 
 class CameraStream:
     """Handles camera streaming operations with error recovery and status monitoring."""
@@ -82,23 +96,22 @@ class CameraStream:
     def initialize_camera(self) -> bool:
         """Initialize the camera with multiple retry attempts."""
         if not self.camera_lock.acquire():
-            logger.error("Camera is currently in use by another process")
+            logger.warning("Camera is currently in use by another process")
             return False
 
         for attempt in range(self.retries):
             try:
-                logger.info(f"Camera initialization attempt {attempt + 1}/{self.retries}")
-                
                 # Release any existing camera instance
                 self.release()
                 
-                # Try V4L2 backend first
-                logger.info("Trying V4L2 backend...")
+                # Try V4L2 backend
                 self.cap = cv2.VideoCapture(self.camera_id, cv2.CAP_V4L2)
                 
                 if not self.cap.isOpened():
-                    logger.warning("Failed to open camera with V4L2")
-                    continue
+                    if attempt < self.retries - 1:
+                        time.sleep(self.retry_delay)
+                        continue
+                    return False
 
                 # Configure camera properties
                 self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
@@ -107,35 +120,24 @@ class CameraStream:
                 self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
                 self.cap.set(cv2.CAP_PROP_FPS, 30)
 
-                # Multiple frame capture attempts
-                success = False
-                for _ in range(3):
-                    ret, frame = self.cap.read()
-                    if ret and frame is not None and frame.size > 0:
-                        success = True
-                        break
-                    time.sleep(0.1)
+                # Verify camera is working
+                ret, frame = self.cap.read()
+                if not ret or frame is None or frame.size == 0:
+                    if attempt < self.retries - 1:
+                        time.sleep(self.retry_delay)
+                        continue
+                    return False
 
-                if not success:
-                    logger.warning("Failed to capture test frame")
-                    self.release()
-                    continue
-
-                actual_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-                actual_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                actual_fps = int(self.cap.get(cv2.CAP_PROP_FPS))
-                
-                logger.info(f"Camera initialized: {actual_width}x{actual_height} @{actual_fps}fps using V4L2")
                 self.is_initialized = True
                 self.start_time = time.time()
                 return True
 
             except Exception as e:
-                logger.error(f"Initialization error: {str(e)}")
+                logger.warning(f"Initialization attempt {attempt + 1} failed: {str(e)}")
                 self.release()
-                time.sleep(self.retry_delay)
+                if attempt < self.retries - 1:
+                    time.sleep(self.retry_delay)
 
-        logger.error("Camera initialization failed after all attempts")
         return False
 
     def get_frame(self) -> Optional[bytes]:
@@ -144,25 +146,16 @@ class CameraStream:
             return None
 
         try:
+            ret, frame = self.cap.read()
+            if not ret or frame is None or frame.size == 0:
+                return None
+
             # Update FPS calculation
             current_time = time.time()
             if current_time - self.start_time >= 1:
                 self.fps = self.frame_count / (current_time - self.start_time)
                 self.start_time = current_time
                 self.frame_count = 0
-
-            # Multiple frame capture attempts
-            success = False
-            for _ in range(3):
-                ret, frame = self.cap.read()
-                if ret and frame is not None and frame.size > 0:
-                    success = True
-                    break
-                time.sleep(0.1)
-
-            if not success:
-                logger.error("Failed to capture frame after multiple attempts")
-                return None
 
             # Resize if necessary
             actual_size = (frame.shape[1], frame.shape[0])
@@ -176,19 +169,17 @@ class CameraStream:
             cv2.putText(frame, timestamp, (10, frame.shape[0] - 10),
                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
 
-            # Encode frame with quality adjustment
-            for quality in [85, 75, 65]:  # Try different compression levels
-                ret, jpeg = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, quality])
-                if ret:
-                    self.frame_count += 1
-                    self.last_frame_time = current_time
-                    return jpeg.tobytes()
+            # Encode frame
+            ret, jpeg = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
+            if ret:
+                self.frame_count += 1
+                self.last_frame_time = current_time
+                return jpeg.tobytes()
 
-            logger.error("Failed to encode frame at any quality level")
             return None
 
         except Exception as e:
-            logger.error(f"Frame capture error: {str(e)}")
+            logger.warning(f"Frame capture error: {str(e)}")
             return None
 
     def release(self):
@@ -199,8 +190,8 @@ class CameraStream:
                 self.cap = None
             self.camera_lock.release()
             self.is_initialized = False
-        except Exception as e:
-            logger.error(f"Error releasing camera: {e}")
+        except Exception:
+            pass
 
 def stream_camera(args):
     """Main camera streaming function."""
@@ -215,24 +206,21 @@ def stream_camera(args):
             frame_data = camera.get_frame()
             if frame_data is None:
                 if not camera.initialize_camera():
-                    logger.error("Failed to reinitialize camera")
                     break
                 continue
 
-            # Write frame data to stdout
             sys.stdout.buffer.write(b'--frame\r\n')
             sys.stdout.buffer.write(b'Content-Type: image/jpeg\r\n\r\n')
             sys.stdout.buffer.write(frame_data)
             sys.stdout.buffer.write(b'\r\n')
             sys.stdout.buffer.flush()
 
-            # Rate limiting
             time.sleep(0.033)  # ~30 FPS
 
     except KeyboardInterrupt:
-        logger.info("Stream stopped by user")
+        pass
     except BrokenPipeError:
-        logger.info("Client disconnected")
+        pass
     except Exception as e:
         logger.error(f"Streaming error: {str(e)}")
     finally:
