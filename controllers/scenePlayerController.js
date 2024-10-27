@@ -418,13 +418,21 @@ async function executeServo(step) {
         if (!part) {
             throw new Error(`Part not found for ID: ${step.part_id}`);
         }
+
         const scriptPath = path.resolve(__dirname, '..', 'scripts', 'servo_control.py');
+        const controlType = part.usePCA9685 ? 'pca9685' : 'gpio';
+        const pinOrChannel = part.usePCA9685 ? part.channel.toString() : part.pin.toString();
+
         const args = [
-            step.angle.toString(),
-            step.speed.toString(),
-            step.duration.toString(),
-            part.pwmPin.toString()
+            'test',                    // command
+            controlType,               // control_type
+            pinOrChannel,              // pin_or_channel
+            step.angle.toString(),     // angle
+            step.duration.toString(),  // duration
+            part.servoType || 'Standard'  // servo_type
         ];
+
+        logger.debug(`Executing servo_control.py with args: ${args.join(', ')}`);
         const result = await new Promise((resolve, reject) => {
             const process = spawn('python3', [scriptPath, ...args]);
             let output = '';
