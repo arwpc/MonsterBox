@@ -5,8 +5,22 @@ const characterService = require('../services/characterService');
 const { spawn } = require('child_process');
 const path = require('path');
 const logger = require('../scripts/logger');
+const fs = require('fs').promises;
 
-function getPartDetails(part) {
+async function getServoName(servoType) {
+    try {
+        const servoConfigPath = path.join(__dirname, '..', 'data', 'servos.json');
+        const data = await fs.readFile(servoConfigPath, 'utf8');
+        const servos = JSON.parse(data).servos;
+        const servo = servos.find(s => s.name === servoType);
+        return servo ? servo.name : servoType;
+    } catch (error) {
+        logger.error('Error reading servo configurations:', error);
+        return servoType;
+    }
+}
+
+async function getPartDetails(part) {
     switch(part.type) {
         case 'motor':
         case 'linear-actuator':
@@ -15,10 +29,11 @@ function getPartDetails(part) {
         case 'led':
             return `GPIO Pin: ${part.gpioPin}`;
         case 'servo':
+            const servoName = await getServoName(part.servoType);
             if (part.usePCA9685) {
-                return `PCA9685 Channel: ${part.channel}, Type: ${part.servoType}, Min Pulse: ${part.minPulse}μs, Max Pulse: ${part.maxPulse}μs`;
+                return `Servo: ${servoName}, PCA9685 Channel: ${part.channel}, Min Pulse: ${part.minPulse}μs, Max Pulse: ${part.maxPulse}μs`;
             } else {
-                return `GPIO Pin: ${part.pin}, Type: ${part.servoType}, Min Pulse: ${part.minPulse}μs, Max Pulse: ${part.maxPulse}μs`;
+                return `Servo: ${servoName}, GPIO Pin: ${part.pin}, Min Pulse: ${part.minPulse}μs, Max Pulse: ${part.maxPulse}μs`;
             }
         case 'sensor':
             return `Type: ${part.sensorType}, GPIO Pin: ${part.gpioPin}, Active: ${part.active ? 'Yes' : 'No'}`;
@@ -47,10 +62,10 @@ router.get('/', async (req, res) => {
     try {
         const parts = await partService.getPartsByCharacter(req.characterId);
         const character = await characterService.getCharacterById(req.characterId);
-        const partsWithDetails = parts.map(part => ({
+        const partsWithDetails = await Promise.all(parts.map(async part => ({
             ...part,
-            details: getPartDetails(part)
-        }));
+            details: await getPartDetails(part)
+        })));
         res.render('parts', { title: 'Parts', parts: partsWithDetails, character });
     } catch (error) {
         logger.error('Error fetching parts:', error);
@@ -294,10 +309,10 @@ router.post('/execute-python-script', executePythonScript);
 router.get('/api/parts', async (req, res) => {
     try {
         const parts = await partService.getPartsByCharacter(req.characterId);
-        const partsWithDetails = parts.map(part => ({
+        const partsWithDetails = await Promise.all(parts.map(async part => ({
             ...part,
-            details: getPartDetails(part)
-        }));
+            details: await getPartDetails(part)
+        })));
         res.json(partsWithDetails);
     } catch (error) {
         logger.error('Error fetching parts for API:', error);
