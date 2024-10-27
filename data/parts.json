@@ -55,7 +55,11 @@
     "controlType": [
       "PWM"
     ],
-    "customSettings": null
+    "customSettings": null,
+    "pca9685Settings": {
+      "frequency": 50,
+      "address": "0x40"
+    }
   },
   {
     "id": 6,
@@ -77,7 +81,11 @@
     "controlType": [
       "PWM"
     ],
-    "customSettings": null
+    "customSettings": null,
+    "pca9685Settings": {
+      "frequency": 50,
+      "address": "0x40"
+    }
   },
   {
     "id": 7,
@@ -120,7 +128,7 @@
     "characterId": 1,
     "pin": 3,
     "usePCA9685": true,
-    "channel": null,
+    "channel": 0,
     "servoType": "GoBilda Stingray 2 Servo",
     "minPulse": 500,
     "maxPulse": 2500,
@@ -136,6 +144,10 @@
       "PWM",
       "Digital"
     ],
-    "customSettings": null
+    "customSettings": null,
+    "pca9685Settings": {
+      "frequency": 50,
+      "address": "0x40"
+    }
   }
 ]
