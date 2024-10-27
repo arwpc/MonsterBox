@@ -1,10 +1,20 @@
-import RPi.GPIO as GPIO
-import smbus
 import sys
 import time
 import json
 
-# PCA9685 registers
+# Try to import RPi.GPIO and smbus, but continue if not available
+try:
+    import RPi.GPIO as GPIO
+    import smbus
+    HARDWARE_AVAILABLE = True
+except ImportError:
+    HARDWARE_AVAILABLE = False
+    print(json.dumps({
+        "status": "info",
+        "message": "Running in development mode - hardware control disabled"
+    }))
+
+# PCA9685 registers (kept for reference even in dev mode)
 PCA9685_MODE1 = 0x00
 PCA9685_PRESCALE = 0xFE
 LED0_ON_L = 0x06
@@ -13,21 +23,25 @@ LED0_OFF_L = 0x08
 LED0_OFF_H = 0x09
 
 def setup_gpio(pin):
-    GPIO.setmode(GPIO.BCM)
-    GPIO.setup(pin, GPIO.OUT)
-    return GPIO.PWM(pin, 50)  # 50 Hz PWM frequency
+    if HARDWARE_AVAILABLE:
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(pin, GPIO.OUT)
+        return GPIO.PWM(pin, 50)  # 50 Hz PWM frequency
+    return None
 
 class PCA9685:
     def __init__(self, address=0x40, bus_number=1, frequency=50):
-        self.bus = smbus.SMBus(bus_number)
-        # Convert hex string to int if needed
-        self.address = int(address, 16) if isinstance(address, str) else address
-        self.set_all_pwm(0, 0)
-        self.bus.write_byte_data(self.address, PCA9685_MODE1, 0x00)
-        self.set_pwm_freq(frequency)
+        if HARDWARE_AVAILABLE:
+            self.bus = smbus.SMBus(bus_number)
+            self.address = int(address, 16) if isinstance(address, str) else address
+            self.set_all_pwm(0, 0)
+            self.bus.write_byte_data(self.address, PCA9685_MODE1, 0x00)
+            self.set_pwm_freq(frequency)
         self.current_angle = 90  # Initialize at center position
 
     def set_pwm_freq(self, freq_hz):
+        if not HARDWARE_AVAILABLE:
+            return
         prescaleval = 25000000.0  # 25MHz
         prescaleval /= 4096.0     # 12-bit
         prescaleval /= float(freq_hz)
@@ -42,12 +56,16 @@ class PCA9685:
         self.bus.write_byte_data(self.address, PCA9685_MODE1, oldmode | 0xa1)
 
     def set_pwm(self, channel, on, off):
+        if not HARDWARE_AVAILABLE:
+            return
         self.bus.write_byte_data(self.address, LED0_ON_L + 4 * channel, on & 0xFF)
         self.bus.write_byte_data(self.address, LED0_ON_H + 4 * channel, on >> 8)
         self.bus.write_byte_data(self.address, LED0_OFF_L + 4 * channel, off & 0xFF)
         self.bus.write_byte_data(self.address, LED0_OFF_H + 4 * channel, off >> 8)
 
     def set_all_pwm(self, on, off):
+        if not HARDWARE_AVAILABLE:
+            return
         self.bus.write_byte_data(self.address, LED0_ON_L, on & 0xFF)
         self.bus.write_byte_data(self.address, LED0_ON_H, on >> 8)
         self.bus.write_byte_data(self.address, LED0_OFF_L, off & 0xFF)
@@ -61,7 +79,10 @@ def get_part_config(part_id):
                 if str(part['id']) == str(part_id):
                     return part
     except Exception as e:
-        print(f"Error reading parts configuration: {str(e)}")
+        print(json.dumps({
+            "status": "error",
+            "message": f"Error reading parts configuration: {str(e)}"
+        }))
         return None
 
 def angle_to_duty_cycle(angle):
@@ -80,104 +101,127 @@ def move_servo_gradually(control_type, pin_or_channel, target_angle, duration, s
     step_time = 0.02  # Step time for smooth movement
     steps = int(duration / step_time)
     step_angle = (target_angle - start_angle) / steps
-    gpio_used = False
 
     try:
-        print("Initializing servo movement...")
+        print(json.dumps({
+            "status": "info",
+            "message": "Starting servo movement"
+        }))
+        sys.stdout.flush()
         
-        if control_type == 'pca9685':
-            # Get PCA9685 settings from part configuration
-            part_config = get_part_config(part_id) if part_id else None
-            pca9685_settings = part_config.get('pca9685Settings', {}) if part_config else {}
-            
-            # Use settings from config or defaults
-            frequency = pca9685_settings.get('frequency', 50)
-            address = pca9685_settings.get('address', '0x40')
-            
-            pca = PCA9685(address=address, frequency=frequency)
-            print("Movement started")  # Signal that movement has begun
-            
-            for step in range(steps + 1):
-                current_angle = start_angle + step_angle * step
-                pulse = int(angle_to_duty_cycle(current_angle) / 100 * 4096)
-                pca.set_pwm(int(pin_or_channel), 0, pulse)
-                time.sleep(step_time)
+        print(json.dumps({
+            "status": "info",
+            "message": "Movement started"
+        }))
+        sys.stdout.flush()
+
+        if HARDWARE_AVAILABLE:
+            if control_type == 'pca9685':
+                part_config = get_part_config(part_id) if part_id else None
+                pca9685_settings = part_config.get('pca9685Settings', {}) if part_config else {}
+                frequency = pca9685_settings.get('frequency', 50)
+                address = pca9685_settings.get('address', '0x40')
+                pca = PCA9685(address=address, frequency=frequency)
                 
-        else:  # GPIO control
-            gpio_used = True
-            pwm = setup_gpio(int(pin_or_channel))
-            pwm.start(angle_to_duty_cycle(start_angle))
-            print("Movement started")  # Signal that movement has begun
-            
+                for step in range(steps + 1):
+                    current_angle = start_angle + step_angle * step
+                    pulse = int(angle_to_duty_cycle(current_angle) / 100 * 4096)
+                    pca.set_pwm(int(pin_or_channel), 0, pulse)
+                    time.sleep(step_time)
+            else:  # GPIO control
+                pwm = setup_gpio(int(pin_or_channel))
+                pwm.start(angle_to_duty_cycle(start_angle))
+                
+                for step in range(steps + 1):
+                    current_angle = start_angle + step_angle * step
+                    pwm.ChangeDutyCycle(angle_to_duty_cycle(current_angle))
+                    time.sleep(step_time)
+                pwm.stop()
+                GPIO.cleanup(int(pin_or_channel))
+        else:
+            # Simulate servo movement in development mode
             for step in range(steps + 1):
                 current_angle = start_angle + step_angle * step
-                pwm.ChangeDutyCycle(angle_to_duty_cycle(current_angle))
                 time.sleep(step_time)
-            pwm.stop()
-            # Only cleanup the specific pin that was used
-            GPIO.cleanup(int(pin_or_channel))
         
         # Update the current angle after successful movement
         current_angles[pin_key] = target_angle
-        print("Movement completed")
+        
+        print(json.dumps({
+            "status": "info",
+            "message": "Movement completed"
+        }))
+        sys.stdout.flush()
+        
+        print(json.dumps({
+            "status": "success",
+            "message": "Servo movement completed successfully"
+        }))
+        sys.stdout.flush()
         
     except Exception as e:
-        if gpio_used:
-            # Only cleanup the specific pin if it was used and an error occurred
+        if HARDWARE_AVAILABLE and control_type != 'pca9685':
             GPIO.cleanup(int(pin_or_channel))
-        print(f"Error during servo movement: {str(e)}")
+        print(json.dumps({
+            "status": "error",
+            "message": f"Error during servo movement: {str(e)}"
+        }))
         raise e
 
 def stop_servo(control_type, pin_or_channel, part_id=None):
     global current_angles
     pin_key = f"{control_type}_{pin_or_channel}"
     
-    gpio_used = False
     try:
-        print("Initializing servo stop...")
+        print(json.dumps({
+            "status": "info",
+            "message": "Initializing servo stop"
+        }))
         
-        if control_type == 'pca9685':
-            # Get PCA9685 settings from part configuration
-            part_config = get_part_config(part_id) if part_id else None
-            pca9685_settings = part_config.get('pca9685Settings', {}) if part_config else {}
-            
-            # Use settings from config or defaults
-            frequency = pca9685_settings.get('frequency', 50)
-            address = pca9685_settings.get('address', '0x40')
-            
-            pca = PCA9685(address=address, frequency=frequency)
-            print("Movement started")  # Signal that movement has begun
-            # Move to center position (90 degrees)
-            pulse = int(angle_to_duty_cycle(90) / 100 * 4096)
-            pca.set_pwm(int(pin_or_channel), 0, pulse)
-            print("Movement completed")
-            
-        else:  # GPIO control
-            gpio_used = True
-            GPIO.setmode(GPIO.BCM)
-            GPIO.setup(int(pin_or_channel), GPIO.OUT)
-            pwm = GPIO.PWM(int(pin_or_channel), 50)
-            print("Movement started")  # Signal that movement has begun
-            pwm.start(angle_to_duty_cycle(90))  # Move to center position
-            time.sleep(0.5)  # Give time to reach position
-            pwm.stop()
-            # Only cleanup the specific pin that was used
-            GPIO.cleanup(int(pin_or_channel))
-            print("Movement completed")
+        if HARDWARE_AVAILABLE:
+            if control_type == 'pca9685':
+                part_config = get_part_config(part_id) if part_id else None
+                pca9685_settings = part_config.get('pca9685Settings', {}) if part_config else {}
+                frequency = pca9685_settings.get('frequency', 50)
+                address = pca9685_settings.get('address', '0x40')
+                pca = PCA9685(address=address, frequency=frequency)
+                pulse = int(angle_to_duty_cycle(90) / 100 * 4096)
+                pca.set_pwm(int(pin_or_channel), 0, pulse)
+            else:
+                GPIO.setmode(GPIO.BCM)
+                GPIO.setup(int(pin_or_channel), GPIO.OUT)
+                pwm = GPIO.PWM(int(pin_or_channel), 50)
+                pwm.start(angle_to_duty_cycle(90))
+                time.sleep(0.5)
+                pwm.stop()
+                GPIO.cleanup(int(pin_or_channel))
+        else:
+            # Simulate servo stop in development mode
+            time.sleep(0.5)
         
         # Update current angle to center position
         current_angles[pin_key] = 90
         
+        print(json.dumps({
+            "status": "success",
+            "message": "Servo stopped successfully"
+        }))
+        
     except Exception as e:
-        if gpio_used:
-            # Only cleanup the specific pin if it was used and an error occurred
+        if HARDWARE_AVAILABLE and control_type != 'pca9685':
             GPIO.cleanup(int(pin_or_channel))
-        print(f"Error during servo stop: {str(e)}")
+        print(json.dumps({
+            "status": "error",
+            "message": f"Error during servo stop: {str(e)}"
+        }))
         raise e
 
 if __name__ == "__main__":
     if len(sys.argv) < 6:
-        print("Usage: python servo_control.py <command> <control_type> <pin_or_channel> <angle> <duration> [servo_type] [part_id]")
+        print(json.dumps({
+            "status": "error",
+            "message": "Usage: python servo_control.py <command> <control_type> <pin_or_channel> <angle> <duration> [servo_type] [part_id]"
+        }))
         sys.exit(1)
 
     command = sys.argv[1]
@@ -187,33 +231,21 @@ if __name__ == "__main__":
     try:
         if command == "test":
             if len(sys.argv) < 7:
-                print("Usage for test: python servo_control.py test <control_type> <pin_or_channel> <angle> <duration> <servo_type> [part_id]")
+                print(json.dumps({
+                    "status": "error",
+                    "message": "Usage for test: python servo_control.py test <control_type> <pin_or_channel> <angle> <duration> <servo_type> [part_id]"
+                }))
                 sys.exit(1)
             angle = float(sys.argv[4])
             duration = float(sys.argv[5])
             servo_type = sys.argv[6]
             part_id = sys.argv[7] if len(sys.argv) > 7 else None
             
-            print(json.dumps({
-                "status": "initializing",
-                "message": "Starting servo movement"
-            }))
-            sys.stdout.flush()
-            
             move_servo_gradually(control_type, pin_or_channel, angle, duration, servo_type, part_id)
-            
-            print(json.dumps({
-                "status": "success",
-                "message": "Servo movement completed successfully"
-            }))
             
         elif command == "stop":
             part_id = sys.argv[7] if len(sys.argv) > 7 else None
             stop_servo(control_type, pin_or_channel, part_id)
-            print(json.dumps({
-                "status": "success",
-                "message": "Servo stopped successfully"
-            }))
         else:
             print(json.dumps({
                 "status": "error",
