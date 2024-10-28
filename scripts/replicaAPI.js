@@ -106,6 +106,24 @@ class ReplicaAPI {
         }
     }
 
+    async downloadAudio(url) {
+        try {
+            const response = await this.retryWithBackoff(async () => {
+                return await axios.get(url, {
+                    responseType: 'arraybuffer',
+                    headers: {
+                        'X-Api-Key': this.apiKey
+                    }
+                });
+            });
+
+            return Buffer.from(response.data);
+        } catch (error) {
+            logger.error(`Error downloading audio: ${error.message}`);
+            throw new Error(`Failed to download audio: ${error.message}`);
+        }
+    }
+
     async textToSpeech(params) {
         try {
             if (!params.text?.trim()) {
@@ -175,7 +193,11 @@ class ReplicaAPI {
                 throw new Error(`Speech generation failed: ${jobStatus.data.state}`);
             }
 
+            // Download the audio file
+            const audioBuffer = await this.downloadAudio(jobStatus.data.url);
+
             return {
+                audioBuffer,
                 url: jobStatus.data.url,
                 uuid: jobStatus.data.uuid,
                 state: jobStatus.data.state,
