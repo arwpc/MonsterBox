@@ -42,15 +42,21 @@ class CameraController:
         self.last_frame_time = 0
         self.frame_count = 0
 
+        # Force V4L2 backend
+        os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0"
+        os.environ["OPENCV_VIDEOIO_PRIORITY_GSTREAMER"] = "0"
+
     def initialize(self) -> bool:
         """Initialize camera with specified settings."""
         try:
             # Release any existing camera instance
             self.release()
             
+            # Wait for camera to be available
+            time.sleep(0.5)
+            
             # Try V4L2 backend with specific settings
-            os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0"  # Disable MSMF
-            self.cap = cv2.VideoCapture(self.camera_id)
+            self.cap = cv2.VideoCapture(self.camera_id, cv2.CAP_V4L2)
             
             if not self.cap.isOpened():
                 return False
@@ -59,6 +65,9 @@ class CameraController:
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
             self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+
+            # Wait for camera to initialize
+            time.sleep(0.1)
 
             # Verify camera is working
             ret, frame = self.cap.read()
@@ -79,6 +88,8 @@ class CameraController:
             if self.cap:
                 self.cap.release()
                 self.cap = None
+                # Wait for camera to be fully released
+                time.sleep(0.1)
         except Exception:
             pass
 
@@ -88,6 +99,9 @@ class CameraController:
             return {"success": False, "error": "Failed to initialize camera"}
 
         try:
+            # Wait for camera to stabilize
+            time.sleep(0.1)
+            
             ret, frame = self.cap.read()
             if not ret or frame is None or frame.size == 0:
                 return {"success": False, "error": "Failed to capture frame"}
