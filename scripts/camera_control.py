@@ -26,80 +26,6 @@ except ImportError as e:
     logger.error(f"Failed to import required libraries: {e}")
     sys.exit(1)
 
-class CameraLock:
-    """Handle camera device locking to prevent concurrent access."""
-    
-    def __init__(self, device_id=0):
-        self.device_path = f"/dev/video{device_id}"
-        self.lock_path = f"/tmp/camera_{device_id}.lock"
-        self.lock_file = None
-        self.max_attempts = 5
-        self.retry_delay = 0.2
-
-    def acquire(self) -> bool:
-        """Acquire lock on camera device with retries."""
-        for attempt in range(self.max_attempts):
-            try:
-                # First check if the lock file exists and is stale
-                if os.path.exists(self.lock_path):
-                    try:
-                        with open(self.lock_path, 'r') as f:
-                            pid = int(f.read().strip())
-                            # Check if process is still running
-                            os.kill(pid, 0)
-                    except (OSError, ValueError):
-                        # Process is not running or invalid PID, remove stale lock
-                        try:
-                            os.remove(self.lock_path)
-                        except OSError:
-                            pass
-
-                self.lock_file = open(self.lock_path, 'w')
-                # Try non-blocking lock first
-                try:
-                    fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-                    # Write current PID to lock file
-                    self.lock_file.write(str(os.getpid()))
-                    self.lock_file.flush()
-                    return True
-                except (IOError, OSError):
-                    # If device is busy, wait and retry
-                    if attempt < self.max_attempts - 1:
-                        self.lock_file.close()
-                        self.lock_file = None
-                        time.sleep(self.retry_delay)
-                        continue
-                    else:
-                        if self.lock_file:
-                            self.lock_file.close()
-                            self.lock_file = None
-                        return False
-
-            except (IOError, OSError):
-                if self.lock_file:
-                    self.lock_file.close()
-                    self.lock_file = None
-                if attempt < self.max_attempts - 1:
-                    time.sleep(self.retry_delay)
-                    continue
-                return False
-
-        return False
-
-    def release(self):
-        """Release lock on camera device."""
-        try:
-            if self.lock_file:
-                fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_UN)
-                self.lock_file.close()
-                self.lock_file = None
-                try:
-                    os.remove(self.lock_path)
-                except OSError:
-                    pass
-        except Exception:
-            pass
-
 class CameraController:
     """Handles camera operations and head tracking control."""
     
@@ -115,61 +41,37 @@ class CameraController:
         self.head_tracking_process = None
         self.last_frame_time = 0
         self.frame_count = 0
-        self.camera_lock = CameraLock(self.camera_id)
-        self.max_retries = 3
-        self.retry_delay = 0.5
 
     def initialize(self) -> bool:
-        """Initialize camera with specified settings and retries."""
-        for attempt in range(self.max_retries):
-            if not self.camera_lock.acquire():
-                if attempt < self.max_retries - 1:
-                    time.sleep(self.retry_delay)
-                    continue
-                logger.error("Failed to acquire camera lock")
+        """Initialize camera with specified settings."""
+        try:
+            # Release any existing camera instance
+            self.release()
+            
+            # Try V4L2 backend with specific settings
+            os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0"  # Disable MSMF
+            self.cap = cv2.VideoCapture(self.camera_id)
+            
+            if not self.cap.isOpened():
                 return False
 
-            try:
-                # Release any existing camera instance
+            # Configure camera properties
+            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
+            self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+
+            # Verify camera is working
+            ret, frame = self.cap.read()
+            if not ret or frame is None or frame.size == 0:
                 self.release()
-                
-                # Try V4L2 backend
-                self.cap = cv2.VideoCapture(self.camera_id, cv2.CAP_V4L2)
-                
-                if not self.cap.isOpened():
-                    if attempt < self.max_retries - 1:
-                        self.release()
-                        time.sleep(self.retry_delay)
-                        continue
-                    return False
-
-                # Configure camera properties
-                self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
-                self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
-                self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
-                self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-                self.cap.set(cv2.CAP_PROP_FPS, 30)
-
-                # Verify camera is working
-                ret, frame = self.cap.read()
-                if not ret or frame is None or frame.size == 0:
-                    if attempt < self.max_retries - 1:
-                        self.release()
-                        time.sleep(self.retry_delay)
-                        continue
-                    return False
-
-                return True
-
-            except Exception as e:
-                logger.warning(f"Camera initialization error: {e}")
-                self.release()
-                if attempt < self.max_retries - 1:
-                    time.sleep(self.retry_delay)
-                    continue
                 return False
 
-        return False
+            return True
+
+        except Exception as e:
+            logger.warning(f"Camera initialization error: {e}")
+            self.release()
+            return False
 
     def release(self):
         """Release camera resources."""
@@ -177,41 +79,8 @@ class CameraController:
             if self.cap:
                 self.cap.release()
                 self.cap = None
-            self.camera_lock.release()
         except Exception:
             pass
-
-    def capture_frame(self) -> Dict[str, Any]:
-        """Capture a single frame and return its properties."""
-        if not self.initialize():
-            return {"success": False, "error": "Failed to initialize camera"}
-
-        try:
-            ret, frame = self.cap.read()
-            if not ret or frame is None or frame.size == 0:
-                return {"success": False, "error": "Failed to capture frame"}
-
-            # Get frame properties
-            actual_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-            actual_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-            actual_fps = int(self.cap.get(cv2.CAP_PROP_FPS))
-
-            # Test frame encoding
-            ret, _ = cv2.imencode('.jpg', frame)
-            if not ret:
-                return {"success": False, "error": "Failed to encode frame"}
-
-            return {
-                "success": True,
-                "width": actual_width,
-                "height": actual_height,
-                "fps": actual_fps
-            }
-
-        except Exception as e:
-            return {"success": False, "error": str(e)}
-        finally:
-            self.release()
 
     def detect_motion(self) -> Dict[str, Any]:
         """Detect motion in current frame."""
