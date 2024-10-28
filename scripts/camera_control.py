@@ -7,6 +7,7 @@ import logging
 import subprocess
 import time
 import os
+import fcntl
 import base64
 from typing import Dict, Any, Optional
 
@@ -25,8 +26,59 @@ except ImportError as e:
     logger.error(f"Failed to import required libraries: {e}")
     sys.exit(1)
 
-class CameraController:
-    """Handles camera operations and head tracking control."""
+class CameraLock:
+    """Handle camera device locking to prevent concurrent access."""
+    
+    def __init__(self, device_id=0):
+        self.device_path = f"/dev/video{device_id}"
+        self.lock_path = f"/tmp/camera_{device_id}.lock"
+        self.lock_file = None
+
+    def acquire(self) -> bool:
+        """Acquire lock on camera device."""
+        try:
+            # First check if the lock file exists and is stale
+            if os.path.exists(self.lock_path):
+                try:
+                    with open(self.lock_path, 'r') as f:
+                        pid = int(f.read().strip())
+                        # Check if process is still running
+                        os.kill(pid, 0)
+                except (OSError, ValueError):
+                    # Process is not running or invalid PID, remove stale lock
+                    try:
+                        os.remove(self.lock_path)
+                    except OSError:
+                        pass
+
+            self.lock_file = open(self.lock_path, 'w')
+            fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            # Write current PID to lock file
+            self.lock_file.write(str(os.getpid()))
+            self.lock_file.flush()
+            return True
+        except (IOError, OSError):
+            if self.lock_file:
+                self.lock_file.close()
+                self.lock_file = None
+            return False
+
+    def release(self):
+        """Release lock on camera device."""
+        try:
+            if self.lock_file:
+                fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_UN)
+                self.lock_file.close()
+                self.lock_file = None
+                try:
+                    os.remove(self.lock_path)
+                except OSError:
+                    pass
+        except Exception:
+            pass
+
+class MotionDetector:
+    """Handles motion detection and visualization."""
     
     def __init__(self, camera_id: int = 0, width: int = 640, height: int = 480):
         self.camera_id = camera_id
@@ -37,7 +89,7 @@ class CameraController:
             history=100,
             varThreshold=10
         )
-        self.head_tracking_process = None
+        self.camera_lock = CameraLock(self.camera_id)
 
         # Force V4L2 backend
         os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0"
@@ -45,6 +97,10 @@ class CameraController:
 
     def initialize(self) -> bool:
         """Initialize camera with specified settings."""
+        if not self.camera_lock.acquire():
+            logger.warning("Camera is currently in use by another process")
+            return False
+
         try:
             # Release any existing camera instance
             self.release()
@@ -56,9 +112,11 @@ class CameraController:
                 return False
 
             # Configure camera properties
+            self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
             self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+            self.cap.set(cv2.CAP_PROP_FPS, 30)
 
             # Verify camera is working
             ret, frame = self.cap.read()
@@ -79,11 +137,12 @@ class CameraController:
             if self.cap:
                 self.cap.release()
                 self.cap = None
+            self.camera_lock.release()
         except Exception:
             pass
 
     def detect_motion(self) -> Dict[str, Any]:
-        """Detect motion in current frame and return processed frame."""
+        """Detect motion in current frame."""
         if not self.initialize():
             return {"success": False, "error": "Failed to initialize camera"}
 
@@ -136,7 +195,7 @@ class CameraController:
                 norm_x = (center_x / frame.shape[1]) * 100
                 norm_y = (center_y / frame.shape[0]) * 100
 
-                # Add timestamp and FPS
+                # Add timestamp
                 timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
                 cv2.putText(frame, timestamp, (10, frame.shape[0] - 10),
                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
@@ -157,6 +216,9 @@ class CameraController:
                 }
 
             # If no motion, just return the frame
+            timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+            cv2.putText(frame, timestamp, (10, frame.shape[0] - 10),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
             _, buffer = cv2.imencode('.jpg', frame)
             frame_data = base64.b64encode(buffer).decode('utf-8')
 
@@ -171,62 +233,10 @@ class CameraController:
         finally:
             self.release()
 
-    def update_settings(self, width: int, height: int) -> Dict[str, Any]:
-        """Update camera resolution settings."""
-        self.width = width
-        self.height = height
-        if self.initialize():
-            return {
-                "success": True,
-                "width": self.width,
-                "height": self.height
-            }
-        return {"success": False, "error": "Failed to update camera settings"}
-
-    def start_head_tracking(self, servo_id: int) -> Dict[str, Any]:
-        """Start head tracking with specified servo."""
-        try:
-            # Kill any existing head tracking process
-            self.stop_head_tracking()
-
-            script_path = os.path.join(os.path.dirname(__file__), 'head_track.py')
-            self.head_tracking_process = subprocess.Popen(
-                ['python3', script_path, 'start', str(servo_id)],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-            )
-            
-            time.sleep(1)  # Brief wait to check process started
-            if self.head_tracking_process.poll() is not None:
-                stdout, stderr = self.head_tracking_process.communicate()
-                error_msg = stderr.decode() if stderr else stdout.decode()
-                return {"success": False, "error": error_msg}
-                
-            return {"success": True, "message": "Head tracking started"}
-        except Exception as e:
-            return {"success": False, "error": str(e)}
-
-    def stop_head_tracking(self) -> Dict[str, Any]:
-        """Stop head tracking."""
-        try:
-            if self.head_tracking_process:
-                self.head_tracking_process.terminate()
-                try:
-                    self.head_tracking_process.wait(timeout=5)
-                except subprocess.TimeoutExpired:
-                    self.head_tracking_process.kill()
-                    self.head_tracking_process.wait()
-                
-                self.head_tracking_process = None
-                
-            return {"success": True, "message": "Head tracking stopped"}
-        except Exception as e:
-            return {"success": False, "error": str(e)}
-
 def main():
     """Main entry point for camera control script."""
-    parser = argparse.ArgumentParser(description='Camera Control Script')
-    parser.add_argument('command', choices=['capture', 'motion', 'settings', 'head_track'],
+    parser = argparse.ArgumentParser(description='Camera Motion Detection')
+    parser.add_argument('command', choices=['motion'],
                        help='Command to execute')
     parser.add_argument('--width', type=int, default=640,
                        help='Frame width (default: 640)')
@@ -234,42 +244,16 @@ def main():
                        help='Frame height (default: 480)')
     parser.add_argument('--camera-id', type=int, required=True,
                        help='Camera device ID')
-    parser.add_argument('--servo-id', type=int,
-                       help='Servo ID for head tracking')
-    parser.add_argument('--action', choices=['start', 'stop'],
-                       help='Action for head tracking')
     
     args = parser.parse_args()
     
     try:
-        controller = CameraController(args.camera_id, args.width, args.height)
-    except Exception as e:
-        print(json.dumps({"success": False, "error": str(e)}))
-        sys.exit(1)
-
-    try:
-        result = None
-        if args.command == 'capture':
-            result = controller.capture_frame()
-        elif args.command == 'motion':
-            result = controller.detect_motion()
-        elif args.command == 'settings':
-            result = controller.update_settings(args.width, args.height)
-        elif args.command == 'head_track':
-            if args.action == 'start' and args.servo_id is not None:
-                result = controller.start_head_tracking(args.servo_id)
-            elif args.action == 'stop':
-                result = controller.stop_head_tracking()
-            else:
-                result = {"success": False, "error": "Invalid head tracking parameters"}
-
+        detector = MotionDetector(args.camera_id, args.width, args.height)
+        result = detector.detect_motion()
         print(json.dumps(result))
-
     except Exception as e:
         print(json.dumps({"success": False, "error": str(e)}))
         sys.exit(1)
-    finally:
-        controller.release()
 
 if __name__ == "__main__":
     main()
