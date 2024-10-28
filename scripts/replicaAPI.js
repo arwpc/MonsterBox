@@ -26,9 +26,8 @@ class ReplicaAPI {
         this.cacheLifetime = 5 * 60 * 1000;
 
         if (!this.apiKey) {
-            logger.warn('REPLICA_API_KEY environment variable is not set. Using mock data.');
-        } else {
-            logger.info('Using Replica API key:', this.apiKey);
+            logger.error('REPLICA_API_KEY environment variable is not set');
+            throw new Error('API key is required');
         }
     }
 
@@ -69,10 +68,6 @@ class ReplicaAPI {
 
     async getVoices() {
         try {
-            if (!this.apiKey) {
-                return this.getMockVoices();
-            }
-
             await this.checkRateLimit();
 
             if (this.voicesCache && this.voicesCacheExpiry > Date.now()) {
@@ -90,14 +85,14 @@ class ReplicaAPI {
             const transformedVoices = response.data.items.map(voice => ({
                 uuid: voice.uuid,
                 name: voice.name,
-                gender: voice.gender,
-                age: voice.age,
-                accent: voice.accent,
+                gender: voice.metadata?.gender || 'unknown',
+                age: voice.metadata?.voiceAge || 'unknown',
+                accent: voice.metadata?.accent || 'unknown',
                 capabilities: {
-                    'tts.vox_1_0': voice.capabilities?.includes('tts.vox_1_0') || false,
-                    'tts.vox_2_0': voice.capabilities?.includes('tts.vox_2_0') || false,
-                    'sts.vox_1_0': voice.capabilities?.includes('sts.vox_1_0') || false,
-                    'sts.vox_2_0': voice.capabilities?.includes('sts.vox_2_0') || false
+                    'tts.vox_1_0': voice.default_style?.capabilities?.['tts.vox_1_0'] || false,
+                    'tts.vox_2_0': voice.default_style?.capabilities?.['tts.vox_2_0'] || false,
+                    'sts.vox_1_0': voice.default_style?.capabilities?.['sts.vox_1_0'] || false,
+                    'sts.vox_2_0': voice.default_style?.capabilities?.['sts.vox_2_0'] || false
                 }
             }));
 
@@ -108,16 +103,12 @@ class ReplicaAPI {
         } catch (error) {
             const errorMsg = error.response?.data?.error || error.message;
             logger.error(`Error fetching available voices: ${errorMsg}`);
-            return this.getMockVoices();
+            throw error;
         }
     }
 
     async getFXPresets() {
         try {
-            if (!this.apiKey) {
-                return this.getMockFXPresets();
-            }
-
             await this.checkRateLimit();
 
             if (this.fxPresetsCache && this.fxPresetsCacheExpiry > Date.now()) {
@@ -139,80 +130,12 @@ class ReplicaAPI {
         } catch (error) {
             const errorMsg = error.response?.data?.error || error.message;
             logger.error(`Error fetching FX presets: ${errorMsg}`);
-            return this.getMockFXPresets();
+            throw error;
         }
-    }
-
-    getMockVoices() {
-        return [
-            {
-                uuid: 'mock-voice-1',
-                name: 'Deep Monster',
-                gender: 'male',
-                age: 'middle',
-                accent: 'american',
-                capabilities: {
-                    'tts.vox_1_0': true,
-                    'tts.vox_2_0': true,
-                    'sts.vox_1_0': false,
-                    'sts.vox_2_0': false
-                }
-            },
-            {
-                uuid: 'mock-voice-2',
-                name: 'Creepy Witch',
-                gender: 'female',
-                age: 'senior',
-                accent: 'british',
-                capabilities: {
-                    'tts.vox_1_0': true,
-                    'tts.vox_2_0': true,
-                    'sts.vox_1_0': false,
-                    'sts.vox_2_0': false
-                }
-            },
-            {
-                uuid: 'mock-voice-3',
-                name: 'Ghost Child',
-                gender: 'neutral',
-                age: 'young',
-                accent: 'american',
-                capabilities: {
-                    'tts.vox_1_0': true,
-                    'tts.vox_2_0': true,
-                    'sts.vox_1_0': false,
-                    'sts.vox_2_0': false
-                }
-            }
-        ];
-    }
-
-    getMockFXPresets() {
-        return [
-            {
-                id: 'halloween',
-                name: 'Halloween',
-                description: 'Spooky Halloween voice effect'
-            },
-            {
-                id: 'ghost',
-                name: 'Ghost',
-                description: 'Haunting, ethereal presence'
-            },
-            {
-                id: 'monster',
-                name: 'Monster',
-                description: 'Deep, growling monster voice'
-            }
-        ];
     }
 
     async textToSpeech(params) {
         try {
-            if (!this.apiKey) {
-                return this.getMockSpeechResponse();
-            }
-
             if (!params.text?.trim()) {
                 throw new Error('Text parameter is required and must not be empty');
             }
@@ -223,59 +146,67 @@ class ReplicaAPI {
 
             await this.checkRateLimit();
 
-            const voices = await this.getVoices();
-            const voice = voices.find(v => v.uuid === params.voiceId);
-            
-            if (!voice) {
-                throw new Error(`Voice not found with ID: ${params.voiceId}`);
-            }
-
             const requestBody = {
+                speaker_id: params.voiceId,
                 text: params.text.trim(),
-                voice_id: params.voiceId,
-                model_id: 'eleven_monolingual_v1',
-                voice_settings: {
-                    stability: 0.5,
-                    similarity_boost: 0.75,
-                    style: params.style || 0,
-                    use_speaker_boost: true
-                }
+                extensions: ['mp3'],
+                sample_rate: params.options?.sampleRate || 44100,
+                bit_rate: params.options?.bitRate || 128,
+                global_pace: params.options?.speed || 1,
+                model_chain: params.options?.modelChain || 'vox_2_0',
+                language_code: params.options?.languageCode || 'en',
+                global_pitch: params.options?.pitch || 0,
+                auto_pitch: true,
+                global_volume: params.options?.volume || 0,
+                user_metadata: params.options?.metadata || {}
             };
 
             const response = await this.retryWithBackoff(async () => {
-                return await this.axiosInstance.post('/text-to-speech', requestBody);
+                return await this.axiosInstance.post('/speech/tts', requestBody);
             });
 
+            if (!response.data?.uuid) {
+                throw new Error('Invalid API response format');
+            }
+
+            // Poll for completion
+            const jobId = response.data.uuid;
+            let jobStatus;
+            let attempts = 0;
+            const maxAttempts = 30; // 30 seconds timeout
+            
+            do {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                jobStatus = await this.retryWithBackoff(async () => {
+                    return await this.axiosInstance.get(`/speech/${jobId}`);
+                });
+                attempts++;
+                
+                if (attempts >= maxAttempts) {
+                    throw new Error('Speech generation timed out');
+                }
+            } while (jobStatus.data.state === 'PENDING');
+
+            if (jobStatus.data.state !== 'SUCCESS') {
+                throw new Error(`Speech generation failed: ${jobStatus.data.state}`);
+            }
+
             return {
-                url: response.data.audio_url,
-                uuid: response.data.request_id,
-                state: 'completed',
-                duration: response.data.duration,
+                url: jobStatus.data.url,
+                uuid: jobStatus.data.uuid,
+                state: jobStatus.data.state,
+                duration: jobStatus.data.duration,
                 metadata: {
                     requestTime: new Date().toISOString(),
                     textLength: params.text.length,
-                    settings: requestBody.voice_settings
+                    settings: requestBody
                 }
             };
         } catch (error) {
             const errorMsg = error.response?.data?.error || error.message;
             logger.error(`Error generating speech: ${errorMsg}`);
-            return this.getMockSpeechResponse();
+            throw error;
         }
-    }
-
-    getMockSpeechResponse() {
-        return {
-            url: '/sounds/test-sound.mp3',
-            uuid: 'mock-speech-' + Date.now(),
-            state: 'completed',
-            duration: 2.5,
-            metadata: {
-                requestTime: new Date().toISOString(),
-                textLength: 0,
-                settings: {}
-            }
-        };
     }
 
     clearCache() {
