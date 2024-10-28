@@ -4,7 +4,7 @@ const logger = require('../scripts/logger');
 const handleError = (res, error, statusCode = 500) => {
     logger.error(`Voice controller error: ${error.message}`);
     res.status(statusCode).json({
-        error: error.message,
+        error: error.message || 'An unexpected error occurred',
         timestamp: new Date().toISOString()
     });
 };
@@ -12,6 +12,9 @@ const handleError = (res, error, statusCode = 500) => {
 exports.getAvailableVoices = async (req, res) => {
     try {
         const voices = await voiceService.getAvailableVoices();
+        if (!voices || voices.length === 0) {
+            return handleError(res, new Error('No voices available'), 404);
+        }
         res.json(voices);
     } catch (error) {
         handleError(res, error);
@@ -40,15 +43,15 @@ exports.getVoiceSettings = async (req, res) => {
 
 exports.saveVoiceSettings = async (req, res) => {
     try {
-        const { characterId, speaker_id, settings } = req.body;
+        const { characterId, voiceId, settings } = req.body;
 
-        if (!characterId || !speaker_id) {
-            return handleError(res, new Error('Character ID and speaker ID are required'), 400);
+        if (!characterId || !voiceId) {
+            return handleError(res, new Error('Character ID and voice ID are required'), 400);
         }
 
         const savedVoice = await voiceService.saveVoice({
             characterId,
-            speaker_id,
+            speaker_id: voiceId,
             settings: settings || {}
         });
 
@@ -69,18 +72,17 @@ exports.generateSpeech = async (req, res) => {
         // Transform style and options into generation options
         const generationOptions = {
             ...options,
-            modelChain: 'vox_2_0', // Changed to vox_2_0
+            modelChain: 'vox_2_0',
             speed: options?.speed || 1.0,
             pitch: options?.pitch || 0,
             volume: options?.volume || 0,
             style,
-            characterId // Pass characterId for history tracking
+            characterId
         };
 
         const result = await voiceService.generateSpeech(speaker_id, text, generationOptions);
         res.json(result);
     } catch (error) {
-        // Check for specific error types
         if (error.message.includes('Rate limit')) {
             return handleError(res, error, 429);
         }
@@ -94,6 +96,9 @@ exports.generateSpeech = async (req, res) => {
 exports.getFXPresets = async (req, res) => {
     try {
         const presets = await voiceService.getFXPresets();
+        if (!presets || presets.length === 0) {
+            return handleError(res, new Error('No FX presets available'), 404);
+        }
         res.json(presets);
     } catch (error) {
         handleError(res, error);

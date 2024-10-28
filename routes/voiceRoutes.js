@@ -5,6 +5,18 @@ const soundService = require('../services/soundService');
 const fs = require('fs').promises;
 const path = require('path');
 
+// New route for voice configuration page
+router.get('/configure', (req, res) => {
+    const characterId = req.query.characterId;
+    if (!characterId) {
+        return res.redirect('/characters');
+    }
+    res.render('voice-config', { 
+        title: 'Configure Voice',
+        characterId: characterId
+    });
+});
+
 router.get('/available', voiceController.getAvailableVoices);
 router.get('/settings/:characterId', voiceController.getVoiceSettings);
 router.post('/settings', voiceController.saveVoiceSettings);

@@ -15,30 +15,40 @@ class VoiceSelector {
         this.currentPreviewVoice = null;
         this.characterId = null;
 
-        this.initializeWaveSurfer();
-        this.setupEventListeners();
-        this.loadVoices();
-        this.loadFXPresets();
+        // Only initialize voice-specific features if we're on the voice configuration page
+        if (document.getElementById('voiceSelector')) {
+            this.initializeWaveSurfer();
+            this.setupEventListeners();
+            this.loadVoices();
+            this.loadFXPresets();
+        }
     }
 
     showLoading(message = 'Loading...') {
         const overlay = document.querySelector('#loadingOverlay');
-        const text = overlay.querySelector('.loading-text');
-        text.textContent = message;
-        overlay.classList.add('active');
+        if (overlay) {
+            const text = overlay.querySelector('.loading-text');
+            text.textContent = message;
+            overlay.classList.add('active');
+        }
     }
 
     hideLoading() {
-        document.querySelector('#loadingOverlay').classList.remove('active');
+        const overlay = document.querySelector('#loadingOverlay');
+        if (overlay) {
+            overlay.classList.remove('active');
+        }
     }
 
     showError(message) {
         const errorElement = document.querySelector('#errorMessage');
-        errorElement.textContent = message;
-        errorElement.style.display = 'block';
-        setTimeout(() => {
-            errorElement.style.display = 'none';
-        }, 5000);
+        if (errorElement) {
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+            setTimeout(() => {
+                errorElement.style.display = 'none';
+            }, 5000);
+        }
     }
 
     initializeWaveSurfer() {
@@ -65,33 +75,22 @@ class VoiceSelector {
     }
 
     setupEventListeners() {
-        // Modal controls
-        document.querySelector('#selectVoiceBtn')?.addEventListener('click', () => this.openModal());
-        document.querySelectorAll('.close, .close-btn').forEach(el => {
-            el.addEventListener('click', () => this.closeModal());
-        });
-
-        // Filter buttons
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.addEventListener('click', (e) => this.toggleFilterDropdown(e.target.dataset.filter));
         });
 
-        // Filter checkboxes
         document.querySelectorAll('.filter-option input').forEach(checkbox => {
             checkbox.addEventListener('change', () => this.applyFilters());
         });
 
-        // Search input
         document.querySelector('#voiceSearch').addEventListener('input', (e) => {
             this.filterVoices(e.target.value);
         });
 
-        // Sort headers
         document.querySelectorAll('th').forEach(header => {
             header.addEventListener('click', (e) => this.sortVoices(e.target));
         });
 
-        // Voice settings controls
         ['speed', 'pitch', 'volume'].forEach(setting => {
             const input = document.querySelector(`#${setting}`);
             const value = input.nextElementSibling;
@@ -101,12 +100,10 @@ class VoiceSelector {
             });
         });
 
-        // FX Preset select
         document.querySelector('#fxPreset').addEventListener('change', () => {
             this.updatePreviewButtonState();
         });
 
-        // Preview button
         document.querySelector('#previewPlay').addEventListener('click', () => {
             if (this.isPlaying) {
                 this.stopPreview();
@@ -115,14 +112,12 @@ class VoiceSelector {
             }
         });
 
-        // Select voice button
         document.querySelector('#selectVoice').addEventListener('click', () => {
             if (this.selectedVoice) {
-                this.confirmVoiceSelection();
+                this.saveVoiceConfiguration();
             }
         });
 
-        // Window click for closing dropdowns
         window.addEventListener('click', (e) => {
             if (!e.target.closest('.filter-btn') && !e.target.closest('.filter-dropdown')) {
                 this.closeAllFilterDropdowns();
@@ -134,7 +129,10 @@ class VoiceSelector {
         try {
             this.showLoading('Loading voices...');
             const response = await fetch('/api/voice/available');
-            if (!response.ok) throw new Error('Failed to load voices');
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to load voices');
+            }
             
             const voices = await response.json();
             this.voices = voices.map(voice => ({
@@ -146,7 +144,7 @@ class VoiceSelector {
             await this.loadRecentlyUsed();
         } catch (error) {
             console.error('Error loading voices:', error);
-            this.showError('Failed to load voices');
+            this.showError('Failed to load voices: ' + error.message);
         } finally {
             this.hideLoading();
         }
@@ -155,13 +153,16 @@ class VoiceSelector {
     async loadFXPresets() {
         try {
             const response = await fetch('/api/voice/fx-presets');
-            if (!response.ok) throw new Error('Failed to load FX presets');
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to load FX presets');
+            }
             
             this.fxPresets = await response.json();
             this.populateFXPresets();
         } catch (error) {
             console.error('Error loading FX presets:', error);
-            this.showError('Failed to load FX presets');
+            this.showError('Failed to load FX presets: ' + error.message);
         }
     }
 
@@ -180,7 +181,7 @@ class VoiceSelector {
 
     getVoiceStyles(voice) {
         const baseStyles = ['neutral'];
-        if (voice.capabilities?.includes('expressive')) {
+        if (voice.capabilities && voice.capabilities['tts.vox_2_0']) {
             baseStyles.push('happy', 'sad', 'angry', 'fearful');
         }
         return baseStyles;
@@ -224,7 +225,6 @@ class VoiceSelector {
     }
 
     setupVoiceRowHandlers() {
-        // Style button click handlers
         document.querySelectorAll('.style-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -239,7 +239,6 @@ class VoiceSelector {
             });
         });
 
-        // Favorite button handlers
         document.querySelectorAll('.favorite-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -263,13 +262,16 @@ class VoiceSelector {
                 body: JSON.stringify({ metadata })
             });
 
-            if (!response.ok) throw new Error('Failed to update favorite status');
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to update favorite status');
+            }
 
             button.querySelector('i').classList.toggle('far');
             button.querySelector('i').classList.toggle('fas');
         } catch (error) {
             console.error('Error updating favorite status:', error);
-            this.showError('Failed to update favorite status');
+            this.showError('Failed to update favorite status: ' + error.message);
         }
     }
 
@@ -356,24 +358,39 @@ class VoiceSelector {
         this.updatePreviewButtonState();
     }
 
-    confirmVoiceSelection() {
-        if (this.selectedVoice) {
-            const settings = {
-                speed: parseFloat(document.querySelector('#speed').value),
-                pitch: parseInt(document.querySelector('#pitch').value),
-                volume: parseInt(document.querySelector('#volume').value),
-                fxPreset: document.querySelector('#fxPreset').value || undefined
-            };
+    async saveVoiceConfiguration() {
+        if (this.selectedVoice && this.characterId) {
+            try {
+                const settings = {
+                    speed: parseFloat(document.querySelector('#speed').value),
+                    pitch: parseInt(document.querySelector('#pitch').value),
+                    volume: parseInt(document.querySelector('#volume').value),
+                    fxPreset: document.querySelector('#fxPreset').value || undefined
+                };
 
-            const event = new CustomEvent('voiceSelected', {
-                detail: {
-                    voice: this.selectedVoice,
-                    settings
+                const response = await fetch('/api/voice/settings', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        characterId: this.characterId,
+                        voiceId: this.selectedVoice.uuid,
+                        settings
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to save voice configuration');
                 }
-            });
-            document.dispatchEvent(event);
-            this.addToRecentlyUsed(this.selectedVoice);
-            this.closeModal();
+
+                this.addToRecentlyUsed(this.selectedVoice);
+                window.location.href = '/characters';
+            } catch (error) {
+                console.error('Error saving voice configuration:', error);
+                this.showError('Failed to save voice configuration: ' + error.message);
+            }
         }
     }
 
@@ -494,23 +511,13 @@ class VoiceSelector {
         });
     }
 
-    openModal() {
-        document.getElementById('voiceModal').style.display = 'block';
-    }
-
-    closeModal() {
-        document.getElementById('voiceModal').style.display = 'none';
-        if (this.isPlaying) {
-            this.stopPreview();
-        }
-    }
-
     setCharacterId(id) {
         this.characterId = id;
     }
 }
 
-// Initialize voice selector when document is ready
 document.addEventListener('DOMContentLoaded', () => {
-    window.voiceSelector = new VoiceSelector();
+    if (document.getElementById('voiceSelector')) {
+        window.voiceSelector = new VoiceSelector();
+    }
 });
