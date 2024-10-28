@@ -171,21 +171,6 @@
                     </select>
                     <button onclick="updateSettings()">Apply Settings</button>
                 </div>
-
-                <div class="control-group">
-                    <h3>Head Tracking</h3>
-                    <div>
-                        <label for="servoSelect">Servo:</label>
-                        <select id="servoSelect">
-                            <option value="">Select Servo...</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="trackingSensitivity">Sensitivity:</label>
-                        <input type="range" id="trackingSensitivity" min="1" max="10" value="5">
-                    </div>
-                    <button id="toggleTracking" disabled>Start Head Tracking</button>
-                </div>
             </div>
         </div>
     </div>
@@ -194,7 +179,6 @@
 
     <script>
         let motionDetectionActive = false;
-        let headTrackingActive = false;
         let motionInterval = null;
 
         const streamImg = document.getElementById('cameraStream');
@@ -257,6 +241,7 @@
 
                 cameraControls.classList.remove('controls-disabled');
                 placeholderMessage.style.display = 'none';
+                streamImg.src = '/images/no-stream.jpg';
             } catch (error) {
                 console.error('Failed to select camera:', error);
                 showError('Failed to select camera: ' + error.message);
@@ -276,14 +261,6 @@
                 await stopMotionDetection();
             } else {
                 await startMotionDetection();
-            }
-        });
-
-        document.getElementById('toggleTracking').addEventListener('click', function() {
-            if (headTrackingActive) {
-                stopHeadTracking();
-            } else {
-                startHeadTracking();
             }
         });
 
@@ -353,73 +330,6 @@
             streamImg.src = '/images/no-stream.jpg';
         }
 
-        async function startHeadTracking() {
-            const servoId = document.getElementById('servoSelect').value;
-            if (!servoId) {
-                showError('Please select a servo first');
-                return;
-            }
-
-            try {
-                const response = await fetch('/camera/control', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        command: 'head_track',
-                        params: {
-                            'servo-id': parseInt(servoId),
-                            'action': 'start'
-                        }
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to start head tracking');
-                }
-
-                const data = await response.json();
-                if (data.success) {
-                    headTrackingActive = true;
-                    document.getElementById('toggleTracking').textContent = 'Stop Head Tracking';
-                } else {
-                    throw new Error(data.error || 'Failed to start head tracking');
-                }
-            } catch (error) {
-                console.error('Head tracking error:', error);
-                showError('Head tracking error: ' + error.message);
-                stopHeadTracking();
-            }
-        }
-
-        async function stopHeadTracking() {
-            try {
-                const response = await fetch('/camera/control', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        command: 'head_track',
-                        params: {
-                            'action': 'stop'
-                        }
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to stop head tracking');
-                }
-
-                headTrackingActive = false;
-                document.getElementById('toggleTracking').textContent = 'Start Head Tracking';
-            } catch (error) {
-                console.error('Failed to stop head tracking:', error);
-                showError('Failed to stop head tracking: ' + error.message);
-            }
-        }
-
         async function updateSettings() {
             const [width, height] = document.getElementById('resolution').value.split(',');
             
@@ -452,38 +362,7 @@
             }
         }
 
-        fetch('/parts/api/parts')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Failed to fetch servos');
-                }
-                return response.json();
-            })
-            .then(parts => {
-                const servoSelect = document.getElementById('servoSelect');
-                const servos = parts.filter(part => part.type === 'servo');
-                
-                servos.forEach(servo => {
-                    const option = document.createElement('option');
-                    option.value = servo.id;
-                    option.textContent = servo.name;
-                    servoSelect.appendChild(option);
-                });
-                
-                document.getElementById('toggleTracking').disabled = servos.length === 0;
-                if (servos.length === 0) {
-                    showError('No servos available for head tracking');
-                }
-            })
-            .catch(error => {
-                console.error('Failed to load servos:', error);
-                showError('Failed to load servos: ' + error.message);
-            });
-
         window.addEventListener('beforeunload', () => {
-            if (headTrackingActive) {
-                stopHeadTracking();
-            }
             if (motionDetectionActive) {
                 stopMotionDetection();
             }

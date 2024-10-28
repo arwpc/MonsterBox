@@ -17,7 +17,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Import OpenCV after numpy is properly initialized
+# Force V4L2 backend before importing OpenCV
+os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0"
+os.environ["OPENCV_VIDEOIO_PRIORITY_GSTREAMER"] = "0"
+os.environ["OPENCV_VIDEOIO_PRIORITY_V4L2"] = "100"
+
+# Import OpenCV after setting backend priorities
 try:
     import numpy as np
     import cv2
@@ -89,8 +94,6 @@ class MotionDetector:
             varThreshold=10
         )
         self.camera_lock = CameraLock(self.camera_id)
-        self.retries = 3
-        self.retry_delay = 2
 
     def initialize(self) -> bool:
         """Initialize camera with specified settings."""
@@ -98,42 +101,33 @@ class MotionDetector:
             logger.warning("Camera is currently in use by another process")
             return False
 
-        for attempt in range(self.retries):
-            try:
-                # Release any existing camera instance
+        try:
+            # Release any existing camera instance
+            self.release()
+            
+            # Try V4L2 backend with specific settings
+            self.cap = cv2.VideoCapture(self.camera_id, cv2.CAP_V4L2)
+            
+            if not self.cap.isOpened():
+                return False
+
+            # Configure camera properties
+            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
+            self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+
+            # Verify camera is working
+            ret, frame = self.cap.read()
+            if not ret or frame is None or frame.size == 0:
                 self.release()
-                
-                # Try to open the camera
-                self.cap = cv2.VideoCapture(self.camera_id)
-                
-                if not self.cap.isOpened():
-                    if attempt < self.retries - 1:
-                        time.sleep(self.retry_delay)
-                        continue
-                    return False
+                return False
 
-                # Configure camera properties
-                self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
-                self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
-                self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+            return True
 
-                # Verify camera is working
-                ret, frame = self.cap.read()
-                if not ret or frame is None or frame.size == 0:
-                    if attempt < self.retries - 1:
-                        time.sleep(self.retry_delay)
-                        continue
-                    return False
-
-                return True
-
-            except Exception as e:
-                logger.warning(f"Camera initialization error: {e}")
-                self.release()
-                if attempt < self.retries - 1:
-                    time.sleep(self.retry_delay)
-
-        return False
+        except Exception as e:
+            logger.warning(f"Camera initialization error: {e}")
+            self.release()
+            return False
 
     def release(self):
         """Release camera resources."""
