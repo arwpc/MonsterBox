@@ -282,6 +282,17 @@ select {
     min-width: 0;
 }
 
+/* Select and Option Styles */
+select {
+    background-color: #000000;
+    color: #00ff00;
+}
+
+select option {
+    background-color: #000000;
+    color: #00ff00;
+}
+
 select[multiple] {
     height: 100px;
 }
