@@ -91,13 +91,15 @@ async function standardizeMP3(inputPath) {
             }
         }
 
-        // Create output paths
-        const outputPath = inputPath.replace(/\.[^.]+$/, '.mp3');
-        const tempPath = inputPath + '.temp';
+        // Parse the input path to handle file extensions properly
+        const parsedPath = path.parse(inputPath);
+        const outputPath = path.join(parsedPath.dir, parsedPath.name + '.mp3');
+        const tempPath = path.join(parsedPath.dir, parsedPath.name + '_temp.mp3');
 
         logger.info(`Converting ${path.basename(inputPath)} to standardized MP3`);
         logger.info(`Input path: ${inputPath}`);
         logger.info(`Output path: ${outputPath}`);
+        logger.info(`Temp path: ${tempPath}`);
 
         // Convert to standardized MP3
         await new Promise((resolve, reject) => {
@@ -133,7 +135,10 @@ async function standardizeMP3(inputPath) {
         });
 
         // Replace original with converted file
-        if (tempPath !== outputPath) {
+        if (fs.existsSync(tempPath)) {
+            if (fs.existsSync(outputPath)) {
+                fs.unlinkSync(outputPath);
+            }
             fs.renameSync(tempPath, outputPath);
         }
 
@@ -146,6 +151,16 @@ async function standardizeMP3(inputPath) {
         return outputPath;
     } catch (error) {
         logger.error(`Error in standardizeMP3: ${error.message}`);
+        // Clean up temp file if it exists
+        const parsedPath = path.parse(inputPath);
+        const tempPath = path.join(parsedPath.dir, parsedPath.name + '_temp.mp3');
+        if (fs.existsSync(tempPath)) {
+            try {
+                fs.unlinkSync(tempPath);
+            } catch (cleanupError) {
+                logger.error(`Failed to clean up temp file: ${cleanupError.message}`);
+            }
+        }
         throw error;
     }
 }

@@ -119,23 +119,22 @@ exports.generateSpeech = async (req, res) => {
         // Create filename and path
         const timestamp = Date.now();
         const sanitizedText = text.substring(0, 30).replace(/[^a-zA-Z0-9]/g, '_');
-        const tempFilename = `${timestamp}-${sanitizedText}.temp`;
-        const tempPath = path.join('public', 'sounds', tempFilename);
+        const rawFilename = `${timestamp}-${sanitizedText}_raw.wav`;
+        const rawPath = path.join('public', 'sounds', rawFilename);
 
-        // Download the audio file and detect its format
-        await downloadAudio(result.url, tempPath);
-
-        // Convert to standardized MP3 format
         try {
-            const finalPath = path.join('public', 'sounds', `${timestamp}-${sanitizedText}.mp3`);
-            await standardizeMP3(tempPath);
-            
-            // Rename the file if necessary
-            if (tempPath !== finalPath && fs.existsSync(tempPath)) {
-                fs.renameSync(tempPath, finalPath);
-            }
+            // Download the audio file
+            await downloadAudio(result.url, rawPath);
+            logger.info(`Downloaded audio file to ${rawPath}`);
 
+            // Convert to standardized MP3 format
+            const finalPath = await standardizeMP3(rawPath);
             logger.info(`Successfully processed audio file to ${finalPath}`);
+
+            // Clean up raw file if it still exists
+            if (fs.existsSync(rawPath)) {
+                fs.unlinkSync(rawPath);
+            }
 
             res.json({
                 success: true,
@@ -147,9 +146,13 @@ exports.generateSpeech = async (req, res) => {
             });
         } catch (err) {
             logger.error(`Failed to process audio file: ${err.message}`);
-            // Clean up temp file
-            if (fs.existsSync(tempPath)) {
-                fs.unlinkSync(tempPath);
+            // Clean up raw file if it exists
+            if (fs.existsSync(rawPath)) {
+                try {
+                    fs.unlinkSync(rawPath);
+                } catch (cleanupError) {
+                    logger.error(`Failed to clean up raw file: ${cleanupError.message}`);
+                }
             }
             throw err;
         }
