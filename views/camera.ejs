@@ -151,6 +151,20 @@
         .camera-select {
             margin-bottom: 10px;
         }
+
+        .placeholder-text {
+            color: #00ff00;
+            text-align: center;
+            padding: 20px;
+            border: 2px dashed #00ff00;
+            margin: 20px 0;
+            font-size: 1.2em;
+        }
+
+        .controls-disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
@@ -159,10 +173,11 @@
     <div class="camera-container">
         <div class="camera-feed">
             <div style="position: relative;">
-                <img id="cameraStream" alt="Camera Stream">
+                <img id="cameraStream" alt="Camera Stream" src="/images/no-stream.jpg">
                 <div id="motionIndicator" class="motion-indicator"></div>
             </div>
             <div id="errorMessage" class="error-message"></div>
+            <div id="placeholderMessage" class="placeholder-text">Please select a camera and click "Apply Camera Selection" to begin</div>
         </div>
         
         <div class="camera-controls">
@@ -176,47 +191,49 @@
                 </div>
             </div>
 
-            <div class="control-group">
-                <h3>Camera Status</h3>
-                <div class="status-row">
-                    <div>
-                        <span class="status-indicator" id="streamStatus"></span>
-                        Stream Status: <span id="streamStatusText">Connecting...</span>
+            <div id="cameraControls" class="controls-disabled">
+                <div class="control-group">
+                    <h3>Camera Status</h3>
+                    <div class="status-row">
+                        <div>
+                            <span class="status-indicator" id="streamStatus"></span>
+                            Stream Status: <span id="streamStatusText">Not Connected</span>
+                        </div>
+                        <button id="disconnectStream" class="disconnect-button" style="display: none;">Disconnect</button>
                     </div>
-                    <button id="disconnectStream" class="disconnect-button" style="display: none;">Disconnect</button>
                 </div>
-            </div>
 
-            <div class="control-group">
-                <h3>Motion Detection</h3>
-                <button id="toggleMotion">Start Motion Detection</button>
-                <div id="motionData">No motion data</div>
-            </div>
+                <div class="control-group">
+                    <h3>Motion Detection</h3>
+                    <button id="toggleMotion">Start Motion Detection</button>
+                    <div id="motionData">No motion data</div>
+                </div>
 
-            <div class="control-group">
-                <h3>Camera Settings</h3>
-                <label for="resolution">Resolution:</label>
-                <select id="resolution">
-                    <option value="640,480" selected>640x480</option>
-                    <option value="320,240">320x240</option>
-                    <option value="160,120">160x120</option>
-                </select>
-                <button onclick="updateSettings()">Apply Settings</button>
-            </div>
-
-            <div class="control-group">
-                <h3>Head Tracking</h3>
-                <div>
-                    <label for="servoSelect">Servo:</label>
-                    <select id="servoSelect">
-                        <option value="">Select Servo...</option>
+                <div class="control-group">
+                    <h3>Camera Settings</h3>
+                    <label for="resolution">Resolution:</label>
+                    <select id="resolution">
+                        <option value="640,480" selected>640x480</option>
+                        <option value="320,240">320x240</option>
+                        <option value="160,120">160x120</option>
                     </select>
+                    <button onclick="updateSettings()">Apply Settings</button>
                 </div>
-                <div>
-                    <label for="trackingSensitivity">Sensitivity:</label>
-                    <input type="range" id="trackingSensitivity" min="1" max="10" value="5">
+
+                <div class="control-group">
+                    <h3>Head Tracking</h3>
+                    <div>
+                        <label for="servoSelect">Servo:</label>
+                        <select id="servoSelect">
+                            <option value="">Select Servo...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="trackingSensitivity">Sensitivity:</label>
+                        <input type="range" id="trackingSensitivity" min="1" max="10" value="5">
+                    </div>
+                    <button id="toggleTracking" disabled>Start Head Tracking</button>
                 </div>
-                <button id="toggleTracking" disabled>Start Head Tracking</button>
             </div>
         </div>
     </div>
@@ -239,6 +256,8 @@
         const disconnectButton = document.getElementById('disconnectStream');
         const cameraSelect = document.getElementById('cameraSelect');
         const applyCameraSelect = document.getElementById('applyCameraSelect');
+        const placeholderMessage = document.getElementById('placeholderMessage');
+        const cameraControls = document.getElementById('cameraControls');
 
         // Load available cameras
         async function loadCameras() {
@@ -268,7 +287,6 @@
                 const selectedCamera = '<%= selectedCamera %>';
                 if (selectedCamera && selectedCamera !== 'null') {
                     cameraSelect.value = selectedCamera;
-                    initializeStream();
                 }
             } catch (error) {
                 console.error('Failed to load cameras:', error);
@@ -279,7 +297,7 @@
         // Apply camera selection
         applyCameraSelect.addEventListener('click', async function() {
             const cameraId = parseInt(cameraSelect.value);
-            if (!cameraId) {
+            if (!cameraId && cameraId !== 0) {
                 showError('Please select a camera');
                 return;
             }
@@ -297,7 +315,9 @@
                     throw new Error('Failed to select camera');
                 }
 
-                // Reinitialize stream with new camera
+                // Enable controls and start stream
+                cameraControls.classList.remove('controls-disabled');
+                placeholderMessage.style.display = 'none';
                 manuallyDisconnected = false;
                 initializeStream();
             } catch (error) {
@@ -341,7 +361,10 @@
                 showError(`Connection lost. Reconnecting... (Attempt ${reconnectAttempts}/${maxReconnectAttempts})`);
                 setTimeout(initializeStream, 2000);
             } else if (!manuallyDisconnected) {
-                showError('Failed to connect to camera after multiple attempts. Please refresh the page to try again.');
+                showError('Failed to connect to camera after multiple attempts. Please try selecting a different camera.');
+                cameraControls.classList.add('controls-disabled');
+                placeholderMessage.style.display = 'block';
+                streamImg.src = '/images/no-stream.jpg';
             }
         };
 
@@ -353,15 +376,16 @@
             stopHeadTracking();
             
             // Clear the image source to stop the stream
-            streamImg.src = '';
+            streamImg.src = '/images/no-stream.jpg';
             
             // Update status
             streamStatus.className = 'status-indicator status-inactive';
             streamStatusText.textContent = 'Disconnected';
             disconnectButton.style.display = 'none';
             
-            // Show reconnect message
-            showError('Camera disconnected. Select a camera and click Apply to reconnect.');
+            // Disable controls and show placeholder
+            cameraControls.classList.add('controls-disabled');
+            placeholderMessage.style.display = 'block';
         });
 
         document.getElementById('toggleMotion').addEventListener('click', function() {
