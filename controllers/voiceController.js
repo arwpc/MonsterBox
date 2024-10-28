@@ -17,6 +17,9 @@ exports.getAvailableVoices = async (req, res) => {
         }
         res.json(voices);
     } catch (error) {
+        if (error.message.includes('API key is required')) {
+            return handleError(res, error, 401);
+        }
         handleError(res, error);
     }
 };
@@ -83,11 +86,17 @@ exports.generateSpeech = async (req, res) => {
         const result = await voiceService.generateSpeech(speaker_id, text, generationOptions);
         res.json(result);
     } catch (error) {
+        if (error.message.includes('API key is required')) {
+            return handleError(res, error, 401);
+        }
         if (error.message.includes('Rate limit')) {
             return handleError(res, error, 429);
         }
         if (error.message.includes('not found')) {
             return handleError(res, error, 404);
+        }
+        if (error.message.includes('timed out')) {
+            return handleError(res, error, 504);
         }
         handleError(res, error);
     }
@@ -97,45 +106,14 @@ exports.getFXPresets = async (req, res) => {
     try {
         const presets = await voiceService.getFXPresets();
         if (!presets || presets.length === 0) {
-            // Return mock presets if no real presets are available
-            return res.json([
-                {
-                    id: 'halloween',
-                    name: 'Halloween',
-                    description: 'Spooky Halloween voice effect'
-                },
-                {
-                    id: 'ghost',
-                    name: 'Ghost',
-                    description: 'Haunting, ethereal presence'
-                },
-                {
-                    id: 'monster',
-                    name: 'Monster',
-                    description: 'Deep, growling monster voice'
-                }
-            ]);
+            return handleError(res, new Error('No FX presets available'), 404);
         }
         res.json(presets);
     } catch (error) {
-        // Return mock presets on error
-        res.json([
-            {
-                id: 'halloween',
-                name: 'Halloween',
-                description: 'Spooky Halloween voice effect'
-            },
-            {
-                id: 'ghost',
-                name: 'Ghost',
-                description: 'Haunting, ethereal presence'
-            },
-            {
-                id: 'monster',
-                name: 'Monster',
-                description: 'Deep, growling monster voice'
-            }
-        ]);
+        if (error.message.includes('API key is required')) {
+            return handleError(res, error, 401);
+        }
+        handleError(res, error);
     }
 };
 
