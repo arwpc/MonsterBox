@@ -20,9 +20,11 @@ class ReplicaAPI {
             timeout: 30000
         });
 
-        // Initialize voices cache with expiration
+        // Initialize caches with expiration
         this.voicesCache = null;
         this.voicesCacheExpiry = null;
+        this.fxPresetsCache = null;
+        this.fxPresetsCacheExpiry = null;
         this.cacheLifetime = 5 * 60 * 1000; // 5 minutes
 
         if (!this.apiKey) {
@@ -95,7 +97,12 @@ class ReplicaAPI {
                 ...voice,
                 id: voice.uuid,
                 speaker_id: voice.default_style?.speaker_id || voice.uuid,
-                capabilities: voice.capabilities || [],
+                capabilities: voice.default_style?.capabilities || {
+                    'tts.vox_1_0': false,
+                    'tts.vox_2_0': false,
+                    'sts.vox_1_0': false,
+                    'sts.vox_2_0': false
+                },
                 metadata: {
                     lastUsed: null,
                     useCount: 0,
@@ -115,6 +122,42 @@ class ReplicaAPI {
         }
     }
 
+    /**
+     * Get available FX presets
+     * @returns {Promise} Response containing array of available FX presets
+     */
+    async getFXPresets() {
+        try {
+            if (!this.apiKey) {
+                return this.getMockFXPresets();
+            }
+
+            await this.checkRateLimit();
+
+            // Return cached presets if still valid
+            if (this.fxPresetsCache && this.fxPresetsCacheExpiry > Date.now()) {
+                return this.fxPresetsCache;
+            }
+
+            const response = await this.retryWithBackoff(async () => {
+                return await this.axiosInstance.get('/effects_presets');
+            });
+
+            if (!response.data?.items) {
+                throw new Error('Invalid API response format');
+            }
+
+            this.fxPresetsCache = response.data.items;
+            this.fxPresetsCacheExpiry = Date.now() + this.cacheLifetime;
+
+            return response.data.items;
+        } catch (error) {
+            const errorMsg = error.response?.data?.error || error.message;
+            logger.error(`Error fetching FX presets: ${errorMsg}`);
+            return this.getMockFXPresets();
+        }
+    }
+
     getMockVoices() {
         // Return a set of mock voices for testing/development
         return [
@@ -124,7 +167,12 @@ class ReplicaAPI {
                 gender: 'male',
                 age: 'middle',
                 accent: 'american',
-                capabilities: ['expressive'],
+                capabilities: {
+                    'tts.vox_1_0': true,
+                    'tts.vox_2_0': true,
+                    'sts.vox_1_0': false,
+                    'sts.vox_2_0': false
+                },
                 metadata: {
                     lastUsed: null,
                     useCount: 0,
@@ -138,7 +186,12 @@ class ReplicaAPI {
                 gender: 'female',
                 age: 'senior',
                 accent: 'british',
-                capabilities: ['expressive'],
+                capabilities: {
+                    'tts.vox_1_0': true,
+                    'tts.vox_2_0': false,
+                    'sts.vox_1_0': false,
+                    'sts.vox_2_0': false
+                },
                 metadata: {
                     lastUsed: null,
                     useCount: 0,
@@ -152,13 +205,38 @@ class ReplicaAPI {
                 gender: 'neutral',
                 age: 'young',
                 accent: 'american',
-                capabilities: ['expressive'],
+                capabilities: {
+                    'tts.vox_1_0': true,
+                    'tts.vox_2_0': true,
+                    'sts.vox_1_0': false,
+                    'sts.vox_2_0': false
+                },
                 metadata: {
                     lastUsed: null,
                     useCount: 0,
                     averageRating: null,
                     tags: ['ghost', 'child', 'eerie']
                 }
+            }
+        ];
+    }
+
+    getMockFXPresets() {
+        return [
+            {
+                id: 'halloween',
+                name: 'Halloween',
+                description: 'Spooky Halloween voice effect'
+            },
+            {
+                id: 'ghost',
+                name: 'Ghost',
+                description: 'Haunting, ethereal presence'
+            },
+            {
+                id: 'monster',
+                name: 'Monster',
+                description: 'Deep, growling monster voice'
             }
         ];
     }
@@ -195,8 +273,13 @@ class ReplicaAPI {
                 throw new Error(`Voice not found with ID: ${params.voiceId}`);
             }
 
-            // Always use vox_1_0 for now since we're having issues with vox_2_0
-            const modelChain = 'vox_1_0';
+            // Get user preferences for model chain order
+            const userPrefs = await this.retryWithBackoff(async () => {
+                return await this.axiosInstance.get('/userinfo/preferences');
+            });
+
+            // Determine best model chain based on voice capabilities and user preferences
+            const modelChain = this.determineModelChain(voice.capabilities, userPrefs.data?.preferences?.preferred_model_chain_order);
 
             // Validate and normalize options
             const bitRate = params.options?.bitRate || 128;
@@ -218,6 +301,11 @@ class ReplicaAPI {
                 auto_pitch: params.options?.autoPitch ?? true
             };
 
+            // Add effects preset if specified
+            if (params.options?.effects_preset_id) {
+                requestBody.effects_preset_id = params.options.effects_preset_id;
+            }
+
             // Add optional metadata and tags
             if (params.options?.userMetadata) {
                 requestBody.user_metadata = params.options.userMetadata;
@@ -227,7 +315,11 @@ class ReplicaAPI {
                 requestBody.user_tags = params.options.userTags;
             }
 
-            logger.info('Making TTS request', { voiceId: params.voiceId, textLength: params.text.length });
+            logger.info('Making TTS request', { 
+                voiceId: params.voiceId, 
+                textLength: params.text.length,
+                modelChain
+            });
 
             const response = await this.retryWithBackoff(async () => {
                 return await this.axiosInstance.post('/speech/tts', requestBody);
@@ -239,7 +331,8 @@ class ReplicaAPI {
 
             logger.info('TTS request successful', { 
                 voiceId: params.voiceId, 
-                duration: response.data.duration 
+                duration: response.data.duration,
+                modelChain
             });
 
             return {
@@ -255,6 +348,18 @@ class ReplicaAPI {
             logger.error(`Error generating speech: ${errorMsg}`);
             return this.getMockSpeechResponse();
         }
+    }
+
+    determineModelChain(voiceCapabilities, userPreferences = ['vox_2_0', 'vox_1_0']) {
+        // Check each preferred model chain in order
+        for (const chain of userPreferences) {
+            const capability = `tts.${chain}`;
+            if (voiceCapabilities[capability]) {
+                return chain;
+            }
+        }
+        // Default to vox_1_0 if no preferred chains are supported
+        return 'vox_1_0';
     }
 
     getMockSpeechResponse() {
@@ -292,12 +397,14 @@ class ReplicaAPI {
     }
 
     /**
-     * Clear the voices cache
+     * Clear all caches
      */
     clearCache() {
         this.voicesCache = null;
         this.voicesCacheExpiry = null;
-        logger.info('Voices cache cleared');
+        this.fxPresetsCache = null;
+        this.fxPresetsCacheExpiry = null;
+        logger.info('All caches cleared');
     }
 }
 

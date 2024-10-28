@@ -1,6 +1,7 @@
 class VoiceSelector {
     constructor() {
         this.voices = [];
+        this.fxPresets = [];
         this.selectedVoice = null;
         this.recentlyUsed = new Set();
         this.filters = {
@@ -17,6 +18,7 @@ class VoiceSelector {
         this.initializeWaveSurfer();
         this.setupEventListeners();
         this.loadVoices();
+        this.loadFXPresets();
     }
 
     showLoading(message = 'Loading...') {
@@ -99,6 +101,11 @@ class VoiceSelector {
             });
         });
 
+        // FX Preset select
+        document.querySelector('#fxPreset').addEventListener('change', () => {
+            this.updatePreviewButtonState();
+        });
+
         // Preview button
         document.querySelector('#previewPlay').addEventListener('click', () => {
             if (this.isPlaying) {
@@ -143,6 +150,32 @@ class VoiceSelector {
         } finally {
             this.hideLoading();
         }
+    }
+
+    async loadFXPresets() {
+        try {
+            const response = await fetch('/api/voice/fx-presets');
+            if (!response.ok) throw new Error('Failed to load FX presets');
+            
+            this.fxPresets = await response.json();
+            this.populateFXPresets();
+        } catch (error) {
+            console.error('Error loading FX presets:', error);
+            this.showError('Failed to load FX presets');
+        }
+    }
+
+    populateFXPresets() {
+        const select = document.querySelector('#fxPreset');
+        select.innerHTML = '<option value="">None</option>';
+        
+        this.fxPresets.forEach(preset => {
+            const option = document.createElement('option');
+            option.value = preset.id;
+            option.textContent = preset.name;
+            option.title = preset.description;
+            select.appendChild(option);
+        });
     }
 
     getVoiceStyles(voice) {
@@ -249,6 +282,7 @@ class VoiceSelector {
         try {
             this.showLoading('Generating preview...');
             const previewText = document.querySelector('#previewText').value;
+            const fxPreset = document.querySelector('#fxPreset').value;
 
             const response = await fetch('/api/voice/generate', {
                 method: 'POST',
@@ -263,7 +297,8 @@ class VoiceSelector {
                     options: {
                         speed: parseFloat(document.querySelector('#speed').value),
                         pitch: parseInt(document.querySelector('#pitch').value),
-                        volume: parseInt(document.querySelector('#volume').value)
+                        volume: parseInt(document.querySelector('#volume').value),
+                        fxPreset: fxPreset || undefined
                     }
                 })
             });
@@ -326,7 +361,8 @@ class VoiceSelector {
             const settings = {
                 speed: parseFloat(document.querySelector('#speed').value),
                 pitch: parseInt(document.querySelector('#pitch').value),
-                volume: parseInt(document.querySelector('#volume').value)
+                volume: parseInt(document.querySelector('#volume').value),
+                fxPreset: document.querySelector('#fxPreset').value || undefined
             };
 
             const event = new CustomEvent('voiceSelected', {
