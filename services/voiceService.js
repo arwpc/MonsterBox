@@ -13,7 +13,6 @@ class VoiceService {
             volume: 0,
             sampleRate: 44100,
             bitRate: 128,
-            modelChain: 'vox_2_0',
             outputFormat: 'mp3',
             languageCode: 'en'
         };
@@ -122,6 +121,26 @@ class VoiceService {
         }
     }
 
+    async determineModelChain(speaker_id) {
+        const voices = await this.getAvailableVoices();
+        const voice = voices.find(v => v.speaker_id === speaker_id);
+        
+        if (!voice) {
+            throw new Error('Voice not found');
+        }
+
+        const capabilities = voice.capabilities || {};
+        
+        // Check for vox_2_0 first, fall back to vox_1_0 if available
+        if (capabilities['tts.vox_2_0']) {
+            return 'vox_2_0';
+        } else if (capabilities['tts.vox_1_0']) {
+            return 'vox_1_0';
+        } else {
+            throw new Error('Voice does not support any available model chains');
+        }
+    }
+
     async generateSpeech(text, speaker_id, options = {}, characterId = null) {
         try {
             if (!text?.trim()) {
@@ -132,13 +151,16 @@ class VoiceService {
                 throw new Error('Speaker ID is required');
             }
 
+            // Determine the appropriate model chain for this voice
+            const modelChain = await this.determineModelChain(speaker_id);
+
             const result = await this.replicaAPI.textToSpeech({
                 voiceId: speaker_id,
                 text: text.trim(),
                 options: {
                     ...this.defaultSettings,
                     ...options,
-                    modelChain: 'vox_2_0'
+                    modelChain
                 }
             });
 
@@ -150,7 +172,7 @@ class VoiceService {
                         timestamp: new Date().toISOString(),
                         type: 'generation',
                         textLength: text.length,
-                        settings: options,
+                        settings: { ...options, modelChain },
                         duration: result.duration
                     });
                     await this.saveVoice(voice);
