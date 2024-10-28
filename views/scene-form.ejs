@@ -71,36 +71,48 @@
                 copyStep($(this).data('index'));
             });
 
-            // Event delegation for voice preview button
+            // Event delegation for voice preview and play buttons
             $('#steps').on('click', '.preview-voice', async function() {
                 const index = $(this).data('index');
                 const text = $(`textarea[name="steps[${index}][text]"]`).val();
                 const statusDiv = $(`#voice-preview-status-${index}`);
+                const playButton = $(this).closest('.voice-controls').find('.play-voice');
+                const audio = $(`#voice-audio-${index}`)[0];
                 
                 if (!text) {
-                    statusDiv.html('Please enter text to preview');
+                    statusDiv.html('Please enter text to generate');
                     return;
                 }
 
-                statusDiv.html('Generating voice preview...');
+                statusDiv.html('Generating voice...');
+                playButton.hide();
 
                 try {
-                    const response = await axios.post('/api/voice/generate', {
+                    const response = await axios.post('/api/voice/generate-and-save', {
                         text: text,
                         characterId: characterId
                     });
 
                     if (response.data.success) {
-                        statusDiv.html('Voice preview generated and added to library!');
-                        // Add the generated sound to the step
+                        statusDiv.html('Voice generated successfully!');
+                        // Set the sound ID for the step
                         $(`input[name="steps[${index}][sound_id]"]`).val(response.data.soundId);
+                        // Set up audio player
+                        audio.src = response.data.path;
+                        playButton.show();
                     } else {
-                        statusDiv.html('Failed to generate voice preview: ' + response.data.error);
+                        statusDiv.html('Failed to generate voice: ' + response.data.error);
                     }
                 } catch (error) {
-                    console.error('Error generating voice preview:', error);
-                    statusDiv.html('Error generating voice preview. Please try again.');
+                    console.error('Error generating voice:', error);
+                    statusDiv.html('Error generating voice. Please try again.');
                 }
+            });
+
+            $('#steps').on('click', '.play-voice', function() {
+                const index = $(this).data('index');
+                const audio = $(`#voice-audio-${index}`)[0];
+                audio.play();
             });
         });
 
@@ -148,12 +160,23 @@
                 previewStatus.id = `voice-preview-status-${newIndex}`;
             }
 
+            // Update audio element id
+            const audioElement = newStep.querySelector('audio');
+            if (audioElement) {
+                audioElement.id = `voice-audio-${newIndex}`;
+            }
+
             // Update the data-index attribute of the buttons
             newStep.querySelector('.remove-step').dataset.index = newIndex;
             newStep.querySelector('.copy-step').dataset.index = newIndex;
             const previewButton = newStep.querySelector('.preview-voice');
             if (previewButton) {
                 previewButton.dataset.index = newIndex;
+            }
+            const playButton = newStep.querySelector('.play-voice');
+            if (playButton) {
+                playButton.dataset.index = newIndex;
+                playButton.style.display = 'none'; // Hide play button on copy
             }
 
             // Append the new step to the steps container
@@ -180,6 +203,10 @@
                 const previewButton = steps[i].querySelector('.preview-voice');
                 if (previewButton) {
                     previewButton.dataset.index = i;
+                }
+                const playButton = steps[i].querySelector('.play-voice');
+                if (playButton) {
+                    playButton.dataset.index = i;
                 }
             }
         }		
