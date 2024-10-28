@@ -191,7 +191,7 @@ async function executeScene(scene, startStep, res) {
                 await new Promise(resolve => setTimeout(resolve, INTER_STEP_DELAY));
             } catch (error) {
                 logger.error(`Error executing step ${i + 1}: ${error.message}`);
-                throw error;
+                // Don't throw error, continue with next step
             }
         }
 
@@ -223,12 +223,15 @@ async function executeScene(scene, startStep, res) {
         isExecuting = false;
         try {
             await stopAllParts();
-            await soundController.stopAllSounds().catch(error => {
-                logger.error(`Error stopping sounds during cleanup: ${error.message}`);
-            });
+            try {
+                await soundController.stopAllSounds();
+            } catch (error) {
+                // Ignore sound stop errors during cleanup
+                logger.warn(`Non-critical error stopping sounds during cleanup: ${error.message}`);
+            }
             logger.info(`Scene ${scene.id} cleanup completed`);
         } catch (error) {
-            logger.error(`Error during scene cleanup: ${error.message}`);
+            logger.warn(`Non-critical error during scene cleanup: ${error.message}`);
         }
         
         try {
