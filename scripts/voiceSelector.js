@@ -13,12 +13,14 @@ class VoiceSelector {
         this.isPlaying = false;
         this.currentPreviewVoice = null;
         this.characterId = null;
+        this.lastGeneratedAudio = null;
 
         // Only initialize voice-specific features if we're on the voice configuration page
         if (document.getElementById('voiceSelector')) {
             this.initializeWaveSurfer();
             this.setupEventListeners();
             this.loadVoices();
+            this.loadCharacters();
         }
     }
 
@@ -46,6 +48,33 @@ class VoiceSelector {
             setTimeout(() => {
                 errorElement.style.display = 'none';
             }, 5000);
+        }
+    }
+
+    async loadCharacters() {
+        try {
+            const response = await fetch('/api/characters');
+            if (!response.ok) {
+                throw new Error('Failed to load characters');
+            }
+            const characters = await response.json();
+            
+            const select = document.querySelector('#characterSelect');
+            select.innerHTML = '<option value="">Select a character...</option>';
+            characters.forEach(character => {
+                const option = document.createElement('option');
+                option.value = character.id;
+                option.textContent = character.name;
+                select.appendChild(option);
+            });
+
+            // If characterId is set, select it in the dropdown
+            if (this.characterId) {
+                select.value = this.characterId;
+            }
+        } catch (error) {
+            console.error('Error loading characters:', error);
+            this.showError('Failed to load characters: ' + error.message);
         }
     }
 
@@ -106,8 +135,19 @@ class VoiceSelector {
             }
         });
 
+        document.querySelector('#saveToLibrary').addEventListener('click', () => {
+            if (this.lastGeneratedAudio) {
+                this.saveToSoundLibrary();
+            }
+        });
+
+        document.querySelector('#characterSelect').addEventListener('change', (e) => {
+            this.characterId = e.target.value;
+            document.querySelector('#selectVoice').disabled = !this.characterId || !this.selectedVoice;
+        });
+
         document.querySelector('#selectVoice').addEventListener('click', () => {
-            if (this.selectedVoice) {
+            if (this.selectedVoice && this.characterId) {
                 this.saveVoiceConfiguration();
             }
         });
@@ -277,6 +317,7 @@ class VoiceSelector {
             }
 
             const data = await response.json();
+            this.lastGeneratedAudio = data;
             
             if (data.url) {
                 this.wavesurfer.load(data.url);
@@ -284,11 +325,49 @@ class VoiceSelector {
                     this.wavesurfer.play();
                     this.isPlaying = true;
                     this.updatePlayButtonState();
+                    document.querySelector('#saveToLibrary').disabled = false;
                 });
             }
         } catch (error) {
             console.error('Error generating preview:', error);
             this.showError(error.message);
+        } finally {
+            this.hideLoading();
+        }
+    }
+
+    async saveToSoundLibrary() {
+        if (!this.lastGeneratedAudio || !this.lastGeneratedAudio.url) {
+            this.showError('No audio available to save');
+            return;
+        }
+
+        try {
+            this.showLoading('Saving to sound library...');
+            const previewText = document.querySelector('#previewText').value;
+            const characterId = document.querySelector('#characterSelect').value;
+
+            const response = await fetch('/api/voice/save-to-sounds', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    audioUrl: this.lastGeneratedAudio.url,
+                    text: previewText,
+                    characterId: characterId || null
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to save to sound library');
+            }
+
+            this.showError('Successfully saved to sound library');
+        } catch (error) {
+            console.error('Error saving to sound library:', error);
+            this.showError('Failed to save to sound library: ' + error.message);
         } finally {
             this.hideLoading();
         }
@@ -310,6 +389,7 @@ class VoiceSelector {
 
     updatePreviewButtonState() {
         document.querySelector('#previewPlay').disabled = !this.currentPreviewVoice;
+        document.querySelector('#saveToLibrary').disabled = !this.lastGeneratedAudio;
     }
 
     selectVoice(voice) {
@@ -320,7 +400,7 @@ class VoiceSelector {
             row.classList.toggle('selected', row.cells[0].textContent === voice.name);
         });
         
-        document.querySelector('#selectVoice').disabled = false;
+        document.querySelector('#selectVoice').disabled = !this.characterId;
         this.updatePreviewButtonState();
     }
 
@@ -484,6 +564,10 @@ class VoiceSelector {
 
     setCharacterId(id) {
         this.characterId = id;
+        const select = document.querySelector('#characterSelect');
+        if (select) {
+            select.value = id;
+        }
     }
 }
 

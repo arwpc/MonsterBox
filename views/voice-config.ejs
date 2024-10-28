@@ -83,6 +83,21 @@
             border-radius: 4px;
             text-align: center;
         }
+
+        /* Character dropdown */
+        .character-select {
+            margin-bottom: 20px;
+            padding: 8px;
+            border-radius: 4px;
+            background: var(--input-background);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+        }
+
+        .preview-actions {
+            display: flex;
+            gap: 10px;
+        }
     </style>
 </head>
 <body>
@@ -205,13 +220,19 @@
                         <button id="previewPlay" class="preview-btn" disabled>
                             <i class="fas fa-play"></i> Preview
                         </button>
+                        <button id="saveToLibrary" class="preview-btn" disabled>
+                            <i class="fas fa-save"></i> Save to Sound Library
+                        </button>
                     </div>
                     <div id="waveform" class="waveform-container"></div>
                 </div>
             </div>
 
             <div class="button-group">
-                <button id="selectVoice" class="button primary-btn" disabled>Save Voice Configuration</button>
+                <select id="characterSelect" class="character-select">
+                    <option value="">Select a character...</option>
+                </select>
+                <button id="selectVoice" class="button primary-btn" disabled>Assign Settings & Voice to Character</button>
                 <a href="/characters" class="button secondary-btn">Cancel</a>
             </div>
         </div>
