@@ -1,91 +1,68 @@
 const axios = require('axios');
 
-async function testTTS() {
-    const apiKey = 'f64f3f2e-f575-494d-a1b2-bbfb60e3f558';
-    const baseURL = 'https://api.replicastudios.com/v2';
-
+async function testVoiceIntegration() {
     try {
-        console.log('Getting available voices...');
-        
-        const voicesResponse = await axios.get(`${baseURL}/library/voices`, {
-            headers: {
-                'X-Api-Key': apiKey,
-                'Content-Type': 'application/json'
-            }
-        });
+        console.log('Starting voice integration test...');
 
-        const firstVoice = voicesResponse.data.items[0];
-        const speakerId = firstVoice.default_style.speaker_id;
+        console.log('\n1. Testing voice listing...');
+        const voicesResponse = await axios.get('http://localhost:3000/api/voice/available');
+        const voices = voicesResponse.data;
         
-        console.log(`Using voice: ${firstVoice.name}`);
-        console.log(`Speaker ID: ${speakerId}`);
-        
-        console.log('\nGenerating speech...');
-        
-        const ttsResponse = await axios.post(`${baseURL}/speech/tts`, {
-            speaker_id: speakerId,
-            text: "Hello, this is a test of the Replica Studios voice API.",
-            extensions: ['mp3'],
-            model_chain: 'vox_2_0',
-            language_code: 'en',
-            sample_rate: 44100,
-            bit_rate: 128,
-            global_pace: 1.0,
-            global_pitch: 0,
-            auto_pitch: true,
-            global_volume: 0
-        }, {
-            headers: {
-                'X-Api-Key': apiKey,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        const jobId = ttsResponse.data.uuid;
-        console.log('Speech job created:', jobId);
-        
-        // Poll for completion
-        let attempts = 0;
-        const maxAttempts = 30;
-        let jobStatus;
-        
-        do {
-            console.log('Checking job status...');
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            jobStatus = await axios.get(`${baseURL}/speech/${jobId}`, {
-                headers: {
-                    'X-Api-Key': apiKey,
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            attempts++;
-            console.log('Status:', jobStatus.data.state);
-            
-            if (attempts >= maxAttempts) {
-                throw new Error('Speech generation timed out');
-            }
-        } while (jobStatus.data.state === 'PENDING');
-
-        if (jobStatus.data.state === 'SUCCESS') {
-            console.log('\nSpeech generation successful!');
-            console.log('Audio URL:', jobStatus.data.url);
-            console.log('Duration:', jobStatus.data.duration, 'seconds');
-        } else {
-            throw new Error(`Speech generation failed: ${jobStatus.data.state}`);
+        if (!voices || voices.length === 0) {
+            throw new Error('No voices available');
         }
-        
+
+        console.log(`Found ${voices.length} voices`);
+        const firstVoice = voices[0];
+        console.log('Selected voice:', {
+            name: firstVoice.name,
+            gender: firstVoice.gender,
+            age: firstVoice.age,
+            accent: firstVoice.accent,
+            speaker_id: firstVoice.speaker_id,
+            capabilities: firstVoice.capabilities
+        });
+
+        console.log('\n2. Testing voice settings...');
+        const settings = {
+            speed: 1.0,
+            pitch: 0,
+            volume: 0
+        };
+
+        const settingsResponse = await axios.post('http://localhost:3000/api/voice/settings', {
+            characterId: 'test-character',
+            voiceId: firstVoice.speaker_id,
+            settings
+        });
+
+        console.log('Settings saved successfully');
+
+        console.log('\n3. Testing speech generation...');
+        const response = await axios.post('http://localhost:3000/api/voice/generate', {
+            speaker_id: firstVoice.speaker_id,
+            text: "Hello, this is a test of the voice generation system.",
+            options: settings
+        });
+
+        console.log('Speech generation successful!');
+        console.log('Result:', {
+            url: response.data.url,
+            duration: response.data.duration,
+            state: response.data.state
+        });
+
+        console.log('\nAll tests completed successfully!');
+
     } catch (error) {
-        console.error('Test failed!');
+        console.error('\nTest failed!');
+        console.error('Error:', error.message);
         if (error.response?.data) {
             console.error('API Error:', error.response.data);
             console.error('Status:', error.response.status);
-        } else {
-            console.error('Error:', error.message);
         }
+        process.exit(1);
     }
 }
 
-console.log('Starting TTS test...');
-testTTS();
+testVoiceIntegration();

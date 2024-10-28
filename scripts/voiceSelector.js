@@ -1,7 +1,6 @@
 class VoiceSelector {
     constructor() {
         this.voices = [];
-        this.fxPresets = [];
         this.selectedVoice = null;
         this.recentlyUsed = new Set();
         this.filters = {
@@ -20,7 +19,6 @@ class VoiceSelector {
             this.initializeWaveSurfer();
             this.setupEventListeners();
             this.loadVoices();
-            this.loadFXPresets();
         }
     }
 
@@ -100,10 +98,6 @@ class VoiceSelector {
             });
         });
 
-        document.querySelector('#fxPreset').addEventListener('change', () => {
-            this.updatePreviewButtonState();
-        });
-
         document.querySelector('#previewPlay').addEventListener('click', () => {
             if (this.isPlaying) {
                 this.stopPreview();
@@ -135,10 +129,7 @@ class VoiceSelector {
             }
             
             const voices = await response.json();
-            this.voices = voices.map(voice => ({
-                ...voice,
-                styles: this.getVoiceStyles(voice)
-            }));
+            this.voices = voices;
             
             this.populateVoiceTable();
             await this.loadRecentlyUsed();
@@ -148,35 +139,6 @@ class VoiceSelector {
         } finally {
             this.hideLoading();
         }
-    }
-
-    async loadFXPresets() {
-        try {
-            const response = await fetch('/api/voice/fx-presets');
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'Failed to load FX presets');
-            }
-            
-            this.fxPresets = await response.json();
-            this.populateFXPresets();
-        } catch (error) {
-            console.error('Error loading FX presets:', error);
-            this.showError('Failed to load FX presets: ' + error.message);
-        }
-    }
-
-    populateFXPresets() {
-        const select = document.querySelector('#fxPreset');
-        select.innerHTML = '<option value="">None</option>';
-        
-        this.fxPresets.forEach(preset => {
-            const option = document.createElement('option');
-            option.value = preset.id;
-            option.textContent = preset.name;
-            option.title = preset.description;
-            select.appendChild(option);
-        });
     }
 
     getVoiceStyles(voice) {
@@ -200,7 +162,7 @@ class VoiceSelector {
                 <td>${voice.age || 'Unknown'}</td>
                 <td>${voice.accent || 'None'}</td>
                 <td>
-                    ${voice.styles.map(style => `
+                    ${this.getVoiceStyles(voice).map(style => `
                         <button class="style-btn" data-voice-id="${voice.uuid}" data-style="${style}">
                             <i class="fas fa-play"></i> ${style}
                         </button>
@@ -284,7 +246,12 @@ class VoiceSelector {
         try {
             this.showLoading('Generating preview...');
             const previewText = document.querySelector('#previewText').value;
-            const fxPreset = document.querySelector('#fxPreset').value;
+
+            // Use the speaker_id from the voice data
+            const speakerId = this.currentPreviewVoice.speaker_id;
+            if (!speakerId) {
+                throw new Error('No valid speaker ID found for this voice');
+            }
 
             const response = await fetch('/api/voice/generate', {
                 method: 'POST',
@@ -292,15 +259,14 @@ class VoiceSelector {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    speaker_id: this.currentPreviewVoice.uuid,
+                    speaker_id: speakerId,
                     text: previewText,
                     style,
                     characterId: this.characterId,
                     options: {
                         speed: parseFloat(document.querySelector('#speed').value),
                         pitch: parseInt(document.querySelector('#pitch').value),
-                        volume: parseInt(document.querySelector('#volume').value),
-                        fxPreset: fxPreset || undefined
+                        volume: parseInt(document.querySelector('#volume').value)
                     }
                 })
             });
@@ -364,9 +330,14 @@ class VoiceSelector {
                 const settings = {
                     speed: parseFloat(document.querySelector('#speed').value),
                     pitch: parseInt(document.querySelector('#pitch').value),
-                    volume: parseInt(document.querySelector('#volume').value),
-                    fxPreset: document.querySelector('#fxPreset').value || undefined
+                    volume: parseInt(document.querySelector('#volume').value)
                 };
+
+                // Use the speaker_id from the voice data
+                const speakerId = this.selectedVoice.speaker_id;
+                if (!speakerId) {
+                    throw new Error('No valid speaker ID found for this voice');
+                }
 
                 const response = await fetch('/api/voice/settings', {
                     method: 'POST',
@@ -375,7 +346,7 @@ class VoiceSelector {
                     },
                     body: JSON.stringify({
                         characterId: this.characterId,
-                        voiceId: this.selectedVoice.uuid,
+                        voiceId: speakerId,
                         settings
                     })
                 });
@@ -414,7 +385,7 @@ class VoiceSelector {
         if (gender.size > 0 && !gender.has(voice.gender?.toLowerCase())) return false;
         if (accent.size > 0 && !accent.has(voice.accent?.toLowerCase())) return false;
         if (age.size > 0 && !age.has(this.getAgeGroup(voice.age))) return false;
-        if (style.size > 0 && !Array.from(style).some(s => voice.styles.includes(s))) return false;
+        if (style.size > 0 && !Array.from(style).some(s => this.getVoiceStyles(voice).includes(s))) return false;
 
         return true;
     }
@@ -472,8 +443,8 @@ class VoiceSelector {
             let valueB = b[column] || '';
 
             if (column === 'styles') {
-                valueA = a.styles.length;
-                valueB = b.styles.length;
+                valueA = this.getVoiceStyles(a).length;
+                valueB = this.getVoiceStyles(b).length;
             }
 
             return currentDirection === 'asc' ? 

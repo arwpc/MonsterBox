@@ -5,7 +5,7 @@ const soundService = require('../services/soundService');
 const fs = require('fs').promises;
 const path = require('path');
 
-// New route for voice configuration page
+// Voice configuration page
 router.get('/configure', (req, res) => {
     const characterId = req.query.characterId;
     if (!characterId) {
@@ -17,22 +17,17 @@ router.get('/configure', (req, res) => {
     });
 });
 
+// API Routes
 router.get('/available', voiceController.getAvailableVoices);
 router.get('/settings/:characterId', voiceController.getVoiceSettings);
 router.post('/settings', voiceController.saveVoiceSettings);
 router.post('/generate', voiceController.generateSpeech);
-router.get('/fx-presets', voiceController.getFXPresets);
-
-// Voice presets routes
-router.get('/presets/:characterId', voiceController.getVoicePresets);
-router.post('/presets', voiceController.savePreset);
-router.delete('/presets/:characterId/:presetName', voiceController.deletePreset);
 
 // Voice metadata routes
 router.patch('/metadata/:characterId', voiceController.updateVoiceMetadata);
 router.get('/history/:characterId', voiceController.getVoiceHistory);
 
-// New route to save generated audio to sounds library
+// Save generated audio to sounds library
 router.post('/save-to-sounds', async (req, res) => {
     try {
         const { audioUrl, text, characterId } = req.body;
