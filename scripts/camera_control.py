@@ -17,12 +17,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Force V4L2 backend before importing OpenCV
-os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0"
-os.environ["OPENCV_VIDEOIO_PRIORITY_GSTREAMER"] = "0"
-os.environ["OPENCV_VIDEOIO_PRIORITY_V4L2"] = "100"
-
-# Import OpenCV after setting backend priorities
+# Import OpenCV after numpy is properly initialized
 try:
     import numpy as np
     import cv2
@@ -105,8 +100,8 @@ class MotionDetector:
             # Release any existing camera instance
             self.release()
             
-            # Try V4L2 backend with specific settings
-            self.cap = cv2.VideoCapture(self.camera_id, cv2.CAP_V4L2)
+            # Open camera with default backend
+            self.cap = cv2.VideoCapture(self.camera_id)
             
             if not self.cap.isOpened():
                 return False
