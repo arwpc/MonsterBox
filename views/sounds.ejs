@@ -11,7 +11,10 @@
     <h1><%- title %></h1>
     
     <div id="sound-list">
-        <a href="/sounds/new" class="button">Add New Sound</a>
+        <div class="button-group">
+            <a href="/sounds/new" class="button primary-btn">Add New Sound</a>
+            <a href="/api/voice/configure" class="button primary-btn">Configure Voice</a>
+        </div>
         
         <div id="character-filter">
             <label for="character-select">Filter by Character:</label>
@@ -56,10 +59,10 @@
                                 <%- characterNames %>
                             </td>
                             <td>
-                                <button onclick="playOnCharacters('<%- sound.id %>')">Play (on Characters)</button>
-                                <button onclick="playLocal('<%- sound.filename %>')">Play (local)</button>
-                                <a href="/sounds/<%- sound.id %>/edit" class="button">Edit</a>
-                                <button onclick="deleteSound('<%- sound.id %>')">Delete</button>
+                                <button onclick="playOnCharacters('<%- sound.id %>')" class="button primary-btn">Play (on Characters)</button>
+                                <button onclick="playLocal('<%- sound.filename %>')" class="button primary-btn">Play (local)</button>
+                                <a href="/sounds/<%- sound.id %>/edit" class="button primary-btn">Edit</a>
+                                <button onclick="deleteSound('<%- sound.id %>')" class="button primary-btn">Delete</button>
                             </td>
                         </tr>
                     <% }); %>
@@ -68,7 +71,7 @@
         <% } %>
     </div>
     
-    <a href="/" class="button">Back to Main Menu</a>
+    <a href="/" class="button primary-btn">Back to Main Menu</a>
 
     <div id="soundInfo"></div>
     <div id="errorInfo" style="color: red;"></div>
