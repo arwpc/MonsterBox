@@ -1,4 +1,5 @@
 const voiceService = require('../services/voiceService');
+const soundService = require('../services/soundService');
 const logger = require('../scripts/logger');
 const { standardizeMP3, detectAudioFormat } = require('../scripts/audioUtils');
 const path = require('path');
@@ -169,6 +170,71 @@ exports.generateSpeech = async (req, res) => {
         if (error.message.includes('timed out')) {
             return handleError(res, error, 504);
         }
+        handleError(res, error);
+    }
+};
+
+exports.generateAndSave = async (req, res) => {
+    try {
+        const { text, characterId } = req.body;
+
+        if (!text || !characterId) {
+            return handleError(res, new Error('Text and character ID are required'), 400);
+        }
+
+        // Get voice settings for the character
+        const voice = await voiceService.getVoiceByCharacterId(characterId);
+        if (!voice || !voice.speaker_id) {
+            return handleError(res, new Error('No voice configured for this character'), 404);
+        }
+
+        // Generate the speech
+        const result = await voiceService.generateSpeech(text, voice.speaker_id, voice.settings || {}, characterId);
+
+        // Create filename and path
+        const timestamp = Date.now();
+        const sanitizedText = text.substring(0, 30).replace(/[^a-zA-Z0-9]/g, '_');
+        const rawFilename = `${timestamp}-${sanitizedText}_raw.wav`;
+        const rawPath = path.join('public', 'sounds', rawFilename);
+
+        try {
+            // Download and process the audio file
+            await downloadAudio(result.url, rawPath);
+            const finalPath = await standardizeMP3(rawPath);
+
+            // Clean up raw file
+            if (fs.existsSync(rawPath)) {
+                fs.unlinkSync(rawPath);
+            }
+
+            // Create sound entry in the library
+            const soundEntry = await soundService.createSound({
+                name: text,
+                filename: path.basename(finalPath),
+                file: path.basename(finalPath),
+                characterIds: [parseInt(characterId)],
+                type: 'voice',
+                created: new Date().toISOString()
+            });
+
+            res.json({
+                success: true,
+                soundId: soundEntry.id,
+                filename: path.basename(finalPath),
+                path: `/sounds/${path.basename(finalPath)}`
+            });
+        } catch (err) {
+            logger.error(`Failed to process audio file: ${err.message}`);
+            if (fs.existsSync(rawPath)) {
+                try {
+                    fs.unlinkSync(rawPath);
+                } catch (cleanupError) {
+                    logger.error(`Failed to clean up raw file: ${cleanupError.message}`);
+                }
+            }
+            throw err;
+        }
+    } catch (error) {
         handleError(res, error);
     }
 };
