@@ -130,5 +130,29 @@
     "type": "voice",
     "created": "2024-10-28T21:17:30.241Z",
     "characterId": null
+  },
+  {
+    "id": 16,
+    "name": "Welcome to my underground!",
+    "filename": "1730150674431-Welcome_to_my_underground__raw.mp3",
+    "file": "1730150674431-Welcome_to_my_underground__raw.mp3",
+    "characterIds": [
+      1
+    ],
+    "type": "voice",
+    "created": "2024-10-28T21:24:34.828Z",
+    "characterId": null
+  },
+  {
+    "id": 17,
+    "name": "Welcommin Kiddos!",
+    "filename": "1730150748628-Welcommin_Kiddos__raw.mp3",
+    "file": "1730150748628-Welcommin_Kiddos__raw.mp3",
+    "characterIds": [
+      1
+    ],
+    "type": "voice",
+    "created": "2024-10-28T21:25:48.864Z",
+    "characterId": null
   }
 ]

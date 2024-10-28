@@ -155,5 +155,23 @@
         "sound_id": "1"
       }
     ]
+  },
+  {
+    "id": 8,
+    "character_id": 1,
+    "scene_name": "Stand up",
+    "steps": [
+      {
+        "type": "sound",
+        "name": "Scary Roar",
+        "sound_id": "3"
+      },
+      {
+        "type": "voice",
+        "name": "Scary Welcom",
+        "sound_id": "17",
+        "text": "Welcommin Kiddos!"
+      }
+    ]
   }
 ]

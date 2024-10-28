@@ -246,7 +246,7 @@ async function executeStep(sceneId, step) {
         case 'sound':
             return await executeSound(step);
         case 'voice':
-            return await executeVoice(step);
+            return await executeSound(step);  // Voice steps are pre-generated as sounds
         case 'motor':
             return await executeMotor(step);
         case 'linear-actuator':
@@ -263,72 +263,6 @@ async function executeStep(sceneId, step) {
         default:
             logger.warn(`Unknown step type: ${step.type}`);
             throw new Error(`Unknown step type: ${step.type}`);
-    }
-}
-
-async function executeVoice(step) {
-    logger.info(`Executing voice step: ${step.name}`);
-    try {
-        // Get voice settings for the character
-        const voice = await voiceService.getVoiceByCharacterId(step.character_id);
-        if (!voice || !voice.speaker_id) {
-            throw new Error('No voice configured for this character');
-        }
-
-        // Generate the speech
-        const result = await voiceService.generateSpeech(step.text, voice.speaker_id, voice.settings || {}, step.character_id);
-
-        // Create filename and path for the audio file
-        const timestamp = Date.now();
-        const sanitizedText = step.text.substring(0, 30).replace(/[^a-zA-Z0-9]/g, '_');
-        const rawFilename = `${timestamp}-${sanitizedText}_raw.wav`;
-        const rawPath = path.join('public', 'sounds', rawFilename);
-
-        // Download the audio file
-        const response = await axios({
-            method: 'GET',
-            url: result.url,
-            responseType: 'arraybuffer',
-            headers: {
-                'Accept': 'audio/*'
-            }
-        });
-
-        // Save the raw audio file
-        fs.writeFileSync(rawPath, Buffer.from(response.data));
-
-        // Convert to standardized MP3 format
-        const finalPath = await standardizeMP3(rawPath);
-
-        // Clean up raw file
-        if (fs.existsSync(rawPath)) {
-            fs.unlinkSync(rawPath);
-        }
-
-        // Create sound entry
-        const soundEntry = await soundService.createSound({
-            name: step.text,
-            filename: path.basename(finalPath),
-            file: path.basename(finalPath),
-            characterIds: [parseInt(step.character_id)],
-            type: 'voice',
-            created: new Date().toISOString()
-        });
-
-        // Play the generated sound
-        const playResult = await soundController.playSound(soundEntry.id, finalPath);
-        logger.info(`Voice started playing: ${step.name}, Result: ${JSON.stringify(playResult)}`);
-
-        if (step.concurrent !== "on") {
-            // Wait for the sound to finish playing only if it's not concurrent
-            await waitForSoundCompletion(soundEntry.id);
-        }
-
-        logger.info(`Voice step completed: ${step.name}`);
-        return true;
-    } catch (error) {
-        logger.error(`Error executing voice step: ${error.message}`);
-        throw error;
     }
 }
 
