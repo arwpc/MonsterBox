@@ -36,6 +36,8 @@ class SoundPlayer:
             
             with self.sounds_lock:
                 self.sounds[sound_id] = process
+            
+            # Send initial playing status
             log_message({"status": "playing", "sound_id": sound_id, "file": file_path})
             
             # Start a new thread to wait for the sound to finish
