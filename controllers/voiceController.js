@@ -1,6 +1,6 @@
 const voiceService = require('../services/voiceService');
 const logger = require('../scripts/logger');
-const { standardizeMP3 } = require('../scripts/audioUtils');
+const { standardizeMP3, detectAudioFormat } = require('../scripts/audioUtils');
 const path = require('path');
 const fs = require('fs');
 const axios = require('axios');
@@ -20,75 +20,26 @@ async function downloadAudio(url, outputPath) {
             url: url,
             responseType: 'arraybuffer',
             headers: {
-                'Accept': 'audio/mpeg'
+                'Accept': 'audio/*'
             }
         });
 
         logger.info(`Downloaded audio file, size: ${response.data.length} bytes`);
-        fs.writeFileSync(outputPath, response.data);
-        logger.info(`Saved audio file to ${outputPath}`);
-        
-        return true;
+
+        // Save the raw audio data
+        fs.writeFileSync(outputPath, Buffer.from(response.data));
+        logger.info(`Saved raw audio file to ${outputPath}`);
+
+        // Detect the actual format
+        const format = await detectAudioFormat(outputPath);
+        logger.info(`Detected format: ${format} for downloaded file`);
+
+        return format;
     } catch (error) {
         logger.error(`Failed to download audio: ${error.message}`);
         throw error;
     }
 }
-
-exports.getAvailableVoices = async (req, res) => {
-    try {
-        const voices = await voiceService.getAvailableVoices();
-        if (!voices || voices.length === 0) {
-            return handleError(res, new Error('No voices available'), 404);
-        }
-        res.json(voices);
-    } catch (error) {
-        if (error.message.includes('API key is required')) {
-            return handleError(res, error, 401);
-        }
-        handleError(res, error);
-    }
-};
-
-exports.getVoiceSettings = async (req, res) => {
-    try {
-        const { characterId } = req.params;
-        
-        if (!characterId) {
-            return handleError(res, new Error('Character ID is required'), 400);
-        }
-
-        const voice = await voiceService.getVoiceByCharacterId(characterId);
-        
-        if (!voice) {
-            return handleError(res, new Error('Voice not found'), 404);
-        }
-
-        res.json(voice);
-    } catch (error) {
-        handleError(res, error);
-    }
-};
-
-exports.saveVoiceSettings = async (req, res) => {
-    try {
-        const { characterId, voiceId, settings } = req.body;
-
-        if (!characterId || !voiceId) {
-            return handleError(res, new Error('Character ID and voice ID are required'), 400);
-        }
-
-        const savedVoice = await voiceService.saveVoice({
-            characterId,
-            speaker_id: voiceId,
-            settings: settings || {}
-        });
-
-        res.json(savedVoice);
-    } catch (error) {
-        handleError(res, error);
-    }
-};
 
 exports.generateSpeech = async (req, res) => {
     try {
@@ -112,28 +63,39 @@ exports.generateSpeech = async (req, res) => {
         // Create filename and path
         const timestamp = Date.now();
         const sanitizedText = text.substring(0, 30).replace(/[^a-zA-Z0-9]/g, '_');
-        const filename = `${timestamp}-${sanitizedText}.mp3`;
-        const outputPath = path.join('public', 'sounds', filename);
+        const tempFilename = `${timestamp}-${sanitizedText}.temp`;
+        const tempPath = path.join('public', 'sounds', tempFilename);
 
-        // Download the audio file
-        await downloadAudio(result.url, outputPath);
+        // Download the audio file and detect its format
+        await downloadAudio(result.url, tempPath);
 
         // Convert to standardized MP3 format
         try {
-            await standardizeMP3(outputPath);
-            logger.info(`Successfully converted ${filename} to standardized format`);
-        } catch (err) {
-            logger.error(`Failed to convert ${filename}: ${err.message}`);
-            // Continue even if conversion fails - original file still exists
-        }
+            const finalPath = path.join('public', 'sounds', `${timestamp}-${sanitizedText}.mp3`);
+            await standardizeMP3(tempPath);
+            
+            // Rename the file if necessary
+            if (tempPath !== finalPath && fs.existsSync(tempPath)) {
+                fs.renameSync(tempPath, finalPath);
+            }
 
-        res.json({
-            success: true,
-            filename: filename,
-            path: `/sounds/${filename}`,
-            duration: result.duration,
-            metadata: result.metadata
-        });
+            logger.info(`Successfully processed audio file to ${finalPath}`);
+
+            res.json({
+                success: true,
+                filename: path.basename(finalPath),
+                path: `/sounds/${path.basename(finalPath)}`,
+                duration: result.duration,
+                metadata: result.metadata
+            });
+        } catch (err) {
+            logger.error(`Failed to process audio file: ${err.message}`);
+            // Clean up temp file
+            if (fs.existsSync(tempPath)) {
+                fs.unlinkSync(tempPath);
+            }
+            throw err;
+        }
     } catch (error) {
         if (error.message.includes('API key is required')) {
             return handleError(res, error, 401);

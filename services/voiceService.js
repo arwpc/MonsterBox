@@ -12,7 +12,7 @@ class VoiceService {
             speed: 1,
             volume: 0,
             sampleRate: 44100,
-            bitRate: 128,
+            bitRate: 192,
             outputFormat: 'mp3',
             languageCode: 'en'
         };
@@ -160,7 +160,8 @@ class VoiceService {
                 options: {
                     ...this.defaultSettings,
                     ...options,
-                    modelChain
+                    modelChain,
+                    extensions: ['mp3']  // Request MP3 format specifically
                 }
             });
 
