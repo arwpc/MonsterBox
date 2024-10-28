@@ -15,13 +15,6 @@ class SoundPlayer:
         log_message({"status": "info", "message": "Initializing SoundPlayer"})
         self.sounds = {}
         self.next_sound_id = 0
-        
-        # Set up environment for ALSA
-        os.environ['SDL_AUDIODRIVER'] = 'alsa'
-        if os.getuid() == 0:  # If running as root
-            uid = int(os.environ.get('SUDO_UID', os.getuid()))
-            os.environ['XDG_RUNTIME_DIR'] = f'/run/user/{uid}'
-            
         log_message({"status": "ready", "message": "SoundPlayer initialized and ready"})
 
     def play_sound(self, sound_id, file_path):
@@ -35,10 +28,10 @@ class SoundPlayer:
             if file_size == 0:
                 raise Exception(f"Sound file is empty: {file_path}")
             
-            # Use MPG123 with ALSA device specification
+            # Use MPG123 to play the MP3 file with basic options
             log_message({"status": "info", "message": f"Starting mpg123 for file: {file_path}"})
             process = subprocess.Popen(
-                ['mpg123', '--quiet', '-a', 'hw:0,0', file_path],
+                ['mpg123', '--quiet', file_path],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE
             )
