@@ -247,7 +247,7 @@ async function executeStep(sceneId, step) {
         case 'sound':
             return await executeSound(step);
         case 'voice':
-            return await executeSound(step);  // Voice steps are pre-generated as sounds
+            return await executeSound({...step, sound_id: step.voice_id});  // Use voice_id as sound_id for voice steps
         case 'motor':
             return await executeMotor(step);
         case 'linear-actuator':
