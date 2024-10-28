@@ -10,7 +10,8 @@ let messageId = 0;
 const eventEmitter = new EventEmitter();
 let playStatus = {};
 
-const COMMAND_TIMEOUT = 15000; // Increased timeout to 15 seconds
+const COMMAND_TIMEOUT = 5000; // Timeout for basic commands
+const PLAYBACK_TIMEOUT = 300000; // 5 minute timeout for sound playback
 
 function setupAudioEnvironment() {
     const env = { ...process.env };
@@ -128,6 +129,9 @@ function startSoundPlayer() {
             soundPlayerProcess.on('close', (code) => {
                 console.log(`Sound player exited with code ${code}`);
                 soundPlayerProcess = null;
+                // Clear all statuses on process exit
+                playStatus = {};
+                messageQueue.clear();
                 reject(new Error(`Sound player process exited unexpectedly with code ${code}`));
             });
         } else {
@@ -136,7 +140,7 @@ function startSoundPlayer() {
     });
 }
 
-function sendCommand(command) {
+function sendCommand(command, timeout = COMMAND_TIMEOUT) {
     return new Promise((resolve, reject) => {
         if (!soundPlayerProcess) {
             console.error('Sound player is not running');
@@ -153,7 +157,7 @@ function sendCommand(command) {
                 messageQueue.delete(id);
                 reject(new Error('Command timed out'));
             }
-        }, COMMAND_TIMEOUT);
+        }, timeout);
 
         messageQueue.set(id, { 
             resolve: (response) => {
@@ -190,6 +194,7 @@ function playSound(soundId, filePath) {
         })
         .catch(error => {
             console.error(`Error playing sound: ${error.message}`);
+            playStatus[soundId] = 'error';
             throw error;
         });
 }
@@ -243,11 +248,12 @@ function waitForSoundToFinish(soundId) {
         const timeout = setTimeout(() => {
             eventEmitter.removeListener('soundFinished', finishListener);
             reject(new Error(`Timeout waiting for sound ${soundId} to finish`));
-        }, COMMAND_TIMEOUT);
+        }, PLAYBACK_TIMEOUT);
 
         const finishListener = (finishedSoundId) => {
             if (finishedSoundId === soundId) {
                 clearTimeout(timeout);
+                eventEmitter.removeListener('soundFinished', finishListener);
                 resolve();
             }
         };
