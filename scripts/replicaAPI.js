@@ -3,12 +3,12 @@ const logger = require('./logger');
 
 class ReplicaAPI {
     constructor() {
-        this.apiKey = process.env.REPLICA_API_KEY;
+        this.apiKey = process.env.REPLICA_API_KEY || 'f64f3f2e-f575-494d-a1b2-bbfb60e3f558';
         this.baseURL = 'https://api.replicastudios.com/v2';
         this.requestCount = 0;
         this.lastRequestTime = Date.now();
         this.rateLimitPerMinute = 100;
-        
+
         this.axiosInstance = axios.create({
             baseURL: this.baseURL,
             headers: {
@@ -82,24 +82,11 @@ class ReplicaAPI {
                 throw new Error('Invalid API response format');
             }
 
-            const transformedVoices = response.data.items.map(voice => ({
-                uuid: voice.uuid,
-                name: voice.name,
-                gender: voice.metadata?.gender || 'unknown',
-                age: voice.metadata?.voiceAge || 'unknown',
-                accent: voice.metadata?.accent || 'unknown',
-                capabilities: {
-                    'tts.vox_1_0': voice.default_style?.capabilities?.['tts.vox_1_0'] || false,
-                    'tts.vox_2_0': voice.default_style?.capabilities?.['tts.vox_2_0'] || false,
-                    'sts.vox_1_0': voice.default_style?.capabilities?.['sts.vox_1_0'] || false,
-                    'sts.vox_2_0': voice.default_style?.capabilities?.['sts.vox_2_0'] || false
-                }
-            }));
-
-            this.voicesCache = transformedVoices;
+            // Keep the original voice data structure as it's needed for speaker_id
+            this.voicesCache = response.data.items;
             this.voicesCacheExpiry = Date.now() + this.cacheLifetime;
 
-            return transformedVoices;
+            return response.data.items;
         } catch (error) {
             const errorMsg = error.response?.data?.error || error.message;
             logger.error(`Error fetching available voices: ${errorMsg}`);
