@@ -74,9 +74,9 @@
             // Event delegation for voice preview and play buttons
             $('#steps').on('click', '.preview-voice', async function() {
                 const index = $(this).data('index');
-                const text = $(`textarea[name="steps[${index}][text]"]`).val();
+                const text = $(`#words_${index}`).val();
                 const statusDiv = $(`#voice-preview-status-${index}`);
-                const playButton = $(this).closest('.voice-controls').find('.play-voice');
+                const playButton = $(this).closest('.form-group').find('.play-voice');
                 const audio = $(`#voice-audio-${index}`)[0];
                 
                 if (!text) {
@@ -88,7 +88,7 @@
                 playButton.hide();
 
                 try {
-                    const response = await axios.post('/api/voice/generate-and-save', {
+                    const response = await axios.post('/api/voice/generate-for-scene', {
                         text: text,
                         characterId: characterId
                     });
@@ -100,6 +100,8 @@
                         // Set up audio player
                         audio.src = response.data.path;
                         playButton.show();
+                        // Play the audio immediately
+                        audio.play();
                     } else {
                         statusDiv.html('Failed to generate voice: ' + response.data.error);
                     }
@@ -151,6 +153,9 @@
             newStep.querySelectorAll('input, select, textarea').forEach(element => {
                 if (element.name) {
                     element.name = element.name.replace(/steps\[\d+\]/, `steps[${newIndex}]`);
+                }
+                if (element.id && element.id.startsWith('words_')) {
+                    element.id = `words_${newIndex}`;
                 }
             });
 
@@ -217,6 +222,9 @@
                 const name = input.getAttribute('name');
                 if (name) {
                     input.setAttribute('name', name.replace(/steps\[\d+\]/, `steps[${newIndex}]`));
+                }
+                if (input.id && input.id.startsWith('words_')) {
+                    input.id = `words_${newIndex}`;
                 }
             });
         }

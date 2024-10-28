@@ -137,5 +137,23 @@
         "sound_id": "3"
       }
     ]
+  },
+  {
+    "id": 7,
+    "character_id": 1,
+    "scene_name": "szzzx",
+    "steps": [
+      {
+        "type": "voice",
+        "name": "scary step",
+        "sound_id": "15",
+        "text": "say scary stuff"
+      },
+      {
+        "type": "sound",
+        "name": "santos",
+        "sound_id": "1"
+      }
+    ]
   }
 ]

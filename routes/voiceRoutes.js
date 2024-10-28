@@ -36,11 +36,14 @@ router.get('/available', voiceController.getAvailableVoices);
 router.get('/settings/:characterId', voiceController.getVoiceSettings);
 router.post('/settings', voiceController.saveVoiceSettings);
 router.post('/generate', voiceController.generateSpeech);
-router.post('/generate-and-save', voiceController.generateAndSave);
+router.post('/generate-for-scene', voiceController.generateAndSaveForScene);
 
 // Voice metadata routes
 router.patch('/metadata/:characterId', voiceController.updateVoiceMetadata);
 router.get('/history/:characterId', voiceController.getVoiceHistory);
+router.get('/stats/:characterId', voiceController.getVoiceStats);
+router.delete('/history/:characterId', voiceController.deleteVoiceHistory);
+router.post('/test-connection', voiceController.testVoiceConnection);
 
 // Download file from URL
 async function downloadFile(url) {

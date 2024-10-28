@@ -1,7 +1,7 @@
 {
   "voices": [
     {
-      "characterId": "test-character",
+      "characterId": 1,
       "speaker_id": "05e00c6a-2534-4024-a9f4-08aba4bbd56c",
       "settings": {
         "pitch": 0,
@@ -9,9 +9,9 @@
         "volume": 0,
         "sampleRate": 44100,
         "bitRate": 128,
-        "modelChain": "vox_2_0",
         "outputFormat": "mp3",
-        "languageCode": "en"
+        "languageCode": "en",
+        "modelChain": "vox_2_0"
       },
       "metadata": {
         "lastUsed": null,
@@ -20,7 +20,7 @@
         "tags": [],
         "notes": "",
         "created": "2024-10-28T16:24:54.907Z",
-        "lastModified": "2024-10-28T16:24:54.907Z"
+        "lastModified": "2024-10-28T21:22:42.513Z"
       },
       "history": [
         {
@@ -35,6 +35,188 @@
             "modelChain": "vox_2_0",
             "outputFormat": "mp3",
             "languageCode": "en"
+          }
+        },
+        {
+          "timestamp": "2024-10-28T21:14:21.000Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "mp3",
+            "languageCode": "en",
+            "modelChain": "vox_2_0"
+          }
+        },
+        {
+          "timestamp": "2024-10-28T21:16:43.500Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "mp3",
+            "languageCode": "en",
+            "modelChain": "vox_2_0"
+          }
+        },
+        {
+          "timestamp": "2024-10-28T21:17:30.011Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "mp3",
+            "languageCode": "en",
+            "modelChain": "vox_2_0"
+          }
+        },
+        {
+          "timestamp": "2024-10-28T21:20:08.995Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "mp3",
+            "languageCode": "en",
+            "modelChain": "vox_2_0"
+          }
+        },
+        {
+          "timestamp": "2024-10-28T21:20:19.169Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "mp3",
+            "languageCode": "en",
+            "modelChain": "vox_2_0"
+          }
+        },
+        {
+          "timestamp": "2024-10-28T21:20:29.806Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "mp3",
+            "languageCode": "en",
+            "modelChain": "vox_2_0"
+          }
+        },
+        {
+          "timestamp": "2024-10-28T21:20:51.059Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "mp3",
+            "languageCode": "en",
+            "modelChain": "vox_2_0"
+          }
+        },
+        {
+          "timestamp": "2024-10-28T21:21:20.554Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "mp3",
+            "languageCode": "en",
+            "modelChain": "vox_2_0"
+          }
+        },
+        {
+          "timestamp": "2024-10-28T21:21:38.335Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "mp3",
+            "languageCode": "en",
+            "modelChain": "vox_2_0"
+          }
+        },
+        {
+          "timestamp": "2024-10-28T21:21:54.864Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "mp3",
+            "languageCode": "en",
+            "modelChain": "vox_2_0"
+          }
+        },
+        {
+          "timestamp": "2024-10-28T21:22:10.687Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "mp3",
+            "languageCode": "en",
+            "modelChain": "vox_2_0"
+          }
+        },
+        {
+          "timestamp": "2024-10-28T21:22:22.150Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "mp3",
+            "languageCode": "en",
+            "modelChain": "vox_2_0"
+          }
+        },
+        {
+          "timestamp": "2024-10-28T21:22:42.513Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "mp3",
+            "languageCode": "en",
+            "modelChain": "vox_2_0"
           }
         }
       ]
