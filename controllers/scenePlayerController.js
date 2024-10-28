@@ -18,6 +18,7 @@ let activeProcesses = new Set();
 const SOUND_CHECK_INTERVAL = 50; // 50ms interval for checking sound status
 const INTER_STEP_DELAY = 100; // 100ms delay between steps
 const SERVO_MOVEMENT_TIMEOUT = 15000; // 15 second timeout for servo movement
+const SOUND_TIMEOUT = 30000; // 30 second timeout for sound playback
 
 const stopAllParts = async () => {
     logger.info('Stopping all parts');
@@ -295,10 +296,29 @@ async function executeSound(step) {
 
 async function waitForSoundCompletion(soundId) {
     return new Promise((resolve, reject) => {
+        const startTime = Date.now();
+        let lastStatus = null;
+
         const checkInterval = setInterval(async () => {
             try {
+                // Check for timeout
+                if (Date.now() - startTime > SOUND_TIMEOUT) {
+                    clearInterval(checkInterval);
+                    await soundController.stopSound(soundId).catch(error => {
+                        logger.error(`Error stopping sound on timeout: ${error.message}`);
+                    });
+                    reject(new Error(`Sound playback timed out after ${SOUND_TIMEOUT}ms`));
+                    return;
+                }
+
                 const status = await soundController.getSoundStatus(soundId);
                 logger.debug(`Sound status for ${soundId}: ${JSON.stringify(status)}`);
+
+                // Only log if status has changed
+                if (lastStatus !== status.status) {
+                    logger.info(`Sound ${soundId} status: ${status.status}`);
+                    lastStatus = status.status;
+                }
 
                 if (status.status === 'stopped' || status.status === 'finished' || status.status === 'not_found') {
                     clearInterval(checkInterval);
