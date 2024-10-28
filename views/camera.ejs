@@ -259,7 +259,6 @@
         const placeholderMessage = document.getElementById('placeholderMessage');
         const cameraControls = document.getElementById('cameraControls');
 
-        // Load available cameras
         async function loadCameras() {
             try {
                 const response = await fetch('/camera/list');
@@ -268,12 +267,10 @@
                 }
                 const cameras = await response.json();
                 
-                // Clear existing options except the placeholder
                 while (cameraSelect.options.length > 1) {
                     cameraSelect.remove(1);
                 }
 
-                // Add camera options
                 cameras.forEach(camera => {
                     camera.devices.forEach(device => {
                         const option = document.createElement('option');
@@ -283,7 +280,6 @@
                     });
                 });
 
-                // Set selected camera if one is saved
                 const selectedCamera = '<%= selectedCamera %>';
                 if (selectedCamera && selectedCamera !== 'null') {
                     cameraSelect.value = selectedCamera;
@@ -294,7 +290,6 @@
             }
         }
 
-        // Apply camera selection
         applyCameraSelect.addEventListener('click', async function() {
             const cameraId = parseInt(cameraSelect.value);
             if (!cameraId && cameraId !== 0) {
@@ -315,7 +310,6 @@
                     throw new Error('Failed to select camera');
                 }
 
-                // Enable controls and start stream
                 cameraControls.classList.remove('controls-disabled');
                 placeholderMessage.style.display = 'none';
                 manuallyDisconnected = false;
@@ -371,28 +365,24 @@
         disconnectButton.addEventListener('click', function() {
             manuallyDisconnected = true;
             
-            // Stop all active features
             stopMotionDetection();
             stopHeadTracking();
             
-            // Clear the image source to stop the stream
             streamImg.src = '/images/no-stream.jpg';
             
-            // Update status
             streamStatus.className = 'status-indicator status-inactive';
             streamStatusText.textContent = 'Disconnected';
             disconnectButton.style.display = 'none';
             
-            // Disable controls and show placeholder
             cameraControls.classList.add('controls-disabled');
             placeholderMessage.style.display = 'block';
         });
 
-        document.getElementById('toggleMotion').addEventListener('click', function() {
+        document.getElementById('toggleMotion').addEventListener('click', async function() {
             if (motionDetectionActive) {
-                stopMotionDetection();
+                await stopMotionDetection();
             } else {
-                startMotionDetection();
+                await startMotionDetection();
             }
         });
 
@@ -413,6 +403,9 @@
 
         async function startMotionDetection() {
             try {
+                streamImg.src = '';
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
                 motionDetectionActive = true;
                 document.getElementById('toggleMotion').textContent = 'Stop Motion Detection';
                 
@@ -444,17 +437,17 @@
                     } catch (error) {
                         console.error('Motion detection error:', error);
                         showError('Motion detection error: ' + error.message);
-                        stopMotionDetection();
+                        await stopMotionDetection();
                     }
                 }, 100);
             } catch (error) {
                 console.error('Failed to start motion detection:', error);
                 showError('Failed to start motion detection: ' + error.message);
-                stopMotionDetection();
+                await stopMotionDetection();
             }
         }
 
-        function stopMotionDetection() {
+        async function stopMotionDetection() {
             motionDetectionActive = false;
             document.getElementById('toggleMotion').textContent = 'Start Motion Detection';
             if (motionInterval) {
@@ -463,6 +456,12 @@
             }
             motionIndicator.style.display = 'none';
             document.getElementById('motionData').textContent = 'No motion data';
+
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            if (!manuallyDisconnected) {
+                initializeStream();
+            }
         }
 
         async function startHeadTracking() {
@@ -603,7 +602,6 @@
             }
         });
 
-        // Load cameras on page load
         loadCameras();
     </script>
 </body>
