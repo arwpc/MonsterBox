@@ -66,24 +66,22 @@ exports.saveVoiceSettings = async (req, res) => {
 
 exports.generateSpeech = async (req, res) => {
     try {
-        const { speaker_id, text, options = {}, style, characterId } = req.body;
+        const { speaker_id, text, options = {}, characterId } = req.body;
 
         if (!speaker_id || !text) {
             return handleError(res, new Error('Speaker ID and text are required'), 400);
         }
 
-        // Transform style and options into generation options
+        // Transform options into generation options
         const generationOptions = {
             ...options,
             modelChain: 'vox_2_0',
             speed: options?.speed || 1.0,
             pitch: options?.pitch || 0,
-            volume: options?.volume || 0,
-            style,
-            characterId
+            volume: options?.volume || 0
         };
 
-        const result = await voiceService.generateSpeech(speaker_id, text, generationOptions);
+        const result = await voiceService.generateSpeech(text, speaker_id, generationOptions, characterId);
         res.json(result);
     } catch (error) {
         if (error.message.includes('API key is required')) {
@@ -98,71 +96,6 @@ exports.generateSpeech = async (req, res) => {
         if (error.message.includes('timed out')) {
             return handleError(res, error, 504);
         }
-        handleError(res, error);
-    }
-};
-
-exports.getFXPresets = async (req, res) => {
-    try {
-        const presets = await voiceService.getFXPresets();
-        if (!presets || presets.length === 0) {
-            return handleError(res, new Error('No FX presets available'), 404);
-        }
-        res.json(presets);
-    } catch (error) {
-        if (error.message.includes('API key is required')) {
-            return handleError(res, error, 401);
-        }
-        handleError(res, error);
-    }
-};
-
-exports.getVoicePresets = async (req, res) => {
-    try {
-        const { characterId } = req.params;
-        
-        if (!characterId) {
-            return handleError(res, new Error('Character ID is required'), 400);
-        }
-
-        const voice = await voiceService.getVoiceByCharacterId(characterId);
-        
-        if (!voice) {
-            return handleError(res, new Error('Voice not found'), 404);
-        }
-
-        res.json(voice.presets || {});
-    } catch (error) {
-        handleError(res, error);
-    }
-};
-
-exports.savePreset = async (req, res) => {
-    try {
-        const { characterId, presetName, settings } = req.body;
-
-        if (!characterId || !presetName) {
-            return handleError(res, new Error('Character ID and preset name are required'), 400);
-        }
-
-        const voice = await voiceService.saveVoicePreset(characterId, presetName, settings);
-        res.json(voice);
-    } catch (error) {
-        handleError(res, error);
-    }
-};
-
-exports.deletePreset = async (req, res) => {
-    try {
-        const { characterId, presetName } = req.params;
-
-        if (!characterId || !presetName) {
-            return handleError(res, new Error('Character ID and preset name are required'), 400);
-        }
-
-        await voiceService.deleteVoicePreset(characterId, presetName);
-        res.json({ message: 'Preset deleted successfully' });
-    } catch (error) {
         handleError(res, error);
     }
 };

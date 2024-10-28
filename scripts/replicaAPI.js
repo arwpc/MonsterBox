@@ -21,8 +21,6 @@ class ReplicaAPI {
 
         this.voicesCache = null;
         this.voicesCacheExpiry = null;
-        this.fxPresetsCache = null;
-        this.fxPresetsCacheExpiry = null;
         this.cacheLifetime = 5 * 60 * 1000;
 
         if (!this.apiKey) {
@@ -82,41 +80,28 @@ class ReplicaAPI {
                 throw new Error('Invalid API response format');
             }
 
-            // Keep the original voice data structure as it's needed for speaker_id
-            this.voicesCache = response.data.items;
+            const transformedVoices = response.data.items.map(voice => ({
+                uuid: voice.uuid,
+                name: voice.name,
+                gender: voice.metadata?.gender || 'unknown',
+                age: voice.metadata?.voiceAge || 'unknown',
+                accent: voice.metadata?.accent || 'unknown',
+                speaker_id: voice.default_style?.speaker_id || voice.uuid,
+                capabilities: voice.default_style?.capabilities || {
+                    'tts.vox_1_0': false,
+                    'tts.vox_2_0': false,
+                    'sts.vox_1_0': false,
+                    'sts.vox_2_0': false
+                }
+            }));
+
+            this.voicesCache = transformedVoices;
             this.voicesCacheExpiry = Date.now() + this.cacheLifetime;
 
-            return response.data.items;
+            return transformedVoices;
         } catch (error) {
             const errorMsg = error.response?.data?.error || error.message;
             logger.error(`Error fetching available voices: ${errorMsg}`);
-            throw error;
-        }
-    }
-
-    async getFXPresets() {
-        try {
-            await this.checkRateLimit();
-
-            if (this.fxPresetsCache && this.fxPresetsCacheExpiry > Date.now()) {
-                return this.fxPresetsCache;
-            }
-
-            const response = await this.retryWithBackoff(async () => {
-                return await this.axiosInstance.get('/effects_presets');
-            });
-
-            if (!response.data?.items) {
-                throw new Error('Invalid API response format');
-            }
-
-            this.fxPresetsCache = response.data.items;
-            this.fxPresetsCacheExpiry = Date.now() + this.cacheLifetime;
-
-            return response.data.items;
-        } catch (error) {
-            const errorMsg = error.response?.data?.error || error.message;
-            logger.error(`Error fetching FX presets: ${errorMsg}`);
             throw error;
         }
     }
@@ -199,9 +184,7 @@ class ReplicaAPI {
     clearCache() {
         this.voicesCache = null;
         this.voicesCacheExpiry = null;
-        this.fxPresetsCache = null;
-        this.fxPresetsCacheExpiry = null;
-        logger.info('All caches cleared');
+        logger.info('Cache cleared');
     }
 }
 

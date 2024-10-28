@@ -1,1 +1,43 @@
-{"voices": []}
+{
+  "voices": [
+    {
+      "characterId": "test-character",
+      "speaker_id": "05e00c6a-2534-4024-a9f4-08aba4bbd56c",
+      "settings": {
+        "pitch": 0,
+        "speed": 1,
+        "volume": 0,
+        "sampleRate": 44100,
+        "bitRate": 128,
+        "modelChain": "vox_2_0",
+        "outputFormat": "mp3",
+        "languageCode": "en"
+      },
+      "metadata": {
+        "lastUsed": null,
+        "useCount": 0,
+        "favorited": false,
+        "tags": [],
+        "notes": "",
+        "created": "2024-10-28T16:24:54.907Z",
+        "lastModified": "2024-10-28T16:24:54.907Z"
+      },
+      "history": [
+        {
+          "timestamp": "2024-10-28T16:24:54.907Z",
+          "type": "created",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "modelChain": "vox_2_0",
+            "outputFormat": "mp3",
+            "languageCode": "en"
+          }
+        }
+      ]
+    }
+  ]
+}
