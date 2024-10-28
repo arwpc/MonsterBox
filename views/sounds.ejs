@@ -13,7 +13,7 @@
     <div id="sound-list">
         <div class="button-group">
             <a href="/sounds/new" class="button primary-btn">Add New Sound</a>
-            <a href="/api/voice/configure" class="button primary-btn">Configure Voice</a>
+            <a href="/api/voice/configure?characterId=<%- characters[0].id %>" id="configureVoiceBtn" class="button primary-btn">Configure Voice</a>
         </div>
         
         <div id="character-filter">
@@ -80,6 +80,12 @@
         function filterSounds() {
             const selectedCharacter = document.getElementById('character-select').value;
             const rows = document.querySelectorAll('#sound-table-body tr');
+            const configureVoiceBtn = document.getElementById('configureVoiceBtn');
+
+            // Update Configure Voice button URL with selected character
+            if (selectedCharacter !== 'all' && selectedCharacter !== 'unassigned') {
+                configureVoiceBtn.href = `/api/voice/configure?characterId=${selectedCharacter}`;
+            }
 
             rows.forEach(row => {
                 const characterIds = JSON.parse(row.dataset.characters);
