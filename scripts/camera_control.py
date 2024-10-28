@@ -8,6 +8,7 @@ import time
 import os
 import fcntl
 import base64
+import subprocess
 from typing import Dict, Any, Optional
 
 # Configure logging
@@ -17,7 +18,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Import OpenCV after numpy is properly initialized
+# Force V4L2 backend before importing OpenCV
+os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0"
+os.environ["OPENCV_VIDEOIO_PRIORITY_GSTREAMER"] = "0"
+os.environ["OPENCV_VIDEOIO_PRIORITY_V4L2"] = "100"
+os.environ["OPENCV_VIDEOIO_BACKEND"] = "v4l2"
+
+# Import OpenCV after setting backend priorities
 try:
     import numpy as np
     import cv2
@@ -36,6 +43,10 @@ class CameraLock:
     def acquire(self) -> bool:
         """Acquire lock on camera device."""
         try:
+            # Kill any existing camera processes
+            subprocess.run(['pkill', '-f', 'camera_stream.py'], capture_output=True)
+            time.sleep(1)  # Wait for processes to die
+            
             # First check if the lock file exists and is stale
             if os.path.exists(self.lock_path):
                 try:
@@ -100,7 +111,7 @@ class MotionDetector:
             # Release any existing camera instance
             self.release()
             
-            # Open camera with default backend
+            # Try V4L2 backend with specific settings
             self.cap = cv2.VideoCapture(self.camera_id)
             
             if not self.cap.isOpened():
