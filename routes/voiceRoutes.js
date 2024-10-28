@@ -83,16 +83,21 @@ router.post('/save-to-sounds', async (req, res) => {
         // Copy the temp file to the final location
         await fsPromises.copyFile(tempFilePath, targetFilePath);
         
-        // Create a new sound entry
+        // Create a new sound entry - ensure both filename and file properties match
         const newSound = await soundService.createSound({
             name: text,
-            file: targetFileName,
-            characterIds: characterId ? [parseInt(characterId)] : [], // Add characterId to the array if provided
+            filename: targetFileName, // This matches the template's usage
+            file: targetFileName,    // This is for backward compatibility
+            characterIds: characterId ? [parseInt(characterId)] : [],
             type: 'voice',
             created: new Date().toISOString()
         });
 
-        res.json(newSound);
+        // Return both the sound entry and the full URL for immediate playback
+        res.json({
+            ...newSound,
+            url: `/sounds/${targetFileName}` // Add the URL for immediate playback
+        });
     } catch (error) {
         console.error('Error saving to sounds:', error);
         res.status(500).json({ error: error.message });

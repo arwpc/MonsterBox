@@ -77,6 +77,14 @@
     <div id="errorInfo" style="color: red;"></div>
 
     <script>
+        // Get the character ID from URL query parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const characterId = urlParams.get('characterId');
+        if (characterId) {
+            document.getElementById('character-select').value = characterId;
+            filterSounds();
+        }
+
         function filterSounds() {
             const selectedCharacter = document.getElementById('character-select').value;
             const rows = document.querySelectorAll('#sound-table-body tr');
@@ -101,6 +109,10 @@
 
         function playLocal(filename) {
             const audio = new Audio('/sounds/' + filename);
+            audio.onerror = function(e) {
+                console.error('Error loading audio:', e);
+                displayError('Error playing sound locally: ' + e.message);
+            };
             audio.play().catch(error => {
                 console.error('Error playing sound locally:', error);
                 displayError('Error playing sound locally: ' + error.message);
