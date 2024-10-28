@@ -71,7 +71,7 @@
                 copyStep($(this).data('index'));
             });
 
-            // Event delegation for voice preview and play buttons
+            // Event delegation for voice preview, play, and config buttons
             $('#steps').on('click', '.preview-voice', async function() {
                 const index = $(this).data('index');
                 const text = $(`#words_${index}`).val();
@@ -115,6 +115,11 @@
                 const index = $(this).data('index');
                 const audio = $(`#voice-audio-${index}`)[0];
                 audio.play();
+            });
+
+            // Voice Config button handler
+            $('#steps').on('click', '.voice-config', function() {
+                window.location.href = `/api/voice/configure?characterId=${characterId}`;
             });
         });
 
@@ -183,6 +188,10 @@
                 playButton.dataset.index = newIndex;
                 playButton.style.display = 'none'; // Hide play button on copy
             }
+            const configButton = newStep.querySelector('.voice-config');
+            if (configButton) {
+                configButton.dataset.index = newIndex;
+            }
 
             // Append the new step to the steps container
             steps.appendChild(newStep);
@@ -212,6 +221,10 @@
                 const playButton = steps[i].querySelector('.play-voice');
                 if (playButton) {
                     playButton.dataset.index = i;
+                }
+                const configButton = steps[i].querySelector('.voice-config');
+                if (configButton) {
+                    configButton.dataset.index = i;
                 }
             }
         }		

@@ -19,7 +19,7 @@
         "tags": [],
         "notes": "",
         "created": "2024-10-28T16:24:54.907Z",
-        "lastModified": "2024-10-28T21:25:48.627Z"
+        "lastModified": "2024-10-28T21:35:33.302Z"
       },
       "history": [
         {
@@ -275,6 +275,32 @@
         },
         {
           "timestamp": "2024-10-28T21:25:48.627Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": -10,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "languageCode": "en"
+          }
+        },
+        {
+          "timestamp": "2024-10-28T21:30:21.074Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": -10,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "languageCode": "en"
+          }
+        },
+        {
+          "timestamp": "2024-10-28T21:35:33.302Z",
           "type": "settings_update",
           "settings": {
             "pitch": -10,

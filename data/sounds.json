@@ -108,18 +108,6 @@
     "characterId": null
   },
   {
-    "id": 14,
-    "name": "Welcome to the Monster Box. I am Baphomet, lord of the underworld.",
-    "filename": "1730150203503-Welcome_to_the_Monster_Box__I__raw.mp3",
-    "file": "1730150203503-Welcome_to_the_Monster_Box__I__raw.mp3",
-    "characterIds": [
-      1
-    ],
-    "type": "voice",
-    "created": "2024-10-28T21:16:43.764Z",
-    "characterId": null
-  },
-  {
     "id": 15,
     "name": "say scary stuff",
     "filename": "1730150250013-say_scary_stuff_raw.mp3",
@@ -132,27 +120,15 @@
     "characterId": null
   },
   {
-    "id": 16,
-    "name": "Welcome to my underground!",
-    "filename": "1730150674431-Welcome_to_my_underground__raw.mp3",
-    "file": "1730150674431-Welcome_to_my_underground__raw.mp3",
+    "id": 18,
+    "name": "This is the beginning of the end!",
+    "filename": "1730151021076-This_is_the_beginning_of_the_e_raw.mp3",
+    "file": "1730151021076-This_is_the_beginning_of_the_e_raw.mp3",
     "characterIds": [
       1
     ],
     "type": "voice",
-    "created": "2024-10-28T21:24:34.828Z",
-    "characterId": null
-  },
-  {
-    "id": 17,
-    "name": "Welcommin Kiddos!",
-    "filename": "1730150748628-Welcommin_Kiddos__raw.mp3",
-    "file": "1730150748628-Welcommin_Kiddos__raw.mp3",
-    "characterIds": [
-      1
-    ],
-    "type": "voice",
-    "created": "2024-10-28T21:25:48.864Z",
+    "created": "2024-10-28T21:30:21.378Z",
     "characterId": null
   }
 ]
