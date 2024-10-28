@@ -1,7 +1,7 @@
 import sys
 import time
 import json
-from threading import Thread
+from threading import Thread, Lock
 import os
 import signal
 import traceback
@@ -15,6 +15,7 @@ class SoundPlayer:
     def __init__(self):
         log_message({"status": "info", "message": "Initializing SoundPlayer"})
         self.sounds = {}
+        self.sounds_lock = Lock()
         self.next_sound_id = 0
         log_message({"status": "ready", "message": "SoundPlayer initialized and ready"})
 
@@ -33,7 +34,8 @@ class SoundPlayer:
             log_message({"status": "info", "message": f"Executing mpg123 command for file: {file_path}"})
             process = subprocess.Popen(['mpg123', '-v', '-k 10', '-a hw:0,0', file_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             
-            self.sounds[sound_id] = process
+            with self.sounds_lock:
+                self.sounds[sound_id] = process
             log_message({"status": "playing", "sound_id": sound_id, "file": file_path})
             
             # Start a new thread to wait for the sound to finish
@@ -46,30 +48,34 @@ class SoundPlayer:
 
     def _wait_for_sound_end(self, sound_id, process, file_path):
         start_time = time.time()
-        stdout, stderr = process.communicate()
-        end_time = time.time()
-        duration = end_time - start_time
-        
-        log_message({"status": "info", "message": f"MPG123 stdout: {stdout.decode('utf-8', errors='ignore')}"})
-        
-        if process.returncode != 0 and process.returncode != -15:  # -15 is SIGTERM, which is normal for stopped sounds
-            log_message({"status": "error", "sound_id": sound_id, "file": file_path, "message": f"MPG123 error: {stderr.decode('utf-8', errors='ignore')}"})
-        
-        # Ensure a minimum play duration of 1 second
-        if duration < 1:
-            time.sleep(1 - duration)
-            duration = 1
-        
-        log_message({"status": "finished", "sound_id": sound_id, "duration": duration})
-        if sound_id in self.sounds:
-            del self.sounds[sound_id]
+        try:
+            stdout, stderr = process.communicate()
+            end_time = time.time()
+            duration = end_time - start_time
+            
+            log_message({"status": "info", "message": f"MPG123 stdout: {stdout.decode('utf-8', errors='ignore')}"})
+            
+            if process.returncode != 0 and process.returncode != -15:  # -15 is SIGTERM, which is normal for stopped sounds
+                log_message({"status": "error", "sound_id": sound_id, "file": file_path, "message": f"MPG123 error: {stderr.decode('utf-8', errors='ignore')}"})
+            
+            # Ensure a minimum play duration of 1 second
+            if duration < 1:
+                time.sleep(1 - duration)
+                duration = 1
+            
+            log_message({"status": "finished", "sound_id": sound_id, "duration": duration})
+        except Exception as e:
+            log_message({"status": "error", "sound_id": sound_id, "message": str(e), "traceback": traceback.format_exc()})
+        finally:
+            with self.sounds_lock:
+                if sound_id in self.sounds:
+                    del self.sounds[sound_id]
 
     def _force_kill_process(self, process):
         """Force kills a process and all its children"""
         try:
             parent = psutil.Process(process.pid)
-            children = parent.children(recursive=True)
-            for child in children:
+            for child in parent.children(recursive=True):
                 try:
                     child.kill()
                 except psutil.NoSuchProcess:
@@ -79,46 +85,48 @@ class SoundPlayer:
             pass
 
     def stop_sound(self, sound_id):
-        if sound_id in self.sounds:
-            process = self.sounds[sound_id]
-            try:
-                # First try SIGTERM
-                process.terminate()
-                
-                # Wait up to 2 seconds for graceful termination
+        with self.sounds_lock:
+            if sound_id in self.sounds:
+                process = self.sounds[sound_id]
                 try:
-                    process.wait(timeout=2)
-                except subprocess.TimeoutExpired:
-                    # If graceful termination fails, force kill
-                    self._force_kill_process(process)
-                
-                log_message({"status": "stopped", "sound_id": sound_id})
-            except Exception as e:
-                log_message({"status": "warning", "message": f"Error stopping sound {sound_id}: {str(e)}"})
-            finally:
-                if sound_id in self.sounds:
-                    del self.sounds[sound_id]
-        else:
-            log_message({"status": "warning", "message": f"Sound {sound_id} not found or already stopped"})
+                    # First try SIGTERM
+                    process.terminate()
+                    
+                    # Wait up to 2 seconds for graceful termination
+                    try:
+                        process.wait(timeout=2)
+                    except subprocess.TimeoutExpired:
+                        # If graceful termination fails, force kill
+                        self._force_kill_process(process)
+                    
+                    log_message({"status": "stopped", "sound_id": sound_id})
+                except Exception as e:
+                    log_message({"status": "warning", "message": f"Error stopping sound {sound_id}: {str(e)}"})
+                finally:
+                    if sound_id in self.sounds:
+                        del self.sounds[sound_id]
+            else:
+                log_message({"status": "warning", "message": f"Sound {sound_id} not found or already stopped"})
 
     def stop_all_sounds(self):
-        # Create a list of sound_ids to avoid modifying dict while iterating
-        sound_ids = list(self.sounds.keys())
+        with self.sounds_lock:
+            sound_ids = list(self.sounds.keys())
         for sound_id in sound_ids:
             self.stop_sound(sound_id)
         log_message({"status": "info", "message": "All sounds stopped"})
 
     def get_sound_status(self, sound_id):
-        if sound_id in self.sounds:
-            process = self.sounds[sound_id]
-            try:
-                is_playing = process.poll() is None
-                status = "playing" if is_playing else "stopped"
-                return {"status": status, "sound_id": sound_id}
-            except Exception:
-                return {"status": "error", "sound_id": sound_id}
-        else:
-            return {"status": "not_found", "sound_id": sound_id}
+        with self.sounds_lock:
+            if sound_id in self.sounds:
+                process = self.sounds[sound_id]
+                try:
+                    is_playing = process.poll() is None
+                    status = "playing" if is_playing else "stopped"
+                    return {"status": status, "sound_id": sound_id}
+                except Exception:
+                    return {"status": "error", "sound_id": sound_id}
+            else:
+                return {"status": "not_found", "sound_id": sound_id}
 
     def get_sound_duration(self, file_path):
         try:
