@@ -2,16 +2,15 @@
   "voices": [
     {
       "characterId": 1,
-      "speaker_id": "05e00c6a-2534-4024-a9f4-08aba4bbd56c",
+      "speaker_id": "b80ebe00-4738-4766-85b7-35c3096acb79",
       "settings": {
-        "pitch": 0,
+        "pitch": -10,
         "speed": 1,
         "volume": 0,
         "sampleRate": 44100,
         "bitRate": 128,
-        "outputFormat": "mp3",
-        "languageCode": "en",
-        "modelChain": "vox_2_0"
+        "outputFormat": "wav",
+        "languageCode": "en"
       },
       "metadata": {
         "lastUsed": null,
@@ -20,7 +19,7 @@
         "tags": [],
         "notes": "",
         "created": "2024-10-28T16:24:54.907Z",
-        "lastModified": "2024-10-28T21:22:42.513Z"
+        "lastModified": "2024-10-28T21:25:48.627Z"
       },
       "history": [
         {
@@ -217,6 +216,74 @@
             "outputFormat": "mp3",
             "languageCode": "en",
             "modelChain": "vox_2_0"
+          }
+        },
+        {
+          "timestamp": "2024-10-28T21:24:34.430Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "mp3",
+            "languageCode": "en",
+            "modelChain": "vox_2_0"
+          }
+        },
+        {
+          "timestamp": "2024-10-28T21:24:57.544Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "mp3",
+            "languageCode": "en",
+            "modelChain": "vox_2_0"
+          }
+        },
+        {
+          "timestamp": "2024-10-28T21:25:12.097Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "mp3",
+            "languageCode": "en",
+            "modelChain": "vox_2_0"
+          }
+        },
+        {
+          "timestamp": "2024-10-28T21:25:19.717Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": -10,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "languageCode": "en"
+          }
+        },
+        {
+          "timestamp": "2024-10-28T21:25:48.627Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": -10,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "languageCode": "en"
           }
         }
       ]
