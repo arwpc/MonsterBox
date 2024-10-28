@@ -225,14 +225,59 @@ tr.selected {
 .setting-group {
     display: flex;
     flex-direction: column;
+    padding: 10px 0;
 }
 
 .setting-group label {
-    margin-bottom: 5px;
+    margin-bottom: 10px;
 }
 
+/* Improved slider styling */
 .setting-group input[type="range"] {
     width: 100%;
+    height: 25px; /* Increased height for better clickability */
+    -webkit-appearance: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 8px 0; /* Added padding for larger hit area */
+}
+
+/* Slider track */
+.setting-group input[type="range"]::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 8px; /* Increased height */
+    background: #002200;
+    border: 1px solid #00ff00;
+    border-radius: 4px;
+}
+
+/* Slider thumb */
+.setting-group input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 20px; /* Larger thumb */
+    width: 20px; /* Larger thumb */
+    background: #00ff00;
+    border-radius: 50%;
+    margin-top: -6px; /* Center the thumb */
+    cursor: pointer;
+}
+
+/* Firefox styles */
+.setting-group input[type="range"]::-moz-range-track {
+    width: 100%;
+    height: 8px;
+    background: #002200;
+    border: 1px solid #00ff00;
+    border-radius: 4px;
+}
+
+.setting-group input[type="range"]::-moz-range-thumb {
+    height: 20px;
+    width: 20px;
+    background: #00ff00;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
 }
 
 .setting-value {

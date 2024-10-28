@@ -112,9 +112,6 @@
                     <div class="button-group">
                         <button type="submit" class="button primary-btn">Save Character</button>
                         <a href="/characters" class="button secondary-btn">Cancel</a>
-                        <% if (character && character.id) { %>
-                            <a href="/api/voice/configure?characterId=<%= character.id %>" class="button">Configure Voice</a>
-                        <% } %>
                     </div>
                 </div>
             </div>

@@ -59,6 +59,9 @@
 
             <div class="button-group">
                 <button type="submit" class="button primary-btn">Save Sound</button>
+                <% if (sound && sound.id) { %>
+                    <a href="/api/voice/configure?characterId=<%- characters[0].id %>" class="button">Configure Voice</a>
+                <% } %>
                 <a href="/sounds" class="button secondary-btn">Back to Sounds</a>
             </div>
         </form>
@@ -80,6 +83,19 @@
                         fileInput.required = false;
                     }
                 });
+            });
+        }
+
+        // Update Configure Voice button when character selection changes
+        const characterSelect = document.getElementById('characterIds');
+        const configureVoiceBtn = document.querySelector('a[href^="/api/voice/configure"]');
+        
+        if (characterSelect && configureVoiceBtn) {
+            characterSelect.addEventListener('change', function() {
+                if (this.selectedOptions.length > 0) {
+                    const selectedCharacterId = this.selectedOptions[0].value;
+                    configureVoiceBtn.href = `/api/voice/configure?characterId=${selectedCharacterId}`;
+                }
             });
         }
     </script>
