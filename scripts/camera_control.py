@@ -155,6 +155,9 @@ class MotionDetector:
             if not ret or frame is None or frame.size == 0:
                 return {"success": False, "error": "Failed to capture frame"}
 
+            # Create a copy of the frame for drawing
+            display_frame = frame.copy()
+
             # Convert to grayscale for better motion detection
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             gray = cv2.GaussianBlur(gray, (21, 21), 0)
@@ -189,23 +192,35 @@ class MotionDetector:
                 center_x = int(x + w/2)
                 center_y = int(y + h/2)
 
-                # Draw rectangle around motion
-                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                # Draw rectangle around motion (thicker, brighter)
+                cv2.rectangle(display_frame, (x, y), (x + w, y + h), (0, 255, 0), 3)
                 
-                # Draw center point
-                cv2.circle(frame, (center_x, center_y), 5, (0, 0, 255), -1)
+                # Draw center point (larger, brighter)
+                cv2.circle(display_frame, (center_x, center_y), 10, (0, 0, 255), -1)
+                cv2.circle(display_frame, (center_x, center_y), 12, (255, 255, 255), 2)
+
+                # Draw crosshair
+                line_length = 20
+                cv2.line(display_frame, (center_x - line_length, center_y),
+                        (center_x + line_length, center_y), (255, 255, 255), 2)
+                cv2.line(display_frame, (center_x, center_y - line_length),
+                        (center_x, center_y + line_length), (255, 255, 255), 2)
 
                 # Calculate normalized position (0-100)
                 norm_x = (center_x / frame.shape[1]) * 100
                 norm_y = (center_y / frame.shape[0]) * 100
 
-                # Add timestamp
+                # Add timestamp and motion info
                 timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-                cv2.putText(frame, timestamp, (10, frame.shape[0] - 10),
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+                cv2.putText(display_frame, timestamp, (10, frame.shape[0] - 10),
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                
+                motion_text = f"Motion: ({int(norm_x)}, {int(norm_y)})"
+                cv2.putText(display_frame, motion_text, (10, 30),
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
 
-                # Encode frame to JPEG
-                _, buffer = cv2.imencode('.jpg', frame)
+                # Encode frame to JPEG with high quality
+                _, buffer = cv2.imencode('.jpg', display_frame, [cv2.IMWRITE_JPEG_QUALITY, 95])
                 frame_data = base64.b64encode(buffer).decode('utf-8')
 
                 return {
@@ -219,11 +234,15 @@ class MotionDetector:
                     "frame": frame_data
                 }
 
-            # If no motion, just return the frame
+            # If no motion, just return the frame with timestamp
             timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-            cv2.putText(frame, timestamp, (10, frame.shape[0] - 10),
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
-            _, buffer = cv2.imencode('.jpg', frame)
+            cv2.putText(display_frame, timestamp, (10, frame.shape[0] - 10),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+            cv2.putText(display_frame, "No Motion", (10, 30),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+
+            # Encode frame to JPEG with high quality
+            _, buffer = cv2.imencode('.jpg', display_frame, [cv2.IMWRITE_JPEG_QUALITY, 95])
             frame_data = base64.b64encode(buffer).decode('utf-8')
 
             return {
