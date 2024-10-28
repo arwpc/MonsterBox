@@ -271,30 +271,42 @@ async function executeSound(step) {
     try {
         const sound = await soundService.getSoundById(step.sound_id);
         if (!sound) {
-            throw new Error(`Sound not found for ID: ${step.sound_id}`);
+            logger.warn(`Sound not found for ID: ${step.sound_id}, skipping step`);
+            return true;
         }
-        // Create path with forward slashes for mpg123
+        
         const filePath = path.resolve(__dirname, '..', 'public', 'sounds', sound.filename).replace(/\\/g, '/');
         logger.debug(`Sound file path: ${filePath}`);
         
-        const playResult = await soundController.playSound(sound.id, filePath);
-        logger.info(`Sound started playing: ${sound.name}, Result: ${JSON.stringify(playResult)}`);
+        try {
+            await soundController.playSound(sound.id, filePath);
+            logger.info(`Sound started playing: ${sound.name}`);
+        } catch (error) {
+            // Log but ignore play errors
+            logger.warn(`Non-critical error playing sound: ${error.message}`);
+        }
 
         if (step.concurrent !== "on") {
-            // Wait for the sound to finish playing only if it's not concurrent
-            await waitForSoundCompletion(sound.id);
+            try {
+                // Wait for the sound to finish playing only if it's not concurrent
+                await waitForSoundCompletion(sound.id);
+            } catch (error) {
+                // Log but ignore wait errors
+                logger.warn(`Non-critical error waiting for sound: ${error.message}`);
+            }
         }
 
         logger.info(`Sound step completed: ${step.name}`);
         return true;
     } catch (error) {
-        logger.error(`Error executing sound step: ${error.message}`);
-        throw error;
+        // Log but continue execution
+        logger.warn(`Non-critical error in sound step: ${error.message}`);
+        return true;
     }
 }
 
 async function waitForSoundCompletion(soundId) {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         const startTime = Date.now();
         let lastStatus = null;
 
@@ -303,15 +315,16 @@ async function waitForSoundCompletion(soundId) {
                 // Check for timeout
                 if (Date.now() - startTime > SOUND_TIMEOUT) {
                     clearInterval(checkInterval);
-                    await soundController.stopSound(soundId).catch(error => {
-                        logger.error(`Error stopping sound on timeout: ${error.message}`);
-                    });
-                    reject(new Error(`Sound playback timed out after ${SOUND_TIMEOUT}ms`));
+                    try {
+                        await soundController.stopSound(soundId);
+                    } catch (error) {
+                        logger.warn(`Non-critical error stopping sound on timeout: ${error.message}`);
+                    }
+                    resolve(); // Resolve instead of reject
                     return;
                 }
 
                 const status = await soundController.getSoundStatus(soundId);
-                logger.debug(`Sound status for ${soundId}: ${JSON.stringify(status)}`);
 
                 // Only log if status has changed
                 if (lastStatus !== status.status) {
@@ -322,15 +335,16 @@ async function waitForSoundCompletion(soundId) {
                 if (status.status === 'stopped' || status.status === 'finished' || status.status === 'not_found') {
                     clearInterval(checkInterval);
                     logger.info(`Sound finished playing: ${soundId}`);
-                    await soundController.stopSound(soundId).catch(error => {
-                        logger.error(`Error stopping sound: ${error.message}`);
-                    });
+                    try {
+                        await soundController.stopSound(soundId);
+                    } catch (error) {
+                        logger.warn(`Non-critical error stopping sound: ${error.message}`);
+                    }
                     resolve();
                 }
             } catch (error) {
-                clearInterval(checkInterval);
-                logger.error(`Error checking sound status: ${error.message}`);
-                reject(error);
+                // Log but continue checking
+                logger.warn(`Non-critical error checking sound status: ${error.message}`);
             }
         }, SOUND_CHECK_INTERVAL);
     });
