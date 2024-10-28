@@ -113,7 +113,7 @@ footer {
 /* Navigation Buttons */
 .nav-button {
     display: inline-block;
-    background-color: #003300;
+    background-color: #004400;
     color: #00ff00;
     padding: 10px 15px;
     margin: 10px;
@@ -128,7 +128,7 @@ footer {
 }
 
 .nav-button:hover {
-    background-color: #004400;
+    background-color: #005500;
     box-shadow: 0 0 10px #00ff00;
     text-decoration: none;
 }
@@ -136,7 +136,7 @@ footer {
 /* Button Styles */
 .button {
     display: inline-block;
-    background-color: #003300;
+    background-color: #004400;
     color: #00ff00;
     padding: 10px 15px;
     border: 1px solid #00ff00;
@@ -147,7 +147,7 @@ footer {
 }
 
 .button:hover {
-    background-color: #004400;
+    background-color: #005500;
     text-decoration: none;
     box-shadow: 0 0 10px #00ff00;
 }
@@ -171,7 +171,7 @@ button:disabled {
 }
 
 .secondary-btn {
-    background-color: #002200;
+    background-color: #004400;
     color: #00ff00;
 }
 
@@ -235,7 +235,7 @@ form {
 
 .dual-select-controls button {
     padding: 5px 10px;
-    background-color: #003300;
+    background-color: #004400;
     color: #00ff00;
     border: 1px solid #00ff00;
     border-radius: 4px;
@@ -244,7 +244,7 @@ form {
 }
 
 .dual-select-controls button:hover {
-    background-color: #004400;
+    background-color: #005500;
     box-shadow: 0 0 5px #00ff00;
 }
 

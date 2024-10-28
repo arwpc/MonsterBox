@@ -59,10 +59,8 @@
 
             <div class="button-group">
                 <button type="submit" class="button primary-btn">Save Sound</button>
-                <% if (sound && sound.id) { %>
-                    <a href="/api/voice/configure?characterId=<%- characters[0].id %>" class="button">Configure Voice</a>
-                <% } %>
-                <a href="/sounds" class="button secondary-btn">Back to Sounds</a>
+                <a href="/api/voice/configure?characterId=<%- characters[0].id %>" class="button primary-btn">Configure Voice</a>
+                <a href="/sounds" class="button primary-btn">Back to Sounds</a>
             </div>
         </form>
     </main>
