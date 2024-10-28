@@ -10,13 +10,17 @@
     <% if (step.type === 'voice') { %>
         <input type="hidden" name="steps[<%- index %>][sound_id]" value="<%- step.sound_id || '' %>">
         <div class="form-group">
-            <label for="text_<%- index %>">Words to Speak:</label>
-            <textarea id="text_<%- index %>" name="steps[<%- index %>][text]" rows="3" required><%- step.text || '' %></textarea>
-            <button type="button" class="button" data-index="<%- index %>">Generate</button>
-            <button type="button" class="button" data-index="<%- index %>" style="display: none;">Play</button>
+            <label for="words_<%- index %>">Words to Speak:</label>
+            <div style="display: flex; gap: 10px; align-items: flex-start;">
+                <textarea id="words_<%- index %>" name="steps[<%- index %>][text]" rows="3" style="flex: 1;" required></textarea>
+                <div style="display: flex; flex-direction: column; gap: 5px;">
+                    <button type="button" class="button preview-voice" data-index="<%- index %>">Generate</button>
+                    <button type="button" class="button play-voice" data-index="<%- index %>" style="display: none;">Play</button>
+                </div>
+            </div>
+            <div id="voice-preview-status-<%- index %>" style="margin-top: 5px; font-style: italic;"></div>
             <audio id="voice-audio-<%- index %>" style="display: none;"></audio>
         </div>
-        <div id="voice-preview-status-<%- index %>" style="margin-top: 5px; font-style: italic;"></div>
     <% } else if (step.type === 'sound') { %>
         <div class="form-group">
             <label for="sound_id_<%- index %>">Sound:</label>

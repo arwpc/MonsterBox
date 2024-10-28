@@ -97,6 +97,86 @@ exports.saveVoiceSettings = async (req, res) => {
     }
 };
 
+exports.generateAndSaveForScene = async (req, res) => {
+    try {
+        const { text, characterId } = req.body;
+        logger.info(`Generating voice for character ${characterId} with text: ${text}`);
+
+        if (!text || !characterId) {
+            return handleError(res, new Error('Text and character ID are required'), 400);
+        }
+
+        // Get voice settings for the character
+        logger.info(`Getting voice settings for character ${characterId}`);
+        const voice = await voiceService.getVoiceByCharacterId(characterId);
+        logger.info(`Voice settings retrieved:`, voice);
+
+        if (!voice || !voice.speaker_id) {
+            logger.error(`No voice configuration found for character ${characterId}`);
+            return handleError(res, new Error('No voice configured for this character'), 404);
+        }
+
+        // Generate the speech using character's voice settings
+        logger.info(`Generating speech with speaker_id: ${voice.speaker_id}`);
+        const result = await voiceService.generateSpeech(text, voice.speaker_id, voice.settings || {}, characterId);
+        logger.info(`Speech generation result:`, result);
+
+        // Create filename and path
+        const timestamp = Date.now();
+        const sanitizedText = text.substring(0, 30).replace(/[^a-zA-Z0-9]/g, '_');
+        const rawFilename = `${timestamp}-${sanitizedText}_raw.wav`;
+        const rawPath = path.join('public', 'sounds', rawFilename);
+        logger.info(`Raw file path: ${rawPath}`);
+
+        try {
+            // Download and process the audio file
+            logger.info(`Downloading audio from ${result.url}`);
+            await downloadAudio(result.url, rawPath);
+            logger.info(`Converting audio to MP3`);
+            const finalPath = await standardizeMP3(rawPath);
+            logger.info(`Final audio path: ${finalPath}`);
+
+            // Clean up raw file
+            if (fs.existsSync(rawPath)) {
+                fs.unlinkSync(rawPath);
+                logger.info(`Cleaned up raw file`);
+            }
+
+            // Create sound entry in the library
+            logger.info(`Creating sound entry in library`);
+            const soundEntry = await soundService.createSound({
+                name: text,
+                filename: path.basename(finalPath),
+                file: path.basename(finalPath),
+                characterIds: [parseInt(characterId)],
+                type: 'voice',
+                created: new Date().toISOString()
+            });
+            logger.info(`Sound entry created:`, soundEntry);
+
+            res.json({
+                success: true,
+                soundId: soundEntry.id,
+                filename: path.basename(finalPath),
+                path: `/sounds/${path.basename(finalPath)}`
+            });
+        } catch (err) {
+            logger.error(`Failed to process audio file: ${err.message}`);
+            if (fs.existsSync(rawPath)) {
+                try {
+                    fs.unlinkSync(rawPath);
+                    logger.info(`Cleaned up raw file after error`);
+                } catch (cleanupError) {
+                    logger.error(`Failed to clean up raw file: ${cleanupError.message}`);
+                }
+            }
+            throw err;
+        }
+    } catch (error) {
+        handleError(res, error);
+    }
+};
+
 exports.generateSpeech = async (req, res) => {
     try {
         const { speaker_id, text, options = {}, characterId } = req.body;
@@ -170,71 +250,6 @@ exports.generateSpeech = async (req, res) => {
         if (error.message.includes('timed out')) {
             return handleError(res, error, 504);
         }
-        handleError(res, error);
-    }
-};
-
-exports.generateAndSave = async (req, res) => {
-    try {
-        const { text, characterId } = req.body;
-
-        if (!text || !characterId) {
-            return handleError(res, new Error('Text and character ID are required'), 400);
-        }
-
-        // Get voice settings for the character
-        const voice = await voiceService.getVoiceByCharacterId(characterId);
-        if (!voice || !voice.speaker_id) {
-            return handleError(res, new Error('No voice configured for this character'), 404);
-        }
-
-        // Generate the speech
-        const result = await voiceService.generateSpeech(text, voice.speaker_id, voice.settings || {}, characterId);
-
-        // Create filename and path
-        const timestamp = Date.now();
-        const sanitizedText = text.substring(0, 30).replace(/[^a-zA-Z0-9]/g, '_');
-        const rawFilename = `${timestamp}-${sanitizedText}_raw.wav`;
-        const rawPath = path.join('public', 'sounds', rawFilename);
-
-        try {
-            // Download and process the audio file
-            await downloadAudio(result.url, rawPath);
-            const finalPath = await standardizeMP3(rawPath);
-
-            // Clean up raw file
-            if (fs.existsSync(rawPath)) {
-                fs.unlinkSync(rawPath);
-            }
-
-            // Create sound entry in the library
-            const soundEntry = await soundService.createSound({
-                name: text,
-                filename: path.basename(finalPath),
-                file: path.basename(finalPath),
-                characterIds: [parseInt(characterId)],
-                type: 'voice',
-                created: new Date().toISOString()
-            });
-
-            res.json({
-                success: true,
-                soundId: soundEntry.id,
-                filename: path.basename(finalPath),
-                path: `/sounds/${path.basename(finalPath)}`
-            });
-        } catch (err) {
-            logger.error(`Failed to process audio file: ${err.message}`);
-            if (fs.existsSync(rawPath)) {
-                try {
-                    fs.unlinkSync(rawPath);
-                } catch (cleanupError) {
-                    logger.error(`Failed to clean up raw file: ${cleanupError.message}`);
-                }
-            }
-            throw err;
-        }
-    } catch (error) {
         handleError(res, error);
     }
 };

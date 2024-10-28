@@ -21,6 +21,7 @@ class VoiceService {
     async getAllVoices() {
         try {
             const data = await fs.readFile(this.voicesPath, 'utf8');
+            logger.info(`Read voices data: ${data}`);
             const voices = JSON.parse(data).voices;
             return voices.map(voice => this.normalizeVoiceData(voice));
         } catch (error) {
@@ -30,8 +31,8 @@ class VoiceService {
     }
 
     normalizeVoiceData(voice) {
-        return {
-            characterId: voice.characterId,
+        const normalized = {
+            characterId: parseInt(voice.characterId),
             speaker_id: voice.speaker_id,
             settings: { ...this.defaultSettings, ...voice.settings },
             metadata: voice.metadata || {
@@ -43,6 +44,8 @@ class VoiceService {
             },
             history: voice.history || []
         };
+        logger.info(`Normalized voice data: ${JSON.stringify(normalized)}`);
+        return normalized;
     }
 
     async getVoiceByCharacterId(characterId) {
@@ -50,8 +53,13 @@ class VoiceService {
             throw new Error('Character ID is required');
         }
 
+        logger.info(`Getting voice for character ID: ${characterId}`);
         const voices = await this.getAllVoices();
-        const voice = voices.find(v => v.characterId === characterId);
+        logger.info(`Found ${voices.length} voices`);
+        const parsedCharacterId = parseInt(characterId);
+        logger.info(`Looking for character ID: ${parsedCharacterId}`);
+        const voice = voices.find(v => v.characterId === parsedCharacterId);
+        logger.info(`Found voice: ${voice ? JSON.stringify(voice) : 'null'}`);
         return voice ? this.normalizeVoiceData(voice) : null;
     }
 
@@ -65,7 +73,7 @@ class VoiceService {
             const voices = JSON.parse(data).voices;
             
             const normalizedVoice = this.normalizeVoiceData(voiceData);
-            const existingIndex = voices.findIndex(v => v.characterId === voiceData.characterId);
+            const existingIndex = voices.findIndex(v => parseInt(v.characterId) === parseInt(voiceData.characterId));
 
             if (existingIndex !== -1) {
                 const existing = voices[existingIndex];

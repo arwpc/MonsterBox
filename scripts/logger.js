@@ -16,8 +16,11 @@ try {
 
 let transports = [
   new winston.transports.Console({
-    level: 'error', // Only log errors to console
-    format: winston.format.simple(),
+    level: 'info', // Changed to info to see debug logs
+    format: winston.format.combine(
+      winston.format.colorize(),
+      winston.format.simple()
+    ),
     handleExceptions: true,
   })
 ];
