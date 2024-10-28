@@ -29,6 +29,8 @@ class ReplicaAPI {
 
         if (!this.apiKey) {
             logger.warn('REPLICA_API_KEY environment variable is not set. Voice generation features will be limited.');
+        } else {
+            logger.info('Using Replica API key:', this.apiKey);
         }
     }
 
@@ -67,10 +69,6 @@ class ReplicaAPI {
         }
     }
 
-    /**
-     * Get a list of available voices
-     * @returns {Promise} Response containing array of available voices
-     */
     async getVoices() {
         try {
             if (!this.apiKey) {
@@ -122,10 +120,6 @@ class ReplicaAPI {
         }
     }
 
-    /**
-     * Get available FX presets
-     * @returns {Promise} Response containing array of available FX presets
-     */
     async getFXPresets() {
         try {
             if (!this.apiKey) {
@@ -241,14 +235,6 @@ class ReplicaAPI {
         ];
     }
 
-    /**
-     * Initialize text to speech with the provided text
-     * @param {Object} params
-     * @param {string} params.text - The text to convert to speech
-     * @param {string} params.voiceId - The ID of the voice to use
-     * @param {Object} [params.options] - Additional options
-     * @returns {Promise} Response containing the speech URL and metadata
-     */
     async textToSpeech(params) {
         try {
             if (!this.apiKey) {
@@ -377,11 +363,6 @@ class ReplicaAPI {
         };
     }
 
-    /**
-     * Get voice by name
-     * @param {string} name - The name of the voice to find
-     * @returns {Promise<Object|null>} The voice object if found, null otherwise
-     */
     async getVoiceByName(name) {
         try {
             if (!name?.trim()) {
@@ -396,9 +377,6 @@ class ReplicaAPI {
         }
     }
 
-    /**
-     * Clear all caches
-     */
     clearCache() {
         this.voicesCache = null;
         this.voicesCacheExpiry = null;
