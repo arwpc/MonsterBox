@@ -41,6 +41,61 @@ async function downloadAudio(url, outputPath) {
     }
 }
 
+exports.getAvailableVoices = async (req, res) => {
+    try {
+        const voices = await voiceService.getAvailableVoices();
+        if (!voices || voices.length === 0) {
+            return handleError(res, new Error('No voices available'), 404);
+        }
+        res.json(voices);
+    } catch (error) {
+        if (error.message.includes('API key is required')) {
+            return handleError(res, error, 401);
+        }
+        handleError(res, error);
+    }
+};
+
+exports.getVoiceSettings = async (req, res) => {
+    try {
+        const { characterId } = req.params;
+        
+        if (!characterId) {
+            return handleError(res, new Error('Character ID is required'), 400);
+        }
+
+        const voice = await voiceService.getVoiceByCharacterId(characterId);
+        
+        if (!voice) {
+            return handleError(res, new Error('Voice not found'), 404);
+        }
+
+        res.json(voice);
+    } catch (error) {
+        handleError(res, error);
+    }
+};
+
+exports.saveVoiceSettings = async (req, res) => {
+    try {
+        const { characterId, voiceId, settings } = req.body;
+
+        if (!characterId || !voiceId) {
+            return handleError(res, new Error('Character ID and voice ID are required'), 400);
+        }
+
+        const savedVoice = await voiceService.saveVoice({
+            characterId,
+            speaker_id: voiceId,
+            settings: settings || {}
+        });
+
+        res.json(savedVoice);
+    } catch (error) {
+        handleError(res, error);
+    }
+};
+
 exports.generateSpeech = async (req, res) => {
     try {
         const { speaker_id, text, options = {}, characterId } = req.body;
@@ -54,7 +109,8 @@ exports.generateSpeech = async (req, res) => {
             ...options,
             speed: options?.speed || 1.0,
             pitch: options?.pitch || 0,
-            volume: options?.volume || 0
+            volume: options?.volume || 0,
+            extensions: ['wav']  // Request WAV format from Replica
         };
 
         // Generate the speech
@@ -85,6 +141,7 @@ exports.generateSpeech = async (req, res) => {
                 success: true,
                 filename: path.basename(finalPath),
                 path: `/sounds/${path.basename(finalPath)}`,
+                url: result.url,  // Include original URL for save-to-sounds
                 duration: result.duration,
                 metadata: result.metadata
             });
