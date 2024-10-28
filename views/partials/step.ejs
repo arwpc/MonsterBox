@@ -7,7 +7,23 @@
         <input type="text" id="step_name_<%- index %>" name="steps[<%- index %>][name]" value="<%- step.name %>" placeholder="Step Name" required>
     </div>
 
-    <% if (step.type === 'sound') { %>
+    <% if (step.type === 'voice') { %>
+        <input type="hidden" name="steps[<%- index %>][sound_id]" value="<%- step.sound_id || '' %>">
+        <div class="form-group">
+            <label for="text_<%- index %>">Words to Speak:</label>
+            <div style="display: flex; gap: 10px; align-items: flex-start;">
+                <textarea id="text_<%- index %>" name="steps[<%- index %>][text]" rows="3" required><%- step.text || '' %></textarea>
+                <div style="display: flex; flex-direction: column; gap: 5px;">
+                    <button type="button" class="preview-voice button" data-index="<%- index %>">Generate</button>
+                    <button type="button" class="play-voice button" data-index="<%- index %>" style="display: none;">Play</button>
+                    <audio id="voice-audio-<%- index %>" style="display: none;"></audio>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <div id="voice-preview-status-<%- index %>" style="margin-top: 5px; font-style: italic;"></div>
+        </div>
+    <% } else if (step.type === 'sound') { %>
         <div class="form-group">
             <label for="sound_id_<%- index %>">Sound:</label>
             <select id="sound_id_<%- index %>" name="steps[<%- index %>][sound_id]" required>
