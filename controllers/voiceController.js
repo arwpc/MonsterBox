@@ -1,5 +1,8 @@
 const voiceService = require('../services/voiceService');
 const logger = require('../scripts/logger');
+const { standardizeMP3 } = require('../scripts/audioUtils');
+const path = require('path');
+const fs = require('fs');
 
 const handleError = (res, error, statusCode = 500) => {
     logger.error(`Voice controller error: ${error.message}`);
@@ -80,8 +83,34 @@ exports.generateSpeech = async (req, res) => {
             volume: options?.volume || 0
         };
 
+        // Generate the speech
         const result = await voiceService.generateSpeech(text, speaker_id, generationOptions, characterId);
-        res.json(result);
+
+        // Create filename and path
+        const timestamp = Date.now();
+        const sanitizedText = text.substring(0, 30).replace(/[^a-zA-Z0-9]/g, '_');
+        const filename = `${timestamp}-${sanitizedText}.mp3`;
+        const outputPath = path.join('public', 'sounds', filename);
+
+        // Save the audio file
+        fs.writeFileSync(outputPath, result.audioBuffer);
+
+        // Convert to standardized MP3 format
+        try {
+            await standardizeMP3(outputPath);
+            logger.info(`Successfully converted ${filename} to standardized format`);
+        } catch (err) {
+            logger.error(`Failed to convert ${filename}: ${err.message}`);
+            // Continue even if conversion fails - original file still exists
+        }
+
+        res.json({
+            success: true,
+            filename: filename,
+            path: `/sounds/${filename}`,
+            duration: result.duration,
+            metadata: result.metadata
+        });
     } catch (error) {
         if (error.message.includes('API key is required')) {
             return handleError(res, error, 401);
@@ -142,6 +171,74 @@ exports.updateVoiceMetadata = async (req, res) => {
 
         const updatedVoice = await voiceService.saveVoice(voice);
         res.json(updatedVoice);
+    } catch (error) {
+        handleError(res, error);
+    }
+};
+
+exports.deleteVoiceHistory = async (req, res) => {
+    try {
+        const { characterId } = req.params;
+        
+        if (!characterId) {
+            return handleError(res, new Error('Character ID is required'), 400);
+        }
+
+        const voice = await voiceService.getVoiceByCharacterId(characterId);
+        
+        if (!voice) {
+            return handleError(res, new Error('Voice not found'), 404);
+        }
+
+        voice.history = [];
+        const updatedVoice = await voiceService.saveVoice(voice);
+        res.json({ success: true, message: 'Voice history cleared' });
+    } catch (error) {
+        handleError(res, error);
+    }
+};
+
+exports.testVoiceConnection = async (req, res) => {
+    try {
+        const { speaker_id } = req.body;
+
+        if (!speaker_id) {
+            return handleError(res, new Error('Speaker ID is required'), 400);
+        }
+
+        const testResult = await voiceService.testConnection(speaker_id);
+        res.json(testResult);
+    } catch (error) {
+        if (error.message.includes('API key is required')) {
+            return handleError(res, error, 401);
+        }
+        handleError(res, error);
+    }
+};
+
+exports.getVoiceStats = async (req, res) => {
+    try {
+        const { characterId } = req.params;
+        
+        if (!characterId) {
+            return handleError(res, new Error('Character ID is required'), 400);
+        }
+
+        const voice = await voiceService.getVoiceByCharacterId(characterId);
+        
+        if (!voice) {
+            return handleError(res, new Error('Voice not found'), 404);
+        }
+
+        const stats = {
+            totalGenerations: voice.history?.length || 0,
+            lastGenerated: voice.history?.[0]?.timestamp || null,
+            averageDuration: voice.history?.reduce((acc, curr) => acc + (curr.duration || 0), 0) / (voice.history?.length || 1),
+            settings: voice.settings || {},
+            metadata: voice.metadata || {}
+        };
+
+        res.json(stats);
     } catch (error) {
         handleError(res, error);
     }
