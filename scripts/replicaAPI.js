@@ -9,26 +9,24 @@ class ReplicaAPI {
         this.lastRequestTime = Date.now();
         this.rateLimitPerMinute = 100;
         
-        // Initialize axios with base configuration
         this.axiosInstance = axios.create({
             baseURL: this.baseURL,
             headers: {
-                ...(this.apiKey && { 'X-Api-Key': this.apiKey }),
+                'X-Api-Key': this.apiKey,
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
             },
             timeout: 30000
         });
 
-        // Initialize caches with expiration
         this.voicesCache = null;
         this.voicesCacheExpiry = null;
         this.fxPresetsCache = null;
         this.fxPresetsCacheExpiry = null;
-        this.cacheLifetime = 5 * 60 * 1000; // 5 minutes
+        this.cacheLifetime = 5 * 60 * 1000;
 
         if (!this.apiKey) {
-            logger.warn('REPLICA_API_KEY environment variable is not set. Voice generation features will be limited.');
+            logger.warn('REPLICA_API_KEY environment variable is not set. Using mock data.');
         } else {
             logger.info('Using Replica API key:', this.apiKey);
         }
@@ -36,7 +34,7 @@ class ReplicaAPI {
 
     async checkRateLimit() {
         const now = Date.now();
-        const timeWindow = 60 * 1000; // 1 minute in milliseconds
+        const timeWindow = 60 * 1000;
         
         if (now - this.lastRequestTime > timeWindow) {
             this.requestCount = 0;
@@ -77,7 +75,6 @@ class ReplicaAPI {
 
             await this.checkRateLimit();
 
-            // Return cached voices if still valid
             if (this.voicesCache && this.voicesCacheExpiry > Date.now()) {
                 return this.voicesCache;
             }
@@ -90,22 +87,17 @@ class ReplicaAPI {
                 throw new Error('Invalid API response format');
             }
 
-            // Transform and cache the voice items
             const transformedVoices = response.data.items.map(voice => ({
-                ...voice,
-                id: voice.uuid,
-                speaker_id: voice.default_style?.speaker_id || voice.uuid,
-                capabilities: voice.default_style?.capabilities || {
-                    'tts.vox_1_0': false,
-                    'tts.vox_2_0': false,
-                    'sts.vox_1_0': false,
-                    'sts.vox_2_0': false
-                },
-                metadata: {
-                    lastUsed: null,
-                    useCount: 0,
-                    averageRating: null,
-                    tags: []
+                uuid: voice.uuid,
+                name: voice.name,
+                gender: voice.gender,
+                age: voice.age,
+                accent: voice.accent,
+                capabilities: {
+                    'tts.vox_1_0': voice.capabilities?.includes('tts.vox_1_0') || false,
+                    'tts.vox_2_0': voice.capabilities?.includes('tts.vox_2_0') || false,
+                    'sts.vox_1_0': voice.capabilities?.includes('sts.vox_1_0') || false,
+                    'sts.vox_2_0': voice.capabilities?.includes('sts.vox_2_0') || false
                 }
             }));
 
@@ -128,7 +120,6 @@ class ReplicaAPI {
 
             await this.checkRateLimit();
 
-            // Return cached presets if still valid
             if (this.fxPresetsCache && this.fxPresetsCacheExpiry > Date.now()) {
                 return this.fxPresetsCache;
             }
@@ -153,7 +144,6 @@ class ReplicaAPI {
     }
 
     getMockVoices() {
-        // Return a set of mock voices for testing/development
         return [
             {
                 uuid: 'mock-voice-1',
@@ -166,12 +156,6 @@ class ReplicaAPI {
                     'tts.vox_2_0': true,
                     'sts.vox_1_0': false,
                     'sts.vox_2_0': false
-                },
-                metadata: {
-                    lastUsed: null,
-                    useCount: 0,
-                    averageRating: null,
-                    tags: ['monster', 'deep', 'scary']
                 }
             },
             {
@@ -182,15 +166,9 @@ class ReplicaAPI {
                 accent: 'british',
                 capabilities: {
                     'tts.vox_1_0': true,
-                    'tts.vox_2_0': false,
+                    'tts.vox_2_0': true,
                     'sts.vox_1_0': false,
                     'sts.vox_2_0': false
-                },
-                metadata: {
-                    lastUsed: null,
-                    useCount: 0,
-                    averageRating: null,
-                    tags: ['witch', 'creepy', 'scary']
                 }
             },
             {
@@ -204,12 +182,6 @@ class ReplicaAPI {
                     'tts.vox_2_0': true,
                     'sts.vox_1_0': false,
                     'sts.vox_2_0': false
-                },
-                metadata: {
-                    lastUsed: null,
-                    useCount: 0,
-                    averageRating: null,
-                    tags: ['ghost', 'child', 'eerie']
                 }
             }
         ];
@@ -251,7 +223,6 @@ class ReplicaAPI {
 
             await this.checkRateLimit();
 
-            // Get the voice details to ensure we're using a valid speaker_id
             const voices = await this.getVoices();
             const voice = voices.find(v => v.uuid === params.voiceId);
             
@@ -259,74 +230,31 @@ class ReplicaAPI {
                 throw new Error(`Voice not found with ID: ${params.voiceId}`);
             }
 
-            // Get user preferences for model chain order
-            const userPrefs = await this.retryWithBackoff(async () => {
-                return await this.axiosInstance.get('/userinfo/preferences');
-            });
-
-            // Determine best model chain based on voice capabilities and user preferences
-            const modelChain = this.determineModelChain(voice.capabilities, userPrefs.data?.preferences?.preferred_model_chain_order);
-
-            // Validate and normalize options
-            const bitRate = params.options?.bitRate || 128;
-            if (![48, 128, 320].includes(bitRate)) {
-                throw new Error('Invalid bit rate. Supported values: 48, 128, 320.');
-            }
-
             const requestBody = {
-                speaker_id: voice.default_style?.speaker_id || voice.uuid,
                 text: params.text.trim(),
-                model_chain: modelChain,
-                language_code: params.options?.languageCode || 'en',
-                extensions: ['mp3'],
-                sample_rate: params.options?.sampleRate || 44100,
-                bit_rate: bitRate,
-                global_pace: Math.max(0.1, Math.min(3.0, params.options?.globalPace || 1)),
-                global_pitch: Math.max(-20, Math.min(20, params.options?.globalPitch || 0)),
-                global_volume: Math.max(-20, Math.min(20, params.options?.globalVolume || 0)),
-                auto_pitch: params.options?.autoPitch ?? true
+                voice_id: params.voiceId,
+                model_id: 'eleven_monolingual_v1',
+                voice_settings: {
+                    stability: 0.5,
+                    similarity_boost: 0.75,
+                    style: params.style || 0,
+                    use_speaker_boost: true
+                }
             };
 
-            // Add effects preset if specified
-            if (params.options?.effects_preset_id) {
-                requestBody.effects_preset_id = params.options.effects_preset_id;
-            }
-
-            // Add optional metadata and tags
-            if (params.options?.userMetadata) {
-                requestBody.user_metadata = params.options.userMetadata;
-            }
-            
-            if (params.options?.userTags) {
-                requestBody.user_tags = params.options.userTags;
-            }
-
-            logger.info('Making TTS request', { 
-                voiceId: params.voiceId, 
-                textLength: params.text.length,
-                modelChain
-            });
-
             const response = await this.retryWithBackoff(async () => {
-                return await this.axiosInstance.post('/speech/tts', requestBody);
-            });
-
-            if (!response.data) {
-                throw new Error('No data received from API');
-            }
-
-            logger.info('TTS request successful', { 
-                voiceId: params.voiceId, 
-                duration: response.data.duration,
-                modelChain
+                return await this.axiosInstance.post('/text-to-speech', requestBody);
             });
 
             return {
-                ...response.data,
+                url: response.data.audio_url,
+                uuid: response.data.request_id,
+                state: 'completed',
+                duration: response.data.duration,
                 metadata: {
                     requestTime: new Date().toISOString(),
                     textLength: params.text.length,
-                    settings: requestBody
+                    settings: requestBody.voice_settings
                 }
             };
         } catch (error) {
@@ -336,20 +264,7 @@ class ReplicaAPI {
         }
     }
 
-    determineModelChain(voiceCapabilities, userPreferences = ['vox_2_0', 'vox_1_0']) {
-        // Check each preferred model chain in order
-        for (const chain of userPreferences) {
-            const capability = `tts.${chain}`;
-            if (voiceCapabilities[capability]) {
-                return chain;
-            }
-        }
-        // Default to vox_1_0 if no preferred chains are supported
-        return 'vox_1_0';
-    }
-
     getMockSpeechResponse() {
-        // Return a mock speech response with a test audio file
         return {
             url: '/sounds/test-sound.mp3',
             uuid: 'mock-speech-' + Date.now(),
@@ -361,20 +276,6 @@ class ReplicaAPI {
                 settings: {}
             }
         };
-    }
-
-    async getVoiceByName(name) {
-        try {
-            if (!name?.trim()) {
-                throw new Error('Name parameter is required and must not be empty');
-            }
-
-            const voices = await this.getVoices();
-            return voices.find(voice => voice.name.toLowerCase() === name.toLowerCase()) || null;
-        } catch (error) {
-            logger.error('Error finding voice by name:', error);
-            throw new Error(`Failed to find voice: ${error.message}`);
-        }
     }
 
     clearCache() {

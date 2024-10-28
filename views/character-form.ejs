@@ -113,15 +113,12 @@
                         <button type="submit" class="button primary-btn">Save Character</button>
                         <a href="/characters" class="button secondary-btn">Cancel</a>
                         <% if (character && character.id) { %>
-                            <button type="button" id="selectVoiceBtn" class="button">Configure Voice</button>
+                            <a href="/api/voice/configure?characterId=<%= character.id %>" class="button">Configure Voice</a>
                         <% } %>
                     </div>
                 </div>
             </div>
         </form>
-
-        <!-- Include the voice selector component -->
-        <%- include('voice-selector') %>
     </main>
 
     <script>
@@ -180,21 +177,6 @@
                 return true;
             };
         }
-
-        // Initialize voice selector when document is ready
-        document.addEventListener('DOMContentLoaded', function() {
-            const characterId = document.querySelector('input[name="id"]')?.value;
-            if (characterId && window.voiceSelector) {
-                window.voiceSelector.setCharacterId(characterId);
-            }
-
-            // Handle voice selection event
-            document.addEventListener('voiceSelected', function(e) {
-                const { voice, settings } = e.detail;
-                console.log('Voice selected:', voice);
-                console.log('Settings:', settings);
-            });
-        });
     </script>
 </body>
 </html>
