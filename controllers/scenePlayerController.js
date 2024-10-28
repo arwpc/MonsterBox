@@ -245,9 +245,8 @@ async function executeStep(sceneId, step) {
     logger.debug(`Executing step: ${JSON.stringify(step)}`);
     switch (step.type) {
         case 'sound':
+        case 'voice':  // Voice steps are just sound files - use same execution path
             return await executeSound(step);
-        case 'voice':
-            return await executeSound({...step, sound_id: step.voice_id});  // Use voice_id as sound_id for voice steps
         case 'motor':
             return await executeMotor(step);
         case 'linear-actuator':
