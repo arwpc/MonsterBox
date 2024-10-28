@@ -20,7 +20,6 @@ class VoiceSelector {
             this.initializeWaveSurfer();
             this.setupEventListeners();
             this.loadVoices();
-            this.loadCharacters();
         }
     }
 
@@ -49,33 +48,6 @@ class VoiceSelector {
             setTimeout(() => {
                 errorElement.style.display = 'none';
             }, 5000);
-        }
-    }
-
-    async loadCharacters() {
-        try {
-            const response = await fetch('/api/voice/characters');
-            if (!response.ok) {
-                throw new Error('Failed to load characters');
-            }
-            const characters = await response.json();
-            
-            const select = document.querySelector('#characterSelect');
-            select.innerHTML = '<option value="">Select a character...</option>';
-            characters.forEach(character => {
-                const option = document.createElement('option');
-                option.value = character.id;
-                option.textContent = character.name;
-                select.appendChild(option);
-            });
-
-            // If characterId is set, select it in the dropdown
-            if (this.characterId) {
-                select.value = this.characterId;
-            }
-        } catch (error) {
-            console.error('Error loading characters:', error);
-            this.showError('Failed to load characters: ' + error.message);
         }
     }
 
@@ -140,11 +112,6 @@ class VoiceSelector {
             if (this.lastGeneratedAudio) {
                 this.saveToSoundLibrary();
             }
-        });
-
-        document.querySelector('#characterSelect').addEventListener('change', (e) => {
-            this.characterId = e.target.value;
-            document.querySelector('#selectVoice').disabled = !this.characterId || !this.selectedVoice;
         });
 
         document.querySelector('#selectVoice').addEventListener('click', () => {
@@ -346,7 +313,6 @@ class VoiceSelector {
         try {
             this.showLoading('Saving to sound library...');
             const previewText = document.querySelector('#previewText').value;
-            const characterId = document.querySelector('#characterSelect').value;
 
             const response = await fetch('/api/voice/save-to-sounds', {
                 method: 'POST',
@@ -356,7 +322,7 @@ class VoiceSelector {
                 body: JSON.stringify({
                     audioUrl: this.lastGeneratedAudio.url,
                     text: previewText,
-                    characterId: characterId || null
+                    characterId: this.characterId || null
                 })
             });
 
@@ -370,7 +336,7 @@ class VoiceSelector {
             
             // After a short delay, redirect to the sounds page
             setTimeout(() => {
-                window.location.href = `/sounds?characterId=${characterId}`;
+                window.location.href = `/sounds?characterId=${this.characterId}`;
             }, 2000);
         } catch (error) {
             console.error('Error saving to sound library:', error);
@@ -575,9 +541,8 @@ class VoiceSelector {
 
     setCharacterId(id) {
         this.characterId = id;
-        const select = document.querySelector('#characterSelect');
-        if (select) {
-            select.value = id;
+        if (this.selectedVoice) {
+            document.querySelector('#selectVoice').disabled = false;
         }
     }
 }
