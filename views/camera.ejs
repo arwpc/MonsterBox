@@ -180,6 +180,7 @@
     <script>
         let motionDetectionActive = false;
         let motionInterval = null;
+        let streamActive = false;
 
         const streamImg = document.getElementById('cameraStream');
         const errorMessage = document.getElementById('errorMessage');
@@ -241,12 +242,20 @@
 
                 cameraControls.classList.remove('controls-disabled');
                 placeholderMessage.style.display = 'none';
-                streamImg.src = '/images/no-stream.jpg';
+                streamActive = true;
+                initializeStream();
             } catch (error) {
                 console.error('Failed to select camera:', error);
                 showError('Failed to select camera: ' + error.message);
             }
         });
+
+        function initializeStream() {
+            if (streamActive) {
+                const [width, height] = document.getElementById('resolution').value.split(',');
+                streamImg.src = `/camera/stream?width=${width}&height=${height}&t=${Date.now()}`;
+            }
+        }
 
         function showError(message) {
             errorMessage.textContent = message;
@@ -266,6 +275,13 @@
 
         async function startMotionDetection() {
             try {
+                // Stop the stream first
+                streamActive = false;
+                streamImg.src = '/images/no-stream.jpg';
+                
+                // Wait for camera to be released
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
                 motionDetectionActive = true;
                 document.getElementById('toggleMotion').textContent = 'Stop Motion Detection';
                 
@@ -327,7 +343,13 @@
                 motionInterval = null;
             }
             document.getElementById('motionData').textContent = 'No motion data';
-            streamImg.src = '/images/no-stream.jpg';
+            
+            // Wait before restarting stream
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Restart the stream
+            streamActive = true;
+            initializeStream();
         }
 
         async function updateSettings() {
