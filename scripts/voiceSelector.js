@@ -365,7 +365,13 @@ class VoiceSelector {
                 throw new Error(error.error || 'Failed to save to sound library');
             }
 
-            this.showError('Successfully saved to sound library', true);
+            const data = await response.json();
+            this.showError('Successfully saved to sound library. View in Sound Library.', true);
+            
+            // After a short delay, redirect to the sounds page
+            setTimeout(() => {
+                window.location.href = `/sounds?characterId=${characterId}`;
+            }, 2000);
         } catch (error) {
             console.error('Error saving to sound library:', error);
             this.showError('Failed to save to sound library: ' + error.message);
@@ -438,7 +444,11 @@ class VoiceSelector {
                 }
 
                 this.addToRecentlyUsed(this.selectedVoice);
-                window.location.href = '/characters';
+                // Show success message and redirect to sounds page
+                this.showError('Voice settings saved successfully. Redirecting to Sound Library...', true);
+                setTimeout(() => {
+                    window.location.href = `/sounds?characterId=${this.characterId}`;
+                }, 2000);
             } catch (error) {
                 console.error('Error saving voice configuration:', error);
                 this.showError('Failed to save voice configuration: ' + error.message);
