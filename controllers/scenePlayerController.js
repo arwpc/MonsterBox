@@ -273,7 +273,8 @@ async function executeSound(step) {
         if (!sound) {
             throw new Error(`Sound not found for ID: ${step.sound_id}`);
         }
-        const filePath = path.resolve(__dirname, '..', 'public', 'sounds', sound.filename);
+        // Create path with forward slashes for mpg123
+        const filePath = path.resolve(__dirname, '..', 'public', 'sounds', sound.filename).replace(/\\/g, '/');
         logger.debug(`Sound file path: ${filePath}`);
         
         const playResult = await soundController.playSound(sound.id, filePath);

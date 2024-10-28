@@ -19,7 +19,7 @@
         "tags": [],
         "notes": "",
         "created": "2024-10-28T16:24:54.907Z",
-        "lastModified": "2024-10-28T21:35:33.302Z"
+        "lastModified": "2024-10-28T21:37:49.776Z"
       },
       "history": [
         {
@@ -301,6 +301,19 @@
         },
         {
           "timestamp": "2024-10-28T21:35:33.302Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": -10,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "languageCode": "en"
+          }
+        },
+        {
+          "timestamp": "2024-10-28T21:37:49.776Z",
           "type": "settings_update",
           "settings": {
             "pitch": -10,

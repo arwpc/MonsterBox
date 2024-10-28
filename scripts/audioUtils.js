@@ -10,6 +10,9 @@ const logger = require('./logger');
  */
 async function detectAudioFormat(filePath) {
     try {
+        // Normalize path for ffprobe
+        const normalizedPath = filePath.replace(/\\/g, '/');
+        
         // Try using ffprobe if available
         return new Promise((resolve, reject) => {
             const ffprobe = spawn('ffprobe', [
@@ -17,7 +20,7 @@ async function detectAudioFormat(filePath) {
                 '-select_streams', 'a:0',
                 '-show_entries', 'stream=codec_name',
                 '-of', 'default=noprint_wrappers=1:nokey=1',
-                filePath
+                normalizedPath
             ]);
 
             let output = '';
@@ -72,21 +75,24 @@ async function standardizeMP3(inputPath) {
         // Parse the input path to handle file extensions properly
         const parsedPath = path.parse(inputPath);
         const outputPath = path.join(parsedPath.dir, parsedPath.name + '.mp3');
+        const tempPath = path.join(parsedPath.dir, parsedPath.name + '_temp.mp3');
+
+        // Normalize paths for ffmpeg
+        const normalizedInputPath = inputPath.replace(/\\/g, '/');
+        const normalizedTempPath = tempPath.replace(/\\/g, '/');
 
         try {
             // Try using ffmpeg if available
-            const tempPath = path.join(parsedPath.dir, parsedPath.name + '_temp.mp3');
-
             await new Promise((resolve, reject) => {
                 const ffmpeg = spawn('ffmpeg', [
                     '-y',                    // Overwrite output files
-                    '-i', inputPath,         // Input file
+                    '-i', normalizedInputPath, // Input file
                     '-acodec', 'libmp3lame', // MP3 codec
                     '-ab', '192k',           // Bitrate
                     '-ar', '44100',          // Sample rate
                     '-ac', '2',              // Stereo
                     '-af', 'aresample=resampler=soxr', // High quality resampling
-                    tempPath                 // Output to temp file
+                    normalizedTempPath       // Output to temp file
                 ]);
 
                 let ffmpegOutput = '';

@@ -130,5 +130,17 @@
     "type": "voice",
     "created": "2024-10-28T21:30:21.378Z",
     "characterId": null
+  },
+  {
+    "id": 19,
+    "name": "This is the beginning of the end!",
+    "filename": "1730151469778-This_is_the_beginning_of_the_e_raw.mp3",
+    "file": "1730151469778-This_is_the_beginning_of_the_e_raw.mp3",
+    "characterIds": [
+      1
+    ],
+    "type": "voice",
+    "created": "2024-10-28T21:37:50.024Z",
+    "characterId": null
   }
 ]
