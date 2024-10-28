@@ -7,8 +7,7 @@ import logging
 import subprocess
 import time
 import os
-import fcntl
-import errno
+import base64
 from typing import Dict, Any, Optional
 
 # Configure logging
@@ -39,8 +38,6 @@ class CameraController:
             varThreshold=10
         )
         self.head_tracking_process = None
-        self.last_frame_time = 0
-        self.frame_count = 0
 
         # Force V4L2 backend
         os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0"
@@ -52,9 +49,6 @@ class CameraController:
             # Release any existing camera instance
             self.release()
             
-            # Wait for camera to be available
-            time.sleep(0.5)
-            
             # Try V4L2 backend with specific settings
             self.cap = cv2.VideoCapture(self.camera_id, cv2.CAP_V4L2)
             
@@ -65,9 +59,6 @@ class CameraController:
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
             self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-
-            # Wait for camera to initialize
-            time.sleep(0.1)
 
             # Verify camera is working
             ret, frame = self.cap.read()
@@ -88,20 +79,15 @@ class CameraController:
             if self.cap:
                 self.cap.release()
                 self.cap = None
-                # Wait for camera to be fully released
-                time.sleep(0.1)
         except Exception:
             pass
 
     def detect_motion(self) -> Dict[str, Any]:
-        """Detect motion in current frame."""
+        """Detect motion in current frame and return processed frame."""
         if not self.initialize():
             return {"success": False, "error": "Failed to initialize camera"}
 
         try:
-            # Wait for camera to stabilize
-            time.sleep(0.1)
-            
             ret, frame = self.cap.read()
             if not ret or frame is None or frame.size == 0:
                 return {"success": False, "error": "Failed to capture frame"}
@@ -134,14 +120,30 @@ class CameraController:
                     largest_area = area
                     largest_contour = cnt
 
+            # Draw motion indicators on frame
             if largest_contour is not None:
                 x, y, w, h = cv2.boundingRect(largest_contour)
-                center_x = float(x + w/2)
-                center_y = float(y + h/2)
+                center_x = int(x + w/2)
+                center_y = int(y + h/2)
+
+                # Draw rectangle around motion
+                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                
+                # Draw center point
+                cv2.circle(frame, (center_x, center_y), 5, (0, 0, 255), -1)
 
                 # Calculate normalized position (0-100)
                 norm_x = (center_x / frame.shape[1]) * 100
                 norm_y = (center_y / frame.shape[0]) * 100
+
+                # Add timestamp and FPS
+                timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+                cv2.putText(frame, timestamp, (10, frame.shape[0] - 10),
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+
+                # Encode frame to JPEG
+                _, buffer = cv2.imencode('.jpg', frame)
+                frame_data = base64.b64encode(buffer).decode('utf-8')
 
                 return {
                     "success": True,
@@ -150,10 +152,19 @@ class CameraController:
                     "center_y": norm_y,
                     "width": w,
                     "height": h,
-                    "area": largest_area
+                    "area": largest_area,
+                    "frame": frame_data
                 }
 
-            return {"success": True, "motion_detected": False}
+            # If no motion, just return the frame
+            _, buffer = cv2.imencode('.jpg', frame)
+            frame_data = base64.b64encode(buffer).decode('utf-8')
+
+            return {
+                "success": True,
+                "motion_detected": False,
+                "frame": frame_data
+            }
 
         except Exception as e:
             return {"success": False, "error": str(e)}

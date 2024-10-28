@@ -70,18 +70,6 @@
             color: #00ff00;
         }
 
-        .motion-indicator {
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            background-color: #ff0000;
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            pointer-events: none;
-            opacity: 0.7;
-            display: none;
-        }
-
         select, input[type="range"] {
             background-color: #001100;
             color: #00ff00;
@@ -114,12 +102,6 @@
             cursor: not-allowed;
         }
 
-        .loading {
-            color: #00ff00;
-            text-align: center;
-            margin: 10px 0;
-        }
-
         .error-message {
             color: #ff0000;
             background-color: #330000;
@@ -128,24 +110,6 @@
             margin: 10px 0;
             border-radius: 4px;
             display: none;
-        }
-
-        .status-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 10px;
-        }
-
-        .disconnect-button {
-            background-color: #330000;
-            border-color: #ff0000;
-            color: #ff0000;
-        }
-
-        .disconnect-button:hover {
-            background-color: #440000;
-            box-shadow: 0 0 5px #ff0000;
         }
 
         .camera-select {
@@ -174,7 +138,6 @@
         <div class="camera-feed">
             <div style="position: relative;">
                 <img id="cameraStream" alt="Camera Stream" src="/images/no-stream.jpg">
-                <div id="motionIndicator" class="motion-indicator"></div>
             </div>
             <div id="errorMessage" class="error-message"></div>
             <div id="placeholderMessage" class="placeholder-text">Please select a camera and click "Apply Camera Selection" to begin</div>
@@ -192,17 +155,6 @@
             </div>
 
             <div id="cameraControls" class="controls-disabled">
-                <div class="control-group">
-                    <h3>Camera Status</h3>
-                    <div class="status-row">
-                        <div>
-                            <span class="status-indicator" id="streamStatus"></span>
-                            Stream Status: <span id="streamStatusText">Not Connected</span>
-                        </div>
-                        <button id="disconnectStream" class="disconnect-button" style="display: none;">Disconnect</button>
-                    </div>
-                </div>
-
                 <div class="control-group">
                     <h3>Motion Detection</h3>
                     <button id="toggleMotion">Start Motion Detection</button>
@@ -244,16 +196,9 @@
         let motionDetectionActive = false;
         let headTrackingActive = false;
         let motionInterval = null;
-        let reconnectAttempts = 0;
-        let manuallyDisconnected = false;
-        const maxReconnectAttempts = 3;
 
         const streamImg = document.getElementById('cameraStream');
-        const streamStatus = document.getElementById('streamStatus');
-        const streamStatusText = document.getElementById('streamStatusText');
-        const motionIndicator = document.getElementById('motionIndicator');
         const errorMessage = document.getElementById('errorMessage');
-        const disconnectButton = document.getElementById('disconnectStream');
         const cameraSelect = document.getElementById('cameraSelect');
         const applyCameraSelect = document.getElementById('applyCameraSelect');
         const placeholderMessage = document.getElementById('placeholderMessage');
@@ -312,20 +257,11 @@
 
                 cameraControls.classList.remove('controls-disabled');
                 placeholderMessage.style.display = 'none';
-                manuallyDisconnected = false;
-                initializeStream();
             } catch (error) {
                 console.error('Failed to select camera:', error);
                 showError('Failed to select camera: ' + error.message);
             }
         });
-
-        function initializeStream() {
-            if (!manuallyDisconnected) {
-                const [width, height] = document.getElementById('resolution').value.split(',');
-                streamImg.src = `/camera/stream?width=${width}&height=${height}&t=${Date.now()}`;
-            }
-        }
 
         function showError(message) {
             errorMessage.textContent = message;
@@ -334,49 +270,6 @@
                 errorMessage.style.display = 'none';
             }, 5000);
         }
-
-        streamImg.onload = function() {
-            streamStatus.className = 'status-indicator status-active';
-            streamStatusText.textContent = 'Connected';
-            disconnectButton.style.display = 'block';
-            reconnectAttempts = 0;
-            errorMessage.style.display = 'none';
-        };
-
-        streamImg.onerror = function() {
-            streamStatus.className = 'status-indicator status-inactive';
-            streamStatusText.textContent = 'Disconnected';
-            disconnectButton.style.display = 'none';
-            stopMotionDetection();
-            stopHeadTracking();
-
-            if (!manuallyDisconnected && reconnectAttempts < maxReconnectAttempts) {
-                reconnectAttempts++;
-                showError(`Connection lost. Reconnecting... (Attempt ${reconnectAttempts}/${maxReconnectAttempts})`);
-                setTimeout(initializeStream, 2000);
-            } else if (!manuallyDisconnected) {
-                showError('Failed to connect to camera after multiple attempts. Please try selecting a different camera.');
-                cameraControls.classList.add('controls-disabled');
-                placeholderMessage.style.display = 'block';
-                streamImg.src = '/images/no-stream.jpg';
-            }
-        };
-
-        disconnectButton.addEventListener('click', function() {
-            manuallyDisconnected = true;
-            
-            stopMotionDetection();
-            stopHeadTracking();
-            
-            streamImg.src = '/images/no-stream.jpg';
-            
-            streamStatus.className = 'status-indicator status-inactive';
-            streamStatusText.textContent = 'Disconnected';
-            disconnectButton.style.display = 'none';
-            
-            cameraControls.classList.add('controls-disabled');
-            placeholderMessage.style.display = 'block';
-        });
 
         document.getElementById('toggleMotion').addEventListener('click', async function() {
             if (motionDetectionActive) {
@@ -394,18 +287,8 @@
             }
         });
 
-        function updateMotionIndicator(x, y) {
-            const imgRect = streamImg.getBoundingClientRect();
-            motionIndicator.style.display = 'block';
-            motionIndicator.style.left = `${(x / 100) * imgRect.width}px`;
-            motionIndicator.style.top = `${(y / 100) * imgRect.height}px`;
-        }
-
         async function startMotionDetection() {
             try {
-                streamImg.src = '';
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                
                 motionDetectionActive = true;
                 document.getElementById('toggleMotion').textContent = 'Stop Motion Detection';
                 
@@ -427,13 +310,25 @@
 
                         const data = await response.json();
                         
-                        if (data.motion_detected) {
-                            updateMotionIndicator(data.center_x, data.center_y);
+                        if (data.success) {
+                            // Update the image with the processed frame
+                            if (data.frame) {
+                                streamImg.src = 'data:image/jpeg;base64,' + data.frame;
+                            }
+                            
+                            // Update motion data display
+                            document.getElementById('motionData').textContent = 
+                                JSON.stringify({
+                                    motion_detected: data.motion_detected,
+                                    center_x: data.center_x,
+                                    center_y: data.center_y,
+                                    width: data.width,
+                                    height: data.height,
+                                    area: data.area
+                                }, null, 2);
                         } else {
-                            motionIndicator.style.display = 'none';
+                            throw new Error(data.error || 'Motion detection failed');
                         }
-                        
-                        document.getElementById('motionData').textContent = JSON.stringify(data, null, 2);
                     } catch (error) {
                         console.error('Motion detection error:', error);
                         showError('Motion detection error: ' + error.message);
@@ -454,14 +349,8 @@
                 clearInterval(motionInterval);
                 motionInterval = null;
             }
-            motionIndicator.style.display = 'none';
             document.getElementById('motionData').textContent = 'No motion data';
-
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            if (!manuallyDisconnected) {
-                initializeStream();
-            }
+            streamImg.src = '/images/no-stream.jpg';
         }
 
         async function startHeadTracking() {
@@ -554,9 +443,7 @@
                 }
 
                 const data = await response.json();
-                if (data.success) {
-                    initializeStream();
-                } else {
+                if (!data.success) {
                     throw new Error(data.error || 'Failed to update settings');
                 }
             } catch (error) {

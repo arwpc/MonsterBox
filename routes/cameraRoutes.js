@@ -131,50 +131,6 @@ router.post('/select', async (req, res) => {
     }
 });
 
-router.get('/stream', async (req, res) => {
-    const width = parseInt(req.query.width) || 640;
-    const height = parseInt(req.query.height) || 480;
-
-    try {
-        const settings = await loadCameraSettings();
-        if (!settings.selectedCamera && settings.selectedCamera !== 0) {
-            throw new Error('No camera selected');
-        }
-
-        res.writeHead(200, {
-            'Content-Type': 'multipart/x-mixed-replace; boundary=frame',
-            'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive',
-            'Pragma': 'no-cache'
-        });
-
-        const streamScript = path.join(__dirname, '..', 'scripts', 'camera_stream.py');
-        const pythonProcess = spawn('python3', [
-            streamScript, 
-            '--width', width.toString(), 
-            '--height', height.toString(),
-            '--camera-id', settings.selectedCamera.toString()
-        ]);
-
-        pythonProcess.stdout.on('data', (data) => {
-            res.write(data);
-        });
-
-        pythonProcess.stderr.on('data', (data) => {
-            logger.error(`Camera stream error: ${data}`);
-        });
-
-        req.on('close', () => {
-            pythonProcess.kill();
-            logger.info('Camera stream connection closed');
-        });
-
-    } catch (error) {
-        logger.error('Camera stream error:', error);
-        res.status(500).json({ error: 'Failed to start camera stream' });
-    }
-});
-
 router.post('/control', async (req, res) => {
     const { command, params = {} } = req.body;
     const controlScript = path.join(__dirname, '..', 'scripts', 'camera_control.py');
