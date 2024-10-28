@@ -10,7 +10,8 @@ let messageId = 0;
 const eventEmitter = new EventEmitter();
 let playStatus = {};
 
-const COMMAND_TIMEOUT = 5000; // Reduced timeout to 5 seconds since we have better process management now
+const COMMAND_TIMEOUT = 15000; // Back to 15 seconds
+const PLAY_COMMAND_TIMEOUT = 2000; // Shorter timeout for play command acknowledgment
 
 function setupAudioEnvironment() {
     const env = { ...process.env };
@@ -107,6 +108,8 @@ function startSoundPlayer() {
                         // Update playStatus for any status updates
                         if (jsonOutput.status && jsonOutput.sound_id) {
                             playStatus[jsonOutput.sound_id] = jsonOutput.status;
+                            // Also emit status updates
+                            eventEmitter.emit('statusUpdate', jsonOutput.sound_id, jsonOutput.status);
                         }
                         
                     } catch (error) {
@@ -153,7 +156,7 @@ function startSoundPlayer() {
     });
 }
 
-function sendCommand(command) {
+function sendCommand(command, timeout = COMMAND_TIMEOUT) {
     return new Promise((resolve, reject) => {
         if (!soundPlayerProcess) {
             console.error('Sound player is not running');
@@ -170,7 +173,7 @@ function sendCommand(command) {
                 messageQueue.delete(id);
                 reject(new Error('Command timed out'));
             }
-        }, COMMAND_TIMEOUT);
+        }, timeout);
 
         messageQueue.set(id, { 
             resolve: (response) => {
@@ -207,7 +210,9 @@ function playSound(soundId, filePath) {
     // Normalize file path for Python
     const normalizedPath = filePath.replace(/\\/g, '/');
     console.log(`Attempting to play sound: ${soundId}, file: ${normalizedPath}`);
-    return sendCommand(`PLAY|${soundId}|${normalizedPath}`)
+    
+    // Only wait for initial acknowledgment
+    return sendCommand(`PLAY|${soundId}|${normalizedPath}`, PLAY_COMMAND_TIMEOUT)
         .then(response => {
             console.log(`Play sound response: ${JSON.stringify(response)}`);
             return response;
@@ -278,28 +283,41 @@ function waitForSoundToFinish(soundId) {
     return new Promise((resolve, reject) => {
         const timeout = setTimeout(() => {
             eventEmitter.removeListener('soundFinished', finishListener);
+            eventEmitter.removeListener('statusUpdate', statusListener);
             reject(new Error(`Timeout waiting for sound ${soundId} to finish`));
         }, COMMAND_TIMEOUT);
 
         const finishListener = (finishedSoundId) => {
             if (finishedSoundId === soundId) {
                 clearTimeout(timeout);
+                eventEmitter.removeListener('statusUpdate', statusListener);
+                resolve();
+            }
+        };
+
+        const statusListener = (updatedSoundId, status) => {
+            if (updatedSoundId === soundId && (status === 'finished' || status === 'stopped')) {
+                clearTimeout(timeout);
+                eventEmitter.removeListener('soundFinished', finishListener);
                 resolve();
             }
         };
 
         eventEmitter.once('soundFinished', finishListener);
+        eventEmitter.on('statusUpdate', statusListener);
 
         // Check if the sound has already finished
         getSoundStatus(soundId).then(status => {
             if (status.status === 'finished' || status.status === 'stopped' || status.status === 'not_found') {
                 clearTimeout(timeout);
                 eventEmitter.removeListener('soundFinished', finishListener);
+                eventEmitter.removeListener('statusUpdate', statusListener);
                 resolve();
             }
         }).catch(error => {
             clearTimeout(timeout);
             eventEmitter.removeListener('soundFinished', finishListener);
+            eventEmitter.removeListener('statusUpdate', statusListener);
             reject(error);
         });
     });
