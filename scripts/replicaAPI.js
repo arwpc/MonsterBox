@@ -116,6 +116,18 @@ class ReplicaAPI {
                 throw new Error('VoiceId parameter is required');
             }
 
+            // Validate global_volume range
+            const volume = params.options?.volume || 0;
+            if (volume < -6.0 || volume > 6.0) {
+                throw new Error('global_volume must be between -6.0 and 6.0');
+            }
+
+            // Validate global_pace range
+            const pace = params.options?.speed || 1;
+            if (pace < 0.5 || pace > 1.5) {
+                throw new Error('global_pace must be between 0.5 and 1.5');
+            }
+
             await this.checkRateLimit();
 
             const requestBody = {
@@ -124,12 +136,12 @@ class ReplicaAPI {
                 extensions: ['mp3'],
                 sample_rate: params.options?.sampleRate || 44100,
                 bit_rate: params.options?.bitRate || 128,
-                global_pace: params.options?.speed || 1,
+                global_pace: pace,
                 model_chain: params.options?.modelChain || 'vox_2_0',
                 language_code: params.options?.languageCode || 'en',
                 global_pitch: params.options?.pitch || 0,
                 auto_pitch: true,
-                global_volume: params.options?.volume || 0,
+                global_volume: volume,
                 user_metadata: params.options?.metadata || {}
             };
 
