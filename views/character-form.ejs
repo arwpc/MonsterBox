@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://unpkg.com/wavesurfer.js"></script>
 </head>
 <body>
     <header>
@@ -114,102 +113,15 @@
                         <button type="submit" class="button primary-btn">Save Character</button>
                         <a href="/characters" class="button secondary-btn">Cancel</a>
                         <% if (character && character.id) { %>
-                            <button type="button" id="configureVoice" class="button">Configure Voice</button>
+                            <button type="button" id="selectVoiceBtn" class="button">Configure Voice</button>
                         <% } %>
                     </div>
                 </div>
             </div>
         </form>
 
-        <!-- Voice Configuration Modal -->
-        <div id="voiceModal" class="modal">
-            <div class="modal-content">
-                <span class="close">&times;</span>
-                <h2>Voice Configuration</h2>
-
-                <div class="form-group">
-                    <label for="voiceSelect">Voice:</label>
-                    <select id="voiceSelect"></select>
-                </div>
-
-                <div class="form-group">
-                    <label for="languageSelect">Language:</label>
-                    <select id="languageSelect">
-                        <option value="en">English</option>
-                        <option value="es">Spanish</option>
-                        <option value="fr">French</option>
-                        <option value="de">German</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="styleSelect">Style:</label>
-                    <select id="styleSelect">
-                        <option value="neutral">Neutral</option>
-                        <option value="happy">Happy</option>
-                        <option value="sad">Sad</option>
-                        <option value="angry">Angry</option>
-                        <option value="fearful">Fearful</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="pitch">Pitch: <span id="pitchValue">0</span></label>
-                    <input type="range" id="pitch" min="-20" max="20" value="0">
-                </div>
-
-                <div class="form-group">
-                    <label for="speed">Speed: <span id="speedValue">1.0x</span></label>
-                    <input type="range" id="speed" min="0.5" max="2.0" step="0.1" value="1.0">
-                </div>
-
-                <div class="form-group">
-                    <label for="volume">Volume: <span id="volumeValue">0 dB</span></label>
-                    <input type="range" id="volume" min="-20" max="20" value="0">
-                </div>
-
-                <div class="form-group">
-                    <label for="sampleRate">Sample Rate:</label>
-                    <select id="sampleRate">
-                        <option value="44100">44.1 kHz</option>
-                        <option value="48000">48 kHz</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="bitRate">Bit Rate:</label>
-                    <select id="bitRate">
-                        <option value="128">128 kbps</option>
-                        <option value="192">192 kbps</option>
-                        <option value="256">256 kbps</option>
-                        <option value="320">320 kbps</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="outputFormat">Output Format:</label>
-                    <select id="outputFormat">
-                        <option value="mp3">MP3</option>
-                        <option value="wav">WAV</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="testText">Test Text:</label>
-                    <textarea id="testText">Hello, I am a test voice message.</textarea>
-                </div>
-
-                <div id="waveform"></div>
-                <div id="loadingIndicator" style="display: none;">Generating audio...</div>
-
-                <div class="button-group">
-                    <button id="previewPlay" class="button">Preview</button>
-                    <button id="previewStop" class="button">Stop</button>
-                    <button id="saveVoiceSettings" class="button">Save Settings</button>
-                    <button id="saveToSounds" class="button">Save to Sounds</button>
-                </div>
-            </div>
-        </div>
+        <!-- Include the voice selector component -->
+        <%- include('voice-selector') %>
     </main>
 
     <script>
@@ -269,262 +181,19 @@
             };
         }
 
-        // Voice configuration modal functionality
-        document.addEventListener('DOMContentLoaded', async function() {
-            const modal = document.getElementById('voiceModal');
-            const configureBtn = document.getElementById('configureVoice');
-            const closeBtn = document.getElementsByClassName('close')[0];
-            let wavesurfer = null;
-            let currentCharacterId = document.querySelector('input[name="id"]')?.value;
-
-            // Load voice settings for the character
-            async function loadVoiceSettings() {
-                if (currentCharacterId) {
-                    try {
-                        const response = await fetch(`/api/voice/settings/${currentCharacterId}`);
-                        if (response.ok) {
-                            const voiceSettings = await response.json();
-                            if (voiceSettings) {
-                                // Update UI with saved settings
-                                document.getElementById('voiceSelect').value = voiceSettings.speaker_id;
-                                document.getElementById('languageSelect').value = voiceSettings.settings.languageCode;
-                                document.getElementById('styleSelect').value = voiceSettings.settings.style;
-                                document.getElementById('pitch').value = voiceSettings.settings.pitch;
-                                document.getElementById('pitchValue').textContent = voiceSettings.settings.pitch;
-                                document.getElementById('speed').value = voiceSettings.settings.speed;
-                                document.getElementById('speedValue').textContent = voiceSettings.settings.speed + 'x';
-                                document.getElementById('volume').value = voiceSettings.settings.volume;
-                                document.getElementById('volumeValue').textContent = voiceSettings.settings.volume + ' dB';
-                                document.getElementById('sampleRate').value = voiceSettings.settings.sampleRate;
-                                document.getElementById('bitRate').value = voiceSettings.settings.bitRate;
-                                document.getElementById('outputFormat').value = voiceSettings.settings.outputFormat;
-                            }
-                        }
-                    } catch (error) {
-                        console.error('Error loading voice settings:', error);
-                    }
-                }
+        // Initialize voice selector when document is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            const characterId = document.querySelector('input[name="id"]')?.value;
+            if (characterId && window.voiceSelector) {
+                window.voiceSelector.setCharacterId(characterId);
             }
 
-            // Initialize WaveSurfer only after user interaction
-            async function initWaveSurfer() {
-                if (!wavesurfer) {
-                    wavesurfer = WaveSurfer.create({
-                        container: '#waveform',
-                        waveColor: '#4a9eff',
-                        progressColor: '#1976d2',
-                        height: 60,
-                        responsive: true,
-                        barWidth: 2,
-                        barGap: 1
-                    });
-                }
-                return wavesurfer;
-            }
-
-            // Save voice settings
-            async function saveVoiceSettings() {
-                if (!currentCharacterId) return;
-
-                const settings = {
-                    characterId: currentCharacterId,
-                    speaker_id: document.getElementById('voiceSelect').value,
-                    settings: {
-                        languageCode: document.getElementById('languageSelect').value,
-                        style: document.getElementById('styleSelect').value,
-                        pitch: parseInt(document.getElementById('pitch').value),
-                        speed: parseFloat(document.getElementById('speed').value),
-                        volume: parseInt(document.getElementById('volume').value),
-                        sampleRate: parseInt(document.getElementById('sampleRate').value),
-                        bitRate: parseInt(document.getElementById('bitRate').value),
-                        outputFormat: document.getElementById('outputFormat').value
-                    }
-                };
-
-                try {
-                    const response = await fetch('/api/voice/settings', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(settings)
-                    });
-
-                    if (!response.ok) throw new Error('Failed to save voice settings');
-                    alert('Voice settings saved successfully');
-                } catch (error) {
-                    console.error('Error saving voice settings:', error);
-                    alert('Error saving voice settings: ' + error.message);
-                }
-            }
-
-            // Save to sounds library
-            async function saveToSounds(audioUrl) {
-                try {
-                    const text = document.getElementById('testText').value;
-                    const response = await fetch('/api/voice/save-to-sounds', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            audioUrl,
-                            text,
-                            characterId: currentCharacterId
-                        })
-                    });
-
-                    if (!response.ok) throw new Error('Failed to save to sounds library');
-                    alert('Sound saved to library successfully');
-                } catch (error) {
-                    console.error('Error saving to sounds:', error);
-                    alert('Error saving to sounds: ' + error.message);
-                }
-            }
-
-            // Voice settings controls
-            const updateValue = (elementId, value, suffix = '') => {
-                const element = document.getElementById(elementId + 'Value');
-                if (element) {
-                    element.textContent = value + suffix;
-                }
-            };
-
-            ['pitch', 'speed', 'volume'].forEach(param => {
-                const element = document.getElementById(param);
-                if (element) {
-                    element.oninput = () => {
-                        updateValue(param, element.value, 
-                            param === 'speed' ? 'x' : 
-                            param === 'volume' ? ' dB' : '');
-                    };
-                }
+            // Handle voice selection event
+            document.addEventListener('voiceSelected', function(e) {
+                const { voice, settings } = e.detail;
+                console.log('Voice selected:', voice);
+                console.log('Settings:', settings);
             });
-
-            // Initialize voice selection
-            try {
-                const response = await fetch('/api/voice/available');
-                const voices = await response.json();
-                
-                const voiceSelect = document.getElementById('voiceSelect');
-                if (voiceSelect) {
-                    voiceSelect.innerHTML = '<option value="">Select a voice</option>';
-                    voices.forEach(voice => {
-                        const option = document.createElement('option');
-                        option.value = voice.uuid;
-                        option.textContent = `${voice.name} (${voice.uuid})`;
-                        voiceSelect.appendChild(option);
-                    });
-                }
-
-                // Load voice settings after voices are loaded
-                await loadVoiceSettings();
-            } catch (error) {
-                console.error('Error loading voices:', error);
-            }
-
-            // Modal controls
-            if (configureBtn) {
-                configureBtn.onclick = function() {
-                    if (modal) {
-                        modal.style.display = 'block';
-                    }
-                };
-            }
-
-            if (closeBtn) {
-                closeBtn.onclick = function() {
-                    if (modal) {
-                        modal.style.display = 'none';
-                    }
-                };
-            }
-
-            window.onclick = function(event) {
-                if (event.target == modal) {
-                    modal.style.display = 'none';
-                }
-            };
-
-            let lastGeneratedAudioUrl = null;
-
-            // Audio preview controls
-            const previewPlayBtn = document.getElementById('previewPlay');
-            if (previewPlayBtn) {
-                previewPlayBtn.onclick = async function() {
-                    const voiceSelect = document.getElementById('voiceSelect');
-                    if (!voiceSelect || !voiceSelect.value) {
-                        alert('Please select a voice first');
-                        return;
-                    }
-
-                    // Initialize WaveSurfer on first user interaction
-                    await initWaveSurfer();
-
-                    const testText = document.getElementById('testText');
-                    const settings = {
-                        speaker_id: voiceSelect.value,
-                        text: testText ? testText.value : 'Hello world',
-                        modelId: 'vox_1_0',
-                        pitch: parseInt(document.getElementById('pitch')?.value || 0),
-                        speed: parseFloat(document.getElementById('speed')?.value || 1.0),
-                        volume: parseInt(document.getElementById('volume')?.value || 0),
-                        sampleRate: parseInt(document.getElementById('sampleRate')?.value || 44100),
-                        bitRate: parseInt(document.getElementById('bitRate')?.value || 128),
-                        outputFormat: document.getElementById('outputFormat')?.value || 'mp3',
-                        languageCode: document.getElementById('languageSelect')?.value || 'en',
-                        style: document.getElementById('styleSelect')?.value || 'neutral'
-                    };
-
-                    const loadingIndicator = document.getElementById('loadingIndicator');
-                    if (loadingIndicator) {
-                        loadingIndicator.style.display = 'block';
-                    }
-
-                    try {
-                        const response = await fetch('/api/voice/generate', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(settings)
-                        });
-                        const data = await response.json();
-                        
-                        if (data.error) {
-                            throw new Error(data.error);
-                        }
-                        
-                        lastGeneratedAudioUrl = data.url;
-                        wavesurfer.load(data.url);
-                        wavesurfer.on('ready', function() {
-                            wavesurfer.play();
-                        });
-                    } catch (error) {
-                        console.error('Error generating speech:', error);
-                        alert('Error generating speech preview: ' + error.message);
-                    } finally {
-                        if (loadingIndicator) {
-                            loadingIndicator.style.display = 'none';
-                        }
-                    }
-                };
-            }
-
-            const previewStopBtn = document.getElementById('previewStop');
-            if (previewStopBtn) {
-                previewStopBtn.onclick = function() {
-                    if (wavesurfer) {
-                        wavesurfer.stop();
-                    }
-                };
-            }
-
-            // Save voice settings button
-            document.getElementById('saveVoiceSettings').onclick = saveVoiceSettings;
-
-            // Save to sounds button
-            document.getElementById('saveToSounds').onclick = function() {
-                if (lastGeneratedAudioUrl) {
-                    saveToSounds(lastGeneratedAudioUrl);
-                } else {
-                    alert('Please generate audio first');
-                }
-            };
         });
     </script>
 </body>

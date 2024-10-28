@@ -1,0 +1,326 @@
+/* Voice Selector Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+.modal-content {
+    position: relative;
+    background-color: #000;
+    margin: 2% auto;
+    padding: 20px;
+    border: 2px solid #00ff00;
+    width: 90%;
+    max-width: 1200px;
+    max-height: 90vh;
+    overflow-y: auto;
+    color: #00ff00;
+}
+
+/* Loading Overlay */
+.loading-overlay {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    z-index: 1001;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.loading-overlay.active {
+    display: flex;
+}
+
+.spinner {
+    border: 4px solid #00ff00;
+    border-top: 4px solid transparent;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Error Message */
+.error-message {
+    display: none;
+    background-color: #330000;
+    color: #ff0000;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ff0000;
+}
+
+/* Recently Used Section */
+.recently-used {
+    margin-bottom: 20px;
+}
+
+.voice-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.voice-chip {
+    background-color: #002200;
+    border: 1px solid #00ff00;
+    padding: 5px 10px;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.voice-chip:hover {
+    background-color: #004400;
+}
+
+/* Search and Filters */
+.search-filters {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.search-bar {
+    flex: 1;
+    margin-right: 20px;
+}
+
+.search-bar input {
+    width: 100%;
+    padding: 8px;
+    background-color: #000;
+    border: 1px solid #00ff00;
+    color: #00ff00;
+}
+
+.filters {
+    display: flex;
+    gap: 10px;
+}
+
+.filter-btn {
+    background-color: #002200;
+    border: 1px solid #00ff00;
+    color: #00ff00;
+    padding: 8px 15px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.filter-btn:hover {
+    background-color: #004400;
+}
+
+/* Filter Dropdowns */
+.filter-dropdown {
+    display: none;
+    position: absolute;
+    background-color: #000;
+    border: 1px solid #00ff00;
+    padding: 10px;
+    z-index: 1002;
+}
+
+.filter-option {
+    margin: 5px 0;
+    color: #00ff00;
+}
+
+/* Voice List */
+.voice-list {
+    margin-bottom: 20px;
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+th, td {
+    padding: 10px;
+    text-align: left;
+    border: 1px solid #00ff00;
+}
+
+th {
+    background-color: #002200;
+    cursor: pointer;
+}
+
+tr:hover {
+    background-color: #001100;
+}
+
+tr.selected {
+    background-color: #002200;
+}
+
+.style-btn {
+    background-color: #001100;
+    border: 1px solid #00ff00;
+    color: #00ff00;
+    padding: 4px 8px;
+    margin: 2px;
+    cursor: pointer;
+}
+
+.style-btn:hover {
+    background-color: #003300;
+}
+
+.action-btn {
+    background-color: transparent;
+    border: none;
+    color: #00ff00;
+    cursor: pointer;
+    padding: 4px;
+}
+
+/* Voice Preview Section */
+.voice-preview {
+    margin-top: 20px;
+    padding: 20px;
+    border: 1px solid #00ff00;
+}
+
+.preview-controls textarea {
+    width: 100%;
+    height: 100px;
+    margin-bottom: 20px;
+    background-color: #000;
+    border: 1px solid #00ff00;
+    color: #00ff00;
+    padding: 10px;
+}
+
+.voice-settings {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.setting-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.setting-group label {
+    margin-bottom: 5px;
+}
+
+.setting-group input[type="range"] {
+    width: 100%;
+}
+
+.setting-value {
+    margin-left: 10px;
+}
+
+.preview-actions {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.preview-btn {
+    background-color: #002200;
+    border: 1px solid #00ff00;
+    color: #00ff00;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.preview-btn:disabled {
+    background-color: #001100;
+    border-color: #004400;
+    color: #004400;
+    cursor: not-allowed;
+}
+
+.preview-btn:not(:disabled):hover {
+    background-color: #004400;
+}
+
+.waveform-container {
+    height: 60px;
+    background-color: #001100;
+    border: 1px solid #00ff00;
+}
+
+/* Modal Actions */
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.primary-btn {
+    background-color: #002200;
+    border: 1px solid #00ff00;
+    color: #00ff00;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.primary-btn:disabled {
+    background-color: #001100;
+    border-color: #004400;
+    color: #004400;
+    cursor: not-allowed;
+}
+
+.primary-btn:not(:disabled):hover {
+    background-color: #004400;
+}
+
+.secondary-btn {
+    background-color: transparent;
+    border: 1px solid #00ff00;
+    color: #00ff00;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.secondary-btn:hover {
+    background-color: #001100;
+}
+
+/* Close Button */
+.close {
+    color: #00ff00;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: #00aa00;
+}
