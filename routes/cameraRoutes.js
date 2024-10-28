@@ -64,39 +64,41 @@ router.get('/list', async (req, res) => {
                 if (code === 0) {
                     const cameras = [];
                     const lines = output.split('\n');
-                    let currentCamera = null;
+                    let isUsbCamera = false;
                     let devices = [];
 
                     for (const line of lines) {
-                        const trimmedLine = line.trim();
-                        if (!trimmedLine) continue;
-
                         if (line.includes('USB 2.0 Camera')) {
-                            // If we have a previous camera, add it to the list
-                            if (currentCamera && devices.length > 0) {
+                            isUsbCamera = true;
+                            continue;
+                        }
+                        
+                        if (isUsbCamera && line.trim().startsWith('/dev/video')) {
+                            const deviceId = parseInt(line.trim().replace('/dev/video', ''));
+                            // Only include video0 and video1 for the USB camera
+                            if (deviceId === 0 || deviceId === 1) {
+                                devices.push({
+                                    id: deviceId,
+                                    path: line.trim()
+                                });
+                            }
+                        } else if (line.trim() === '' || !line.trim().startsWith('/dev/')) {
+                            // End of current device section
+                            if (isUsbCamera && devices.length > 0) {
                                 cameras.push({
-                                    name: currentCamera,
+                                    name: 'USB Camera',
                                     devices: devices
                                 });
                             }
-                            // Start a new camera
-                            currentCamera = 'USB Camera';
+                            isUsbCamera = false;
                             devices = [];
-                        } else if (trimmedLine.startsWith('/dev/video')) {
-                            const deviceId = parseInt(trimmedLine.replace('/dev/video', ''));
-                            if (!isNaN(deviceId)) {
-                                devices.push({
-                                    id: deviceId,
-                                    path: trimmedLine
-                                });
-                            }
                         }
                     }
 
-                    // Add the last camera if we have one
-                    if (currentCamera && devices.length > 0) {
+                    // Add any remaining devices
+                    if (isUsbCamera && devices.length > 0) {
                         cameras.push({
-                            name: currentCamera,
+                            name: 'USB Camera',
                             devices: devices
                         });
                     }
