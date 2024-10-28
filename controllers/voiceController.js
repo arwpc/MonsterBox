@@ -91,6 +91,15 @@ exports.generateSpeech = async (req, res) => {
     }
 };
 
+exports.getFXPresets = async (req, res) => {
+    try {
+        const presets = await voiceService.getFXPresets();
+        res.json(presets);
+    } catch (error) {
+        handleError(res, error);
+    }
+};
+
 exports.getVoicePresets = async (req, res) => {
     try {
         const { characterId } = req.params;

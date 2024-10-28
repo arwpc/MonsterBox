@@ -32,6 +32,7 @@ const activeModeRoutes = require('./routes/activeModeRoutes');
 const systemConfigRoutes = require('./routes/systemConfigRoutes');
 const logRoutes = require('./routes/logRoutes');
 const cameraRoutes = require('./routes/cameraRoutes');
+const voiceRoutes = require('./routes/voiceRoutes');
 
 // Import services
 const characterService = require('./services/characterService');
@@ -78,6 +79,7 @@ app.use('/active-mode', activeModeRoutes);
 app.use('/system-config', systemConfigRoutes);
 app.use('/logs', logRoutes);
 app.use('/camera', cameraRoutes);
+app.use('/api/voice', voiceRoutes); // Added voice routes
 
 // Root route
 app.get('/', async (req, res) => {
