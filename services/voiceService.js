@@ -12,8 +12,8 @@ class VoiceService {
             speed: 1,
             volume: 0,
             sampleRate: 44100,
-            bitRate: 192,
-            outputFormat: 'mp3',
+            bitRate: 128,  // Using supported bit rate
+            outputFormat: 'wav',  // Request WAV format
             languageCode: 'en'
         };
     }
@@ -161,7 +161,7 @@ class VoiceService {
                     ...this.defaultSettings,
                     ...options,
                     modelChain,
-                    extensions: ['mp3']  // Request MP3 format specifically
+                    extensions: ['wav']  // Request WAV format
                 }
             });
 
@@ -184,6 +184,30 @@ class VoiceService {
         } catch (error) {
             logger.error(`Error generating speech: ${error.message}`);
             throw new Error(`Speech generation failed: ${error.message}`);
+        }
+    }
+
+    async testConnection(speaker_id) {
+        try {
+            if (!speaker_id) {
+                throw new Error('Speaker ID is required');
+            }
+
+            const voices = await this.getAvailableVoices();
+            const voice = voices.find(v => v.speaker_id === speaker_id);
+
+            if (!voice) {
+                throw new Error('Voice not found');
+            }
+
+            return {
+                success: true,
+                voice: voice,
+                message: 'Successfully connected to voice service'
+            };
+        } catch (error) {
+            logger.error(`Error testing connection: ${error.message}`);
+            throw new Error(`Connection test failed: ${error.message}`);
         }
     }
 }
