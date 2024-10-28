@@ -10,8 +10,8 @@ let messageId = 0;
 const eventEmitter = new EventEmitter();
 let playStatus = {};
 
-const COMMAND_TIMEOUT = 15000; // Back to 15 seconds
-const PLAY_COMMAND_TIMEOUT = 2000; // Shorter timeout for play command acknowledgment
+const COMMAND_TIMEOUT = 15000; // 15 seconds for most commands
+const STATUS_CHECK_INTERVAL = 100; // 100ms interval for status checks
 
 function setupAudioEnvironment() {
     const env = { ...process.env };
@@ -205,22 +205,77 @@ function sendCommand(command, timeout = COMMAND_TIMEOUT) {
     });
 }
 
-function playSound(soundId, filePath) {
-    playStatus[soundId] = 'playing';
+async function waitForStatus(soundId, targetStatus, timeout = COMMAND_TIMEOUT) {
+    return new Promise((resolve, reject) => {
+        const startTime = Date.now();
+        
+        // Check current status first
+        if (playStatus[soundId] === targetStatus) {
+            resolve();
+            return;
+        }
+
+        const statusListener = (updatedSoundId, status) => {
+            if (updatedSoundId === soundId && status === targetStatus) {
+                clearInterval(checkInterval);
+                clearTimeout(timeoutId);
+                eventEmitter.removeListener('statusUpdate', statusListener);
+                resolve();
+            }
+        };
+
+        const timeoutId = setTimeout(() => {
+            clearInterval(checkInterval);
+            eventEmitter.removeListener('statusUpdate', statusListener);
+            reject(new Error(`Timeout waiting for sound ${soundId} to reach status ${targetStatus}`));
+        }, timeout);
+
+        // Listen for status updates
+        eventEmitter.on('statusUpdate', statusListener);
+
+        // Also poll status periodically
+        const checkInterval = setInterval(async () => {
+            if (Date.now() - startTime > timeout) {
+                clearInterval(checkInterval);
+                eventEmitter.removeListener('statusUpdate', statusListener);
+                return;
+            }
+
+            try {
+                const status = await getSoundStatus(soundId);
+                if (status.status === targetStatus) {
+                    clearInterval(checkInterval);
+                    clearTimeout(timeoutId);
+                    eventEmitter.removeListener('statusUpdate', statusListener);
+                    resolve();
+                }
+            } catch (error) {
+                console.error(`Error checking sound status: ${error.message}`);
+            }
+        }, STATUS_CHECK_INTERVAL);
+    });
+}
+
+async function playSound(soundId, filePath) {
+    playStatus[soundId] = 'starting';
     // Normalize file path for Python
     const normalizedPath = filePath.replace(/\\/g, '/');
     console.log(`Attempting to play sound: ${soundId}, file: ${normalizedPath}`);
     
-    // Only wait for initial acknowledgment
-    return sendCommand(`PLAY|${soundId}|${normalizedPath}`, PLAY_COMMAND_TIMEOUT)
-        .then(response => {
-            console.log(`Play sound response: ${JSON.stringify(response)}`);
-            return response;
-        })
-        .catch(error => {
-            console.error(`Error playing sound: ${error.message}`);
-            throw error;
-        });
+    try {
+        // Send play command
+        await sendCommand(`PLAY|${soundId}|${normalizedPath}`);
+        
+        // Wait for playing status
+        await waitForStatus(soundId, 'playing');
+        
+        console.log(`Sound ${soundId} is now playing`);
+        return { status: 'success', message: 'Sound playback started' };
+    } catch (error) {
+        console.error(`Error playing sound: ${error.message}`);
+        playStatus[soundId] = 'error';
+        throw error;
+    }
 }
 
 async function stopSound(soundId) {
