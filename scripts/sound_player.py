@@ -28,56 +28,97 @@ class SoundPlayer:
             if file_size == 0:
                 raise Exception(f"Sound file is empty: {file_path}")
             
-            # Use MPG123 to play the MP3 file
-            log_message({"status": "info", "message": f"Executing mpg123 command for file: {file_path}"})
-            process = subprocess.Popen(['mpg123', '-v', '-k 10', '-a hw:0,0', file_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            # Use MPG123 to play the MP3 file with basic options
+            log_message({"status": "info", "message": f"Starting mpg123 for file: {file_path}"})
+            process = subprocess.Popen(
+                ['mpg123', '--quiet', file_path],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
             
             self.sounds[sound_id] = process
             log_message({"status": "playing", "sound_id": sound_id, "file": file_path})
             
-            # Start a new thread to wait for the sound to finish
-            Thread(target=self._wait_for_sound_end, args=(sound_id, process, file_path)).start()
+            # Start a new thread to monitor the sound playback
+            Thread(target=self._monitor_sound_playback, args=(sound_id, process, file_path)).start()
             
         except FileNotFoundError as e:
             log_message({"status": "error", "sound_id": sound_id, "file": file_path, "message": str(e)})
         except Exception as e:
             log_message({"status": "error", "sound_id": sound_id, "file": file_path, "message": str(e), "traceback": traceback.format_exc()})
 
-    def _wait_for_sound_end(self, sound_id, process, file_path):
-        start_time = time.time()
-        stdout, stderr = process.communicate()
-        end_time = time.time()
-        duration = end_time - start_time
-        
-        log_message({"status": "info", "message": f"MPG123 stdout: {stdout.decode('utf-8')}"})
-        
-        if process.returncode != 0:
-            log_message({"status": "error", "sound_id": sound_id, "file": file_path, "message": f"MPG123 error: {stderr.decode('utf-8')}"})
-        
-        # Ensure a minimum play duration of 1 second
-        if duration < 1:
-            time.sleep(1 - duration)
-            duration = 1
-        
-        log_message({"status": "finished", "sound_id": sound_id, "duration": duration})
-        if sound_id in self.sounds:
-            del self.sounds[sound_id]
+    def _monitor_sound_playback(self, sound_id, process, file_path):
+        """Monitor sound playback with active polling"""
+        try:
+            log_message({"status": "info", "message": f"Started monitoring sound playback for ID: {sound_id}"})
+            
+            while True:
+                # Check if process has finished
+                return_code = process.poll()
+                if return_code is not None:
+                    stdout, stderr = process.communicate()
+                    if return_code == 0:
+                        log_message({
+                            "status": "finished",
+                            "sound_id": sound_id,
+                            "message": "Sound playback completed successfully"
+                        })
+                    else:
+                        error_msg = stderr.decode('utf-8').strip() if stderr else "Unknown error"
+                        log_message({
+                            "status": "error",
+                            "sound_id": sound_id,
+                            "message": f"Sound playback failed with code {return_code}: {error_msg}"
+                        })
+                    break
+                
+                # Small sleep to prevent CPU overuse
+                time.sleep(0.1)
+            
+            # Clean up
+            if sound_id in self.sounds:
+                del self.sounds[sound_id]
+                
+        except Exception as e:
+            log_message({
+                "status": "error",
+                "sound_id": sound_id,
+                "message": f"Error monitoring sound playback: {str(e)}",
+                "traceback": traceback.format_exc()
+            })
+            if sound_id in self.sounds:
+                del self.sounds[sound_id]
 
     def stop_sound(self, sound_id):
         if sound_id in self.sounds:
             process = self.sounds[sound_id]
-            process.terminate()
-            process.wait()
-            del self.sounds[sound_id]
-            log_message({"status": "stopped", "sound_id": sound_id})
+            log_message({"status": "info", "message": f"Stopping sound: {sound_id}"})
+            try:
+                process.terminate()
+                process.wait(timeout=2)  # Wait up to 2 seconds for graceful termination
+                log_message({"status": "stopped", "sound_id": sound_id})
+            except subprocess.TimeoutExpired:
+                process.kill()  # Force kill if termination takes too long
+                log_message({"status": "killed", "sound_id": sound_id})
+            finally:
+                if sound_id in self.sounds:
+                    del self.sounds[sound_id]
         else:
             log_message({"status": "warning", "message": f"Sound {sound_id} not found or already stopped"})
 
     def stop_all_sounds(self):
-        for sound_id, process in self.sounds.items():
-            process.terminate()
-            process.wait()
-        self.sounds.clear()
+        log_message({"status": "info", "message": "Stopping all sounds"})
+        for sound_id, process in list(self.sounds.items()):
+            try:
+                process.terminate()
+                process.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                process.kill()
+            except Exception as e:
+                log_message({"status": "error", "message": f"Error stopping sound {sound_id}: {str(e)}"})
+            finally:
+                if sound_id in self.sounds:
+                    del self.sounds[sound_id]
         log_message({"status": "info", "message": "All sounds stopped"})
 
     def get_sound_status(self, sound_id):
@@ -95,7 +136,7 @@ class SoundPlayer:
                 raise FileNotFoundError(f"Sound file not found: {file_path}")
             
             # Use MPG123 to get the duration of the MP3 file
-            result = subprocess.run(['mpg123', '-t', '-k 10', file_path], capture_output=True, text=True)
+            result = subprocess.run(['mpg123', '-t', '--quiet', file_path], capture_output=True, text=True)
             duration_line = [line for line in result.stderr.split('\n') if 'Time:' in line][0]
             duration = float(duration_line.split()[-1])
             return {"status": "success", "duration": duration}
