@@ -10,7 +10,7 @@ let messageId = 0;
 const eventEmitter = new EventEmitter();
 let playStatus = {};
 
-const COMMAND_TIMEOUT = 15000; // Increased timeout to 15 seconds
+const COMMAND_TIMEOUT = 5000; // Reduced timeout to 5 seconds since we have better process management now
 
 function setupAudioEnvironment() {
     const env = { ...process.env };
@@ -128,8 +128,25 @@ function startSoundPlayer() {
             soundPlayerProcess.on('close', (code) => {
                 console.log(`Sound player exited with code ${code}`);
                 soundPlayerProcess = null;
+                // Clear all pending commands in the queue
+                messageQueue.forEach(({ reject }) => {
+                    reject(new Error('Sound player process closed'));
+                });
+                messageQueue.clear();
                 reject(new Error(`Sound player process exited unexpectedly with code ${code}`));
             });
+
+            // Set up a timeout for the initial ready message
+            const readyTimeout = setTimeout(() => {
+                reject(new Error('Timeout waiting for sound player to become ready'));
+            }, COMMAND_TIMEOUT);
+
+            // Clear the timeout when resolved
+            const originalResolve = resolve;
+            resolve = (...args) => {
+                clearTimeout(readyTimeout);
+                originalResolve(...args);
+            };
         } else {
             resolve();
         }
@@ -167,14 +184,21 @@ function sendCommand(command) {
             }
         });
         
-        soundPlayerProcess.stdin.write(fullCommand, (error) => {
-            if (error) {
-                clearTimeout(timeoutId);
-                console.error(`Error sending command: ${error.message}`);
-                messageQueue.delete(id);
-                reject(error);
-            }
-        });
+        try {
+            soundPlayerProcess.stdin.write(fullCommand, (error) => {
+                if (error) {
+                    clearTimeout(timeoutId);
+                    console.error(`Error sending command: ${error.message}`);
+                    messageQueue.delete(id);
+                    reject(error);
+                }
+            });
+        } catch (error) {
+            clearTimeout(timeoutId);
+            console.error(`Error sending command: ${error.message}`);
+            messageQueue.delete(id);
+            reject(error);
+        }
     });
 }
 
@@ -194,20 +218,32 @@ function playSound(soundId, filePath) {
         });
 }
 
-function stopSound(soundId) {
+async function stopSound(soundId) {
     console.log(`Attempting to stop sound: ${soundId}`);
-    return sendCommand(`STOP|${soundId}`).then(response => {
+    try {
+        const response = await sendCommand(`STOP|${soundId}`);
         playStatus[soundId] = 'stopped';
         return response;
-    });
+    } catch (error) {
+        console.error(`Error stopping sound: ${error.message}`);
+        // Even if the command times out, mark the sound as stopped
+        playStatus[soundId] = 'stopped';
+        throw error;
+    }
 }
 
-function stopAllSounds() {
+async function stopAllSounds() {
     console.log('Attempting to stop all sounds');
-    return sendCommand('STOP_ALL').then(response => {
+    try {
+        const response = await sendCommand('STOP_ALL');
         playStatus = {};
         return response;
-    });
+    } catch (error) {
+        console.error(`Error stopping all sounds: ${error.message}`);
+        // Even if the command times out, clear the play status
+        playStatus = {};
+        throw error;
+    }
 }
 
 async function getSoundStatus(soundId) {
