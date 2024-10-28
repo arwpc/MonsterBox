@@ -10,6 +10,8 @@ let messageId = 0;
 const eventEmitter = new EventEmitter();
 let playStatus = {};
 
+const COMMAND_TIMEOUT = 15000; // Increased timeout to 15 seconds
+
 function setupAudioEnvironment() {
     const env = { ...process.env };
 
@@ -60,7 +62,6 @@ function startSoundPlayer() {
             console.log(`Sound player process PID: ${soundPlayerProcess.pid}`);
 
             let stdoutBuffer = '';
-            let stderrBuffer = '';
 
             soundPlayerProcess.stdout.on('data', (data) => {
                 stdoutBuffer += data.toString();
@@ -68,31 +69,46 @@ function startSoundPlayer() {
                 let lines = stdoutBuffer.split('\n');
                 while (lines.length > 1) {
                     let line = lines.shift();
+                    if (!line.trim()) continue;
+                    
                     console.log(`Sound player output: ${line}`);
                     try {
                         const jsonOutput = JSON.parse(line);
+                        
+                        // Handle ready status
                         if (jsonOutput.status === 'ready') {
                             console.log('Sound player is ready');
                             resolve();
-                        } else if (jsonOutput.status === 'finished') {
+                        }
+                        
+                        // Handle finished status
+                        if (jsonOutput.status === 'finished') {
                             console.log(`Emitting soundFinished event for ${jsonOutput.sound_id}`);
                             playStatus[jsonOutput.sound_id] = 'finished';
                             eventEmitter.emit('soundFinished', jsonOutput.sound_id);
-                        } else if (jsonOutput.status === 'error') {
-                            console.error(`Sound player error: ${JSON.stringify(jsonOutput)}`);
-                        } else if (jsonOutput.messageId !== undefined) {
+                        }
+                        
+                        // Handle message queue responses
+                        if (jsonOutput.messageId !== undefined) {
                             const queueItem = messageQueue.get(jsonOutput.messageId);
                             if (queueItem) {
                                 const { resolve } = queueItem;
                                 messageQueue.delete(jsonOutput.messageId);
-                                if (jsonOutput.status) {
+                                
+                                // Update playStatus if status is included
+                                if (jsonOutput.status && jsonOutput.sound_id) {
                                     playStatus[jsonOutput.sound_id] = jsonOutput.status;
                                 }
+                                
                                 resolve(jsonOutput);
-                            } else {
-                                console.warn(`Received response for unknown messageId: ${jsonOutput.messageId}`);
                             }
                         }
+                        
+                        // Update playStatus for any status updates
+                        if (jsonOutput.status && jsonOutput.sound_id) {
+                            playStatus[jsonOutput.sound_id] = jsonOutput.status;
+                        }
+                        
                     } catch (error) {
                         console.log(`Non-JSON output from sound player: ${line}`);
                     }
@@ -101,7 +117,6 @@ function startSoundPlayer() {
             });
 
             soundPlayerProcess.stderr.on('data', (data) => {
-                stderrBuffer += data.toString();
                 console.error(`Sound player stderr: ${data.toString()}`);
             });
 
@@ -112,9 +127,6 @@ function startSoundPlayer() {
 
             soundPlayerProcess.on('close', (code) => {
                 console.log(`Sound player exited with code ${code}`);
-                if (stderrBuffer) {
-                    console.error(`Sound player stderr buffer: ${stderrBuffer}`);
-                }
                 soundPlayerProcess = null;
                 reject(new Error(`Sound player process exited unexpectedly with code ${code}`));
             });
@@ -136,29 +148,33 @@ function sendCommand(command) {
         const fullCommand = `${id}|${command}\n`;
         console.log(`Sending command: ${fullCommand.trim()}`);
         
+        const timeoutId = setTimeout(() => {
+            if (messageQueue.has(id)) {
+                messageQueue.delete(id);
+                reject(new Error('Command timed out'));
+            }
+        }, COMMAND_TIMEOUT);
+
         messageQueue.set(id, { 
             resolve: (response) => {
+                clearTimeout(timeoutId);
                 console.log(`Received response for command ${id}: ${JSON.stringify(response)}`);
                 resolve(response);
-            }, 
-            reject 
+            },
+            reject: (error) => {
+                clearTimeout(timeoutId);
+                reject(error);
+            }
         });
         
         soundPlayerProcess.stdin.write(fullCommand, (error) => {
             if (error) {
+                clearTimeout(timeoutId);
                 console.error(`Error sending command: ${error.message}`);
                 messageQueue.delete(id);
                 reject(error);
             }
         });
-
-        // Set a timeout to prevent hanging
-        setTimeout(() => {
-            if (messageQueue.has(id)) {
-                messageQueue.delete(id);
-                reject(new Error('Command timed out'));
-            }
-        }, 5000);
     });
 }
 
@@ -199,13 +215,20 @@ async function getSoundStatus(soundId) {
     try {
         const response = await sendCommand(`STATUS|${soundId}`);
         console.log(`Get sound status response: ${JSON.stringify(response)}`);
+        
+        // Update playStatus with the latest status
         if (response.status) {
             playStatus[soundId] = response.status;
         }
+        
         return response;
     } catch (error) {
         console.error(`Error getting sound status: ${error.message}`);
-        throw error;
+        // Return last known status if command fails
+        return {
+            status: playStatus[soundId] || 'unknown',
+            sound_id: soundId
+        };
     }
 }
 
@@ -220,7 +243,7 @@ function waitForSoundToFinish(soundId) {
         const timeout = setTimeout(() => {
             eventEmitter.removeListener('soundFinished', finishListener);
             reject(new Error(`Timeout waiting for sound ${soundId} to finish`));
-        }, 10000); // 10 second timeout
+        }, COMMAND_TIMEOUT);
 
         const finishListener = (finishedSoundId) => {
             if (finishedSoundId === soundId) {
@@ -229,11 +252,11 @@ function waitForSoundToFinish(soundId) {
             }
         };
 
-        eventEmitter.on('soundFinished', finishListener);
+        eventEmitter.once('soundFinished', finishListener);
 
         // Check if the sound has already finished
         getSoundStatus(soundId).then(status => {
-            if (status.status !== 'playing') {
+            if (status.status === 'finished' || status.status === 'stopped' || status.status === 'not_found') {
                 clearTimeout(timeout);
                 eventEmitter.removeListener('soundFinished', finishListener);
                 resolve();
