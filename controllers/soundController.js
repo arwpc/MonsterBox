@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const EventEmitter = require('events');
+const logger = require('../scripts/logger');
 
 let soundPlayerProcess = null;
 const messageQueue = new Map();
@@ -40,11 +41,11 @@ function startSoundPlayer() {
         if (!soundPlayerProcess) {
             // Normalize script path for Python
             const scriptPath = path.resolve(__dirname, '..', 'scripts', 'sound_player.py').replace(/\\/g, '/');
-            console.log(`Starting sound player: ${scriptPath}`);
-            console.log(`Current working directory: ${process.cwd()}`);
+            logger.info(`Starting sound player: ${scriptPath}`);
+            logger.debug(`Current working directory: ${process.cwd()}`);
             
             const env = setupAudioEnvironment();
-            console.log(`Environment: ${JSON.stringify(env)}`);
+            logger.debug(`Environment: ${JSON.stringify(env)}`);
             
             let spawnOptions = {
                 stdio: ['pipe', 'pipe', 'pipe'],
@@ -57,34 +58,34 @@ function startSoundPlayer() {
                 spawnOptions.gid = parseInt(process.env.SUDO_GID);
             }
             
-            console.log('Spawning sound player process...');
+            logger.info('Spawning sound player process...');
             soundPlayerProcess = spawn('python3', [scriptPath], spawnOptions);
 
-            console.log(`Sound player process PID: ${soundPlayerProcess.pid}`);
+            logger.debug(`Sound player process PID: ${soundPlayerProcess.pid}`);
 
             let stdoutBuffer = '';
 
             soundPlayerProcess.stdout.on('data', (data) => {
                 stdoutBuffer += data.toString();
-                console.log(`Raw stdout: ${data.toString()}`);
+                logger.debug(`Raw stdout: ${data.toString()}`);
                 let lines = stdoutBuffer.split('\n');
                 while (lines.length > 1) {
                     let line = lines.shift();
                     if (!line.trim()) continue;
                     
-                    console.log(`Sound player output: ${line}`);
+                    logger.debug(`Sound player output: ${line}`);
                     try {
                         const jsonOutput = JSON.parse(line);
                         
                         // Handle ready status
                         if (jsonOutput.status === 'ready') {
-                            console.log('Sound player is ready');
+                            logger.info('Sound player is ready');
                             resolve();
                         }
                         
                         // Handle finished status
                         if (jsonOutput.status === 'finished') {
-                            console.log(`Emitting soundFinished event for ${jsonOutput.sound_id}`);
+                            logger.debug(`Emitting soundFinished event for ${jsonOutput.sound_id}`);
                             playStatus[jsonOutput.sound_id] = 'finished';
                             eventEmitter.emit('soundFinished', jsonOutput.sound_id);
                         }
@@ -113,23 +114,23 @@ function startSoundPlayer() {
                         }
                         
                     } catch (error) {
-                        console.log(`Non-JSON output from sound player: ${line}`);
+                        logger.debug(`Non-JSON output from sound player: ${line}`);
                     }
                 }
                 stdoutBuffer = lines.join('\n');
             });
 
             soundPlayerProcess.stderr.on('data', (data) => {
-                console.error(`Sound player stderr: ${data.toString()}`);
+                logger.debug(`Sound player stderr: ${data.toString()}`);
             });
 
             soundPlayerProcess.on('error', (error) => {
-                console.error(`Failed to start sound player: ${error.message}`);
+                logger.error(`Failed to start sound player: ${error.message}`);
                 reject(error);
             });
 
             soundPlayerProcess.on('close', (code) => {
-                console.log(`Sound player exited with code ${code}`);
+                logger.info(`Sound player exited with code ${code}`);
                 soundPlayerProcess = null;
                 // Clear all pending commands in the queue
                 messageQueue.forEach(({ reject }) => {
@@ -159,18 +160,20 @@ function startSoundPlayer() {
 function sendCommand(command, timeout = COMMAND_TIMEOUT) {
     return new Promise((resolve, reject) => {
         if (!soundPlayerProcess) {
-            console.error('Sound player is not running');
+            logger.error('Sound player is not running');
             reject(new Error('Sound player is not running'));
             return;
         }
 
         const id = messageId++;
         const fullCommand = `${id}|${command}\n`;
-        console.log(`Sending command: ${fullCommand.trim()}`);
+        logger.debug(`Sending command: ${fullCommand.trim()}`);
         
         const timeoutId = setTimeout(() => {
             if (messageQueue.has(id)) {
                 messageQueue.delete(id);
+                // Use debug level for timeouts since they're expected
+                logger.debug('Command timed out - this is normal for long-running sounds');
                 reject(new Error('Command timed out'));
             }
         }, timeout);
@@ -178,7 +181,7 @@ function sendCommand(command, timeout = COMMAND_TIMEOUT) {
         messageQueue.set(id, { 
             resolve: (response) => {
                 clearTimeout(timeoutId);
-                console.log(`Received response for command ${id}: ${JSON.stringify(response)}`);
+                logger.debug(`Received response for command ${id}: ${JSON.stringify(response)}`);
                 resolve(response);
             },
             reject: (error) => {
@@ -191,14 +194,14 @@ function sendCommand(command, timeout = COMMAND_TIMEOUT) {
             soundPlayerProcess.stdin.write(fullCommand, (error) => {
                 if (error) {
                     clearTimeout(timeoutId);
-                    console.error(`Error sending command: ${error.message}`);
+                    logger.error(`Error sending command: ${error.message}`);
                     messageQueue.delete(id);
                     reject(error);
                 }
             });
         } catch (error) {
             clearTimeout(timeoutId);
-            console.error(`Error sending command: ${error.message}`);
+            logger.error(`Error sending command: ${error.message}`);
             messageQueue.delete(id);
             reject(error);
         }
@@ -227,6 +230,8 @@ async function waitForStatus(soundId, targetStatus, timeout = COMMAND_TIMEOUT) {
         const timeoutId = setTimeout(() => {
             clearInterval(checkInterval);
             eventEmitter.removeListener('statusUpdate', statusListener);
+            // Use debug level for timeouts since they're expected
+            logger.debug(`Timeout waiting for sound ${soundId} to reach status ${targetStatus} - this is normal for long-running sounds`);
             reject(new Error(`Timeout waiting for sound ${soundId} to reach status ${targetStatus}`));
         }, timeout);
 
@@ -250,7 +255,7 @@ async function waitForStatus(soundId, targetStatus, timeout = COMMAND_TIMEOUT) {
                     resolve();
                 }
             } catch (error) {
-                console.error(`Error checking sound status: ${error.message}`);
+                logger.debug(`Non-critical error checking sound status: ${error.message}`);
             }
         }, STATUS_CHECK_INTERVAL);
     });
@@ -260,7 +265,7 @@ async function playSound(soundId, filePath) {
     playStatus[soundId] = 'starting';
     // Normalize file path for Python
     const normalizedPath = filePath.replace(/\\/g, '/');
-    console.log(`Attempting to play sound: ${soundId}, file: ${normalizedPath}`);
+    logger.info(`Attempting to play sound: ${soundId}, file: ${normalizedPath}`);
     
     try {
         // Send play command
@@ -269,23 +274,33 @@ async function playSound(soundId, filePath) {
         // Wait for playing status
         await waitForStatus(soundId, 'playing');
         
-        console.log(`Sound ${soundId} is now playing`);
+        logger.info(`Sound ${soundId} is now playing`);
         return { status: 'success', message: 'Sound playback started' };
     } catch (error) {
-        console.error(`Error playing sound: ${error.message}`);
+        // Only log as error if it's not a timeout
+        if (error.message === 'Command timed out') {
+            logger.debug(`Sound ${soundId} command timed out - this is normal for long-running sounds`);
+        } else {
+            logger.error(`Error playing sound: ${error.message}`);
+        }
         playStatus[soundId] = 'error';
         throw error;
     }
 }
 
 async function stopSound(soundId) {
-    console.log(`Attempting to stop sound: ${soundId}`);
+    logger.info(`Attempting to stop sound: ${soundId}`);
     try {
         const response = await sendCommand(`STOP|${soundId}`);
         playStatus[soundId] = 'stopped';
         return response;
     } catch (error) {
-        console.error(`Error stopping sound: ${error.message}`);
+        // Only log as error if it's not a timeout
+        if (error.message === 'Command timed out') {
+            logger.debug(`Stop sound ${soundId} command timed out - this is normal`);
+        } else {
+            logger.error(`Error stopping sound: ${error.message}`);
+        }
         // Even if the command times out, mark the sound as stopped
         playStatus[soundId] = 'stopped';
         throw error;
@@ -293,13 +308,18 @@ async function stopSound(soundId) {
 }
 
 async function stopAllSounds() {
-    console.log('Attempting to stop all sounds');
+    logger.info('Attempting to stop all sounds');
     try {
         const response = await sendCommand('STOP_ALL');
         playStatus = {};
         return response;
     } catch (error) {
-        console.error(`Error stopping all sounds: ${error.message}`);
+        // Only log as error if it's not a timeout
+        if (error.message === 'Command timed out') {
+            logger.debug('Stop all sounds command timed out - this is normal');
+        } else {
+            logger.error(`Error stopping all sounds: ${error.message}`);
+        }
         // Even if the command times out, clear the play status
         playStatus = {};
         throw error;
@@ -307,10 +327,10 @@ async function stopAllSounds() {
 }
 
 async function getSoundStatus(soundId) {
-    console.log(`Checking status of sound: ${soundId}`);
+    logger.debug(`Checking status of sound: ${soundId}`);
     try {
         const response = await sendCommand(`STATUS|${soundId}`);
-        console.log(`Get sound status response: ${JSON.stringify(response)}`);
+        logger.debug(`Get sound status response: ${JSON.stringify(response)}`);
         
         // Update playStatus with the latest status
         if (response.status) {
@@ -319,7 +339,12 @@ async function getSoundStatus(soundId) {
         
         return response;
     } catch (error) {
-        console.error(`Error getting sound status: ${error.message}`);
+        // Only log as error if it's not a timeout
+        if (error.message === 'Command timed out') {
+            logger.debug(`Get sound ${soundId} status command timed out - this is normal`);
+        } else {
+            logger.error(`Error getting sound status: ${error.message}`);
+        }
         // Return last known status if command fails
         return {
             status: playStatus[soundId] || 'unknown',
@@ -330,7 +355,7 @@ async function getSoundStatus(soundId) {
 
 function isSoundPlayerRunning() {
     const isRunning = soundPlayerProcess !== null && !soundPlayerProcess.killed;
-    console.log(`Checking if sound player is running: ${isRunning}`);
+    logger.debug(`Checking if sound player is running: ${isRunning}`);
     return isRunning;
 }
 
@@ -339,6 +364,8 @@ function waitForSoundToFinish(soundId) {
         const timeout = setTimeout(() => {
             eventEmitter.removeListener('soundFinished', finishListener);
             eventEmitter.removeListener('statusUpdate', statusListener);
+            // Use debug level for timeouts since they're expected
+            logger.debug(`Timeout waiting for sound ${soundId} to finish - this is normal for long-running sounds`);
             reject(new Error(`Timeout waiting for sound ${soundId} to finish`));
         }, COMMAND_TIMEOUT);
 
@@ -373,6 +400,12 @@ function waitForSoundToFinish(soundId) {
             clearTimeout(timeout);
             eventEmitter.removeListener('soundFinished', finishListener);
             eventEmitter.removeListener('statusUpdate', statusListener);
+            // Only log as error if it's not a timeout
+            if (error.message === 'Command timed out') {
+                logger.debug(`Get sound ${soundId} status command timed out - this is normal`);
+            } else {
+                logger.error(`Error checking sound status: ${error.message}`);
+            }
             reject(error);
         });
     });
