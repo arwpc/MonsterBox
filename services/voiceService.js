@@ -127,6 +127,15 @@ class VoiceService {
         }
     }
 
+    async getFXPresets() {
+        try {
+            return await this.replicaAPI.getFXPresets();
+        } catch (error) {
+            logger.error(`Error fetching FX presets: ${error.message}`);
+            throw new Error(`Failed to fetch FX presets: ${error.message}`);
+        }
+    }
+
     async generateSpeech(speaker_id, text, options = {}) {
         try {
             // Validate input
