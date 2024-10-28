@@ -286,14 +286,9 @@ async function executeSound(step) {
             logger.warn(`Non-critical error playing sound: ${error.message}`);
         }
 
+        // For non-concurrent sounds, just wait a fixed duration
         if (step.concurrent !== "on") {
-            try {
-                // Wait for the sound to finish playing only if it's not concurrent
-                await waitForSoundCompletion(sound.id);
-            } catch (error) {
-                // Log but ignore wait errors
-                logger.warn(`Non-critical error waiting for sound: ${error.message}`);
-            }
+            await new Promise(resolve => setTimeout(resolve, 5000));
         }
 
         logger.info(`Sound step completed: ${step.name}`);
