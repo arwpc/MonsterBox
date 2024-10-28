@@ -96,10 +96,13 @@ class MotionDetector:
         self.height = height
         self.cap: Optional[cv2.VideoCapture] = None
         self.background_subtractor = cv2.createBackgroundSubtractorMOG2(
-            history=100,
-            varThreshold=10
+            history=50,  # Shorter history for faster adaptation
+            varThreshold=16,  # Lower threshold for more sensitive detection
+            detectShadows=False  # Disable shadow detection for better performance
         )
         self.camera_lock = CameraLock(self.camera_id)
+        self.prev_frame = None
+        self.min_area = 100  # Minimum area for motion detection
 
     def initialize(self) -> bool:
         """Initialize camera with specified settings."""
@@ -158,31 +161,47 @@ class MotionDetector:
             # Create a copy of the frame for drawing
             display_frame = frame.copy()
 
-            # Convert to grayscale for better motion detection
+            # Convert to grayscale and apply blur
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             gray = cv2.GaussianBlur(gray, (21, 21), 0)
+
+            # Initialize previous frame if needed
+            if self.prev_frame is None:
+                self.prev_frame = gray
+                return {
+                    "success": True,
+                    "motion_detected": False,
+                    "frame": self._encode_frame(display_frame)
+                }
+
+            # Calculate absolute difference between frames
+            frame_delta = cv2.absdiff(self.prev_frame, gray)
+            thresh = cv2.threshold(frame_delta, 25, 255, cv2.THRESH_BINARY)[1]
 
             # Apply background subtraction
             mask = self.background_subtractor.apply(gray)
             
-            # Clean up the mask
-            mask = cv2.erode(mask, None, iterations=2)
-            mask = cv2.dilate(mask, None, iterations=2)
+            # Combine frame difference and background subtraction
+            combined_mask = cv2.bitwise_or(thresh, mask)
             
-            # Apply threshold to get binary image
-            _, mask = cv2.threshold(mask, 25, 255, cv2.THRESH_BINARY)
+            # Clean up the mask
+            combined_mask = cv2.erode(combined_mask, None, iterations=2)
+            combined_mask = cv2.dilate(combined_mask, None, iterations=2)
 
             # Find contours
             contours, _ = cv2.findContours(
-                mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+                combined_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
             )
+
+            # Update previous frame
+            self.prev_frame = gray
 
             # Find largest contour
             largest_contour = None
             largest_area = 0
             for cnt in contours:
                 area = cv2.contourArea(cnt)
-                if area > 200 and area > largest_area:
+                if area > self.min_area and area > largest_area:
                     largest_area = area
                     largest_contour = cnt
 
@@ -219,10 +238,6 @@ class MotionDetector:
                 cv2.putText(display_frame, motion_text, (10, 30),
                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
 
-                # Encode frame to JPEG with high quality
-                _, buffer = cv2.imencode('.jpg', display_frame, [cv2.IMWRITE_JPEG_QUALITY, 95])
-                frame_data = base64.b64encode(buffer).decode('utf-8')
-
                 return {
                     "success": True,
                     "motion_detected": True,
@@ -231,7 +246,7 @@ class MotionDetector:
                     "width": w,
                     "height": h,
                     "area": largest_area,
-                    "frame": frame_data
+                    "frame": self._encode_frame(display_frame)
                 }
 
             # If no motion, just return the frame with timestamp
@@ -241,20 +256,21 @@ class MotionDetector:
             cv2.putText(display_frame, "No Motion", (10, 30),
                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
 
-            # Encode frame to JPEG with high quality
-            _, buffer = cv2.imencode('.jpg', display_frame, [cv2.IMWRITE_JPEG_QUALITY, 95])
-            frame_data = base64.b64encode(buffer).decode('utf-8')
-
             return {
                 "success": True,
                 "motion_detected": False,
-                "frame": frame_data
+                "frame": self._encode_frame(display_frame)
             }
 
         except Exception as e:
             return {"success": False, "error": str(e)}
         finally:
             self.release()
+
+    def _encode_frame(self, frame: np.ndarray) -> str:
+        """Encode frame to base64 JPEG."""
+        _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 95])
+        return base64.b64encode(buffer).decode('utf-8')
 
 def main():
     """Main entry point for camera control script."""
