@@ -6,13 +6,13 @@ import sys
 import json
 
 def log_info(message):
-    print(json.dumps({"level": "info", "message": message}), flush=True)
+    print(json.dumps({"level": "info", "message": message}), file=sys.stderr, flush=True)
 
 def log_error(message):
     print(json.dumps({"level": "error", "message": message}), file=sys.stderr, flush=True)
 
 def log_debug(message):
-    print(json.dumps({"level": "debug", "message": message}), flush=True)
+    print(json.dumps({"level": "debug", "message": message}), file=sys.stderr, flush=True)
 
 def setup_gpio(dir_pin, pwm_pin):
     try:
@@ -97,6 +97,7 @@ def control_actuator(direction, speed, duration, dir_pin, pwm_pin, max_extension
 if __name__ == "__main__":
     if len(sys.argv) < 8:
         log_error("Usage: python3 linear_actuator_control.py <direction> <speed> <duration> <dir_pin> <pwm_pin> <max_extension> <max_retraction>")
+        print(json.dumps({"success": False, "error": "Invalid number of arguments"}))
         sys.exit(1)
 
     try:
@@ -113,12 +114,13 @@ if __name__ == "__main__":
         success = control_actuator(direction, speed, duration, dir_pin, pwm_pin, max_extension, max_retraction)
         if success:
             log_info("Linear actuator control completed successfully")
-            print(json.dumps({"status": "success", "message": "Linear actuator control completed successfully"}))
+            print(json.dumps({"success": True}))
         else:
             log_error("Linear actuator control failed")
-            print(json.dumps({"status": "error", "message": "Linear actuator control failed"}))
+            print(json.dumps({"success": False, "error": "Linear actuator control failed"}))
         sys.exit(0 if success else 1)
     except Exception as e:
-        log_error(f"Error controlling linear actuator: {str(e)}")
-        print(json.dumps({"status": "error", "message": f"Error controlling linear actuator: {str(e)}"}))
+        error_msg = f"Error controlling linear actuator: {str(e)}"
+        log_error(error_msg)
+        print(json.dumps({"success": False, "error": error_msg}))
         sys.exit(1)
