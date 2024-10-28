@@ -12,9 +12,10 @@
         <div class="form-group">
             <label for="words_<%- index %>">Words to Speak:</label>
             <div style="display: flex; gap: 10px; align-items: flex-start;">
-                <textarea id="words_<%- index %>" name="steps[<%- index %>][text]" rows="3" style="flex: 1;" required></textarea>
+                <textarea id="words_<%- index %>" name="steps[<%- index %>][text]" rows="3" style="flex: 1;" required><%- step.text || '' %></textarea>
                 <div style="display: flex; flex-direction: column; gap: 5px;">
                     <button type="button" class="button preview-voice" data-index="<%- index %>">Generate</button>
+                    <button type="button" class="button voice-config" data-index="<%- index %>">Voice Config</button>
                     <button type="button" class="button play-voice" data-index="<%- index %>" style="display: none;">Play</button>
                 </div>
             </div>
