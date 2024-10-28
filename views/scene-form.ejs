@@ -40,6 +40,7 @@
                     <button type="button" onclick="addStep('light')" class="button">Add Light</button>
                     <button type="button" onclick="addStep('sensor')" class="button">Add Sensor</button>
                     <button type="button" onclick="addStep('sound')" class="button">Add Sound</button>
+                    <button type="button" onclick="addStep('voice')" class="button">Add My Words</button>
                     <button type="button" onclick="addStep('pause')" class="button">Add Pause</button>
                 </div>
             </div>
@@ -68,6 +69,38 @@
 
             $('#steps').on('click', '.copy-step', function() {
                 copyStep($(this).data('index'));
+            });
+
+            // Event delegation for voice preview button
+            $('#steps').on('click', '.preview-voice', async function() {
+                const index = $(this).data('index');
+                const text = $(`textarea[name="steps[${index}][text]"]`).val();
+                const statusDiv = $(`#voice-preview-status-${index}`);
+                
+                if (!text) {
+                    statusDiv.html('Please enter text to preview');
+                    return;
+                }
+
+                statusDiv.html('Generating voice preview...');
+
+                try {
+                    const response = await axios.post('/api/voice/generate', {
+                        text: text,
+                        characterId: characterId
+                    });
+
+                    if (response.data.success) {
+                        statusDiv.html('Voice preview generated and added to library!');
+                        // Add the generated sound to the step
+                        $(`input[name="steps[${index}][sound_id]"]`).val(response.data.soundId);
+                    } else {
+                        statusDiv.html('Failed to generate voice preview: ' + response.data.error);
+                    }
+                } catch (error) {
+                    console.error('Error generating voice preview:', error);
+                    statusDiv.html('Error generating voice preview. Please try again.');
+                }
             });
         });
 
@@ -103,15 +136,25 @@
             newStep.dataset.index = newIndex;
 
             // Update the name attribute of all inputs and selects
-            newStep.querySelectorAll('input, select').forEach(element => {
+            newStep.querySelectorAll('input, select, textarea').forEach(element => {
                 if (element.name) {
                     element.name = element.name.replace(/steps\[\d+\]/, `steps[${newIndex}]`);
                 }
             });
 
+            // Update preview status div id
+            const previewStatus = newStep.querySelector('.preview-status');
+            if (previewStatus) {
+                previewStatus.id = `voice-preview-status-${newIndex}`;
+            }
+
             // Update the data-index attribute of the buttons
             newStep.querySelector('.remove-step').dataset.index = newIndex;
             newStep.querySelector('.copy-step').dataset.index = newIndex;
+            const previewButton = newStep.querySelector('.preview-voice');
+            if (previewButton) {
+                previewButton.dataset.index = newIndex;
+            }
 
             // Append the new step to the steps container
             steps.appendChild(newStep);
@@ -134,11 +177,15 @@
                 updateStepInputNames(steps[i], i);
                 steps[i].querySelector('.remove-step').dataset.index = i;
                 steps[i].querySelector('.copy-step').dataset.index = i;
+                const previewButton = steps[i].querySelector('.preview-voice');
+                if (previewButton) {
+                    previewButton.dataset.index = i;
+                }
             }
         }		
 
         function updateStepInputNames(stepElement, newIndex) {
-            const inputs = stepElement.querySelectorAll('input, select');
+            const inputs = stepElement.querySelectorAll('input, select, textarea');
             inputs.forEach(input => {
                 const name = input.getAttribute('name');
                 if (name) {

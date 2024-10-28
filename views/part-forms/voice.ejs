@@ -1,0 +1,25 @@
+<div class="step" data-index="<%= index %>" data-type="voice">
+    <h3>Step <%= index + 1 %>: Voice</h3>
+    <input type="hidden" name="steps[<%= index %>][type]" value="voice">
+    <input type="hidden" name="steps[<%= index %>][sound_id]" value="">
+    
+    <div class="form-group">
+        <label for="steps[<%= index %>][name]">Step Name:</label>
+        <input type="text" name="steps[<%= index %>][name]" value="Voice Step" required>
+    </div>
+
+    <div class="form-group">
+        <label for="steps[<%= index %>][text]">Text to Speak:</label>
+        <textarea name="steps[<%= index %>][text]" rows="3" required></textarea>
+        <button type="button" class="preview-voice button" data-index="<%= index %>">Preview</button>
+    </div>
+
+    <div class="form-group">
+        <div id="voice-preview-status-<%= index %>" class="preview-status"></div>
+    </div>
+
+    <div class="button-group">
+        <button type="button" class="remove-step button" data-index="<%= index %>">Remove Step</button>
+        <button type="button" class="copy-step button" data-index="<%= index %>">Copy Step</button>
+    </div>
+</div>
