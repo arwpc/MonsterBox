@@ -40,10 +40,11 @@ class VoiceSelector {
         }
     }
 
-    showError(message) {
+    showError(message, isSuccess = false) {
         const errorElement = document.querySelector('#errorMessage');
         if (errorElement) {
             errorElement.textContent = message;
+            errorElement.style.backgroundColor = isSuccess ? '#4CAF50' : '#ff5252';
             errorElement.style.display = 'block';
             setTimeout(() => {
                 errorElement.style.display = 'none';
@@ -53,7 +54,7 @@ class VoiceSelector {
 
     async loadCharacters() {
         try {
-            const response = await fetch('/api/characters');
+            const response = await fetch('/api/voice/characters');
             if (!response.ok) {
                 throw new Error('Failed to load characters');
             }
@@ -364,7 +365,7 @@ class VoiceSelector {
                 throw new Error(error.error || 'Failed to save to sound library');
             }
 
-            this.showError('Successfully saved to sound library');
+            this.showError('Successfully saved to sound library', true);
         } catch (error) {
             console.error('Error saving to sound library:', error);
             this.showError('Failed to save to sound library: ' + error.message);
