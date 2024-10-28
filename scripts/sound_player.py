@@ -6,6 +6,7 @@ import os
 import signal
 import traceback
 import subprocess
+import re
 
 def log_message(message):
     print(json.dumps(message), flush=True)
@@ -15,7 +16,43 @@ class SoundPlayer:
         log_message({"status": "info", "message": "Initializing SoundPlayer"})
         self.sounds = {}
         self.next_sound_id = 0
+        # Check if ffmpeg is available
+        try:
+            subprocess.run(['ffmpeg', '-version'], capture_output=True, check=True)
+            self.ffmpeg_available = True
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            self.ffmpeg_available = False
+            log_message({"status": "warning", "message": "ffmpeg not found - Replica file conversion will be disabled"})
         log_message({"status": "ready", "message": "SoundPlayer initialized and ready"})
+
+    def is_replica_file(self, filename):
+        # Replica files have timestamps in their names
+        return bool(re.match(r'\d{13}-.*\.mp3$', os.path.basename(filename)))
+
+    def convert_replica_file(self, input_path):
+        if not self.ffmpeg_available:
+            return input_path
+
+        try:
+            # Create temp file in same directory
+            output_path = input_path.rsplit('.', 1)[0] + '_converted.mp3'
+            
+            # Convert file using ffmpeg with proper MP3 encoding
+            process = subprocess.run([
+                'ffmpeg', '-y', '-i', input_path,
+                '-acodec', 'libmp3lame', '-ab', '192k',
+                '-ar', '44100', '-ac', '2',
+                output_path
+            ], capture_output=True, text=True)
+
+            if process.returncode == 0:
+                return output_path
+            else:
+                log_message({"status": "warning", "message": f"Failed to convert Replica file: {process.stderr}"})
+                return input_path
+        except Exception as e:
+            log_message({"status": "warning", "message": f"Error converting Replica file: {str(e)}"})
+            return input_path
 
     def play_sound(self, sound_id, file_path):
         try:
@@ -27,12 +64,24 @@ class SoundPlayer:
             
             if file_size == 0:
                 raise Exception(f"Sound file is empty: {file_path}")
+
+            # Handle Replica files differently
+            actual_file_path = file_path
+            converted_file = None
+            if self.is_replica_file(file_path):
+                log_message({"status": "info", "message": "Detected Replica file, preprocessing..."})
+                actual_file_path = self.convert_replica_file(file_path)
+                if actual_file_path != file_path:
+                    converted_file = actual_file_path
             
             # Use MPG123 to play the MP3 file
-            log_message({"status": "info", "message": f"Executing mpg123 command for file: {file_path}"})
-            process = subprocess.Popen(['mpg123', '-v', '-k 10', '-a hw:0,0', file_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            log_message({"status": "info", "message": f"Executing mpg123 command for file: {actual_file_path}"})
+            process = subprocess.Popen(['mpg123', '-v', '-k 10', '-a hw:0,0', actual_file_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             
-            self.sounds[sound_id] = process
+            self.sounds[sound_id] = {
+                'process': process,
+                'converted_file': converted_file
+            }
             log_message({"status": "playing", "sound_id": sound_id, "file": file_path})
             
             # Start a new thread to wait for the sound to finish
@@ -60,29 +109,55 @@ class SoundPlayer:
             duration = 1
         
         log_message({"status": "finished", "sound_id": sound_id, "duration": duration})
+        
+        # Clean up
         if sound_id in self.sounds:
+            # Remove converted file if it exists
+            if self.sounds[sound_id]['converted_file']:
+                try:
+                    os.remove(self.sounds[sound_id]['converted_file'])
+                except Exception as e:
+                    log_message({"status": "warning", "message": f"Failed to remove converted file: {str(e)}"})
             del self.sounds[sound_id]
 
     def stop_sound(self, sound_id):
         if sound_id in self.sounds:
-            process = self.sounds[sound_id]
+            sound_info = self.sounds[sound_id]
+            process = sound_info['process']
             process.terminate()
             process.wait()
+            
+            # Clean up converted file if it exists
+            if sound_info['converted_file']:
+                try:
+                    os.remove(sound_info['converted_file'])
+                except Exception as e:
+                    log_message({"status": "warning", "message": f"Failed to remove converted file: {str(e)}"})
+            
             del self.sounds[sound_id]
             log_message({"status": "stopped", "sound_id": sound_id})
         else:
             log_message({"status": "warning", "message": f"Sound {sound_id} not found or already stopped"})
 
     def stop_all_sounds(self):
-        for sound_id, process in self.sounds.items():
+        for sound_id, sound_info in self.sounds.items():
+            process = sound_info['process']
             process.terminate()
             process.wait()
+            
+            # Clean up converted file if it exists
+            if sound_info['converted_file']:
+                try:
+                    os.remove(sound_info['converted_file'])
+                except Exception as e:
+                    log_message({"status": "warning", "message": f"Failed to remove converted file: {str(e)}"})
+        
         self.sounds.clear()
         log_message({"status": "info", "message": "All sounds stopped"})
 
     def get_sound_status(self, sound_id):
         if sound_id in self.sounds:
-            process = self.sounds[sound_id]
+            process = self.sounds[sound_id]['process']
             is_playing = process.poll() is None
             log_message({"status": "playing" if is_playing else "stopped", "message": "All sounds stopped"})
             return {"status": "playing" if is_playing else "stopped", "sound_id": sound_id}
