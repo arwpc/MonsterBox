@@ -75,7 +75,6 @@ exports.generateSpeech = async (req, res) => {
         // Transform options into generation options
         const generationOptions = {
             ...options,
-            modelChain: 'vox_2_0',
             speed: options?.speed || 1.0,
             pitch: options?.pitch || 0,
             volume: options?.volume || 0
