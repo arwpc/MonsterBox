@@ -35,7 +35,8 @@ function setupAudioEnvironment() {
 function startSoundPlayer() {
     return new Promise((resolve, reject) => {
         if (!soundPlayerProcess) {
-            const scriptPath = path.resolve(__dirname, '..', 'scripts', 'sound_player.py');
+            // Normalize script path for Python
+            const scriptPath = path.resolve(__dirname, '..', 'scripts', 'sound_player.py').replace(/\\/g, '/');
             console.log(`Starting sound player: ${scriptPath}`);
             console.log(`Current working directory: ${process.cwd()}`);
             
@@ -180,8 +181,10 @@ function sendCommand(command) {
 
 function playSound(soundId, filePath) {
     playStatus = {[soundId]: ''};
-    console.log(`Attempting to play sound: ${soundId}, file: ${filePath}`);
-    return sendCommand(`PLAY|${soundId}|${filePath}`)
+    // Normalize file path for Python
+    const normalizedPath = filePath.replace(/\\/g, '/');
+    console.log(`Attempting to play sound: ${soundId}, file: ${normalizedPath}`);
+    return sendCommand(`PLAY|${soundId}|${normalizedPath}`)
         .then(response => {
             console.log(`Play sound response: ${JSON.stringify(response)}`);
             return response;

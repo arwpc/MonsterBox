@@ -27,12 +27,19 @@ async function downloadAudio(url, outputPath) {
 
         logger.info(`Downloaded audio file, size: ${response.data.length} bytes`);
 
+        // Normalize path and ensure directory exists
+        const normalizedPath = outputPath.replace(/\\/g, '/');
+        const dir = path.dirname(normalizedPath);
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+
         // Save the raw audio data
-        fs.writeFileSync(outputPath, Buffer.from(response.data));
-        logger.info(`Saved raw audio file to ${outputPath}`);
+        fs.writeFileSync(normalizedPath, Buffer.from(response.data));
+        logger.info(`Saved raw audio file to ${normalizedPath}`);
 
         // Detect the actual format
-        const format = await detectAudioFormat(outputPath);
+        const format = await detectAudioFormat(normalizedPath);
         logger.info(`Detected format: ${format} for downloaded file`);
 
         return format;
@@ -125,7 +132,7 @@ exports.generateAndSaveForScene = async (req, res) => {
         const timestamp = Date.now();
         const sanitizedText = text.substring(0, 30).replace(/[^a-zA-Z0-9]/g, '_');
         const rawFilename = `${timestamp}-${sanitizedText}_raw.wav`;
-        const rawPath = path.join('public', 'sounds', rawFilename);
+        const rawPath = path.join('public', 'sounds', rawFilename).replace(/\\/g, '/');
         logger.info(`Raw file path: ${rawPath}`);
 
         try {
@@ -150,7 +157,12 @@ exports.generateAndSaveForScene = async (req, res) => {
                 file: path.basename(finalPath),
                 characterIds: [parseInt(characterId)],
                 type: 'voice',
-                created: new Date().toISOString()
+                created: new Date().toISOString(),
+                metadata: {
+                    originalText: text,  // Store the original text in metadata
+                    voiceId: voice.speaker_id,
+                    voiceSettings: voice.settings || {}
+                }
             });
             logger.info(`Sound entry created:`, soundEntry);
 
@@ -201,7 +213,7 @@ exports.generateSpeech = async (req, res) => {
         const timestamp = Date.now();
         const sanitizedText = text.substring(0, 30).replace(/[^a-zA-Z0-9]/g, '_');
         const rawFilename = `${timestamp}-${sanitizedText}_raw.wav`;
-        const rawPath = path.join('public', 'sounds', rawFilename);
+        const rawPath = path.join('public', 'sounds', rawFilename).replace(/\\/g, '/');
 
         try {
             // Download the audio file
