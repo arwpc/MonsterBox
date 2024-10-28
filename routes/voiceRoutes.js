@@ -87,7 +87,7 @@ router.post('/save-to-sounds', async (req, res) => {
         const newSound = await soundService.createSound({
             name: text,
             file: targetFileName,
-            characterId: characterId || null,
+            characterIds: characterId ? [parseInt(characterId)] : [], // Add characterId to the array if provided
             type: 'voice',
             created: new Date().toISOString()
         });
