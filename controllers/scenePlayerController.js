@@ -478,8 +478,26 @@ async function executeLinearActuator(step) {
                 logger.debug(`Linear actuator control output: ${data}`);
             });
             process.stderr.on('data', (data) => {
-                errorOutput += data.toString();
-                logger.error(`Linear actuator control error: ${data}`);
+                const lines = data.toString().split('\n');
+                lines.forEach(line => {
+                    if (!line.trim()) return;
+                    try {
+                        const logData = JSON.parse(line);
+                        // Log with appropriate level based on the JSON data
+                        if (logData.level === 'info') {
+                            logger.info(`Linear actuator control: ${logData.message}`);
+                        } else if (logData.level === 'debug') {
+                            logger.debug(`Linear actuator control: ${logData.message}`);
+                        } else if (logData.level === 'error') {
+                            logger.error(`Linear actuator control: ${logData.message}`);
+                            errorOutput += logData.message + '\n';
+                        }
+                    } catch (e) {
+                        // If not JSON, treat as error
+                        logger.error(`Linear actuator control error: ${line}`);
+                        errorOutput += line + '\n';
+                    }
+                });
             });
             process.on('close', (code) => {
                 activeProcesses.delete(process);
