@@ -140,7 +140,8 @@ router.post('/', async (req, res) => {
 
         const createdLinearActuator = await partService.createPart(newLinearActuator);
         logger.info('Created linear actuator:', createdLinearActuator);
-        res.status(200).json({ message: 'Linear actuator created successfully', linearActuator: createdLinearActuator });
+        // Changed from JSON response to redirect
+        res.redirect(`/parts?characterId=${newLinearActuator.characterId}`);
 
     } catch (error) {
         logger.error('Error creating linear actuator:', error);
