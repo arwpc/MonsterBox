@@ -142,5 +142,12 @@
     "type": "voice",
     "created": "2024-10-28T21:37:50.024Z",
     "characterId": null
+  },
+  {
+    "id": 20,
+    "name": "test-sound",
+    "filename": "1730324965070-test-sound.mp3",
+    "characterIds": [],
+    "characterId": null
   }
 ]

@@ -15,7 +15,7 @@ router.get('/:id/edit', async (req, res) => {
         }
         const part = await partService.getPartById(id);
         const characters = await characterService.getAllCharacters();
-        res.render('part-forms/light', { title: 'Edit Light', action: `/parts/light/${part.id}`, part, characters });
+        res.render('part-forms/light', { title: 'Edit Light', action: `/parts/${part.id}/update`, part, characters });
     } catch (error) {
         logger.error('Error fetching Light:', error);
         res.status(500).send('An error occurred while fetching the Light: ' + error.message);
@@ -32,13 +32,12 @@ router.post('/', async (req, res) => {
         };
         const createdLight = await partService.createPart(newLight);
         logger.info('Created light:', createdLight);
-        res.status(200).json({ message: 'Light created successfully', light: createdLight });
+        res.redirect(`/parts?characterId=${newLight.characterId}`);
     } catch (error) {
         logger.error('Error creating Light:', error);
         res.status(500).send('An error occurred while creating the Light: ' + error.message);
     }
 });
-
 
 router.post('/test', async (req, res) => {
     try {
@@ -83,8 +82,7 @@ router.post('/test', async (req, res) => {
     }
 });
 
-
-router.post('/:id', async (req, res) => {
+router.post('/:id/update', async (req, res) => {
     try {
         logger.debug('Update Light Route - Request params:', req.params);
         logger.debug('Update Light Route - Request body:', req.body);
@@ -114,6 +112,5 @@ router.post('/:id', async (req, res) => {
         res.status(500).send('An error occurred while updating the Light: ' + error.message);
     }
 });
-
 
 module.exports = router;
