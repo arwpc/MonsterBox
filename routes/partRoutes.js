@@ -108,6 +108,9 @@ router.get('/new/:type', async (req, res) => {
         };
 
         if (type === 'servo') {
+            const servoConfigPath = path.join(__dirname, '..', 'data', 'servos.json');
+            const servoConfigData = await fs.readFile(servoConfigPath, 'utf8');
+            renderData.servoConfigs = JSON.parse(servoConfigData).servos;
             renderData.servoTypes = servoTypes;
             renderData.getServoDefaults = getServoDefaults;
         }
@@ -122,16 +125,36 @@ router.get('/new/:type', async (req, res) => {
 router.get('/:id/edit', async (req, res) => {
     try {
         const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            logger.warn(`Invalid part ID (not a number): ${req.params.id}`);
+            return res.status(404).send('Part not found');
+        }
+        
         const part = await partService.getPartById(id);
+        if (!part) {
+            logger.warn(`Part not found with ID: ${id}`);
+            return res.status(404).send('Part not found');
+        }
+
         const character = await characterService.getCharacterById(req.characterId);
         const characters = await characterService.getAllCharacters();
-        res.render(`part-forms/${part.type}`, {
+        const renderData = {
             title: `Edit ${part.type.charAt(0).toUpperCase() + part.type.slice(1)}`,
             action: `/parts/${part.id}/update`,
             part,
             character,
             characters
-        });
+        };
+
+        if (part.type === 'servo') {
+            const servoConfigPath = path.join(__dirname, '..', 'data', 'servos.json');
+            const servoConfigData = await fs.readFile(servoConfigPath, 'utf8');
+            renderData.servoConfigs = JSON.parse(servoConfigData).servos;
+            renderData.servoTypes = servoTypes;
+            renderData.getServoDefaults = getServoDefaults;
+        }
+
+        res.render(`part-forms/${part.type}`, renderData);
     } catch (error) {
         logger.error('Error fetching part for edit:', error);
         res.status(500).send('An error occurred while fetching the part');
@@ -145,7 +168,20 @@ router.post('/:type', checkCharacterSelected, async (req, res) => {
         partData.type = type;
         partData.characterId = req.characterId;
         logger.info(`Creating new part - characterId: ${req.characterId}, type: ${type}`);
-        await partService.createPart(partData);
+        logger.info(`Creating new part with data: ${JSON.stringify(partData)}`);
+        const newPart = await partService.createPart(partData);
+        logger.info(`Created new part: ${JSON.stringify(newPart)}`);
+        if (type === 'led') {
+            logger.info(`Created LED: ${JSON.stringify(newPart)}`);
+        } else if (type === 'light') {
+            logger.info(`Created light: ${JSON.stringify(newPart)}`);
+        } else if (type === 'servo') {
+            logger.info(`Created servo: ${JSON.stringify(newPart)}`);
+        } else if (type === 'linear-actuator') {
+            logger.info(`Created linear actuator: ${JSON.stringify(newPart)}`);
+        } else if (type === 'sensor') {
+            logger.info(`Created sensor: ${JSON.stringify(newPart)}`);
+        }
         const redirectUrl = `/parts?characterId=${req.characterId}`;
         logger.info(`Redirecting to: ${redirectUrl}`);
         res.redirect(redirectUrl);
@@ -158,9 +194,15 @@ router.post('/:type', checkCharacterSelected, async (req, res) => {
 router.post('/:id/update', async (req, res) => {
     try {
         const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            logger.warn(`Invalid part ID (not a number): ${req.params.id}`);
+            return res.status(404).send('Part not found');
+        }
+
         const partData = req.body;
         partData.characterId = req.characterId;
-        await partService.updatePart(id, partData);
+        const updatedPart = await partService.updatePart(id, partData);
+        logger.info(`Updated part: ${JSON.stringify(updatedPart)}`);
         res.redirect(`/parts?characterId=${req.characterId}`);
     } catch (error) {
         logger.error('Error updating part:', error);
@@ -191,6 +233,7 @@ router.post('/:id/delete', async (req, res) => {
 
         try {
             await partService.deletePart(id);
+            logger.info(`Part with ID ${id} deleted successfully`);
             
             // Log all parts after deletion
             const allPartsAfter = await partService.getAllParts();
