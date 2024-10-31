@@ -449,15 +449,23 @@ router.post('/control', async (req, res) => {
             activeProcesses.set('motion', process);
 
             // Handle stdout data (motion detection results)
+            let buffer = '';
             process.stdout.on('data', (data) => {
                 try {
-                    // Split data into lines and process each line
-                    const lines = data.toString().split('\n');
-                    for (const line of lines) {
-                        if (line.trim()) {
-                            // Parse and send each JSON result
-                            const result = JSON.parse(line);
+                    // Append new data to buffer
+                    buffer += data.toString();
+
+                    // Process complete JSON objects
+                    let newlineIndex;
+                    while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+                        const jsonStr = buffer.slice(0, newlineIndex);
+                        buffer = buffer.slice(newlineIndex + 1);
+
+                        try {
+                            const result = JSON.parse(jsonStr);
                             res.write(JSON.stringify(result) + '\n');
+                        } catch (e) {
+                            logger.error('Error parsing motion data:', e);
                         }
                     }
                 } catch (e) {
