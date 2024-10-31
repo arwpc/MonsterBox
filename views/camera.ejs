@@ -132,10 +132,23 @@
             <div class="section">
                 <h3>Camera Settings</h3>
                 <select id="resolutionSelect">
-                    <option value="320x240">320x240 (Recommended)</option>
+                    <option value="320x240">320x240 (Default)</option>
                     <option value="640x480">640x480</option>
                     <option value="800x600">800x600</option>
-                    <option value="1280x720">1280x720</option>
+                    <option value="848x480">848x480</option>
+                    <option value="1024x768">1024x768</option>
+                    <option value="1280x720">1280x720 (HD)</option>
+                    <option value="1280x960">1280x960</option>
+                    <option value="1280x1024">1280x1024</option>
+                    <option value="1920x1080">1920x1080 (Full HD)</option>
+                </select>
+                <select id="fpsSelect">
+                    <option value="15">15 FPS (Default)</option>
+                    <option value="30">30 FPS</option>
+                    <option value="25">25 FPS</option>
+                    <option value="20">20 FPS</option>
+                    <option value="10">10 FPS</option>
+                    <option value="5">5 FPS</option>
                 </select>
                 <button onclick="applySettings()">Apply Settings</button>
             </div>
@@ -247,10 +260,10 @@
 
         function startStream() {
             const img = document.getElementById('cameraStream');
-            const width = parseInt(document.getElementById('resolutionSelect').value.split('x')[0]);
-            const height = parseInt(document.getElementById('resolutionSelect').value.split('x')[1]);
+            const [width, height] = document.getElementById('resolutionSelect').value.split('x');
+            const fps = document.getElementById('fpsSelect').value;
             
-            streamUrl = `/camera/stream?width=${width}&height=${height}&t=${Date.now()}`;
+            streamUrl = `/camera/stream?width=${width}&height=${height}&fps=${fps}&t=${Date.now()}`;
             img.src = streamUrl;
             showStatus('Starting stream...', true);
 
@@ -277,6 +290,7 @@
 
         async function applySettings() {
             const [width, height] = document.getElementById('resolutionSelect').value.split('x');
+            const fps = document.getElementById('fpsSelect').value;
             try {
                 showStatus('Applying camera settings...', true);
                 const response = await fetch('/camera/control', {
@@ -286,7 +300,8 @@
                         command: 'settings',
                         params: {
                             width: parseInt(width),
-                            height: parseInt(height)
+                            height: parseInt(height),
+                            fps: parseInt(fps)
                         }
                     })
                 });

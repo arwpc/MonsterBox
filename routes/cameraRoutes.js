@@ -79,7 +79,7 @@ async function cleanupLockFiles() {
 }
 
 // Start camera stream
-async function startCameraStream(cameraId, width = 320, height = 240) {
+async function startCameraStream(cameraId, width = 320, height = 240, fps = 15) {
     return new Promise((resolve, reject) => {
         const streamScript = path.join(__dirname, '..', 'scripts', 'camera_stream.py');
         logger.info(`Starting camera stream: ${streamScript}`);
@@ -88,7 +88,8 @@ async function startCameraStream(cameraId, width = 320, height = 240) {
             streamScript,
             '--camera-id', cameraId.toString(),
             '--width', width.toString(),
-            '--height', height.toString()
+            '--height', height.toString(),
+            '--fps', fps.toString()
         ]);
 
         let initOutput = '';
@@ -142,7 +143,7 @@ async function startCameraStream(cameraId, width = 320, height = 240) {
                 process.kill('SIGTERM');
                 reject(new Error('Stream initialization timeout'));
             }
-        }, 5000);
+        }, 10000);  // Increased timeout to 10 seconds
 
         // Track this process
         activeProcesses.set('stream', process);
@@ -183,8 +184,9 @@ router.get('/stream', async (req, res) => {
 
         const width = parseInt(req.query.width) || 320;
         const height = parseInt(req.query.height) || 240;
+        const fps = parseInt(req.query.fps) || 15;
 
-        streamProcess = await startCameraStream(settings.selectedCamera, width, height);
+        streamProcess = await startCameraStream(settings.selectedCamera, width, height, fps);
 
         res.setHeader('Content-Type', 'multipart/x-mixed-replace; boundary=frame');
         
@@ -375,7 +377,7 @@ router.post('/select', async (req, res) => {
 
         process.stderr.on('data', (data) => {
             error += data.toString();
-            logger.error(`Camera verification error: ${data}`);
+            logger.info(`Camera verification output: ${data}`);
         });
 
         await new Promise((resolve, reject) => {
@@ -430,6 +432,9 @@ router.post('/control', async (req, res) => {
             if (params.height !== undefined) {
                 args.push('--height', params.height.toString());
             }
+            if (params.fps !== undefined) {
+                args.push('--fps', params.fps.toString());
+            }
         } else if (command === 'motion') {
             // No additional parameters needed for motion detection
         } else {
@@ -454,7 +459,7 @@ router.post('/control', async (req, res) => {
 
         process.stderr.on('data', (data) => {
             error += data.toString();
-            logger.error(`Camera control error: ${data}`);
+            logger.info(`Camera control output: ${data}`);
         });
 
         process.on('close', async (code) => {
@@ -473,7 +478,8 @@ router.post('/control', async (req, res) => {
                     const streamProcess = await startCameraStream(
                         settings.selectedCamera,
                         params.width || 320,
-                        params.height || 240
+                        params.height || 240,
+                        params.fps || 15
                     );
                     streamProcess.on('error', (err) => {
                         logger.error('Stream process error:', err);
@@ -496,7 +502,8 @@ router.post('/control', async (req, res) => {
             const streamProcess = await startCameraStream(
                 settings.selectedCamera,
                 params.width || 320,
-                params.height || 240
+                params.height || 240,
+                params.fps || 15
             );
             streamProcess.on('error', (err) => {
                 logger.error('Stream process error:', err);
