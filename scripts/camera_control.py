@@ -8,7 +8,7 @@ import base64
 import subprocess
 import json
 import argparse
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Tuple
 
 # Configure logging
 logging.basicConfig(
@@ -18,9 +18,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Force V4L2 backend and disable GStreamer
+# Force V4L2 backend and disable others
 os.environ["OPENCV_VIDEOIO_PRIORITY_V4L2"] = "100"
 os.environ["OPENCV_VIDEOIO_PRIORITY_GSTREAMER"] = "0"
+os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0"
 
 try:
     import numpy as np
@@ -50,86 +51,102 @@ def verify_camera_device(device_id: int) -> bool:
             logger.error(f"Camera device {device_path} does not exist")
             return False
         
-        # Check if device is readable
-        if not os.access(device_path, os.R_OK):
-            logger.error(f"No read permission for {device_path}")
+        # Check if device is readable and writable
+        if not os.access(device_path, os.R_OK | os.W_OK):
+            logger.error(f"Insufficient permissions for {device_path}")
             return False
             
-        # Check if device is writable
-        if not os.access(device_path, os.W_OK):
-            logger.error(f"No write permission for {device_path}")
-            return False
-            
-        # Check if it's a USB camera device
+        # Check device capabilities with v4l2-ctl
         try:
-            output = subprocess.check_output(['v4l2-ctl', '--list-devices']).decode()
-            if 'Streaming Camera' in output and f'/dev/video{device_id}' in output:
-                logger.info(f"Verified USB camera device: {device_path}")
-                return True
-            else:
-                logger.error(f"Device {device_path} is not a USB camera")
-                return False
-        except subprocess.CalledProcessError:
-            logger.warning("Could not verify USB camera with v4l2-ctl")
-            # Fall back to basic verification
+            # List supported formats
+            formats = subprocess.check_output(['v4l2-ctl', '-d', device_path, '--list-formats-ext']).decode()
+            logger.info(f"Supported formats:\n{formats}")
+            
+            # Get current settings
+            settings = subprocess.check_output(['v4l2-ctl', '-d', device_path, '--all']).decode()
+            logger.info(f"Current settings:\n{settings}")
+            
             return True
+        except subprocess.CalledProcessError as e:
+            logger.warning(f"v4l2-ctl error: {e}")
+            return True  # Continue even if v4l2-ctl fails
             
     except Exception as e:
         logger.error(f"Error verifying camera device: {e}")
         return False
 
+def set_camera_controls(device_id: int):
+    """Set optimal camera controls using v4l2-ctl."""
+    device_path = f"/dev/video{device_id}"
+    try:
+        # Set power line frequency to 50Hz
+        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=power_line_frequency=1'])
+        
+        # Set auto exposure to manual mode
+        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=auto_exposure=1'])
+        
+        # Set exposure time
+        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=exposure_time_absolute=157'])
+        
+        # Enable auto white balance
+        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=white_balance_automatic=1'])
+        
+        logger.info("Camera controls configured")
+    except Exception as e:
+        logger.warning(f"Error setting camera controls: {e}")
+
 def initialize_camera(device_id: int, width: int = 320, height: int = 240) -> Optional[cv2.VideoCapture]:
-    """Initialize camera with optimized settings for Raspberry Pi."""
+    """Initialize camera with optimized settings."""
     try:
         # Verify camera device first
         if not verify_camera_device(device_id):
             return None
 
+        # Set camera controls
+        set_camera_controls(device_id)
+
         # Add delay before opening camera
-        time.sleep(2.0)  # Increased delay
+        time.sleep(2.0)
         
-        # Try opening with V4L2 backend
-        logger.info(f"Attempting to open camera {device_id} with V4L2 backend")
+        # Open camera with V4L2 backend
+        logger.info(f"Opening camera {device_id} with V4L2 backend")
         cap = cv2.VideoCapture(device_id, cv2.CAP_V4L2)
         if not cap.isOpened():
-            logger.error(f"Failed to open camera {device_id} with V4L2 backend")
+            logger.error("Failed to open camera")
             return None
 
         # Configure camera properties
         logger.info("Setting camera properties...")
-        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Minimal buffer for lower latency
-        cap.set(cv2.CAP_PROP_FPS, 15)        # Stable FPS for Pi
-
-        # Always use MJPG format since we know it works
-        logger.info("Using MJPG format")
+        
+        # Set MJPG format
         fourcc = cv2.VideoWriter_fourcc(*'MJPG')
         cap.set(cv2.CAP_PROP_FOURCC, fourcc)
+        
+        # Set resolution
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
         
-        # Camera quality settings
-        if hasattr(cv2, 'CAP_PROP_AUTO_EXPOSURE'):
-            cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1)  # Auto exposure
-        if hasattr(cv2, 'CAP_PROP_BRIGHTNESS'):
-            cap.set(cv2.CAP_PROP_BRIGHTNESS, 0.5)   # Mid brightness
-        if hasattr(cv2, 'CAP_PROP_CONTRAST'):
-            cap.set(cv2.CAP_PROP_CONTRAST, 0.5)     # Mid contrast
+        # Set FPS and buffer size
+        cap.set(cv2.CAP_PROP_FPS, 15)
+        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
         # Add delay after setting properties
         time.sleep(1.0)
 
-        # Test frame capture
-        for _ in range(3):  # Try up to 3 times
+        # Test frame capture with increased retries
+        for attempt in range(5):
             ret, frame = cap.read()
             if ret and frame is not None and frame.size > 0:
                 # Log actual camera settings
                 actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
                 actual_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
                 actual_fps = int(cap.get(cv2.CAP_PROP_FPS))
+                
                 logger.info(f"Successfully initialized camera - Width: {actual_width}, Height: {actual_height}, FPS: {actual_fps}")
                 return cap
-
-            time.sleep(0.5)  # Wait before retry
+            
+            logger.warning(f"Frame capture attempt {attempt + 1} failed")
+            time.sleep(1.0)
 
         logger.error("Failed to capture test frame")
         return None
@@ -180,9 +197,9 @@ class CameraSettings:
                 "error": str(e)
             }
         finally:
-            if 'cap' in locals():
+            if 'cap' in locals() and cap is not None:
                 cap.release()
-                time.sleep(1.0)  # Add delay after release
+                time.sleep(1.0)
 
 class MotionDetector:
     """Handles motion detection and visualization."""
@@ -204,7 +221,7 @@ class MotionDetector:
         """Initialize camera with specified settings."""
         self.cap = initialize_camera(self.camera_id, self.width, self.height)
         if self.cap is not None:
-            time.sleep(2.0)  # Add delay after initialization
+            time.sleep(2.0)
             return True
         return False
 
@@ -215,7 +232,7 @@ class MotionDetector:
                 self.cap.release()
                 self.cap = None
             logger.info("Camera resources released")
-            time.sleep(1.0)  # Add delay after release
+            time.sleep(1.0)
         except Exception as e:
             logger.warning(f"Error releasing camera: {e}")
 
@@ -231,7 +248,7 @@ class MotionDetector:
                 if ret:
                     logger.info("Camera warmed up successfully")
                     break
-                time.sleep(0.5)
+                time.sleep(1.0)
 
             ret, frame = self.cap.read()
             if not ret or frame is None or frame.size == 0:
@@ -385,12 +402,12 @@ def main():
         if args.command == 'settings':
             settings = CameraSettings(args.camera_id, args.width, args.height)
             result = settings.apply_settings()
-            print(json.dumps(result))  # Print JSON to stdout
+            print(json.dumps(result))
             sys.exit(0 if result["success"] else 1)
         elif args.command == 'motion':
             detector = MotionDetector(args.camera_id, args.width, args.height)
             result = detector.detect_motion()
-            print(json.dumps(result))  # Print JSON to stdout
+            print(json.dumps(result))
             sys.exit(0 if result["success"] else 1)
             
     except Exception as e:
