@@ -252,7 +252,7 @@ class ReplicaAPI {
             // Return the result with proper file paths
             const mp3Filename = `${filename}.mp3`;
             return {
-                url: mp3Filename,  // Just return the filename
+                url: `sounds/${mp3Filename}`,  // Prepend 'sounds/' to the filename
                 uuid: jobStatus.data.uuid,
                 state: jobStatus.data.state,
                 duration: jobStatus.data.duration,
