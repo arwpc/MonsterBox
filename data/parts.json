@@ -149,15 +149,5 @@
       "frequency": 50,
       "address": "0x40"
     }
-  },
-  {
-    "id": 12,
-    "name": "test",
-    "type": "linear-actuator",
-    "characterId": 13,
-    "directionPin": 18,
-    "pwmPin": 13,
-    "maxExtension": 10000,
-    "maxRetraction": 10000
   }
 ]
