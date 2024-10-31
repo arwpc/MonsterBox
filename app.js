@@ -13,7 +13,8 @@ const logger = require('./scripts/logger');
 const app = express();
 const server = http.createServer(app);
 const port = 3000;
-const audio = require('./scripts/audio');
+const audioStream = require('./scripts/audio');
+const soundController = require('./controllers/soundController');
 const fs = require('fs');
 const os = require('os');
 const session = require('express-session');
@@ -153,8 +154,7 @@ function startServer() {
         // Keep these console.log calls for IP and host information
         console.log(`MonsterBox server running at http://localhost:${port}`);
         console.log(`Local IP address: ${localIp}, system name ${hostname}`);
-        logger.info('Audio stream server started');
-        logger.info('Audio stream started successfully');
+        logger.info('Server started successfully');
         logger.info('Ready for Halloween, Sir.');
     });
 
@@ -179,17 +179,23 @@ function startServer() {
 }
 
 // Initialize the application
-function initializeApp() {
-    // Start the audio stream
+async function initializeApp() {
     try {
-        audio.startStream(server);
-    } catch (error) {
-        logger.error('Error starting audio stream:', error);
-    }
+        // Start the audio stream
+        audioStream.startStream(server);
+        logger.info('Audio stream started successfully');
 
-    // Start the server only if not in test environment
-    if (process.env.NODE_ENV !== 'test') {
-        startServer();
+        // Initialize the sound controller
+        await soundController.startSoundPlayer();
+        logger.info('Sound player initialized successfully');
+
+        // Start the server only if not in test environment
+        if (process.env.NODE_ENV !== 'test') {
+            startServer();
+        }
+    } catch (error) {
+        logger.error('Error during initialization:', error);
+        process.exit(1);
     }
 }
 
@@ -212,8 +218,16 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 // Graceful shutdown function
-function gracefulShutdown(reason) {
+async function gracefulShutdown(reason) {
     logger.info(`Initiating graceful shutdown. Reason: ${reason}`);
+
+    try {
+        // Stop all sounds
+        await soundController.stopAllSounds();
+        logger.info('All sounds stopped');
+    } catch (error) {
+        logger.error('Error stopping sounds during shutdown:', error);
+    }
 
     server.close(() => {
         logger.info('HTTP server closed');
