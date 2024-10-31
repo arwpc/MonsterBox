@@ -3,6 +3,9 @@ const { exec } = require('child_process');
 const { promisify } = require('util');
 const execAsync = promisify(exec);
 
+// Import test setup
+require('./setupTests')();
+
 describe('RPI Dependencies Check', function() {
     // Increase timeout for slower operations
     this.timeout(10000);
