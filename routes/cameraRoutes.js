@@ -30,55 +30,11 @@ async function saveCameraSettings(settings) {
 // Kill any existing camera processes
 async function killExistingCameraProcesses() {
     return new Promise((resolve) => {
-        const kill = spawn('pkill', ['-f', '(camera_stream|camera_control).py']);
+        const kill = spawn('pkill', ['-f', '(camera_stream|camera_control|head_track).py']);
         kill.on('close', () => {
             // Add delay after killing processes
             setTimeout(resolve, 1000);
         });
-    });
-}
-
-// Verify camera accessibility
-async function verifyCameraAccess(cameraId) {
-    return new Promise((resolve) => {
-        const verifyScript = path.join(__dirname, '..', 'scripts', 'camera_control.py');
-        const process = spawn('python3', [
-            verifyScript,
-            'motion',  // Use motion command as it includes verification
-            '--camera-id', cameraId.toString(),
-            '--width', '160',  // Use minimal resolution for quick test
-            '--height', '120'
-        ]);
-
-        let output = '';
-        let error = '';
-
-        process.stdout.on('data', (data) => {
-            output += data.toString();
-        });
-
-        process.stderr.on('data', (data) => {
-            error += data.toString();
-        });
-
-        process.on('close', (code) => {
-            try {
-                if (code === 0 && output) {
-                    const result = JSON.parse(output);
-                    resolve(result.success === true);
-                } else {
-                    resolve(false);
-                }
-            } catch (e) {
-                resolve(false);
-            }
-        });
-
-        // Set a timeout to kill the process if it takes too long
-        setTimeout(() => {
-            process.kill();
-            resolve(false);
-        }, 5000);
     });
 }
 
@@ -109,15 +65,6 @@ router.get('/stream', async (req, res) => {
 
         // Kill any existing camera processes and wait
         await killExistingCameraProcesses();
-
-        // Verify camera is accessible
-        const isAccessible = await verifyCameraAccess(settings.selectedCamera);
-        if (!isAccessible) {
-            throw new Error('Camera is not accessible');
-        }
-
-        // Wait additional time after verification
-        await new Promise(resolve => setTimeout(resolve, 1000));
 
         const width = parseInt(req.query.width) || 320;  // Default to lower resolution
         const height = parseInt(req.query.height) || 240;
@@ -275,17 +222,51 @@ router.post('/select', async (req, res) => {
         // Kill any existing camera processes and wait
         await killExistingCameraProcesses();
 
-        // Verify camera is accessible before saving selection
-        const isAccessible = await verifyCameraAccess(cameraId);
-        if (!isAccessible) {
-            throw new Error('Selected camera is not accessible');
-        }
+        // Verify camera is accessible
+        const verifyScript = path.join(__dirname, '..', 'scripts', 'camera_control.py');
+        const process = spawn('python3', [
+            verifyScript,
+            'motion',  // Use motion command as it includes verification
+            '--camera-id', cameraId.toString(),
+            '--width', '160',  // Use minimal resolution for quick test
+            '--height', '120'
+        ]);
+
+        let output = '';
+        let error = '';
+
+        process.stdout.on('data', (data) => {
+            output += data.toString();
+        });
+
+        process.stderr.on('data', (data) => {
+            error += data.toString();
+        });
+
+        await new Promise((resolve, reject) => {
+            process.on('close', (code) => {
+                if (code === 0) {
+                    try {
+                        const result = JSON.parse(output);
+                        if (result.success) {
+                            resolve();
+                        } else {
+                            reject(new Error(result.error || 'Camera verification failed'));
+                        }
+                    } catch (e) {
+                        reject(new Error('Invalid camera verification response'));
+                    }
+                } else {
+                    reject(new Error(error || 'Camera verification failed'));
+                }
+            });
+        });
 
         await saveCameraSettings({ selectedCamera: cameraId });
         res.json({ success: true });
     } catch (error) {
         logger.error('Error selecting camera:', error);
-        res.status(500).json({ error: 'Failed to select camera' });
+        res.status(500).json({ error: error.message });
     }
 });
 
@@ -301,15 +282,6 @@ router.post('/control', async (req, res) => {
 
         // Kill any existing camera processes and wait
         await killExistingCameraProcesses();
-
-        // Verify camera is accessible
-        const isAccessible = await verifyCameraAccess(settings.selectedCamera);
-        if (!isAccessible) {
-            throw new Error('Camera is not accessible');
-        }
-
-        // Wait additional time after verification
-        await new Promise(resolve => setTimeout(resolve, 1000));
 
         const args = [controlScript, command, '--camera-id', settings.selectedCamera.toString()];
 
@@ -377,7 +349,7 @@ router.post('/control', async (req, res) => {
         logger.error('Camera control error:', error);
         res.status(500).json({ 
             success: false, 
-            error: 'Failed to execute camera control'
+            error: error.message
         });
     }
 });

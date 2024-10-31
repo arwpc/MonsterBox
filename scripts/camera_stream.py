@@ -7,11 +7,13 @@ import logging
 import time
 import os
 import fcntl
-from typing import Optional
+import subprocess
+import json
+from typing import Optional, List, Dict
 
 # Configure logging
 logging.basicConfig(
-    level=logging.WARNING,
+    level=logging.INFO,  # Changed to INFO for better debugging
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
@@ -22,27 +24,79 @@ os.environ["OPENCV_VIDEOIO_PRIORITY_GSTREAMER"] = "0"
 os.environ["OPENCV_VIDEOIO_PRIORITY_V4L2"] = "100"
 os.environ["OPENCV_VIDEOIO_BACKEND"] = "v4l2"
 
+def get_supported_formats(device_id: int) -> List[str]:
+    """Get list of supported formats for the camera."""
+    formats = []
+    try:
+        result = subprocess.run(['v4l2-ctl', '-d', f'/dev/video{device_id}', '--list-formats'],
+                              capture_output=True, text=True)
+        if result.returncode == 0:
+            for line in result.stdout.splitlines():
+                if '[' in line and ']' in line:
+                    fmt = line.split('[')[1].split(']')[0]
+                    formats.append(fmt)
+        logger.info(f"Supported formats for camera {device_id}: {formats}")
+    except Exception as e:
+        logger.warning(f"Failed to get supported formats: {e}")
+    return formats or ['MJPG', 'YUYV']  # Default formats if query fails
+
 def verify_camera_access(device_id: int, retries: int = 3) -> bool:
     """Verify camera device exists and is accessible."""
     device_path = f"/dev/video{device_id}"
+    alt_device_path = f"/dev/video{1 if device_id == 0 else 0}"  # Try alternate device
     
     # Check if device exists
     if not os.path.exists(device_path):
         logger.warning(f"Camera device {device_path} does not exist")
         return False
     
+    # Check device permissions
+    try:
+        st = os.stat(device_path)
+        logger.info(f"Device permissions: {oct(st.st_mode)}")
+    except Exception as e:
+        logger.warning(f"Failed to check device permissions: {e}")
+
+    # Get supported formats
+    formats = get_supported_formats(device_id)
+    logger.info(f"Attempting formats: {formats}")
+
     # Try to open the camera multiple times
     for attempt in range(retries):
         try:
-            cap = cv2.VideoCapture(device_id, cv2.CAP_V4L2)
-            if cap.isOpened():
-                ret, frame = cap.read()
-                cap.release()
-                if ret and frame is not None and frame.size > 0:
-                    return True
-            time.sleep(0.5)  # Wait before retry
+            logger.info(f"Attempting to open camera {device_id} (attempt {attempt + 1}/{retries})")
+            
+            # Try to kill any existing processes using both devices
+            try:
+                subprocess.run(['fuser', '-k', device_path], capture_output=True)
+                subprocess.run(['fuser', '-k', alt_device_path], capture_output=True)
+                time.sleep(1.0)  # Increased delay after killing processes
+            except Exception as e:
+                logger.info(f"Failed to kill existing processes: {e}")
+
+            # Try each supported format
+            for fmt in formats:
+                fourcc = cv2.VideoWriter_fourcc(*fmt)
+                cap = cv2.VideoCapture(device_id, cv2.CAP_V4L2)
+                if cap.isOpened():
+                    cap.set(cv2.CAP_PROP_FOURCC, fourcc)
+                    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 320)  # Start with low resolution
+                    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
+                    cap.set(cv2.CAP_PROP_FPS, 15)
+                    
+                    ret, frame = cap.read()
+                    cap.release()
+                    
+                    if ret and frame is not None and frame.size > 0:
+                        logger.info(f"Successfully opened camera {device_id} with format {fmt}")
+                        return True
+            
+            logger.warning(f"Failed to open camera {device_id} with any format")
+            time.sleep(1.0)  # Increased delay between attempts
+            
         except Exception as e:
             logger.warning(f"Camera access attempt {attempt + 1} failed: {e}")
+            time.sleep(1.0)  # Increased delay after error
     
     logger.warning(f"Failed to access camera after {retries} attempts")
     return False
@@ -59,9 +113,12 @@ class CameraLock:
     def acquire(self) -> bool:
         """Acquire lock on camera device."""
         try:
-            # First verify camera is accessible
-            if not verify_camera_access(self.device_id):
-                return False
+            # Kill any existing camera processes
+            try:
+                subprocess.run(['fuser', '-k', self.device_path], capture_output=True)
+                time.sleep(0.5)
+            except Exception as e:
+                logger.info(f"Failed to kill existing processes: {e}")
 
             # Check and clean up stale lock file
             if os.path.exists(self.lock_path):
@@ -115,6 +172,10 @@ class CameraStream:
 
     def initialize(self) -> bool:
         """Initialize camera with specified settings."""
+        # First verify camera is accessible
+        if not verify_camera_access(self.camera_id):
+            return False
+
         if not self.camera_lock.acquire():
             logger.warning("Camera is currently in use by another process")
             return False
@@ -124,37 +185,50 @@ class CameraStream:
             self.release()
             
             # Wait for camera to be fully released
-            time.sleep(0.5)
+            time.sleep(1.0)  # Increased delay
             
-            # Create capture with explicit backend
-            self.cap = cv2.VideoCapture(self.camera_id, cv2.CAP_V4L2)
+            # Get supported formats
+            formats = get_supported_formats(self.camera_id)
+            logger.info(f"Attempting formats: {formats}")
             
-            if not self.cap.isOpened():
-                logger.warning(f"Failed to open camera {self.camera_id}")
-                self.release()
-                return False
+            # Try each supported format
+            for fmt in formats:
+                logger.info(f"Trying format: {fmt}")
+                
+                # Create capture with explicit backend
+                self.cap = cv2.VideoCapture(self.camera_id, cv2.CAP_V4L2)
+                
+                if not self.cap.isOpened():
+                    logger.warning(f"Failed to open camera {self.camera_id}")
+                    continue
 
-            # Configure camera properties with lower resolution and FPS
-            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
-            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
-            self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-            self.cap.set(cv2.CAP_PROP_FPS, 15)  # Reduced FPS
-            self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M','J','P','G'))
+                # Configure camera properties
+                fourcc = cv2.VideoWriter_fourcc(*fmt)
+                self.cap.set(cv2.CAP_PROP_FOURCC, fourcc)
+                self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
+                self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
+                self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+                self.cap.set(cv2.CAP_PROP_FPS, 15)
 
-            # Verify camera is working with multiple attempts
-            for _ in range(3):
-                ret, frame = self.cap.read()
-                if ret and frame is not None and frame.size > 0:
-                    # Resize frame if necessary
-                    actual_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-                    actual_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                    if actual_width != self.width or actual_height != self.height:
-                        frame = cv2.resize(frame, (self.width, self.height))
-                    return True
-                time.sleep(0.1)
+                # Verify camera is working with multiple attempts
+                for attempt in range(3):
+                    ret, frame = self.cap.read()
+                    if ret and frame is not None and frame.size > 0:
+                        # Resize frame if necessary
+                        actual_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                        actual_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                        if actual_width != self.width or actual_height != self.height:
+                            frame = cv2.resize(frame, (self.width, self.height))
+                        logger.info(f"Successfully initialized camera with format {fmt}")
+                        return True
+                    time.sleep(0.5)  # Increased delay between attempts
 
-            logger.warning("Failed to get valid frame after multiple attempts")
-            self.release()
+                # If we get here, this format didn't work
+                self.cap.release()
+                self.cap = None
+                time.sleep(0.5)  # Delay before trying next format
+
+            logger.warning("Failed to initialize camera with any format")
             return False
 
         except Exception as e:
@@ -198,8 +272,12 @@ class CameraStream:
 
                 # Add timestamp (smaller font for lower resolutions)
                 timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-                cv2.putText(frame, timestamp, (5, frame.shape[0] - 5),
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 255, 0), 1)
+                font = cv2.FONT_HERSHEY_SIMPLEX
+                # Draw timestamp with glow effect
+                cv2.putText(frame, timestamp, (5, frame.shape[0]-5), font, 
+                           0.5, (0, 255, 0), 2)
+                cv2.putText(frame, timestamp, (5, frame.shape[0]-5), font, 
+                           0.5, (255, 255, 255), 1)
 
                 # Encode frame as JPEG with reduced quality
                 _, jpeg = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
