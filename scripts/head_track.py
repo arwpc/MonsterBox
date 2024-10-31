@@ -15,7 +15,8 @@ from camera_lock import CameraLock
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    stream=sys.stderr  # Log to stderr to keep stdout clean
 )
 logger = logging.getLogger(__name__)
 
@@ -92,20 +93,21 @@ def move_servo(servo_id: str, angle: float, duration: float = 0.5) -> bool:
         control_type = 'pca9685' if servo.get('usePCA9685', False) else 'gpio'
         pin_or_channel = str(servo.get('channel' if control_type == 'pca9685' else 'pin', 0))
         
-        command = [
-            'python3',
-            script_path,
-            'test',
-            control_type,
-            pin_or_channel,
-            str(angle),
-            str(duration),
-            servo.get('servoType', 'Standard'),
-            str(servo_id)
-        ]
-
-        # Execute servo control command
-        result = subprocess.run(command, capture_output=True, text=True)
+        # Redirect stderr to suppress debug output
+        with open(os.devnull, 'w') as devnull:
+            command = [
+                'python3',
+                script_path,
+                'test',
+                control_type,
+                pin_or_channel,
+                str(angle),
+                str(duration),
+                servo.get('servoType', 'Standard'),
+                str(servo_id)
+            ]
+            
+            result = subprocess.run(command, capture_output=True, text=True, stderr=devnull)
         
         if result.returncode == 0:
             logger.info(f"Servo {servo_id} moved to angle {angle}")
@@ -133,15 +135,18 @@ class HeadTracker:
         self.min_angle = 0
         self.max_angle = 180
         self.angle_threshold = 5  # Minimum angle change to move servo
+        self.running = True
 
     def initialize(self) -> bool:
         """Initialize camera with specified settings."""
         if not self.camera_lock.acquire():
-            logger.warning("Camera is currently in use by another process")
             return False
 
         self.cap = initialize_camera(self.camera_id, self.width, self.height)
-        return self.cap is not None
+        if not self.cap:
+            self.camera_lock.release()
+            return False
+        return True
 
     def release(self):
         """Release camera resources."""
@@ -170,6 +175,7 @@ class HeadTracker:
                 "success": False,
                 "error": "Failed to initialize camera"
             }))
+            sys.stdout.flush()
             return
 
         try:
@@ -177,14 +183,23 @@ class HeadTracker:
             last_frame_time = time.time()
             target_frame_time = 1.0 / 15  # Target 15 FPS
 
+            # Warm up the camera
+            for _ in range(5):
+                ret, _ = self.cap.read()
+                if ret:
+                    logger.info("Camera warmed up successfully")
+                    break
+                time.sleep(1.0)
+
             # Print initialization success
             print(json.dumps({
                 "success": True,
-                "message": "Head tracking initialized"
+                "message": "Head tracking initialized",
+                "servo_angle": self.servo_angle
             }))
             sys.stdout.flush()
 
-            while True:
+            while self.running:
                 ret, frame = self.cap.read()
                 if not ret or frame is None:
                     break
@@ -218,18 +233,6 @@ class HeadTracker:
                         if move_servo(servo_id, new_angle):
                             self.servo_angle = new_angle
                     
-                    # Draw face rectangle with glow effect
-                    cv2.rectangle(frame, (x-2, y-2), (x+w+2, y+h+2), (0, 255, 0), 4)
-                    cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 255, 255), 2)
-                    
-                    # Draw tracking info
-                    font = cv2.FONT_HERSHEY_SIMPLEX
-                    tracking_text = f"Face: {norm_x:.1f}%, Angle: {self.servo_angle:.1f}°"
-                    cv2.putText(frame, tracking_text, (5, 20), font, 
-                               0.5, (0, 255, 0), 2)
-                    cv2.putText(frame, tracking_text, (5, 20), font, 
-                               0.5, (255, 255, 255), 1)
-                    
                     # Send tracking data
                     print(json.dumps({
                         "success": True,
@@ -241,13 +244,6 @@ class HeadTracker:
                     }))
                     sys.stdout.flush()
                 else:
-                    # Draw "No Face Detected" message
-                    font = cv2.FONT_HERSHEY_SIMPLEX
-                    cv2.putText(frame, "No Face Detected", (5, 20), font, 
-                               0.5, (0, 255, 0), 2)
-                    cv2.putText(frame, "No Face Detected", (5, 20), font, 
-                               0.5, (255, 255, 255), 1)
-                    
                     # Send no face detected status
                     print(json.dumps({
                         "success": True,
@@ -255,13 +251,6 @@ class HeadTracker:
                         "servo_angle": self.servo_angle
                     }))
                     sys.stdout.flush()
-
-                # Add timestamp
-                timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-                cv2.putText(frame, timestamp, (5, frame.shape[0]-5), font, 
-                           0.5, (0, 255, 0), 2)
-                cv2.putText(frame, timestamp, (5, frame.shape[0]-5), font, 
-                           0.5, (255, 255, 255), 1)
 
                 # Frame rate control
                 frame_count += 1
@@ -280,6 +269,10 @@ class HeadTracker:
         finally:
             self.release()
 
+    def stop(self):
+        """Stop head tracking."""
+        self.running = False
+
 def main():
     """Main entry point for head tracking script."""
     parser = argparse.ArgumentParser(description='Head Tracking Script')
@@ -297,6 +290,10 @@ def main():
     try:
         tracker = HeadTracker(args.camera_id, args.width, args.height)
         tracker.track_head(args.servo_id)
+    except KeyboardInterrupt:
+        logger.info("Head tracking interrupted")
+        if 'tracker' in locals():
+            tracker.stop()
     except Exception as e:
         print(json.dumps({
             "success": False,

@@ -520,11 +520,32 @@ router.post('/control', async (req, res) => {
                         const jsonStr = buffer.slice(0, newlineIndex);
                         buffer = buffer.slice(newlineIndex + 1);
 
+                        // Skip empty lines
+                        if (!jsonStr.trim()) {
+                            continue;
+                        }
+
                         try {
+                            // Check if this is initialization output
+                            if (jsonStr.includes('"message":"Motion detection initialized"')) {
+                                logger.info('Motion detection initialized');
+                                continue;
+                            }
+
+                            // Try to parse as JSON
                             const result = JSON.parse(jsonStr);
-                            res.write(JSON.stringify(result) + '\n');
+                            
+                            // Only write valid motion detection results
+                            if (result.success && (result.motion_detected !== undefined)) {
+                                res.write(JSON.stringify(result) + '\n');
+                            } else if (!result.success) {
+                                logger.error('Motion detection error:', result.error);
+                            }
                         } catch (e) {
-                            logger.error('Error parsing motion data:', e);
+                            // Only log parsing errors for non-empty strings that aren't debug output
+                            if (jsonStr.trim() && !jsonStr.startsWith('Device') && !jsonStr.includes('v4l2')) {
+                                logger.error('Error parsing motion data:', e);
+                            }
                         }
                     }
                 } catch (e) {
@@ -620,6 +641,12 @@ router.post('/head-track', async (req, res) => {
     const { servoId } = req.body;
     
     try {
+        // Validate servo ID
+        if (!servoId) {
+            throw new Error('Servo ID is required');
+        }
+
+        // Load camera settings
         const settings = await loadCameraSettings();
         if (!settings.selectedCamera && settings.selectedCamera !== 0) {
             throw new Error('No camera selected');
@@ -662,11 +689,30 @@ router.post('/head-track', async (req, res) => {
                     const jsonStr = buffer.slice(0, newlineIndex);
                     buffer = buffer.slice(newlineIndex + 1);
 
+                    // Skip empty lines
+                    if (!jsonStr.trim()) {
+                        continue;
+                    }
+
                     try {
+                        // Check if this is initialization output
+                        if (jsonStr.includes('"message":"Head tracking initialized"')) {
+                            logger.info('Head tracking initialized');
+                            continue;
+                        }
+
+                        // Try to parse as JSON
                         const result = JSON.parse(jsonStr);
-                        res.write(JSON.stringify(result) + '\n');
+                        if (result.success) {
+                            res.write(JSON.stringify(result) + '\n');
+                        } else {
+                            logger.error('Head tracking error:', result.error);
+                        }
                     } catch (e) {
-                        logger.error('Error parsing head tracking data:', e);
+                        // Only log parsing errors for non-empty strings that aren't debug output
+                        if (jsonStr.trim() && !jsonStr.startsWith('Device') && !jsonStr.includes('v4l2')) {
+                            logger.error('Error parsing head tracking data:', e);
+                        }
                     }
                 }
             } catch (e) {
@@ -674,7 +720,7 @@ router.post('/head-track', async (req, res) => {
             }
         });
 
-        // Handle stderr output
+        // Handle stderr output (debug/info messages)
         process.stderr.on('data', (data) => {
             logger.info(`Head tracking output: ${data}`);
         });

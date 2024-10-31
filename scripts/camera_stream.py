@@ -13,7 +13,7 @@ from typing import Optional, Tuple
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
-    stream=sys.stderr  # Log to stderr to keep stdout clean for MJPEG stream
+    stream=sys.stderr  # Log to stderr to keep stdout clean
 )
 logger = logging.getLogger(__name__)
 
@@ -26,12 +26,22 @@ try:
     import numpy as np
 except ImportError as e:
     logger.error(f"Failed to import numpy: {e}")
+    print(json.dumps({
+        "success": False,
+        "error": "Required module numpy is not available. Please install it with: pip install numpy"
+    }))
+    sys.stdout.flush()
     sys.exit(1)
 
 try:
     import cv2
 except ImportError as e:
     logger.error(f"Failed to import cv2: {e}")
+    print(json.dumps({
+        "success": False,
+        "error": "Required module opencv-python is not available. Please install it with: pip install opencv-python"
+    }))
+    sys.stdout.flush()
     sys.exit(1)
 
 def verify_camera_device(device_id: int) -> bool:
@@ -49,12 +59,23 @@ def verify_camera_device(device_id: int) -> bool:
             
         # Check device capabilities with v4l2-ctl
         try:
-            # List supported formats
-            formats = subprocess.check_output(['v4l2-ctl', '-d', device_path, '--list-formats-ext']).decode()
-            logger.info(f"Supported formats:\n{formats}")
+            # Redirect stderr to devnull to suppress debug output
+            with open(os.devnull, 'w') as devnull:
+                # List supported formats
+                formats = subprocess.check_output(
+                    ['v4l2-ctl', '-d', device_path, '--list-formats-ext'],
+                    stderr=devnull
+                ).decode()
+                
+                # Get current settings
+                settings = subprocess.check_output(
+                    ['v4l2-ctl', '-d', device_path, '--all'],
+                    stderr=devnull
+                ).decode()
             
-            # Get current settings
-            settings = subprocess.check_output(['v4l2-ctl', '-d', device_path, '--all']).decode()
+            # Log device info to stderr
+            logger.info(f"Device {device_path} capabilities:")
+            logger.info(f"Supported formats:\n{formats}")
             logger.info(f"Current settings:\n{settings}")
             
             # Check if MJPG format is supported
@@ -75,30 +96,32 @@ def set_camera_controls(device_id: int):
     """Set optimal camera controls using v4l2-ctl."""
     device_path = f"/dev/video{device_id}"
     try:
-        # Reset all controls to default
-        subprocess.run(['v4l2-ctl', '-d', device_path, '--all'])
-        
-        # Set power line frequency to 50Hz
-        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=power_line_frequency=1'])
-        
-        # Set auto exposure to manual mode
-        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=auto_exposure=1'])
-        
-        # Set exposure time
-        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=exposure_time_absolute=157'])
-        
-        # Enable auto white balance
-        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=white_balance_automatic=1'])
-        
-        # Set additional controls from v4l2-ctl output
-        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=brightness=0'])
-        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=contrast=32'])  # Changed to match camera_control.py
-        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=saturation=64'])
-        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=hue=0'])
-        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=gamma=100'])
-        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=gain=0'])
-        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=sharpness=9'])
-        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=backlight_compensation=1'])
+        # Redirect stderr to devnull to suppress debug output
+        with open(os.devnull, 'w') as devnull:
+            # Reset all controls to default
+            subprocess.run(['v4l2-ctl', '-d', device_path, '--all'], stderr=devnull)
+            
+            # Set power line frequency to 50Hz
+            subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=power_line_frequency=1'], stderr=devnull)
+            
+            # Set auto exposure to manual mode
+            subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=auto_exposure=1'], stderr=devnull)
+            
+            # Set exposure time
+            subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=exposure_time_absolute=157'], stderr=devnull)
+            
+            # Enable auto white balance
+            subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=white_balance_automatic=1'], stderr=devnull)
+            
+            # Set additional controls from v4l2-ctl output
+            subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=brightness=0'], stderr=devnull)
+            subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=contrast=32'], stderr=devnull)
+            subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=saturation=64'], stderr=devnull)
+            subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=hue=0'], stderr=devnull)
+            subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=gamma=100'], stderr=devnull)
+            subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=gain=0'], stderr=devnull)
+            subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=sharpness=9'], stderr=devnull)
+            subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=backlight_compensation=1'], stderr=devnull)
         
         logger.info("Camera controls configured")
     except Exception as e:
@@ -210,7 +233,6 @@ class CameraStream:
     def stream(self):
         """Stream camera frames in MJPEG format."""
         if not self.initialize():
-            logger.error("Failed to initialize camera")
             return
 
         try:
@@ -224,6 +246,17 @@ class CameraStream:
                     logger.info("Camera warmed up successfully")
                     break
                 time.sleep(1.0)
+
+            # Print initialization success
+            print(json.dumps({
+                "success": True,
+                "message": "Stream initialized"
+            }))
+            sys.stdout.flush()
+
+            # Start MJPEG stream
+            print("--frame")  # Start of MJPEG stream marker
+            sys.stdout.flush()
 
             while True:
                 try:
@@ -303,7 +336,11 @@ def main():
         streamer = CameraStream(args.camera_id, args.width, args.height, args.fps)
         streamer.stream()
     except Exception as e:
-        logger.error(f"Error: {str(e)}")
+        print(json.dumps({
+            "success": False,
+            "error": str(e)
+        }))
+        sys.stdout.flush()
         sys.exit(1)
 
 if __name__ == "__main__":
