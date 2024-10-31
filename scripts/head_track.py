@@ -7,8 +7,10 @@ import argparse
 import logging
 import time
 import os
-import fcntl
-from typing import Optional
+import json
+import subprocess
+from typing import Optional, Dict, Any
+from camera_lock import CameraLock
 
 # Configure logging
 logging.basicConfig(
@@ -74,62 +76,47 @@ def initialize_camera(device_id: int, width: int = 320, height: int = 240) -> Op
         logger.error(f"Camera initialization error: {e}")
         return None
 
-class CameraLock:
-    """Handle camera device locking to prevent concurrent access."""
-    
-    def __init__(self, device_id=0):
-        self.device_id = device_id
-        self.device_path = f"/dev/video{device_id}"
-        self.lock_path = f"/tmp/camera_{device_id}.lock"
-        self.lock_file = None
+def move_servo(servo_id: str, angle: float, duration: float = 0.5) -> bool:
+    """Control servo movement using servo_control.py."""
+    try:
+        # Get servo configuration
+        with open('data/parts.json', 'r') as f:
+            parts = json.load(f)
+            servo = next((part for part in parts if str(part['id']) == str(servo_id)), None)
+            if not servo:
+                logger.error(f"Servo {servo_id} not found")
+                return False
 
-    def acquire(self) -> bool:
-        """Acquire lock on camera device."""
-        try:
-            # Clean up stale lock file
-            if os.path.exists(self.lock_path):
-                try:
-                    with open(self.lock_path, 'r') as f:
-                        pid = int(f.read().strip())
-                        try:
-                            os.kill(pid, 0)
-                        except OSError:
-                            os.remove(self.lock_path)
-                except (OSError, ValueError):
-                    try:
-                        os.remove(self.lock_path)
-                    except OSError:
-                        pass
+        # Prepare servo control command
+        script_path = os.path.join('scripts', 'servo_control.py')
+        control_type = 'pca9685' if servo.get('usePCA9685', False) else 'gpio'
+        pin_or_channel = str(servo.get('channel' if control_type == 'pca9685' else 'pin', 0))
+        
+        command = [
+            'python3',
+            script_path,
+            'test',
+            control_type,
+            pin_or_channel,
+            str(angle),
+            str(duration),
+            servo.get('servoType', 'Standard'),
+            str(servo_id)
+        ]
 
-            # Add delay before acquiring lock
-            time.sleep(0.5)
-
-            self.lock_file = open(self.lock_path, 'w')
-            fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-            self.lock_file.write(str(os.getpid()))
-            self.lock_file.flush()
+        # Execute servo control command
+        result = subprocess.run(command, capture_output=True, text=True)
+        
+        if result.returncode == 0:
+            logger.info(f"Servo {servo_id} moved to angle {angle}")
             return True
-        except (IOError, OSError):
-            if self.lock_file:
-                self.lock_file.close()
-                self.lock_file = None
+        else:
+            logger.error(f"Servo control failed: {result.stderr}")
             return False
 
-    def release(self):
-        """Release lock on camera device."""
-        try:
-            if self.lock_file:
-                fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_UN)
-                self.lock_file.close()
-                self.lock_file = None
-                try:
-                    os.remove(self.lock_path)
-                except OSError:
-                    pass
-                # Add delay after releasing lock
-                time.sleep(0.5)
-        except Exception:
-            pass
+    except Exception as e:
+        logger.error(f"Error controlling servo: {e}")
+        return False
 
 class HeadTracker:
     """Handles head tracking and servo control."""
@@ -143,6 +130,11 @@ class HeadTracker:
         self.face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
         self.prev_center_x = None
         self.prev_center_y = None
+        self.servo_x_angle = 90  # Current pan servo angle
+        self.servo_y_angle = 90  # Current tilt servo angle
+        self.min_angle = 0
+        self.max_angle = 180
+        self.angle_threshold = 5  # Minimum angle change to move servo
 
     def initialize(self) -> bool:
         """Initialize camera with specified settings."""
@@ -163,10 +155,28 @@ class HeadTracker:
         except Exception as e:
             logger.warning(f"Error releasing camera: {e}")
 
-    def track_head(self, servo_id: int):
-        """Track head movement and control servo."""
+    def calculate_servo_angles(self, face_x: float, face_y: float) -> Dict[str, float]:
+        """Calculate servo angles based on face position."""
+        # Convert face position (0-100) to angle adjustment
+        x_adjustment = (face_x - 50) * 0.9  # Scale factor to control sensitivity
+        y_adjustment = (face_y - 50) * 0.9
+
+        # Update servo angles with bounds checking
+        new_x_angle = max(self.min_angle, min(self.max_angle, self.servo_x_angle - x_adjustment))
+        new_y_angle = max(self.min_angle, min(self.max_angle, self.servo_y_angle - y_adjustment))
+
+        return {
+            'x': new_x_angle if abs(new_x_angle - self.servo_x_angle) > self.angle_threshold else self.servo_x_angle,
+            'y': new_y_angle if abs(new_y_angle - self.servo_y_angle) > self.angle_threshold else self.servo_y_angle
+        }
+
+    def track_head(self, pan_servo_id: str, tilt_servo_id: str):
+        """Track head movement and control servos."""
         if not self.initialize():
-            logger.error("Failed to initialize camera")
+            print(json.dumps({
+                "success": False,
+                "error": "Failed to initialize camera"
+            }))
             return
 
         try:
@@ -174,16 +184,17 @@ class HeadTracker:
             last_frame_time = time.time()
             target_frame_time = 1.0 / 15  # Target 15 FPS
 
+            # Print initialization success
+            print(json.dumps({
+                "success": True,
+                "message": "Head tracking initialized"
+            }))
+            sys.stdout.flush()
+
             while True:
                 ret, frame = self.cap.read()
                 if not ret or frame is None:
                     break
-
-                # Resize frame if necessary
-                actual_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-                actual_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                if actual_width != self.width or actual_height != self.height:
-                    frame = cv2.resize(frame, (self.width, self.height))
 
                 # Convert to grayscale for face detection
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -204,55 +215,47 @@ class HeadTracker:
                     center_x = x + w//2
                     center_y = y + h//2
                     
-                    # Draw face rectangle with glow effect
-                    cv2.rectangle(frame, (x-2, y-2), (x+w+2, y+h+2), (0, 255, 0), 4)
-                    cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 255, 255), 2)
-                    
-                    # Draw crosshair on face
-                    cv2.line(frame, (center_x-15, center_y), (center_x+15, center_y), 
-                            (0, 255, 0), 3)
-                    cv2.line(frame, (center_x, center_y-15), (center_x, center_y+15), 
-                            (0, 255, 0), 3)
-                    cv2.line(frame, (center_x-10, center_y), (center_x+10, center_y), 
-                            (255, 255, 255), 1)
-                    cv2.line(frame, (center_x, center_y-10), (center_x, center_y+10), 
-                            (255, 255, 255), 1)
-                    
                     # Calculate normalized position (0-100)
                     norm_x = (center_x / frame.shape[1]) * 100
                     norm_y = (center_y / frame.shape[0]) * 100
                     
-                    # Draw tracking info
-                    font = cv2.FONT_HERSHEY_SIMPLEX
-                    tracking_text = f"Face Detected: ({int(norm_x)}, {int(norm_y)})"
-                    cv2.putText(frame, tracking_text, (5, 20), font, 
-                               0.5, (0, 255, 0), 2)
-                    cv2.putText(frame, tracking_text, (5, 20), font, 
-                               0.5, (255, 255, 255), 1)
+                    # Calculate new servo angles
+                    new_angles = self.calculate_servo_angles(norm_x, norm_y)
                     
-                    # TODO: Add servo control logic here using norm_x and norm_y
+                    # Move servos if significant change
+                    if new_angles['x'] != self.servo_x_angle:
+                        if move_servo(pan_servo_id, new_angles['x']):
+                            self.servo_x_angle = new_angles['x']
                     
-                    self.prev_center_x = center_x
-                    self.prev_center_y = center_y
+                    if new_angles['y'] != self.servo_y_angle:
+                        if move_servo(tilt_servo_id, new_angles['y']):
+                            self.servo_y_angle = new_angles['y']
+                    
+                    # Send tracking data
+                    print(json.dumps({
+                        "success": True,
+                        "face_detected": True,
+                        "position": {
+                            "x": norm_x,
+                            "y": norm_y
+                        },
+                        "servo_angles": {
+                            "x": self.servo_x_angle,
+                            "y": self.servo_y_angle
+                        }
+                    }))
+                    sys.stdout.flush()
                 else:
-                    # Draw "No Face Detected" message
-                    font = cv2.FONT_HERSHEY_SIMPLEX
-                    cv2.putText(frame, "No Face Detected", (5, 20), font, 
-                               0.5, (0, 255, 0), 2)
-                    cv2.putText(frame, "No Face Detected", (5, 20), font, 
-                               0.5, (255, 255, 255), 1)
-
-                # Add timestamp
-                timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-                cv2.putText(frame, timestamp, (5, frame.shape[0]-5), font, 
-                           0.5, (0, 255, 0), 2)
-                cv2.putText(frame, timestamp, (5, frame.shape[0]-5), font, 
-                           0.5, (255, 255, 255), 1)
-
-                # Display frame
-                cv2.imshow('Head Tracking', frame)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
+                    # Send no face detected status
+                    print(json.dumps({
+                        "success": True,
+                        "face_detected": False,
+                        "servo_angles": {
+                            "x": self.servo_x_angle,
+                            "y": self.servo_y_angle
+                        }
+                    }))
+                    sys.stdout.flush()
 
                 # Frame rate control
                 frame_count += 1
@@ -263,31 +266,39 @@ class HeadTracker:
                 last_frame_time = time.time()
 
         except Exception as e:
-            logger.error(f"Head tracking error: {e}")
+            print(json.dumps({
+                "success": False,
+                "error": str(e)
+            }))
+            sys.stdout.flush()
         finally:
             self.release()
-            cv2.destroyAllWindows()
 
 def main():
     """Main entry point for head tracking script."""
     parser = argparse.ArgumentParser(description='Head Tracking Script')
-    parser.add_argument('command', choices=['start', 'stop'],
-                       help='Command to execute')
-    parser.add_argument('servo_id', type=int,
-                       help='Servo ID for head tracking')
+    parser.add_argument('--camera-id', type=int, default=0,
+                       help='Camera device ID (default: 0)')
+    parser.add_argument('--pan-servo-id', type=str, required=True,
+                       help='ID of the pan servo')
+    parser.add_argument('--tilt-servo-id', type=str, required=True,
+                       help='ID of the tilt servo')
+    parser.add_argument('--width', type=int, default=320,
+                       help='Frame width (default: 320)')
+    parser.add_argument('--height', type=int, default=240,
+                       help='Frame height (default: 240)')
     
     args = parser.parse_args()
     
     try:
-        if args.command == 'start':
-            tracker = HeadTracker()
-            tracker.track_head(args.servo_id)
-        elif args.command == 'stop':
-            # Stop command handled by parent process
-            pass
+        tracker = HeadTracker(args.camera_id, args.width, args.height)
+        tracker.track_head(args.pan_servo_id, args.tilt_servo_id)
     except Exception as e:
-        logger.error(f"Error: {str(e)}")
-        sys.exit(1)
+        print(json.dumps({
+            "success": False,
+            "error": str(e)
+        }))
+        sys.stdout.flush()
 
 if __name__ == "__main__":
     main()

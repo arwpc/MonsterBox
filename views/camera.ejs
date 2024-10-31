@@ -3,6 +3,7 @@
 <head>
     <title><%= title %></title>
     <style>
+        /* Previous styles remain unchanged */
         body {
             background-color: black;
             color: #00ff00;
@@ -113,7 +114,7 @@
             50% { opacity: 0.5; }
             100% { opacity: 1; }
         }
-        #motionData {
+        #motionData, #headTrackData {
             margin-top: 10px;
             padding: 5px;
             border: 1px solid #00ff00;
@@ -122,7 +123,7 @@
             position: relative;
             overflow: hidden;
         }
-        .motion-active {
+        .active {
             animation: pulse 2s infinite;
         }
         @keyframes pulse {
@@ -133,58 +134,6 @@
         .coordinates {
             color: #00ff00;
             font-weight: bold;
-        }
-        .motion-indicator {
-            position: absolute;
-            width: 10px;
-            height: 10px;
-            background-color: #00ff00;
-            border-radius: 50%;
-            box-shadow: 0 0 5px #00ff00;
-            pointer-events: none;
-            transition: all 0.1s ease-out;
-        }
-        .motion-trail {
-            position: absolute;
-            width: 6px;
-            height: 6px;
-            background-color: rgba(0, 255, 0, 0.5);
-            border-radius: 50%;
-            pointer-events: none;
-            transition: all 0.3s ease-out;
-        }
-        .motion-box {
-            position: absolute;
-            border: 2px solid #00ff00;
-            box-shadow: 0 0 10px #00ff00;
-            pointer-events: none;
-            transition: all 0.1s ease-out;
-        }
-        .motion-crosshair {
-            position: absolute;
-            pointer-events: none;
-            transition: all 0.1s ease-out;
-        }
-        .motion-crosshair::before,
-        .motion-crosshair::after {
-            content: '';
-            position: absolute;
-            background-color: #00ff00;
-            box-shadow: 0 0 5px #00ff00;
-        }
-        .motion-crosshair::before {
-            width: 20px;
-            height: 2px;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
-        .motion-crosshair::after {
-            width: 2px;
-            height: 20px;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
         }
     </style>
 </head>
@@ -239,10 +188,14 @@
 
             <div class="section">
                 <h3>Head Tracking</h3>
-                <select id="servoSelect">
-                    <option value="">Select Servo...</option>
+                <select id="panServoSelect">
+                    <option value="">Select Pan Servo...</option>
                 </select>
-                <button onclick="startHeadTracking()">Start Head Tracking</button>
+                <select id="tiltServoSelect">
+                    <option value="">Select Tilt Servo...</option>
+                </select>
+                <button id="headTrackButton" onclick="toggleHeadTracking()">Start Head Tracking</button>
+                <div id="headTrackData">No tracking data</div>
             </div>
         </div>
     </div>
@@ -250,10 +203,12 @@
     <script>
         let streamUrl = null;
         let motionDetectionActive = false;
+        let headTrackingActive = false;
         let reconnectAttempts = 0;
         const maxReconnectAttempts = 3;
         const reconnectDelay = 5000;
         let motionDetectionController = null;
+        let headTrackingController = null;
 
         function showStatus(message, isLoading = false) {
             const statusEl = document.getElementById('statusMessage');
@@ -306,6 +261,39 @@
             } catch (error) {
                 showStatus('Error loading cameras');
                 console.error('Error loading cameras:', error);
+            }
+        }
+
+        async function loadServos() {
+            try {
+                const response = await fetch('/parts');
+                const data = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(data, 'text/html');
+                const servos = Array.from(doc.querySelectorAll('[data-type="servo"]')).map(el => ({
+                    id: el.dataset.id,
+                    name: el.dataset.name
+                }));
+
+                const panSelect = document.getElementById('panServoSelect');
+                const tiltSelect = document.getElementById('tiltServoSelect');
+                
+                panSelect.innerHTML = '<option value="">Select Pan Servo...</option>';
+                tiltSelect.innerHTML = '<option value="">Select Tilt Servo...</option>';
+                
+                servos.forEach(servo => {
+                    const panOption = document.createElement('option');
+                    panOption.value = servo.id;
+                    panOption.textContent = servo.name;
+                    panSelect.appendChild(panOption);
+
+                    const tiltOption = document.createElement('option');
+                    tiltOption.value = servo.id;
+                    tiltOption.textContent = servo.name;
+                    tiltSelect.appendChild(tiltOption);
+                });
+            } catch (error) {
+                console.error('Error loading servos:', error);
             }
         }
 
@@ -406,7 +394,7 @@
                     showStatus('Starting motion detection...', true);
                     button.textContent = 'Stop Motion Detection';
                     button.classList.add('active');
-                    motionData.classList.add('motion-active');
+                    motionData.classList.add('active');
                     
                     // Create AbortController for the fetch
                     motionDetectionController = new AbortController();
@@ -470,7 +458,7 @@
                         motionDetectionActive = false;
                         button.textContent = 'Start Motion Detection';
                         button.classList.remove('active');
-                        motionData.classList.remove('motion-active');
+                        motionData.classList.remove('active');
                     }
                 }
             } else {
@@ -481,18 +469,115 @@
                 }
                 button.textContent = 'Start Motion Detection';
                 button.classList.remove('active');
-                motionData.classList.remove('motion-active');
+                motionData.classList.remove('active');
                 motionData.textContent = 'No motion data';
                 startStream();
             }
         }
 
-        async function startHeadTracking() {
-            // Head tracking implementation
+        async function toggleHeadTracking() {
+            const button = document.getElementById('headTrackButton');
+            const headTrackData = document.getElementById('headTrackData');
+            const panServoId = document.getElementById('panServoSelect').value;
+            const tiltServoId = document.getElementById('tiltServoSelect').value;
+            
+            if (!headTrackingActive) {
+                if (!panServoId || !tiltServoId) {
+                    showStatus('Please select both pan and tilt servos');
+                    return;
+                }
+
+                try {
+                    showStatus('Starting head tracking...', true);
+                    button.textContent = 'Stop Head Tracking';
+                    button.classList.add('active');
+                    headTrackData.classList.add('active');
+                    
+                    // Create AbortController for the fetch
+                    headTrackingController = new AbortController();
+                    
+                    // Start head tracking
+                    headTrackingActive = true;
+                    const response = await fetch('/camera/head-track', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ panServoId, tiltServoId }),
+                        signal: headTrackingController.signal
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Head tracking failed');
+                    }
+
+                    // Create reader for streaming response
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let buffer = '';
+
+                    while (headTrackingActive) {
+                        const { value, done } = await reader.read();
+                        if (done) break;
+
+                        // Append new data to buffer
+                        buffer += decoder.decode(value, { stream: true });
+
+                        // Process complete JSON objects
+                        let newlineIndex;
+                        while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+                            const jsonStr = buffer.slice(0, newlineIndex);
+                            buffer = buffer.slice(newlineIndex + 1);
+
+                            try {
+                                const result = JSON.parse(jsonStr);
+                                if (result.success) {
+                                    if (result.face_detected) {
+                                        const pos = result.position;
+                                        const angles = result.servo_angles;
+                                        headTrackData.innerHTML = 
+                                            `Face at <span class="coordinates">(${pos.x.toFixed(1)}, ${pos.y.toFixed(1)})</span><br>` +
+                                            `Servos: Pan ${angles.x.toFixed(1)}°, Tilt ${angles.y.toFixed(1)}°`;
+                                    } else {
+                                        headTrackData.textContent = 'No face detected';
+                                    }
+                                    hideStatus();
+                                }
+                            } catch (e) {
+                                console.error('Error parsing head tracking data:', e);
+                            }
+                        }
+                    }
+                    
+                } catch (error) {
+                    if (error.name === 'AbortError') {
+                        console.log('Head tracking stopped');
+                    } else {
+                        showStatus('Error in head tracking');
+                        console.error('Head tracking error:', error);
+                        headTrackingActive = false;
+                        button.textContent = 'Start Head Tracking';
+                        button.classList.remove('active');
+                        headTrackData.classList.remove('active');
+                    }
+                }
+            } else {
+                headTrackingActive = false;
+                if (headTrackingController) {
+                    headTrackingController.abort();
+                    headTrackingController = null;
+                }
+                button.textContent = 'Start Head Tracking';
+                button.classList.remove('active');
+                headTrackData.classList.remove('active');
+                headTrackData.textContent = 'No tracking data';
+                startStream();
+            }
         }
 
-        // Load cameras on page load
-        document.addEventListener('DOMContentLoaded', loadCameras);
+        // Load cameras and servos on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCameras();
+            loadServos();
+        });
     </script>
 </body>
 </html>
