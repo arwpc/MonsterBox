@@ -9,6 +9,14 @@ class ReplicaAPI {
         this.lastRequestTime = Date.now();
         this.rateLimitPerMinute = 100;
 
+        // Standard audio format settings for maximum compatibility
+        this.audioSettings = {
+            format: 'mp3',           // Most widely supported format
+            sampleRate: 44100,       // CD-quality sample rate
+            bitRate: 192000,         // High-quality bitrate for clear audio
+            channels: 2              // Stereo output
+        };
+
         this.axiosInstance = axios.create({
             baseURL: this.baseURL,
             headers: {
@@ -128,20 +136,16 @@ class ReplicaAPI {
                 throw new Error('global_pace must be between 0.5 and 1.5');
             }
 
-            // Validate bit rate
-            const bitRate = params.options?.bitRate || 128;
-            if (![48, 128, 320].includes(bitRate)) {
-                throw new Error('Wrong bit rate. Supported values: 48, 128, 320.');
-            }
-
             await this.checkRateLimit();
 
+            // Construct request body with standardized audio settings
             const requestBody = {
                 speaker_id: params.voiceId,
                 text: params.text.trim(),
-                extensions: params.options?.extensions || ['mp3'],  // Default to MP3
-                sample_rate: params.options?.sampleRate || 44100,
-                bit_rate: bitRate,
+                extensions: [this.audioSettings.format],    // Always request MP3
+                sample_rate: this.audioSettings.sampleRate, // CD-quality 44.1kHz
+                bit_rate: this.audioSettings.bitRate,      // High-quality 192kbps
+                channels: this.audioSettings.channels,      // Stereo
                 global_pace: pace,
                 model_chain: params.options?.modelChain || 'vox_2_0',
                 language_code: params.options?.languageCode || 'en',
@@ -150,6 +154,14 @@ class ReplicaAPI {
                 global_volume: volume,
                 user_metadata: params.options?.metadata || {}
             };
+
+            // Log the audio format settings being used
+            logger.info(`Requesting speech generation with audio settings: ${JSON.stringify({
+                format: this.audioSettings.format,
+                sampleRate: this.audioSettings.sampleRate,
+                bitRate: this.audioSettings.bitRate,
+                channels: this.audioSettings.channels
+            })}`);
 
             const response = await this.retryWithBackoff(async () => {
                 return await this.axiosInstance.post('/speech/tts', requestBody);
@@ -181,14 +193,26 @@ class ReplicaAPI {
                 throw new Error(`Speech generation failed: ${jobStatus.data.state}`);
             }
 
+            // Validate the returned audio format
+            if (!jobStatus.data.available_formats?.includes(this.audioSettings.format)) {
+                throw new Error(`Expected ${this.audioSettings.format} format not available in response`);
+            }
+
             return {
                 url: jobStatus.data.url,
                 uuid: jobStatus.data.uuid,
                 state: jobStatus.data.state,
                 duration: jobStatus.data.duration,
+                format: this.audioSettings.format,
                 metadata: {
                     requestTime: new Date().toISOString(),
                     textLength: params.text.length,
+                    audioSettings: {
+                        format: this.audioSettings.format,
+                        sampleRate: this.audioSettings.sampleRate,
+                        bitRate: this.audioSettings.bitRate,
+                        channels: this.audioSettings.channels
+                    },
                     settings: requestBody
                 }
             };
