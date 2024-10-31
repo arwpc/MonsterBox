@@ -26,18 +26,17 @@ async function downloadAudio(url, outputPath) {
 
         logger.info(`Downloaded audio file, size: ${response.data.length} bytes`);
 
-        // Normalize path and ensure directory exists
-        const normalizedPath = outputPath.replace(/\\/g, '/');
-        const dir = path.dirname(normalizedPath);
+        // Ensure directory exists
+        const dir = path.dirname(outputPath);
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true });
         }
 
         // Save the audio data
-        fs.writeFileSync(normalizedPath, Buffer.from(response.data));
-        logger.info(`Saved audio file to ${normalizedPath}`);
+        fs.writeFileSync(outputPath, Buffer.from(response.data));
+        logger.info(`Saved audio file to ${outputPath}`);
 
-        return normalizedPath;
+        return outputPath;
     } catch (error) {
         logger.error(`Failed to download audio: ${error.message}`);
         throw error;
@@ -127,21 +126,22 @@ exports.generateAndSaveForScene = async (req, res) => {
         const timestamp = Date.now();
         const sanitizedText = text.substring(0, 30).replace(/[^a-zA-Z0-9]/g, '_');
         const filename = `${timestamp}-${sanitizedText}.mp3`;
-        const filePath = path.join('public', 'sounds', filename).replace(/\\/g, '/');
-        logger.info(`File path: ${filePath}`);
+        const filePath = path.join('public', 'sounds', filename);
+        const absolutePath = path.resolve(__dirname, '..', filePath);
+        logger.info(`File path: ${absolutePath}`);
 
         try {
             // Download the audio file
             logger.info(`Downloading audio from ${result.url}`);
-            await downloadAudio(result.url, filePath);
-            logger.info(`Audio saved to ${filePath}`);
+            await downloadAudio(result.url, absolutePath);
+            logger.info(`Audio saved to ${absolutePath}`);
 
             // Create sound entry in the library
             logger.info(`Creating sound entry in library`);
             const soundEntry = await soundService.createSound({
                 name: text,
-                filename: path.basename(filePath),
-                file: path.basename(filePath),
+                filename: path.basename(absolutePath),
+                file: path.basename(absolutePath),
                 characterIds: [parseInt(characterId)],
                 type: 'voice',
                 created: new Date().toISOString(),
@@ -156,14 +156,14 @@ exports.generateAndSaveForScene = async (req, res) => {
             res.json({
                 success: true,
                 soundId: soundEntry.id,
-                filename: path.basename(filePath),
-                path: `/sounds/${path.basename(filePath)}`
+                filename: path.basename(absolutePath),
+                path: absolutePath
             });
         } catch (err) {
             logger.error(`Failed to process audio file: ${err.message}`);
-            if (fs.existsSync(filePath)) {
+            if (fs.existsSync(absolutePath)) {
                 try {
-                    fs.unlinkSync(filePath);
+                    fs.unlinkSync(absolutePath);
                     logger.info(`Cleaned up file after error`);
                 } catch (cleanupError) {
                     logger.error(`Failed to clean up file: ${cleanupError.message}`);
@@ -201,26 +201,27 @@ exports.generateSpeech = async (req, res) => {
         const timestamp = Date.now();
         const sanitizedText = text.substring(0, 30).replace(/[^a-zA-Z0-9]/g, '_');
         const filename = `${timestamp}-${sanitizedText}.mp3`;
-        const filePath = path.join('public', 'sounds', filename).replace(/\\/g, '/');
+        const filePath = path.join('public', 'sounds', filename);
+        const absolutePath = path.resolve(__dirname, '..', filePath);
 
         try {
             // Download the audio file
-            await downloadAudio(result.url, filePath);
-            logger.info(`Downloaded audio file to ${filePath}`);
+            await downloadAudio(result.url, absolutePath);
+            logger.info(`Downloaded audio file to ${absolutePath}`);
 
             res.json({
                 success: true,
-                filename: path.basename(filePath),
-                path: `/sounds/${path.basename(filePath)}`,
+                filename: path.basename(absolutePath),
+                path: absolutePath,
                 url: result.url,
                 duration: result.duration,
                 metadata: result.metadata
             });
         } catch (err) {
             logger.error(`Failed to process audio file: ${err.message}`);
-            if (fs.existsSync(filePath)) {
+            if (fs.existsSync(absolutePath)) {
                 try {
-                    fs.unlinkSync(filePath);
+                    fs.unlinkSync(absolutePath);
                 } catch (cleanupError) {
                     logger.error(`Failed to clean up file: ${cleanupError.message}`);
                 }
