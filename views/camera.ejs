@@ -119,6 +119,8 @@
             border: 1px solid #00ff00;
             min-height: 20px;
             font-family: monospace;
+            position: relative;
+            overflow: hidden;
         }
         .motion-active {
             animation: pulse 2s infinite;
@@ -131,6 +133,58 @@
         .coordinates {
             color: #00ff00;
             font-weight: bold;
+        }
+        .motion-indicator {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #00ff00;
+            border-radius: 50%;
+            box-shadow: 0 0 5px #00ff00;
+            pointer-events: none;
+            transition: all 0.1s ease-out;
+        }
+        .motion-trail {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background-color: rgba(0, 255, 0, 0.5);
+            border-radius: 50%;
+            pointer-events: none;
+            transition: all 0.3s ease-out;
+        }
+        .motion-box {
+            position: absolute;
+            border: 2px solid #00ff00;
+            box-shadow: 0 0 10px #00ff00;
+            pointer-events: none;
+            transition: all 0.1s ease-out;
+        }
+        .motion-crosshair {
+            position: absolute;
+            pointer-events: none;
+            transition: all 0.1s ease-out;
+        }
+        .motion-crosshair::before,
+        .motion-crosshair::after {
+            content: '';
+            position: absolute;
+            background-color: #00ff00;
+            box-shadow: 0 0 5px #00ff00;
+        }
+        .motion-crosshair::before {
+            width: 20px;
+            height: 2px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .motion-crosshair::after {
+            width: 2px;
+            height: 20px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
         }
     </style>
 </head>
@@ -199,7 +253,7 @@
         let reconnectAttempts = 0;
         const maxReconnectAttempts = 3;
         const reconnectDelay = 5000;
-        let motionDetectionInterval = null;
+        let motionDetectionController = null;
 
         function showStatus(message, isLoading = false) {
             const statusEl = document.getElementById('statusMessage');
@@ -354,66 +408,82 @@
                     button.classList.add('active');
                     motionData.classList.add('motion-active');
                     
+                    // Create AbortController for the fetch
+                    motionDetectionController = new AbortController();
+                    
                     // Start continuous motion detection
                     motionDetectionActive = true;
-                    await updateMotionDetection();
+                    const response = await fetch('/camera/control', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ command: 'motion' }),
+                        signal: motionDetectionController.signal
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Motion detection failed');
+                    }
+
+                    // Create reader for streaming response
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let buffer = '';
+
+                    while (motionDetectionActive) {
+                        const { value, done } = await reader.read();
+                        if (done) break;
+
+                        // Append new data to buffer
+                        buffer += decoder.decode(value, { stream: true });
+
+                        // Process complete JSON objects
+                        let newlineIndex;
+                        while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+                            const jsonStr = buffer.slice(0, newlineIndex);
+                            buffer = buffer.slice(newlineIndex + 1);
+
+                            try {
+                                const result = JSON.parse(jsonStr);
+                                if (result.success) {
+                                    if (result.motion_detected) {
+                                        const coords = `(${result.center_x.toFixed(1)}, ${result.center_y.toFixed(1)})`;
+                                        motionData.innerHTML = 
+                                            `Motion detected at <span class="coordinates">${coords}</span>`;
+                                    } else {
+                                        motionData.textContent = 'No motion detected';
+                                    }
+                                    document.getElementById('cameraStream').src = `data:image/jpeg;base64,${result.frame}`;
+                                    hideStatus();
+                                }
+                            } catch (e) {
+                                console.error('Error parsing motion data:', e);
+                            }
+                        }
+                    }
                     
                 } catch (error) {
-                    showStatus('Error starting motion detection');
-                    console.error('Error starting motion detection:', error);
-                    motionDetectionActive = false;
-                    button.textContent = 'Start Motion Detection';
-                    button.classList.remove('active');
-                    motionData.classList.remove('motion-active');
+                    if (error.name === 'AbortError') {
+                        console.log('Motion detection stopped');
+                    } else {
+                        showStatus('Error in motion detection');
+                        console.error('Motion detection error:', error);
+                        motionDetectionActive = false;
+                        button.textContent = 'Start Motion Detection';
+                        button.classList.remove('active');
+                        motionData.classList.remove('motion-active');
+                    }
                 }
             } else {
                 motionDetectionActive = false;
+                if (motionDetectionController) {
+                    motionDetectionController.abort();
+                    motionDetectionController = null;
+                }
                 button.textContent = 'Start Motion Detection';
                 button.classList.remove('active');
                 motionData.classList.remove('motion-active');
                 motionData.textContent = 'No motion data';
                 startStream();
-            }
-        }
-
-        async function updateMotionDetection() {
-            if (!motionDetectionActive) return;
-
-            try {
-                const response = await fetch('/camera/control', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ command: 'motion' })
-                });
-
-                if (!response.ok) {
-                    throw new Error('Motion detection failed');
-                }
-
-                const result = await response.json();
-                if (result.success) {
-                    if (result.motion_detected) {
-                        const coords = `(${result.center_x.toFixed(1)}, ${result.center_y.toFixed(1)})`;
-                        document.getElementById('motionData').innerHTML = 
-                            `Motion detected at <span class="coordinates">${coords}</span>`;
-                    } else {
-                        document.getElementById('motionData').textContent = 'No motion detected';
-                    }
-                    document.getElementById('cameraStream').src = `data:image/jpeg;base64,${result.frame}`;
-                    hideStatus();
-
-                    // Continue motion detection if still active
-                    if (motionDetectionActive) {
-                        setTimeout(updateMotionDetection, 100);
-                    }
-                } else {
-                    throw new Error(result.error || 'Motion detection failed');
-                }
-            } catch (error) {
-                console.error('Motion detection error:', error);
-                if (motionDetectionActive) {
-                    setTimeout(updateMotionDetection, 1000);
-                }
             }
         }
 
