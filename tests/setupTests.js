@@ -1,6 +1,8 @@
 const chai = require('chai');
+const chaiHttp = require('chai-http');
 
 // Configure chai
+chai.use(chaiHttp);
 chai.config.includeStack = true; // Enable stack traces
 chai.config.truncateThreshold = 0; // Disable truncating
 
@@ -28,5 +30,10 @@ chai.Assertion.addMethod('devicePath', function() {
     );
 });
 
-// Export chai for use in tests
+// Make chai globally available for all tests
+global.chai = chai;
+global.expect = chai.expect;
+global.should = chai.should();
+
+// Export chai for explicit imports if needed
 module.exports = chai;
