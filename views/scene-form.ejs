@@ -71,12 +71,11 @@
                 copyStep($(this).data('index'));
             });
 
-            // Event delegation for voice preview, play, and config buttons
+            // Event delegation for voice preview and config buttons
             $('#steps').on('click', '.preview-voice', async function() {
                 const index = $(this).data('index');
                 const text = $(`#words_${index}`).val();
                 const statusDiv = $(`#voice-preview-status-${index}`);
-                const playButton = $(this).closest('.form-group').find('.play-voice');
                 const audio = $(`#voice-audio-${index}`)[0];
                 
                 if (!text) {
@@ -85,7 +84,6 @@
                 }
 
                 statusDiv.html('Generating voice...');
-                playButton.hide();
 
                 try {
                     const response = await axios.post('/api/voice/generate-for-scene', {
@@ -97,10 +95,8 @@
                         statusDiv.html('Voice generated successfully!');
                         // Set the sound ID for the step
                         $(`input[name="steps[${index}][sound_id]"]`).val(response.data.soundId);
-                        // Set up audio player
+                        // Set up audio player and play immediately
                         audio.src = response.data.path;
-                        playButton.show();
-                        // Play the audio immediately
                         audio.play();
                     } else {
                         statusDiv.html('Failed to generate voice: ' + response.data.error);
@@ -109,12 +105,6 @@
                     console.error('Error generating voice:', error);
                     statusDiv.html('Error generating voice. Please try again.');
                 }
-            });
-
-            $('#steps').on('click', '.play-voice', function() {
-                const index = $(this).data('index');
-                const audio = $(`#voice-audio-${index}`)[0];
-                audio.play();
             });
 
             // Voice Config button handler
@@ -183,11 +173,6 @@
             if (previewButton) {
                 previewButton.dataset.index = newIndex;
             }
-            const playButton = newStep.querySelector('.play-voice');
-            if (playButton) {
-                playButton.dataset.index = newIndex;
-                playButton.style.display = 'none'; // Hide play button on copy
-            }
             const configButton = newStep.querySelector('.voice-config');
             if (configButton) {
                 configButton.dataset.index = newIndex;
@@ -217,10 +202,6 @@
                 const previewButton = steps[i].querySelector('.preview-voice');
                 if (previewButton) {
                     previewButton.dataset.index = i;
-                }
-                const playButton = steps[i].querySelector('.play-voice');
-                if (playButton) {
-                    playButton.dataset.index = i;
                 }
                 const configButton = steps[i].querySelector('.voice-config');
                 if (configButton) {
