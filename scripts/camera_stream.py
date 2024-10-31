@@ -16,6 +16,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Force V4L2 backend before importing OpenCV
+os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0"
+os.environ["OPENCV_VIDEOIO_PRIORITY_GSTREAMER"] = "0"
+os.environ["OPENCV_VIDEOIO_PRIORITY_V4L2"] = "100"
+os.environ["OPENCV_VIDEOIO_BACKEND"] = "v4l2"
+
 class CameraLock:
     """Handle camera device locking to prevent concurrent access."""
     
@@ -87,8 +93,8 @@ class CameraStream:
             # Release any existing camera instance
             self.release()
             
-            # Try V4L2 backend with specific settings
-            self.cap = cv2.VideoCapture(self.camera_id)
+            # Create capture with explicit backend
+            self.cap = cv2.VideoCapture(self.camera_id, cv2.CAP_V4L2)
             
             if not self.cap.isOpened():
                 return False
@@ -98,6 +104,7 @@ class CameraStream:
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
             self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
             self.cap.set(cv2.CAP_PROP_FPS, 30)
+            self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M','J','P','G'))
 
             # Verify camera is working
             ret, frame = self.cap.read()
