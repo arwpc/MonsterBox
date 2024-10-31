@@ -1,7 +1,6 @@
 const voiceService = require('../services/voiceService');
 const soundService = require('../services/soundService');
 const logger = require('../scripts/logger');
-const { standardizeMP3, detectAudioFormat } = require('../scripts/audioUtils');
 const path = require('path');
 const fs = require('fs');
 const axios = require('axios');
@@ -34,15 +33,11 @@ async function downloadAudio(url, outputPath) {
             fs.mkdirSync(dir, { recursive: true });
         }
 
-        // Save the raw audio data
+        // Save the audio data
         fs.writeFileSync(normalizedPath, Buffer.from(response.data));
-        logger.info(`Saved raw audio file to ${normalizedPath}`);
+        logger.info(`Saved audio file to ${normalizedPath}`);
 
-        // Detect the actual format
-        const format = await detectAudioFormat(normalizedPath);
-        logger.info(`Detected format: ${format} for downloaded file`);
-
-        return format;
+        return normalizedPath;
     } catch (error) {
         logger.error(`Failed to download audio: ${error.message}`);
         throw error;
@@ -131,35 +126,27 @@ exports.generateAndSaveForScene = async (req, res) => {
         // Create filename and path
         const timestamp = Date.now();
         const sanitizedText = text.substring(0, 30).replace(/[^a-zA-Z0-9]/g, '_');
-        const rawFilename = `${timestamp}-${sanitizedText}_raw.wav`;
-        const rawPath = path.join('public', 'sounds', rawFilename).replace(/\\/g, '/');
-        logger.info(`Raw file path: ${rawPath}`);
+        const filename = `${timestamp}-${sanitizedText}.mp3`;
+        const filePath = path.join('public', 'sounds', filename).replace(/\\/g, '/');
+        logger.info(`File path: ${filePath}`);
 
         try {
-            // Download and process the audio file
+            // Download the audio file
             logger.info(`Downloading audio from ${result.url}`);
-            await downloadAudio(result.url, rawPath);
-            logger.info(`Converting audio to MP3`);
-            const finalPath = await standardizeMP3(rawPath);
-            logger.info(`Final audio path: ${finalPath}`);
-
-            // Clean up raw file
-            if (fs.existsSync(rawPath)) {
-                fs.unlinkSync(rawPath);
-                logger.info(`Cleaned up raw file`);
-            }
+            await downloadAudio(result.url, filePath);
+            logger.info(`Audio saved to ${filePath}`);
 
             // Create sound entry in the library
             logger.info(`Creating sound entry in library`);
             const soundEntry = await soundService.createSound({
                 name: text,
-                filename: path.basename(finalPath),
-                file: path.basename(finalPath),
+                filename: path.basename(filePath),
+                file: path.basename(filePath),
                 characterIds: [parseInt(characterId)],
                 type: 'voice',
                 created: new Date().toISOString(),
                 metadata: {
-                    originalText: text,  // Store the original text in metadata
+                    originalText: text,
                     voiceId: voice.speaker_id,
                     voiceSettings: voice.settings || {}
                 }
@@ -169,17 +156,17 @@ exports.generateAndSaveForScene = async (req, res) => {
             res.json({
                 success: true,
                 soundId: soundEntry.id,
-                filename: path.basename(finalPath),
-                path: `/sounds/${path.basename(finalPath)}`
+                filename: path.basename(filePath),
+                path: `/sounds/${path.basename(filePath)}`
             });
         } catch (err) {
             logger.error(`Failed to process audio file: ${err.message}`);
-            if (fs.existsSync(rawPath)) {
+            if (fs.existsSync(filePath)) {
                 try {
-                    fs.unlinkSync(rawPath);
-                    logger.info(`Cleaned up raw file after error`);
+                    fs.unlinkSync(filePath);
+                    logger.info(`Cleaned up file after error`);
                 } catch (cleanupError) {
-                    logger.error(`Failed to clean up raw file: ${cleanupError.message}`);
+                    logger.error(`Failed to clean up file: ${cleanupError.message}`);
                 }
             }
             throw err;
@@ -203,7 +190,8 @@ exports.generateSpeech = async (req, res) => {
             speed: options?.speed || 1.0,
             pitch: options?.pitch || 0,
             volume: options?.volume || 0,
-            extensions: ['wav']  // Request WAV format from Replica
+            extensions: ['mp3'],  // Request MP3 format directly
+            bitRate: 128  // Standard MP3 bitrate
         };
 
         // Generate the speech
@@ -212,39 +200,29 @@ exports.generateSpeech = async (req, res) => {
         // Create filename and path
         const timestamp = Date.now();
         const sanitizedText = text.substring(0, 30).replace(/[^a-zA-Z0-9]/g, '_');
-        const rawFilename = `${timestamp}-${sanitizedText}_raw.wav`;
-        const rawPath = path.join('public', 'sounds', rawFilename).replace(/\\/g, '/');
+        const filename = `${timestamp}-${sanitizedText}.mp3`;
+        const filePath = path.join('public', 'sounds', filename).replace(/\\/g, '/');
 
         try {
             // Download the audio file
-            await downloadAudio(result.url, rawPath);
-            logger.info(`Downloaded audio file to ${rawPath}`);
-
-            // Convert to standardized MP3 format
-            const finalPath = await standardizeMP3(rawPath);
-            logger.info(`Successfully processed audio file to ${finalPath}`);
-
-            // Clean up raw file if it still exists
-            if (fs.existsSync(rawPath)) {
-                fs.unlinkSync(rawPath);
-            }
+            await downloadAudio(result.url, filePath);
+            logger.info(`Downloaded audio file to ${filePath}`);
 
             res.json({
                 success: true,
-                filename: path.basename(finalPath),
-                path: `/sounds/${path.basename(finalPath)}`,
-                url: result.url,  // Include original URL for save-to-sounds
+                filename: path.basename(filePath),
+                path: `/sounds/${path.basename(filePath)}`,
+                url: result.url,
                 duration: result.duration,
                 metadata: result.metadata
             });
         } catch (err) {
             logger.error(`Failed to process audio file: ${err.message}`);
-            // Clean up raw file if it exists
-            if (fs.existsSync(rawPath)) {
+            if (fs.existsSync(filePath)) {
                 try {
-                    fs.unlinkSync(rawPath);
+                    fs.unlinkSync(filePath);
                 } catch (cleanupError) {
-                    logger.error(`Failed to clean up raw file: ${cleanupError.message}`);
+                    logger.error(`Failed to clean up file: ${cleanupError.message}`);
                 }
             }
             throw err;
