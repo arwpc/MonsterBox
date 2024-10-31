@@ -380,6 +380,7 @@ router.post('/select', async (req, res) => {
 
         process.stdout.on('data', (data) => {
             output += data.toString();
+            logger.info(`Camera verification stdout: ${data}`);
         });
 
         process.stderr.on('data', (data) => {
@@ -387,34 +388,38 @@ router.post('/select', async (req, res) => {
             logger.info(`Camera verification output: ${data}`);
         });
 
-        await new Promise((resolve, reject) => {
+        const result = await new Promise((resolve, reject) => {
             process.on('close', async (code) => {
                 activeProcesses.delete('verify');
-                if (code === 0) {
-                    try {
-                        const result = JSON.parse(output);
-                        if (result.success) {
-                            await saveCameraSettings({ 
-                                selectedCamera: cameraId,
-                                width: result.width,
-                                height: result.height,
-                                fps: result.fps
-                            });
-                            logger.info(`Camera ${cameraId} selected successfully with resolution ${result.width}x${result.height} @ ${result.fps}fps`);
-                            resolve();
-                        } else {
-                            reject(new Error(result.error || 'Camera verification failed'));
-                        }
-                    } catch (e) {
-                        reject(new Error('Invalid camera verification response'));
+                try {
+                    // Try to parse the last line of output as JSON
+                    const lines = output.trim().split('\n');
+                    const lastLine = lines[lines.length - 1];
+                    const result = JSON.parse(lastLine);
+                    
+                    if (result.success) {
+                        await saveCameraSettings({ 
+                            selectedCamera: cameraId,
+                            width: result.width,
+                            height: result.height,
+                            fps: result.fps
+                        });
+                        logger.info(`Camera ${cameraId} selected successfully with resolution ${result.width}x${result.height} @ ${result.fps}fps`);
+                        resolve(result);
+                    } else {
+                        reject(new Error(result.error || 'Camera verification failed'));
                     }
-                } else {
-                    reject(new Error(error || 'Camera verification failed'));
+                } catch (e) {
+                    reject(new Error(`Invalid camera verification response: ${e.message}`));
                 }
+            });
+
+            process.on('error', (err) => {
+                reject(err);
             });
         });
 
-        res.json({ success: true });
+        res.json({ success: true, ...result });
     } catch (error) {
         logger.error('Error selecting camera:', error);
         res.status(500).json({ error: error.message });
