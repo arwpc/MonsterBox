@@ -91,14 +91,9 @@ def initialize_camera(device_id: int, width: int = 320, height: int = 240) -> Tu
         cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Minimal buffer for lower latency
         cap.set(cv2.CAP_PROP_FPS, 15)        # Stable FPS for Pi
 
-        # Choose format based on resolution
-        if width > 640 or height > 480:
-            logger.info("Using MJPG format for high resolution")
-            fourcc = cv2.VideoWriter_fourcc(*'MJPG')
-        else:
-            logger.info("Using YUYV format for low resolution")
-            fourcc = cv2.VideoWriter_fourcc(*'YUYV')
-
+        # Always use MJPG format since we know it works
+        logger.info("Using MJPG format")
+        fourcc = cv2.VideoWriter_fourcc(*'MJPG')
         cap.set(cv2.CAP_PROP_FOURCC, fourcc)
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
