@@ -17,11 +17,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Force V4L2 backend before importing OpenCV
-os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0"
-os.environ["OPENCV_VIDEOIO_PRIORITY_GSTREAMER"] = "0"
+# Force V4L2 backend
 os.environ["OPENCV_VIDEOIO_PRIORITY_V4L2"] = "100"
-os.environ["OPENCV_VIDEOIO_BACKEND"] = "v4l2"
 
 try:
     import numpy as np
@@ -44,29 +41,56 @@ except ImportError as e:
     sys.exit(1)
 
 def initialize_camera(device_id: int, width: int = 320, height: int = 240) -> Optional[cv2.VideoCapture]:
-    """Initialize camera with MJPG format first, fallback to others if needed."""
+    """Initialize camera with optimized settings for Raspberry Pi."""
     try:
         # Add delay before opening camera
-        time.sleep(1.0)  # Increased delay for better stability
+        time.sleep(1.0)
         
-        # Try MJPG format first as it's most likely to work
+        # Open camera with V4L2 backend
         cap = cv2.VideoCapture(device_id, cv2.CAP_V4L2)
         if not cap.isOpened():
             return None
 
-        # Configure camera buffer size
+        # Configure camera properties
         cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Minimal buffer for lower latency
-
-        # Try MJPG first
-        fourcc = cv2.VideoWriter_fourcc(*'MJPG')
-        cap.set(cv2.CAP_PROP_FOURCC, fourcc)
+        cap.set(cv2.CAP_PROP_FPS, 15)        # Stable FPS for Pi
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-        cap.set(cv2.CAP_PROP_FPS, 15)  # Lower FPS for stability
+
+        # Try MJPG format first
+        fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+        cap.set(cv2.CAP_PROP_FOURCC, fourcc)
         
-        # Additional camera settings
+        # Camera quality settings
         if hasattr(cv2, 'CAP_PROP_AUTO_EXPOSURE'):
             cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1)  # Auto exposure
+        if hasattr(cv2, 'CAP_PROP_BRIGHTNESS'):
+            cap.set(cv2.CAP_PROP_BRIGHTNESS, 0.5)   # Mid brightness
+        if hasattr(cv2, 'CAP_PROP_CONTRAST'):
+            cap.set(cv2.CAP_PROP_CONTRAST, 0.5)     # Mid contrast
+
+        ret, frame = cap.read()
+        if ret and frame is not None and frame.size > 0:
+            logger.info("Successfully initialized camera with MJPG format")
+            return cap
+
+        # If MJPG fails, try YUYV
+        cap.release()
+        time.sleep(1.0)
+        
+        cap = cv2.VideoCapture(device_id, cv2.CAP_V4L2)
+        if not cap.isOpened():
+            return None
+
+        fourcc = cv2.VideoWriter_fourcc(*'YUYV')
+        cap.set(cv2.CAP_PROP_FOURCC, fourcc)
+        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        cap.set(cv2.CAP_PROP_FPS, 15)
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+
+        if hasattr(cv2, 'CAP_PROP_AUTO_EXPOSURE'):
+            cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1)
         if hasattr(cv2, 'CAP_PROP_BRIGHTNESS'):
             cap.set(cv2.CAP_PROP_BRIGHTNESS, 0.5)
         if hasattr(cv2, 'CAP_PROP_CONTRAST'):
@@ -74,39 +98,8 @@ def initialize_camera(device_id: int, width: int = 320, height: int = 240) -> Op
 
         ret, frame = cap.read()
         if ret and frame is not None and frame.size > 0:
-            logger.info("Successfully initialized camera with MJPG format")
+            logger.info("Successfully initialized camera with YUYV format")
             return cap
-
-        # If MJPG fails, try other formats
-        for fmt in ['YUYV', 'H264']:
-            cap.release()
-            time.sleep(1.0)  # Increased delay between format attempts
-            
-            cap = cv2.VideoCapture(device_id, cv2.CAP_V4L2)
-            if not cap.isOpened():
-                continue
-
-            # Configure camera buffer size
-            cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-
-            fourcc = cv2.VideoWriter_fourcc(*fmt)
-            cap.set(cv2.CAP_PROP_FOURCC, fourcc)
-            cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-            cap.set(cv2.CAP_PROP_FPS, 15)
-            
-            # Additional camera settings
-            if hasattr(cv2, 'CAP_PROP_AUTO_EXPOSURE'):
-                cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1)
-            if hasattr(cv2, 'CAP_PROP_BRIGHTNESS'):
-                cap.set(cv2.CAP_PROP_BRIGHTNESS, 0.5)
-            if hasattr(cv2, 'CAP_PROP_CONTRAST'):
-                cap.set(cv2.CAP_PROP_CONTRAST, 0.5)
-
-            ret, frame = cap.read()
-            if ret and frame is not None and frame.size > 0:
-                logger.info(f"Successfully initialized camera with {fmt} format")
-                return cap
 
         return None
 
@@ -142,7 +135,7 @@ class CameraLock:
                         pass
 
             # Add delay before acquiring lock
-            time.sleep(0.5)
+            time.sleep(1.0)
 
             self.lock_file = open(self.lock_path, 'w')
             fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -167,7 +160,7 @@ class CameraLock:
                 except OSError:
                     pass
                 # Add delay after releasing lock
-                time.sleep(0.5)
+                time.sleep(1.0)
         except Exception:
             pass
 
@@ -215,45 +208,6 @@ class CameraSettings:
             if 'cap' in locals():
                 cap.release()
             self.camera_lock.release()
-
-class HeadTracker:
-    """Manages head tracking subprocess."""
-    
-    def __init__(self, camera_id: int = 0):
-        self.camera_id = camera_id
-        self.process = None
-        self.script_path = os.path.join(os.path.dirname(__file__), 'head_track.py')
-
-    def start(self, servo_id: int = 0) -> bool:
-        """Start head tracking process."""
-        try:
-            if self.process:
-                self.stop()
-            
-            # Add delay before starting new process
-            time.sleep(0.5)
-            
-            self.process = subprocess.Popen(
-                ['python3', self.script_path, 'start', str(servo_id)],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-            )
-            return True
-        except Exception as e:
-            logger.error(f"Failed to start head tracking: {e}")
-            return False
-
-    def stop(self) -> bool:
-        """Stop head tracking process."""
-        try:
-            if self.process:
-                self.process.terminate()
-                self.process.wait(timeout=5)
-                self.process = None
-            return True
-        except Exception as e:
-            logger.error(f"Failed to stop head tracking: {e}")
-            return False
 
 class MotionDetector:
     """Handles motion detection and visualization."""

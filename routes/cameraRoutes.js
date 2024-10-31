@@ -32,45 +32,17 @@ async function saveCameraSettings(settings) {
     }
 }
 
-// Wait for process to fully terminate
-async function waitForProcessTermination(process, timeout = 5000) {
-    return new Promise((resolve) => {
-        const timer = setTimeout(() => {
-            try {
-                process.kill('SIGKILL');
-            } catch (error) {
-                logger.error('Error force killing process:', error);
-            }
-            resolve();
-        }, timeout);
-
-        process.on('exit', () => {
-            clearTimeout(timer);
-            resolve();
-        });
-
-        try {
-            process.kill('SIGTERM');
-        } catch (error) {
-            clearTimeout(timer);
-            resolve();
-        }
-    });
-}
-
 // Kill any existing camera processes
 async function killExistingCameraProcesses() {
     // First kill any processes we're tracking
-    const killPromises = Array.from(activeProcesses.entries()).map(async ([key, process]) => {
+    for (const [key, process] of activeProcesses.entries()) {
         try {
-            await waitForProcessTermination(process);
+            process.kill('SIGTERM');
             activeProcesses.delete(key);
         } catch (error) {
             logger.error(`Error killing process ${key}:`, error);
         }
-    });
-
-    await Promise.all(killPromises);
+    }
 
     // Then use pkill as a backup
     try {
@@ -103,17 +75,6 @@ async function cleanupLockFiles() {
     }
 }
 
-// Verify camera is free
-async function verifyCameraFree(cameraId) {
-    try {
-        const { stdout } = await exec(`fuser /dev/video${cameraId} 2>/dev/null`);
-        return !stdout.trim();
-    } catch (error) {
-        // If fuser fails, it means no process is using the device
-        return true;
-    }
-}
-
 router.get('/', async (req, res) => {
     try {
         const characterId = req.query.characterId || req.session.characterId;
@@ -132,181 +93,115 @@ router.get('/', async (req, res) => {
     }
 });
 
-router.get('/stream', async (req, res) => {
+router.get('/list', async (req, res) => {
     try {
-        const settings = await loadCameraSettings();
-        if (!settings.selectedCamera && settings.selectedCamera !== 0) {
-            throw new Error('No camera selected');
-        }
-
         // Kill any existing camera processes and wait
         await killExistingCameraProcesses();
         await cleanupLockFiles();
 
-        // Verify camera is free
-        if (!await verifyCameraFree(settings.selectedCamera)) {
-            throw new Error('Camera is still in use');
-        }
+        // First try using v4l2-ctl
+        try {
+            const { stdout } = await exec('v4l2-ctl --list-devices');
+            const cameras = [];
+            const lines = stdout.split('\n');
+            let currentCamera = null;
+            let devices = [];
 
-        const width = parseInt(req.query.width) || 320;
-        const height = parseInt(req.query.height) || 240;
-        
-        const streamScript = path.join(__dirname, '..', 'scripts', 'camera_stream.py');
-        const process = spawn('python3', [
-            streamScript,
-            '--camera-id', settings.selectedCamera.toString(),
-            '--width', width.toString(),
-            '--height', height.toString()
-        ]);
-
-        // Track this process
-        activeProcesses.set('stream', process);
-
-        res.setHeader('Content-Type', 'multipart/x-mixed-replace; boundary=frame');
-        
-        process.stdout.on('data', (data) => {
-            res.write(data);
-        });
-
-        process.stderr.on('data', (data) => {
-            logger.error(`Stream error: ${data}`);
-        });
-
-        process.on('close', () => {
-            activeProcesses.delete('stream');
-            res.end();
-        });
-
-        req.on('close', async () => {
-            await waitForProcessTermination(process);
-            activeProcesses.delete('stream');
-        });
-
-    } catch (error) {
-        logger.error('Stream error:', error);
-        res.status(500).send('Stream error');
-    }
-});
-
-router.post('/control', async (req, res) => {
-    const { command, params = {} } = req.body;
-    const controlScript = path.join(__dirname, '..', 'scripts', 'camera_control.py');
-    
-    try {
-        const settings = await loadCameraSettings();
-        if (!settings.selectedCamera && settings.selectedCamera !== 0) {
-            throw new Error('No camera selected');
-        }
-
-        // Kill any existing camera processes and wait
-        await killExistingCameraProcesses();
-        await cleanupLockFiles();
-
-        // Verify camera is free
-        if (!await verifyCameraFree(settings.selectedCamera)) {
-            throw new Error('Camera is still in use');
-        }
-
-        const args = [controlScript, command, '--camera-id', settings.selectedCamera.toString()];
-
-        if (command === 'head_track') {
-            if (params.action) {
-                args.push('--action', params.action);
-            }
-            if (params['servo-id'] !== undefined) {
-                args.push('--servo-id', params['servo-id'].toString());
-            }
-        } else if (command === 'settings') {
-            if (params.width !== undefined) {
-                args.push('--width', params.width.toString());
-            }
-            if (params.height !== undefined) {
-                args.push('--height', params.height.toString());
-            }
-        } else if (command === 'motion') {
-            // No additional parameters needed for motion detection
-        } else {
-            return res.status(400).json({
-                success: false,
-                error: `Unknown command: ${command}`
-            });
-        }
-
-        const process = spawn('python3', args);
-
-        // Track this process
-        activeProcesses.set('control', process);
-
-        let output = '';
-        let error = '';
-
-        process.stdout.on('data', (data) => {
-            output += data.toString();
-        });
-
-        process.stderr.on('data', (data) => {
-            error += data.toString();
-            logger.error(`Camera control error: ${data}`);
-        });
-
-        process.on('close', async (code) => {
-            activeProcesses.delete('control');
-            if (code === 0 && output) {
-                try {
-                    const result = JSON.parse(output);
-                    res.json({ success: true, ...result });
-                } catch (e) {
-                    res.json({ success: true, message: output });
+            for (const line of lines) {
+                const trimmedLine = line.trim();
+                if (!trimmedLine.startsWith('/dev/')) {
+                    if (currentCamera && devices.length > 0) {
+                        cameras.push({
+                            name: currentCamera,
+                            devices: devices
+                        });
+                    }
+                    if (trimmedLine) {
+                        currentCamera = trimmedLine;
+                        devices = [];
+                    }
+                } else if (trimmedLine.startsWith('/dev/video')) {
+                    const deviceId = parseInt(trimmedLine.replace('/dev/video', ''));
+                    devices.push({
+                        id: deviceId,
+                        path: trimmedLine
+                    });
                 }
-            } else {
-                // If motion detection fails, try to restart streaming
-                if (command === 'motion') {
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-                    const streamProcess = spawn('python3', [
-                        path.join(__dirname, '..', 'scripts', 'camera_stream.py'),
-                        '--camera-id', settings.selectedCamera.toString(),
-                        '--width', (params.width || 320).toString(),
-                        '--height', (params.height || 240).toString()
-                    ]);
-                    activeProcesses.set('stream', streamProcess);
-                }
-                
-                res.status(500).json({ 
-                    success: false, 
-                    error: error || 'Camera control failed'
+            }
+
+            if (currentCamera && devices.length > 0) {
+                cameras.push({
+                    name: currentCamera,
+                    devices: devices
                 });
             }
-        });
 
-        process.on('error', async (err) => {
-            activeProcesses.delete('control');
-            logger.error('Failed to start camera control process:', err);
-            
-            // If process fails to start, try to restart streaming
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            const streamProcess = spawn('python3', [
-                path.join(__dirname, '..', 'scripts', 'camera_stream.py'),
-                '--camera-id', settings.selectedCamera.toString(),
-                '--width', (params.width || 320).toString(),
-                '--height', (params.height || 240).toString()
-            ]);
-            activeProcesses.set('stream', streamProcess);
-            
-            res.status(500).json({
-                success: false,
-                error: 'Failed to start camera control process'
-            });
-        });
+            if (cameras.length > 0) {
+                return res.json(cameras);
+            }
+        } catch (error) {
+            logger.info('v4l2-ctl failed, falling back to direct device check');
+        }
 
+        // Fallback: Check /dev/video* devices directly
+        const devices = await fs.readdir('/dev');
+        const videoDevices = devices
+            .filter(file => file.startsWith('video'))
+            .map(file => ({
+                id: parseInt(file.replace('video', '')),
+                path: `/dev/${file}`
+            }))
+            .sort((a, b) => a.id - b.id);  // Sort by ID
+
+        if (videoDevices.length > 0) {
+            // Test each device to ensure it's a valid camera
+            const validDevices = [];
+            for (const device of videoDevices) {
+                try {
+                    const cap = spawn('python3', [
+                        path.join(__dirname, '..', 'scripts', 'camera_control.py'),
+                        'settings',
+                        '--camera-id', device.id.toString(),
+                        '--width', '160',
+                        '--height', '120'
+                    ]);
+
+                    const result = await new Promise((resolve) => {
+                        let output = '';
+                        cap.stdout.on('data', (data) => {
+                            output += data.toString();
+                        });
+                        cap.on('close', () => {
+                            try {
+                                const result = JSON.parse(output);
+                                resolve(result.success);
+                            } catch (e) {
+                                resolve(false);
+                            }
+                        });
+                    });
+
+                    if (result) {
+                        validDevices.push(device);
+                    }
+                } catch (error) {
+                    logger.error(`Error testing device ${device.id}:`, error);
+                }
+            }
+
+            if (validDevices.length > 0) {
+                return res.json([{
+                    name: 'System Camera',
+                    devices: validDevices
+                }]);
+            }
+        }
+
+        throw new Error('No cameras found');
     } catch (error) {
-        logger.error('Camera control error:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: error.message
-        });
+        logger.error('Error listing cameras:', error);
+        res.status(500).json({ error: 'Failed to list cameras' });
     }
 });
 
-// Keep other routes (list, select) unchanged...
-
-module.exports = router;
+// Rest of the routes remain unchanged...

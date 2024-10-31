@@ -1,564 +1,268 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
-    <link rel="stylesheet" href="/css/style.css">
     <style>
-        .camera-container {
-            display: flex;
-            gap: 20px;
-            margin: 20px 0;
-        }
-
-        .camera-feed {
-            flex: 1;
-            min-width: 0;
-            position: relative;
-        }
-
-        .camera-controls {
-            flex: 0 0 300px;
-            padding: 20px;
-            background-color: #001100;
-            border: 1px solid #00ff00;
-            border-radius: 5px;
-        }
-
-        #cameraStream {
-            width: 100%;
-            max-width: 640px;
-            border: 2px solid #00ff00;
-            background-color: #000;
-            display: block;
-        }
-
-        .control-group {
-            margin-bottom: 20px;
-            padding: 10px;
-            border: 1px solid #003300;
-            border-radius: 5px;
-        }
-
-        .status-indicator {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            margin-right: 5px;
-            transition: all 0.3s ease;
-        }
-
-        .status-connecting {
-            background-color: #ffff00;
-            box-shadow: 0 0 5px #ffff00;
-            animation: blink 1s infinite;
-        }
-
-        .status-connected {
-            background-color: #00ff00;
-            box-shadow: 0 0 5px #00ff00;
-        }
-
-        .status-disconnected {
-            background-color: #ff0000;
-            box-shadow: 0 0 5px #ff0000;
-        }
-
-        @keyframes blink {
-            50% { opacity: 0.5; }
-        }
-
-        .status-text {
-            display: inline-block;
-            margin-left: 5px;
+        body {
+            background-color: black;
             color: #00ff00;
-            font-size: 0.9em;
-        }
-
-        #motionData, #headTrackData {
             font-family: monospace;
-            margin-top: 10px;
-            padding: 10px;
-            background-color: #000000;
-            border: 1px solid #00ff00;
-            height: 150px;
-            overflow-y: auto;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
             color: #00ff00;
-            font-size: 12px;
+            text-shadow: 0 0 10px #00ff00;
         }
-
-        select, input[type="range"] {
-            background-color: #001100;
-            color: #00ff00;
-            border: 1px solid #00ff00;
-            padding: 5px;
-            margin: 5px 0;
-            width: 100%;
+        .camera-feed {
+            position: relative;
+            margin-bottom: 20px;
         }
-
-        button {
-            background-color: #003300;
-            color: #00ff00;
-            border: 1px solid #00ff00;
-            padding: 8px 16px;
-            margin: 5px 0;
-            cursor: pointer;
-            width: 100%;
-            border-radius: 4px;
-            transition: all 0.3s ease;
+        .camera-feed img {
+            max-width: 100%;
+            border: 2px solid #00ff00;
+            box-shadow: 0 0 10px #00ff00;
         }
-
-        button:hover {
-            background-color: #004400;
-            box-shadow: 0 0 5px #00ff00;
-        }
-
-        button:disabled {
-            background-color: #001100;
-            color: #004400;
-            border-color: #004400;
-            cursor: not-allowed;
-        }
-
         .error-message {
             color: #ff0000;
-            background-color: #330000;
+            background-color: rgba(255, 0, 0, 0.1);
             border: 1px solid #ff0000;
             padding: 10px;
             margin: 10px 0;
             border-radius: 4px;
-            display: none;
         }
-
-        .camera-select {
-            margin-bottom: 10px;
+        .info-message {
+            color: #00ff00;
+            background-color: rgba(0, 255, 0, 0.1);
+            border: 1px solid #00ff00;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
         }
-
-        .placeholder-text {
+        .control-panel {
+            background-color: rgba(0, 255, 0, 0.1);
+            border: 1px solid #00ff00;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 4px;
+            max-width: 400px;
+        }
+        select, button {
+            background-color: black;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 5px 10px;
+            margin: 5px 0;
+            width: 100%;
+            cursor: pointer;
+        }
+        select:hover, button:hover {
+            background-color: #003300;
+        }
+        .status {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        .connected {
+            background-color: #00ff00;
+            box-shadow: 0 0 10px #00ff00;
+        }
+        .disconnected {
+            background-color: #ff0000;
+            box-shadow: 0 0 10px #ff0000;
+        }
+        .motion-data {
+            font-family: monospace;
+            white-space: pre-wrap;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: rgba(0, 255, 0, 0.1);
+            border: 1px solid #00ff00;
+            border-radius: 4px;
+        }
+        h2 {
+            color: #00ff00;
+            margin-top: 20px;
+            text-shadow: 0 0 5px #00ff00;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        .loading {
             color: #00ff00;
             text-align: center;
             padding: 20px;
-            border: 2px dashed #00ff00;
-            margin: 20px 0;
-            font-size: 1.2em;
+            display: none;
         }
-
-        .controls-disabled {
-            opacity: 0.5;
-            pointer-events: none;
+        @keyframes pulse {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
         }
-
-        .connection-status {
-            margin-top: 10px;
-            padding: 5px;
-            border-radius: 3px;
-            background-color: #001100;
-            border: 1px solid #003300;
+        .loading.active {
+            display: block;
+            animation: pulse 1s infinite;
         }
     </style>
 </head>
 <body>
     <h1><%= title %></h1>
 
-    <div class="camera-container">
-        <div class="camera-feed">
-            <div style="position: relative;">
-                <img id="cameraStream" alt="Camera Stream" src="/images/no-stream.jpg">
+    <div class="camera-feed">
+        <img id="cameraStream" src="/images/no-stream.jpg" alt="Camera Stream">
+        <div id="loadingOverlay" class="loading">Loading...</div>
+    </div>
+
+    <div id="errorMessage" class="error-message" style="display: none;"></div>
+    <div id="infoMessage" class="info-message" style="display: none;"></div>
+
+    <div class="control-panel">
+        <div class="section">
+            <h2>Camera Selection</h2>
+            <select id="cameraSelect">
+                <option value="">Select Camera...</option>
+            </select>
+            <button onclick="applyCameraSelection()">Apply Camera Selection</button>
+            <div class="status">
+                <div id="connectionStatus" class="status-indicator disconnected"></div>
+                <span id="connectionText">Disconnected</span>
             </div>
-            <div id="errorMessage" class="error-message"></div>
-            <div id="placeholderMessage" class="placeholder-text">Please select a camera and click "Apply Camera Selection" to begin</div>
         </div>
-        
-        <div class="camera-controls">
-            <!-- Camera Selection (First) -->
-            <div class="control-group">
-                <h3>Camera Selection</h3>
-                <div class="camera-select">
-                    <select id="cameraSelect" style="margin-bottom: 10px;">
-                        <option value="">Select Camera...</option>
-                    </select>
-                    <button id="applyCameraSelect">Apply Camera Selection</button>
-                    <div class="connection-status">
-                        <div class="status-indicator status-disconnected" id="connectionIndicator"></div>
-                        <span class="status-text" id="connectionStatus">Disconnected</span>
-                    </div>
-                </div>
-                <div class="control-group">
-                    <h3>Camera Settings</h3>
-                    <label for="resolution">Resolution:</label>
-                    <select id="resolution">
-                        <option value="320,240" selected>320x240 (Recommended)</option>
-                        <option value="160,120">160x120 (Low)</option>
-                        <option value="640,480">640x480 (High)</option>
-                    </select>
-                    <button onclick="updateSettings()">Apply Settings</button>
-                </div>
-            </div>
 
-            <!-- Motion Detection (Second) -->
-            <div id="cameraControls" class="controls-disabled">
-                <div class="control-group">
-                    <h3>Motion Detection</h3>
-                    <button id="toggleMotion">Start Motion Detection</button>
-                    <div id="motionData">No motion data</div>
-                </div>
+        <div class="section">
+            <h2>Camera Settings</h2>
+            <div>Resolution:</div>
+            <select id="resolution" onchange="applySettings()">
+                <option value="320x240" selected>320x240 (Recommended)</option>
+                <option value="640x480">640x480</option>
+                <option value="800x600">800x600</option>
+                <option value="1280x720">1280x720</option>
+            </select>
+            <button onclick="applySettings()">Apply Settings</button>
+        </div>
 
-                <!-- Head Tracking (Third) -->
-                <div class="control-group">
-                    <h3>Head Tracking</h3>
-                    <select id="servoSelect" style="margin-bottom: 10px;">
-                        <option value="">Select Servo...</option>
-                        <option value="0">Servo 0</option>
-                        <option value="1">Servo 1</option>
-                        <option value="2">Servo 2</option>
-                        <option value="3">Servo 3</option>
-                    </select>
-                    <button id="toggleHeadTrack">Start Head Tracking</button>
-                    <div id="headTrackData">No head tracking data</div>
-                </div>
-            </div>
+        <div class="section">
+            <h2>Motion Detection</h2>
+            <button id="motionButton" onclick="toggleMotion()">Start Motion Detection</button>
+            <div id="motionData" class="motion-data">No motion data</div>
+        </div>
+
+        <div class="section">
+            <h2>Head Tracking</h2>
+            <select id="servoSelect">
+                <option value="">Select Servo...</option>
+            </select>
+            <button id="trackingButton" onclick="toggleTracking()">Start Head Tracking</button>
         </div>
     </div>
 
-    <a href="/" class="button">Back to Main Menu</a>
-
     <script>
-        let motionDetectionActive = false;
-        let headTrackingActive = false;
-        let motionInterval = null;
-        let headTrackInterval = null;
-        let streamActive = false;
-        let consecutiveErrors = 0;
-        const MAX_CONSECUTIVE_ERRORS = 3;
+        let isStreaming = false;
+        let isMotionDetecting = false;
+        let isTracking = false;
+        let streamCheckInterval;
+        let motionCheckInterval;
+        let reconnectAttempts = 0;
+        const MAX_RECONNECT_ATTEMPTS = 3;
+        const initialCamera = '<%= selectedCamera %>';
+        const SELECTED_CAMERA = initialCamera === 'null' ? null : parseInt(initialCamera);
 
-        const streamImg = document.getElementById('cameraStream');
-        const errorMessage = document.getElementById('errorMessage');
-        const cameraSelect = document.getElementById('cameraSelect');
-        const servoSelect = document.getElementById('servoSelect');
-        const applyCameraSelect = document.getElementById('applyCameraSelect');
-        const placeholderMessage = document.getElementById('placeholderMessage');
-        const cameraControls = document.getElementById('cameraControls');
-        const connectionIndicator = document.getElementById('connectionIndicator');
-        const connectionStatus = document.getElementById('connectionStatus');
-
-        function updateConnectionStatus(status) {
-            connectionIndicator.className = 'status-indicator status-' + status;
-            switch(status) {
-                case 'connecting':
-                    connectionStatus.textContent = 'Connecting...';
-                    break;
-                case 'connected':
-                    connectionStatus.textContent = 'Connected';
-                    break;
-                case 'disconnected':
-                    connectionStatus.textContent = 'Disconnected';
-                    break;
-            }
+        async function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
         }
 
-        async function loadCameras() {
+        async function showInfo(message) {
+            const infoDiv = document.getElementById('infoMessage');
+            infoDiv.textContent = message;
+            infoDiv.style.display = 'block';
+            setTimeout(() => {
+                infoDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        async function fetchCameras() {
             try {
+                document.getElementById('loadingOverlay').classList.add('active');
                 const response = await fetch('/camera/list');
                 if (!response.ok) {
                     throw new Error('Failed to fetch cameras');
                 }
                 const cameras = await response.json();
+                const select = document.getElementById('cameraSelect');
+                select.innerHTML = '<option value="">Select Camera...</option>';
                 
-                while (cameraSelect.options.length > 1) {
-                    cameraSelect.remove(1);
-                }
-
                 cameras.forEach(camera => {
                     camera.devices.forEach(device => {
                         const option = document.createElement('option');
                         option.value = device.id;
                         option.textContent = `${camera.name} (${device.path})`;
-                        cameraSelect.appendChild(option);
+                        select.appendChild(option);
                     });
                 });
 
-                const selectedCamera = '<%= selectedCamera %>';
-                if (selectedCamera && selectedCamera !== 'null') {
-                    cameraSelect.value = selectedCamera;
+                // Set previously selected camera if any
+                if (SELECTED_CAMERA !== null) {
+                    select.value = SELECTED_CAMERA;
+                    await applyCameraSelection();
                 }
             } catch (error) {
-                console.error('Failed to load cameras:', error);
                 showError('Failed to load cameras: ' + error.message);
+            } finally {
+                document.getElementById('loadingOverlay').classList.remove('active');
             }
         }
 
-        applyCameraSelect.addEventListener('click', async function() {
-            const cameraId = parseInt(cameraSelect.value);
-            if (!cameraId && cameraId !== 0) {
+        async function applyCameraSelection() {
+            const cameraId = document.getElementById('cameraSelect').value;
+            if (!cameraId) {
                 showError('Please select a camera');
                 return;
             }
 
             try {
-                updateConnectionStatus('connecting');
-                applyCameraSelect.disabled = true;
-
+                document.getElementById('loadingOverlay').classList.add('active');
                 const response = await fetch('/camera/select', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ cameraId })
+                    body: JSON.stringify({ cameraId: parseInt(cameraId) })
                 });
 
                 if (!response.ok) {
                     throw new Error('Failed to select camera');
                 }
 
-                // Wait for camera initialization
-                await new Promise(resolve => setTimeout(resolve, 1000));
-
-                cameraControls.classList.remove('controls-disabled');
-                placeholderMessage.style.display = 'none';
-                streamActive = true;
-                updateConnectionStatus('connected');
-                initializeStream();
+                showInfo('Camera selected successfully');
+                startStream();
             } catch (error) {
-                console.error('Failed to select camera:', error);
                 showError('Failed to select camera: ' + error.message);
-                updateConnectionStatus('disconnected');
             } finally {
-                applyCameraSelect.disabled = false;
+                document.getElementById('loadingOverlay').classList.remove('active');
             }
-        });
+        }
 
-        document.getElementById('toggleHeadTrack').addEventListener('click', async function() {
-            if (headTrackingActive) {
-                await stopHeadTracking();
-            } else {
-                await startHeadTracking();
-            }
-        });
-
-        async function startHeadTracking() {
-            const servoId = servoSelect.value;
-            if (!servoId && servoId !== '0') {
-                showError('Please select a servo');
-                return;
-            }
-
+        async function applySettings() {
+            const [width, height] = document.getElementById('resolution').value.split('x');
+            
             try {
-                // Stop other features first
-                if (motionDetectionActive) {
-                    await stopMotionDetection();
-                }
-                streamActive = false;
-                streamImg.src = '/images/no-stream.jpg';
-                
-                // Wait for camera to be released
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                
+                document.getElementById('loadingOverlay').classList.add('active');
                 const response = await fetch('/camera/control', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        command: 'head_track',
-                        params: {
-                            action: 'start',
-                            'servo-id': parseInt(servoId)
-                        }
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to start head tracking');
-                }
-
-                const data = await response.json();
-                if (!data.success) {
-                    throw new Error(data.error || 'Failed to start head tracking');
-                }
-
-                headTrackingActive = true;
-                document.getElementById('toggleHeadTrack').textContent = 'Stop Head Tracking';
-                document.getElementById('headTrackData').textContent = 'Head tracking active';
-                servoSelect.disabled = true;
-
-            } catch (error) {
-                console.error('Failed to start head tracking:', error);
-                showError('Failed to start head tracking: ' + error.message);
-                await stopHeadTracking();
-            }
-        }
-
-        async function stopHeadTracking() {
-            try {
-                const response = await fetch('/camera/control', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        command: 'head_track',
-                        params: {
-                            action: 'stop'
-                        }
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to stop head tracking');
-                }
-
-            } catch (error) {
-                console.error('Failed to stop head tracking:', error);
-                showError('Failed to stop head tracking: ' + error.message);
-            } finally {
-                headTrackingActive = false;
-                document.getElementById('toggleHeadTrack').textContent = 'Start Head Tracking';
-                document.getElementById('headTrackData').textContent = 'No head tracking data';
-                servoSelect.disabled = false;
-
-                // Wait before restarting stream
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                
-                // Restart the stream
-                streamActive = true;
-                initializeStream();
-            }
-        }
-
-        function initializeStream() {
-            if (streamActive) {
-                const [width, height] = document.getElementById('resolution').value.split(',');
-                streamImg.src = `/camera/stream?width=${width}&height=${height}&t=${Date.now()}`;
-                streamImg.onerror = function() {
-                    updateConnectionStatus('disconnected');
-                };
-                streamImg.onload = function() {
-                    updateConnectionStatus('connected');
-                };
-            }
-        }
-
-        function showError(message) {
-            errorMessage.textContent = message;
-            errorMessage.style.display = 'block';
-            setTimeout(() => {
-                errorMessage.style.display = 'none';
-            }, 5000);
-        }
-
-        document.getElementById('toggleMotion').addEventListener('click', async function() {
-            if (motionDetectionActive) {
-                await stopMotionDetection();
-            } else {
-                await startMotionDetection();
-            }
-        });
-
-        async function startMotionDetection() {
-            try {
-                // Stop other features first
-                if (headTrackingActive) {
-                    await stopHeadTracking();
-                }
-                streamActive = false;
-                streamImg.src = '/images/no-stream.jpg';
-                
-                // Wait for camera to be released
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                
-                motionDetectionActive = true;
-                document.getElementById('toggleMotion').textContent = 'Stop Motion Detection';
-                consecutiveErrors = 0;
-                
-                // Increased interval to 250ms (4 FPS) to reduce load
-                motionInterval = setInterval(async () => {
-                    if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
-                        console.error('Too many consecutive errors, stopping motion detection');
-                        await stopMotionDetection();
-                        showError('Motion detection stopped due to repeated errors');
-                        return;
-                    }
-
-                    try {
-                        const response = await fetch('/camera/control', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({
-                                command: 'motion'
-                            })
-                        });
-
-                        if (!response.ok) {
-                            throw new Error('Motion detection failed');
-                        }
-
-                        const data = await response.json();
-                        
-                        if (data.success) {
-                            consecutiveErrors = 0;
-                            // Update the image with the processed frame
-                            if (data.frame) {
-                                streamImg.src = 'data:image/jpeg;base64,' + data.frame;
-                            }
-                            
-                            // Update motion data display
-                            document.getElementById('motionData').textContent = 
-                                JSON.stringify({
-                                    motion_detected: data.motion_detected,
-                                    center_x: data.center_x,
-                                    center_y: data.center_y,
-                                    width: data.width,
-                                    height: data.height,
-                                    area: data.area
-                                }, null, 2);
-                        } else {
-                            throw new Error(data.error || 'Motion detection failed');
-                        }
-                    } catch (error) {
-                        console.error('Motion detection error:', error);
-                        consecutiveErrors++;
-                        if (consecutiveErrors < MAX_CONSECUTIVE_ERRORS) {
-                            showError('Motion detection error: ' + error.message);
-                        }
-                    }
-                }, 250); // Increased interval to 250ms
-            } catch (error) {
-                console.error('Failed to start motion detection:', error);
-                showError('Failed to start motion detection: ' + error.message);
-                await stopMotionDetection();
-            }
-        }
-
-        async function stopMotionDetection() {
-            motionDetectionActive = false;
-            document.getElementById('toggleMotion').textContent = 'Start Motion Detection';
-            if (motionInterval) {
-                clearInterval(motionInterval);
-                motionInterval = null;
-            }
-            document.getElementById('motionData').textContent = 'No motion data';
-            consecutiveErrors = 0;
-            
-            // Wait before restarting stream
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            // Restart the stream
-            streamActive = true;
-            initializeStream();
-        }
-
-        async function updateSettings() {
-            const [width, height] = document.getElementById('resolution').value.split(',');
-            
-            try {
-                const response = await fetch('/camera/control', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         command: 'settings',
@@ -570,36 +274,194 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error('Failed to update camera settings');
+                    throw new Error('Failed to apply settings');
                 }
 
-                const data = await response.json();
-                if (!data.success) {
-                    throw new Error(data.error || 'Failed to update settings');
-                }
-
-                // Restart the stream with new resolution
-                if (streamActive) {
-                    initializeStream();
-                }
+                showInfo('Settings applied successfully');
+                startStream();
             } catch (error) {
-                console.error('Settings update error:', error);
-                showError('Failed to update settings: ' + error.message);
+                showError('Failed to apply settings: ' + error.message);
+            } finally {
+                document.getElementById('loadingOverlay').classList.remove('active');
             }
         }
 
-        window.addEventListener('beforeunload', async () => {
-            if (headTrackingActive) {
-                await stopHeadTracking();
+        function updateConnectionStatus(connected) {
+            const status = document.getElementById('connectionStatus');
+            const text = document.getElementById('connectionText');
+            if (connected) {
+                status.className = 'status-indicator connected';
+                text.textContent = 'Connected';
+            } else {
+                status.className = 'status-indicator disconnected';
+                text.textContent = 'Disconnected';
             }
-            if (motionDetectionActive) {
-                await stopMotionDetection();
+        }
+
+        function startStream() {
+            const img = document.getElementById('cameraStream');
+            const [width, height] = document.getElementById('resolution').value.split('x');
+            img.src = `/camera/stream?width=${width}&height=${height}&t=${Date.now()}`;
+            isStreaming = true;
+            updateConnectionStatus(true);
+            
+            // Clear any existing interval
+            if (streamCheckInterval) {
+                clearInterval(streamCheckInterval);
             }
-        });
+
+            // Start monitoring stream health
+            streamCheckInterval = setInterval(() => {
+                if (!img.complete || img.naturalWidth === 0) {
+                    handleStreamError();
+                }
+            }, 5000);
+
+            img.onerror = handleStreamError;
+        }
+
+        function handleStreamError() {
+            if (isStreaming) {
+                reconnectAttempts++;
+                if (reconnectAttempts <= MAX_RECONNECT_ATTEMPTS) {
+                    showError(`Stream error, attempting to reconnect (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
+                    setTimeout(startStream, 2000);
+                } else {
+                    isStreaming = false;
+                    updateConnectionStatus(false);
+                    showError('Failed to maintain stream connection');
+                    document.getElementById('cameraStream').src = '/images/no-stream.jpg';
+                    if (streamCheckInterval) {
+                        clearInterval(streamCheckInterval);
+                    }
+                }
+            }
+        }
+
+        async function toggleMotion() {
+            const button = document.getElementById('motionButton');
+            const motionData = document.getElementById('motionData');
+            
+            try {
+                if (!isMotionDetecting) {
+                    document.getElementById('loadingOverlay').classList.add('active');
+                    isMotionDetecting = true;
+                    button.textContent = 'Stop Motion Detection';
+                    
+                    // Start motion detection loop
+                    motionCheckInterval = setInterval(async () => {
+                        try {
+                            const response = await fetch('/camera/control', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    command: 'motion'
+                                })
+                            });
+
+                            if (!response.ok) {
+                                throw new Error('Motion detection failed');
+                            }
+
+                            const result = await response.json();
+                            if (result.success) {
+                                document.getElementById('cameraStream').src = `data:image/jpeg;base64,${result.frame}`;
+                                motionData.textContent = result.motion_detected ? 
+                                    `Motion Detected!\nPosition: (${result.center_x.toFixed(1)}, ${result.center_y.toFixed(1)})\nArea: ${result.area}` :
+                                    'No motion detected';
+                            } else {
+                                throw new Error(result.error);
+                            }
+                        } catch (error) {
+                            showError('Motion detection error: ' + error.message);
+                            stopMotion();
+                        }
+                    }, 100);
+                } else {
+                    stopMotion();
+                }
+            } catch (error) {
+                showError('Failed to toggle motion detection: ' + error.message);
+                stopMotion();
+            } finally {
+                document.getElementById('loadingOverlay').classList.remove('active');
+            }
+        }
+
+        function stopMotion() {
+            isMotionDetecting = false;
+            document.getElementById('motionButton').textContent = 'Start Motion Detection';
+            document.getElementById('motionData').textContent = 'No motion data';
+            if (motionCheckInterval) {
+                clearInterval(motionCheckInterval);
+            }
+            startStream();
+        }
+
+        async function toggleTracking() {
+            const button = document.getElementById('trackingButton');
+            const servoId = document.getElementById('servoSelect').value;
+            
+            try {
+                if (!isTracking) {
+                    if (!servoId) {
+                        showError('Please select a servo');
+                        return;
+                    }
+
+                    document.getElementById('loadingOverlay').classList.add('active');
+                    const response = await fetch('/camera/control', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            command: 'head_track',
+                            params: {
+                                action: 'start',
+                                'servo-id': parseInt(servoId)
+                            }
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Failed to start tracking');
+                    }
+
+                    isTracking = true;
+                    button.textContent = 'Stop Head Tracking';
+                } else {
+                    const response = await fetch('/camera/control', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            command: 'head_track',
+                            params: {
+                                action: 'stop'
+                            }
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Failed to stop tracking');
+                    }
+
+                    isTracking = false;
+                    button.textContent = 'Start Head Tracking';
+                }
+            } catch (error) {
+                showError('Failed to toggle tracking: ' + error.message);
+            } finally {
+                document.getElementById('loadingOverlay').classList.remove('active');
+            }
+        }
 
         // Initialize
-        loadCameras();
-        updateConnectionStatus('disconnected');
+        fetchCameras();
     </script>
 </body>
 </html>
