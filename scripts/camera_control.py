@@ -87,6 +87,49 @@ class CameraLock:
         except Exception:
             pass
 
+class HeadTracker:
+    """Manages head tracking subprocess."""
+    
+    def __init__(self, camera_id: int = 0):
+        self.camera_id = camera_id
+        self.process = None
+        self.script_path = os.path.join(os.path.dirname(__file__), 'head_track.py')
+
+    def start(self, servo_id: int = 0) -> bool:
+        """Start head tracking process."""
+        try:
+            if self.process:
+                self.stop()
+            
+            # Kill any existing head tracking processes
+            subprocess.run(['pkill', '-f', 'head_track.py'], capture_output=True)
+            time.sleep(1)  # Wait for processes to die
+            
+            self.process = subprocess.Popen(
+                ['python3', self.script_path, 'start', str(servo_id)],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+            return True
+        except Exception as e:
+            logger.error(f"Failed to start head tracking: {e}")
+            return False
+
+    def stop(self) -> bool:
+        """Stop head tracking process."""
+        try:
+            if self.process:
+                self.process.terminate()
+                self.process.wait(timeout=5)
+                self.process = None
+            
+            # Ensure all head tracking processes are killed
+            subprocess.run(['pkill', '-f', 'head_track.py'], capture_output=True)
+            return True
+        except Exception as e:
+            logger.error(f"Failed to stop head tracking: {e}")
+            return False
+
 class MotionDetector:
     """Handles motion detection and visualization."""
     
@@ -274,8 +317,8 @@ class MotionDetector:
 
 def main():
     """Main entry point for camera control script."""
-    parser = argparse.ArgumentParser(description='Camera Motion Detection')
-    parser.add_argument('command', choices=['motion'],
+    parser = argparse.ArgumentParser(description='Camera Control Script')
+    parser.add_argument('command', choices=['motion', 'head_track'],
                        help='Command to execute')
     parser.add_argument('--width', type=int, default=640,
                        help='Frame width (default: 640)')
@@ -283,13 +326,44 @@ def main():
                        help='Frame height (default: 480)')
     parser.add_argument('--camera-id', type=int, required=True,
                        help='Camera device ID')
+    parser.add_argument('--action', choices=['start', 'stop'],
+                       help='Action for head tracking')
+    parser.add_argument('--servo-id', type=int,
+                       help='Servo ID for head tracking')
     
     args = parser.parse_args()
     
     try:
-        detector = MotionDetector(args.camera_id, args.width, args.height)
-        result = detector.detect_motion()
-        print(json.dumps(result))
+        if args.command == 'motion':
+            detector = MotionDetector(args.camera_id, args.width, args.height)
+            result = detector.detect_motion()
+            print(json.dumps(result))
+            
+        elif args.command == 'head_track':
+            tracker = HeadTracker(args.camera_id)
+            if args.action == 'start':
+                if args.servo_id is None:
+                    print(json.dumps({
+                        "success": False,
+                        "error": "Servo ID is required for head tracking"
+                    }))
+                else:
+                    success = tracker.start(args.servo_id)
+                    print(json.dumps({
+                        "success": success,
+                        "error": None if success else "Failed to start head tracking"
+                    }))
+            elif args.action == 'stop':
+                success = tracker.stop()
+                print(json.dumps({
+                    "success": success,
+                    "error": None if success else "Failed to stop head tracking"
+                }))
+            else:
+                print(json.dumps({
+                    "success": False,
+                    "error": "Invalid action for head tracking"
+                }))
     except Exception as e:
         print(json.dumps({"success": False, "error": str(e)}))
         sys.exit(1)
