@@ -284,14 +284,14 @@ async function executeSound(step) {
         try {
             await soundController.playSound(sound.id, filePath);
             logger.info(`Sound started playing: ${sound.name}`);
+
+            // For non-concurrent sounds, wait for completion
+            if (step.concurrent !== "on") {
+                await waitForSoundCompletion(sound.id);
+            }
         } catch (error) {
             // Log but ignore play errors
             logger.warn(`Non-critical error playing sound: ${error.message}`);
-        }
-
-        // For non-concurrent sounds, just wait a fixed duration
-        if (step.concurrent !== "on") {
-            await new Promise(resolve => setTimeout(resolve, 5000));
         }
 
         logger.info(`Sound step completed: ${step.name}`);
