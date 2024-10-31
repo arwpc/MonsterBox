@@ -170,11 +170,11 @@ describe('Voice Routes', () => {
         generateRes.should.have.status(200);
         generateRes.body.should.have.property('url');
         
-        // Then save it to sounds library
+        // Then save it to sounds library using the URL from generation
         const saveRes = await chai.request(app)
             .post('/api/voice/save-to-sounds')
             .send({
-                audioUrl: `/sounds/${path.basename(generateRes.body.path)}`,
+                audioUrl: generateRes.body.url,  // Use the URL from generation
                 text: testText,
                 characterId: testCharacterId
             });
