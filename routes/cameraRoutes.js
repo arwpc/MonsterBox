@@ -617,7 +617,7 @@ router.post('/control', async (req, res) => {
 
 // Head tracking route
 router.post('/head-track', async (req, res) => {
-    const { panServoId, tiltServoId } = req.body;
+    const { servoId } = req.body;
     
     try {
         const settings = await loadCameraSettings();
@@ -633,8 +633,7 @@ router.post('/head-track', async (req, res) => {
         const trackScript = path.join(__dirname, '..', 'scripts', 'head_track.py');
         const args = [
             '--camera-id', settings.selectedCamera.toString(),
-            '--pan-servo-id', panServoId,
-            '--tilt-servo-id', tiltServoId,
+            '--servo-id', servoId,
             '--width', '320',  // Use lower resolution for faster processing
             '--height', '240'
         ];

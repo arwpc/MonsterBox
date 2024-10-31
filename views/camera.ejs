@@ -188,11 +188,8 @@
 
             <div class="section">
                 <h3>Head Tracking</h3>
-                <select id="panServoSelect">
-                    <option value="">Select Pan Servo...</option>
-                </select>
-                <select id="tiltServoSelect">
-                    <option value="">Select Tilt Servo...</option>
+                <select id="servoSelect">
+                    <option value="">Select Head Servo...</option>
                 </select>
                 <button id="headTrackButton" onclick="toggleHeadTracking()">Start Head Tracking</button>
                 <div id="headTrackData">No tracking data</div>
@@ -275,22 +272,14 @@
                     name: el.dataset.name
                 }));
 
-                const panSelect = document.getElementById('panServoSelect');
-                const tiltSelect = document.getElementById('tiltServoSelect');
-                
-                panSelect.innerHTML = '<option value="">Select Pan Servo...</option>';
-                tiltSelect.innerHTML = '<option value="">Select Tilt Servo...</option>';
+                const servoSelect = document.getElementById('servoSelect');
+                servoSelect.innerHTML = '<option value="">Select Head Servo...</option>';
                 
                 servos.forEach(servo => {
-                    const panOption = document.createElement('option');
-                    panOption.value = servo.id;
-                    panOption.textContent = servo.name;
-                    panSelect.appendChild(panOption);
-
-                    const tiltOption = document.createElement('option');
-                    tiltOption.value = servo.id;
-                    tiltOption.textContent = servo.name;
-                    tiltSelect.appendChild(tiltOption);
+                    const option = document.createElement('option');
+                    option.value = servo.id;
+                    option.textContent = servo.name;
+                    servoSelect.appendChild(option);
                 });
             } catch (error) {
                 console.error('Error loading servos:', error);
@@ -478,12 +467,11 @@
         async function toggleHeadTracking() {
             const button = document.getElementById('headTrackButton');
             const headTrackData = document.getElementById('headTrackData');
-            const panServoId = document.getElementById('panServoSelect').value;
-            const tiltServoId = document.getElementById('tiltServoSelect').value;
+            const servoId = document.getElementById('servoSelect').value;
             
             if (!headTrackingActive) {
-                if (!panServoId || !tiltServoId) {
-                    showStatus('Please select both pan and tilt servos');
+                if (!servoId) {
+                    showStatus('Please select head servo');
                     return;
                 }
 
@@ -501,7 +489,7 @@
                     const response = await fetch('/camera/head-track', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ panServoId, tiltServoId }),
+                        body: JSON.stringify({ servoId }),
                         signal: headTrackingController.signal
                     });
 
@@ -532,10 +520,10 @@
                                 if (result.success) {
                                     if (result.face_detected) {
                                         const pos = result.position;
-                                        const angles = result.servo_angles;
+                                        const angle = result.servo_angle;
                                         headTrackData.innerHTML = 
-                                            `Face at <span class="coordinates">(${pos.x.toFixed(1)}, ${pos.y.toFixed(1)})</span><br>` +
-                                            `Servos: Pan ${angles.x.toFixed(1)}°, Tilt ${angles.y.toFixed(1)}°`;
+                                            `Face at <span class="coordinates">(${pos.x.toFixed(1)})</span><br>` +
+                                            `Servo angle: ${angle.toFixed(1)}°`;
                                     } else {
                                         headTrackData.textContent = 'No face detected';
                                     }
