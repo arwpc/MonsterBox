@@ -6,6 +6,7 @@ const logger = require('../scripts/logger');
 const fs = require('fs').promises;
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
+const partService = require('../services/partService');
 
 // Path to store camera settings
 const CAMERA_SETTINGS_PATH = path.join(__dirname, '..', 'data', 'camera-settings.json');
@@ -49,7 +50,7 @@ async function saveCameraSettings(settings) {
             fps: settings.fps || DEFAULT_FPS
         }, null, 2));
     } catch (error) {
-        logger.error('Error saving camera settings:', error);
+        logger.error('Failed to save camera settings', { error: error.message });
     }
 }
 
@@ -60,16 +61,16 @@ async function killExistingCameraProcesses() {
         try {
             process.kill('SIGTERM');
             activeProcesses.delete(key);
-            logger.info(`Killed process: ${key}`);
+            logger.debug(`Killed process: ${key}`);
         } catch (error) {
-            logger.error(`Error killing process ${key}:`, error);
+            logger.error(`Failed to kill process ${key}`, { error: error.message });
         }
     }
 
     // Then use pkill as a backup
     try {
         await exec('pkill -f "(camera_stream|camera_control|head_track).py"');
-        logger.info('Killed any remaining camera processes');
+        logger.debug('Killed any remaining camera processes');
     } catch (error) {
         // Ignore pkill errors as they might mean no processes were found
     }
@@ -86,16 +87,16 @@ async function cleanupLockFiles() {
             if (file.startsWith('camera_') && file.endsWith('.lock')) {
                 try {
                     await fs.unlink(`/tmp/${file}`);
-                    logger.info(`Removed lock file: ${file}`);
+                    logger.debug(`Removed lock file: ${file}`);
                 } catch (error) {
-                    logger.error(`Error removing lock file ${file}:`, error);
+                    logger.error(`Failed to remove lock file ${file}`, { error: error.message });
                 }
             }
         }
         // Add delay after cleanup
         await new Promise(resolve => setTimeout(resolve, 1000));
     } catch (error) {
-        logger.error('Error cleaning up lock files:', error);
+        logger.error('Failed to cleanup lock files', { error: error.message });
     }
 }
 
@@ -103,7 +104,7 @@ async function cleanupLockFiles() {
 async function startCameraStream(cameraId, width = DEFAULT_WIDTH, height = DEFAULT_HEIGHT, fps = DEFAULT_FPS) {
     return new Promise((resolve, reject) => {
         const streamScript = path.join(__dirname, '..', 'scripts', 'camera_stream.py');
-        logger.info(`Starting camera stream: ${streamScript} with resolution ${width}x${height} @ ${fps}fps`);
+        logger.debug(`Starting camera stream with resolution ${width}x${height} @ ${fps}fps`);
         
         const process = spawn('python3', [
             streamScript,
@@ -145,7 +146,7 @@ async function startCameraStream(cameraId, width = DEFAULT_WIDTH, height = DEFAU
                     try {
                         res.write(data);
                     } catch (error) {
-                        logger.error('Error writing stream data:', error);
+                        logger.error('Failed to write stream data', { error: error.message });
                     }
                 }
             } catch (e) {
@@ -162,21 +163,21 @@ async function startCameraStream(cameraId, width = DEFAULT_WIDTH, height = DEFAU
             if (!initialized) {
                 initError += msg;
             }
-            logger.info(`Stream output: ${msg}`);
+            logger.debug(`Stream output: ${msg}`);
         });
 
         process.on('error', (err) => {
             if (!initialized || !frameReceived) {
                 reject(err);
             }
-            logger.error('Stream process error:', err);
+            logger.error('Stream process error', { error: err.message });
         });
 
         process.on('close', (code) => {
             if (!initialized || !frameReceived) {
                 reject(new Error(initError || `Stream process exited with code ${code}`));
             }
-            logger.info(`Stream process closed with code ${code}`);
+            logger.debug(`Stream process closed with code ${code}`);
         });
 
         // Set a timeout for initialization
@@ -189,8 +190,19 @@ async function startCameraStream(cameraId, width = DEFAULT_WIDTH, height = DEFAU
 
         // Track this process
         activeProcesses.set('stream', process);
-        logger.info('Camera stream process started');
+        logger.debug('Camera stream process started');
     });
+}
+
+// Get servos by character ID
+async function getServosByCharacter(characterId) {
+    try {
+        const parts = await partService.getPartsByCharacter(characterId);
+        return parts.filter(part => part.type === 'servo');
+    } catch (error) {
+        logger.error('Failed to get servos', { error: error.message });
+        return [];
+    }
 }
 
 // Camera routes
@@ -198,13 +210,15 @@ router.get('/', async (req, res) => {
     try {
         const characterId = req.query.characterId || req.session.characterId;
         const settings = await loadCameraSettings();
+        const servos = await getServosByCharacter(characterId);
         res.render('camera', { 
             title: 'Camera Control',
             characterId: characterId || null,
-            selectedCamera: settings.selectedCamera
+            selectedCamera: settings.selectedCamera,
+            servos: servos
         });
     } catch (error) {
-        logger.error('Error rendering camera view:', error);
+        logger.error('Failed to render camera view', { error: error.message });
         res.status(500).render('error', { 
             error: 'Failed to load camera interface',
             details: error.message
