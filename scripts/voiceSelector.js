@@ -100,14 +100,6 @@ class VoiceSelector {
             });
         });
 
-        document.querySelector('#previewPlay').addEventListener('click', () => {
-            if (this.isPlaying) {
-                this.stopPreview();
-            } else if (this.currentPreviewVoice) {
-                this.playPreview();
-            }
-        });
-
         document.querySelector('#saveToLibrary').addEventListener('click', () => {
             if (this.lastGeneratedAudio) {
                 this.saveToSoundLibrary();
@@ -203,8 +195,7 @@ class VoiceSelector {
                 const voice = this.voices.find(v => v.uuid === voiceId);
                 if (voice) {
                     this.currentPreviewVoice = voice;
-                    document.querySelector('#previewPlay').disabled = false;
-                    this.playPreview(style);
+                    this.generatePreview(style);
                 }
             });
         });
@@ -245,12 +236,7 @@ class VoiceSelector {
         }
     }
 
-    async playPreview(style = 'neutral') {
-        if (this.isPlaying) {
-            this.stopPreview();
-            return;
-        }
-
+    async generatePreview(style = 'neutral') {
         try {
             this.showLoading('Generating preview...');
             const previewText = document.querySelector('#previewText').value;
@@ -294,10 +280,12 @@ class VoiceSelector {
                 this.wavesurfer.on('ready', () => {
                     this.wavesurfer.play();
                     this.isPlaying = true;
-                    this.updatePlayButtonState();
                     document.querySelector('#saveToLibrary').disabled = false;
                 });
             }
+            
+            // Show success message
+            this.showError('Voice generated successfully', true);
         } catch (error) {
             console.error('Error generating preview:', error);
             this.showError(error.message);
@@ -348,22 +336,7 @@ class VoiceSelector {
         }
     }
 
-    stopPreview() {
-        this.wavesurfer.stop();
-        this.isPlaying = false;
-        this.updatePlayButtonState();
-    }
-
     updatePlayButtonState() {
-        const playButton = document.querySelector('#previewPlay');
-        playButton.innerHTML = this.isPlaying ? 
-            '<i class="fas fa-stop"></i> Stop' : 
-            '<i class="fas fa-play"></i> Preview';
-        playButton.disabled = !this.currentPreviewVoice;
-    }
-
-    updatePreviewButtonState() {
-        document.querySelector('#previewPlay').disabled = !this.currentPreviewVoice;
         document.querySelector('#saveToLibrary').disabled = !this.lastGeneratedAudio;
     }
 
@@ -376,7 +349,10 @@ class VoiceSelector {
         });
         
         document.querySelector('#selectVoice').disabled = !this.characterId;
-        this.updatePreviewButtonState();
+        this.updatePlayButtonState();
+        
+        // Generate preview automatically when voice is selected
+        this.generatePreview('neutral');
     }
 
     async saveVoiceConfiguration() {
