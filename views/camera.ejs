@@ -6,7 +6,6 @@
     <title><%= title %></title>
     <link rel="stylesheet" href="/css/style.css">
     <style>
-        /* Previous styles remain unchanged */
         .camera-container {
             display: flex;
             gap: 20px;
@@ -48,16 +47,34 @@
             height: 10px;
             border-radius: 50%;
             margin-right: 5px;
+            transition: all 0.3s ease;
         }
 
-        .status-active {
+        .status-connecting {
+            background-color: #ffff00;
+            box-shadow: 0 0 5px #ffff00;
+            animation: blink 1s infinite;
+        }
+
+        .status-connected {
             background-color: #00ff00;
             box-shadow: 0 0 5px #00ff00;
         }
 
-        .status-inactive {
+        .status-disconnected {
             background-color: #ff0000;
             box-shadow: 0 0 5px #ff0000;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0.5; }
+        }
+
+        .status-text {
+            display: inline-block;
+            margin-left: 5px;
+            color: #00ff00;
+            font-size: 0.9em;
         }
 
         #motionData, #headTrackData {
@@ -90,6 +107,7 @@
             cursor: pointer;
             width: 100%;
             border-radius: 4px;
+            transition: all 0.3s ease;
         }
 
         button:hover {
@@ -131,6 +149,14 @@
             opacity: 0.5;
             pointer-events: none;
         }
+
+        .connection-status {
+            margin-top: 10px;
+            padding: 5px;
+            border-radius: 3px;
+            background-color: #001100;
+            border: 1px solid #003300;
+        }
     </style>
 </head>
 <body>
@@ -146,6 +172,7 @@
         </div>
         
         <div class="camera-controls">
+            <!-- Camera Selection (First) -->
             <div class="control-group">
                 <h3>Camera Selection</h3>
                 <div class="camera-select">
@@ -153,10 +180,32 @@
                         <option value="">Select Camera...</option>
                     </select>
                     <button id="applyCameraSelect">Apply Camera Selection</button>
+                    <div class="connection-status">
+                        <div class="status-indicator status-disconnected" id="connectionIndicator"></div>
+                        <span class="status-text" id="connectionStatus">Disconnected</span>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <h3>Camera Settings</h3>
+                    <label for="resolution">Resolution:</label>
+                    <select id="resolution">
+                        <option value="320,240" selected>320x240 (Recommended)</option>
+                        <option value="160,120">160x120 (Low)</option>
+                        <option value="640,480">640x480 (High)</option>
+                    </select>
+                    <button onclick="updateSettings()">Apply Settings</button>
                 </div>
             </div>
 
+            <!-- Motion Detection (Second) -->
             <div id="cameraControls" class="controls-disabled">
+                <div class="control-group">
+                    <h3>Motion Detection</h3>
+                    <button id="toggleMotion">Start Motion Detection</button>
+                    <div id="motionData">No motion data</div>
+                </div>
+
+                <!-- Head Tracking (Third) -->
                 <div class="control-group">
                     <h3>Head Tracking</h3>
                     <select id="servoSelect" style="margin-bottom: 10px;">
@@ -168,23 +217,6 @@
                     </select>
                     <button id="toggleHeadTrack">Start Head Tracking</button>
                     <div id="headTrackData">No head tracking data</div>
-                </div>
-
-                <div class="control-group">
-                    <h3>Motion Detection</h3>
-                    <button id="toggleMotion">Start Motion Detection</button>
-                    <div id="motionData">No motion data</div>
-                </div>
-
-                <div class="control-group">
-                    <h3>Camera Settings</h3>
-                    <label for="resolution">Resolution:</label>
-                    <select id="resolution">
-                        <option value="320,240" selected>320x240 (Recommended)</option>
-                        <option value="160,120">160x120 (Low)</option>
-                        <option value="640,480">640x480 (High)</option>
-                    </select>
-                    <button onclick="updateSettings()">Apply Settings</button>
                 </div>
             </div>
         </div>
@@ -208,8 +240,24 @@
         const applyCameraSelect = document.getElementById('applyCameraSelect');
         const placeholderMessage = document.getElementById('placeholderMessage');
         const cameraControls = document.getElementById('cameraControls');
+        const connectionIndicator = document.getElementById('connectionIndicator');
+        const connectionStatus = document.getElementById('connectionStatus');
 
-        // Rest of the JavaScript code remains unchanged
+        function updateConnectionStatus(status) {
+            connectionIndicator.className = 'status-indicator status-' + status;
+            switch(status) {
+                case 'connecting':
+                    connectionStatus.textContent = 'Connecting...';
+                    break;
+                case 'connected':
+                    connectionStatus.textContent = 'Connected';
+                    break;
+                case 'disconnected':
+                    connectionStatus.textContent = 'Disconnected';
+                    break;
+            }
+        }
+
         async function loadCameras() {
             try {
                 const response = await fetch('/camera/list');
@@ -249,6 +297,9 @@
             }
 
             try {
+                updateConnectionStatus('connecting');
+                applyCameraSelect.disabled = true;
+
                 const response = await fetch('/camera/select', {
                     method: 'POST',
                     headers: {
@@ -261,13 +312,20 @@
                     throw new Error('Failed to select camera');
                 }
 
+                // Wait for camera initialization
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
                 cameraControls.classList.remove('controls-disabled');
                 placeholderMessage.style.display = 'none';
                 streamActive = true;
+                updateConnectionStatus('connected');
                 initializeStream();
             } catch (error) {
                 console.error('Failed to select camera:', error);
                 showError('Failed to select camera: ' + error.message);
+                updateConnectionStatus('disconnected');
+            } finally {
+                applyCameraSelect.disabled = false;
             }
         });
 
@@ -373,6 +431,12 @@
             if (streamActive) {
                 const [width, height] = document.getElementById('resolution').value.split(',');
                 streamImg.src = `/camera/stream?width=${width}&height=${height}&t=${Date.now()}`;
+                streamImg.onerror = function() {
+                    updateConnectionStatus('disconnected');
+                };
+                streamImg.onload = function() {
+                    updateConnectionStatus('connected');
+                };
             }
         }
 
@@ -533,7 +597,9 @@
             }
         });
 
+        // Initialize
         loadCameras();
+        updateConnectionStatus('disconnected');
     </script>
 </body>
 </html>
