@@ -26,6 +26,9 @@ os.environ["OPENCV_VIDEOIO_BACKEND"] = "v4l2"
 def initialize_camera(device_id: int, width: int = 320, height: int = 240) -> Optional[cv2.VideoCapture]:
     """Initialize camera with MJPG format first, fallback to others if needed."""
     try:
+        # Add delay before opening camera
+        time.sleep(0.5)
+        
         # Try MJPG format first as it's most likely to work
         cap = cv2.VideoCapture(device_id, cv2.CAP_V4L2)
         if not cap.isOpened():
@@ -47,6 +50,8 @@ def initialize_camera(device_id: int, width: int = 320, height: int = 240) -> Op
         # If MJPG fails, try other formats
         for fmt in ['YUYV', 'H264']:
             cap.release()
+            time.sleep(0.5)  # Add delay between format attempts
+            
             cap = cv2.VideoCapture(device_id, cv2.CAP_V4L2)
             if not cap.isOpened():
                 continue
@@ -96,6 +101,9 @@ class CameraLock:
                     except OSError:
                         pass
 
+            # Add delay before acquiring lock
+            time.sleep(0.5)
+
             self.lock_file = open(self.lock_path, 'w')
             fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
             self.lock_file.write(str(os.getpid()))
@@ -118,6 +126,8 @@ class CameraLock:
                     os.remove(self.lock_path)
                 except OSError:
                     pass
+                # Add delay after releasing lock
+                time.sleep(0.5)
         except Exception:
             pass
 
