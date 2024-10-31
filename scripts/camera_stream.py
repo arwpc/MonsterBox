@@ -7,7 +7,7 @@ import os
 import subprocess
 import argparse
 import json
-from typing import Optional
+from typing import Optional, Tuple
 
 # Configure logging
 logging.basicConfig(
@@ -69,22 +69,22 @@ def verify_camera_device(device_id: int) -> bool:
         logger.error(f"Error verifying camera device: {e}")
         return False
 
-def initialize_camera(device_id: int, width: int = 320, height: int = 240) -> Optional[cv2.VideoCapture]:
+def initialize_camera(device_id: int, width: int = 320, height: int = 240) -> Tuple[Optional[cv2.VideoCapture], bool]:
     """Initialize camera with optimized settings for Raspberry Pi."""
     try:
         # Verify camera device first
         if not verify_camera_device(device_id):
-            return None
+            return None, False
 
         # Add delay before opening camera
-        time.sleep(1.0)
+        time.sleep(2.0)  # Increased delay
         
         # Try opening with V4L2 backend
         logger.info(f"Attempting to open camera {device_id} with V4L2 backend")
         cap = cv2.VideoCapture(device_id, cv2.CAP_V4L2)
         if not cap.isOpened():
             logger.error(f"Failed to open camera {device_id} with V4L2 backend")
-            return None
+            return None, False
 
         # Configure camera properties
         logger.info("Setting camera properties...")
@@ -111,31 +111,36 @@ def initialize_camera(device_id: int, width: int = 320, height: int = 240) -> Op
         if hasattr(cv2, 'CAP_PROP_CONTRAST'):
             cap.set(cv2.CAP_PROP_CONTRAST, 0.5)     # Mid contrast
 
+        # Add delay after setting properties
+        time.sleep(1.0)
+
         # Test frame capture
-        ret, frame = cap.read()
-        if ret and frame is not None and frame.size > 0:
-            # Log actual camera settings
-            actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-            actual_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-            actual_fps = int(cap.get(cv2.CAP_PROP_FPS))
-            logger.info(f"Successfully initialized camera - Width: {actual_width}, Height: {actual_height}, FPS: {actual_fps}")
-            
-            # Print success JSON to stdout
-            print(json.dumps({
-                "success": True,
-                "width": actual_width,
-                "height": actual_height
-            }))
-            sys.stdout.flush()  # Ensure JSON is sent immediately
-            
-            return cap
+        for _ in range(3):  # Try up to 3 times
+            ret, frame = cap.read()
+            if ret and frame is not None and frame.size > 0:
+                # Log actual camera settings
+                actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                actual_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                actual_fps = int(cap.get(cv2.CAP_PROP_FPS))
+                logger.info(f"Successfully initialized camera - Width: {actual_width}, Height: {actual_height}, FPS: {actual_fps}")
+                
+                # Print success JSON to stdout
+                print(json.dumps({
+                    "success": True,
+                    "width": actual_width,
+                    "height": actual_height
+                }))
+                sys.stdout.flush()  # Ensure JSON is sent immediately
+                
+                return cap, True
+            time.sleep(0.5)  # Wait before retry
 
         logger.error("Failed to capture test frame")
-        return None
+        return None, False
 
     except Exception as e:
         logger.error(f"Camera initialization error: {e}")
-        return None
+        return None, False
 
 class CameraStream:
     """Handles camera streaming in MJPEG format."""
@@ -151,8 +156,13 @@ class CameraStream:
 
     def initialize(self) -> bool:
         """Initialize camera with specified settings."""
-        self.cap = initialize_camera(self.camera_id, self.width, self.height)
-        return self.cap is not None
+        cap, success = initialize_camera(self.camera_id, self.width, self.height)
+        if success:
+            self.cap = cap
+            # Add delay after successful initialization
+            time.sleep(2.0)
+            return True
+        return False
 
     def release(self):
         """Release camera resources."""
@@ -161,6 +171,8 @@ class CameraStream:
                 self.cap.release()
                 self.cap = None
             logger.info("Camera resources released")
+            # Add delay after release
+            time.sleep(1.0)
         except Exception as e:
             logger.warning(f"Error releasing camera: {e}")
 
@@ -173,6 +185,14 @@ class CameraStream:
         try:
             last_frame_time = time.time()
             target_frame_time = 1.0 / 15  # Target 15 FPS
+
+            # Warm up the camera
+            for _ in range(5):
+                ret, _ = self.cap.read()
+                if ret:
+                    logger.info("Camera warmed up successfully")
+                    break
+                time.sleep(0.5)
 
             while True:
                 try:
