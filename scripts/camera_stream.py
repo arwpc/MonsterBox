@@ -7,12 +7,14 @@ import os
 import fcntl
 import subprocess
 import argparse
+import json
 from typing import Optional
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    stream=sys.stderr  # Log to stderr to keep stdout clean for MJPEG stream
 )
 logger = logging.getLogger(__name__)
 
@@ -237,7 +239,13 @@ class CameraStream:
             # Reset counters on successful initialization
             self.frame_count = 0
             self.error_count = 0
-            logger.info("Camera stream initialized successfully")
+            # Print success JSON to stdout
+            print(json.dumps({
+                "success": True,
+                "width": int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
+                "height": int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            }))
+            sys.stdout.flush()  # Ensure JSON is sent immediately
             return True
         return False
 
