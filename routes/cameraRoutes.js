@@ -436,7 +436,57 @@ router.post('/control', async (req, res) => {
                 args.push('--fps', params.fps.toString());
             }
         } else if (command === 'motion') {
-            // No additional parameters needed for motion detection
+            // Set response headers for streaming
+            res.setHeader('Content-Type', 'application/x-ndjson');
+            res.setHeader('Cache-Control', 'no-cache');
+            res.setHeader('Connection', 'keep-alive');
+
+            // Start motion detection process
+            logger.info(`Executing camera control: ${args.join(' ')}`);
+            const process = spawn('python3', args);
+
+            // Track this process
+            activeProcesses.set('motion', process);
+
+            // Handle stdout data (motion detection results)
+            process.stdout.on('data', (data) => {
+                try {
+                    // Split data into lines and process each line
+                    const lines = data.toString().split('\n');
+                    for (const line of lines) {
+                        if (line.trim()) {
+                            // Parse and send each JSON result
+                            const result = JSON.parse(line);
+                            res.write(JSON.stringify(result) + '\n');
+                        }
+                    }
+                } catch (e) {
+                    logger.error('Error processing motion data:', e);
+                }
+            });
+
+            // Handle stderr output
+            process.stderr.on('data', (data) => {
+                logger.info(`Camera control output: ${data}`);
+            });
+
+            // Handle process close
+            process.on('close', (code) => {
+                activeProcesses.delete('motion');
+                logger.info(`Motion detection process closed with code ${code}`);
+                res.end();
+            });
+
+            // Handle client disconnect
+            req.on('close', () => {
+                if (activeProcesses.has('motion')) {
+                    const process = activeProcesses.get('motion');
+                    process.kill('SIGTERM');
+                    activeProcesses.delete('motion');
+                }
+            });
+
+            return;
         } else {
             return res.status(400).json({
                 success: false,
@@ -444,6 +494,7 @@ router.post('/control', async (req, res) => {
             });
         }
 
+        // For non-motion commands
         logger.info(`Executing camera control: ${args.join(' ')}`);
         const process = spawn('python3', args);
 
@@ -472,20 +523,6 @@ router.post('/control', async (req, res) => {
                     res.json({ success: true, message: output });
                 }
             } else {
-                // If motion detection fails, try to restart streaming
-                if (command === 'motion') {
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-                    const streamProcess = await startCameraStream(
-                        settings.selectedCamera,
-                        params.width || 320,
-                        params.height || 240,
-                        params.fps || 15
-                    );
-                    streamProcess.on('error', (err) => {
-                        logger.error('Stream process error:', err);
-                    });
-                }
-                
                 res.status(500).json({ 
                     success: false, 
                     error: error || 'Camera control failed'
@@ -496,19 +533,6 @@ router.post('/control', async (req, res) => {
         process.on('error', async (err) => {
             activeProcesses.delete('control');
             logger.error('Failed to start camera control process:', err);
-            
-            // If process fails to start, try to restart streaming
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            const streamProcess = await startCameraStream(
-                settings.selectedCamera,
-                params.width || 320,
-                params.height || 240,
-                params.fps || 15
-            );
-            streamProcess.on('error', (err) => {
-                logger.error('Stream process error:', err);
-            });
-            
             res.status(500).json({
                 success: false,
                 error: 'Failed to start camera control process'
