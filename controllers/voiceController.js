@@ -15,6 +15,16 @@ const handleError = (res, error, statusCode = 500) => {
 
 async function downloadAudio(url, outputPath) {
     try {
+        // If the URL starts with '/sounds/', it's a local file
+        if (url.startsWith('/sounds/')) {
+            const sourceFile = path.join(process.cwd(), 'public', url);
+            // Copy the file to the output path
+            await fs.promises.copyFile(sourceFile, outputPath);
+            logger.info(`Copied local audio file to ${outputPath}`);
+            return outputPath;
+        }
+
+        // Otherwise, download from external URL
         const response = await axios({
             method: 'GET',
             url: url,
