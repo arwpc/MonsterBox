@@ -61,7 +61,6 @@ async function killExistingCameraProcesses() {
         try {
             process.kill('SIGTERM');
             activeProcesses.delete(key);
-            logger.debug(`Killed process: ${key}`);
         } catch (error) {
             logger.error(`Failed to kill process ${key}`, { error: error.message });
         }
@@ -70,7 +69,6 @@ async function killExistingCameraProcesses() {
     // Then use pkill as a backup
     try {
         await exec('pkill -f "(camera_stream|camera_control|head_track).py"');
-        logger.debug('Killed any remaining camera processes');
     } catch (error) {
         // Ignore pkill errors as they might mean no processes were found
     }
@@ -87,7 +85,6 @@ async function cleanupLockFiles() {
             if (file.startsWith('camera_') && file.endsWith('.lock')) {
                 try {
                     await fs.unlink(`/tmp/${file}`);
-                    logger.debug(`Removed lock file: ${file}`);
                 } catch (error) {
                     logger.error(`Failed to remove lock file ${file}`, { error: error.message });
                 }
@@ -104,7 +101,6 @@ async function cleanupLockFiles() {
 async function startCameraStream(cameraId, width = DEFAULT_WIDTH, height = DEFAULT_HEIGHT, fps = DEFAULT_FPS) {
     return new Promise((resolve, reject) => {
         const streamScript = path.join(__dirname, '..', 'scripts', 'camera_stream.py');
-        logger.debug(`Starting camera stream with resolution ${width}x${height} @ ${fps}fps`);
         
         const process = spawn('python3', [
             streamScript,
@@ -163,7 +159,6 @@ async function startCameraStream(cameraId, width = DEFAULT_WIDTH, height = DEFAU
             if (!initialized) {
                 initError += msg;
             }
-            logger.debug(`Stream output: ${msg}`);
         });
 
         process.on('error', (err) => {
@@ -177,7 +172,6 @@ async function startCameraStream(cameraId, width = DEFAULT_WIDTH, height = DEFAU
             if (!initialized || !frameReceived) {
                 reject(new Error(initError || `Stream process exited with code ${code}`));
             }
-            logger.debug(`Stream process closed with code ${code}`);
         });
 
         // Set a timeout for initialization
@@ -190,7 +184,6 @@ async function startCameraStream(cameraId, width = DEFAULT_WIDTH, height = DEFAU
 
         // Track this process
         activeProcesses.set('stream', process);
-        logger.debug('Camera stream process started');
     });
 }
 
@@ -256,11 +249,11 @@ router.get('/stream', async (req, res) => {
         });
 
         streamProcess.stderr.on('data', (data) => {
-            logger.info(`Stream output: ${data}`);
+            // Debug level for stream output
+            logger.debug(`Stream output: ${data}`);
         });
 
         streamProcess.on('close', (code) => {
-            logger.info(`Stream process closed with code ${code}`);
             activeProcesses.delete('stream');
             try {
                 res.end();
@@ -270,7 +263,6 @@ router.get('/stream', async (req, res) => {
         });
 
         req.on('close', async () => {
-            logger.info('Client disconnected, cleaning up');
             if (streamProcess) {
                 streamProcess.kill('SIGTERM');
                 activeProcesses.delete('stream');
@@ -335,7 +327,8 @@ router.get('/list', async (req, res) => {
                 return res.json(cameras);
             }
         } catch (error) {
-            logger.info('v4l2-ctl failed, falling back to direct device check');
+            // Debug level for fallback message
+            logger.debug('v4l2-ctl failed, falling back to direct device check');
         }
 
         // Fallback: Check /dev/video* devices directly
@@ -413,7 +406,6 @@ router.post('/select', async (req, res) => {
 
         // Verify camera is accessible
         const verifyScript = path.join(__dirname, '..', 'scripts', 'camera_control.py');
-        logger.info(`Verifying camera ${cameraId} with resolution ${DEFAULT_WIDTH}x${DEFAULT_HEIGHT} @ ${DEFAULT_FPS}fps`);
         
         const process = spawn('python3', [
             verifyScript,
@@ -432,12 +424,10 @@ router.post('/select', async (req, res) => {
 
         process.stdout.on('data', (data) => {
             output += data.toString();
-            logger.info(`Camera verification stdout: ${data}`);
         });
 
         process.stderr.on('data', (data) => {
             error += data.toString();
-            logger.info(`Camera verification output: ${data}`);
         });
 
         const result = await new Promise((resolve, reject) => {
@@ -456,7 +446,6 @@ router.post('/select', async (req, res) => {
                             height: result.height,
                             fps: result.fps
                         });
-                        logger.info(`Camera ${cameraId} selected successfully with resolution ${result.width}x${result.height} @ ${result.fps}fps`);
                         resolve(result);
                     } else {
                         reject(new Error(result.error || 'Camera verification failed'));
@@ -515,7 +504,6 @@ router.post('/control', async (req, res) => {
             args.push('--fps', fps.toString());
 
             // Start motion detection process
-            logger.info(`Executing camera control: ${args.join(' ')}`);
             const process = spawn('python3', args);
 
             // Track this process
@@ -542,7 +530,6 @@ router.post('/control', async (req, res) => {
                         try {
                             // Check if this is initialization output
                             if (jsonStr.includes('"message":"Motion detection initialized"')) {
-                                logger.info('Motion detection initialized');
                                 continue;
                             }
 
@@ -569,13 +556,13 @@ router.post('/control', async (req, res) => {
 
             // Handle stderr output
             process.stderr.on('data', (data) => {
-                logger.info(`Camera control output: ${data}`);
+                // Debug level for camera control output
+                logger.debug(`Camera control output: ${data}`);
             });
 
             // Handle process close
             process.on('close', (code) => {
                 activeProcesses.delete('motion');
-                logger.info(`Motion detection process closed with code ${code}`);
                 res.end();
             });
 
@@ -597,7 +584,6 @@ router.post('/control', async (req, res) => {
         }
 
         // For non-motion commands
-        logger.info(`Executing camera control: ${args.join(' ')}`);
         const process = spawn('python3', args);
 
         // Track this process
@@ -612,7 +598,8 @@ router.post('/control', async (req, res) => {
 
         process.stderr.on('data', (data) => {
             error += data.toString();
-            logger.info(`Camera control output: ${data}`);
+            // Debug level for camera control output
+            logger.debug(`Camera control output: ${data}`);
         });
 
         process.on('close', async (code) => {
@@ -679,7 +666,6 @@ router.post('/head-track', async (req, res) => {
             '--height', '240'
         ];
 
-        logger.info(`Starting head tracking: ${trackScript} ${args.join(' ')}`);
         const process = spawn('python3', [trackScript, ...args]);
 
         // Track this process
@@ -711,7 +697,6 @@ router.post('/head-track', async (req, res) => {
                     try {
                         // Check if this is initialization output
                         if (jsonStr.includes('"message":"Head tracking initialized"')) {
-                            logger.info('Head tracking initialized');
                             continue;
                         }
 
@@ -736,13 +721,13 @@ router.post('/head-track', async (req, res) => {
 
         // Handle stderr output (debug/info messages)
         process.stderr.on('data', (data) => {
-            logger.info(`Head tracking output: ${data}`);
+            // Debug level for head tracking output
+            logger.debug(`Head tracking output: ${data}`);
         });
 
         // Handle process close
         process.on('close', (code) => {
             activeProcesses.delete('head_track');
-            logger.info(`Head tracking process closed with code ${code}`);
             res.end();
         });
 
