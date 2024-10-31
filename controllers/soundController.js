@@ -39,8 +39,7 @@ function setupAudioEnvironment() {
 function startSoundPlayer() {
     return new Promise((resolve, reject) => {
         if (!soundPlayerProcess) {
-            // Normalize script path for Python
-            const scriptPath = path.resolve(__dirname, '..', 'scripts', 'sound_player.py').replace(/\\/g, '/');
+            const scriptPath = path.resolve(__dirname, '..', 'scripts', 'sound_player.py');
             logger.info(`Starting sound player: ${scriptPath}`);
             logger.debug(`Current working directory: ${process.cwd()}`);
             
@@ -263,13 +262,19 @@ async function waitForStatus(soundId, targetStatus, timeout = COMMAND_TIMEOUT) {
 
 async function playSound(soundId, filePath) {
     playStatus[soundId] = 'starting';
-    // Normalize file path for Python
-    const normalizedPath = filePath.replace(/\\/g, '/');
-    logger.info(`Attempting to play sound: ${soundId}, file: ${normalizedPath}`);
+    
+    // Verify file exists before attempting to play
+    if (!fs.existsSync(filePath)) {
+        logger.error(`Sound file not found: ${filePath}`);
+        playStatus[soundId] = 'error';
+        throw new Error(`Sound file not found: ${filePath}`);
+    }
+    
+    logger.info(`Attempting to play sound: ${soundId}, file: ${filePath}`);
     
     try {
-        // Send play command
-        await sendCommand(`PLAY|${soundId}|${normalizedPath}`);
+        // Send play command with the raw file path
+        await sendCommand(`PLAY|${soundId}|${filePath}`);
         
         // Wait for playing status
         await waitForStatus(soundId, 'playing');

@@ -278,11 +278,18 @@ async function executeSound(step) {
             return true;
         }
         
-        const filePath = path.resolve(__dirname, '..', 'public', 'sounds', sound.filename).replace(/\\/g, '/');
-        logger.debug(`Sound file path: ${filePath}`);
+        // Get the absolute path to the sound file
+        const absolutePath = path.resolve(__dirname, '..', 'public', 'sounds', sound.filename);
+        logger.debug(`Sound absolute file path: ${absolutePath}`);
+        
+        // Verify file exists
+        if (!fs.existsSync(absolutePath)) {
+            logger.error(`Sound file not found at path: ${absolutePath}`);
+            return true;
+        }
         
         try {
-            await soundController.playSound(sound.id, filePath);
+            await soundController.playSound(sound.id, absolutePath);
             logger.info(`Sound started playing: ${sound.name}`);
 
             // For non-concurrent sounds, wait for completion
