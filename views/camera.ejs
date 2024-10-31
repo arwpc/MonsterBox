@@ -59,7 +59,7 @@
             box-shadow: 0 0 5px #ff0000;
         }
 
-        #motionData {
+        #motionData, #headTrackData {
             font-family: monospace;
             margin-top: 10px;
             padding: 10px;
@@ -156,6 +156,19 @@
 
             <div id="cameraControls" class="controls-disabled">
                 <div class="control-group">
+                    <h3>Head Tracking</h3>
+                    <select id="servoSelect" style="margin-bottom: 10px;">
+                        <option value="">Select Servo...</option>
+                        <option value="0">Servo 0</option>
+                        <option value="1">Servo 1</option>
+                        <option value="2">Servo 2</option>
+                        <option value="3">Servo 3</option>
+                    </select>
+                    <button id="toggleHeadTrack">Start Head Tracking</button>
+                    <div id="headTrackData">No head tracking data</div>
+                </div>
+
+                <div class="control-group">
                     <h3>Motion Detection</h3>
                     <button id="toggleMotion">Start Motion Detection</button>
                     <div id="motionData">No motion data</div>
@@ -179,12 +192,15 @@
 
     <script>
         let motionDetectionActive = false;
+        let headTrackingActive = false;
         let motionInterval = null;
+        let headTrackInterval = null;
         let streamActive = false;
 
         const streamImg = document.getElementById('cameraStream');
         const errorMessage = document.getElementById('errorMessage');
         const cameraSelect = document.getElementById('cameraSelect');
+        const servoSelect = document.getElementById('servoSelect');
         const applyCameraSelect = document.getElementById('applyCameraSelect');
         const placeholderMessage = document.getElementById('placeholderMessage');
         const cameraControls = document.getElementById('cameraControls');
@@ -250,6 +266,104 @@
             }
         });
 
+        document.getElementById('toggleHeadTrack').addEventListener('click', async function() {
+            if (headTrackingActive) {
+                await stopHeadTracking();
+            } else {
+                await startHeadTracking();
+            }
+        });
+
+        async function startHeadTracking() {
+            const servoId = servoSelect.value;
+            if (!servoId && servoId !== '0') {
+                showError('Please select a servo');
+                return;
+            }
+
+            try {
+                // Stop other features first
+                if (motionDetectionActive) {
+                    await stopMotionDetection();
+                }
+                streamActive = false;
+                streamImg.src = '/images/no-stream.jpg';
+                
+                // Wait for camera to be released
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                const response = await fetch('/camera/control', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        command: 'head_track',
+                        params: {
+                            action: 'start',
+                            'servo-id': parseInt(servoId)
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to start head tracking');
+                }
+
+                const data = await response.json();
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to start head tracking');
+                }
+
+                headTrackingActive = true;
+                document.getElementById('toggleHeadTrack').textContent = 'Stop Head Tracking';
+                document.getElementById('headTrackData').textContent = 'Head tracking active';
+                servoSelect.disabled = true;
+
+            } catch (error) {
+                console.error('Failed to start head tracking:', error);
+                showError('Failed to start head tracking: ' + error.message);
+                await stopHeadTracking();
+            }
+        }
+
+        async function stopHeadTracking() {
+            try {
+                const response = await fetch('/camera/control', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        command: 'head_track',
+                        params: {
+                            action: 'stop'
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to stop head tracking');
+                }
+
+            } catch (error) {
+                console.error('Failed to stop head tracking:', error);
+                showError('Failed to stop head tracking: ' + error.message);
+            } finally {
+                headTrackingActive = false;
+                document.getElementById('toggleHeadTrack').textContent = 'Start Head Tracking';
+                document.getElementById('headTrackData').textContent = 'No head tracking data';
+                servoSelect.disabled = false;
+
+                // Wait before restarting stream
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Restart the stream
+                streamActive = true;
+                initializeStream();
+            }
+        }
+
         function initializeStream() {
             if (streamActive) {
                 const [width, height] = document.getElementById('resolution').value.split(',');
@@ -275,7 +389,10 @@
 
         async function startMotionDetection() {
             try {
-                // Stop the stream first
+                // Stop other features first
+                if (headTrackingActive) {
+                    await stopHeadTracking();
+                }
                 streamActive = false;
                 streamImg.src = '/images/no-stream.jpg';
                 
@@ -384,9 +501,12 @@
             }
         }
 
-        window.addEventListener('beforeunload', () => {
+        window.addEventListener('beforeunload', async () => {
+            if (headTrackingActive) {
+                await stopHeadTracking();
+            }
             if (motionDetectionActive) {
-                stopMotionDetection();
+                await stopMotionDetection();
             }
         });
 
