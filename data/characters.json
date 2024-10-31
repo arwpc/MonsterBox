@@ -22,5 +22,109 @@
     "parts": [],
     "sounds": [],
     "image": "c61727bf720f20508d93c2c0af5aa498"
+  },
+  {
+    "id": 4,
+    "parts": [],
+    "sounds": [],
+    "image": null
+  },
+  {
+    "id": 5,
+    "parts": [],
+    "sounds": [],
+    "image": null
+  },
+  {
+    "id": 6,
+    "parts": [],
+    "sounds": [],
+    "image": null
+  },
+  {
+    "id": 7,
+    "parts": [],
+    "sounds": [],
+    "image": null
+  },
+  {
+    "id": 8,
+    "parts": [],
+    "sounds": [],
+    "image": null
+  },
+  {
+    "id": 9,
+    "parts": [],
+    "sounds": [],
+    "image": null
+  },
+  {
+    "id": 10,
+    "parts": [],
+    "sounds": [],
+    "image": null
+  },
+  {
+    "id": 11,
+    "parts": [],
+    "sounds": [],
+    "image": null
+  },
+  {
+    "id": 12,
+    "char_name": "Voice Test Character",
+    "char_description": "Test character for voice CRUD operations",
+    "parts": [],
+    "sounds": [],
+    "image": null
+  },
+  {
+    "id": 13,
+    "char_name": "Voice Test Character",
+    "char_description": "Test character for voice CRUD operations",
+    "parts": [],
+    "sounds": [],
+    "image": null
+  },
+  {
+    "id": 14,
+    "char_name": "Voice Test Character",
+    "char_description": "Test character for voice CRUD operations",
+    "parts": [],
+    "sounds": [],
+    "image": null
+  },
+  {
+    "id": 15,
+    "char_name": "Voice Test Character",
+    "char_description": "Test character for voice CRUD operations",
+    "parts": [],
+    "sounds": [],
+    "image": null
+  },
+  {
+    "id": 16,
+    "char_name": "Voice Test Character",
+    "char_description": "Test character for voice CRUD operations",
+    "parts": [],
+    "sounds": [],
+    "image": null
+  },
+  {
+    "id": 17,
+    "char_name": "Voice Test Character",
+    "char_description": "Test character for voice CRUD operations",
+    "parts": [],
+    "sounds": [],
+    "image": null
+  },
+  {
+    "id": 18,
+    "char_name": "Voice Test Character",
+    "char_description": "Test character for voice CRUD operations",
+    "parts": [],
+    "sounds": [],
+    "image": null
   }
 ]
