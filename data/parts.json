@@ -88,14 +88,6 @@
     }
   },
   {
-    "id": 7,
-    "type": "motor",
-    "name": "Coffin Door",
-    "characterId": 2,
-    "directionPin": "13",
-    "pwmPin": "5"
-  },
-  {
     "id": 8,
     "name": "Coffin Sensor",
     "type": "sensor",
@@ -149,5 +141,22 @@
       "frequency": 50,
       "address": "0x40"
     }
+  },
+  {
+    "id": 12,
+    "name": "Coffin door",
+    "type": "linear-actuator",
+    "characterId": 2,
+    "directionPin": 5,
+    "pwmPin": 13,
+    "maxExtension": 20000,
+    "maxRetraction": 20000
+  },
+  {
+    "id": 13,
+    "name": "Burning Rose",
+    "type": "light",
+    "characterId": 2,
+    "gpioPin": "16"
   }
 ]
