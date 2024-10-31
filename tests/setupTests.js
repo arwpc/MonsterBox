@@ -1,5 +1,9 @@
 // Test setup for RPI Dependencies Check
 const chai = require('chai');
+const mocha = require('mocha');
+
+// Get mocha globals
+const { before, after } = mocha;
 
 // Configure chai
 chai.config.includeStack = true; // Enable stack traces
@@ -29,20 +33,23 @@ chai.Assertion.addMethod('devicePath', function() {
     );
 });
 
-// Global setup
-before(function() {
-    // Increase timeout for all tests
-    this.timeout(10000);
-    
-    // Check if running as root/sudo
-    if (process.getuid() !== 0) {
-        console.warn('\x1b[33m%s\x1b[0m', 
-            'Warning: Some tests require root privileges. Run with sudo: sudo npm test'
-        );
-    }
-});
+// Export setup function to be used in tests
+module.exports = function() {
+    // Global setup
+    before(function() {
+        // Increase timeout for all tests
+        this.timeout(10000);
+        
+        // Check if running as root/sudo
+        if (process.getuid() !== 0) {
+            console.warn('\x1b[33m%s\x1b[0m', 
+                'Warning: Some tests require root privileges. Run with sudo: sudo npm test'
+            );
+        }
+    });
 
-// Global teardown
-after(function() {
-    // Cleanup if needed
-});
+    // Global teardown
+    after(function() {
+        // Cleanup if needed
+    });
+};
