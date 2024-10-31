@@ -29,8 +29,35 @@ class SoundPlayer:
             
             if file_size == 0:
                 raise Exception(f"Sound file is empty: {file_path}")
+
+            # First convert to standard format if it's a raw file
+            if "_raw" in file_path:
+                converted_path = file_path.replace("_raw.wav", ".mp3")
+                temp_path = converted_path + ".temp"
+                
+                # Use ffmpeg to convert to standard MP3 format with specific parameters
+                convert_cmd = [
+                    'ffmpeg', '-y',
+                    '-i', file_path,
+                    '-acodec', 'libmp3lame',
+                    '-ab', '128k',
+                    '-ar', '44100',
+                    '-ac', '2',
+                    temp_path
+                ]
+                
+                log_message({"status": "info", "message": f"Converting audio with command: {' '.join(convert_cmd)}"})
+                result = subprocess.run(convert_cmd, capture_output=True, text=True)
+                
+                if result.returncode != 0:
+                    raise Exception(f"FFmpeg conversion failed: {result.stderr}")
+                
+                # Move temp file to final location
+                os.replace(temp_path, converted_path)
+                file_path = converted_path
+                log_message({"status": "info", "message": f"Converted audio saved to: {file_path}"})
             
-            # Use MPG123 to play the MP3 file - removed hardcoded audio device
+            # Use MPG123 to play the MP3 file
             log_message({"status": "info", "message": f"Executing mpg123 command for file: {file_path}"})
             process = subprocess.Popen(['mpg123', '-v', file_path], 
                                     stdout=subprocess.PIPE, 
