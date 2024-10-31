@@ -41,24 +41,68 @@ except ImportError as e:
     }))
     sys.exit(1)
 
+def verify_camera_device(device_id: int) -> bool:
+    """Verify if the camera device exists and has proper permissions."""
+    device_path = f"/dev/video{device_id}"
+    try:
+        if not os.path.exists(device_path):
+            logger.error(f"Camera device {device_path} does not exist")
+            return False
+        
+        # Check if device is readable
+        if not os.access(device_path, os.R_OK):
+            logger.error(f"No read permission for {device_path}")
+            return False
+            
+        # Check if device is writable
+        if not os.access(device_path, os.W_OK):
+            logger.error(f"No write permission for {device_path}")
+            return False
+            
+        # Check if it's a USB camera device
+        try:
+            output = subprocess.check_output(['v4l2-ctl', '--list-devices']).decode()
+            if 'Streaming Camera' in output and f'/dev/video{device_id}' in output:
+                logger.info(f"Verified USB camera device: {device_path}")
+                return True
+            else:
+                logger.error(f"Device {device_path} is not a USB camera")
+                return False
+        except subprocess.CalledProcessError:
+            logger.warning("Could not verify USB camera with v4l2-ctl")
+            # Fall back to basic verification
+            return True
+            
+    except Exception as e:
+        logger.error(f"Error verifying camera device: {e}")
+        return False
+
 def initialize_camera(device_id: int, width: int = 320, height: int = 240) -> Optional[cv2.VideoCapture]:
     """Initialize camera with optimized settings for Raspberry Pi."""
     try:
+        # Verify camera device first
+        if not verify_camera_device(device_id):
+            return None
+
         # Add delay before opening camera
         time.sleep(1.0)
         
-        # Open camera with V4L2 backend
+        # Try opening with V4L2 backend
+        logger.info(f"Attempting to open camera {device_id} with V4L2 backend")
         cap = cv2.VideoCapture(device_id, cv2.CAP_V4L2)
         if not cap.isOpened():
+            logger.error(f"Failed to open camera {device_id} with V4L2 backend")
             return None
 
         # Configure camera properties
+        logger.info("Setting camera properties...")
         cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Minimal buffer for lower latency
         cap.set(cv2.CAP_PROP_FPS, 15)        # Stable FPS for Pi
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
 
         # Try MJPG format first
+        logger.info("Trying MJPG format...")
         fourcc = cv2.VideoWriter_fourcc(*'MJPG')
         cap.set(cv2.CAP_PROP_FOURCC, fourcc)
         
@@ -70,17 +114,25 @@ def initialize_camera(device_id: int, width: int = 320, height: int = 240) -> Op
         if hasattr(cv2, 'CAP_PROP_CONTRAST'):
             cap.set(cv2.CAP_PROP_CONTRAST, 0.5)     # Mid contrast
 
+        # Test frame capture
         ret, frame = cap.read()
         if ret and frame is not None and frame.size > 0:
             logger.info("Successfully initialized camera with MJPG format")
+            # Log actual camera settings
+            actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+            actual_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            actual_fps = int(cap.get(cv2.CAP_PROP_FPS))
+            logger.info(f"Camera settings - Width: {actual_width}, Height: {actual_height}, FPS: {actual_fps}")
             return cap
 
         # If MJPG fails, try YUYV
+        logger.info("MJPG failed, trying YUYV format...")
         cap.release()
         time.sleep(1.0)
         
         cap = cv2.VideoCapture(device_id, cv2.CAP_V4L2)
         if not cap.isOpened():
+            logger.error("Failed to reopen camera for YUYV format")
             return None
 
         fourcc = cv2.VideoWriter_fourcc(*'YUYV')
@@ -100,8 +152,14 @@ def initialize_camera(device_id: int, width: int = 320, height: int = 240) -> Op
         ret, frame = cap.read()
         if ret and frame is not None and frame.size > 0:
             logger.info("Successfully initialized camera with YUYV format")
+            # Log actual camera settings
+            actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+            actual_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            actual_fps = int(cap.get(cv2.CAP_PROP_FPS))
+            logger.info(f"Camera settings - Width: {actual_width}, Height: {actual_height}, FPS: {actual_fps}")
             return cap
 
+        logger.error("Failed to initialize camera with any format")
         return None
 
     except Exception as e:
@@ -395,8 +453,8 @@ def main():
                        help='Frame width (default: 320)')
     parser.add_argument('--height', type=int, default=240,
                        help='Frame height (default: 240)')
-    parser.add_argument('--camera-id', type=int, required=True,
-                       help='Camera device ID')
+    parser.add_argument('--camera-id', type=int, default=0,
+                       help='Camera device ID (default: 0)')
     
     args = parser.parse_args()
     
