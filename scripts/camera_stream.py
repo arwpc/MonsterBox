@@ -4,7 +4,6 @@ import sys
 import logging
 import time
 import os
-import fcntl
 import subprocess
 import argparse
 import json
@@ -158,63 +157,6 @@ def initialize_camera(device_id: int, width: int = 320, height: int = 240) -> Op
         logger.error(f"Camera initialization error: {e}")
         return None
 
-class CameraLock:
-    """Handle camera device locking to prevent concurrent access."""
-    
-    def __init__(self, device_id=0):
-        self.device_id = device_id
-        self.device_path = f"/dev/video{device_id}"
-        self.lock_path = f"/tmp/camera_{device_id}.lock"
-        self.lock_file = None
-
-    def acquire(self) -> bool:
-        """Acquire lock on camera device."""
-        try:
-            # Clean up stale lock file
-            if os.path.exists(self.lock_path):
-                try:
-                    with open(self.lock_path, 'r') as f:
-                        pid = int(f.read().strip())
-                        try:
-                            os.kill(pid, 0)
-                        except OSError:
-                            os.remove(self.lock_path)
-                except (OSError, ValueError):
-                    try:
-                        os.remove(self.lock_path)
-                    except OSError:
-                        pass
-
-            # Add delay before acquiring lock
-            time.sleep(1.0)
-
-            self.lock_file = open(self.lock_path, 'w')
-            fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-            self.lock_file.write(str(os.getpid()))
-            self.lock_file.flush()
-            return True
-        except (IOError, OSError):
-            if self.lock_file:
-                self.lock_file.close()
-                self.lock_file = None
-            return False
-
-    def release(self):
-        """Release lock on camera device."""
-        try:
-            if self.lock_file:
-                fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_UN)
-                self.lock_file.close()
-                self.lock_file = None
-                try:
-                    os.remove(self.lock_path)
-                except OSError:
-                    pass
-                # Add delay after releasing lock
-                time.sleep(1.0)
-        except Exception:
-            pass
-
 class CameraStream:
     """Handles camera streaming in MJPEG format."""
     
@@ -223,17 +165,12 @@ class CameraStream:
         self.width = width
         self.height = height
         self.cap = None
-        self.camera_lock = CameraLock(self.camera_id)
         self.frame_count = 0
         self.error_count = 0
         self.max_errors = 3
 
     def initialize(self) -> bool:
         """Initialize camera with specified settings."""
-        if not self.camera_lock.acquire():
-            logger.warning("Camera is currently in use by another process")
-            return False
-
         self.cap = initialize_camera(self.camera_id, self.width, self.height)
         if self.cap is not None:
             # Reset counters on successful initialization
@@ -255,7 +192,6 @@ class CameraStream:
             if self.cap:
                 self.cap.release()
                 self.cap = None
-            self.camera_lock.release()
             logger.info("Camera resources released")
         except Exception as e:
             logger.warning(f"Error releasing camera: {e}")
