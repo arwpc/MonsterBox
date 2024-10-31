@@ -22,10 +22,36 @@ os.environ["OPENCV_VIDEOIO_PRIORITY_GSTREAMER"] = "0"
 os.environ["OPENCV_VIDEOIO_PRIORITY_V4L2"] = "100"
 os.environ["OPENCV_VIDEOIO_BACKEND"] = "v4l2"
 
+def verify_camera_access(device_id: int, retries: int = 3) -> bool:
+    """Verify camera device exists and is accessible."""
+    device_path = f"/dev/video{device_id}"
+    
+    # Check if device exists
+    if not os.path.exists(device_path):
+        logger.warning(f"Camera device {device_path} does not exist")
+        return False
+    
+    # Try to open the camera multiple times
+    for attempt in range(retries):
+        try:
+            cap = cv2.VideoCapture(device_id, cv2.CAP_V4L2)
+            if cap.isOpened():
+                ret, frame = cap.read()
+                cap.release()
+                if ret and frame is not None and frame.size > 0:
+                    return True
+            time.sleep(0.5)  # Wait before retry
+        except Exception as e:
+            logger.warning(f"Camera access attempt {attempt + 1} failed: {e}")
+    
+    logger.warning(f"Failed to access camera after {retries} attempts")
+    return False
+
 class CameraLock:
     """Handle camera device locking to prevent concurrent access."""
     
     def __init__(self, device_id=0):
+        self.device_id = device_id
         self.device_path = f"/dev/video{device_id}"
         self.lock_path = f"/tmp/camera_{device_id}.lock"
         self.lock_file = None
@@ -33,7 +59,11 @@ class CameraLock:
     def acquire(self) -> bool:
         """Acquire lock on camera device."""
         try:
-            # First check if the lock file exists and is stale
+            # First verify camera is accessible
+            if not verify_camera_access(self.device_id):
+                return False
+
+            # Check and clean up stale lock file
             if os.path.exists(self.lock_path):
                 try:
                     with open(self.lock_path, 'r') as f:
@@ -151,6 +181,10 @@ class CameraStream:
             return
 
         try:
+            frame_count = 0
+            last_frame_time = time.time()
+            target_frame_time = 1.0 / 15  # Target 15 FPS
+
             while True:
                 ret, frame = self.cap.read()
                 if not ret or frame is None:
@@ -177,8 +211,19 @@ class CameraStream:
                 sys.stdout.buffer.write(b'\r\n')
                 sys.stdout.buffer.flush()
 
-                # Small delay to control frame rate (adjusted for 15 FPS)
-                time.sleep(0.067)  # ~15 FPS
+                # Frame rate control
+                frame_count += 1
+                current_time = time.time()
+                elapsed = current_time - last_frame_time
+                if elapsed < target_frame_time:
+                    time.sleep(target_frame_time - elapsed)
+                last_frame_time = time.time()
+
+                # Periodically verify camera is still working
+                if frame_count % 30 == 0:  # Check every 30 frames
+                    if not verify_camera_access(self.camera_id, retries=1):
+                        logger.warning("Camera became inaccessible")
+                        break
 
         except BrokenPipeError:
             # Client disconnected
@@ -204,6 +249,11 @@ def main():
     args = parser.parse_args()
     
     try:
+        # First verify camera is accessible
+        if not verify_camera_access(args.camera_id):
+            sys.stderr.write(f"Camera {args.camera_id} is not accessible\n")
+            sys.exit(1)
+
         streamer = CameraStream(args.camera_id, args.width, args.height)
         streamer.stream()
     except Exception as e:
