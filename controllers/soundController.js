@@ -11,7 +11,7 @@ let messageId = 0;
 const eventEmitter = new EventEmitter();
 let playStatus = {};
 
-const COMMAND_TIMEOUT = 15000; // 15 seconds for most commands
+const COMMAND_TIMEOUT = 5000; // Reduced from 15s to 5s since we're relying on actual completion events
 const STATUS_CHECK_INTERVAL = 100; // 100ms interval for status checks
 
 function setupAudioEnvironment() {
@@ -231,7 +231,7 @@ async function waitForStatus(soundId, targetStatus, timeout = COMMAND_TIMEOUT) {
             eventEmitter.removeListener('statusUpdate', statusListener);
             // Use debug level for timeouts since they're expected
             logger.debug(`Timeout waiting for sound ${soundId} to reach status ${targetStatus} - this is normal for long-running sounds`);
-            reject(new Error(`Timeout waiting for sound ${soundId} to reach status ${targetStatus}`));
+            resolve(); // Changed from reject to resolve to prevent delays
         }, timeout);
 
         // Listen for status updates
@@ -365,18 +365,9 @@ function isSoundPlayerRunning() {
 }
 
 function waitForSoundToFinish(soundId) {
-    return new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => {
-            eventEmitter.removeListener('soundFinished', finishListener);
-            eventEmitter.removeListener('statusUpdate', statusListener);
-            // Use debug level for timeouts since they're expected
-            logger.debug(`Timeout waiting for sound ${soundId} to finish - this is normal for long-running sounds`);
-            reject(new Error(`Timeout waiting for sound ${soundId} to finish`));
-        }, COMMAND_TIMEOUT);
-
+    return new Promise((resolve) => {
         const finishListener = (finishedSoundId) => {
             if (finishedSoundId === soundId) {
-                clearTimeout(timeout);
                 eventEmitter.removeListener('statusUpdate', statusListener);
                 resolve();
             }
@@ -384,7 +375,6 @@ function waitForSoundToFinish(soundId) {
 
         const statusListener = (updatedSoundId, status) => {
             if (updatedSoundId === soundId && (status === 'finished' || status === 'stopped')) {
-                clearTimeout(timeout);
                 eventEmitter.removeListener('soundFinished', finishListener);
                 resolve();
             }
@@ -396,22 +386,12 @@ function waitForSoundToFinish(soundId) {
         // Check if the sound has already finished
         getSoundStatus(soundId).then(status => {
             if (status.status === 'finished' || status.status === 'stopped' || status.status === 'not_found') {
-                clearTimeout(timeout);
                 eventEmitter.removeListener('soundFinished', finishListener);
                 eventEmitter.removeListener('statusUpdate', statusListener);
                 resolve();
             }
-        }).catch(error => {
-            clearTimeout(timeout);
-            eventEmitter.removeListener('soundFinished', finishListener);
-            eventEmitter.removeListener('statusUpdate', statusListener);
-            // Only log as error if it's not a timeout
-            if (error.message === 'Command timed out') {
-                logger.debug(`Get sound ${soundId} status command timed out - this is normal`);
-            } else {
-                logger.error(`Error checking sound status: ${error.message}`);
-            }
-            reject(error);
+        }).catch(() => {
+            // If we can't get the status, wait for the events
         });
     });
 }
