@@ -13,7 +13,7 @@ class ReplicaAPI {
         this.audioSettings = {
             format: 'mp3',           // Most widely supported format
             sampleRate: 44100,       // CD-quality sample rate
-            bitRate: 192000,         // High-quality bitrate for clear audio
+            bitRate: 320,            // Highest quality supported bit rate (320kbps)
             channels: 2              // Stereo output
         };
 
@@ -144,7 +144,7 @@ class ReplicaAPI {
                 text: params.text.trim(),
                 extensions: [this.audioSettings.format],    // Always request MP3
                 sample_rate: this.audioSettings.sampleRate, // CD-quality 44.1kHz
-                bit_rate: this.audioSettings.bitRate,      // High-quality 192kbps
+                bit_rate: this.audioSettings.bitRate,      // High-quality 320kbps
                 channels: this.audioSettings.channels,      // Stereo
                 global_pace: pace,
                 model_chain: params.options?.modelChain || 'vox_2_0',
