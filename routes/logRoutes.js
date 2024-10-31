@@ -18,10 +18,17 @@ router.get('/', async (req, res) => {
         const files = await fs.readdir(LOG_DIR);
         const logFiles = await Promise.all(
             files
-                .filter(file => file.startsWith('MonsterBox-') && file.endsWith('.log'))
+                .filter(file => {
+                    // Match both patterns: name.log and name-YYYY-MM-DD.log
+                    return /^(combined|error|exceptions|rejections)(-\d{4}-\d{2}-\d{2})?\.log$/.test(file);
+                })
                 .map(async file => {
                     const stats = await fs.stat(path.join(LOG_DIR, file));
-                    return { name: file, mtime: stats.mtime };
+                    return { 
+                        name: file, 
+                        mtime: stats.mtime,
+                        type: file.split(/[-\.]/)[0] // Extract log type (combined, error, etc)
+                    };
                 })
         );
         
@@ -43,7 +50,23 @@ router.get('/', async (req, res) => {
         let allLogs = [];
         for (const file of logFiles) {
             const content = await fs.readFile(path.join(LOG_DIR, file.name), 'utf8');
-            allLogs = allLogs.concat(content.split('\n').filter(line => line.trim() !== ''));
+            // Parse each line as JSON and format it
+            const lines = content.split('\n')
+                .filter(line => line.trim() !== '')
+                .map(line => {
+                    try {
+                        const parsed = JSON.parse(line);
+                        return `[${parsed.timestamp}] ${parsed.level}: ${parsed.message}`;
+                    } catch (e) {
+                        // If JSON parsing fails, try to format it nicely anyway
+                        return line.includes('timestamp') ? line : `[LOG] ${line}`;
+                    }
+                });
+            
+            // Add file type header
+            allLogs.push(`=== ${file.type.toUpperCase()} LOGS (${file.name}) ===`);
+            allLogs = allLogs.concat(lines);
+            allLogs.push(''); // Empty line between different log files
         }
 
         // Reverse to show newest logs first
@@ -86,7 +109,9 @@ router.post('/clear', async (req, res) => {
         logger.info('Attempting to clear all log files');
 
         const files = await fs.readdir(LOG_DIR);
-        const logFiles = files.filter(file => file.startsWith('MonsterBox-') && file.endsWith('.log'));
+        const logFiles = files.filter(file => {
+            return /^(combined|error|exceptions|rejections)(-\d{4}-\d{2}-\d{2})?\.log$/.test(file);
+        });
 
         for (const file of logFiles) {
             await fs.writeFile(path.join(LOG_DIR, file), '', 'utf8');
