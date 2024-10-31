@@ -237,7 +237,9 @@ class CameraStream:
             # Reset counters on successful initialization
             self.frame_count = 0
             self.error_count = 0
-        return self.cap is not None
+            logger.info("Camera stream initialized successfully")
+            return True
+        return False
 
     def release(self):
         """Release camera resources."""
@@ -246,13 +248,14 @@ class CameraStream:
                 self.cap.release()
                 self.cap = None
             self.camera_lock.release()
+            logger.info("Camera resources released")
         except Exception as e:
             logger.warning(f"Error releasing camera: {e}")
 
     def stream(self):
         """Stream camera frames in MJPEG format."""
         if not self.initialize():
-            sys.stderr.write("Failed to initialize camera\n")
+            logger.error("Failed to initialize camera")
             return
 
         try:
@@ -277,12 +280,6 @@ class CameraStream:
                     # Log periodic status
                     if self.frame_count % 30 == 0:  # Every 30 frames
                         logger.info(f"Streaming frame {self.frame_count}")
-
-                    # Resize frame if necessary
-                    actual_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-                    actual_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                    if actual_width != self.width or actual_height != self.height:
-                        frame = cv2.resize(frame, (self.width, self.height))
 
                     # Add timestamp
                     timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
