@@ -116,21 +116,42 @@ async function startCameraStream(cameraId, width = DEFAULT_WIDTH, height = DEFAU
         let initOutput = '';
         let initError = '';
         let initialized = false;
+        let frameReceived = false;
 
         // Handle initialization output
-        process.stdout.once('data', (data) => {
+        process.stdout.on('data', (data) => {
             try {
-                initOutput += data.toString();
-                const result = JSON.parse(initOutput);
-                if (result.success) {
-                    initialized = true;
+                if (!initialized) {
+                    initOutput += data.toString();
+                    if (initOutput.includes('{"success":')) {
+                        const result = JSON.parse(initOutput.split('\n').find(line => line.includes('{"success":')));
+                        if (result.success) {
+                            initialized = true;
+                        } else {
+                            reject(new Error(result.error || 'Failed to initialize camera'));
+                            return;
+                        }
+                    }
+                }
+
+                // Check if we've received frame data
+                if (initialized && data.includes('--frame')) {
+                    frameReceived = true;
                     resolve(process);
-                } else {
-                    reject(new Error(result.error || 'Failed to initialize camera'));
+                }
+
+                // If initialized but not frame data, it might be other output
+                if (initialized && !frameReceived) {
+                    try {
+                        res.write(data);
+                    } catch (error) {
+                        logger.error('Error writing stream data:', error);
+                    }
                 }
             } catch (e) {
-                // If not JSON, it's probably the first frame
-                if (initialized) {
+                // If parsing fails, it might be frame data
+                if (initialized && data.includes('--frame')) {
+                    frameReceived = true;
                     resolve(process);
                 }
             }
@@ -145,14 +166,14 @@ async function startCameraStream(cameraId, width = DEFAULT_WIDTH, height = DEFAU
         });
 
         process.on('error', (err) => {
-            if (!initialized) {
+            if (!initialized || !frameReceived) {
                 reject(err);
             }
             logger.error('Stream process error:', err);
         });
 
         process.on('close', (code) => {
-            if (!initialized) {
+            if (!initialized || !frameReceived) {
                 reject(new Error(initError || `Stream process exited with code ${code}`));
             }
             logger.info(`Stream process closed with code ${code}`);
@@ -160,11 +181,11 @@ async function startCameraStream(cameraId, width = DEFAULT_WIDTH, height = DEFAU
 
         // Set a timeout for initialization
         setTimeout(() => {
-            if (!initialized) {
+            if (!initialized || !frameReceived) {
                 process.kill('SIGTERM');
                 reject(new Error('Stream initialization timeout'));
             }
-        }, 10000);  // 10 second timeout
+        }, 15000);  // 15 second timeout
 
         // Track this process
         activeProcesses.set('stream', process);
