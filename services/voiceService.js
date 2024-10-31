@@ -12,8 +12,8 @@ class VoiceService {
             speed: 1,
             volume: 0,
             sampleRate: 44100,
-            bitRate: 128,  // Using supported bit rate
-            outputFormat: 'wav',  // Request WAV format
+            bitRate: 128,  // Standard MP3 bitrate
+            outputFormat: 'mp3',  // Request MP3 format directly
             languageCode: 'en'
         };
     }
@@ -169,7 +169,8 @@ class VoiceService {
                     ...this.defaultSettings,
                     ...options,
                     modelChain,
-                    extensions: ['wav']  // Request WAV format
+                    extensions: ['mp3'],  // Request MP3 format directly
+                    bitRate: 128  // Standard MP3 bitrate
                 }
             });
 

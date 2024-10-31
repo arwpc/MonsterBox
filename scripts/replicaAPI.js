@@ -139,7 +139,7 @@ class ReplicaAPI {
             const requestBody = {
                 speaker_id: params.voiceId,
                 text: params.text.trim(),
-                extensions: params.options?.extensions || ['wav'],
+                extensions: params.options?.extensions || ['mp3'],  // Default to MP3
                 sample_rate: params.options?.sampleRate || 44100,
                 bit_rate: bitRate,
                 global_pace: pace,
