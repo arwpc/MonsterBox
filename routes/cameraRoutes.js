@@ -39,6 +39,7 @@ async function killExistingCameraProcesses() {
         try {
             process.kill('SIGTERM');
             activeProcesses.delete(key);
+            logger.info(`Killed process: ${key}`);
         } catch (error) {
             logger.error(`Error killing process ${key}:`, error);
         }
@@ -47,6 +48,7 @@ async function killExistingCameraProcesses() {
     // Then use pkill as a backup
     try {
         await exec('pkill -f "(camera_stream|camera_control|head_track).py"');
+        logger.info('Killed any remaining camera processes');
     } catch (error) {
         // Ignore pkill errors as they might mean no processes were found
     }
@@ -63,6 +65,7 @@ async function cleanupLockFiles() {
             if (file.startsWith('camera_') && file.endsWith('.lock')) {
                 try {
                     await fs.unlink(`/tmp/${file}`);
+                    logger.info(`Removed lock file: ${file}`);
                 } catch (error) {
                     logger.error(`Error removing lock file ${file}:`, error);
                 }
@@ -109,6 +112,8 @@ router.get('/stream', async (req, res) => {
         const height = parseInt(req.query.height) || 240;
         
         const streamScript = path.join(__dirname, '..', 'scripts', 'camera_stream.py');
+        logger.info(`Starting camera stream: ${streamScript}`);
+        
         const process = spawn('python3', [
             streamScript,
             '--camera-id', settings.selectedCamera.toString(),
@@ -118,6 +123,7 @@ router.get('/stream', async (req, res) => {
 
         // Track this process
         activeProcesses.set('stream', process);
+        logger.info('Camera stream process started');
 
         res.setHeader('Content-Type', 'multipart/x-mixed-replace; boundary=frame');
         
@@ -129,14 +135,17 @@ router.get('/stream', async (req, res) => {
             logger.error(`Stream error: ${data}`);
         });
 
-        process.on('close', () => {
+        process.on('close', (code) => {
+            logger.info(`Stream process closed with code ${code}`);
             activeProcesses.delete('stream');
             res.end();
         });
 
         req.on('close', async () => {
+            logger.info('Client disconnected, cleaning up');
             process.kill('SIGTERM');
             activeProcesses.delete('stream');
+            await cleanupLockFiles();
         });
 
     } catch (error) {
@@ -269,6 +278,8 @@ router.post('/select', async (req, res) => {
 
         // Verify camera is accessible
         const verifyScript = path.join(__dirname, '..', 'scripts', 'camera_control.py');
+        logger.info(`Verifying camera ${cameraId}`);
+        
         const process = spawn('python3', [
             verifyScript,
             'settings',
@@ -289,6 +300,7 @@ router.post('/select', async (req, res) => {
 
         process.stderr.on('data', (data) => {
             error += data.toString();
+            logger.error(`Camera verification error: ${data}`);
         });
 
         await new Promise((resolve, reject) => {
@@ -312,6 +324,7 @@ router.post('/select', async (req, res) => {
         });
 
         await saveCameraSettings({ selectedCamera: cameraId });
+        logger.info(`Camera ${cameraId} selected successfully`);
         res.json({ success: true });
     } catch (error) {
         logger.error('Error selecting camera:', error);
@@ -351,6 +364,7 @@ router.post('/control', async (req, res) => {
             });
         }
 
+        logger.info(`Executing camera control: ${args.join(' ')}`);
         const process = spawn('python3', args);
 
         // Track this process
