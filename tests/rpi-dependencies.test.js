@@ -1,4 +1,3 @@
-const { expect } = require('./test-helper');
 const { exec } = require('child_process');
 const { promisify } = require('util');
 const execAsync = promisify(exec);
@@ -6,15 +5,6 @@ const execAsync = promisify(exec);
 describe('RPI Dependencies Check', function() {
     // Increase timeout for slower operations
     this.timeout(10000);
-
-    // Check if running as root/sudo
-    before(function() {
-        if (process.getuid() !== 0) {
-            console.warn('\x1b[33m%s\x1b[0m', 
-                'Warning: Some tests require root privileges. Run with sudo: sudo npm test'
-            );
-        }
-    });
 
     // Helper function to run command and check output
     async function runCommand(command, errorMessage) {
@@ -25,6 +15,15 @@ describe('RPI Dependencies Check', function() {
             return { success: false, error: error.message };
         }
     }
+
+    before(function() {
+        // Check if running as root/sudo
+        if (process.getuid() !== 0) {
+            console.warn('\x1b[33m%s\x1b[0m', 
+                'Warning: Some tests require root privileges. Run with sudo: sudo npm test'
+            );
+        }
+    });
 
     it('should have I2C working', async function() {
         const result = await runCommand('sudo i2cdetect -y 1');

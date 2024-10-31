@@ -1,11 +1,9 @@
-// Test setup for all tests
 const chai = require('chai');
 const chaiHttp = require('chai-http');
+const app = require('../app');
 
-// Configure chai
 chai.use(chaiHttp);
-chai.config.includeStack = true; // Enable stack traces
-chai.config.truncateThreshold = 0; // Disable truncating
+chai.should();
 
 // Add custom assertion for version strings
 chai.Assertion.addMethod('validVersion', function() {
@@ -31,21 +29,6 @@ chai.Assertion.addMethod('devicePath', function() {
     );
 });
 
-// Make chai and its assertions globally available
 global.chai = chai;
+global.app = app;
 global.expect = chai.expect;
-global.should = chai.should();
-
-// Export for explicit imports if needed
-module.exports = {
-    chai,
-    expect: chai.expect,
-    should: chai.should(),
-};
-
-// Register the globals with Mocha
-before(function() {
-    global.chai = chai;
-    global.expect = chai.expect;
-    global.should = chai.should();
-});
