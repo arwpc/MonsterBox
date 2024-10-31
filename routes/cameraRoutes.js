@@ -91,37 +91,54 @@ async function startCameraStream(cameraId, width = 320, height = 240) {
             '--height', height.toString()
         ]);
 
-        let started = false;
-        let error = '';
+        let initOutput = '';
+        let initError = '';
+        let initialized = false;
+
+        // Handle initialization output
+        process.stdout.once('data', (data) => {
+            try {
+                initOutput += data.toString();
+                const result = JSON.parse(initOutput);
+                if (result.success) {
+                    initialized = true;
+                    resolve(process);
+                } else {
+                    reject(new Error(result.error || 'Failed to initialize camera'));
+                }
+            } catch (e) {
+                // If not JSON, it's probably the first frame
+                if (initialized) {
+                    resolve(process);
+                }
+            }
+        });
 
         process.stderr.on('data', (data) => {
             const msg = data.toString();
-            if (msg.includes('Successfully initialized camera')) {
-                started = true;
-                resolve(process);
-            } else if (!started) {
-                error += msg;
+            if (!initialized) {
+                initError += msg;
             }
             logger.info(`Stream output: ${msg}`);
         });
 
         process.on('error', (err) => {
-            if (!started) {
+            if (!initialized) {
                 reject(err);
             }
             logger.error('Stream process error:', err);
         });
 
         process.on('close', (code) => {
-            if (!started) {
-                reject(new Error(error || `Stream process exited with code ${code}`));
+            if (!initialized) {
+                reject(new Error(initError || `Stream process exited with code ${code}`));
             }
             logger.info(`Stream process closed with code ${code}`);
         });
 
-        // Set a timeout for stream initialization
+        // Set a timeout for initialization
         setTimeout(() => {
-            if (!started) {
+            if (!initialized) {
                 process.kill('SIGTERM');
                 reject(new Error('Stream initialization timeout'));
             }
@@ -370,13 +387,6 @@ router.post('/select', async (req, res) => {
                         if (result.success) {
                             await saveCameraSettings({ selectedCamera: cameraId });
                             logger.info(`Camera ${cameraId} selected successfully`);
-                            
-                            // Start streaming immediately after selection
-                            const streamProcess = await startCameraStream(cameraId);
-                            streamProcess.on('error', (err) => {
-                                logger.error('Stream process error:', err);
-                            });
-                            
                             resolve();
                         } else {
                             reject(new Error(result.error || 'Camera verification failed'));
