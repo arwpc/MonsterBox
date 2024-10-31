@@ -174,7 +174,7 @@ describe('Voice Routes', () => {
         const saveRes = await chai.request(app)
             .post('/api/voice/save-to-sounds')
             .send({
-                audioUrl: generateRes.body.url,
+                audioUrl: `/sounds/${path.basename(generateRes.body.path)}`,
                 text: testText,
                 characterId: testCharacterId
             });
