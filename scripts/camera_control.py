@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 
 import sys
-import cv2
-import numpy as np
-import argparse
 import logging
 import time
 import os
@@ -25,6 +22,26 @@ os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0"
 os.environ["OPENCV_VIDEOIO_PRIORITY_GSTREAMER"] = "0"
 os.environ["OPENCV_VIDEOIO_PRIORITY_V4L2"] = "100"
 os.environ["OPENCV_VIDEOIO_BACKEND"] = "v4l2"
+
+try:
+    import numpy as np
+except ImportError as e:
+    logger.error(f"Failed to import numpy: {e}")
+    print(json.dumps({
+        "success": False,
+        "error": "Required module numpy is not available. Please install it with: pip install numpy"
+    }))
+    sys.exit(1)
+
+try:
+    import cv2
+except ImportError as e:
+    logger.error(f"Failed to import cv2: {e}")
+    print(json.dumps({
+        "success": False,
+        "error": "Required module opencv-python is not available. Please install it with: pip install opencv-python"
+    }))
+    sys.exit(1)
 
 def initialize_camera(device_id: int, width: int = 320, height: int = 240) -> Optional[cv2.VideoCapture]:
     """Initialize camera with MJPG format first, fallback to others if needed."""
