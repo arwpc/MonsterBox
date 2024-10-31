@@ -57,6 +57,11 @@ def verify_camera_device(device_id: int) -> bool:
             settings = subprocess.check_output(['v4l2-ctl', '-d', device_path, '--all']).decode()
             logger.info(f"Current settings:\n{settings}")
             
+            # Check if MJPG format is supported
+            if 'MJPG' not in formats:
+                logger.error("Camera does not support MJPG format")
+                return False
+                
             return True
         except subprocess.CalledProcessError as e:
             logger.warning(f"v4l2-ctl error: {e}")
@@ -70,6 +75,9 @@ def set_camera_controls(device_id: int):
     """Set optimal camera controls using v4l2-ctl."""
     device_path = f"/dev/video{device_id}"
     try:
+        # Reset all controls to default
+        subprocess.run(['v4l2-ctl', '-d', device_path, '--all'])
+        
         # Set power line frequency to 50Hz
         subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=power_line_frequency=1'])
         
@@ -84,7 +92,7 @@ def set_camera_controls(device_id: int):
         
         # Set additional controls from v4l2-ctl output
         subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=brightness=0'])
-        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=contrast=0'])
+        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=contrast=32'])  # Changed to match camera_control.py
         subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=saturation=64'])
         subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=hue=0'])
         subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=gamma=100'])
@@ -96,7 +104,7 @@ def set_camera_controls(device_id: int):
     except Exception as e:
         logger.warning(f"Error setting camera controls: {e}")
 
-def initialize_camera(device_id: int, width: int = 320, height: int = 240, fps: int = 15) -> Tuple[Optional[cv2.VideoCapture], bool]:
+def initialize_camera(device_id: int, width: int = 1280, height: int = 720, fps: int = 30) -> Tuple[Optional[cv2.VideoCapture], bool]:
     """Initialize camera with optimized settings."""
     try:
         # Verify camera device first
@@ -169,7 +177,7 @@ def initialize_camera(device_id: int, width: int = 320, height: int = 240, fps: 
 class CameraStream:
     """Handles camera streaming in MJPEG format."""
     
-    def __init__(self, camera_id: int = 0, width: int = 320, height: int = 240, fps: int = 15):
+    def __init__(self, camera_id: int = 0, width: int = 1280, height: int = 720, fps: int = 30):
         self.camera_id = camera_id
         self.width = width
         self.height = height
@@ -282,12 +290,12 @@ def main():
     parser = argparse.ArgumentParser(description='Camera Streaming Script')
     parser.add_argument('--camera-id', type=int, default=0,
                        help='Camera device ID (default: 0)')
-    parser.add_argument('--width', type=int, default=320,
-                       help='Frame width (default: 320)')
-    parser.add_argument('--height', type=int, default=240,
-                       help='Frame height (default: 240)')
-    parser.add_argument('--fps', type=int, default=15,
-                       help='Frames per second (default: 15)')
+    parser.add_argument('--width', type=int, default=1280,
+                       help='Frame width (default: 1280)')
+    parser.add_argument('--height', type=int, default=720,
+                       help='Frame height (default: 720)')
+    parser.add_argument('--fps', type=int, default=30,
+                       help='Frames per second (default: 30)')
     
     args = parser.parse_args()
     

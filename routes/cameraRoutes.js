@@ -10,6 +10,11 @@ const exec = util.promisify(require('child_process').exec);
 // Path to store camera settings
 const CAMERA_SETTINGS_PATH = path.join(__dirname, '..', 'data', 'camera-settings.json');
 
+// Default camera settings
+const DEFAULT_WIDTH = 1280;
+const DEFAULT_HEIGHT = 720;
+const DEFAULT_FPS = 30;
+
 // Keep track of active camera processes
 let activeProcesses = new Map();
 
@@ -79,10 +84,10 @@ async function cleanupLockFiles() {
 }
 
 // Start camera stream
-async function startCameraStream(cameraId, width = 320, height = 240, fps = 15) {
+async function startCameraStream(cameraId, width = DEFAULT_WIDTH, height = DEFAULT_HEIGHT, fps = DEFAULT_FPS) {
     return new Promise((resolve, reject) => {
         const streamScript = path.join(__dirname, '..', 'scripts', 'camera_stream.py');
-        logger.info(`Starting camera stream: ${streamScript}`);
+        logger.info(`Starting camera stream: ${streamScript} with resolution ${width}x${height} @ ${fps}fps`);
         
         const process = spawn('python3', [
             streamScript,
@@ -143,7 +148,7 @@ async function startCameraStream(cameraId, width = 320, height = 240, fps = 15) 
                 process.kill('SIGTERM');
                 reject(new Error('Stream initialization timeout'));
             }
-        }, 10000);  // Increased timeout to 10 seconds
+        }, 10000);  // 10 second timeout
 
         // Track this process
         activeProcesses.set('stream', process);
@@ -182,9 +187,9 @@ router.get('/stream', async (req, res) => {
         await killExistingCameraProcesses();
         await cleanupLockFiles();
 
-        const width = parseInt(req.query.width) || 320;
-        const height = parseInt(req.query.height) || 240;
-        const fps = parseInt(req.query.fps) || 15;
+        const width = parseInt(req.query.width) || DEFAULT_WIDTH;
+        const height = parseInt(req.query.height) || DEFAULT_HEIGHT;
+        const fps = parseInt(req.query.fps) || DEFAULT_FPS;
 
         streamProcess = await startCameraStream(settings.selectedCamera, width, height, fps);
 
@@ -300,8 +305,9 @@ router.get('/list', async (req, res) => {
                         path.join(__dirname, '..', 'scripts', 'camera_control.py'),
                         'settings',
                         '--camera-id', device.id.toString(),
-                        '--width', '160',
-                        '--height', '120'
+                        '--width', DEFAULT_WIDTH.toString(),
+                        '--height', DEFAULT_HEIGHT.toString(),
+                        '--fps', DEFAULT_FPS.toString()
                     ]);
 
                     const result = await new Promise((resolve) => {
@@ -355,14 +361,15 @@ router.post('/select', async (req, res) => {
 
         // Verify camera is accessible
         const verifyScript = path.join(__dirname, '..', 'scripts', 'camera_control.py');
-        logger.info(`Verifying camera ${cameraId}`);
+        logger.info(`Verifying camera ${cameraId} with resolution ${DEFAULT_WIDTH}x${DEFAULT_HEIGHT} @ ${DEFAULT_FPS}fps`);
         
         const process = spawn('python3', [
             verifyScript,
             'settings',
             '--camera-id', cameraId.toString(),
-            '--width', '160',
-            '--height', '120'
+            '--width', DEFAULT_WIDTH.toString(),
+            '--height', DEFAULT_HEIGHT.toString(),
+            '--fps', DEFAULT_FPS.toString()
         ]);
 
         // Track this process
@@ -387,8 +394,13 @@ router.post('/select', async (req, res) => {
                     try {
                         const result = JSON.parse(output);
                         if (result.success) {
-                            await saveCameraSettings({ selectedCamera: cameraId });
-                            logger.info(`Camera ${cameraId} selected successfully`);
+                            await saveCameraSettings({ 
+                                selectedCamera: cameraId,
+                                width: result.width,
+                                height: result.height,
+                                fps: result.fps
+                            });
+                            logger.info(`Camera ${cameraId} selected successfully with resolution ${result.width}x${result.height} @ ${result.fps}fps`);
                             resolve();
                         } else {
                             reject(new Error(result.error || 'Camera verification failed'));
@@ -425,21 +437,25 @@ router.post('/control', async (req, res) => {
 
         const args = [controlScript, command, '--camera-id', settings.selectedCamera.toString()];
 
+        // Use saved settings or defaults
+        const width = params.width || settings.width || DEFAULT_WIDTH;
+        const height = params.height || settings.height || DEFAULT_HEIGHT;
+        const fps = params.fps || settings.fps || DEFAULT_FPS;
+
         if (command === 'settings') {
-            if (params.width !== undefined) {
-                args.push('--width', params.width.toString());
-            }
-            if (params.height !== undefined) {
-                args.push('--height', params.height.toString());
-            }
-            if (params.fps !== undefined) {
-                args.push('--fps', params.fps.toString());
-            }
+            args.push('--width', width.toString());
+            args.push('--height', height.toString());
+            args.push('--fps', fps.toString());
         } else if (command === 'motion') {
             // Set response headers for streaming
             res.setHeader('Content-Type', 'application/x-ndjson');
             res.setHeader('Cache-Control', 'no-cache');
             res.setHeader('Connection', 'keep-alive');
+
+            // Add resolution and fps parameters
+            args.push('--width', width.toString());
+            args.push('--height', height.toString());
+            args.push('--fps', fps.toString());
 
             // Start motion detection process
             logger.info(`Executing camera control: ${args.join(' ')}`);
