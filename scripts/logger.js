@@ -3,9 +3,9 @@ const path = require('path');
 
 // Create logs directory if it doesn't exist
 const fs = require('fs');
-const logDir = path.join(__dirname, '..', 'log');
+const logDir = path.resolve(process.cwd(), 'log');
 if (!fs.existsSync(logDir)) {
-    fs.mkdirSync(logDir);
+    fs.mkdirSync(logDir, { recursive: true });
 }
 
 // Define custom log format
@@ -42,15 +42,21 @@ const logger = winston.createLogger({
                 })
             )
         }),
-        // File transport
+        // File transport for errors
         new winston.transports.File({
             filename: path.join(logDir, 'error.log'),
-            level: 'error'
+            level: 'error',
+            options: { flags: 'a' }
         }),
+        // File transport for all logs
         new winston.transports.File({
-            filename: path.join(logDir, 'combined.log')
+            filename: path.join(logDir, 'combined.log'),
+            options: { flags: 'a' }
         })
     ]
 });
+
+// Add a test log to verify logging is working
+logger.info('Logger initialized');
 
 module.exports = logger;

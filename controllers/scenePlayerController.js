@@ -287,7 +287,7 @@ async function executeSound(step) {
 
             // For non-concurrent sounds, wait for completion
             if (step.concurrent !== "on") {
-                await waitForSoundCompletion(sound.id);
+                await soundController.waitForSoundToFinish(sound.id);
             }
         } catch (error) {
             // Log but ignore play errors
