@@ -37,7 +37,9 @@ apt-get install -y \
     libmp3lame0 \
     libmp3lame-dev \
     build-essential \
-    alsa-utils
+    alsa-utils \
+    libasound2 \
+    libasound2-dev
 
 # Install Python and core dependencies
 print_status "Installing Python dependencies..."
@@ -56,24 +58,27 @@ apt-get install -y \
     python3-pip \
     python3-pyaudio
 
-# Install OpenCV system dependencies
+# Install OpenCV dependencies for Debian Bookworm
 print_status "Installing OpenCV dependencies..."
 apt-get install -y \
     libopencv-dev \
     libatlas-base-dev \
-    libjasper-dev \
-    libqtgui4 \
-    libqt4-test \
     libhdf5-dev \
-    libhdf5-serial-dev
+    libgtk-3-0 \
+    libavcodec-dev \
+    libavformat-dev \
+    libswscale-dev
 
-# Install audio dependencies
-print_status "Installing audio dependencies..."
+# Install multimedia codecs
+print_status "Installing multimedia codecs..."
 apt-get install -y \
-    libasound2-dev \
-    portaudio19-dev \
-    libavcodec-extra \
-    libavcodec-extra58
+    libavcodec-dev \
+    libavformat-dev \
+    libswscale-dev \
+    libv4l-dev \
+    libxvidcore-dev \
+    libx264-dev \
+    libavcodec-extra
 
 # Enable I2C interface
 print_status "Enabling I2C interface..."
@@ -93,10 +98,13 @@ echo "start_x=1" >> /boot/config.txt
 
 # Set up audio volume
 print_status "Configuring audio settings..."
-amixer sset 'PCM' 95%
-amixer sset 'Master' 95%
+# Try different audio controls that might exist on Raspberry Pi
+for control in PCM Master Headphone Speaker; do
+    amixer -q sset $control 95% unmute 2>/dev/null || true
+done
+
 # Save the volume settings
-alsactl store
+alsactl store || true
 
 # Install Node.js dependencies
 print_status "Installing Node.js dependencies..."
@@ -113,26 +121,31 @@ fi
 print_status "Setting up audio permissions..."
 usermod -a -G audio $SUDO_USER
 
-# Verify ffmpeg installation and codecs
-print_status "Verifying ffmpeg installation..."
-if ! ffmpeg -version | grep -q "libmp3lame"; then
-    print_error "ffmpeg is missing MP3 support. Installing additional codecs..."
-    apt-get install -y \
-        libavcodec-extra \
-        libavcodec-extra58
-fi
-
 # Add current user to required groups
 print_status "Adding user to required groups..."
 usermod -a -G video,i2c,gpio,audio $SUDO_USER
+
+# Configure audio settings
+print_status "Configuring additional audio settings..."
+if [ ! -f /etc/asound.conf ]; then
+    echo "pcm.!default {
+    type hw
+    card 0
+}
+
+ctl.!default {
+    type hw
+    card 0
+}" > /etc/asound.conf
+fi
 
 print_success "Installation completed!"
 print_status "Please reboot your system to ensure all changes take effect."
 print_status "After reboot:"
 print_status "1. Run 'sudo i2cdetect -y 1' to verify I2C is working"
 print_status "2. Check camera with 'v4l2-ctl --list-devices'"
-print_status "3. Test audio with 'aplay -l'"
-print_status "4. Verify audio volume with 'amixer get PCM'"
+print_status "3. Test audio with 'speaker-test -t wav -c 2'"
+print_status "4. Verify audio settings with 'amixer'"
 print_status "5. Verify ffmpeg with 'ffmpeg -version'"
 print_status "6. Test MP3 playback with 'mpg123 --version'"
 print_status "7. Check GPU memory with 'vcgencmd get_mem gpu'"
