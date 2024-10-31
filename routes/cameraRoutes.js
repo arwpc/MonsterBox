@@ -8,6 +8,9 @@ const fs = require('fs').promises;
 // Path to store camera settings
 const CAMERA_SETTINGS_PATH = path.join(__dirname, '..', 'data', 'camera-settings.json');
 
+// Keep track of active camera processes
+let activeProcesses = new Map();
+
 // Load camera settings
 async function loadCameraSettings() {
     try {
@@ -30,10 +33,21 @@ async function saveCameraSettings(settings) {
 // Kill any existing camera processes
 async function killExistingCameraProcesses() {
     return new Promise((resolve) => {
+        // First kill any processes we're tracking
+        for (const [key, process] of activeProcesses.entries()) {
+            try {
+                process.kill();
+                activeProcesses.delete(key);
+            } catch (error) {
+                logger.error(`Error killing process ${key}:`, error);
+            }
+        }
+
+        // Then use pkill as a backup
         const kill = spawn('pkill', ['-f', '(camera_stream|camera_control|head_track).py']);
         kill.on('close', () => {
             // Add delay after killing processes
-            setTimeout(resolve, 1000);
+            setTimeout(resolve, 2000); // Increased delay to ensure cleanup
         });
     });
 }
@@ -66,7 +80,7 @@ router.get('/stream', async (req, res) => {
         // Kill any existing camera processes and wait
         await killExistingCameraProcesses();
 
-        const width = parseInt(req.query.width) || 320;  // Default to lower resolution
+        const width = parseInt(req.query.width) || 320;
         const height = parseInt(req.query.height) || 240;
         
         const streamScript = path.join(__dirname, '..', 'scripts', 'camera_stream.py');
@@ -76,6 +90,9 @@ router.get('/stream', async (req, res) => {
             '--width', width.toString(),
             '--height', height.toString()
         ]);
+
+        // Track this process
+        activeProcesses.set('stream', process);
 
         res.setHeader('Content-Type', 'multipart/x-mixed-replace; boundary=frame');
         
@@ -88,11 +105,13 @@ router.get('/stream', async (req, res) => {
         });
 
         process.on('close', () => {
+            activeProcesses.delete('stream');
             res.end();
         });
 
         req.on('close', () => {
             process.kill();
+            activeProcesses.delete('stream');
         });
 
     } catch (error) {
@@ -129,22 +148,18 @@ router.get('/list', async (req, res) => {
                     for (const line of lines) {
                         const trimmedLine = line.trim();
                         
-                        // If line doesn't start with /dev/, it's a camera name
                         if (!trimmedLine.startsWith('/dev/')) {
-                            // Save previous camera if exists
                             if (currentCamera && devices.length > 0) {
                                 cameras.push({
                                     name: currentCamera,
                                     devices: devices
                                 });
                             }
-                            // Start new camera if line not empty
                             if (trimmedLine) {
                                 currentCamera = trimmedLine;
                                 devices = [];
                             }
                         }
-                        // If line starts with /dev/video, it's a device
                         else if (trimmedLine.startsWith('/dev/video')) {
                             const deviceId = parseInt(trimmedLine.replace('/dev/video', ''));
                             devices.push({
@@ -154,7 +169,6 @@ router.get('/list', async (req, res) => {
                         }
                     }
 
-                    // Add last camera if exists
                     if (currentCamera && devices.length > 0) {
                         cameras.push({
                             name: currentCamera,
@@ -162,7 +176,6 @@ router.get('/list', async (req, res) => {
                         });
                     }
 
-                    // If no cameras found, try listing video devices directly
                     if (cameras.length === 0) {
                         const videoDevices = [];
                         for (let i = 0; i < 2; i++) {
@@ -183,7 +196,6 @@ router.get('/list', async (req, res) => {
 
                     resolve(cameras);
                 } else {
-                    // If v4l2-ctl fails, try listing video devices directly
                     fs.readdir('/dev').then(files => {
                         const videoDevices = files
                             .filter(file => file.startsWith('video'))
@@ -226,11 +238,14 @@ router.post('/select', async (req, res) => {
         const verifyScript = path.join(__dirname, '..', 'scripts', 'camera_control.py');
         const process = spawn('python3', [
             verifyScript,
-            'motion',  // Use motion command as it includes verification
+            'motion',
             '--camera-id', cameraId.toString(),
-            '--width', '160',  // Use minimal resolution for quick test
+            '--width', '160',
             '--height', '120'
         ]);
+
+        // Track this process
+        activeProcesses.set('verify', process);
 
         let output = '';
         let error = '';
@@ -245,6 +260,7 @@ router.post('/select', async (req, res) => {
 
         await new Promise((resolve, reject) => {
             process.on('close', (code) => {
+                activeProcesses.delete('verify');
                 if (code === 0) {
                     try {
                         const result = JSON.parse(output);
@@ -309,6 +325,10 @@ router.post('/control', async (req, res) => {
         }
 
         const process = spawn('python3', args);
+
+        // Track this process
+        activeProcesses.set('control', process);
+
         let output = '';
         let error = '';
 
@@ -322,6 +342,7 @@ router.post('/control', async (req, res) => {
         });
 
         process.on('close', (code) => {
+            activeProcesses.delete('control');
             if (code === 0 && output) {
                 try {
                     const result = JSON.parse(output);
@@ -338,6 +359,7 @@ router.post('/control', async (req, res) => {
         });
 
         process.on('error', (err) => {
+            activeProcesses.delete('control');
             logger.error('Failed to start camera control process:', err);
             res.status(500).json({
                 success: false,
