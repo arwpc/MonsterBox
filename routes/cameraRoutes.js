@@ -36,7 +36,7 @@ async function killExistingCameraProcesses() {
         // First kill any processes we're tracking
         for (const [key, process] of activeProcesses.entries()) {
             try {
-                process.kill();
+                process.kill('SIGTERM');
                 activeProcesses.delete(key);
             } catch (error) {
                 logger.error(`Error killing process ${key}:`, error);
@@ -46,10 +46,28 @@ async function killExistingCameraProcesses() {
         // Then use pkill as a backup
         const kill = spawn('pkill', ['-f', '(camera_stream|camera_control|head_track).py']);
         kill.on('close', () => {
-            // Add delay after killing processes
-            setTimeout(resolve, 2000); // Increased delay to ensure cleanup
+            // Add longer delay after killing processes
+            setTimeout(resolve, 3000); // Increased to 3 seconds
         });
     });
+}
+
+// Clean up lock files
+async function cleanupLockFiles() {
+    try {
+        const files = await fs.readdir('/tmp');
+        for (const file of files) {
+            if (file.startsWith('camera_') && file.endsWith('.lock')) {
+                try {
+                    await fs.unlink(`/tmp/${file}`);
+                } catch (error) {
+                    logger.error(`Error removing lock file ${file}:`, error);
+                }
+            }
+        }
+    } catch (error) {
+        logger.error('Error cleaning up lock files:', error);
+    }
 }
 
 router.get('/', async (req, res) => {
@@ -79,6 +97,7 @@ router.get('/stream', async (req, res) => {
 
         // Kill any existing camera processes and wait
         await killExistingCameraProcesses();
+        await cleanupLockFiles();
 
         const width = parseInt(req.query.width) || 320;
         const height = parseInt(req.query.height) || 240;
@@ -110,7 +129,7 @@ router.get('/stream', async (req, res) => {
         });
 
         req.on('close', () => {
-            process.kill();
+            process.kill('SIGTERM');
             activeProcesses.delete('stream');
         });
 
@@ -124,6 +143,7 @@ router.get('/list', async (req, res) => {
     try {
         // Kill any existing camera processes and wait
         await killExistingCameraProcesses();
+        await cleanupLockFiles();
 
         const result = await new Promise((resolve, reject) => {
             const process = spawn('v4l2-ctl', ['--list-devices']);
@@ -233,6 +253,7 @@ router.post('/select', async (req, res) => {
 
         // Kill any existing camera processes and wait
         await killExistingCameraProcesses();
+        await cleanupLockFiles();
 
         // Verify camera is accessible
         const verifyScript = path.join(__dirname, '..', 'scripts', 'camera_control.py');
@@ -298,6 +319,7 @@ router.post('/control', async (req, res) => {
 
         // Kill any existing camera processes and wait
         await killExistingCameraProcesses();
+        await cleanupLockFiles();
 
         const args = [controlScript, command, '--camera-id', settings.selectedCamera.toString()];
 
