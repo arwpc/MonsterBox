@@ -1,210 +1,264 @@
-# MonsterBox
+# MonsterBox Installation Guide
 
-A Node.js application for managing and controlling interactive animatronic displays through scenes, sounds, and various hardware components.
+This guide provides instructions for installing all required dependencies for the MonsterBox project.
 
-## Features
+## Installation Methods
 
-- Scene Management: Create, edit, and execute complex animatronic scenes
-- Character Management: Manage different character profiles and their associated components
-- Hardware Control:
-  - Servo Motors
-  - LED Controls
-  - Linear Actuators
-  - Motors
-  - Light Controls
-  - Sensors
-- Sound Management: Upload and play audio files
-- Voice Integration: Voice selection and management
-- Camera Integration: Live camera feed and head tracking capabilities
-- Active Mode: Real-time control and monitoring
-- Comprehensive Logging System
+### Method 1: Using the Installation Script (Recommended for Raspberry Pi)
 
-## Hardware Components
-
-### Core System
-- **Raspberry Pi**: RPi4b with 4GB RAM and 256GB SD Card
-- **USB Audio**: External USB Sound Card Adapter for audio output
-
-### Servo Control
-- **Controller**: PCA9685 16-Channel Servo Controller
-- **Servos**:
-  - Hooyij DS3240MG 40kg Waterproof High Torque Servo Motor
-    - Full metal gear
-    - Waterproof design
-    - High torque capacity
-  - Miuzei MG90S 9G Micro Servo Motor
-    - Compact design
-    - Suitable for lighter applications
-  - Gobilda Stingray 2 Servo Gearbox
-    - Used for animatronic head movement
-    - 0.34 sec/60° speed
-    - 30RPM
-    - 700 oz-in torque
-    - 900° rotation range
-
-### Motor Control System
-- **Control Board**: Cytron 2-channel 10A Motor Driver
-- **Linear Actuators**:
-  - 150mm Stroke Actuator
-    - Used for Baphomet's Arms
-    - Precise position control
-  - 12" Stroke Actuator
-    - Used for coffin door mechanism
-    - Heavy-duty applications
-- **Motors**:
-  - Jeep Wrangler Wiper Motor
-    - Robust design
-    - High torque capability
-
-### Sensors
-- **Motion Detection**: PIR Motion Sensor
-  - HC-SR501 Infrared Sensor
-  - Adjustable sensitivity
-  - Wide detection range
-
-## Dependencies
-
-### Core Dependencies
-- `express@4.21.1`: Web application framework
-- `body-parser@1.20.3`: Request body parsing middleware
-- `express-session@1.18.1`: Session middleware
-- `ejs@3.1.10`: Templating engine
-- `dotenv@16.4.5`: Environment variable management
-
-### Hardware Control
-- `i2c-bus@5.2.3`: I2C communication for hardware control
-- `onoff@6.0.3`: GPIO control for Raspberry Pi
-- `pca9685@5.0.0`: PWM controller for servos and LEDs
-
-### Media Handling
-- `hls.js@1.5.17`: HTTP Live Streaming client
-- `mpg123@0.2.3`: Audio playback
-- `multer@1.4.5-lts.1`: File upload handling
-- `ws@8.18.0`: WebSocket client/server
-
-### System Management
-- `node-disk-info@1.3.0`: Disk information utilities
-- `node-schedule@2.1.1`: Task scheduling
-- `form-data@4.0.1`: Form data handling
-- `jsdom@25.0.1`: DOM environment for testing
-
-### Logging & Monitoring
-- `winston@3.15.0`: Logging framework
-- `winston-daily-rotate-file@4.7.1`: Log rotation
-
-### Development & Testing
-- `nodemon@3.1.7`: Development server with auto-reload
-- `mocha@10.7.3`: Testing framework
-- `chai@4.5.0`: Assertion library
-- `chai-http@4.4.0`: HTTP integration testing
-- `supertest@6.3.4`: HTTP assertions
-- `axios@1.7.7`: HTTP client
-
-### Authentication & Tools
-- `replit-auth@5.0.3`: Authentication utilities
-- `repopack@0.1.43`: Repository management tools
-
-## System Requirements
-
-- Node.js >= 14.0.0
-- Python (for hardware control scripts)
-- Required hardware components as detailed in Hardware Components section
-- Network connectivity for web interface access
-- USB ports for audio and peripheral connections
-- I2C interface enabled on Raspberry Pi
-
-## Installation
-
-1. Clone the repository:
 ```bash
-git clone https://github.com/your-repo/monsterbox.git
-cd monsterbox
+sudo ./install.sh
 ```
 
-2. Install Node.js dependencies:
+### Method 2: Manual Installation
+
+#### System Dependencies
+
 ```bash
+# Update package lists
+sudo apt-get update
+
+# Install system dependencies
+sudo apt-get install -y \
+    v4l-utils \
+    i2c-tools \
+    nodejs \
+    npm \
+    git \
+    ffmpeg \
+    mpg123 \
+    libmp3lame0 \
+    libmp3lame-dev \
+    build-essential \
+    alsa-utils
+
+# Install Python and dependencies
+sudo apt-get install -y \
+    python3-dev \
+    python3-numpy \
+    python3-opencv \
+    python3-rpi.gpio \
+    python3-smbus \
+    python3-pygame \
+    python3-flask \
+    python3-gpiozero \
+    python3-psutil \
+    python3-setuptools \
+    python3-wheel \
+    python3-pip \
+    python3-pyaudio
+
+# Install OpenCV dependencies
+sudo apt-get install -y \
+    libopencv-dev \
+    libatlas-base-dev \
+    libjasper-dev \
+    libqtgui4 \
+    libqt4-test \
+    libhdf5-dev \
+    libhdf5-serial-dev
+
+# Install audio dependencies
+sudo apt-get install -y \
+    libasound2-dev \
+    portaudio19-dev \
+    libavcodec-extra \
+    libavcodec-extra58
+```
+
+#### Configure Hardware Settings
+
+1. Set GPU Memory and Enable Camera:
+```bash
+# Edit /boot/config.txt
+sudo sed -i '/gpu_mem=/d' /boot/config.txt
+sudo sed -i '/start_x=/d' /boot/config.txt
+echo "gpu_mem=1024" | sudo tee -a /boot/config.txt
+echo "start_x=1" | sudo tee -a /boot/config.txt
+```
+
+2. Configure Audio Volume:
+```bash
+# Set volume to 95%
+amixer sset 'PCM' 95%
+amixer sset 'Master' 95%
+sudo alsactl store
+```
+
+3. Enable I2C:
+```bash
+# Add to /etc/modules
+echo "i2c-dev" | sudo tee -a /etc/modules
+
+# Enable in config.txt
+echo "dtparam=i2c_arm=on" | sudo tee -a /boot/config.txt
+```
+
+#### Node.js Dependencies
+
+```bash
+# Install Node.js packages
 npm install
 ```
 
-3. Set up environment variables:
+### Method 3: Development Installation (Non-Raspberry Pi)
+
+For development on non-Raspberry Pi systems, you can skip the hardware-specific dependencies:
+
 ```bash
-cp .env.example .env
-# Edit .env with your configuration
+# Install core system dependencies
+sudo apt-get update && sudo apt-get install -y \
+    v4l-utils \
+    nodejs \
+    npm \
+    git \
+    ffmpeg \
+    mpg123 \
+    libmp3lame0 \
+    python3-dev \
+    python3-numpy \
+    python3-opencv \
+    python3-pygame \
+    python3-flask \
+    python3-psutil \
+    alsa-utils
+
+# Set audio volume
+amixer sset 'PCM' 95%
+amixer sset 'Master' 95%
+sudo alsactl store
+
+# Install Node.js packages
+npm install
 ```
 
-## Project Structure
+## Post-Installation
 
-- `/controllers` - Business logic for different components
-- `/data` - JSON data storage for characters, scenes, sounds, etc.
-- `/public` - Static assets (CSS, images, sounds)
-- `/routes` - Express route definitions
-- `/scripts` - Python and JavaScript scripts for hardware control
-- `/services` - Core service layer
-- `/tests` - Test suites
-- `/views` - EJS templates for the web interface
-
-## Running the Application
-
-Development mode:
+1. Reboot your system to ensure all changes take effect:
 ```bash
-npm run dev
+sudo reboot
 ```
 
-Production mode:
+2. After reboot, verify the installations:
+
+- Check GPU Memory:
 ```bash
-npm start
+vcgencmd get_mem gpu
+# Should show: gpu=1024M
 ```
 
-Run tests:
+- Check Audio Volume:
 ```bash
-npm test
+amixer get PCM
+# Should show volume at 95%
 ```
 
-Run specific test suite:
+- Check I2C (Raspberry Pi):
 ```bash
-npm run test:sound
+sudo i2cdetect -y 1
 ```
 
-## Logging System
-
-MonsterBox uses Winston for centralized logging:
-
-- Log files are stored in the `/log` directory
-- Daily rotation with compression after 20MB
-- 14-day retention policy
-- Multiple log levels (debug, info, warn, error)
-
-Configure logging level via environment variable:
+- Check camera:
 ```bash
-export LOG_LEVEL=debug
+v4l2-ctl --list-devices
 ```
 
-## Scene Management
+- Check audio devices:
+```bash
+aplay -l
+```
 
-Scenes can be created and managed through the web interface, including:
-- Step sequencing
-- Component coordination
-- Sound integration
-- Timing control
-- Character-specific behaviors
+- Verify ffmpeg installation:
+```bash
+ffmpeg -version
+```
 
-## API Routes
+- Test MP3 playback:
+```bash
+mpg123 --version
+```
 
-The application provides various REST endpoints for:
-- Character management (`/api/characters`)
-- Scene control (`/api/scenes`)
-- Hardware control (`/api/servos`, `/api/leds`, etc.)
-- Sound management (`/api/sounds`)
-- System configuration (`/api/system-config`)
+## Hardware Requirements
 
-## Contributing
+- Raspberry Pi (recommended: 4B or newer)
+- Camera module or USB camera
+- I2C-enabled devices (servos, sensors)
+- Audio output device
+- GPIO-connected components (LEDs, motors)
+- At least 1024MB GPU memory allocation
 
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+## Troubleshooting
 
-## License
+If you encounter permission issues:
 
-MIT License - See LICENSE file for details
+1. Add your user to required groups:
+```bash
+sudo usermod -a -G video,i2c,gpio,audio $USER
+```
+
+2. Set up video device permissions:
+```bash
+echo 'SUBSYSTEM=="video4linux", GROUP="video", MODE="0666"' | sudo tee /etc/udev/rules.d/99-camera.rules
+```
+
+3. Reload udev rules:
+```bash
+sudo udevadm control --reload-rules && sudo udevadm trigger
+```
+
+### Audio Issues
+
+If you encounter audio playback issues:
+
+1. Check audio devices:
+```bash
+aplay -l
+```
+
+2. Verify volume settings:
+```bash
+amixer get PCM
+amixer get Master
+```
+
+3. Test MP3 playback:
+```bash
+mpg123 -t test.mp3
+```
+
+4. Verify ffmpeg MP3 support:
+```bash
+ffmpeg -codecs | grep mp3
+```
+
+### Camera Issues
+
+If the camera isn't working:
+
+1. Check if camera is detected:
+```bash
+ls -l /dev/video*
+```
+
+2. Test camera access:
+```bash
+v4l2-ctl --all
+```
+
+3. Verify camera settings:
+```bash
+v4l2-ctl --list-formats-ext
+```
+
+### GPU Memory Issues
+
+If you experience graphics issues:
+
+1. Verify GPU memory allocation:
+```bash
+vcgencmd get_mem gpu
+```
+
+2. Check config.txt settings:
+```bash
+grep gpu_mem /boot/config.txt
