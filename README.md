@@ -7,7 +7,8 @@ This guide provides instructions for installing all required dependencies for th
 ### Method 1: Using the Installation Script (Recommended for Raspberry Pi)
 
 ```bash
-sudo ./install.sh
+# IMPORTANT: Run with bash, NOT python
+sudo bash install.sh
 ```
 
 ### Method 2: Manual Installation
@@ -189,7 +190,24 @@ mpg123 --version
 
 ## Troubleshooting
 
-If you encounter permission issues:
+### Installation Script Issues
+
+1. Make sure to run the installation script with bash:
+```bash
+# CORRECT way to run the script:
+sudo bash install.sh
+
+# INCORRECT ways:
+sudo python3 install.sh  # This will fail
+sudo ./install.sh       # This might fail if script isn't executable
+```
+
+2. If you get permission errors, make sure the script is executable:
+```bash
+chmod +x install.sh
+```
+
+### Permission Issues
 
 1. Add your user to required groups:
 ```bash

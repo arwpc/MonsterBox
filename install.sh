@@ -1,4 +1,5 @@
 #!/bin/bash
+# This is a bash script and should be run with: sudo bash install.sh
 
 # Function to print colored output
 print_status() {
@@ -15,7 +16,7 @@ print_success() {
 
 # Check if running as root
 if [ "$EUID" -ne 0 ]; then 
-    print_error "Please run as root (use sudo)"
+    print_error "Please run as root (use sudo bash install.sh)"
     exit 1
 fi
 
