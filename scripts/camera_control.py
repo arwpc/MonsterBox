@@ -230,6 +230,7 @@ class MotionDetector:
         )
         self.prev_frame = None
         self.min_area = 50
+        self.frame_count = 0
 
     def initialize(self) -> bool:
         """Initialize camera with specified settings."""
@@ -264,128 +265,133 @@ class MotionDetector:
                     break
                 time.sleep(1.0)
 
-            ret, frame = self.cap.read()
-            if not ret or frame is None or frame.size == 0:
-                return {"success": False, "error": "Failed to capture frame"}
+            # Process frames for motion detection
+            while True:
+                ret, frame = self.cap.read()
+                if not ret or frame is None or frame.size == 0:
+                    return {"success": False, "error": "Failed to capture frame"}
 
-            # Create a copy of the frame for drawing
-            display_frame = frame.copy()
+                # Create a copy of the frame for drawing
+                display_frame = frame.copy()
 
-            # Convert to grayscale and apply blur
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            gray = cv2.GaussianBlur(gray, (21, 21), 0)
+                # Convert to grayscale and apply blur
+                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                gray = cv2.GaussianBlur(gray, (21, 21), 0)
 
-            # Initialize previous frame if needed
-            if self.prev_frame is None:
+                # Initialize previous frame if needed
+                if self.prev_frame is None:
+                    self.prev_frame = gray
+                    continue
+
+                # Calculate absolute difference between frames
+                frame_delta = cv2.absdiff(self.prev_frame, gray)
+                thresh = cv2.threshold(frame_delta, 25, 255, cv2.THRESH_BINARY)[1]
+
+                # Apply background subtraction
+                mask = self.background_subtractor.apply(gray)
+                
+                # Combine frame difference and background subtraction
+                combined_mask = cv2.bitwise_or(thresh, mask)
+                
+                # Clean up the mask
+                combined_mask = cv2.erode(combined_mask, None, iterations=2)
+                combined_mask = cv2.dilate(combined_mask, None, iterations=2)
+
+                # Find contours
+                contours, _ = cv2.findContours(
+                    combined_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+                )
+
+                # Update previous frame
                 self.prev_frame = gray
-                return {
-                    "success": True,
-                    "motion_detected": False,
-                    "frame": self._encode_frame(display_frame)
-                }
 
-            # Calculate absolute difference between frames
-            frame_delta = cv2.absdiff(self.prev_frame, gray)
-            thresh = cv2.threshold(frame_delta, 25, 255, cv2.THRESH_BINARY)[1]
+                # Find largest contour
+                largest_contour = None
+                largest_area = 0
+                for cnt in contours:
+                    area = cv2.contourArea(cnt)
+                    if area > self.min_area and area > largest_area:
+                        largest_area = area
+                        largest_contour = cnt
 
-            # Apply background subtraction
-            mask = self.background_subtractor.apply(gray)
-            
-            # Combine frame difference and background subtraction
-            combined_mask = cv2.bitwise_or(thresh, mask)
-            
-            # Clean up the mask
-            combined_mask = cv2.erode(combined_mask, None, iterations=2)
-            combined_mask = cv2.dilate(combined_mask, None, iterations=2)
+                # Draw motion indicators on frame
+                if largest_contour is not None:
+                    x, y, w, h = cv2.boundingRect(largest_contour)
+                    center_x = int(x + w/2)
+                    center_y = int(y + h/2)
 
-            # Find contours
-            contours, _ = cv2.findContours(
-                combined_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-            )
+                    # Draw motion box with glow effect
+                    cv2.rectangle(display_frame, (x-2, y-2), (x+w+2, y+h+2), (0, 255, 0), 4)
+                    cv2.rectangle(display_frame, (x, y), (x+w, y+h), (255, 255, 255), 2)
+                    
+                    # Draw crosshair with glow effect
+                    cv2.line(display_frame, (center_x-15, center_y), (center_x+15, center_y), 
+                            (0, 255, 0), 3)
+                    cv2.line(display_frame, (center_x, center_y-15), (center_x, center_y+15), 
+                            (0, 255, 0), 3)
+                    cv2.line(display_frame, (center_x-10, center_y), (center_x+10, center_y), 
+                            (255, 255, 255), 1)
+                    cv2.line(display_frame, (center_x, center_y-10), (center_x, center_y+10), 
+                            (255, 255, 255), 1)
 
-            # Update previous frame
-            self.prev_frame = gray
+                    # Calculate normalized position (0-100)
+                    norm_x = (center_x / frame.shape[1]) * 100
+                    norm_y = (center_y / frame.shape[0]) * 100
 
-            # Find largest contour
-            largest_contour = None
-            largest_area = 0
-            for cnt in contours:
-                area = cv2.contourArea(cnt)
-                if area > self.min_area and area > largest_area:
-                    largest_area = area
-                    largest_contour = cnt
+                    # Add motion info with glow effect
+                    timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+                    motion_text = f"Motion Detected"
+                    coords_text = f"Position: ({int(norm_x)}, {int(norm_y)})"
+                    
+                    font = cv2.FONT_HERSHEY_SIMPLEX
+                    cv2.putText(display_frame, timestamp, (5, frame.shape[0]-5), font, 
+                               0.5, (0, 255, 0), 2)
+                    cv2.putText(display_frame, timestamp, (5, frame.shape[0]-5), font, 
+                               0.5, (255, 255, 255), 1)
+                    cv2.putText(display_frame, motion_text, (5, 20), font, 
+                               0.5, (0, 255, 0), 2)
+                    cv2.putText(display_frame, motion_text, (5, 20), font, 
+                               0.5, (255, 255, 255), 1)
+                    cv2.putText(display_frame, coords_text, (5, 40), font, 
+                               0.5, (0, 255, 0), 2)
+                    cv2.putText(display_frame, coords_text, (5, 40), font, 
+                               0.5, (255, 255, 255), 1)
 
-            # Draw motion indicators on frame
-            if largest_contour is not None:
-                x, y, w, h = cv2.boundingRect(largest_contour)
-                center_x = int(x + w/2)
-                center_y = int(y + h/2)
+                    print(json.dumps({
+                        "success": True,
+                        "motion_detected": True,
+                        "center_x": norm_x,
+                        "center_y": norm_y,
+                        "width": w,
+                        "height": h,
+                        "area": largest_area,
+                        "frame": self._encode_frame(display_frame)
+                    }))
+                    sys.stdout.flush()
 
-                # Draw motion box with glow effect
-                cv2.rectangle(display_frame, (x-2, y-2), (x+w+2, y+h+2), (0, 255, 0), 4)
-                cv2.rectangle(display_frame, (x, y), (x+w, y+h), (255, 255, 255), 2)
-                
-                # Draw crosshair with glow effect
-                cv2.line(display_frame, (center_x-15, center_y), (center_x+15, center_y), 
-                        (0, 255, 0), 3)
-                cv2.line(display_frame, (center_x, center_y-15), (center_x, center_y+15), 
-                        (0, 255, 0), 3)
-                cv2.line(display_frame, (center_x-10, center_y), (center_x+10, center_y), 
-                        (255, 255, 255), 1)
-                cv2.line(display_frame, (center_x, center_y-10), (center_x, center_y+10), 
-                        (255, 255, 255), 1)
+                else:
+                    # If no motion, just return the frame with timestamp
+                    timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+                    font = cv2.FONT_HERSHEY_SIMPLEX
+                    cv2.putText(display_frame, "No Motion", (5, 20), font, 
+                               0.5, (0, 255, 0), 2)
+                    cv2.putText(display_frame, "No Motion", (5, 20), font, 
+                               0.5, (255, 255, 255), 1)
+                    cv2.putText(display_frame, timestamp, (5, frame.shape[0]-5), font, 
+                               0.5, (0, 255, 0), 2)
+                    cv2.putText(display_frame, timestamp, (5, frame.shape[0]-5), font, 
+                               0.5, (255, 255, 255), 1)
 
-                # Calculate normalized position (0-100)
-                norm_x = (center_x / frame.shape[1]) * 100
-                norm_y = (center_y / frame.shape[0]) * 100
+                    print(json.dumps({
+                        "success": True,
+                        "motion_detected": False,
+                        "frame": self._encode_frame(display_frame)
+                    }))
+                    sys.stdout.flush()
 
-                # Add motion info with glow effect
-                timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-                motion_text = f"Motion Detected"
-                coords_text = f"Position: ({int(norm_x)}, {int(norm_y)})"
-                
-                font = cv2.FONT_HERSHEY_SIMPLEX
-                cv2.putText(display_frame, timestamp, (5, frame.shape[0]-5), font, 
-                           0.5, (0, 255, 0), 2)
-                cv2.putText(display_frame, timestamp, (5, frame.shape[0]-5), font, 
-                           0.5, (255, 255, 255), 1)
-                cv2.putText(display_frame, motion_text, (5, 20), font, 
-                           0.5, (0, 255, 0), 2)
-                cv2.putText(display_frame, motion_text, (5, 20), font, 
-                           0.5, (255, 255, 255), 1)
-                cv2.putText(display_frame, coords_text, (5, 40), font, 
-                           0.5, (0, 255, 0), 2)
-                cv2.putText(display_frame, coords_text, (5, 40), font, 
-                           0.5, (255, 255, 255), 1)
-
-                return {
-                    "success": True,
-                    "motion_detected": True,
-                    "center_x": norm_x,
-                    "center_y": norm_y,
-                    "width": w,
-                    "height": h,
-                    "area": largest_area,
-                    "frame": self._encode_frame(display_frame)
-                }
-
-            # If no motion, just return the frame with timestamp
-            timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-            font = cv2.FONT_HERSHEY_SIMPLEX
-            cv2.putText(display_frame, "No Motion", (5, 20), font, 
-                       0.5, (0, 255, 0), 2)
-            cv2.putText(display_frame, "No Motion", (5, 20), font, 
-                       0.5, (255, 255, 255), 1)
-            cv2.putText(display_frame, timestamp, (5, frame.shape[0]-5), font, 
-                       0.5, (0, 255, 0), 2)
-            cv2.putText(display_frame, timestamp, (5, frame.shape[0]-5), font, 
-                       0.5, (255, 255, 255), 1)
-
-            return {
-                "success": True,
-                "motion_detected": False,
-                "frame": self._encode_frame(display_frame)
-            }
+                # Control frame rate
+                time.sleep(1.0 / self.fps)
+                self.frame_count += 1
 
         except Exception as e:
             logger.warning(f"Motion detection error: {e}")
@@ -422,9 +428,8 @@ def main():
             sys.exit(0 if result["success"] else 1)
         elif args.command == 'motion':
             detector = MotionDetector(args.camera_id, args.width, args.height, args.fps)
-            result = detector.detect_motion()
-            print(json.dumps(result))
-            sys.exit(0 if result["success"] else 1)
+            detector.detect_motion()
+            sys.exit(0)
             
     except Exception as e:
         print(json.dumps({
