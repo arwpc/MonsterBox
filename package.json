@@ -7,7 +7,8 @@
     "start": "node --no-deprecation app.js",
     "dev": "nodemon --trace-deprecation --trace-warnings app.js",
     "test": "mocha --require ./tests/setupTests.js tests --recursive",
-    "test:sound": "mocha tests/sound-playback.test.js"
+    "test:sound": "mocha tests/sound-playback.test.js",
+    "test:rpi": "mocha --require ./tests/setupTests.js tests/rpi-dependencies.test.js"
   },
   "dependencies": {
     "body-parser": "^1.20.2",
