@@ -213,28 +213,52 @@ class ReplicaAPI {
                 throw new Error(`Speech generation failed: ${jobStatus.data.state}`);
             }
 
+            if (!jobStatus.data.url) {
+                throw new Error('No download URL provided in response');
+            }
+
             // Download the WAV file
+            logger.info(`Downloading WAV file from: ${jobStatus.data.url}`);
             const audioResponse = await axios.get(jobStatus.data.url, {
                 responseType: 'arraybuffer'
             });
 
-            // Save WAV file temporarily
+            // Create sanitized filename from text
+            const sanitizedText = params.text.slice(0, 30)
+                .toLowerCase()
+                .replace(/[^a-z0-9]/g, '_');
             const timestamp = Date.now();
-            const wavPath = path.join(process.cwd(), 'public', 'sounds', `${timestamp}_temp.wav`);
-            const mp3Path = path.join(process.cwd(), 'public', 'sounds', `${timestamp}.mp3`);
+            const filename = `${timestamp}-${sanitizedText}`;
+
+            // Ensure the sounds directory exists
+            const soundsDir = path.join(process.cwd(), 'public', 'sounds');
+            try {
+                await fs.access(soundsDir);
+            } catch {
+                await fs.mkdir(soundsDir, { recursive: true });
+            }
+
+            // Save WAV file temporarily
+            const wavPath = path.join(soundsDir, `${filename}.wav`);
+            const mp3Path = path.join(soundsDir, `${filename}.mp3`);
             
             await fs.writeFile(wavPath, Buffer.from(audioResponse.data));
+            logger.info(`Saved WAV file to: ${wavPath}`);
 
             // Convert WAV to MP3
             await this.convertToMp3(wavPath, mp3Path);
+            logger.info(`Converted to MP3: ${mp3Path}`);
 
-            // Return the path to the converted MP3 file
+            // Return the result with proper file paths
+            const relativeMp3Path = path.join('sounds', `${filename}.mp3`);
             return {
-                url: `sounds/${path.basename(mp3Path)}`,
+                url: relativeMp3Path,
                 uuid: jobStatus.data.uuid,
                 state: jobStatus.data.state,
                 duration: jobStatus.data.duration,
                 format: this.audioSettings.targetFormat,
+                filepath: mp3Path,
+                filename: `${filename}.mp3`,
                 metadata: {
                     requestTime: new Date().toISOString(),
                     textLength: params.text.length,
