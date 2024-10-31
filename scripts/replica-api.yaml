@@ -1,0 +1,2519 @@
+openapi: 3.0.0
+info:
+  title: Replica API
+  version: 2.0.0
+  description: API Documentation for Replica Studios
+  contact:
+    email: "team@replicastudios.com"
+servers:
+  - url: "https://api.replicastudios.com/v2"
+    description: "Production"
+
+tags:
+  - name: auth
+    description: Endpoints for authentication and authorization
+    x-displayName: Auth
+  - name: userinfo
+    description: Endpoints for user information
+    x-displayName: User Info
+  - name: voices
+    description: Endpoints for voice-related operations
+    x-displayName: Voices
+  - name: speech (history)
+    description: Endpoints related to retrieving speech history
+    x-displayName: History
+  - name: speech
+    description: Endpoints related to speech job operations
+    x-displayName: Operations
+  - name: speech (batched)
+    description: Endpoints related to speech batch operations
+    x-displayName: Batch Operations
+  - name: tts
+    description: Endpoints for Text-to-Speech operations
+    x-displayName: Text-to-Speech
+  - name: sts
+    description: Endpoints for Speech-to-Speech operations
+    x-displayName: Speech-to-Speech
+  - name: voicelab
+    description: Endpoints for Voicelab operations
+    x-displayName: Voicelab
+  - name: favorites
+    description: Endpoints for User favorites retrieval
+    x-displayName: Favorites
+  - name: labels
+    description: Endpoints for User label operations
+    x-displayName: Labels
+  - name: effects
+    description: Endpoints for effects operations
+    x-displayName: Effects Presets
+
+x-tagGroups:
+  - name: auth
+    tags:
+      - auth
+      - userinfo
+  - name: voices
+    tags:
+      - voices
+  - name: speech
+    tags:
+      - speech (history)
+      - speech
+      - speech (batched)
+  - name: speech generation
+    tags:
+      - tts
+      - sts
+  - name: voicelab
+    tags:
+      - voicelab
+  - name: favorites & labels
+    tags:
+      - favorites
+      - labels
+  - name: effects presets
+    tags:
+      - effects
+
+
+paths:
+  /auth:
+    post:
+      tags:
+        - auth
+      summary: Authenticate user
+      description: Authenticate user (Bearer Authentication Only)
+      operationId: authenticateUser
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                client_id:
+                  type: string
+                  example: 5cfa9ac9-147b-4ccc-8373-d57dcdecfb27
+                secret:
+                  type: string
+                  example: 069e9582-ce4c-4675-9589-71448bb89690
+      responses:
+        '200':
+          description: Successful authentication
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  refresh_token:
+                    type: string
+                    example: "6fce13d2-aa94-4ee0-b9e8-fca1b37290e5"
+        '401':
+          description: Invalid authentication
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: array
+                    items:
+                      type: string
+                      example: "Invalid authentication"
+
+  /auth/refresh:
+    post:
+      tags:
+        - auth
+      summary: Refresh authentication token
+      description: Refresh authentication token (Bearer Authentication Only)
+      operationId: refreshAuthToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh_token:
+                  type: string
+                  example: 0c9f73f0-25a3-4737-beda-68d7fa24ce01
+      responses:
+        '200':
+          description: Successful token refresh
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  refresh_token:
+                    type: string
+                    example: "6fce13d2-aa94-4ee0-b9e8-fca1b37290e5"
+        '401':
+          description: Invalid refresh token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: array
+                    items:
+                      type: string
+                      example: "Refresh token is not found"
+
+  /api_key:
+    get:
+      x-internal: true
+      tags:
+        - auth
+      summary: Get user API Key
+      description: Get user API Key
+      operationId: getApiKey
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful retrieval of user API Key
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  api_key:
+                    type: string
+                    example: 5cfa9ac9-147b-4ccc-8373-d57dcdecfb27
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+          
+  /api_key/regenerate:
+    get:
+      x-internal: true
+      tags:
+        - auth
+      summary: Regenerate user API Key
+      description: Regenerate user API Key
+      operationId: getRegenerateApiKey
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful regeneration of user API Key
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  api_key:
+                    type: string
+                    example: 5cfa9ac9-147b-4ccc-8373-d57dcdecfb27
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /userinfo:
+    get:
+      tags:
+        - userinfo
+      summary: Get user information
+      description: Get user information
+      operationId: getUserInfo
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful retrieval of user information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uuid:
+                    type: string
+                    example: 5cfa9ac9-147b-4ccc-8373-d57dcdecfb27
+                  email:
+                    type: string
+                    example: user@test.com
+                  email_verified:
+                    type: boolean
+                    example: true
+                  created:
+                    type: string
+                    format: date-time
+                    example: 2024-06-12T00:50:08.508505+00:00
+                  remaining_usage_credits:
+                    type: number
+                    example: 500
+                  name:
+                    type: string
+                    example: John Smith
+                  subscription:
+                    type: object
+                    nullable: true
+                    properties:
+                      id:
+                        type: string
+                        example: sub_1PB5d7IhWOK8iuvJ7nW95Foa
+                      tier:
+                        type: string
+                        example: price_1OZo3XIhWOK8iuvJcuo14Scc
+                      status:
+                        type: string
+                        example: active
+                      will_downgrade_to:
+                        type: string
+                        nullable: true
+                      top_up_price_ids:
+                        type: array
+                        nullable: true
+                        items:
+                          type: string
+                      upgradable_tiers:
+                        type: array
+                        nullable: true
+                        items:
+                          type: string
+                      downgradable_tiers:
+                        type: array
+                        nullable: true
+                        items:
+                          type: string
+                      roles:
+                        type: array
+                        items:
+                          type: string
+                      currency:
+                        type: string
+                        nullable: true
+                      current_period_end:
+                        type: number
+                        nullable: true
+                      cancel_at_period_end:
+                        type: boolean
+                        example: false
+                      available_languages:
+                        type: array
+                        items:
+                          type: string
+                          example: "en"
+                      unavailable_languages:
+                        type: array
+                        items:
+                          type: string
+                          example: "ja"
+                      max_voice_blends:
+                        type: number
+                        example: 3
+                      remaining_downloads:
+                        type: number
+                        example: 5
+                  subscription_discount:
+                    type: string
+                    nullable: true
+                  preferences:
+                    type: object
+                    properties:
+                      theme:
+                        type: string
+                        example: "dark"
+                      language_code:
+                        type: string
+                        example: "en"
+                      model_chain:
+                        type: string
+                        example: "vox_1_0"
+                      file_format:
+                        type: string
+                        example: "mp3"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /userinfo/credits:
+    get:
+      tags:
+        - userinfo
+      summary: Get user credits information
+      description: Get user credits information
+      operationId: getUserInfoCredits
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      responses:
+        '200':
+          description: Successful retrieval of user credits information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uuid:
+                    type: string
+                    example: 5cfa9ac9-147b-4ccc-8373-d57dcdecfb27
+                  remaining_usage_credits:
+                    type: number
+                    example: 500
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /userinfo/preferences:
+    get:
+      tags:
+        - userinfo
+      summary: Get user preferences
+      description: Get user preferences
+      operationId: getUserPreferences
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful retrieval of user preferences
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uuid:
+                    type: string
+                    example: 5cfa9ac9-147b-4ccc-8373-d57dcdecfb27
+                  preferences:
+                    type: object
+                    properties:
+                      theme:
+                        type: string
+                        example: "dark"
+                        description: "Theme of the user, `dark` or `light`"
+                      language_code:
+                        type: string
+                        example: "en"
+                        description: "Language code of the user, `en`, `ja`, etc."
+                      preferred_model_chain_order:
+                        type: array
+                        items:
+                          type: string
+                        example: ["vox_1_0", "vox_2_0"]
+                        description: "Preferred model chain order of the user, `vox_1_0`, `vox_2_0`, etc."
+                      audio_master_eq:
+                        type: boolean
+                        example: true
+                      audio_lufs_target:
+                        type: number
+                        example: -23
+                        description: "LUFS target for normalization, or `null` for raw audio"
+                      file_format:
+                        type: string
+                        example: "mp3"
+                        description: "File format of the user, `wav`, `mp3`, `ogg`, or `flac`"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    post:
+      tags:
+        - userinfo
+      summary: Update user preferences
+      description: Update user preferences
+      operationId: updateUserPreferences
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                theme:
+                  type: string
+                  example: "dark"
+                  description: "Theme of the user, `dark` or `light`"
+                language_code:
+                  type: string
+                  example: "en"
+                  description: "Language code of the user, `en`, `ja`, etc."
+                preferred_model_chain_order:
+                  type: array
+                  items:
+                    type: string
+                  example: ["vox_1_0", "vox_2_0"]
+                  description: "Preferred model chain order of the user, `vox_1_0`, `vox_2_0`, etc."
+                audio_master_eq:
+                  type: boolean
+                  example: true
+                  description: "Apply audio master EQ, `true` or `false`"
+                audio_lufs_target:
+                  type: number
+                  example: -23
+                  description: "LUFS target for normalization, or `null` for raw audio"
+                file_format:
+                  type: string
+                  example: "mp3"
+                  description: "File format of the user, `wav`, `mp3`, `ogg`, or `flac`"
+      responses:
+        '200':
+          description: Successful update of user preferences
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uuid:
+                    type: string
+                    example: 5cfa9ac9-147b-4ccc-8373-d57dcdecfb27
+                  preferences:
+                    type: object
+                    properties:
+                      theme:
+                        type: string
+                        example: "dark"
+                      language_code:
+                        type: string
+                        example: "en"
+                      preferred_model_chain_order:
+                        type: array
+                        items:
+                          type: string
+                        example: ["vox_1_0", "vox_2_0"]
+                      audio_master_eq:
+                        type: boolean
+                        example: true
+                      audio_lufs_target:
+                        type: number
+                        example: -23
+                      file_format:
+                        type: string
+                        example: "mp3"
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /library/voices:
+    get:
+      tags:
+        - voices
+      summary: Get available voices
+      description: Get available voices
+      operationId: getVoices
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/Voices'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /library/voices/{uuid}:
+    get:
+      tags:
+        - voices
+      summary: Get a specific voice by UUID
+      description: Get a specific voice by UUID
+      operationId: getVoiceByUuid
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful retrieval of the voice
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Voice'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+          
+  /library/voices/{uuid}/favorite:
+    post:
+      tags:
+        - voices
+      summary: Favorite a voice by UUID
+      description: Favorite a voice by UUID
+      operationId: postFavoriteVoiceByUuid
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful favorite of the voice
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  object_id:
+                    type: string
+                    example: "67788f31-d05c-4c95-a157-e1f2132d7b52"
+                  type:
+                    type: string
+                    example: "voices"
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    delete:
+      tags:
+        - voices
+      summary: Unfavorite a voice by UUID
+      description: Unfavorite a voice by UUID
+      operationId: deleteFavoriteVoiceByUuid
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful unfavorite of the voice
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        object_id:
+                          type: string
+                          example: "67788f31-d05c-4c95-a157-e1f2132d7b52"
+                        type:
+                          type: string
+                          example: "voices"
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /my/voices:
+    get:
+      tags:
+        - voices
+      summary: Get voices of the authenticated user
+      description: Get voices of the authenticated user
+      operationId: getMyVoices
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/Voices'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /my/voices/{uuid}:
+    get:
+      tags:
+        - voices
+      summary: Get a specific voice of the authenticated user by UUID
+      description: Get a specific voice of the authenticated user by UUID
+      operationId: getMyVoiceByUuid
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful retrieval of the voice
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Voice'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /my/voices/{uuid}/favorite:
+    post:
+      tags:
+        - voices
+      summary: Favorite a user's voice by UUID
+      description: Favorite a user's voice by UUID
+      operationId: postFavoriteMyVoiceByUuid
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful favorite of the voice
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  object_id:
+                    type: string
+                    example: "67788f31-d05c-4c95-a157-e1f2132d7b52"
+                  type:
+                    type: string
+                    example: "voice_blends"
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    delete:
+      tags:
+        - voices
+      summary: Unfavorite a user's voice by UUID
+      description: Unfavorite a user's voice by UUID
+      operationId: deleteFavoriteMyVoiceByUuid
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful unfavorite of the voice
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        object_id:
+                          type: string
+                          example: "67788f31-d05c-4c95-a157-e1f2132d7b52"
+                        type:
+                          type: string
+                          example: "voice_blendss"
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /speech/history:
+    get:
+      tags:
+        - speech (history)
+      summary: Retrieve speech history
+      description: Get a list of all speech history entries.
+      operationId: getSpeechHistory
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: offset
+          in: query
+          schema:
+            type: number
+        - name: limit
+          in: query
+          schema:
+            type: number
+      responses:
+        '200':
+          $ref: '#/components/responses/SpeechHistory'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags:
+        - speech (history)
+      summary: Retrieve filtered speech history
+      description: Get a filtered list of speech history entries.
+      operationId: getFilteredSpeechHistory
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: offset
+          in: query
+          schema:
+            type: number
+        - name: limit
+          in: query
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                offset:
+                  type: number
+                limit:
+                  type: number
+                where:
+                  type: object
+                  properties:
+                    user_metadata:
+                      type: object
+                      additionalProperties: true
+                      example:
+                        _contains:
+                          session_id: Test
+                text_filter:
+                  type: object
+                  properties:
+                    name:
+                      type: object
+                      additionalProperties: true
+                      example:
+                        _ilike: "%mark%"
+                order_by:
+                  type: object
+                  properties:
+                    session_order:
+                      type: string
+                      example: "desc"
+      responses:
+        '200':
+          $ref: '#/components/responses/SpeechHistory'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /speech/versioned-history:
+    get:
+      x-internal: true
+      tags:
+        - speech (history)
+      summary: Retrieve speech history
+      description: Get a list of all latest speech history entries.
+      operationId: getSpeechVersionedHistory
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: offset
+          in: query
+          schema:
+            type: number
+        - name: limit
+          in: query
+          schema:
+            type: number
+      responses:
+        '200':
+          $ref: '#/components/responses/SpeechHistory'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      x-internal: true
+      tags:
+        - speech (history)
+      summary: Retrieve filtered speech history
+      description: Get a filtered list of latest speech history entries.
+      operationId: getFilteredVersionSpeechHistory
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: offset
+          in: query
+          schema:
+            type: number
+        - name: limit
+          in: query
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                offset:
+                  type: number
+                limit:
+                  type: number
+                where:
+                  type: object
+                  properties:
+                    user_metadata:
+                      type: object
+                      additionalProperties: true
+                      example:
+                        _contains:
+                          session_id: Test
+                text_filter:
+                  type: object
+                  properties:
+                    name:
+                      type: object
+                      additionalProperties: true
+                      example:
+                        _ilike: "%mark%"
+      responses:
+        '200':
+          $ref: '#/components/responses/SpeechHistory'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+
+  /speech:
+    post:
+      tags:
+        - speech (batched)
+      summary: Retrieve speech jobs by UUIDs
+      description: Get details of specific speech jobs by their UUIDs.
+      operationId: getSpeechJobByUuidBulk
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: extension
+          in: query
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                uuids:
+                  type: array
+                  items:
+                    type: string
+                    example: "67788f31-d05c-4c95-a157-e1f2132d7b52"
+      responses:
+        '200':
+          $ref: '#/components/responses/SpeechJobs'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    patch:
+      tags:
+      - speech (batched)
+      summary: Update speech jobs by UUIDs
+      description: Update details of specific speech jobs by their UUIDs.
+      operationId: patchSpeechJobByUuidBulk
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                uuids:
+                  type: array
+                  items:
+                    type: string
+                    example: "67788f31-d05c-4c95-a157-e1f2132d7b52"
+                user_metadata:
+                  type: object
+                  additionalProperties: true
+                  example:
+                    session_id: Test
+                add_user_tags:
+                  type: array
+                  items:
+                    type: string
+                remove_user_tags:
+                  type: array
+                  items:
+                    type: string
+                    
+      responses:
+        '200':
+          $ref: '#/components/responses/SpeechHistory'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    delete:
+      tags:
+      - speech (batched)
+      summary: Archive speech jobs by UUIDs
+      description: Archive specific speech job by their UUIDs.
+      operationId: deleteSpeechJobByUuidBulk
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                uuids:
+                  type: array
+                  items:
+                    type: string
+                    example: "67788f31-d05c-4c95-a157-e1f2132d7b52"
+      responses:
+        '200':
+          $ref: '#/components/responses/SpeechHistory'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /speech/download:
+    post:
+      tags:
+        - speech
+        - speech (batched)
+      summary: Retrieve download url for speech job(s)
+      description: Retrieve download url for speech job(s).
+      operationId: postSpeechDownload
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                job_ids:
+                  type: array
+                  example: []
+                extension:
+                  type: string
+                  example: "wav"
+      responses:
+        '200':
+          description: File or zip download url
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    example: "https://"
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '406':
+          $ref: '#/components/responses/FormatUnavailableError'
+        '409':
+          $ref: '#/components/responses/GenerationIncompleteError'
+        '410':
+          $ref: '#/components/responses/GenerationError'
+
+  /speech/{uuid}:
+    get:
+      tags:
+        - speech
+      summary: Retrieve speech job by UUID
+      description: Get details of a specific speech job by its UUID.
+      operationId: getSpeechJobByUuid
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: extension
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful retrieval of the speech job
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpeechJob'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    patch:
+      tags:
+      - speech
+      summary: Update speech job by UUID
+      description: Update details of a specific speech job by its UUID.
+      operationId: patchSpeechJobByUuid
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_metadata:
+                  type: object
+                  additionalProperties: true
+                  example:
+                    session_id: Test
+                add_user_tags:
+                  type: array
+                  items:
+                    type: string
+                remove_user_tags:
+                  type: array
+                  items:
+                    type: string
+                    
+      responses:
+        '200':
+          description: Successful update of the speech job
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpeechHistoryEntry'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    delete:
+      tags:
+      - speech
+      summary: Archive speech job by UUID
+      description: Archive a specific speech job by its UUID.
+      operationId: deleteSpeechJobByUuid
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful archive of the speech job
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpeechHistoryEntry'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /speech/{uuid}/pin:
+    post:
+      x-internal: true
+      tags:
+        - speech
+      summary: Pin the specified speech job as the latest version
+      description: Pin the specified speech job as the latest version.
+      operationId: pinSpeechJob
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful pin of the speech job
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpeechJob'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /speech/{uuid}/favorite:
+    post:
+      tags:
+        - speech
+      summary: Favorite a specific speech job by UUID
+      description: Favorite a specific speech job by its UUID.
+      operationId: favoriteSpeechJobByUuid
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful favorite of the speech job
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpeechJob'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    delete:
+      tags:
+        - speech
+      summary: Unfavorite a specific speech job by UUID
+      description: Unfavorite a specific speech job by its UUID.
+      operationId: unfavoriteSpeechJobByUuid
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful unfavorite of the speech job
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpeechJob'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /speech/tts:
+    post:
+      tags:
+        - tts
+      summary: Request to generate text-to-speech (TTS)
+      description: Request to generate text-to-speech (TTS)
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      operationId: generateTTS
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                speaker_id:
+                  type: string
+                  description: ID of the speaker to use for the speech generation
+                  example: "55a0aad5-a739-402f-9cec-36b01ff81a41"
+                text:
+                  type: string
+                  description: Text to be converted to speech
+                  example: "Hello V 2"
+                extensions:
+                  type: array
+                  items:
+                    type: string
+                  description: Desired file formats for output (e.g., wav, mp3)
+                  example: ["wav"]
+                sample_rate:
+                  type: integer
+                  description: Sample rate in Hz (e.g., 44100)
+                  example: 44100
+                bit_rate:
+                  type: integer
+                  description: Bit rate in Kbps (e.g., 128)
+                  example: 128
+                global_pace:
+                  type: number
+                  description: Global pace factor (e.g., 1.0 is normal pace)
+                  example: 1
+                model_chain:
+                  type: string
+                  description: Model chain identifier for speech synthesis
+                  example: "vox_1_0"
+                language_code:
+                  type: string
+                  description: Language code for the speech synthesis (e.g., en)
+                  example: "en"
+                global_pitch:
+                  type: number
+                  description: Global pitch adjustment (semitones)
+                  example: 0
+                auto_pitch:
+                  type: boolean
+                  description: Enable automatic pitch adjustment
+                  example: true
+                global_volume:
+                  type: number
+                  description: Global volume adjustment (dB)
+                  example: 0
+                voice_preset_id:
+                  type: string
+                  description: ID of the voice preset to apply
+                  example: "b4c1b709-941d-4501-8a73-4a36a9c169d8"
+                effects_preset_id:
+                  type: string
+                  description: ID of the effects preset to apply
+                  example: "b4c1b709-941d-4501-8a73-4a36a9c169d8"
+                user_metadata:
+                  type: object
+                  description: Additional metadata associated with the request
+                  properties:
+                    session_id:
+                      type: string
+                      example: "insomnia"
+                user_tags:
+                  type: array
+                  items:
+                    type: string
+                  description: User-defined tags for the request
+                  example: ["Insomnia"]
+      responses:
+        '200':
+          description: Successfully generated TTS job
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpeechJob'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+          
+  /speech/tts/submit:
+    post:
+      tags:
+        - tts
+      summary: Request to submit text-to-speech (TTS)
+      description: Request to submit text-to-speech (TTS)
+      operationId: submitTTS
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                speaker_id:
+                  type: string
+                  description: ID of the speaker to use for the speech generation
+                  example: "55a0aad5-a739-402f-9cec-36b01ff81a41"
+                job_specs:
+                  type: array
+                  description: List of speech jobs to submit. Requires at least text, but can include other options.
+                  items:
+                    type: object
+                    properties:
+                      text:
+                        type: string
+                        example: "Hello V 2"
+                    additionalProperties:
+                      type: string
+                extensions:
+                  type: array
+                  items:
+                    type: string
+                  description: Desired file formats for output (e.g., wav, mp3)
+                  example: ["wav"]
+                sample_rate:
+                  type: integer
+                  description: Sample rate in Hz (e.g., 44100)
+                  example: 44100
+                bit_rate:
+                  type: integer
+                  description: Bit rate in Kbps (e.g., 128)
+                  example: 128
+                global_pace:
+                  type: number
+                  description: Global pace factor (e.g., 1.0 is normal pace)
+                  example: 1
+                model_chain:
+                  type: string
+                  description: Model chain identifier for speech synthesis
+                  example: "vox_1_0"
+                language_code:
+                  type: string
+                  description: Language code for the speech synthesis (e.g., en)
+                  example: "en"
+                global_pitch:
+                  type: number
+                  description: Global pitch adjustment
+                  example: 0
+                auto_pitch:
+                  type: boolean
+                  description: Enable automatic pitch adjustment
+                  example: true
+                global_volume:
+                  type: number
+                  description: Global volume adjustment
+                  example: 0
+                voice_preset_id:
+                  type: string
+                  description: ID of the voice preset to apply
+                  example: "b4c1b709-941d-4501-8a73-4a36a9c169d8"
+                effects_preset_id:
+                  type: string
+                  description: ID of the effects preset to apply
+                  example: "b4c1b709-941d-4501-8a73-4a36a9c169d8"
+                user_metadata:
+                  type: object
+                  description: Additional metadata associated with the request
+                  properties:
+                    session_id:
+                      type: string
+                      example: "insomnia"
+                user_tags:
+                  type: array
+                  items:
+                    type: string
+                  description: User-defined tags for the request
+                  example: ["Insomnia"]
+      responses:
+        '200':
+          description: Successfully submitted TTS job
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+                      properties:
+                        text:
+                          type: string
+                        job_id:
+                          type: string
+                        status:
+                          type: string
+                        error:
+                          type: string
+                          nullable: true
+                          example: null
+                  success_count:
+                    type: number
+                  error_count:
+                    type: number
+                  status:
+                    type: string
+                      
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /speech/sts:
+    post:
+      tags:
+        - sts
+      summary: Request to create a speech-to-speech job
+      description: Request to create a speech-to-speech job
+      operationId: createSTS
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                performer_style_id:
+                  type: string
+                  description: ID of the performer style to apply
+                  example: "619b4f32-6d41-43a2-bc43-4a3466783eb6"
+                transcript:
+                  type: string
+                  nullable: true
+                  description: Optional transcript text
+                  example: null
+                model_chain:
+                  type: string
+                  description: Model chain identifier for speech synthesis
+                  example: "vox_1_0"
+                voice_preset_id:
+                  type: string
+                  description: ID of the voice preset to use
+                  example: "b4c1b709-941d-4501-8a73-4a36a9c169d8"
+                user_metadata:
+                  type: object
+                  description: Additional metadata associated with the request
+                  properties:
+                    session_id:
+                      type: string
+                      example: "insomnia"
+                user_tags:
+                  type: array
+                  items:
+                    type: string
+                  description: User-defined tags for the request
+                  example: ["Insomnia"]
+      responses:
+        '201':
+          description: Successfully created STS job
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpeechJob'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /speech/sts/{uuid}/start:
+    post:
+      tags:
+        - sts
+      summary: Start a specific STS job for speech generation
+      description: Start a specific STS job for speech generation
+      operationId: startSTSJob
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The ID of the STS job to start
+          example: b1f3c033-be24-4e58-8c60-8d305828cc05
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                extensions:
+                  type: array
+                  items:
+                    type: string
+                  example: ["wav", "mp3"]
+                  description: Desired file formats for output (e.g., wav, mp3)
+                global_pitch:
+                  type: number
+                  example: 0
+                  description: Global pitch adjustment (semitones)
+                global_pace:
+                  type: number
+                  example: 1
+                  description: Global pace adjustment (1.0 is normal pace)
+                global_volume:
+                  type: number
+                  example: 0
+                  description: Global volume adjustment (dB)
+                effects_preset_id:
+                  type: string
+                  description: ID of the effects preset to apply
+                  example: "b4c1b709-941d-4501-8a73-4a36a9c169d8"
+      responses:
+        '202':
+          description: Successfully started the STS job
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpeechJob'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /voicelab:
+    get:
+      summary: Retrieve Voicelab items
+      description: Retrieve Voicelab items
+      operationId: getVoicelabItems
+      tags:
+        - voicelab
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/VoicelabVoices'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      summary: Create a new Voicelab item
+      description: Create a new Voicelab item
+      operationId: createVoicelabItem
+      tags:
+        - voicelab
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                metadata:
+                  type: object
+                  properties:
+                    accent:
+                      type: string
+                    gender:
+                      type: string
+                    voiceAge:
+                      type: string
+                  required:
+                    - accent
+                    - gender
+                    - voiceAge
+                recipe:
+                  type: object
+                  properties:
+                    options:
+                      type: object
+                      properties:
+                        auto_pitch:
+                          type: boolean
+                    performer_id:
+                      type: string
+                    voice_config:
+                      type: object
+                      additionalProperties:
+                        type: number
+                  required:
+                    - options
+                    - performer_id
+                    - voice_config
+              required:
+                - name
+                - metadata
+                - recipe
+      responses:
+        '201':
+          description: Successfully created a new Voicelab item
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoicelabVoice'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /voicelab/{voice_preset_id}:
+    get:
+      summary: Retrieve a specific Voicelab item
+      description: Retrieve a specific Voicelab item
+      operationId: getVoicelabItemById
+      tags:
+        - voicelab
+      parameters:
+        - name: voice_preset_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID of the Voicelab item to retrieve
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful response with the Voicelab item
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoicelabVoice'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    patch:
+      summary: Update a Voicelab item
+      description: Update a Voicelab item
+      operationId: updateVoicelabItem
+      security:
+        - bearerAuth: []
+      tags:
+        - voicelab
+      parameters:
+        - name: voice_preset_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID of the Voicelab item to update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+              required:
+                - name
+      responses:
+        '200':
+          description: Successfully updated the Voicelab item
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoicelabVoice'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    delete:
+      summary: Archive a Voicelab item
+      description: Archive a Voicelab item
+      operationId: deleteVoicelabItem
+      security:
+        - bearerAuth: []
+      tags:
+        - voicelab
+      parameters:
+        - name: voice_preset_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID of the Voicelab item to archive
+      responses:
+        '204':
+          description: Voicelab item successfully deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoicelabVoice'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /favorites:
+    get:
+      summary: List all favorites
+      description: List all favorites
+      operationId: listFavorites
+      security:
+        - bearerAuth: []
+      tags:
+        - favorites
+      responses:
+        '200':
+          description: A list of all favorites by type
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: object
+                    properties:
+                      voices:
+                        type: array
+                        example: ["7a6dc9b5-16b3-43df-a37e-27fc18b2d4d0"]
+                      voice_blends:
+                        type: array
+                        example: ["1a51827d-29ab-4982-ad65-8ebe9ced659a"]
+                      speech_jobs:
+                        type: array
+                        example: ["5153c186-92d4-4937-91f0-e3422b67ee9b"]
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /favorites/{type}:
+    get:
+      summary: Get all favorites by type
+      description: Get all favorites by type
+      operationId: getFavoriteType
+      security:
+        - bearerAuth: []
+      tags:
+        - favorites
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The type of favorite to return
+      responses:
+        '200':
+          description: The favorites of the given type
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    example: ["1a51827d-29ab-4982-ad65-8ebe9ced659a"]
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /labels:
+    get:
+      summary: List all labels
+      description: List all labels
+      operationId: listTags
+      security:
+        - bearerAuth: []
+      tags:
+        - labels
+      responses:
+        '200':
+          $ref: '#/components/responses/Labels'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    post:
+      summary: Create a new label
+      description: Create a new label
+      operationId: createTag
+      security:
+        - bearerAuth: []
+      tags:
+        - labels
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tag:
+                  type: string
+                  example: "NewTag1"
+                color:
+                  type: string
+      responses:
+        '201':
+          description: label created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Label'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  /labels/{label}:
+    get:
+      summary: Get a label by name
+      description: Get a label by name
+      operationId: getTag
+      security:
+        - bearerAuth: []
+      tags:
+        - labels
+      parameters:
+        - name: label
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The label
+      responses:
+        '200':
+          description: The label
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Label'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    patch:
+      summary: Update a label by name
+      description: Update a label by name
+      operationId: patchTag
+      security:
+        - bearerAuth: []
+      tags:
+        - labels
+      parameters:
+        - name: label
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The label
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tag:
+                  type: string
+                  example: "NewTag1"
+                color:
+                  type: string
+      responses:
+        '200':
+          description: label updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Label'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    delete:
+      summary: Delete a label by name
+      description: Delete a label by name
+      operationId: deleteTag
+      security:
+        - bearerAuth: []
+      tags:
+        - labels
+      parameters:
+        - name: label
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The label
+      responses:
+        '204':
+          description: label deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Label'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /effects_presets:
+    get:
+      summary: List all effects presets
+      description: List all effects presets
+      operationId: listEffectsPresets
+      security:
+        - bearerAuth: []
+      tags:
+        - effects
+      responses:
+        '200':
+          $ref: '#/components/responses/Effects'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+
+######################
+components:
+  securitySchemes:
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Voice:
+      type: object
+      properties:
+        uuid:
+          type: string
+          example: b9e84783-d657-4efe-b5b8-8b64a5a4bc2b
+        name:
+          type: string
+          example: Mark
+        avatar_url:
+          type: string
+          nullable: true
+          example: null
+        hero_image_url:
+          type: string
+          nullable: true
+          example: null
+        hero_sample_url:
+          type: string
+          nullable: true
+          example: null
+        description:
+          type: string
+          nullable: true
+          example: null
+        metadata:
+          type: object
+          properties:
+            accent:
+              type: string
+            gender:
+              type: string
+            voiceAge:
+              type: string
+        characteristics:
+          type: array
+          items:
+            type: string
+        default_sample:
+          $ref: '#/components/schemas/Sample'
+        default_style:
+          $ref: '#/components/schemas/VoiceStyle'
+        styles:
+          type: array
+          items:
+            $ref: '#/components/schemas/VoiceStyle'
+
+    VoiceStyle:
+      type: object
+      properties:
+        uuid:
+          type: string
+          example: "e76aaaf3-3f98-4fb2-be68-1ed36a5e197a"
+        name:
+          type: string
+          example: "Casual"
+        description:
+          type: string
+          nullable: true
+          example: null
+        speaker_id:
+          type: string
+          example: "e76aaaf3-3f98-4fb2-be68-1ed36a5e197a"
+        avatar_url:
+          type: string
+          nullable: true
+          example: null
+        samples:
+          type: array
+          items:
+            $ref: '#/components/schemas/Sample'
+        capabilities:
+          type: object
+          properties:
+            "tts.vox_1_0":
+              type: boolean
+              example: true
+            "tts.vox_2_0":
+              type: boolean
+              example: false
+            "sts.vox_1_0":
+              type: boolean
+              example: true
+            "sts.vox_2_0":
+              type: boolean
+              example: false
+
+    Sample:
+      type: object
+      properties:
+        uuid:
+          type: string
+          example: 500992d2-73a0-464d-a5b7-bf4f79469310
+        text:
+          type: string
+          example: "Quiet. We don’t have time for bickering. Grab your things, the Orcs arrive at dawn and we must be ready for them."
+        url:
+          type: string
+          example: "https://static.replicastudios.com/production/uploads/previews/bf1be392-4832-40a4-9c61-715ffbdf1176_sample_1698884272263.wav"
+
+    SpeechHistoryEntry:
+      type: object
+      properties:
+        uuid:
+          type: string
+          example: 67788f31-d05c-4c95-a157-e1f2132d7b52
+        state:
+          type: string
+          description: State of the speech generation
+          example: SUCCESS
+        generation_type:
+          type: string
+          description: Type of speech generation (e.g., tts, sts)
+          example: tts
+        model_chain:
+          type: string
+          description: Model chain used for the speech generation
+          example: vox_1_0
+        language_code:
+          type: string
+          description: Language code of the speech
+          example: en
+        text:
+          type: string
+          description: Text content of the speech
+          example: "<speak>Halt! Stop right there!<\/speak>"
+        voice_blend:
+          type: array
+          description: Voice blend information
+          nullable: true
+          example: null
+        voice:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                example: 7a6dc9b5-16b3-43df-a37e-27fc18b2d4d0
+              name:
+                type: string
+                example: Ava
+        style:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                example: 619b4f32-6d41-43a2-bc43-4a3466783eb6
+              name:
+                type: string
+                example: Polite
+        duration:
+          type: number
+          description: Duration of the speech in seconds
+          example: 2.04336
+        user_tags:
+          type: array
+          items:
+            type: string
+          description: User-defined tags
+          example:
+            - NewTag
+            - NewTag2
+        user_metadata:
+          type: object
+          description: Additional user-defined metadata
+          properties:
+            session_id:
+              type: string
+              example: Test
+        created:
+          type: string
+          format: date-time
+          description: Timestamp of when the speech was created
+          example: 2024-06-12T00:50:08.508505+00:00
+
+    SpeechJob:
+      type: object
+      properties:
+        uuid:
+          type: string
+          example: 67788f31-d05c-4c95-a157-e1f2132d7b52
+        state:
+          type: string
+          description: State of the speech generation
+          example: SUCCESS
+        generation_type:
+          type: string
+          description: Type of speech generation (e.g., tts, sts)
+          example: tts
+        model_chain:
+          type: string
+          description: Model chain used for the speech generation
+          example: vox_1_0
+        language_code:
+          type: string
+          description: Language code of the speech
+          example: en
+        text:
+          type: string
+          description: Text content of the speech
+          example: "<speak>Halt! Stop right there!<\/speak>"
+        voice_blend:
+          type: string
+          description: Voice blend information
+          nullable: true
+          example: null
+        voice:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                example: 7a6dc9b5-16b3-43df-a37e-27fc18b2d4d0
+              name:
+                type: string
+                example: Ava
+        style:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                example: 619b4f32-6d41-43a2-bc43-4a3466783eb6
+              name:
+                type: string
+                example: Ava - Polite
+        duration:
+          type: number
+          description: Duration of the speech in seconds
+          example: 2.04336
+        user_tags:
+          type: array
+          items:
+            type: string
+          description: User-defined tags
+          example:
+            - NewTag
+            - NewTag2
+        user_metadata:
+          type: object
+          description: Additional user-defined metadata
+          properties:
+            session_id:
+              type: string
+              example: Test
+        created:
+          type: string
+          format: date-time
+          description: Timestamp of when the speech was created
+          example: 2024-06-12T00:50:08.508505+00:00
+        url:
+          type: string
+          format: uri
+          example: "https://storage-dev20220823060809671100000008.s3.amazonaws.com/voice_conversion_output/6b6b182f-8b7f-4587-8969-f7af30a3e816/6b6b182f-8b7f-4587-8969-f7af30a3e816.mp3"
+        available_formats:
+          type: array
+          items:
+            type: string
+          example:
+            - "mp3"
+            - "ogg"
+            - "wav"
+        additional_fields:
+          type: object
+          additionalProperties: true
+          properties:
+            warning:
+              type: string
+              example: "This'll take a while..."
+
+    VoicelabVoice:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "5153c186-92d4-4937-91f0-e3422b67ee9b"
+        name:
+          type: string
+          example: "Test Blend"
+        metadata:
+          type: object
+          nullable: true
+          properties:
+            accent:
+              type: string
+              example: "british"
+            gender:
+              type: string
+              example: "male"
+            voiceAge:
+              type: string
+              example: "middleaged"
+        recipe:
+          type: object
+          properties:
+            options:
+              type: object
+              properties:
+                auto_pitch:
+                  type: boolean
+                  example: true
+            performer_id:
+              type: string
+              example: "7a6dc9b5-16b3-43df-a37e-27fc18b2d4d0"
+            voice_config:
+              type: object
+              additionalProperties:
+                type: number
+          required:
+            - options
+            - voice_config
+        image_url:
+          type: string
+          format: uri
+          nullable: true
+          example: null
+        sample_url:
+          type: string
+          format: uri
+          nullable: true
+          example: null
+        modified:
+          type: string
+          format: date-time
+          example: "2024-03-20T03:00:43.777691+00:00"
+
+    Label:
+      type: object
+      properties:
+        tag:
+          type: string
+          description: The name of the label
+        color:
+          type: string
+          description: The color of the label
+
+    Effect:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "12345678-1234-1234-1234-123456789012"
+        description:
+          type: string
+          example: "Effect Name"
+
+  responses:
+    # Success Responses
+    Voices:
+      description: Successful retrieval of voices
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              items:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Voice'
+              voices_aggregate:
+                type: object
+                properties:
+                  aggregate:
+                    type: object
+                    properties:
+                      count:
+                        type: number
+                        example: 3
+
+    SpeechHistory:
+      description: A list of speech history entries
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              items:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SpeechHistoryEntry'
+              history_aggregate:
+                type: object
+                properties:
+                  aggregate:
+                    type: object
+                    properties:
+                      count:
+                        type: integer
+                        example: 45
+              styles:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                      example: Polite
+                    history_aggregate:
+                      type: object
+                      properties:
+                        aggregate:
+                          type: object
+                          properties:
+                            count:
+                              type: integer
+                              example: 33
+
+    SpeechJobs:
+      description: Successful retrieval of the speech jobs
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              items:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SpeechJob'
+
+    VoicelabVoices:
+      description: Successful response with Voicelab items
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              items:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VoicelabVoice'
+
+    Labels:
+      description: A list of labels
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              items:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Label'
+              usage:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    tag:
+                      type: string
+                      example: NewTag
+                    history_aggregate:
+                      type: object
+                      properties:
+                        aggregate:
+                          type: object
+                          properties:
+                            count:
+                              type: integer
+                              example: 2
+
+    Effects:
+      description: A list of effects presets
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              items:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Effect'
+
+    # Error Responses
+    UnauthorizedError:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              reasons:
+                type: array
+                items:
+                  type: string
+                  example: "Invalid authentication"
+              exception:
+                type: string
+                example: "Unauthorized"
+
+    BadRequestError:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Invalid parameters"
+
+    NotFoundError:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Resource does not exist"
+
+    FormatUnavailableError:
+      description: Format unavailable
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Resource not available in requested format"
+
+    GenerationIncompleteError:
+      description: Generation incomplete
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Speech generation incomplete"
+
+    GenerationError:
+      description: Generation failed
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Speech generation failed for reason X"

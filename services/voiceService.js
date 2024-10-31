@@ -11,9 +11,11 @@ class VoiceService {
             pitch: 0,
             speed: 1,
             volume: 0,
-            sampleRate: 44100,
-            bitRate: 128,  // Standard MP3 bitrate
-            outputFormat: 'mp3',  // Request MP3 format directly
+            // Use the standardized audio settings from ReplicaAPI
+            sampleRate: this.replicaAPI.audioSettings.sampleRate,
+            bitRate: this.replicaAPI.audioSettings.bitRate,
+            outputFormat: this.replicaAPI.audioSettings.format,
+            channels: this.replicaAPI.audioSettings.channels,
             languageCode: 'en'
         };
     }
@@ -162,15 +164,14 @@ class VoiceService {
             // Determine the appropriate model chain for this voice
             const modelChain = await this.determineModelChain(speaker_id);
 
+            // Use the standardized audio settings from ReplicaAPI
             const result = await this.replicaAPI.textToSpeech({
                 voiceId: speaker_id,
                 text: text.trim(),
                 options: {
                     ...this.defaultSettings,
                     ...options,
-                    modelChain,
-                    extensions: ['mp3'],  // Request MP3 format directly
-                    bitRate: 128  // Standard MP3 bitrate
+                    modelChain
                 }
             });
 
@@ -182,7 +183,11 @@ class VoiceService {
                         timestamp: new Date().toISOString(),
                         type: 'generation',
                         textLength: text.length,
-                        settings: { ...options, modelChain },
+                        settings: { 
+                            ...options, 
+                            modelChain,
+                            audioSettings: this.replicaAPI.audioSettings
+                        },
                         duration: result.duration
                     });
                     await this.saveVoice(voice);
