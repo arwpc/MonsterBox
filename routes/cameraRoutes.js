@@ -22,16 +22,32 @@ let activeProcesses = new Map();
 async function loadCameraSettings() {
     try {
         const data = await fs.readFile(CAMERA_SETTINGS_PATH, 'utf8');
-        return JSON.parse(data);
+        const settings = JSON.parse(data);
+        return {
+            selectedCamera: settings.selectedCamera,
+            width: settings.width || DEFAULT_WIDTH,
+            height: settings.height || DEFAULT_HEIGHT,
+            fps: settings.fps || DEFAULT_FPS
+        };
     } catch (error) {
-        return { selectedCamera: null };
+        return { 
+            selectedCamera: null,
+            width: DEFAULT_WIDTH,
+            height: DEFAULT_HEIGHT,
+            fps: DEFAULT_FPS
+        };
     }
 }
 
 // Save camera settings
 async function saveCameraSettings(settings) {
     try {
-        await fs.writeFile(CAMERA_SETTINGS_PATH, JSON.stringify(settings, null, 2));
+        await fs.writeFile(CAMERA_SETTINGS_PATH, JSON.stringify({
+            selectedCamera: settings.selectedCamera,
+            width: settings.width || DEFAULT_WIDTH,
+            height: settings.height || DEFAULT_HEIGHT,
+            fps: settings.fps || DEFAULT_FPS
+        }, null, 2));
     } catch (error) {
         logger.error('Error saving camera settings:', error);
     }
@@ -187,9 +203,10 @@ router.get('/stream', async (req, res) => {
         await killExistingCameraProcesses();
         await cleanupLockFiles();
 
-        const width = parseInt(req.query.width) || DEFAULT_WIDTH;
-        const height = parseInt(req.query.height) || DEFAULT_HEIGHT;
-        const fps = parseInt(req.query.fps) || DEFAULT_FPS;
+        // Use saved settings or query parameters
+        const width = parseInt(req.query.width) || settings.width || DEFAULT_WIDTH;
+        const height = parseInt(req.query.height) || settings.height || DEFAULT_HEIGHT;
+        const fps = parseInt(req.query.fps) || settings.fps || DEFAULT_FPS;
 
         streamProcess = await startCameraStream(settings.selectedCamera, width, height, fps);
 
