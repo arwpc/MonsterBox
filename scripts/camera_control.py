@@ -32,6 +32,7 @@ except ImportError as e:
         "success": False,
         "error": "Required module numpy is not available. Please install it with: pip install numpy"
     }))
+    sys.stdout.flush()
     sys.exit(1)
 
 try:
@@ -42,6 +43,7 @@ except ImportError as e:
         "success": False,
         "error": "Required module opencv-python is not available. Please install it with: pip install opencv-python"
     }))
+    sys.stdout.flush()
     sys.exit(1)
 
 # Global flag for graceful shutdown
@@ -57,71 +59,107 @@ def signal_handler(signum, frame):
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 
-def verify_camera_device(device_id: int) -> bool:
+def verify_camera_device(device_id: int) -> Dict[str, Any]:
     """Verify if the camera device exists and has proper permissions."""
     device_path = f"/dev/video{device_id}"
     try:
         if not os.path.exists(device_path):
-            logger.error(f"Camera device {device_path} does not exist")
-            return False
+            return {
+                "success": False,
+                "error": f"Camera device {device_path} does not exist"
+            }
         
-        # Check if device is readable and writable
         if not os.access(device_path, os.R_OK | os.W_OK):
-            logger.error(f"Insufficient permissions for {device_path}")
-            return False
+            return {
+                "success": False,
+                "error": f"Insufficient permissions for {device_path}"
+            }
             
         # Check device capabilities with v4l2-ctl
         try:
-            # List supported formats
-            formats = subprocess.check_output(['v4l2-ctl', '-d', device_path, '--list-formats-ext']).decode()
-            logger.info(f"Supported formats:\n{formats}")
+            # Redirect stderr to devnull to suppress debug output
+            with open(os.devnull, 'w') as devnull:
+                # List supported formats
+                formats = subprocess.check_output(
+                    ['v4l2-ctl', '-d', device_path, '--list-formats-ext'],
+                    stderr=devnull
+                ).decode()
+                
+                # Get current settings
+                settings = subprocess.check_output(
+                    ['v4l2-ctl', '-d', device_path, '--all'],
+                    stderr=devnull
+                ).decode()
             
-            # Get current settings
-            settings = subprocess.check_output(['v4l2-ctl', '-d', device_path, '--all']).decode()
+            # Log device info to stderr
+            logger.info(f"Device {device_path} capabilities:")
+            logger.info(f"Supported formats:\n{formats}")
             logger.info(f"Current settings:\n{settings}")
             
             # Check if MJPG format is supported
             if 'MJPG' not in formats:
-                logger.error("Camera does not support MJPG format")
-                return False
+                return {
+                    "success": False,
+                    "error": "Camera does not support MJPG format"
+                }
                 
-            return True
+            return {
+                "success": True,
+                "device": device_path,
+                "formats": ["MJPG" if "MJPG" in formats else None, 
+                          "YUYV" if "YUYV" in formats else None,
+                          "H264" if "H264" in formats else None],
+                "capabilities": {
+                    "video_capture": True,
+                    "streaming": True,
+                    "mjpeg": True
+                }
+            }
         except subprocess.CalledProcessError as e:
             logger.warning(f"v4l2-ctl error: {e}")
-            return True  # Continue even if v4l2-ctl fails
+            return {
+                "success": True,  # Continue even if v4l2-ctl fails
+                "warning": "Could not verify camera capabilities",
+                "device": device_path
+            }
             
     except Exception as e:
         logger.error(f"Error verifying camera device: {e}")
-        return False
+        return {
+            "success": False,
+            "error": str(e)
+        }
 
 def set_camera_controls(device_id: int):
     """Set optimal camera controls using v4l2-ctl."""
     device_path = f"/dev/video{device_id}"
     try:
-        # Reset all controls to default
-        subprocess.run(['v4l2-ctl', '-d', device_path, '--all'])
-        
-        # Set power line frequency to 50Hz
-        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=power_line_frequency=1'])
-        
-        # Set auto exposure to manual mode
-        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=auto_exposure=1'])
-        
-        # Set exposure time
-        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=exposure_time_absolute=157'])
-        
-        # Enable auto white balance
-        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=white_balance_automatic=1'])
-        
-        # Set additional controls from v4l2-ctl output
-        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=brightness=0'])
-        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=contrast=32'])
-        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=saturation=64'])
-        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=hue=0'])
-        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=gamma=100'])
-        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=gain=0'])
-        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=sharpness=9'])
-        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=backlight_compensation=1'])
+        # Redirect stderr to devnull to suppress debug output
+        with open(os.devnull, 'w') as devnull:
+            # Reset all controls to default
+            subprocess.run(['v4l2-ctl', '-d', device_path, '--all'], stderr=devnull)
+            
+            # Set power line frequency to 50Hz
+            subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=power_line_frequency=1'], stderr=devnull)
+            
+            # Set auto exposure to manual mode
+            subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=auto_exposure=1'], stderr=devnull)
+            
+            # Set exposure time
+            subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=exposure_time_absolute=157'], stderr=devnull)
+            
+            # Enable auto white balance
+            subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=white_balance_automatic=1'], stderr=devnull)
+            
+            # Set additional controls from v4l2-ctl output
+            subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=brightness=0'], stderr=devnull)
+            subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=contrast=32'], stderr=devnull)
+            subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=saturation=64'], stderr=devnull)
+            subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=hue=0'], stderr=devnull)
+            subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=gamma=100'], stderr=devnull)
+            subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=gain=0'], stderr=devnull)
+            subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=sharpness=9'], stderr=devnull)
+            subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=backlight_compensation=1'], stderr=devnull)
         
         logger.info("Camera controls configured")
     except Exception as e:
@@ -131,7 +169,9 @@ def initialize_camera(device_id: int, width: int = 1280, height: int = 720, fps:
     """Initialize camera with optimized settings."""
     try:
         # Verify camera device first
-        if not verify_camera_device(device_id):
+        result = verify_camera_device(device_id)
+        if not result["success"]:
+            logger.error(result["error"])
             return None
 
         # Set camera controls
@@ -214,6 +254,11 @@ class CameraSettings:
     def apply_settings(self) -> Dict[str, Any]:
         """Apply camera settings."""
         try:
+            # Verify camera first
+            result = verify_camera_device(self.camera_id)
+            if not result["success"]:
+                return result
+
             cap = initialize_camera(self.camera_id, self.width, self.height, self.fps)
             if not cap:
                 return {
@@ -271,9 +316,22 @@ class MotionDetector:
 
     def initialize(self) -> bool:
         """Initialize camera with specified settings."""
+        # Verify camera first
+        result = verify_camera_device(self.camera_id)
+        if not result["success"]:
+            print(json.dumps(result))
+            sys.stdout.flush()
+            return False
+
         self.cap = initialize_camera(self.camera_id, self.width, self.height, self.fps)
         if self.cap is not None:
             time.sleep(2.0)
+            # Print initialization success
+            print(json.dumps({
+                "success": True,
+                "message": "Motion detection initialized"
+            }))
+            sys.stdout.flush()
             return True
         return False
 
@@ -431,11 +489,6 @@ class MotionDetector:
     def detect_motion(self):
         """Detect motion in camera feed."""
         if not self.initialize():
-            print(json.dumps({
-                "success": False,
-                "error": "Failed to initialize camera"
-            }))
-            sys.stdout.flush()
             return
 
         try:
