@@ -29,6 +29,9 @@ os.environ["OPENCV_VIDEOIO_BACKEND"] = "v4l2"
 def initialize_camera(device_id: int, width: int = 320, height: int = 240) -> Optional[cv2.VideoCapture]:
     """Initialize camera with MJPG format first, fallback to others if needed."""
     try:
+        # Add delay before opening camera
+        time.sleep(0.5)
+        
         # Try MJPG format first as it's most likely to work
         cap = cv2.VideoCapture(device_id, cv2.CAP_V4L2)
         if not cap.isOpened():
@@ -50,6 +53,8 @@ def initialize_camera(device_id: int, width: int = 320, height: int = 240) -> Op
         # If MJPG fails, try other formats
         for fmt in ['YUYV', 'H264']:
             cap.release()
+            time.sleep(0.5)  # Add delay between format attempts
+            
             cap = cv2.VideoCapture(device_id, cv2.CAP_V4L2)
             if not cap.isOpened():
                 continue
@@ -99,6 +104,9 @@ class CameraLock:
                     except OSError:
                         pass
 
+            # Add delay before acquiring lock
+            time.sleep(0.5)
+
             self.lock_file = open(self.lock_path, 'w')
             fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
             self.lock_file.write(str(os.getpid()))
@@ -121,8 +129,55 @@ class CameraLock:
                     os.remove(self.lock_path)
                 except OSError:
                     pass
+                # Add delay after releasing lock
+                time.sleep(0.5)
         except Exception:
             pass
+
+class CameraSettings:
+    """Handles camera settings configuration."""
+    
+    def __init__(self, camera_id: int = 0, width: int = 320, height: int = 240):
+        self.camera_id = camera_id
+        self.width = width
+        self.height = height
+        self.camera_lock = CameraLock(self.camera_id)
+
+    def apply_settings(self) -> Dict[str, Any]:
+        """Apply camera settings."""
+        if not self.camera_lock.acquire():
+            return {
+                "success": False,
+                "error": "Camera is currently in use by another process"
+            }
+
+        try:
+            cap = initialize_camera(self.camera_id, self.width, self.height)
+            if not cap:
+                return {
+                    "success": False,
+                    "error": "Failed to initialize camera with new settings"
+                }
+
+            # Verify settings were applied
+            actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+            actual_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            
+            return {
+                "success": True,
+                "width": actual_width,
+                "height": actual_height
+            }
+
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e)
+            }
+        finally:
+            if 'cap' in locals():
+                cap.release()
+            self.camera_lock.release()
 
 class HeadTracker:
     """Manages head tracking subprocess."""
@@ -137,6 +192,9 @@ class HeadTracker:
         try:
             if self.process:
                 self.stop()
+            
+            # Add delay before starting new process
+            time.sleep(0.5)
             
             self.process = subprocess.Popen(
                 ['python3', self.script_path, 'start', str(servo_id)],
@@ -339,7 +397,7 @@ class MotionDetector:
 def main():
     """Main entry point for camera control script."""
     parser = argparse.ArgumentParser(description='Camera Control Script')
-    parser.add_argument('command', choices=['motion', 'head_track'],
+    parser.add_argument('command', choices=['motion', 'head_track', 'settings'],
                        help='Command to execute')
     parser.add_argument('--width', type=int, default=320,
                        help='Frame width (default: 320)')
@@ -385,6 +443,12 @@ def main():
                     "success": False,
                     "error": "Invalid action for head tracking"
                 }))
+        
+        elif args.command == 'settings':
+            settings = CameraSettings(args.camera_id, args.width, args.height)
+            result = settings.apply_settings()
+            print(json.dumps(result))
+            
     except Exception as e:
         print(json.dumps({"success": False, "error": str(e)}))
         sys.exit(1)

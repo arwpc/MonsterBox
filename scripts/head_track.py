@@ -7,6 +7,7 @@ import argparse
 import logging
 import time
 import os
+import fcntl
 from typing import Optional
 
 # Configure logging
@@ -25,6 +26,9 @@ os.environ["OPENCV_VIDEOIO_BACKEND"] = "v4l2"
 def initialize_camera(device_id: int, width: int = 320, height: int = 240) -> Optional[cv2.VideoCapture]:
     """Initialize camera with MJPG format first, fallback to others if needed."""
     try:
+        # Add delay before opening camera
+        time.sleep(0.5)
+        
         # Try MJPG format first as it's most likely to work
         cap = cv2.VideoCapture(device_id, cv2.CAP_V4L2)
         if not cap.isOpened():
@@ -46,6 +50,8 @@ def initialize_camera(device_id: int, width: int = 320, height: int = 240) -> Op
         # If MJPG fails, try other formats
         for fmt in ['YUYV', 'H264']:
             cap.release()
+            time.sleep(0.5)  # Add delay between format attempts
+            
             cap = cv2.VideoCapture(device_id, cv2.CAP_V4L2)
             if not cap.isOpened():
                 continue
@@ -68,6 +74,63 @@ def initialize_camera(device_id: int, width: int = 320, height: int = 240) -> Op
         logger.error(f"Camera initialization error: {e}")
         return None
 
+class CameraLock:
+    """Handle camera device locking to prevent concurrent access."""
+    
+    def __init__(self, device_id=0):
+        self.device_id = device_id
+        self.device_path = f"/dev/video{device_id}"
+        self.lock_path = f"/tmp/camera_{device_id}.lock"
+        self.lock_file = None
+
+    def acquire(self) -> bool:
+        """Acquire lock on camera device."""
+        try:
+            # Clean up stale lock file
+            if os.path.exists(self.lock_path):
+                try:
+                    with open(self.lock_path, 'r') as f:
+                        pid = int(f.read().strip())
+                        try:
+                            os.kill(pid, 0)
+                        except OSError:
+                            os.remove(self.lock_path)
+                except (OSError, ValueError):
+                    try:
+                        os.remove(self.lock_path)
+                    except OSError:
+                        pass
+
+            # Add delay before acquiring lock
+            time.sleep(0.5)
+
+            self.lock_file = open(self.lock_path, 'w')
+            fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            self.lock_file.write(str(os.getpid()))
+            self.lock_file.flush()
+            return True
+        except (IOError, OSError):
+            if self.lock_file:
+                self.lock_file.close()
+                self.lock_file = None
+            return False
+
+    def release(self):
+        """Release lock on camera device."""
+        try:
+            if self.lock_file:
+                fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_UN)
+                self.lock_file.close()
+                self.lock_file = None
+                try:
+                    os.remove(self.lock_path)
+                except OSError:
+                    pass
+                # Add delay after releasing lock
+                time.sleep(0.5)
+        except Exception:
+            pass
+
 class HeadTracker:
     """Handles head tracking and servo control."""
     
@@ -76,12 +139,17 @@ class HeadTracker:
         self.width = width
         self.height = height
         self.cap = None
+        self.camera_lock = CameraLock(self.camera_id)
         self.face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
         self.prev_center_x = None
         self.prev_center_y = None
 
     def initialize(self) -> bool:
         """Initialize camera with specified settings."""
+        if not self.camera_lock.acquire():
+            logger.warning("Camera is currently in use by another process")
+            return False
+
         self.cap = initialize_camera(self.camera_id, self.width, self.height)
         return self.cap is not None
 
@@ -91,6 +159,7 @@ class HeadTracker:
             if self.cap:
                 self.cap.release()
                 self.cap = None
+            self.camera_lock.release()
         except Exception as e:
             logger.warning(f"Error releasing camera: {e}")
 
