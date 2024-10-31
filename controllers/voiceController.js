@@ -167,7 +167,7 @@ exports.generateAndSaveForScene = async (req, res) => {
                 success: true,
                 soundId: soundEntry.id,
                 filename: path.basename(absolutePath),
-                path: absolutePath
+                path: `/sounds/${path.basename(absolutePath)}` // Return web-accessible path
             });
         } catch (err) {
             logger.error(`Failed to process audio file: ${err.message}`);
@@ -222,7 +222,7 @@ exports.generateSpeech = async (req, res) => {
             res.json({
                 success: true,
                 filename: path.basename(absolutePath),
-                path: absolutePath,
+                path: `/sounds/${path.basename(absolutePath)}`, // Return web-accessible path
                 url: result.url,
                 duration: result.duration,
                 metadata: result.metadata
