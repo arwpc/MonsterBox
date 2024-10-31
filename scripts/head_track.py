@@ -7,8 +7,7 @@ import argparse
 import logging
 import time
 import os
-import subprocess
-from typing import Optional, List
+from typing import Optional
 
 # Configure logging
 logging.basicConfig(
@@ -23,11 +22,51 @@ os.environ["OPENCV_VIDEOIO_PRIORITY_GSTREAMER"] = "0"
 os.environ["OPENCV_VIDEOIO_PRIORITY_V4L2"] = "100"
 os.environ["OPENCV_VIDEOIO_BACKEND"] = "v4l2"
 
-def get_supported_formats(device_id: int) -> List[str]:
-    """Get list of supported formats for the camera."""
-    # Default to these common formats instead of trying to parse v4l2-ctl output
-    # These are 4-character codes that OpenCV's VideoWriter_fourcc expects
-    return ['MJPG', 'YUYV', 'H264']
+def initialize_camera(device_id: int, width: int = 320, height: int = 240) -> Optional[cv2.VideoCapture]:
+    """Initialize camera with MJPG format first, fallback to others if needed."""
+    try:
+        # Try MJPG format first as it's most likely to work
+        cap = cv2.VideoCapture(device_id, cv2.CAP_V4L2)
+        if not cap.isOpened():
+            return None
+
+        # Try MJPG first
+        fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+        cap.set(cv2.CAP_PROP_FOURCC, fourcc)
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        cap.set(cv2.CAP_PROP_FPS, 15)
+
+        ret, frame = cap.read()
+        if ret and frame is not None and frame.size > 0:
+            logger.info("Successfully initialized camera with MJPG format")
+            return cap
+
+        # If MJPG fails, try other formats
+        for fmt in ['YUYV', 'H264']:
+            cap.release()
+            cap = cv2.VideoCapture(device_id, cv2.CAP_V4L2)
+            if not cap.isOpened():
+                continue
+
+            fourcc = cv2.VideoWriter_fourcc(*fmt)
+            cap.set(cv2.CAP_PROP_FOURCC, fourcc)
+            cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+            cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+            cap.set(cv2.CAP_PROP_FPS, 15)
+
+            ret, frame = cap.read()
+            if ret and frame is not None and frame.size > 0:
+                logger.info(f"Successfully initialized camera with {fmt} format")
+                return cap
+
+        return None
+
+    except Exception as e:
+        logger.error(f"Camera initialization error: {e}")
+        return None
 
 class HeadTracker:
     """Handles head tracking and servo control."""
@@ -36,65 +75,15 @@ class HeadTracker:
         self.camera_id = camera_id
         self.width = width
         self.height = height
-        self.cap: Optional[cv2.VideoCapture] = None
+        self.cap = None
+        self.face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+        self.prev_center_x = None
+        self.prev_center_y = None
 
     def initialize(self) -> bool:
         """Initialize camera with specified settings."""
-        try:
-            # Release any existing camera instance
-            self.release()
-            
-            # Wait for camera to be fully released
-            time.sleep(1.0)  # Increased delay
-            
-            # Get supported formats
-            formats = get_supported_formats(self.camera_id)
-            logger.info(f"Attempting formats: {formats}")
-            
-            # Try each supported format
-            for fmt in formats:
-                logger.info(f"Trying format: {fmt}")
-                
-                # Create capture with explicit backend
-                self.cap = cv2.VideoCapture(self.camera_id, cv2.CAP_V4L2)
-                
-                if not self.cap.isOpened():
-                    logger.warning(f"Failed to open camera {self.camera_id}")
-                    continue
-
-                # Configure camera properties
-                fourcc = cv2.VideoWriter_fourcc(*fmt)
-                self.cap.set(cv2.CAP_PROP_FOURCC, fourcc)
-                self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
-                self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
-                self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-                self.cap.set(cv2.CAP_PROP_FPS, 15)
-
-                # Verify camera is working with multiple attempts
-                for attempt in range(3):
-                    ret, frame = self.cap.read()
-                    if ret and frame is not None and frame.size > 0:
-                        # Resize frame if necessary
-                        actual_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-                        actual_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                        if actual_width != self.width or actual_height != self.height:
-                            frame = cv2.resize(frame, (self.width, self.height))
-                        logger.info(f"Successfully initialized camera with format {fmt}")
-                        return True
-                    time.sleep(0.5)  # Increased delay between attempts
-
-                # If we get here, this format didn't work
-                self.cap.release()
-                self.cap = None
-                time.sleep(0.5)  # Delay before trying next format
-
-            logger.warning("Failed to initialize camera with any format")
-            return False
-
-        except Exception as e:
-            logger.warning(f"Camera initialization error: {e}")
-            self.release()
-            return False
+        self.cap = initialize_camera(self.camera_id, self.width, self.height)
+        return self.cap is not None
 
     def release(self):
         """Release camera resources."""
@@ -102,7 +91,6 @@ class HeadTracker:
             if self.cap:
                 self.cap.release()
                 self.cap = None
-            time.sleep(0.1)  # Add delay after release
         except Exception as e:
             logger.warning(f"Error releasing camera: {e}")
 
@@ -113,6 +101,10 @@ class HeadTracker:
             return
 
         try:
+            frame_count = 0
+            last_frame_time = time.time()
+            target_frame_time = 1.0 / 15  # Target 15 FPS
+
             while True:
                 ret, frame = self.cap.read()
                 if not ret or frame is None:
@@ -124,11 +116,82 @@ class HeadTracker:
                 if actual_width != self.width or actual_height != self.height:
                     frame = cv2.resize(frame, (self.width, self.height))
 
-                # TODO: Add head tracking logic here
-                # For now, just display the frame
+                # Convert to grayscale for face detection
+                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                faces = self.face_cascade.detectMultiScale(
+                    gray, 
+                    scaleFactor=1.1, 
+                    minNeighbors=5,
+                    minSize=(30, 30)
+                )
+
+                # Process detected faces
+                if len(faces) > 0:
+                    # Get the largest face
+                    largest_face = max(faces, key=lambda x: x[2] * x[3])
+                    x, y, w, h = largest_face
+                    
+                    # Calculate face center
+                    center_x = x + w//2
+                    center_y = y + h//2
+                    
+                    # Draw face rectangle with glow effect
+                    cv2.rectangle(frame, (x-2, y-2), (x+w+2, y+h+2), (0, 255, 0), 4)
+                    cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 255, 255), 2)
+                    
+                    # Draw crosshair on face
+                    cv2.line(frame, (center_x-15, center_y), (center_x+15, center_y), 
+                            (0, 255, 0), 3)
+                    cv2.line(frame, (center_x, center_y-15), (center_x, center_y+15), 
+                            (0, 255, 0), 3)
+                    cv2.line(frame, (center_x-10, center_y), (center_x+10, center_y), 
+                            (255, 255, 255), 1)
+                    cv2.line(frame, (center_x, center_y-10), (center_x, center_y+10), 
+                            (255, 255, 255), 1)
+                    
+                    # Calculate normalized position (0-100)
+                    norm_x = (center_x / frame.shape[1]) * 100
+                    norm_y = (center_y / frame.shape[0]) * 100
+                    
+                    # Draw tracking info
+                    font = cv2.FONT_HERSHEY_SIMPLEX
+                    tracking_text = f"Face Detected: ({int(norm_x)}, {int(norm_y)})"
+                    cv2.putText(frame, tracking_text, (5, 20), font, 
+                               0.5, (0, 255, 0), 2)
+                    cv2.putText(frame, tracking_text, (5, 20), font, 
+                               0.5, (255, 255, 255), 1)
+                    
+                    # TODO: Add servo control logic here using norm_x and norm_y
+                    
+                    self.prev_center_x = center_x
+                    self.prev_center_y = center_y
+                else:
+                    # Draw "No Face Detected" message
+                    font = cv2.FONT_HERSHEY_SIMPLEX
+                    cv2.putText(frame, "No Face Detected", (5, 20), font, 
+                               0.5, (0, 255, 0), 2)
+                    cv2.putText(frame, "No Face Detected", (5, 20), font, 
+                               0.5, (255, 255, 255), 1)
+
+                # Add timestamp
+                timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+                cv2.putText(frame, timestamp, (5, frame.shape[0]-5), font, 
+                           0.5, (0, 255, 0), 2)
+                cv2.putText(frame, timestamp, (5, frame.shape[0]-5), font, 
+                           0.5, (255, 255, 255), 1)
+
+                # Display frame
                 cv2.imshow('Head Tracking', frame)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
+
+                # Frame rate control
+                frame_count += 1
+                current_time = time.time()
+                elapsed = current_time - last_frame_time
+                if elapsed < target_frame_time:
+                    time.sleep(target_frame_time - elapsed)
+                last_frame_time = time.time()
 
         except Exception as e:
             logger.error(f"Head tracking error: {e}")
@@ -151,7 +214,7 @@ def main():
             tracker = HeadTracker()
             tracker.track_head(args.servo_id)
         elif args.command == 'stop':
-            # TODO: Implement stop command
+            # Stop command handled by parent process
             pass
     except Exception as e:
         logger.error(f"Error: {str(e)}")
