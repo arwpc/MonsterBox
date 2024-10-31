@@ -17,8 +17,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Force V4L2 backend
+# Force V4L2 backend and disable GStreamer
 os.environ["OPENCV_VIDEOIO_PRIORITY_V4L2"] = "100"
+os.environ["OPENCV_VIDEOIO_PRIORITY_GSTREAMER"] = "0"
 
 try:
     import numpy as np
@@ -89,13 +90,18 @@ def initialize_camera(device_id: int, width: int = 320, height: int = 240) -> Op
         logger.info("Setting camera properties...")
         cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Minimal buffer for lower latency
         cap.set(cv2.CAP_PROP_FPS, 15)        # Stable FPS for Pi
+
+        # Choose format based on resolution
+        if width > 640 or height > 480:
+            logger.info("Using MJPG format for high resolution")
+            fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+        else:
+            logger.info("Using YUYV format for low resolution")
+            fourcc = cv2.VideoWriter_fourcc(*'YUYV')
+
+        cap.set(cv2.CAP_PROP_FOURCC, fourcc)
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-
-        # Try MJPG format first
-        logger.info("Trying MJPG format...")
-        fourcc = cv2.VideoWriter_fourcc(*'MJPG')
-        cap.set(cv2.CAP_PROP_FOURCC, fourcc)
         
         # Camera quality settings
         if hasattr(cv2, 'CAP_PROP_AUTO_EXPOSURE'):
@@ -108,49 +114,23 @@ def initialize_camera(device_id: int, width: int = 320, height: int = 240) -> Op
         # Test frame capture
         ret, frame = cap.read()
         if ret and frame is not None and frame.size > 0:
-            logger.info("Successfully initialized camera with MJPG format")
             # Log actual camera settings
             actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             actual_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
             actual_fps = int(cap.get(cv2.CAP_PROP_FPS))
-            logger.info(f"Camera settings - Width: {actual_width}, Height: {actual_height}, FPS: {actual_fps}")
+            logger.info(f"Successfully initialized camera - Width: {actual_width}, Height: {actual_height}, FPS: {actual_fps}")
+            
+            # Print success JSON to stdout
+            print(json.dumps({
+                "success": True,
+                "width": actual_width,
+                "height": actual_height
+            }))
+            sys.stdout.flush()  # Ensure JSON is sent immediately
+            
             return cap
 
-        # If MJPG fails, try YUYV
-        logger.info("MJPG failed, trying YUYV format...")
-        cap.release()
-        time.sleep(1.0)
-        
-        cap = cv2.VideoCapture(device_id, cv2.CAP_V4L2)
-        if not cap.isOpened():
-            logger.error("Failed to reopen camera for YUYV format")
-            return None
-
-        fourcc = cv2.VideoWriter_fourcc(*'YUYV')
-        cap.set(cv2.CAP_PROP_FOURCC, fourcc)
-        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-        cap.set(cv2.CAP_PROP_FPS, 15)
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-
-        if hasattr(cv2, 'CAP_PROP_AUTO_EXPOSURE'):
-            cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1)
-        if hasattr(cv2, 'CAP_PROP_BRIGHTNESS'):
-            cap.set(cv2.CAP_PROP_BRIGHTNESS, 0.5)
-        if hasattr(cv2, 'CAP_PROP_CONTRAST'):
-            cap.set(cv2.CAP_PROP_CONTRAST, 0.5)
-
-        ret, frame = cap.read()
-        if ret and frame is not None and frame.size > 0:
-            logger.info("Successfully initialized camera with YUYV format")
-            # Log actual camera settings
-            actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-            actual_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-            actual_fps = int(cap.get(cv2.CAP_PROP_FPS))
-            logger.info(f"Camera settings - Width: {actual_width}, Height: {actual_height}, FPS: {actual_fps}")
-            return cap
-
-        logger.error("Failed to initialize camera with any format")
+        logger.error("Failed to capture test frame")
         return None
 
     except Exception as e:
@@ -172,19 +152,7 @@ class CameraStream:
     def initialize(self) -> bool:
         """Initialize camera with specified settings."""
         self.cap = initialize_camera(self.camera_id, self.width, self.height)
-        if self.cap is not None:
-            # Reset counters on successful initialization
-            self.frame_count = 0
-            self.error_count = 0
-            # Print success JSON to stdout
-            print(json.dumps({
-                "success": True,
-                "width": int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
-                "height": int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-            }))
-            sys.stdout.flush()  # Ensure JSON is sent immediately
-            return True
-        return False
+        return self.cap is not None
 
     def release(self):
         """Release camera resources."""
