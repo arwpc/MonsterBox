@@ -190,6 +190,9 @@
                 <h3>Head Tracking</h3>
                 <select id="servoSelect">
                     <option value="">Select Head Servo...</option>
+                    <% servos.forEach(function(servo) { %>
+                        <option value="<%= servo.id %>"><%= servo.name %></option>
+                    <% }); %>
                 </select>
                 <button id="headTrackButton" onclick="toggleHeadTracking()">Start Head Tracking</button>
                 <div id="headTrackData">No tracking data</div>
@@ -206,6 +209,7 @@
         const reconnectDelay = 5000;
         let motionDetectionController = null;
         let headTrackingController = null;
+        const characterId = '<%= characterId %>';
 
         function showStatus(message, isLoading = false) {
             const statusEl = document.getElementById('statusMessage');
@@ -258,31 +262,6 @@
             } catch (error) {
                 showStatus('Error loading cameras');
                 console.error('Error loading cameras:', error);
-            }
-        }
-
-        async function loadServos() {
-            try {
-                const response = await fetch('/parts');
-                const data = await response.text();
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(data, 'text/html');
-                const servos = Array.from(doc.querySelectorAll('[data-type="servo"]')).map(el => ({
-                    id: el.dataset.id,
-                    name: el.dataset.name
-                }));
-
-                const servoSelect = document.getElementById('servoSelect');
-                servoSelect.innerHTML = '<option value="">Select Head Servo...</option>';
-                
-                servos.forEach(servo => {
-                    const option = document.createElement('option');
-                    option.value = servo.id;
-                    option.textContent = servo.name;
-                    servoSelect.appendChild(option);
-                });
-            } catch (error) {
-                console.error('Error loading servos:', error);
             }
         }
 
@@ -561,10 +540,9 @@
             }
         }
 
-        // Load cameras and servos on page load
+        // Load cameras on page load
         document.addEventListener('DOMContentLoaded', () => {
             loadCameras();
-            loadServos();
         });
     </script>
 </body>
