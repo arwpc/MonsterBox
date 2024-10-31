@@ -252,13 +252,13 @@ class ReplicaAPI {
             // Return the result with proper file paths
             const mp3Filename = `${filename}.mp3`;
             return {
-                url: `sounds/${mp3Filename}`,  // Prepend 'sounds/' to the filename
+                filename: mp3Filename,
+                filepath: mp3Path,
+                url: `/sounds/${mp3Filename}`,  // Return web-accessible path
                 uuid: jobStatus.data.uuid,
                 state: jobStatus.data.state,
                 duration: jobStatus.data.duration,
                 format: this.audioSettings.targetFormat,
-                filepath: mp3Path,
-                filename: mp3Filename,
                 metadata: {
                     requestTime: new Date().toISOString(),
                     textLength: params.text.length,
