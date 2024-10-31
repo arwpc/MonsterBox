@@ -18,10 +18,10 @@ class SoundPlayer:
         self.sounds_lock = Lock()
         self.next_sound_id = 0
 
-        # Test mpg123 and audio device
+        # Test mpg123 installation
         try:
-            test_result = subprocess.run(['mpg123', '--test', '-a', 'default'], capture_output=True, text=True)
-            log_message({"status": "info", "message": f"MPG123 test result: {test_result.stderr}"})
+            version = subprocess.run(['mpg123', '--version'], capture_output=True, text=True)
+            log_message({"status": "info", "message": f"MPG123 version: {version.stdout.strip()}"})
         except Exception as e:
             log_message({"status": "warning", "message": f"MPG123 test failed: {str(e)}"})
 
@@ -38,18 +38,24 @@ class SoundPlayer:
             if file_size == 0:
                 raise Exception(f"Sound file is empty: {file_path}")
             
-            # Use MPG123 to play the MP3 file with optimized settings
-            log_message({"status": "info", "message": f"Executing mpg123 command for file: {file_path}"})
+            # Get duration first
+            duration_result = subprocess.run(['mpg123', '--skip', '0', '-t', file_path], 
+                                          capture_output=True, text=True)
+            duration = None
+            for line in duration_result.stderr.split('\n'):
+                if 'Time:' in line:
+                    duration = float(line.split()[-1])
+                    break
+            
+            if duration:
+                log_message({"status": "info", "message": f"Sound duration: {duration} seconds"})
+            
+            # Use MPG123 to play the MP3 file
+            log_message({"status": "info", "message": f"Starting playback: {file_path}"})
             process = subprocess.Popen(
                 [
                     'mpg123',
-                    '-a', 'default',  # Use default audio device
-                    '--quiet',        # Reduce console output
-                    '--buffer', '1024',  # Larger buffer for smoother playback
-                    '--aggressive',   # More aggressive buffering
-                    '--no-control',   # Disable terminal control
-                    '--no-equ',      # Disable equalizer
-                    '--no-gapless',  # Disable gapless playback
+                    '--quiet',
                     file_path
                 ],
                 stdout=subprocess.PIPE,
@@ -63,20 +69,19 @@ class SoundPlayer:
             log_message({"status": "playing", "sound_id": sound_id, "file": file_path})
             
             # Start a new thread to wait for the sound to finish
-            Thread(target=self._wait_for_sound_end, args=(sound_id, process, file_path)).start()
+            Thread(target=self._wait_for_sound_end, args=(sound_id, process, file_path, duration)).start()
             
         except FileNotFoundError as e:
             log_message({"status": "error", "sound_id": sound_id, "file": file_path, "message": str(e)})
         except Exception as e:
             log_message({"status": "error", "sound_id": sound_id, "file": file_path, "message": str(e), "traceback": traceback.format_exc()})
 
-    def _wait_for_sound_end(self, sound_id, process, file_path):
+    def _wait_for_sound_end(self, sound_id, process, file_path, duration):
         start_time = time.time()
         try:
-            # Set a timeout for process.communicate()
-            stdout, stderr = process.communicate(timeout=30)  # 30 second timeout
+            stdout, stderr = process.communicate()
             end_time = time.time()
-            duration = end_time - start_time
+            actual_duration = end_time - start_time
             
             if stdout:
                 log_message({"status": "info", "message": f"MPG123 stdout: {stdout.decode('utf-8', errors='ignore')}"})
@@ -87,11 +92,12 @@ class SoundPlayer:
                 log_message({"status": "error", "sound_id": sound_id, "file": file_path, 
                            "message": f"MPG123 error (code {process.returncode}): {stderr.decode('utf-8', errors='ignore')}"})
             
-            log_message({"status": "finished", "sound_id": sound_id, "duration": duration})
-        except subprocess.TimeoutExpired:
-            log_message({"status": "error", "sound_id": sound_id, 
-                        "message": "Sound playback timed out after 30 seconds"})
-            self._force_kill_process(process)
+            log_message({
+                "status": "finished", 
+                "sound_id": sound_id, 
+                "duration": actual_duration,
+                "expected_duration": duration
+            })
         except Exception as e:
             log_message({"status": "error", "sound_id": sound_id, "message": str(e), 
                         "traceback": traceback.format_exc()})
@@ -157,20 +163,6 @@ class SoundPlayer:
             else:
                 return {"status": "not_found", "sound_id": sound_id}
 
-    def get_sound_duration(self, file_path):
-        try:
-            if not os.path.exists(file_path):
-                raise FileNotFoundError(f"Sound file not found: {file_path}")
-            
-            # Use MPG123 to get the duration of the MP3 file
-            result = subprocess.run(['mpg123', '--quiet', '-t', file_path], 
-                                 capture_output=True, text=True, timeout=5)
-            duration_line = [line for line in result.stderr.split('\n') if 'Time:' in line][0]
-            duration = float(duration_line.split()[-1])
-            return {"status": "success", "duration": duration}
-        except Exception as e:
-            return {"status": "error", "message": str(e)}
-
 def signal_handler(signum, frame):
     log_message({"status": "info", "message": f"Received signal {signum}. Exiting gracefully."})
     sys.exit(0)
@@ -235,14 +227,6 @@ if __name__ == "__main__":
                         sound_id = parts[2]
                         status = player.get_sound_status(sound_id)
                         response.update(status)
-                elif cmd == "DURATION":
-                    if len(parts) != 3:
-                        response["status"] = "error"
-                        response["message"] = f"Invalid DURATION command format: {command}"
-                    else:
-                        file_path = parts[2]
-                        duration_info = player.get_sound_duration(file_path)
-                        response.update(duration_info)
                 else:
                     response["status"] = "error"
                     response["message"] = f"Unknown command: {cmd}"
