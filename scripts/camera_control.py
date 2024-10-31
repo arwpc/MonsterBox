@@ -14,7 +14,8 @@ from typing import Dict, Any, Optional, List
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    stream=sys.stderr  # Log to stderr to keep stdout clean for JSON output
 )
 logger = logging.getLogger(__name__)
 
@@ -252,6 +253,14 @@ class CameraSettings:
             actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             actual_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
             
+            # Test frame capture
+            ret, frame = cap.read()
+            if not ret or frame is None or frame.size == 0:
+                return {
+                    "success": False,
+                    "error": "Failed to capture test frame"
+                }
+            
             return {
                 "success": True,
                 "width": actual_width,
@@ -459,18 +468,22 @@ def main():
     args = parser.parse_args()
     
     try:
-        if args.command == 'motion':
-            detector = MotionDetector(args.camera_id, args.width, args.height)
-            result = detector.detect_motion()
-            print(json.dumps(result))
-        
-        elif args.command == 'settings':
+        if args.command == 'settings':
             settings = CameraSettings(args.camera_id, args.width, args.height)
             result = settings.apply_settings()
-            print(json.dumps(result))
+            print(json.dumps(result))  # Print JSON to stdout
+            sys.exit(0 if result["success"] else 1)
+        elif args.command == 'motion':
+            detector = MotionDetector(args.camera_id, args.width, args.height)
+            result = detector.detect_motion()
+            print(json.dumps(result))  # Print JSON to stdout
+            sys.exit(0 if result["success"] else 1)
             
     except Exception as e:
-        print(json.dumps({"success": False, "error": str(e)}))
+        print(json.dumps({
+            "success": False,
+            "error": str(e)
+        }))
         sys.exit(1)
 
 if __name__ == "__main__":
