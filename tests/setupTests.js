@@ -2,6 +2,7 @@ const chai = require('chai');
 const chaiHttp = require('chai-http');
 const app = require('../app');
 
+// Configure chai
 chai.use(chaiHttp);
 chai.should();
 
@@ -29,6 +30,16 @@ chai.Assertion.addMethod('devicePath', function() {
     );
 });
 
+// Make globals available
 global.chai = chai;
 global.app = app;
 global.expect = chai.expect;
+global.should = chai.should();
+
+// Export for explicit imports if needed
+module.exports = {
+    chai,
+    app,
+    expect: chai.expect,
+    should: chai.should()
+};
