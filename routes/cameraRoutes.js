@@ -615,4 +615,94 @@ router.post('/control', async (req, res) => {
     }
 });
 
+// Head tracking route
+router.post('/head-track', async (req, res) => {
+    const { panServoId, tiltServoId } = req.body;
+    
+    try {
+        const settings = await loadCameraSettings();
+        if (!settings.selectedCamera && settings.selectedCamera !== 0) {
+            throw new Error('No camera selected');
+        }
+
+        // Kill any existing camera processes and wait
+        await killExistingCameraProcesses();
+        await cleanupLockFiles();
+
+        // Start head tracking process
+        const trackScript = path.join(__dirname, '..', 'scripts', 'head_track.py');
+        const args = [
+            '--camera-id', settings.selectedCamera.toString(),
+            '--pan-servo-id', panServoId,
+            '--tilt-servo-id', tiltServoId,
+            '--width', '320',  // Use lower resolution for faster processing
+            '--height', '240'
+        ];
+
+        logger.info(`Starting head tracking: ${trackScript} ${args.join(' ')}`);
+        const process = spawn('python3', [trackScript, ...args]);
+
+        // Track this process
+        activeProcesses.set('head_track', process);
+
+        // Set response headers for streaming
+        res.setHeader('Content-Type', 'application/x-ndjson');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+
+        // Handle stdout data (tracking results)
+        let buffer = '';
+        process.stdout.on('data', (data) => {
+            try {
+                // Append new data to buffer
+                buffer += data.toString();
+
+                // Process complete JSON objects
+                let newlineIndex;
+                while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+                    const jsonStr = buffer.slice(0, newlineIndex);
+                    buffer = buffer.slice(newlineIndex + 1);
+
+                    try {
+                        const result = JSON.parse(jsonStr);
+                        res.write(JSON.stringify(result) + '\n');
+                    } catch (e) {
+                        logger.error('Error parsing head tracking data:', e);
+                    }
+                }
+            } catch (e) {
+                logger.error('Error processing head tracking data:', e);
+            }
+        });
+
+        // Handle stderr output
+        process.stderr.on('data', (data) => {
+            logger.info(`Head tracking output: ${data}`);
+        });
+
+        // Handle process close
+        process.on('close', (code) => {
+            activeProcesses.delete('head_track');
+            logger.info(`Head tracking process closed with code ${code}`);
+            res.end();
+        });
+
+        // Handle client disconnect
+        req.on('close', () => {
+            if (activeProcesses.has('head_track')) {
+                const process = activeProcesses.get('head_track');
+                process.kill('SIGTERM');
+                activeProcesses.delete('head_track');
+            }
+        });
+
+    } catch (error) {
+        logger.error('Head tracking error:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message
+        });
+    }
+});
+
 module.exports = router;
