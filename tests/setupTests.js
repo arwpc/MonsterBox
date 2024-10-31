@@ -1,3 +1,4 @@
+// Test setup for all tests
 const chai = require('chai');
 const chaiHttp = require('chai-http');
 
@@ -30,10 +31,21 @@ chai.Assertion.addMethod('devicePath', function() {
     );
 });
 
-// Make chai globally available for all tests
+// Make chai and its assertions globally available
 global.chai = chai;
 global.expect = chai.expect;
 global.should = chai.should();
 
-// Export chai for explicit imports if needed
-module.exports = chai;
+// Export for explicit imports if needed
+module.exports = {
+    chai,
+    expect: chai.expect,
+    should: chai.should(),
+};
+
+// Register the globals with Mocha
+before(function() {
+    global.chai = chai;
+    global.expect = chai.expect;
+    global.should = chai.should();
+});
