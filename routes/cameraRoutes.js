@@ -75,6 +75,7 @@ async function cleanupLockFiles() {
     }
 }
 
+// Camera routes
 router.get('/', async (req, res) => {
     try {
         const characterId = req.query.characterId || req.session.characterId;
@@ -90,6 +91,57 @@ router.get('/', async (req, res) => {
             error: 'Failed to load camera interface',
             details: error.message
         });
+    }
+});
+
+router.get('/stream', async (req, res) => {
+    try {
+        const settings = await loadCameraSettings();
+        if (!settings.selectedCamera && settings.selectedCamera !== 0) {
+            throw new Error('No camera selected');
+        }
+
+        // Kill any existing camera processes and wait
+        await killExistingCameraProcesses();
+        await cleanupLockFiles();
+
+        const width = parseInt(req.query.width) || 320;
+        const height = parseInt(req.query.height) || 240;
+        
+        const streamScript = path.join(__dirname, '..', 'scripts', 'camera_stream.py');
+        const process = spawn('python3', [
+            streamScript,
+            '--camera-id', settings.selectedCamera.toString(),
+            '--width', width.toString(),
+            '--height', height.toString()
+        ]);
+
+        // Track this process
+        activeProcesses.set('stream', process);
+
+        res.setHeader('Content-Type', 'multipart/x-mixed-replace; boundary=frame');
+        
+        process.stdout.on('data', (data) => {
+            res.write(data);
+        });
+
+        process.stderr.on('data', (data) => {
+            logger.error(`Stream error: ${data}`);
+        });
+
+        process.on('close', () => {
+            activeProcesses.delete('stream');
+            res.end();
+        });
+
+        req.on('close', async () => {
+            process.kill('SIGTERM');
+            activeProcesses.delete('stream');
+        });
+
+    } catch (error) {
+        logger.error('Stream error:', error);
+        res.status(500).send('Stream error');
     }
 });
 
@@ -204,4 +256,174 @@ router.get('/list', async (req, res) => {
     }
 });
 
-// Rest of the routes remain unchanged...
+router.post('/select', async (req, res) => {
+    try {
+        const { cameraId } = req.body;
+        if (typeof cameraId !== 'number') {
+            throw new Error('Invalid camera ID');
+        }
+
+        // Kill any existing camera processes and wait
+        await killExistingCameraProcesses();
+        await cleanupLockFiles();
+
+        // Verify camera is accessible
+        const verifyScript = path.join(__dirname, '..', 'scripts', 'camera_control.py');
+        const process = spawn('python3', [
+            verifyScript,
+            'settings',
+            '--camera-id', cameraId.toString(),
+            '--width', '160',
+            '--height', '120'
+        ]);
+
+        // Track this process
+        activeProcesses.set('verify', process);
+
+        let output = '';
+        let error = '';
+
+        process.stdout.on('data', (data) => {
+            output += data.toString();
+        });
+
+        process.stderr.on('data', (data) => {
+            error += data.toString();
+        });
+
+        await new Promise((resolve, reject) => {
+            process.on('close', (code) => {
+                activeProcesses.delete('verify');
+                if (code === 0) {
+                    try {
+                        const result = JSON.parse(output);
+                        if (result.success) {
+                            resolve();
+                        } else {
+                            reject(new Error(result.error || 'Camera verification failed'));
+                        }
+                    } catch (e) {
+                        reject(new Error('Invalid camera verification response'));
+                    }
+                } else {
+                    reject(new Error(error || 'Camera verification failed'));
+                }
+            });
+        });
+
+        await saveCameraSettings({ selectedCamera: cameraId });
+        res.json({ success: true });
+    } catch (error) {
+        logger.error('Error selecting camera:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+router.post('/control', async (req, res) => {
+    const { command, params = {} } = req.body;
+    const controlScript = path.join(__dirname, '..', 'scripts', 'camera_control.py');
+    
+    try {
+        const settings = await loadCameraSettings();
+        if (!settings.selectedCamera && settings.selectedCamera !== 0) {
+            throw new Error('No camera selected');
+        }
+
+        // Kill any existing camera processes and wait
+        await killExistingCameraProcesses();
+        await cleanupLockFiles();
+
+        const args = [controlScript, command, '--camera-id', settings.selectedCamera.toString()];
+
+        if (command === 'settings') {
+            if (params.width !== undefined) {
+                args.push('--width', params.width.toString());
+            }
+            if (params.height !== undefined) {
+                args.push('--height', params.height.toString());
+            }
+        } else if (command === 'motion') {
+            // No additional parameters needed for motion detection
+        } else {
+            return res.status(400).json({
+                success: false,
+                error: `Unknown command: ${command}`
+            });
+        }
+
+        const process = spawn('python3', args);
+
+        // Track this process
+        activeProcesses.set('control', process);
+
+        let output = '';
+        let error = '';
+
+        process.stdout.on('data', (data) => {
+            output += data.toString();
+        });
+
+        process.stderr.on('data', (data) => {
+            error += data.toString();
+            logger.error(`Camera control error: ${data}`);
+        });
+
+        process.on('close', async (code) => {
+            activeProcesses.delete('control');
+            if (code === 0 && output) {
+                try {
+                    const result = JSON.parse(output);
+                    res.json({ success: true, ...result });
+                } catch (e) {
+                    res.json({ success: true, message: output });
+                }
+            } else {
+                // If motion detection fails, try to restart streaming
+                if (command === 'motion') {
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    const streamProcess = spawn('python3', [
+                        path.join(__dirname, '..', 'scripts', 'camera_stream.py'),
+                        '--camera-id', settings.selectedCamera.toString(),
+                        '--width', (params.width || 320).toString(),
+                        '--height', (params.height || 240).toString()
+                    ]);
+                    activeProcesses.set('stream', streamProcess);
+                }
+                
+                res.status(500).json({ 
+                    success: false, 
+                    error: error || 'Camera control failed'
+                });
+            }
+        });
+
+        process.on('error', async (err) => {
+            activeProcesses.delete('control');
+            logger.error('Failed to start camera control process:', err);
+            
+            // If process fails to start, try to restart streaming
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            const streamProcess = spawn('python3', [
+                path.join(__dirname, '..', 'scripts', 'camera_stream.py'),
+                '--camera-id', settings.selectedCamera.toString(),
+                '--width', (params.width || 320).toString(),
+                '--height', (params.height || 240).toString()
+            ]);
+            activeProcesses.set('stream', streamProcess);
+            
+            res.status(500).json({
+                success: false,
+                error: 'Failed to start camera control process'
+            });
+        });
+
+    } catch (error) {
+        logger.error('Camera control error:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message
+        });
+    }
+});
+
+module.exports = router;

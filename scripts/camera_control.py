@@ -8,6 +8,7 @@ import fcntl
 import base64
 import subprocess
 import json
+import argparse
 from typing import Dict, Any, Optional, List
 
 # Configure logging
@@ -388,7 +389,7 @@ class MotionDetector:
 def main():
     """Main entry point for camera control script."""
     parser = argparse.ArgumentParser(description='Camera Control Script')
-    parser.add_argument('command', choices=['motion', 'head_track', 'settings'],
+    parser.add_argument('command', choices=['motion', 'settings'],
                        help='Command to execute')
     parser.add_argument('--width', type=int, default=320,
                        help='Frame width (default: 320)')
@@ -396,10 +397,6 @@ def main():
                        help='Frame height (default: 240)')
     parser.add_argument('--camera-id', type=int, required=True,
                        help='Camera device ID')
-    parser.add_argument('--action', choices=['start', 'stop'],
-                       help='Action for head tracking')
-    parser.add_argument('--servo-id', type=int,
-                       help='Servo ID for head tracking')
     
     args = parser.parse_args()
     
@@ -408,32 +405,6 @@ def main():
             detector = MotionDetector(args.camera_id, args.width, args.height)
             result = detector.detect_motion()
             print(json.dumps(result))
-            
-        elif args.command == 'head_track':
-            tracker = HeadTracker(args.camera_id)
-            if args.action == 'start':
-                if args.servo_id is None:
-                    print(json.dumps({
-                        "success": False,
-                        "error": "Servo ID is required for head tracking"
-                    }))
-                else:
-                    success = tracker.start(args.servo_id)
-                    print(json.dumps({
-                        "success": success,
-                        "error": None if success else "Failed to start head tracking"
-                    }))
-            elif args.action == 'stop':
-                success = tracker.stop()
-                print(json.dumps({
-                    "success": success,
-                    "error": None if success else "Failed to stop head tracking"
-                }))
-            else:
-                print(json.dumps({
-                    "success": False,
-                    "error": "Invalid action for head tracking"
-                }))
         
         elif args.command == 'settings':
             settings = CameraSettings(args.camera_id, args.width, args.height)
