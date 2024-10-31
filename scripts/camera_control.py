@@ -93,6 +93,9 @@ def set_camera_controls(device_id: int):
     """Set optimal camera controls using v4l2-ctl."""
     device_path = f"/dev/video{device_id}"
     try:
+        # Reset all controls to default
+        subprocess.run(['v4l2-ctl', '-d', device_path, '--all'])
+        
         # Set power line frequency to 50Hz
         subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=power_line_frequency=1'])
         
@@ -107,7 +110,7 @@ def set_camera_controls(device_id: int):
         
         # Set additional controls from v4l2-ctl output
         subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=brightness=0'])
-        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=contrast=0'])
+        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=contrast=32'])  # Changed to default
         subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=saturation=64'])
         subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=hue=0'])
         subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=gamma=100'])
@@ -165,6 +168,21 @@ def initialize_camera(device_id: int, width: int = 320, height: int = 240, fps: 
                 actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
                 actual_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
                 actual_fps = int(cap.get(cv2.CAP_PROP_FPS))
+                
+                # Verify resolution matches requested
+                if actual_width != width or actual_height != height:
+                    logger.warning(f"Camera resolution mismatch. Requested: {width}x{height}, Got: {actual_width}x{actual_height}")
+                    # Try setting resolution again
+                    cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+                    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+                    time.sleep(1.0)
+                    # Check resolution again
+                    actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                    actual_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                    if actual_width != width or actual_height != height:
+                        logger.error(f"Failed to set resolution to {width}x{height}")
+                        cap.release()
+                        return None
                 
                 logger.info(f"Successfully initialized camera - Width: {actual_width}, Height: {actual_height}, FPS: {actual_fps}")
                 return cap
@@ -275,6 +293,11 @@ class MotionDetector:
         try:
             ret, frame = self.cap.read()
             if not ret or frame is None or frame.size == 0:
+                return None
+
+            # Verify frame dimensions
+            if frame.shape[1] != self.width or frame.shape[0] != self.height:
+                logger.warning(f"Frame size mismatch. Expected: {self.width}x{self.height}, Got: {frame.shape[1]}x{frame.shape[0]}")
                 return None
 
             # Create a copy of the frame for drawing
@@ -426,6 +449,16 @@ class MotionDetector:
                 if result:
                     print(json.dumps(result))
                     sys.stdout.flush()
+                else:
+                    # If frame processing fails, try to reinitialize
+                    self.release()
+                    if not self.initialize():
+                        print(json.dumps({
+                            "success": False,
+                            "error": "Failed to reinitialize camera"
+                        }))
+                        sys.stdout.flush()
+                        break
 
                 # Control frame rate
                 current_time = time.time()
