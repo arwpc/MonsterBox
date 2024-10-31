@@ -129,9 +129,7 @@ class HeadTracker:
         self.camera_lock = CameraLock(self.camera_id)
         self.face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
         self.prev_center_x = None
-        self.prev_center_y = None
-        self.servo_x_angle = 90  # Current pan servo angle
-        self.servo_y_angle = 90  # Current tilt servo angle
+        self.servo_angle = 90  # Current servo angle
         self.min_angle = 0
         self.max_angle = 180
         self.angle_threshold = 5  # Minimum angle change to move servo
@@ -155,23 +153,18 @@ class HeadTracker:
         except Exception as e:
             logger.warning(f"Error releasing camera: {e}")
 
-    def calculate_servo_angles(self, face_x: float, face_y: float) -> Dict[str, float]:
-        """Calculate servo angles based on face position."""
+    def calculate_servo_angle(self, face_x: float) -> float:
+        """Calculate servo angle based on face position."""
         # Convert face position (0-100) to angle adjustment
         x_adjustment = (face_x - 50) * 0.9  # Scale factor to control sensitivity
-        y_adjustment = (face_y - 50) * 0.9
 
-        # Update servo angles with bounds checking
-        new_x_angle = max(self.min_angle, min(self.max_angle, self.servo_x_angle - x_adjustment))
-        new_y_angle = max(self.min_angle, min(self.max_angle, self.servo_y_angle - y_adjustment))
+        # Update servo angle with bounds checking
+        new_angle = max(self.min_angle, min(self.max_angle, self.servo_angle - x_adjustment))
 
-        return {
-            'x': new_x_angle if abs(new_x_angle - self.servo_x_angle) > self.angle_threshold else self.servo_x_angle,
-            'y': new_y_angle if abs(new_y_angle - self.servo_y_angle) > self.angle_threshold else self.servo_y_angle
-        }
+        return new_angle if abs(new_angle - self.servo_angle) > self.angle_threshold else self.servo_angle
 
-    def track_head(self, pan_servo_id: str, tilt_servo_id: str):
-        """Track head movement and control servos."""
+    def track_head(self, servo_id: str):
+        """Track head movement and control servo."""
         if not self.initialize():
             print(json.dumps({
                 "success": False,
@@ -213,49 +206,62 @@ class HeadTracker:
                     
                     # Calculate face center
                     center_x = x + w//2
-                    center_y = y + h//2
                     
                     # Calculate normalized position (0-100)
                     norm_x = (center_x / frame.shape[1]) * 100
-                    norm_y = (center_y / frame.shape[0]) * 100
                     
-                    # Calculate new servo angles
-                    new_angles = self.calculate_servo_angles(norm_x, norm_y)
+                    # Calculate new servo angle
+                    new_angle = self.calculate_servo_angle(norm_x)
                     
-                    # Move servos if significant change
-                    if new_angles['x'] != self.servo_x_angle:
-                        if move_servo(pan_servo_id, new_angles['x']):
-                            self.servo_x_angle = new_angles['x']
+                    # Move servo if significant change
+                    if new_angle != self.servo_angle:
+                        if move_servo(servo_id, new_angle):
+                            self.servo_angle = new_angle
                     
-                    if new_angles['y'] != self.servo_y_angle:
-                        if move_servo(tilt_servo_id, new_angles['y']):
-                            self.servo_y_angle = new_angles['y']
+                    # Draw face rectangle with glow effect
+                    cv2.rectangle(frame, (x-2, y-2), (x+w+2, y+h+2), (0, 255, 0), 4)
+                    cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 255, 255), 2)
+                    
+                    # Draw tracking info
+                    font = cv2.FONT_HERSHEY_SIMPLEX
+                    tracking_text = f"Face: {norm_x:.1f}%, Angle: {self.servo_angle:.1f}°"
+                    cv2.putText(frame, tracking_text, (5, 20), font, 
+                               0.5, (0, 255, 0), 2)
+                    cv2.putText(frame, tracking_text, (5, 20), font, 
+                               0.5, (255, 255, 255), 1)
                     
                     # Send tracking data
                     print(json.dumps({
                         "success": True,
                         "face_detected": True,
                         "position": {
-                            "x": norm_x,
-                            "y": norm_y
+                            "x": norm_x
                         },
-                        "servo_angles": {
-                            "x": self.servo_x_angle,
-                            "y": self.servo_y_angle
-                        }
+                        "servo_angle": self.servo_angle
                     }))
                     sys.stdout.flush()
                 else:
+                    # Draw "No Face Detected" message
+                    font = cv2.FONT_HERSHEY_SIMPLEX
+                    cv2.putText(frame, "No Face Detected", (5, 20), font, 
+                               0.5, (0, 255, 0), 2)
+                    cv2.putText(frame, "No Face Detected", (5, 20), font, 
+                               0.5, (255, 255, 255), 1)
+                    
                     # Send no face detected status
                     print(json.dumps({
                         "success": True,
                         "face_detected": False,
-                        "servo_angles": {
-                            "x": self.servo_x_angle,
-                            "y": self.servo_y_angle
-                        }
+                        "servo_angle": self.servo_angle
                     }))
                     sys.stdout.flush()
+
+                # Add timestamp
+                timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+                cv2.putText(frame, timestamp, (5, frame.shape[0]-5), font, 
+                           0.5, (0, 255, 0), 2)
+                cv2.putText(frame, timestamp, (5, frame.shape[0]-5), font, 
+                           0.5, (255, 255, 255), 1)
 
                 # Frame rate control
                 frame_count += 1
@@ -279,10 +285,8 @@ def main():
     parser = argparse.ArgumentParser(description='Head Tracking Script')
     parser.add_argument('--camera-id', type=int, default=0,
                        help='Camera device ID (default: 0)')
-    parser.add_argument('--pan-servo-id', type=str, required=True,
-                       help='ID of the pan servo')
-    parser.add_argument('--tilt-servo-id', type=str, required=True,
-                       help='ID of the tilt servo')
+    parser.add_argument('--servo-id', type=str, required=True,
+                       help='ID of the servo')
     parser.add_argument('--width', type=int, default=320,
                        help='Frame width (default: 320)')
     parser.add_argument('--height', type=int, default=240,
@@ -292,7 +296,7 @@ def main():
     
     try:
         tracker = HeadTracker(args.camera_id, args.width, args.height)
-        tracker.track_head(args.pan_servo_id, args.tilt_servo_id)
+        tracker.track_head(args.servo_id)
     except Exception as e:
         print(json.dumps({
             "success": False,
