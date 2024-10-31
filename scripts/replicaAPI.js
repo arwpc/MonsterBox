@@ -1,5 +1,10 @@
 const axios = require('axios');
 const logger = require('./logger');
+const { exec } = require('child_process');
+const { promisify } = require('util');
+const execAsync = promisify(exec);
+const fs = require('fs').promises;
+const path = require('path');
 
 class ReplicaAPI {
     constructor() {
@@ -9,11 +14,12 @@ class ReplicaAPI {
         this.lastRequestTime = Date.now();
         this.rateLimitPerMinute = 100;
 
-        // Standard audio format settings for maximum compatibility
+        // Standard audio format settings
         this.audioSettings = {
-            format: 'mp3',           // MPEG-1 Layer III
-            sampleRate: 44100,       // Standard sample rate
-            bitRate: 128,            // Standard bit rate (most compatible)
+            downloadFormat: 'wav',    // Download as WAV from Replica
+            targetFormat: 'mp3',      // Convert to MP3 locally
+            sampleRate: 44100,        // CD-quality sample rate
+            bitRate: 128,            // Standard MP3 bit rate
             channels: 1              // Mono (more reliable)
         };
 
@@ -69,6 +75,28 @@ class ReplicaAPI {
                 const delay = Math.min(1000 * Math.pow(2, i), 5000);
                 await new Promise(resolve => setTimeout(resolve, delay));
             }
+        }
+    }
+
+    async convertToMp3(wavPath, mp3Path) {
+        try {
+            // Use ffmpeg to convert WAV to MP3 with specific settings
+            const command = `ffmpeg -y -i "${wavPath}" -acodec libmp3lame -ac ${this.audioSettings.channels} -ar ${this.audioSettings.sampleRate} -b:a ${this.audioSettings.bitRate}k "${mp3Path}"`;
+            await execAsync(command);
+            
+            // Verify the converted file exists and has content
+            const stats = await fs.stat(mp3Path);
+            if (stats.size === 0) {
+                throw new Error('Converted MP3 file is empty');
+            }
+            
+            // Clean up the WAV file
+            await fs.unlink(wavPath);
+            
+            return true;
+        } catch (error) {
+            logger.error(`Error converting WAV to MP3: ${error.message}`);
+            throw error;
         }
     }
 
@@ -138,16 +166,12 @@ class ReplicaAPI {
 
             await this.checkRateLimit();
 
-            // Construct request body with standardized audio settings
+            // Request WAV format from Replica
             const requestBody = {
                 speaker_id: params.voiceId,
                 text: params.text.trim(),
-                output_format: {                     // Explicit output format configuration
-                    format: this.audioSettings.format,
-                    sample_rate: this.audioSettings.sampleRate,
-                    bit_rate: this.audioSettings.bitRate,
-                    channels: this.audioSettings.channels
-                },
+                extensions: [this.audioSettings.downloadFormat],
+                sample_rate: this.audioSettings.sampleRate,
                 global_pace: pace,
                 model_chain: params.options?.modelChain || 'vox_2_0',
                 language_code: params.options?.languageCode || 'en',
@@ -157,8 +181,7 @@ class ReplicaAPI {
                 user_metadata: params.options?.metadata || {}
             };
 
-            // Log the audio format settings being used
-            logger.info(`Requesting speech generation with audio settings: ${JSON.stringify(requestBody.output_format)}`);
+            logger.info(`Requesting speech generation with format: ${this.audioSettings.downloadFormat}`);
 
             const response = await this.retryWithBackoff(async () => {
                 return await this.axiosInstance.post('/speech/tts', requestBody);
@@ -190,27 +213,37 @@ class ReplicaAPI {
                 throw new Error(`Speech generation failed: ${jobStatus.data.state}`);
             }
 
-            // Download and validate the audio file
+            // Download the WAV file
             const audioResponse = await axios.get(jobStatus.data.url, {
                 responseType: 'arraybuffer'
             });
 
-            // Basic MP3 header validation
-            const buffer = Buffer.from(audioResponse.data);
-            if (!this.isValidMP3(buffer)) {
-                throw new Error('Generated audio file is not a valid MP3');
-            }
+            // Save WAV file temporarily
+            const timestamp = Date.now();
+            const wavPath = path.join(process.cwd(), 'public', 'sounds', `${timestamp}_temp.wav`);
+            const mp3Path = path.join(process.cwd(), 'public', 'sounds', `${timestamp}.mp3`);
+            
+            await fs.writeFile(wavPath, Buffer.from(audioResponse.data));
 
+            // Convert WAV to MP3
+            await this.convertToMp3(wavPath, mp3Path);
+
+            // Return the path to the converted MP3 file
             return {
-                url: jobStatus.data.url,
+                url: `sounds/${path.basename(mp3Path)}`,
                 uuid: jobStatus.data.uuid,
                 state: jobStatus.data.state,
                 duration: jobStatus.data.duration,
-                format: this.audioSettings.format,
+                format: this.audioSettings.targetFormat,
                 metadata: {
                     requestTime: new Date().toISOString(),
                     textLength: params.text.length,
-                    audioSettings: requestBody.output_format,
+                    audioSettings: {
+                        format: this.audioSettings.targetFormat,
+                        sampleRate: this.audioSettings.sampleRate,
+                        bitRate: this.audioSettings.bitRate,
+                        channels: this.audioSettings.channels
+                    },
                     settings: requestBody
                 }
             };
@@ -219,30 +252,6 @@ class ReplicaAPI {
             logger.error(`Error generating speech: ${errorMsg}`);
             throw error;
         }
-    }
-
-    isValidMP3(buffer) {
-        // Check for MP3 sync word (0xFF 0xFB or 0xFF 0xFA)
-        if (buffer.length < 4) return false;
-        
-        // Check first frame header
-        if (buffer[0] !== 0xFF || (buffer[1] & 0xE0) !== 0xE0) {
-            return false;
-        }
-
-        // Verify MPEG version (should be MPEG-1)
-        const mpegVersion = (buffer[1] & 0x18) >> 3;
-        if (mpegVersion !== 0x03) { // 0x03 = MPEG-1
-            return false;
-        }
-
-        // Verify Layer (should be Layer III)
-        const layer = (buffer[1] & 0x06) >> 1;
-        if (layer !== 0x01) { // 0x01 = Layer III
-            return false;
-        }
-
-        return true;
     }
 
     clearCache() {
