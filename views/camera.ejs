@@ -6,6 +6,7 @@
     <title><%= title %></title>
     <link rel="stylesheet" href="/css/style.css">
     <style>
+        /* Previous styles remain unchanged */
         .camera-container {
             display: flex;
             gap: 20px;
@@ -68,6 +69,7 @@
             height: 150px;
             overflow-y: auto;
             color: #00ff00;
+            font-size: 12px;
         }
 
         select, input[type="range"] {
@@ -178,9 +180,9 @@
                     <h3>Camera Settings</h3>
                     <label for="resolution">Resolution:</label>
                     <select id="resolution">
-                        <option value="640,480" selected>640x480</option>
-                        <option value="320,240">320x240</option>
-                        <option value="160,120">160x120</option>
+                        <option value="320,240" selected>320x240 (Recommended)</option>
+                        <option value="160,120">160x120 (Low)</option>
+                        <option value="640,480">640x480 (High)</option>
                     </select>
                     <button onclick="updateSettings()">Apply Settings</button>
                 </div>
@@ -196,6 +198,8 @@
         let motionInterval = null;
         let headTrackInterval = null;
         let streamActive = false;
+        let consecutiveErrors = 0;
+        const MAX_CONSECUTIVE_ERRORS = 3;
 
         const streamImg = document.getElementById('cameraStream');
         const errorMessage = document.getElementById('errorMessage');
@@ -205,6 +209,7 @@
         const placeholderMessage = document.getElementById('placeholderMessage');
         const cameraControls = document.getElementById('cameraControls');
 
+        // Rest of the JavaScript code remains unchanged
         async function loadCameras() {
             try {
                 const response = await fetch('/camera/list');
@@ -401,8 +406,17 @@
                 
                 motionDetectionActive = true;
                 document.getElementById('toggleMotion').textContent = 'Stop Motion Detection';
+                consecutiveErrors = 0;
                 
+                // Increased interval to 250ms (4 FPS) to reduce load
                 motionInterval = setInterval(async () => {
+                    if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+                        console.error('Too many consecutive errors, stopping motion detection');
+                        await stopMotionDetection();
+                        showError('Motion detection stopped due to repeated errors');
+                        return;
+                    }
+
                     try {
                         const response = await fetch('/camera/control', {
                             method: 'POST',
@@ -421,6 +435,7 @@
                         const data = await response.json();
                         
                         if (data.success) {
+                            consecutiveErrors = 0;
                             // Update the image with the processed frame
                             if (data.frame) {
                                 streamImg.src = 'data:image/jpeg;base64,' + data.frame;
@@ -441,10 +456,12 @@
                         }
                     } catch (error) {
                         console.error('Motion detection error:', error);
-                        showError('Motion detection error: ' + error.message);
-                        await stopMotionDetection();
+                        consecutiveErrors++;
+                        if (consecutiveErrors < MAX_CONSECUTIVE_ERRORS) {
+                            showError('Motion detection error: ' + error.message);
+                        }
                     }
-                }, 100);
+                }, 250); // Increased interval to 250ms
             } catch (error) {
                 console.error('Failed to start motion detection:', error);
                 showError('Failed to start motion detection: ' + error.message);
@@ -460,6 +477,7 @@
                 motionInterval = null;
             }
             document.getElementById('motionData').textContent = 'No motion data';
+            consecutiveErrors = 0;
             
             // Wait before restarting stream
             await new Promise(resolve => setTimeout(resolve, 1000));
@@ -494,6 +512,11 @@
                 const data = await response.json();
                 if (!data.success) {
                     throw new Error(data.error || 'Failed to update settings');
+                }
+
+                // Restart the stream with new resolution
+                if (streamActive) {
+                    initializeStream();
                 }
             } catch (error) {
                 console.error('Settings update error:', error);

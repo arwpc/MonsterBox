@@ -76,7 +76,7 @@ class CameraLock:
 class CameraStream:
     """Handles camera streaming in MJPEG format."""
     
-    def __init__(self, camera_id: int = 0, width: int = 640, height: int = 480):
+    def __init__(self, camera_id: int = 0, width: int = 320, height: int = 240):  # Default resolution reduced
         self.camera_id = camera_id
         self.width = width
         self.height = height
@@ -93,26 +93,39 @@ class CameraStream:
             # Release any existing camera instance
             self.release()
             
+            # Wait for camera to be fully released
+            time.sleep(0.5)
+            
             # Create capture with explicit backend
             self.cap = cv2.VideoCapture(self.camera_id, cv2.CAP_V4L2)
             
             if not self.cap.isOpened():
-                return False
-
-            # Configure camera properties
-            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
-            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
-            self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-            self.cap.set(cv2.CAP_PROP_FPS, 30)
-            self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M','J','P','G'))
-
-            # Verify camera is working
-            ret, frame = self.cap.read()
-            if not ret or frame is None or frame.size == 0:
+                logger.warning(f"Failed to open camera {self.camera_id}")
                 self.release()
                 return False
 
-            return True
+            # Configure camera properties with lower resolution and FPS
+            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
+            self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+            self.cap.set(cv2.CAP_PROP_FPS, 15)  # Reduced FPS
+            self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M','J','P','G'))
+
+            # Verify camera is working with multiple attempts
+            for _ in range(3):
+                ret, frame = self.cap.read()
+                if ret and frame is not None and frame.size > 0:
+                    # Resize frame if necessary
+                    actual_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                    actual_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                    if actual_width != self.width or actual_height != self.height:
+                        frame = cv2.resize(frame, (self.width, self.height))
+                    return True
+                time.sleep(0.1)
+
+            logger.warning("Failed to get valid frame after multiple attempts")
+            self.release()
+            return False
 
         except Exception as e:
             logger.warning(f"Camera initialization error: {e}")
@@ -126,8 +139,10 @@ class CameraStream:
                 self.cap.release()
                 self.cap = None
             self.camera_lock.release()
-        except Exception:
-            pass
+            # Add delay after release
+            time.sleep(0.1)
+        except Exception as e:
+            logger.warning(f"Error releasing camera: {e}")
 
     def stream(self):
         """Stream camera frames in MJPEG format."""
@@ -141,13 +156,19 @@ class CameraStream:
                 if not ret or frame is None:
                     break
 
-                # Add timestamp
-                timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-                cv2.putText(frame, timestamp, (10, frame.shape[0] - 10),
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                # Resize frame if necessary
+                actual_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                actual_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                if actual_width != self.width or actual_height != self.height:
+                    frame = cv2.resize(frame, (self.width, self.height))
 
-                # Encode frame as JPEG
-                _, jpeg = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 90])
+                # Add timestamp (smaller font for lower resolutions)
+                timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+                cv2.putText(frame, timestamp, (5, frame.shape[0] - 5),
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 255, 0), 1)
+
+                # Encode frame as JPEG with reduced quality
+                _, jpeg = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
                 
                 # Write MJPEG frame
                 sys.stdout.buffer.write(b'--frame\r\n')
@@ -156,8 +177,8 @@ class CameraStream:
                 sys.stdout.buffer.write(b'\r\n')
                 sys.stdout.buffer.flush()
 
-                # Small delay to control frame rate
-                time.sleep(0.033)  # ~30 FPS
+                # Small delay to control frame rate (adjusted for 15 FPS)
+                time.sleep(0.067)  # ~15 FPS
 
         except BrokenPipeError:
             # Client disconnected
@@ -175,10 +196,10 @@ def main():
     parser = argparse.ArgumentParser(description='Camera Streaming Script')
     parser.add_argument('--camera-id', type=int, required=True,
                        help='Camera device ID')
-    parser.add_argument('--width', type=int, default=640,
-                       help='Frame width (default: 640)')
-    parser.add_argument('--height', type=int, default=480,
-                       help='Frame height (default: 480)')
+    parser.add_argument('--width', type=int, default=320,  # Default reduced
+                       help='Frame width (default: 320)')
+    parser.add_argument('--height', type=int, default=240,  # Default reduced
+                       help='Frame height (default: 240)')
     
     args = parser.parse_args()
     

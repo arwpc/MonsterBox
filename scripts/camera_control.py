@@ -45,7 +45,7 @@ class CameraLock:
         try:
             # Kill any existing camera processes
             subprocess.run(['pkill', '-f', 'camera_stream.py'], capture_output=True)
-            time.sleep(1)  # Wait for processes to die
+            time.sleep(0.5)  # Increased delay to ensure cleanup
             
             # First check if the lock file exists and is stale
             if os.path.exists(self.lock_path):
@@ -103,7 +103,7 @@ class HeadTracker:
             
             # Kill any existing head tracking processes
             subprocess.run(['pkill', '-f', 'head_track.py'], capture_output=True)
-            time.sleep(1)  # Wait for processes to die
+            time.sleep(0.5)  # Increased delay
             
             self.process = subprocess.Popen(
                 ['python3', self.script_path, 'start', str(servo_id)],
@@ -133,7 +133,7 @@ class HeadTracker:
 class MotionDetector:
     """Handles motion detection and visualization."""
     
-    def __init__(self, camera_id: int = 0, width: int = 640, height: int = 480):
+    def __init__(self, camera_id: int = 0, width: int = 320, height: int = 240):  # Default resolution reduced
         self.camera_id = camera_id
         self.width = width
         self.height = height
@@ -145,7 +145,7 @@ class MotionDetector:
         )
         self.camera_lock = CameraLock(self.camera_id)
         self.prev_frame = None
-        self.min_area = 100  # Minimum area for motion detection
+        self.min_area = 50  # Reduced minimum area for motion detection due to lower resolution
 
     def initialize(self) -> bool:
         """Initialize camera with specified settings."""
@@ -157,25 +157,39 @@ class MotionDetector:
             # Release any existing camera instance
             self.release()
             
+            # Wait for camera to be fully released
+            time.sleep(0.5)
+            
             # Create capture with explicit backend
             self.cap = cv2.VideoCapture(self.camera_id, cv2.CAP_V4L2)
             
             if not self.cap.isOpened():
-                return False
-
-            # Configure camera properties
-            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
-            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
-            self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-            self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M','J','P','G'))
-
-            # Verify camera is working
-            ret, frame = self.cap.read()
-            if not ret or frame is None or frame.size == 0:
+                logger.warning(f"Failed to open camera {self.camera_id}")
                 self.release()
                 return False
 
-            return True
+            # Configure camera properties with lower resolution and FPS
+            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
+            self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+            self.cap.set(cv2.CAP_PROP_FPS, 15)  # Reduced FPS
+            self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M','J','P','G'))
+
+            # Verify camera is working with multiple attempts
+            for _ in range(3):
+                ret, frame = self.cap.read()
+                if ret and frame is not None and frame.size > 0:
+                    # Resize frame if necessary
+                    actual_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                    actual_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                    if actual_width != self.width or actual_height != self.height:
+                        frame = cv2.resize(frame, (self.width, self.height))
+                    return True
+                time.sleep(0.1)
+
+            logger.warning("Failed to get valid frame after multiple attempts")
+            self.release()
+            return False
 
         except Exception as e:
             logger.warning(f"Camera initialization error: {e}")
@@ -189,8 +203,10 @@ class MotionDetector:
                 self.cap.release()
                 self.cap = None
             self.camera_lock.release()
-        except Exception:
-            pass
+            # Add delay after release
+            time.sleep(0.1)
+        except Exception as e:
+            logger.warning(f"Error releasing camera: {e}")
 
     def detect_motion(self) -> Dict[str, Any]:
         """Detect motion in current frame."""
@@ -201,6 +217,12 @@ class MotionDetector:
             ret, frame = self.cap.read()
             if not ret or frame is None or frame.size == 0:
                 return {"success": False, "error": "Failed to capture frame"}
+
+            # Resize frame if necessary
+            actual_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+            actual_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            if actual_width != self.width or actual_height != self.height:
+                frame = cv2.resize(frame, (self.width, self.height))
 
             # Create a copy of the frame for drawing
             display_frame = frame.copy()
@@ -256,18 +278,18 @@ class MotionDetector:
                 center_y = int(y + h/2)
 
                 # Draw rectangle around motion (thicker, brighter)
-                cv2.rectangle(display_frame, (x, y), (x + w, y + h), (0, 255, 0), 3)
+                cv2.rectangle(display_frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
                 
                 # Draw center point (larger, brighter)
-                cv2.circle(display_frame, (center_x, center_y), 10, (0, 0, 255), -1)
-                cv2.circle(display_frame, (center_x, center_y), 12, (255, 255, 255), 2)
+                cv2.circle(display_frame, (center_x, center_y), 5, (0, 0, 255), -1)
+                cv2.circle(display_frame, (center_x, center_y), 6, (255, 255, 255), 1)
 
                 # Draw crosshair
-                line_length = 20
+                line_length = 10
                 cv2.line(display_frame, (center_x - line_length, center_y),
-                        (center_x + line_length, center_y), (255, 255, 255), 2)
+                        (center_x + line_length, center_y), (255, 255, 255), 1)
                 cv2.line(display_frame, (center_x, center_y - line_length),
-                        (center_x, center_y + line_length), (255, 255, 255), 2)
+                        (center_x, center_y + line_length), (255, 255, 255), 1)
 
                 # Calculate normalized position (0-100)
                 norm_x = (center_x / frame.shape[1]) * 100
@@ -275,12 +297,12 @@ class MotionDetector:
 
                 # Add timestamp and motion info
                 timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-                cv2.putText(display_frame, timestamp, (10, frame.shape[0] - 10),
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                cv2.putText(display_frame, timestamp, (5, frame.shape[0] - 5),
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 255, 0), 1)
                 
                 motion_text = f"Motion: ({int(norm_x)}, {int(norm_y)})"
-                cv2.putText(display_frame, motion_text, (10, 30),
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                cv2.putText(display_frame, motion_text, (5, 15),
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 255, 0), 1)
 
                 return {
                     "success": True,
@@ -295,10 +317,10 @@ class MotionDetector:
 
             # If no motion, just return the frame with timestamp
             timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-            cv2.putText(display_frame, timestamp, (10, frame.shape[0] - 10),
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-            cv2.putText(display_frame, "No Motion", (10, 30),
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+            cv2.putText(display_frame, timestamp, (5, frame.shape[0] - 5),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 255, 0), 1)
+            cv2.putText(display_frame, "No Motion", (5, 15),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 255, 0), 1)
 
             return {
                 "success": True,
@@ -307,13 +329,14 @@ class MotionDetector:
             }
 
         except Exception as e:
+            logger.warning(f"Motion detection error: {e}")
             return {"success": False, "error": str(e)}
         finally:
             self.release()
 
     def _encode_frame(self, frame: np.ndarray) -> str:
         """Encode frame to base64 JPEG."""
-        _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 95])
+        _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])  # Reduced JPEG quality
         return base64.b64encode(buffer).decode('utf-8')
 
 def main():
@@ -321,10 +344,10 @@ def main():
     parser = argparse.ArgumentParser(description='Camera Control Script')
     parser.add_argument('command', choices=['motion', 'head_track'],
                        help='Command to execute')
-    parser.add_argument('--width', type=int, default=640,
-                       help='Frame width (default: 640)')
-    parser.add_argument('--height', type=int, default=480,
-                       help='Frame height (default: 480)')
+    parser.add_argument('--width', type=int, default=320,  # Default reduced
+                       help='Frame width (default: 320)')
+    parser.add_argument('--height', type=int, default=240,  # Default reduced
+                       help='Frame height (default: 240)')
     parser.add_argument('--camera-id', type=int, required=True,
                        help='Camera device ID')
     parser.add_argument('--action', choices=['start', 'stop'],
