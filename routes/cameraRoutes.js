@@ -64,48 +64,84 @@ router.get('/list', async (req, res) => {
                 if (code === 0) {
                     const cameras = [];
                     const lines = output.split('\n');
-                    let isUsbCamera = false;
+                    let currentCamera = null;
                     let devices = [];
 
                     for (const line of lines) {
-                        if (line.includes('USB 2.0 Camera')) {
-                            isUsbCamera = true;
-                            continue;
-                        }
+                        const trimmedLine = line.trim();
                         
-                        if (isUsbCamera && line.trim().startsWith('/dev/video')) {
-                            const deviceId = parseInt(line.trim().replace('/dev/video', ''));
-                            // Only include video0 and video1 for the USB camera
-                            if (deviceId === 0 || deviceId === 1) {
-                                devices.push({
-                                    id: deviceId,
-                                    path: line.trim()
-                                });
-                            }
-                        } else if (line.trim() === '' || !line.trim().startsWith('/dev/')) {
-                            // End of current device section
-                            if (isUsbCamera && devices.length > 0) {
+                        // If line doesn't start with /dev/, it's a camera name
+                        if (!trimmedLine.startsWith('/dev/')) {
+                            // Save previous camera if exists
+                            if (currentCamera && devices.length > 0) {
                                 cameras.push({
-                                    name: 'USB Camera',
+                                    name: currentCamera,
                                     devices: devices
                                 });
                             }
-                            isUsbCamera = false;
-                            devices = [];
+                            // Start new camera if line not empty
+                            if (trimmedLine) {
+                                currentCamera = trimmedLine;
+                                devices = [];
+                            }
+                        }
+                        // If line starts with /dev/video, it's a device
+                        else if (trimmedLine.startsWith('/dev/video')) {
+                            const deviceId = parseInt(trimmedLine.replace('/dev/video', ''));
+                            devices.push({
+                                id: deviceId,
+                                path: trimmedLine
+                            });
                         }
                     }
 
-                    // Add any remaining devices
-                    if (isUsbCamera && devices.length > 0) {
+                    // Add last camera if exists
+                    if (currentCamera && devices.length > 0) {
                         cameras.push({
-                            name: 'USB Camera',
+                            name: currentCamera,
                             devices: devices
                         });
                     }
 
+                    // If no cameras found, try listing video devices directly
+                    if (cameras.length === 0) {
+                        const videoDevices = [];
+                        for (let i = 0; i < 2; i++) {
+                            if (fs.existsSync(`/dev/video${i}`)) {
+                                videoDevices.push({
+                                    id: i,
+                                    path: `/dev/video${i}`
+                                });
+                            }
+                        }
+                        if (videoDevices.length > 0) {
+                            cameras.push({
+                                name: 'System Camera',
+                                devices: videoDevices
+                            });
+                        }
+                    }
+
                     resolve(cameras);
                 } else {
-                    reject(new Error(error || 'Failed to list cameras'));
+                    // If v4l2-ctl fails, try listing video devices directly
+                    fs.readdir('/dev').then(files => {
+                        const videoDevices = files
+                            .filter(file => file.startsWith('video'))
+                            .map(file => ({
+                                id: parseInt(file.replace('video', '')),
+                                path: `/dev/${file}`
+                            }));
+                        
+                        if (videoDevices.length > 0) {
+                            resolve([{
+                                name: 'System Camera',
+                                devices: videoDevices
+                            }]);
+                        } else {
+                            reject(new Error('No cameras found'));
+                        }
+                    }).catch(err => reject(err));
                 }
             });
         });
