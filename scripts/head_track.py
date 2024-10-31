@@ -12,11 +12,11 @@ import subprocess
 from typing import Optional, Dict, Any
 from camera_lock import CameraLock
 
-# Configure logging
+# Configure logging - only show errors by default
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.ERROR,
     format='%(asctime)s - %(levelname)s - %(message)s',
-    stream=sys.stderr  # Log to stderr to keep stdout clean
+    stream=sys.stderr
 )
 logger = logging.getLogger(__name__)
 
@@ -29,10 +29,8 @@ os.environ["OPENCV_VIDEOIO_BACKEND"] = "v4l2"
 def initialize_camera(device_id: int, width: int = 320, height: int = 240) -> Optional[cv2.VideoCapture]:
     """Initialize camera with MJPG format first, fallback to others if needed."""
     try:
-        # Add delay before opening camera
         time.sleep(0.5)
         
-        # Try MJPG format first as it's most likely to work
         cap = cv2.VideoCapture(device_id, cv2.CAP_V4L2)
         if not cap.isOpened():
             return None
@@ -47,13 +45,12 @@ def initialize_camera(device_id: int, width: int = 320, height: int = 240) -> Op
 
         ret, frame = cap.read()
         if ret and frame is not None and frame.size > 0:
-            logger.info("Successfully initialized camera with MJPG format")
             return cap
 
         # If MJPG fails, try other formats
         for fmt in ['YUYV', 'H264']:
             cap.release()
-            time.sleep(0.5)  # Add delay between format attempts
+            time.sleep(0.5)
             
             cap = cv2.VideoCapture(device_id, cv2.CAP_V4L2)
             if not cap.isOpened():
@@ -68,7 +65,6 @@ def initialize_camera(device_id: int, width: int = 320, height: int = 240) -> Op
 
             ret, frame = cap.read()
             if ret and frame is not None and frame.size > 0:
-                logger.info(f"Successfully initialized camera with {fmt} format")
                 return cap
 
         return None
@@ -109,12 +105,7 @@ def move_servo(servo_id: str, angle: float, duration: float = 0.5) -> bool:
             
             result = subprocess.run(command, capture_output=True, text=True, stderr=devnull)
         
-        if result.returncode == 0:
-            logger.info(f"Servo {servo_id} moved to angle {angle}")
-            return True
-        else:
-            logger.error(f"Servo control failed: {result.stderr}")
-            return False
+        return result.returncode == 0
 
     except Exception as e:
         logger.error(f"Error controlling servo: {e}")
@@ -156,16 +147,12 @@ class HeadTracker:
                 self.cap = None
             self.camera_lock.release()
         except Exception as e:
-            logger.warning(f"Error releasing camera: {e}")
+            logger.error(f"Error releasing camera: {e}")
 
     def calculate_servo_angle(self, face_x: float) -> float:
         """Calculate servo angle based on face position."""
-        # Convert face position (0-100) to angle adjustment
-        x_adjustment = (face_x - 50) * 0.9  # Scale factor to control sensitivity
-
-        # Update servo angle with bounds checking
+        x_adjustment = (face_x - 50) * 0.9
         new_angle = max(self.min_angle, min(self.max_angle, self.servo_angle - x_adjustment))
-
         return new_angle if abs(new_angle - self.servo_angle) > self.angle_threshold else self.servo_angle
 
     def track_head(self, servo_id: str):
@@ -187,7 +174,6 @@ class HeadTracker:
             for _ in range(5):
                 ret, _ = self.cap.read()
                 if ret:
-                    logger.info("Camera warmed up successfully")
                     break
                 time.sleep(1.0)
 
@@ -291,7 +277,6 @@ def main():
         tracker = HeadTracker(args.camera_id, args.width, args.height)
         tracker.track_head(args.servo_id)
     except KeyboardInterrupt:
-        logger.info("Head tracking interrupted")
         if 'tracker' in locals():
             tracker.stop()
     except Exception as e:
