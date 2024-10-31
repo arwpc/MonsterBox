@@ -288,7 +288,9 @@ class VoiceSelector {
             this.lastGeneratedAudio = data;
             
             if (data.url) {
-                this.wavesurfer.load(data.url);
+                // Convert relative URL to absolute URL
+                const absoluteUrl = new URL(data.url, window.location.origin).href;
+                this.wavesurfer.load(absoluteUrl);
                 this.wavesurfer.on('ready', () => {
                     this.wavesurfer.play();
                     this.isPlaying = true;
