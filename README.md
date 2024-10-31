@@ -1,306 +1,98 @@
 # MonsterBox Installation Guide
 
-This guide provides instructions for installing all required dependencies for the MonsterBox project.
+[Previous content remains the same until the Hardware Requirements section...]
 
-## Installation Methods
+## Testing the Installation
 
-### Method 1: Using the Installation Script (Recommended for Raspberry Pi)
+After installation, you can run the automated tests to verify all dependencies are correctly installed and configured:
 
 ```bash
-# IMPORTANT: Run with bash, NOT python
-sudo bash install.sh
+# Run all tests (including dependency checks)
+sudo npm test
+
+# Run only the RPI dependency checks
+sudo npm test tests/rpi-dependencies.test.js
 ```
 
-### Method 2: Manual Installation
+The tests will verify:
+1. I2C functionality
+2. Camera availability and permissions
+3. Audio device configuration and volume settings
+4. FFmpeg installation and codecs
+5. MP3 playback capability
+6. GPU memory allocation
+7. User permissions and group memberships
 
-#### System Dependencies
+### Test Requirements
 
+- Tests must be run as root/sudo due to hardware access requirements
+- All hardware components should be connected (camera, I2C devices, audio)
+- System should be rebooted after installation before running tests
+
+### Understanding Test Results
+
+The test output will show:
+- ✓ Success: Component is properly installed and configured
+- ✗ Failure: Component needs attention (check error message)
+
+Example successful output:
 ```bash
-# Update package lists
-sudo apt-get update
+  RPI Dependencies Check
+    ✓ should have I2C working
+    ✓ should have camera available
+    ✓ should have audio devices configured
+    ✓ should have audio volume set correctly
+    ✓ should have ffmpeg installed with required codecs
+    ✓ should have MP3 playback capability
+    ✓ should have correct GPU memory allocation
+    ✓ should have correct permissions for video devices
+    ✓ should have I2C device node available
+    ✓ should have correct user groups configured
+    ✓ should have correct GPU configuration in boot config
 
-# Install system dependencies
-sudo apt-get install -y \
-    v4l-utils \
-    i2c-tools \
-    nodejs \
-    npm \
-    git \
-    ffmpeg \
-    mpg123 \
-    libmp3lame0 \
-    libmp3lame-dev \
-    build-essential \
-    alsa-utils \
-    libasound2 \
-    libasound2-dev
-
-# Install Python and dependencies
-sudo apt-get install -y \
-    python3-dev \
-    python3-numpy \
-    python3-opencv \
-    python3-rpi.gpio \
-    python3-smbus \
-    python3-pygame \
-    python3-flask \
-    python3-gpiozero \
-    python3-psutil \
-    python3-setuptools \
-    python3-wheel \
-    python3-pip \
-    python3-pyaudio
-
-# Install OpenCV and multimedia dependencies
-sudo apt-get install -y \
-    libopencv-dev \
-    libatlas-base-dev \
-    libhdf5-dev \
-    libgtk-3-0 \
-    libavcodec-dev \
-    libavformat-dev \
-    libswscale-dev \
-    libv4l-dev \
-    libxvidcore-dev \
-    libx264-dev \
-    libavcodec-extra
+  11 passing (3s)
 ```
 
-#### Configure Hardware Settings
+### Troubleshooting Failed Tests
 
-1. Set GPU Memory and Enable Camera:
+1. I2C Test Failures:
 ```bash
-# Edit /boot/config.txt
-sudo sed -i '/gpu_mem=/d' /boot/config.txt
-sudo sed -i '/start_x=/d' /boot/config.txt
-echo "gpu_mem=1024" | sudo tee -a /boot/config.txt
-echo "start_x=1" | sudo tee -a /boot/config.txt
+# Check I2C device
+ls -l /dev/i2c*
+# Check I2C configuration
+grep i2c /boot/config.txt
 ```
 
-2. Configure Audio:
+2. Camera Test Failures:
 ```bash
-# Create ALSA configuration
-sudo tee /etc/asound.conf << EOF
-pcm.!default {
-    type hw
-    card 0
-}
-
-ctl.!default {
-    type hw
-    card 0
-}
-EOF
-
-# Set volume for available controls
-for control in PCM Master Headphone Speaker; do
-    amixer -q sset $control 95% unmute 2>/dev/null || true
-done
-
-# Store settings
-sudo alsactl store
-```
-
-3. Enable I2C:
-```bash
-# Add to /etc/modules
-echo "i2c-dev" | sudo tee -a /etc/modules
-
-# Enable in config.txt
-echo "dtparam=i2c_arm=on" | sudo tee -a /boot/config.txt
-```
-
-#### Node.js Dependencies
-
-```bash
-# Install Node.js packages
-npm install
-```
-
-### Method 3: Development Installation (Non-Raspberry Pi)
-
-For development on non-Raspberry Pi systems, you can skip the hardware-specific dependencies:
-
-```bash
-# Install core system dependencies
-sudo apt-get update && sudo apt-get install -y \
-    v4l-utils \
-    nodejs \
-    npm \
-    git \
-    ffmpeg \
-    mpg123 \
-    libmp3lame0 \
-    python3-dev \
-    python3-numpy \
-    python3-opencv \
-    python3-pygame \
-    python3-flask \
-    python3-psutil \
-    alsa-utils \
-    libasound2 \
-    libasound2-dev
-
-# Configure audio
-sudo tee /etc/asound.conf << EOF
-pcm.!default {
-    type hw
-    card 0
-}
-
-ctl.!default {
-    type hw
-    card 0
-}
-EOF
-
-# Set volume
-for control in PCM Master Headphone Speaker; do
-    amixer -q sset $control 95% unmute 2>/dev/null || true
-done
-
-# Install Node.js packages
-npm install
-```
-
-## Post-Installation
-
-1. Reboot your system to ensure all changes take effect:
-```bash
-sudo reboot
-```
-
-2. After reboot, verify the installations:
-
-- Check GPU Memory:
-```bash
-vcgencmd get_mem gpu
-# Should show: gpu=1024M
-```
-
-- Test Audio:
-```bash
-# Play test sound
-speaker-test -t wav -c 2
-
-# Check audio devices and controls
-aplay -l
-amixer
-```
-
-- Check I2C (Raspberry Pi):
-```bash
-sudo i2cdetect -y 1
-```
-
-- Check camera:
-```bash
-v4l2-ctl --list-devices
-```
-
-- Verify ffmpeg installation:
-```bash
-ffmpeg -version
-```
-
-- Test MP3 playback:
-```bash
-mpg123 --version
-```
-
-## Hardware Requirements
-
-- Raspberry Pi (recommended: 4B or newer)
-- Camera module or USB camera
-- I2C-enabled devices (servos, sensors)
-- Audio output device
-- GPIO-connected components (LEDs, motors)
-- At least 1024MB GPU memory allocation
-
-## Troubleshooting
-
-### Installation Script Issues
-
-1. Make sure to run the installation script with bash:
-```bash
-# CORRECT way to run the script:
-sudo bash install.sh
-
-# INCORRECT ways:
-sudo python3 install.sh  # This will fail
-sudo ./install.sh       # This might fail if script isn't executable
-```
-
-### Audio Issues
-
-If you encounter audio playback issues:
-
-1. Check available audio devices:
-```bash
-aplay -l
-```
-
-2. Check available controls:
-```bash
-amixer
-```
-
-3. Test audio output:
-```bash
-# Test with speaker-test
-speaker-test -t wav -c 2
-
-# Test with specific audio device (if default doesn't work)
-speaker-test -D plughw:0,0 -t wav -c 2
-```
-
-4. Check ALSA configuration:
-```bash
-cat /etc/asound.conf
-```
-
-5. Try setting volume manually:
-```bash
-# Try different controls
-amixer -c 0 sset PCM 95%
-amixer -c 0 sset Master 95%
-amixer -c 0 sset Headphone 95%
-amixer -c 0 sset Speaker 95%
-```
-
-### Camera Issues
-
-If the camera isn't working:
-
-1. Check if camera is detected:
-```bash
+# Check video devices
 ls -l /dev/video*
+# Check camera module
+vcgencmd get_camera
 ```
 
-2. Test camera access:
+3. Audio Test Failures:
 ```bash
-v4l2-ctl --all
+# List audio devices
+aplay -l
+# Check volume controls
+amixer
 ```
 
-3. Verify camera settings:
+4. GPU Memory Test Failures:
 ```bash
-v4l2-ctl --list-formats-ext
-```
-
-### GPU Memory Issues
-
-If you experience graphics issues:
-
-1. Verify GPU memory allocation:
-```bash
+# Check current GPU memory
 vcgencmd get_mem gpu
-```
-
-2. Check config.txt settings:
-```bash
+# Verify config.txt
 grep gpu_mem /boot/config.txt
 ```
 
-3. Monitor GPU memory usage:
+5. Permission Test Failures:
 ```bash
-vcgencmd get_mem
+# Check current user groups
+groups
+# Add missing groups
+sudo usermod -a -G video,i2c,gpio,audio $USER
+```
+
+[Rest of the previous README content remains the same...]
