@@ -17,6 +17,14 @@ class SoundPlayer:
         self.sounds = {}
         self.sounds_lock = Lock()
         self.next_sound_id = 0
+
+        # Test mpg123 and audio device
+        try:
+            test_result = subprocess.run(['mpg123', '--test', '-a', 'default'], capture_output=True, text=True)
+            log_message({"status": "info", "message": f"MPG123 test result: {test_result.stderr}"})
+        except Exception as e:
+            log_message({"status": "warning", "message": f"MPG123 test failed: {str(e)}"})
+
         log_message({"status": "ready", "message": "SoundPlayer initialized and ready"})
 
     def play_sound(self, sound_id, file_path):
@@ -35,11 +43,12 @@ class SoundPlayer:
             process = subprocess.Popen(
                 [
                     'mpg123',
-                    '--quiet',  # Reduce console output
+                    '-a', 'default',  # Use default audio device
+                    '--quiet',        # Reduce console output
                     '--buffer', '1024',  # Larger buffer for smoother playback
-                    '--aggressive',  # More aggressive buffering
-                    '--no-control',  # Disable terminal control
-                    '--no-equ',  # Disable equalizer
+                    '--aggressive',   # More aggressive buffering
+                    '--no-control',   # Disable terminal control
+                    '--no-equ',      # Disable equalizer
                     '--no-gapless',  # Disable gapless playback
                     file_path
                 ],
