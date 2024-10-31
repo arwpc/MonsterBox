@@ -315,32 +315,71 @@ class MotionDetector:
                 center_x = int(x + w/2)
                 center_y = int(y + h/2)
 
-                # Draw rectangle around motion (thicker, brighter)
-                cv2.rectangle(display_frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                # Draw motion box with glow effect
+                # Outer glow
+                cv2.rectangle(display_frame, (x-2, y-2), (x+w+2, y+h+2), (0, 255, 0), 4)
+                # Inner box
+                cv2.rectangle(display_frame, (x, y), (x+w, y+h), (255, 255, 255), 2)
                 
-                # Draw center point (larger, brighter)
-                cv2.circle(display_frame, (center_x, center_y), 5, (0, 0, 255), -1)
-                cv2.circle(display_frame, (center_x, center_y), 6, (255, 255, 255), 1)
+                # Draw crosshair with glow effect
+                # Outer glow
+                cv2.line(display_frame, (center_x-15, center_y), (center_x+15, center_y), 
+                        (0, 255, 0), 3)
+                cv2.line(display_frame, (center_x, center_y-15), (center_x, center_y+15), 
+                        (0, 255, 0), 3)
+                # Inner lines
+                cv2.line(display_frame, (center_x-10, center_y), (center_x+10, center_y), 
+                        (255, 255, 255), 1)
+                cv2.line(display_frame, (center_x, center_y-10), (center_x, center_y+10), 
+                        (255, 255, 255), 1)
 
-                # Draw crosshair
-                line_length = 10
-                cv2.line(display_frame, (center_x - line_length, center_y),
-                        (center_x + line_length, center_y), (255, 255, 255), 1)
-                cv2.line(display_frame, (center_x, center_y - line_length),
-                        (center_x, center_y + line_length), (255, 255, 255), 1)
+                # Draw direction arrow based on movement
+                if hasattr(self, 'prev_center'):
+                    prev_x, prev_y = self.prev_center
+                    if abs(center_x - prev_x) > 5 or abs(center_y - prev_y) > 5:
+                        # Calculate arrow endpoint
+                        dx = center_x - prev_x
+                        dy = center_y - prev_y
+                        magnitude = np.sqrt(dx*dx + dy*dy)
+                        if magnitude > 0:
+                            dx = dx/magnitude * 20
+                            dy = dy/magnitude * 20
+                            arrow_x = int(center_x + dx)
+                            arrow_y = int(center_y + dy)
+                            # Draw arrow with glow effect
+                            cv2.arrowedLine(display_frame, (center_x, center_y), 
+                                          (arrow_x, arrow_y), (0, 255, 0), 3)
+                            cv2.arrowedLine(display_frame, (center_x, center_y), 
+                                          (arrow_x, arrow_y), (255, 255, 255), 1)
+
+                self.prev_center = (center_x, center_y)
 
                 # Calculate normalized position (0-100)
                 norm_x = (center_x / frame.shape[1]) * 100
                 norm_y = (center_y / frame.shape[0]) * 100
 
-                # Add timestamp and motion info
+                # Add motion info with glow effect
                 timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-                cv2.putText(display_frame, timestamp, (5, frame.shape[0] - 5),
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 255, 0), 1)
+                motion_text = f"Motion Detected"
+                coords_text = f"Position: ({int(norm_x)}, {int(norm_y)})"
                 
-                motion_text = f"Motion: ({int(norm_x)}, {int(norm_y)})"
-                cv2.putText(display_frame, motion_text, (5, 15),
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 255, 0), 1)
+                # Draw text with glow effect
+                font = cv2.FONT_HERSHEY_SIMPLEX
+                # Timestamp
+                cv2.putText(display_frame, timestamp, (5, frame.shape[0]-5), font, 
+                           0.5, (0, 255, 0), 2)
+                cv2.putText(display_frame, timestamp, (5, frame.shape[0]-5), font, 
+                           0.5, (255, 255, 255), 1)
+                # Motion text
+                cv2.putText(display_frame, motion_text, (5, 20), font, 
+                           0.5, (0, 255, 0), 2)
+                cv2.putText(display_frame, motion_text, (5, 20), font, 
+                           0.5, (255, 255, 255), 1)
+                # Coordinates
+                cv2.putText(display_frame, coords_text, (5, 40), font, 
+                           0.5, (0, 255, 0), 2)
+                cv2.putText(display_frame, coords_text, (5, 40), font, 
+                           0.5, (255, 255, 255), 1)
 
                 return {
                     "success": True,
@@ -355,10 +394,17 @@ class MotionDetector:
 
             # If no motion, just return the frame with timestamp
             timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-            cv2.putText(display_frame, timestamp, (5, frame.shape[0] - 5),
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 255, 0), 1)
-            cv2.putText(display_frame, "No Motion", (5, 15),
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 255, 0), 1)
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            # Draw "No Motion" with glow effect
+            cv2.putText(display_frame, "No Motion", (5, 20), font, 
+                       0.5, (0, 255, 0), 2)
+            cv2.putText(display_frame, "No Motion", (5, 20), font, 
+                       0.5, (255, 255, 255), 1)
+            # Draw timestamp with glow effect
+            cv2.putText(display_frame, timestamp, (5, frame.shape[0]-5), font, 
+                       0.5, (0, 255, 0), 2)
+            cv2.putText(display_frame, timestamp, (5, frame.shape[0]-5), font, 
+                       0.5, (255, 255, 255), 1)
 
             return {
                 "success": True,
