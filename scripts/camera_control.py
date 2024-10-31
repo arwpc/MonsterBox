@@ -47,20 +47,30 @@ def initialize_camera(device_id: int, width: int = 320, height: int = 240) -> Op
     """Initialize camera with MJPG format first, fallback to others if needed."""
     try:
         # Add delay before opening camera
-        time.sleep(0.5)
+        time.sleep(1.0)  # Increased delay for better stability
         
         # Try MJPG format first as it's most likely to work
         cap = cv2.VideoCapture(device_id, cv2.CAP_V4L2)
         if not cap.isOpened():
             return None
 
+        # Configure camera buffer size
+        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Minimal buffer for lower latency
+
         # Try MJPG first
         fourcc = cv2.VideoWriter_fourcc(*'MJPG')
         cap.set(cv2.CAP_PROP_FOURCC, fourcc)
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-        cap.set(cv2.CAP_PROP_FPS, 15)
+        cap.set(cv2.CAP_PROP_FPS, 15)  # Lower FPS for stability
+        
+        # Additional camera settings
+        if hasattr(cv2, 'CAP_PROP_AUTO_EXPOSURE'):
+            cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1)  # Auto exposure
+        if hasattr(cv2, 'CAP_PROP_BRIGHTNESS'):
+            cap.set(cv2.CAP_PROP_BRIGHTNESS, 0.5)
+        if hasattr(cv2, 'CAP_PROP_CONTRAST'):
+            cap.set(cv2.CAP_PROP_CONTRAST, 0.5)
 
         ret, frame = cap.read()
         if ret and frame is not None and frame.size > 0:
@@ -70,18 +80,28 @@ def initialize_camera(device_id: int, width: int = 320, height: int = 240) -> Op
         # If MJPG fails, try other formats
         for fmt in ['YUYV', 'H264']:
             cap.release()
-            time.sleep(0.5)  # Add delay between format attempts
+            time.sleep(1.0)  # Increased delay between format attempts
             
             cap = cv2.VideoCapture(device_id, cv2.CAP_V4L2)
             if not cap.isOpened():
                 continue
 
+            # Configure camera buffer size
+            cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+
             fourcc = cv2.VideoWriter_fourcc(*fmt)
             cap.set(cv2.CAP_PROP_FOURCC, fourcc)
             cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
             cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-            cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
             cap.set(cv2.CAP_PROP_FPS, 15)
+            
+            # Additional camera settings
+            if hasattr(cv2, 'CAP_PROP_AUTO_EXPOSURE'):
+                cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1)
+            if hasattr(cv2, 'CAP_PROP_BRIGHTNESS'):
+                cap.set(cv2.CAP_PROP_BRIGHTNESS, 0.5)
+            if hasattr(cv2, 'CAP_PROP_CONTRAST'):
+                cap.set(cv2.CAP_PROP_CONTRAST, 0.5)
 
             ret, frame = cap.read()
             if ret and frame is not None and frame.size > 0:
