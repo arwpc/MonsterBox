@@ -91,11 +91,21 @@ def set_camera_controls(device_id: int):
         # Enable auto white balance
         subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=white_balance_automatic=1'])
         
+        # Set additional controls from v4l2-ctl output
+        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=brightness=0'])
+        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=contrast=0'])
+        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=saturation=64'])
+        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=hue=0'])
+        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=gamma=100'])
+        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=gain=0'])
+        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=sharpness=9'])
+        subprocess.run(['v4l2-ctl', '-d', device_path, '--set-ctrl=backlight_compensation=1'])
+        
         logger.info("Camera controls configured")
     except Exception as e:
         logger.warning(f"Error setting camera controls: {e}")
 
-def initialize_camera(device_id: int, width: int = 320, height: int = 240) -> Optional[cv2.VideoCapture]:
+def initialize_camera(device_id: int, width: int = 320, height: int = 240, fps: int = 15) -> Optional[cv2.VideoCapture]:
     """Initialize camera with optimized settings."""
     try:
         # Verify camera device first
@@ -127,7 +137,7 @@ def initialize_camera(device_id: int, width: int = 320, height: int = 240) -> Op
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
         
         # Set FPS and buffer size
-        cap.set(cv2.CAP_PROP_FPS, 15)
+        cap.set(cv2.CAP_PROP_FPS, fps)
         cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
         # Add delay after setting properties
@@ -158,15 +168,16 @@ def initialize_camera(device_id: int, width: int = 320, height: int = 240) -> Op
 class CameraSettings:
     """Handles camera settings configuration."""
     
-    def __init__(self, camera_id: int = 0, width: int = 320, height: int = 240):
+    def __init__(self, camera_id: int = 0, width: int = 320, height: int = 240, fps: int = 15):
         self.camera_id = camera_id
         self.width = width
         self.height = height
+        self.fps = fps
 
     def apply_settings(self) -> Dict[str, Any]:
         """Apply camera settings."""
         try:
-            cap = initialize_camera(self.camera_id, self.width, self.height)
+            cap = initialize_camera(self.camera_id, self.width, self.height, self.fps)
             if not cap:
                 return {
                     "success": False,
@@ -176,6 +187,7 @@ class CameraSettings:
             # Verify settings were applied
             actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             actual_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            actual_fps = int(cap.get(cv2.CAP_PROP_FPS))
             
             # Test frame capture
             ret, frame = cap.read()
@@ -188,7 +200,8 @@ class CameraSettings:
             return {
                 "success": True,
                 "width": actual_width,
-                "height": actual_height
+                "height": actual_height,
+                "fps": actual_fps
             }
 
         except Exception as e:
@@ -204,10 +217,11 @@ class CameraSettings:
 class MotionDetector:
     """Handles motion detection and visualization."""
     
-    def __init__(self, camera_id: int = 0, width: int = 320, height: int = 240):
+    def __init__(self, camera_id: int = 0, width: int = 320, height: int = 240, fps: int = 15):
         self.camera_id = camera_id
         self.width = width
         self.height = height
+        self.fps = fps
         self.cap = None
         self.background_subtractor = cv2.createBackgroundSubtractorMOG2(
             history=50,
@@ -219,7 +233,7 @@ class MotionDetector:
 
     def initialize(self) -> bool:
         """Initialize camera with specified settings."""
-        self.cap = initialize_camera(self.camera_id, self.width, self.height)
+        self.cap = initialize_camera(self.camera_id, self.width, self.height, self.fps)
         if self.cap is not None:
             time.sleep(2.0)
             return True
@@ -393,6 +407,8 @@ def main():
                        help='Frame width (default: 320)')
     parser.add_argument('--height', type=int, default=240,
                        help='Frame height (default: 240)')
+    parser.add_argument('--fps', type=int, default=15,
+                       help='Frames per second (default: 15)')
     parser.add_argument('--camera-id', type=int, default=0,
                        help='Camera device ID (default: 0)')
     
@@ -400,12 +416,12 @@ def main():
     
     try:
         if args.command == 'settings':
-            settings = CameraSettings(args.camera_id, args.width, args.height)
+            settings = CameraSettings(args.camera_id, args.width, args.height, args.fps)
             result = settings.apply_settings()
             print(json.dumps(result))
             sys.exit(0 if result["success"] else 1)
         elif args.command == 'motion':
-            detector = MotionDetector(args.camera_id, args.width, args.height)
+            detector = MotionDetector(args.camera_id, args.width, args.height, args.fps)
             result = detector.detect_motion()
             print(json.dumps(result))
             sys.exit(0 if result["success"] else 1)
