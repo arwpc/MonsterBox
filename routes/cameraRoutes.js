@@ -78,6 +78,25 @@ async function cleanupLockFiles() {
     }
 }
 
+// Start camera stream
+async function startCameraStream(cameraId, width = 320, height = 240) {
+    const streamScript = path.join(__dirname, '..', 'scripts', 'camera_stream.py');
+    logger.info(`Starting camera stream: ${streamScript}`);
+    
+    const process = spawn('python3', [
+        streamScript,
+        '--camera-id', cameraId.toString(),
+        '--width', width.toString(),
+        '--height', height.toString()
+    ]);
+
+    // Track this process
+    activeProcesses.set('stream', process);
+    logger.info('Camera stream process started');
+
+    return process;
+}
+
 // Camera routes
 router.get('/', async (req, res) => {
     try {
@@ -110,25 +129,17 @@ router.get('/stream', async (req, res) => {
 
         const width = parseInt(req.query.width) || 320;
         const height = parseInt(req.query.height) || 240;
-        
-        const streamScript = path.join(__dirname, '..', 'scripts', 'camera_stream.py');
-        logger.info(`Starting camera stream: ${streamScript}`);
-        
-        const process = spawn('python3', [
-            streamScript,
-            '--camera-id', settings.selectedCamera.toString(),
-            '--width', width.toString(),
-            '--height', height.toString()
-        ]);
 
-        // Track this process
-        activeProcesses.set('stream', process);
-        logger.info('Camera stream process started');
+        const process = await startCameraStream(settings.selectedCamera, width, height);
 
         res.setHeader('Content-Type', 'multipart/x-mixed-replace; boundary=frame');
         
         process.stdout.on('data', (data) => {
-            res.write(data);
+            try {
+                res.write(data);
+            } catch (error) {
+                logger.error('Error writing stream data:', error);
+            }
         });
 
         process.stderr.on('data', (data) => {
@@ -138,7 +149,11 @@ router.get('/stream', async (req, res) => {
         process.on('close', (code) => {
             logger.info(`Stream process closed with code ${code}`);
             activeProcesses.delete('stream');
-            res.end();
+            try {
+                res.end();
+            } catch (error) {
+                logger.error('Error ending stream response:', error);
+            }
         });
 
         req.on('close', async () => {
@@ -304,12 +319,21 @@ router.post('/select', async (req, res) => {
         });
 
         await new Promise((resolve, reject) => {
-            process.on('close', (code) => {
+            process.on('close', async (code) => {
                 activeProcesses.delete('verify');
                 if (code === 0) {
                     try {
                         const result = JSON.parse(output);
                         if (result.success) {
+                            await saveCameraSettings({ selectedCamera: cameraId });
+                            logger.info(`Camera ${cameraId} selected successfully`);
+                            
+                            // Start streaming immediately after selection
+                            const streamProcess = await startCameraStream(cameraId);
+                            streamProcess.on('error', (err) => {
+                                logger.error('Stream process error:', err);
+                            });
+                            
                             resolve();
                         } else {
                             reject(new Error(result.error || 'Camera verification failed'));
@@ -323,8 +347,6 @@ router.post('/select', async (req, res) => {
             });
         });
 
-        await saveCameraSettings({ selectedCamera: cameraId });
-        logger.info(`Camera ${cameraId} selected successfully`);
         res.json({ success: true });
     } catch (error) {
         logger.error('Error selecting camera:', error);
@@ -395,13 +417,14 @@ router.post('/control', async (req, res) => {
                 // If motion detection fails, try to restart streaming
                 if (command === 'motion') {
                     await new Promise(resolve => setTimeout(resolve, 2000));
-                    const streamProcess = spawn('python3', [
-                        path.join(__dirname, '..', 'scripts', 'camera_stream.py'),
-                        '--camera-id', settings.selectedCamera.toString(),
-                        '--width', (params.width || 320).toString(),
-                        '--height', (params.height || 240).toString()
-                    ]);
-                    activeProcesses.set('stream', streamProcess);
+                    const streamProcess = await startCameraStream(
+                        settings.selectedCamera,
+                        params.width || 320,
+                        params.height || 240
+                    );
+                    streamProcess.on('error', (err) => {
+                        logger.error('Stream process error:', err);
+                    });
                 }
                 
                 res.status(500).json({ 
@@ -417,13 +440,14 @@ router.post('/control', async (req, res) => {
             
             // If process fails to start, try to restart streaming
             await new Promise(resolve => setTimeout(resolve, 2000));
-            const streamProcess = spawn('python3', [
-                path.join(__dirname, '..', 'scripts', 'camera_stream.py'),
-                '--camera-id', settings.selectedCamera.toString(),
-                '--width', (params.width || 320).toString(),
-                '--height', (params.height || 240).toString()
-            ]);
-            activeProcesses.set('stream', streamProcess);
+            const streamProcess = await startCameraStream(
+                settings.selectedCamera,
+                params.width || 320,
+                params.height || 240
+            );
+            streamProcess.on('error', (err) => {
+                logger.error('Stream process error:', err);
+            });
             
             res.status(500).json({
                 success: false,
