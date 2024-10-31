@@ -45,6 +45,48 @@ router.get('/', async (req, res) => {
     }
 });
 
+router.get('/stream', async (req, res) => {
+    try {
+        const settings = await loadCameraSettings();
+        if (!settings.selectedCamera && settings.selectedCamera !== 0) {
+            throw new Error('No camera selected');
+        }
+
+        const width = parseInt(req.query.width) || 640;
+        const height = parseInt(req.query.height) || 480;
+        
+        const streamScript = path.join(__dirname, '..', 'scripts', 'camera_stream.py');
+        const process = spawn('python3', [
+            streamScript,
+            '--camera-id', settings.selectedCamera.toString(),
+            '--width', width.toString(),
+            '--height', height.toString()
+        ]);
+
+        res.setHeader('Content-Type', 'multipart/x-mixed-replace; boundary=frame');
+        
+        process.stdout.on('data', (data) => {
+            res.write(data);
+        });
+
+        process.stderr.on('data', (data) => {
+            logger.error(`Stream error: ${data}`);
+        });
+
+        process.on('close', () => {
+            res.end();
+        });
+
+        req.on('close', () => {
+            process.kill();
+        });
+
+    } catch (error) {
+        logger.error('Stream error:', error);
+        res.status(500).send('Stream error');
+    }
+});
+
 router.get('/list', async (req, res) => {
     try {
         const result = await new Promise((resolve, reject) => {
