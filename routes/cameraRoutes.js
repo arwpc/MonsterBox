@@ -80,21 +80,57 @@ async function cleanupLockFiles() {
 
 // Start camera stream
 async function startCameraStream(cameraId, width = 320, height = 240) {
-    const streamScript = path.join(__dirname, '..', 'scripts', 'camera_stream.py');
-    logger.info(`Starting camera stream: ${streamScript}`);
-    
-    const process = spawn('python3', [
-        streamScript,
-        '--camera-id', cameraId.toString(),
-        '--width', width.toString(),
-        '--height', height.toString()
-    ]);
+    return new Promise((resolve, reject) => {
+        const streamScript = path.join(__dirname, '..', 'scripts', 'camera_stream.py');
+        logger.info(`Starting camera stream: ${streamScript}`);
+        
+        const process = spawn('python3', [
+            streamScript,
+            '--camera-id', cameraId.toString(),
+            '--width', width.toString(),
+            '--height', height.toString()
+        ]);
 
-    // Track this process
-    activeProcesses.set('stream', process);
-    logger.info('Camera stream process started');
+        let started = false;
+        let error = '';
 
-    return process;
+        process.stderr.on('data', (data) => {
+            const msg = data.toString();
+            if (msg.includes('Successfully initialized camera')) {
+                started = true;
+                resolve(process);
+            } else if (!started) {
+                error += msg;
+            }
+            logger.info(`Stream output: ${msg}`);
+        });
+
+        process.on('error', (err) => {
+            if (!started) {
+                reject(err);
+            }
+            logger.error('Stream process error:', err);
+        });
+
+        process.on('close', (code) => {
+            if (!started) {
+                reject(new Error(error || `Stream process exited with code ${code}`));
+            }
+            logger.info(`Stream process closed with code ${code}`);
+        });
+
+        // Set a timeout for stream initialization
+        setTimeout(() => {
+            if (!started) {
+                process.kill('SIGTERM');
+                reject(new Error('Stream initialization timeout'));
+            }
+        }, 5000);
+
+        // Track this process
+        activeProcesses.set('stream', process);
+        logger.info('Camera stream process started');
+    });
 }
 
 // Camera routes
@@ -117,6 +153,7 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/stream', async (req, res) => {
+    let streamProcess = null;
     try {
         const settings = await loadCameraSettings();
         if (!settings.selectedCamera && settings.selectedCamera !== 0) {
@@ -130,11 +167,11 @@ router.get('/stream', async (req, res) => {
         const width = parseInt(req.query.width) || 320;
         const height = parseInt(req.query.height) || 240;
 
-        const process = await startCameraStream(settings.selectedCamera, width, height);
+        streamProcess = await startCameraStream(settings.selectedCamera, width, height);
 
         res.setHeader('Content-Type', 'multipart/x-mixed-replace; boundary=frame');
         
-        process.stdout.on('data', (data) => {
+        streamProcess.stdout.on('data', (data) => {
             try {
                 res.write(data);
             } catch (error) {
@@ -142,11 +179,11 @@ router.get('/stream', async (req, res) => {
             }
         });
 
-        process.stderr.on('data', (data) => {
-            logger.error(`Stream error: ${data}`);
+        streamProcess.stderr.on('data', (data) => {
+            logger.info(`Stream output: ${data}`);
         });
 
-        process.on('close', (code) => {
+        streamProcess.on('close', (code) => {
             logger.info(`Stream process closed with code ${code}`);
             activeProcesses.delete('stream');
             try {
@@ -158,13 +195,19 @@ router.get('/stream', async (req, res) => {
 
         req.on('close', async () => {
             logger.info('Client disconnected, cleaning up');
-            process.kill('SIGTERM');
-            activeProcesses.delete('stream');
+            if (streamProcess) {
+                streamProcess.kill('SIGTERM');
+                activeProcesses.delete('stream');
+            }
             await cleanupLockFiles();
         });
 
     } catch (error) {
         logger.error('Stream error:', error);
+        if (streamProcess) {
+            streamProcess.kill('SIGTERM');
+            activeProcesses.delete('stream');
+        }
         res.status(500).send('Stream error');
     }
 });
