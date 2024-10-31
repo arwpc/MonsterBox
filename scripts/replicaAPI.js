@@ -11,10 +11,10 @@ class ReplicaAPI {
 
         // Standard audio format settings for maximum compatibility
         this.audioSettings = {
-            format: 'mp3',           // Most widely supported format
-            sampleRate: 44100,       // CD-quality sample rate
-            bitRate: 320,            // Highest quality supported bit rate (320kbps)
-            channels: 2              // Stereo output
+            format: 'mp3',           // MPEG-1 Layer III
+            sampleRate: 44100,       // Standard sample rate
+            bitRate: 128,            // Standard bit rate (most compatible)
+            channels: 1              // Mono (more reliable)
         };
 
         this.axiosInstance = axios.create({
@@ -142,10 +142,12 @@ class ReplicaAPI {
             const requestBody = {
                 speaker_id: params.voiceId,
                 text: params.text.trim(),
-                extensions: [this.audioSettings.format],    // Always request MP3
-                sample_rate: this.audioSettings.sampleRate, // CD-quality 44.1kHz
-                bit_rate: this.audioSettings.bitRate,      // High-quality 320kbps
-                channels: this.audioSettings.channels,      // Stereo
+                output_format: {                     // Explicit output format configuration
+                    format: this.audioSettings.format,
+                    sample_rate: this.audioSettings.sampleRate,
+                    bit_rate: this.audioSettings.bitRate,
+                    channels: this.audioSettings.channels
+                },
                 global_pace: pace,
                 model_chain: params.options?.modelChain || 'vox_2_0',
                 language_code: params.options?.languageCode || 'en',
@@ -156,12 +158,7 @@ class ReplicaAPI {
             };
 
             // Log the audio format settings being used
-            logger.info(`Requesting speech generation with audio settings: ${JSON.stringify({
-                format: this.audioSettings.format,
-                sampleRate: this.audioSettings.sampleRate,
-                bitRate: this.audioSettings.bitRate,
-                channels: this.audioSettings.channels
-            })}`);
+            logger.info(`Requesting speech generation with audio settings: ${JSON.stringify(requestBody.output_format)}`);
 
             const response = await this.retryWithBackoff(async () => {
                 return await this.axiosInstance.post('/speech/tts', requestBody);
@@ -193,9 +190,15 @@ class ReplicaAPI {
                 throw new Error(`Speech generation failed: ${jobStatus.data.state}`);
             }
 
-            // Validate the returned audio format
-            if (!jobStatus.data.available_formats?.includes(this.audioSettings.format)) {
-                throw new Error(`Expected ${this.audioSettings.format} format not available in response`);
+            // Download and validate the audio file
+            const audioResponse = await axios.get(jobStatus.data.url, {
+                responseType: 'arraybuffer'
+            });
+
+            // Basic MP3 header validation
+            const buffer = Buffer.from(audioResponse.data);
+            if (!this.isValidMP3(buffer)) {
+                throw new Error('Generated audio file is not a valid MP3');
             }
 
             return {
@@ -207,12 +210,7 @@ class ReplicaAPI {
                 metadata: {
                     requestTime: new Date().toISOString(),
                     textLength: params.text.length,
-                    audioSettings: {
-                        format: this.audioSettings.format,
-                        sampleRate: this.audioSettings.sampleRate,
-                        bitRate: this.audioSettings.bitRate,
-                        channels: this.audioSettings.channels
-                    },
+                    audioSettings: requestBody.output_format,
                     settings: requestBody
                 }
             };
@@ -221,6 +219,30 @@ class ReplicaAPI {
             logger.error(`Error generating speech: ${errorMsg}`);
             throw error;
         }
+    }
+
+    isValidMP3(buffer) {
+        // Check for MP3 sync word (0xFF 0xFB or 0xFF 0xFA)
+        if (buffer.length < 4) return false;
+        
+        // Check first frame header
+        if (buffer[0] !== 0xFF || (buffer[1] & 0xE0) !== 0xE0) {
+            return false;
+        }
+
+        // Verify MPEG version (should be MPEG-1)
+        const mpegVersion = (buffer[1] & 0x18) >> 3;
+        if (mpegVersion !== 0x03) { // 0x03 = MPEG-1
+            return false;
+        }
+
+        // Verify Layer (should be Layer III)
+        const layer = (buffer[1] & 0x06) >> 1;
+        if (layer !== 0x01) { // 0x01 = Layer III
+            return false;
+        }
+
+        return true;
     }
 
     clearCache() {
