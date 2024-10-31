@@ -31,7 +31,9 @@ sudo apt-get install -y \
     libmp3lame0 \
     libmp3lame-dev \
     build-essential \
-    alsa-utils
+    alsa-utils \
+    libasound2 \
+    libasound2-dev
 
 # Install Python and dependencies
 sudo apt-get install -y \
@@ -49,22 +51,19 @@ sudo apt-get install -y \
     python3-pip \
     python3-pyaudio
 
-# Install OpenCV dependencies
+# Install OpenCV and multimedia dependencies
 sudo apt-get install -y \
     libopencv-dev \
     libatlas-base-dev \
-    libjasper-dev \
-    libqtgui4 \
-    libqt4-test \
     libhdf5-dev \
-    libhdf5-serial-dev
-
-# Install audio dependencies
-sudo apt-get install -y \
-    libasound2-dev \
-    portaudio19-dev \
-    libavcodec-extra \
-    libavcodec-extra58
+    libgtk-3-0 \
+    libavcodec-dev \
+    libavformat-dev \
+    libswscale-dev \
+    libv4l-dev \
+    libxvidcore-dev \
+    libx264-dev \
+    libavcodec-extra
 ```
 
 #### Configure Hardware Settings
@@ -78,11 +77,27 @@ echo "gpu_mem=1024" | sudo tee -a /boot/config.txt
 echo "start_x=1" | sudo tee -a /boot/config.txt
 ```
 
-2. Configure Audio Volume:
+2. Configure Audio:
 ```bash
-# Set volume to 95%
-amixer sset 'PCM' 95%
-amixer sset 'Master' 95%
+# Create ALSA configuration
+sudo tee /etc/asound.conf << EOF
+pcm.!default {
+    type hw
+    card 0
+}
+
+ctl.!default {
+    type hw
+    card 0
+}
+EOF
+
+# Set volume for available controls
+for control in PCM Master Headphone Speaker; do
+    amixer -q sset $control 95% unmute 2>/dev/null || true
+done
+
+# Store settings
 sudo alsactl store
 ```
 
@@ -122,12 +137,27 @@ sudo apt-get update && sudo apt-get install -y \
     python3-pygame \
     python3-flask \
     python3-psutil \
-    alsa-utils
+    alsa-utils \
+    libasound2 \
+    libasound2-dev
 
-# Set audio volume
-amixer sset 'PCM' 95%
-amixer sset 'Master' 95%
-sudo alsactl store
+# Configure audio
+sudo tee /etc/asound.conf << EOF
+pcm.!default {
+    type hw
+    card 0
+}
+
+ctl.!default {
+    type hw
+    card 0
+}
+EOF
+
+# Set volume
+for control in PCM Master Headphone Speaker; do
+    amixer -q sset $control 95% unmute 2>/dev/null || true
+done
 
 # Install Node.js packages
 npm install
@@ -148,10 +178,14 @@ vcgencmd get_mem gpu
 # Should show: gpu=1024M
 ```
 
-- Check Audio Volume:
+- Test Audio:
 ```bash
-amixer get PCM
-# Should show volume at 95%
+# Play test sound
+speaker-test -t wav -c 2
+
+# Check audio devices and controls
+aplay -l
+amixer
 ```
 
 - Check I2C (Raspberry Pi):
@@ -162,11 +196,6 @@ sudo i2cdetect -y 1
 - Check camera:
 ```bash
 v4l2-ctl --list-devices
-```
-
-- Check audio devices:
-```bash
-aplay -l
 ```
 
 - Verify ffmpeg installation:
@@ -202,51 +231,41 @@ sudo python3 install.sh  # This will fail
 sudo ./install.sh       # This might fail if script isn't executable
 ```
 
-2. If you get permission errors, make sure the script is executable:
-```bash
-chmod +x install.sh
-```
-
-### Permission Issues
-
-1. Add your user to required groups:
-```bash
-sudo usermod -a -G video,i2c,gpio,audio $USER
-```
-
-2. Set up video device permissions:
-```bash
-echo 'SUBSYSTEM=="video4linux", GROUP="video", MODE="0666"' | sudo tee /etc/udev/rules.d/99-camera.rules
-```
-
-3. Reload udev rules:
-```bash
-sudo udevadm control --reload-rules && sudo udevadm trigger
-```
-
 ### Audio Issues
 
 If you encounter audio playback issues:
 
-1. Check audio devices:
+1. Check available audio devices:
 ```bash
 aplay -l
 ```
 
-2. Verify volume settings:
+2. Check available controls:
 ```bash
-amixer get PCM
-amixer get Master
+amixer
 ```
 
-3. Test MP3 playback:
+3. Test audio output:
 ```bash
-mpg123 -t test.mp3
+# Test with speaker-test
+speaker-test -t wav -c 2
+
+# Test with specific audio device (if default doesn't work)
+speaker-test -D plughw:0,0 -t wav -c 2
 ```
 
-4. Verify ffmpeg MP3 support:
+4. Check ALSA configuration:
 ```bash
-ffmpeg -codecs | grep mp3
+cat /etc/asound.conf
+```
+
+5. Try setting volume manually:
+```bash
+# Try different controls
+amixer -c 0 sset PCM 95%
+amixer -c 0 sset Master 95%
+amixer -c 0 sset Headphone 95%
+amixer -c 0 sset Speaker 95%
 ```
 
 ### Camera Issues
@@ -280,3 +299,8 @@ vcgencmd get_mem gpu
 2. Check config.txt settings:
 ```bash
 grep gpu_mem /boot/config.txt
+```
+
+3. Monitor GPU memory usage:
+```bash
+vcgencmd get_mem
