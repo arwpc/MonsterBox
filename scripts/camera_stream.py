@@ -26,19 +26,9 @@ os.environ["OPENCV_VIDEOIO_BACKEND"] = "v4l2"
 
 def get_supported_formats(device_id: int) -> List[str]:
     """Get list of supported formats for the camera."""
-    formats = []
-    try:
-        result = subprocess.run(['v4l2-ctl', '-d', f'/dev/video{device_id}', '--list-formats'],
-                              capture_output=True, text=True)
-        if result.returncode == 0:
-            for line in result.stdout.splitlines():
-                if '[' in line and ']' in line:
-                    fmt = line.split('[')[1].split(']')[0]
-                    formats.append(fmt)
-        logger.info(f"Supported formats for camera {device_id}: {formats}")
-    except Exception as e:
-        logger.warning(f"Failed to get supported formats: {e}")
-    return formats or ['MJPG', 'YUYV']  # Default formats if query fails
+    # Default to these common formats instead of trying to parse v4l2-ctl output
+    # These are 4-character codes that OpenCV's VideoWriter_fourcc expects
+    return ['MJPG', 'YUYV', 'H264']
 
 def verify_camera_access(device_id: int, retries: int = 3) -> bool:
     """Verify camera device exists and is accessible."""
