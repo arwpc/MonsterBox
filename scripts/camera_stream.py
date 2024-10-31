@@ -222,6 +222,9 @@ class CameraStream:
         self.height = height
         self.cap = None
         self.camera_lock = CameraLock(self.camera_id)
+        self.frame_count = 0
+        self.error_count = 0
+        self.max_errors = 3
 
     def initialize(self) -> bool:
         """Initialize camera with specified settings."""
@@ -230,6 +233,10 @@ class CameraStream:
             return False
 
         self.cap = initialize_camera(self.camera_id, self.width, self.height)
+        if self.cap is not None:
+            # Reset counters on successful initialization
+            self.frame_count = 0
+            self.error_count = 0
         return self.cap is not None
 
     def release(self):
@@ -249,55 +256,72 @@ class CameraStream:
             return
 
         try:
-            frame_count = 0
             last_frame_time = time.time()
             target_frame_time = 1.0 / 15  # Target 15 FPS
 
             while True:
-                ret, frame = self.cap.read()
-                if not ret or frame is None:
-                    break
+                try:
+                    ret, frame = self.cap.read()
+                    if not ret or frame is None:
+                        self.error_count += 1
+                        logger.warning(f"Failed to read frame (attempt {self.error_count}/{self.max_errors})")
+                        if self.error_count >= self.max_errors:
+                            break
+                        time.sleep(1.0)  # Wait before retry
+                        continue
 
-                # Resize frame if necessary
-                actual_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-                actual_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                if actual_width != self.width or actual_height != self.height:
-                    frame = cv2.resize(frame, (self.width, self.height))
+                    # Reset error count on successful frame
+                    self.error_count = 0
+                    self.frame_count += 1
 
-                # Add timestamp
-                timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-                font = cv2.FONT_HERSHEY_SIMPLEX
-                cv2.putText(frame, timestamp, (5, frame.shape[0]-5), font, 
-                           0.5, (0, 255, 0), 2)
-                cv2.putText(frame, timestamp, (5, frame.shape[0]-5), font, 
-                           0.5, (255, 255, 255), 1)
+                    # Log periodic status
+                    if self.frame_count % 30 == 0:  # Every 30 frames
+                        logger.info(f"Streaming frame {self.frame_count}")
 
-                # Encode frame as JPEG with moderate quality
-                _, jpeg = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
-                
-                # Write MJPEG frame
-                sys.stdout.buffer.write(b'--frame\r\n')
-                sys.stdout.buffer.write(b'Content-Type: image/jpeg\r\n\r\n')
-                sys.stdout.buffer.write(jpeg.tobytes())
-                sys.stdout.buffer.write(b'\r\n')
-                sys.stdout.buffer.flush()
+                    # Resize frame if necessary
+                    actual_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                    actual_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                    if actual_width != self.width or actual_height != self.height:
+                        frame = cv2.resize(frame, (self.width, self.height))
 
-                # Frame rate control
-                frame_count += 1
-                current_time = time.time()
-                elapsed = current_time - last_frame_time
-                if elapsed < target_frame_time:
-                    time.sleep(target_frame_time - elapsed)
-                last_frame_time = time.time()
+                    # Add timestamp
+                    timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+                    font = cv2.FONT_HERSHEY_SIMPLEX
+                    cv2.putText(frame, timestamp, (5, frame.shape[0]-5), font, 
+                               0.5, (0, 255, 0), 2)
+                    cv2.putText(frame, timestamp, (5, frame.shape[0]-5), font, 
+                               0.5, (255, 255, 255), 1)
+
+                    # Encode frame as JPEG with moderate quality
+                    _, jpeg = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
+                    
+                    # Write MJPEG frame
+                    sys.stdout.buffer.write(b'--frame\r\n')
+                    sys.stdout.buffer.write(b'Content-Type: image/jpeg\r\n\r\n')
+                    sys.stdout.buffer.write(jpeg.tobytes())
+                    sys.stdout.buffer.write(b'\r\n')
+                    sys.stdout.buffer.flush()
+
+                    # Frame rate control
+                    current_time = time.time()
+                    elapsed = current_time - last_frame_time
+                    if elapsed < target_frame_time:
+                        time.sleep(target_frame_time - elapsed)
+                    last_frame_time = time.time()
+
+                except Exception as e:
+                    self.error_count += 1
+                    logger.error(f"Frame processing error: {e}")
+                    if self.error_count >= self.max_errors:
+                        break
+                    time.sleep(1.0)  # Wait before retry
 
         except BrokenPipeError:
-            # Client disconnected
-            pass
+            logger.info("Client disconnected")
         except KeyboardInterrupt:
-            # Ctrl+C pressed
-            pass
+            logger.info("Stream interrupted")
         except Exception as e:
-            sys.stderr.write(f"Streaming error: {str(e)}\n")
+            logger.error(f"Streaming error: {str(e)}")
         finally:
             self.release()
 
@@ -317,7 +341,7 @@ def main():
         streamer = CameraStream(args.camera_id, args.width, args.height)
         streamer.stream()
     except Exception as e:
-        sys.stderr.write(f"Error: {str(e)}\n")
+        logger.error(f"Error: {str(e)}")
         sys.exit(1)
 
 if __name__ == "__main__":
