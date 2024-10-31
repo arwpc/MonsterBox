@@ -18,8 +18,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Force V4L2 backend
+# Force V4L2 backend and disable GStreamer
 os.environ["OPENCV_VIDEOIO_PRIORITY_V4L2"] = "100"
+os.environ["OPENCV_VIDEOIO_PRIORITY_GSTREAMER"] = "0"
 
 try:
     import numpy as np
@@ -85,7 +86,7 @@ def initialize_camera(device_id: int, width: int = 320, height: int = 240) -> Op
             return None
 
         # Add delay before opening camera
-        time.sleep(1.0)
+        time.sleep(2.0)  # Increased delay
         
         # Try opening with V4L2 backend
         logger.info(f"Attempting to open camera {device_id} with V4L2 backend")
@@ -98,13 +99,13 @@ def initialize_camera(device_id: int, width: int = 320, height: int = 240) -> Op
         logger.info("Setting camera properties...")
         cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Minimal buffer for lower latency
         cap.set(cv2.CAP_PROP_FPS, 15)        # Stable FPS for Pi
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
 
-        # Try MJPG format first
-        logger.info("Trying MJPG format...")
+        # Always use MJPG format since we know it works
+        logger.info("Using MJPG format")
         fourcc = cv2.VideoWriter_fourcc(*'MJPG')
         cap.set(cv2.CAP_PROP_FOURCC, fourcc)
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
         
         # Camera quality settings
         if hasattr(cv2, 'CAP_PROP_AUTO_EXPOSURE'):
@@ -114,52 +115,23 @@ def initialize_camera(device_id: int, width: int = 320, height: int = 240) -> Op
         if hasattr(cv2, 'CAP_PROP_CONTRAST'):
             cap.set(cv2.CAP_PROP_CONTRAST, 0.5)     # Mid contrast
 
-        # Test frame capture
-        ret, frame = cap.read()
-        if ret and frame is not None and frame.size > 0:
-            logger.info("Successfully initialized camera with MJPG format")
-            # Log actual camera settings
-            actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-            actual_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-            actual_fps = int(cap.get(cv2.CAP_PROP_FPS))
-            logger.info(f"Camera settings - Width: {actual_width}, Height: {actual_height}, FPS: {actual_fps}")
-            return cap
-
-        # If MJPG fails, try YUYV
-        logger.info("MJPG failed, trying YUYV format...")
-        cap.release()
+        # Add delay after setting properties
         time.sleep(1.0)
-        
-        cap = cv2.VideoCapture(device_id, cv2.CAP_V4L2)
-        if not cap.isOpened():
-            logger.error("Failed to reopen camera for YUYV format")
-            return None
 
-        fourcc = cv2.VideoWriter_fourcc(*'YUYV')
-        cap.set(cv2.CAP_PROP_FOURCC, fourcc)
-        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-        cap.set(cv2.CAP_PROP_FPS, 15)
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+        # Test frame capture
+        for _ in range(3):  # Try up to 3 times
+            ret, frame = cap.read()
+            if ret and frame is not None and frame.size > 0:
+                # Log actual camera settings
+                actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                actual_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                actual_fps = int(cap.get(cv2.CAP_PROP_FPS))
+                logger.info(f"Successfully initialized camera - Width: {actual_width}, Height: {actual_height}, FPS: {actual_fps}")
+                return cap
 
-        if hasattr(cv2, 'CAP_PROP_AUTO_EXPOSURE'):
-            cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1)
-        if hasattr(cv2, 'CAP_PROP_BRIGHTNESS'):
-            cap.set(cv2.CAP_PROP_BRIGHTNESS, 0.5)
-        if hasattr(cv2, 'CAP_PROP_CONTRAST'):
-            cap.set(cv2.CAP_PROP_CONTRAST, 0.5)
+            time.sleep(0.5)  # Wait before retry
 
-        ret, frame = cap.read()
-        if ret and frame is not None and frame.size > 0:
-            logger.info("Successfully initialized camera with YUYV format")
-            # Log actual camera settings
-            actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-            actual_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-            actual_fps = int(cap.get(cv2.CAP_PROP_FPS))
-            logger.info(f"Camera settings - Width: {actual_width}, Height: {actual_height}, FPS: {actual_fps}")
-            return cap
-
-        logger.error("Failed to initialize camera with any format")
+        logger.error("Failed to capture test frame")
         return None
 
     except Exception as e:
@@ -210,6 +182,7 @@ class CameraSettings:
         finally:
             if 'cap' in locals():
                 cap.release()
+                time.sleep(1.0)  # Add delay after release
 
 class MotionDetector:
     """Handles motion detection and visualization."""
@@ -230,7 +203,10 @@ class MotionDetector:
     def initialize(self) -> bool:
         """Initialize camera with specified settings."""
         self.cap = initialize_camera(self.camera_id, self.width, self.height)
-        return self.cap is not None
+        if self.cap is not None:
+            time.sleep(2.0)  # Add delay after initialization
+            return True
+        return False
 
     def release(self):
         """Release camera resources."""
@@ -238,6 +214,8 @@ class MotionDetector:
             if self.cap:
                 self.cap.release()
                 self.cap = None
+            logger.info("Camera resources released")
+            time.sleep(1.0)  # Add delay after release
         except Exception as e:
             logger.warning(f"Error releasing camera: {e}")
 
@@ -247,6 +225,14 @@ class MotionDetector:
             return {"success": False, "error": "Failed to initialize camera"}
 
         try:
+            # Warm up the camera
+            for _ in range(5):
+                ret, _ = self.cap.read()
+                if ret:
+                    logger.info("Camera warmed up successfully")
+                    break
+                time.sleep(0.5)
+
             ret, frame = self.cap.read()
             if not ret or frame is None or frame.size == 0:
                 return {"success": False, "error": "Failed to capture frame"}
