@@ -4,6 +4,14 @@ import json
 import sys
 import time
 
+TEST_PINS = {
+    'digitalOut': 27,  # Changed from 18
+    'digitalIn': 22,   # Changed from 17
+    'pwm': 19,        # Changed from 13
+    'servo': 10,      # Changed from 12
+    'motion': 25      # Changed from 20
+}
+
 def test_gpio_output(pin):
     """Test basic digital output"""
     try:
