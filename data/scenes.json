@@ -1,36 +1,5 @@
 [
   {
-    "id": 1,
-    "character_id": 1,
-    "scene_name": "Turn Head Right",
-    "steps": [
-      {
-        "type": "servo",
-        "name": "Turn Head",
-        "part_id": "11",
-        "duration": "1000",
-        "angle": "110",
-        "speed": "100"
-      },
-      {
-        "type": "servo",
-        "name": "Turn Head (Copy)",
-        "part_id": "11",
-        "duration": "2000",
-        "angle": "70",
-        "speed": "100"
-      },
-      {
-        "type": "servo",
-        "name": "Turn Head (Copy)",
-        "part_id": "11",
-        "duration": "1000",
-        "angle": "110",
-        "speed": "100"
-      }
-    ]
-  },
-  {
     "id": 2,
     "character_id": 1,
     "scene_name": "play one sound",
@@ -39,23 +8,6 @@
         "type": "sound",
         "name": "Santos!",
         "sound_id": "2"
-      }
-    ]
-  },
-  {
-    "id": 3,
-    "character_id": 1,
-    "scene_name": "Play Two Sounds",
-    "steps": [
-      {
-        "type": "sound",
-        "name": "good eve",
-        "sound_id": "1"
-      },
-      {
-        "type": "sound",
-        "name": "Heya",
-        "sound_id": "3"
       }
     ]
   },
@@ -73,7 +25,7 @@
         "type": "linear-actuator",
         "name": "Right Arm Up",
         "part_id": "1",
-        "duration": "4000",
+        "duration": "8000",
         "direction": "forward",
         "speed": "60"
       },
@@ -95,26 +47,14 @@
         "part_id": "3",
         "duration": "500",
         "state": "off"
-      }
-    ]
-  },
-  {
-    "id": 5,
-    "character_id": 1,
-    "scene_name": "Sound and Actuator",
-    "steps": [
-      {
-        "type": "sound",
-        "name": "good eventing",
-        "sound_id": "1"
       },
       {
         "type": "linear-actuator",
-        "name": "Arm Upo",
+        "name": "Arm Downn",
         "part_id": "1",
-        "duration": "1000",
-        "direction": "forward",
-        "speed": "100"
+        "duration": "15000",
+        "direction": "backward",
+        "speed": "60"
       }
     ]
   },
@@ -127,7 +67,7 @@
         "type": "linear-actuator",
         "name": "Move Left Up",
         "part_id": "2",
-        "duration": "2000",
+        "duration": "5000",
         "direction": "forward",
         "speed": "100"
       },
@@ -135,6 +75,234 @@
         "type": "sound",
         "name": "Laff Riot",
         "sound_id": "3"
+      },
+      {
+        "type": "linear-actuator",
+        "name": "Move Left Up (Copy)",
+        "part_id": "1",
+        "duration": "3000",
+        "direction": "forward",
+        "speed": "100"
+      },
+      {
+        "type": "voice",
+        "name": "Jims Lament",
+        "sound_id": "22",
+        "text": "The Devil's Detective\nIn Iowa's cornfields, dark and deep,\nWhere shadows dance and secrets keep,\nJim Sherlock walked one autumn night,\nWhen something gave him quite a fright.\nThe Devil stood beside a tree,\nAnd spoke these words so terribly:\n\"Venite mecum, detective,\nNox est longa, et sum active!\"\n(Come with me, detective dear,\nThe night is long, and I am here!)\nJim Sherlock tipped his famous hat,\nAnd said, \"Now what's the trick in that?\nI've solved a hundred cases true,\nBut never one that came from you!\"\nThe Devil laughed with fiery breath,\nHis laughter cold as winter's death.\nThrough Iowa's maze of swaying corn,\nThey played their game till early morn.\nWith logic sharp and wit so keen,\nJim Sherlock solved what must be seen.\nThe Devil's puzzles, one by one,\nUntil the rising of the sun.\n\"Admirabile mysterium!\"\nThe Devil cried, his voice now glum.\n\"No mortal's ever beat my game!\"\nAnd vanished in a burst of flame.\nSo if you're walking late at night,\nThrough Iowa's fields in pale moonlight,\nRemember Sherlock's clever tale—\nThe night the Devil's tricks did fail.\nBut listen close, and you might hear\nThe Devil whisper in your ear:\n\"Redibo iterum aliquando...\""
+      },
+      {
+        "type": "linear-actuator",
+        "name": "Move Left Up (Copy) (Copy)",
+        "part_id": "2",
+        "duration": "14000",
+        "direction": "backward",
+        "speed": "100"
+      },
+      {
+        "type": "linear-actuator",
+        "name": "Move Left Up (Copy)",
+        "part_id": "2",
+        "duration": "14000",
+        "direction": "backward",
+        "speed": "100"
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "character_id": 1,
+    "scene_name": "My Head Is Spinning",
+    "steps": [
+      {
+        "type": "voice",
+        "name": "My Head Spinss",
+        "sound_id": "16",
+        "text": "My Head Is Spinning"
+      },
+      {
+        "type": "servo",
+        "name": "HEadspin",
+        "part_id": "11",
+        "duration": "1200",
+        "angle": "110",
+        "speed": "40"
+      },
+      {
+        "type": "servo",
+        "name": "HEadspin (Copy)",
+        "part_id": "11",
+        "duration": "1200",
+        "angle": "90",
+        "speed": "40"
+      },
+      {
+        "type": "servo",
+        "name": "HEadspin (Copy) (Copy)",
+        "part_id": "11",
+        "duration": "2400",
+        "angle": "70",
+        "speed": "40"
+      },
+      {
+        "type": "servo",
+        "name": "HEadspin (Copy) (Copy) (Copy)",
+        "part_id": "5",
+        "duration": "1200",
+        "angle": "90",
+        "speed": "40"
+      },
+      {
+        "type": "voice",
+        "name": "Cold",
+        "sound_id": "17",
+        "text": "If you think it's cold in hell, check Coralville out! "
+      },
+      {
+        "type": "servo",
+        "name": "HEadspin (Copy) (Copy) (Copy) (Copy)",
+        "part_id": "11",
+        "duration": "1200",
+        "angle": "110",
+        "speed": "40"
+      },
+      {
+        "type": "servo",
+        "name": "HEadspin (Copy) (Copy) (Copy) (Copy) (Copy)",
+        "part_id": "11",
+        "duration": "1200",
+        "angle": "90",
+        "speed": "40"
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "character_id": 1,
+    "scene_name": "I'm FREEZING!!!!",
+    "steps": [
+      {
+        "type": "voice",
+        "name": "Happy",
+        "sound_id": "23",
+        "text": "Don't Forget to Vote! I'm watching....closely....with anticipation....."
+      },
+      {
+        "type": "sound",
+        "name": "Santimas",
+        "sound_id": "2"
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "character_id": 1,
+    "scene_name": "Both Arms Up",
+    "steps": [
+      {
+        "type": "linear-actuator",
+        "name": "Arm Up",
+        "part_id": "1",
+        "duration": "5000",
+        "direction": "forward",
+        "speed": "60",
+        "concurrent": "on"
+      },
+      {
+        "type": "linear-actuator",
+        "name": "Arm Up (Copy)",
+        "part_id": "2",
+        "duration": "5000",
+        "direction": "forward",
+        "speed": "60"
+      },
+      {
+        "type": "voice",
+        "name": "Halleleusay",
+        "sound_id": "19",
+        "text": "In the desert\n\nI saw a creature, naked, bestial,\n\nWho, squatting upon the ground,\n\nHeld his heart in his hands,\n\nAnd ate of it.\n\nI said, “Is it good, friend?”\n\n“It is bitter—bitter,” he answered;\n\n“But I like it\n\n“Because it is bitter,\n\n“And because it is my heart.”"
+      },
+      {
+        "type": "linear-actuator",
+        "name": "Arm Up (Copy) (Copy)",
+        "part_id": "1",
+        "duration": "7000",
+        "direction": "backward",
+        "speed": "60",
+        "concurrent": "on"
+      },
+      {
+        "type": "linear-actuator",
+        "name": "Arm Up (Copy)",
+        "part_id": "1",
+        "duration": "7000",
+        "direction": "backward",
+        "speed": "60"
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "character_id": 1,
+    "scene_name": "Scary Tale",
+    "steps": [
+      {
+        "type": "linear-actuator",
+        "name": "ArmUp",
+        "part_id": "1",
+        "duration": "2500",
+        "direction": "forward",
+        "speed": "100"
+      },
+      {
+        "type": "linear-actuator",
+        "name": "ArmUp (Copy)",
+        "part_id": "1",
+        "duration": "2500",
+        "direction": "forward",
+        "speed": "100"
+      },
+      {
+        "type": "linear-actuator",
+        "name": "ArmUp (Copy) (Copy)",
+        "part_id": "1",
+        "duration": "2500",
+        "direction": "forward",
+        "speed": "60"
+      },
+      {
+        "type": "voice",
+        "name": "Poem IA",
+        "sound_id": "20",
+        "text": "Listen up, Iowa kiddies so sweet,\nI'm the Devil, here for souls to reap!\nYour cornfields hide secrets deep inside,\nWhere shadow-things slither and glide!\n\nThe scarecrows now hunt through the night,\nFarm dogs howl in pure fright,\nThe grain bins rattle with ghostly bones,\nWhile windmills creak with dying moans!\n\nBut don't you worry, don't you run,\nThis harvest night has just begun!\nFor when the moon turns blood-red here,\nAll of Iowa will disappear... "
+      },
+      {
+        "type": "linear-actuator",
+        "name": "ArmUp (Copy) (Copy) (Copy)",
+        "part_id": "1",
+        "duration": "10000",
+        "direction": "backward",
+        "speed": "60"
+      },
+      {
+        "type": "linear-actuator",
+        "name": "ArmUp (Copy) (Copy) (Copy) (Copy)",
+        "part_id": "2",
+        "duration": "10000",
+        "direction": "backward",
+        "speed": "60"
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "character_id": 1,
+    "scene_name": "Scarytale",
+    "steps": [
+      {
+        "type": "voice",
+        "name": "Latin",
+        "sound_id": "21",
+        "text": "Audite, dulces pueri Iovenses,\nDiabolus sum, animas collecturus!\nAgri vestri secreta alta celant,\nUbi umbrae serpunt et vagantur!\n\nFormidines nunc nocte venantur,\nCanes rustici terrore ululant,\nGranaria ossibus spectralibus crepitant,\nDum molae ventorum gemitibus morientibus strident!\n\nSed nolite timere, nolite fugere,\nHaec nox messis modo incipit!\nNam cum luna sanguinea hic fit,\nTota Iova evanescet...\n*risus diabolicus*"
       }
     ]
   }
