@@ -136,10 +136,38 @@ describe('RPI Dependencies Check', function() {
         expect(result.output).to.match(/dtparam=i2c_arm=on/);
     });
 
-    it('should have pigpio daemon running', async function() {
-        const result = await runCommand('systemctl status pigpiod');
+    it('should have gpiozero installed correctly', async function() {
+        const result = await runCommand('python3 -c "import gpiozero; print(gpiozero.__version__)"');
         expect(result.success).to.be.true;
-        expect(result.output).to.match(/Active: active \(running\)/);
+        const version = result.output.trim().split('.');
+        expect(parseInt(version[0])).to.be.at.least(1);
+        expect(parseInt(version[1])).to.be.at.least(6);
+    });
+
+    it('should have pigpio daemon running', async function() {
+        const result = await runCommand('systemctl is-active pigpiod');
+        expect(result.success).to.be.true;
+        expect(result.output.trim()).to.equal('active');
+    });
+
+    it('should have correct GPIO permissions', async function() {
+        const result = await runCommand('ls -l /dev/gpiomem');
+        expect(result.success).to.be.true;
+        // Should be readable/writable by gpio group
+        expect(result.output).to.match(/crw-rw----.*gpio/);
+    });
+
+    it('should have I2C enabled for PCA9685', async function() {
+        const result = await runCommand('raspi-config nonint get_i2c');
+        expect(result.success).to.be.true;
+        expect(result.output.trim()).to.equal('0'); // 0 means enabled
+    });
+
+    it('should have correct GPIO group membership', async function() {
+        const username = process.env.SUDO_USER || process.env.USER;
+        const result = await runCommand(`groups ${username}`);
+        expect(result.success).to.be.true;
+        expect(result.output.toLowerCase()).to.match(/gpio/);
     });
 
     it('should have gpiozero installed and configured', async function() {
