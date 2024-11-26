@@ -1,112 +1,84 @@
-import RPi.GPIO as GPIO
-import sys
+from gpiozero import PWMOutputDevice, DigitalOutputDevice
 import time
+import sys
 import json
 
 def log_message(message):
-    # Instead of printing, we'll add to a list of log messages
-    log_messages.append(message)
+    print(json.dumps(message))
+    sys.stdout.flush()
 
-def validate_inputs(direction, speed, duration):
-    if direction not in ['forward', 'backward']:
-        raise ValueError(f"Invalid direction: {direction}. Must be 'forward' or 'backward'.")
-    
+def control_motor(dir_pin, pwm_pin, direction, speed, duration):
     try:
-        speed = int(speed)
-        if not 0 <= speed <= 100:
-            raise ValueError(f"Invalid speed: {speed}. Must be between 0 and 100.")
-    except ValueError:
-        raise ValueError(f"Invalid speed: {speed}. Must be an integer between 0 and 100.")
-    
-    try:
-        duration = int(duration)
-        if duration <= 0:
-            raise ValueError(f"Invalid duration: {duration}. Must be a positive integer.")
-    except ValueError:
-        raise ValueError(f"Invalid duration: {duration}. Must be a positive integer.")
-
-def setup_gpio(dir_pin, pwm_pin, retries=3):
-    for attempt in range(retries):
-        try:
-            GPIO.setmode(GPIO.BCM)
-            GPIO.setup(dir_pin, GPIO.OUT)
-            GPIO.setup(pwm_pin, GPIO.OUT)
-            log_message({"status": "info", "message": f"GPIO setup completed (attempt {attempt + 1})"})
-            return True
-        except Exception as e:
-            log_message({"status": "error", "message": f"GPIO setup failed (attempt {attempt + 1}): {str(e)}"})
-            if attempt == retries - 1:
-                raise
-    return False
-
-def control_motor(direction, speed, duration, dir_pin, pwm_pin):
-    log_message({"status": "info", "message": f"Controlling motor: direction={direction}, speed={speed}, duration={duration}, dir_pin={dir_pin}, pwm_pin={pwm_pin}"})
-
-    pwm = None
-    gpio_setup = False
-    try:
-        gpio_setup = setup_gpio(dir_pin, pwm_pin)
-        if not gpio_setup:
-            raise Exception("Failed to set up GPIO")
+        # Create motor control objects
+        dir_control = DigitalOutputDevice(dir_pin)
+        pwm_control = PWMOutputDevice(pwm_pin, frequency=100)
         
-        GPIO.output(dir_pin, GPIO.HIGH if direction == 'forward' else GPIO.LOW)
-        pwm = GPIO.PWM(pwm_pin, 100)  # Use a default frequency of 100 Hz
-        pwm.start(0)
-        log_message({"status": "info", "message": f"PWM started with initial duty cycle 0"})
+        # Set direction
+        dir_control.value = 1 if direction == 'forward' else 0
         
-        pwm.ChangeDutyCycle(speed)
-        log_message({"status": "info", "message": f"Changed duty cycle to {speed}"})
+        # Set speed (0 to 1)
+        speed_value = float(speed) / 100.0
+        pwm_control.value = speed_value
         
-        time.sleep(duration / 1000)  # Convert duration to seconds
-        log_message({"status": "info", "message": f"Motor ran for {duration} ms"})
+        log_message({
+            "status": "success",
+            "message": f"Motor started: direction={direction}, speed={speed}%"
+        })
         
-        pwm.ChangeDutyCycle(0)
-        log_message({"status": "info", "message": "Motor stopped (duty cycle set to 0)"})
+        # Run for specified duration
+        time.sleep(float(duration))
         
-        return {"success": True, "message": "Motor control successful"}
+        # Stop motor
+        pwm_control.value = 0
+        
+        log_message({
+            "status": "success",
+            "message": "Motor stopped"
+        })
+        
     except Exception as e:
-        error_message = f"Error controlling motor: {str(e)}"
-        log_message({"status": "error", "message": error_message})
-        return {"success": False, "error": error_message}
+        log_message({
+            "status": "error",
+            "message": str(e)
+        })
+        raise
     finally:
-        if pwm:
-            pwm.stop()
-            log_message({"status": "info", "message": "PWM stopped"})
-        if gpio_setup:
-            GPIO.cleanup([dir_pin, pwm_pin])
-            log_message({"status": "info", "message": "GPIO cleanup completed"})
+        # gpiozero handles cleanup automatically
+        pass
 
 if __name__ == "__main__":
-    log_messages = []
-    
     if len(sys.argv) != 6:
-        error_message = "Incorrect number of arguments. Usage: python motor_control.py <direction> <speed> <duration> <dir_pin> <pwm_pin>"
-        log_message({"status": "error", "message": error_message})
-        print(json.dumps({"success": False, "error": error_message, "logs": log_messages}))
+        log_message({
+            "status": "error",
+            "message": "Usage: python motor_control.py <dir_pin> <pwm_pin> <direction> <speed> <duration>"
+        })
         sys.exit(1)
 
-    direction = sys.argv[1]
-    speed = sys.argv[2]
-    duration = sys.argv[3]
-    dir_pin = int(sys.argv[4])
-    pwm_pin = int(sys.argv[5])
-
-    gpio_setup = False
     try:
-        validate_inputs(direction, speed, duration)
-        speed = int(speed)
-        duration = int(duration)
-        
-        result = control_motor(direction, speed, duration, dir_pin, pwm_pin)
-        log_message({"status": "info", "message": "Motor control execution completed"})
-    except ValueError as e:
-        error_message = f"Input validation error: {str(e)}"
-        log_message({"status": "error", "message": error_message})
-        result = {"success": False, "error": error_message}
-    except Exception as e:
-        error_message = f"Unexpected error: {str(e)}"
-        log_message({"status": "error", "message": error_message})
-        result = {"success": False, "error": error_message}
+        dir_pin = int(sys.argv[1])
+        pwm_pin = int(sys.argv[2])
+        direction = sys.argv[3]
+        speed = float(sys.argv[4])
+        duration = float(sys.argv[5])
 
-    # Print a single JSON object containing both the result and logs
-    print(json.dumps({"result": result, "logs": log_messages}))
+        if direction not in ['forward', 'reverse']:
+            raise ValueError("Direction must be 'forward' or 'reverse'")
+        if not (0 <= speed <= 100):
+            raise ValueError("Speed must be between 0 and 100")
+        if duration <= 0:
+            raise ValueError("Duration must be positive")
+
+        control_motor(dir_pin, pwm_pin, direction, speed, duration)
+
+    except ValueError as e:
+        log_message({
+            "status": "error",
+            "message": str(e)
+        })
+        sys.exit(1)
+    except Exception as e:
+        log_message({
+            "status": "error",
+            "message": f"Unexpected error: {str(e)}"
+        })
+        sys.exit(1)

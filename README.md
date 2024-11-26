@@ -32,23 +32,23 @@ The tests will verify:
 ### Understanding Test Results
 
 The test output will show:
-- ✓ Success: Component is properly installed and configured
-- ✗ Failure: Component needs attention (check error message)
+- Success: Component is properly installed and configured
+- Failure: Component needs attention (check error message)
 
 Example successful output:
 ```bash
   RPI Dependencies Check
-    ✓ should have I2C working
-    ✓ should have camera available
-    ✓ should have audio devices configured
-    ✓ should have audio volume set correctly
-    ✓ should have ffmpeg installed with required codecs
-    ✓ should have MP3 playback capability
-    ✓ should have correct GPU memory allocation
-    ✓ should have correct permissions for video devices
-    ✓ should have I2C device node available
-    ✓ should have correct user groups configured
-    ✓ should have correct GPU configuration in boot config
+    should have I2C working
+    should have camera available
+    should have audio devices configured
+    should have audio volume set correctly
+    should have ffmpeg installed with required codecs
+    should have MP3 playback capability
+    should have correct GPU memory allocation
+    should have correct permissions for video devices
+    should have I2C device node available
+    should have correct user groups configured
+    should have correct GPU configuration in boot config
 
   11 passing (3s)
 ```
@@ -95,4 +95,39 @@ groups
 sudo usermod -a -G video,i2c,gpio,audio $USER
 ```
 
+## GPIO Control System
+
+The MonsterBox project uses modern GPIO libraries for hardware control:
+
+- Primary GPIO Library: `gpiozero` - Provides high-level interfaces for GPIO control
+- PWM Support: `pigpio` - Offers advanced PWM capabilities when needed
+- Hardware Support: Compatible with Raspberry Pi 3, 4, and 5
+
+### Key Features
+
+- Standardized GPIO control across all components
+- Robust error handling and status reporting
+- Flexible PWM and servo control
+- JSON-formatted responses for all operations
+
+### Hardware Components
+
+- Sensors: Digital and analog input processing
+- Motors: PWM-based speed control
+- Servos: Precise angular position control
+- Lights: On/off and PWM brightness control
+- LEDs: Advanced PWM effects
+- Linear Actuators: Position and speed control
+
+### Setup
+
+1. Install required packages:
+```bash
+pip install -r requirements.txt
+```
+2. Enable the pigpio daemon (for advanced PWM):
+```bash
+sudo systemctl enable pigpiod
+sudo systemctl start pigpiod
+```
 [Rest of the previous README content remains the same...]

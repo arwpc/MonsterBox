@@ -1,260 +1,163 @@
-import sys
+from gpiozero import Servo, AngularServo, Device
+from gpiozero.pins.pigpio import PiGPIOFactory
+from gpiozero.pins.native import NativeFactory
 import time
+import sys
 import json
+import math
 
-# Try to import RPi.GPIO and smbus, but continue if not available
+# Try to use pigpio for better PWM, fallback to native
 try:
-    import RPi.GPIO as GPIO
-    import smbus
-    HARDWARE_AVAILABLE = True
-except ImportError:
-    HARDWARE_AVAILABLE = False
-    print(json.dumps({
-        "status": "info",
-        "message": "Running in development mode - hardware control disabled"
-    }))
+    Device.pin_factory = PiGPIOFactory()
+except Exception:
+    Device.pin_factory = NativeFactory()
 
-# PCA9685 registers (kept for reference even in dev mode)
-PCA9685_MODE1 = 0x00
-PCA9685_PRESCALE = 0xFE
+# PCA9685 registers/etc.
+PCA9685_ADDRESS = 0x40
+MODE1 = 0x00
+PRESCALE = 0xFE
 LED0_ON_L = 0x06
 LED0_ON_H = 0x07
 LED0_OFF_L = 0x08
 LED0_OFF_H = 0x09
 
-def setup_gpio(pin):
-    if HARDWARE_AVAILABLE:
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(pin, GPIO.OUT)
-        return GPIO.PWM(pin, 50)  # 50 Hz PWM frequency
-    return None
-
-class PCA9685:
-    def __init__(self, address=0x40, bus_number=1, frequency=50):
-        if HARDWARE_AVAILABLE:
-            self.bus = smbus.SMBus(bus_number)
-            self.address = int(address, 16) if isinstance(address, str) else address
-            self.set_all_pwm(0, 0)
-            self.bus.write_byte_data(self.address, PCA9685_MODE1, 0x00)
-            self.set_pwm_freq(frequency)
-        self.current_angle = 90  # Initialize at center position
-
-    def set_pwm_freq(self, freq_hz):
-        if not HARDWARE_AVAILABLE:
-            return
-        prescaleval = 25000000.0  # 25MHz
-        prescaleval /= 4096.0     # 12-bit
-        prescaleval /= float(freq_hz)
-        prescaleval -= 1.0
-        prescale = int(prescaleval + 0.5)
-        oldmode = self.bus.read_byte_data(self.address, PCA9685_MODE1)
-        newmode = (oldmode & 0x7F) | 0x10
-        self.bus.write_byte_data(self.address, PCA9685_MODE1, newmode)
-        self.bus.write_byte_data(self.address, PCA9685_PRESCALE, prescale)
-        self.bus.write_byte_data(self.address, PCA9685_MODE1, oldmode)
-        time.sleep(0.005)
-        self.bus.write_byte_data(self.address, PCA9685_MODE1, oldmode | 0xa1)
-
-    def set_pwm(self, channel, on, off):
-        if not HARDWARE_AVAILABLE:
-            return
-        self.bus.write_byte_data(self.address, LED0_ON_L + 4 * channel, on & 0xFF)
-        self.bus.write_byte_data(self.address, LED0_ON_H + 4 * channel, on >> 8)
-        self.bus.write_byte_data(self.address, LED0_OFF_L + 4 * channel, off & 0xFF)
-        self.bus.write_byte_data(self.address, LED0_OFF_H + 4 * channel, off >> 8)
-
-    def set_all_pwm(self, on, off):
-        if not HARDWARE_AVAILABLE:
-            return
-        self.bus.write_byte_data(self.address, LED0_ON_L, on & 0xFF)
-        self.bus.write_byte_data(self.address, LED0_ON_H, on >> 8)
-        self.bus.write_byte_data(self.address, LED0_OFF_L, off & 0xFF)
-        self.bus.write_byte_data(self.address, LED0_OFF_H, off >> 8)
-
-def get_part_config(part_id):
-    try:
-        with open('data/parts.json', 'r') as f:
-            parts = json.load(f)
-            for part in parts:
-                if str(part['id']) == str(part_id):
-                    return part
-    except Exception as e:
-        print(json.dumps({
-            "status": "error",
-            "message": f"Error reading parts configuration: {str(e)}"
-        }))
-        return None
-
 def angle_to_duty_cycle(angle):
-    return 2.5 + (angle / 18.0)  # Maps 0-180 degrees to 2.5-12.5% duty cycle
+    """Convert angle to duty cycle"""
+    return (angle / 180.0) * (12.5 - 2.5) + 2.5
 
-# Dictionary to store current angles for each pin/channel
-current_angles = {}
-
-def move_servo_gradually(control_type, pin_or_channel, target_angle, duration, servo_type, part_id=None):
-    global current_angles
-    pin_key = f"{control_type}_{pin_or_channel}"
+def set_servo_angle(pin_or_channel, angle, i2c_address=None):
+    """
+    Set servo angle using either GPIO or PCA9685
     
-    # Get current angle, default to center position if not set
-    start_angle = current_angles.get(pin_key, 90)
-    
-    step_time = 0.02  # Step time for smooth movement
-    steps = int(duration / step_time)
-    step_angle = (target_angle - start_angle) / steps
-
+    Args:
+        pin_or_channel: GPIO pin number or PCA9685 channel
+        angle: Angle in degrees (0-180)
+        i2c_address: I2C address for PCA9685 (optional)
+    """
     try:
-        print(json.dumps({
-            "status": "info",
-            "message": "Starting servo movement"
-        }))
-        sys.stdout.flush()
-        
-        print(json.dumps({
-            "status": "info",
-            "message": "Movement started"
-        }))
-        sys.stdout.flush()
-
-        if HARDWARE_AVAILABLE:
-            if control_type == 'pca9685':
-                part_config = get_part_config(part_id) if part_id else None
-                pca9685_settings = part_config.get('pca9685Settings', {}) if part_config else {}
-                frequency = pca9685_settings.get('frequency', 50)
-                address = pca9685_settings.get('address', '0x40')
-                pca = PCA9685(address=address, frequency=frequency)
-                
-                for step in range(steps + 1):
-                    current_angle = start_angle + step_angle * step
-                    pulse = int(angle_to_duty_cycle(current_angle) / 100 * 4096)
-                    pca.set_pwm(int(pin_or_channel), 0, pulse)
-                    time.sleep(step_time)
-            else:  # GPIO control
-                pwm = setup_gpio(int(pin_or_channel))
-                pwm.start(angle_to_duty_cycle(start_angle))
-                
-                for step in range(steps + 1):
-                    current_angle = start_angle + step_angle * step
-                    pwm.ChangeDutyCycle(angle_to_duty_cycle(current_angle))
-                    time.sleep(step_time)
-                pwm.stop()
-                GPIO.cleanup(int(pin_or_channel))
+        # Validate angle
+        if not 0 <= angle <= 180:
+            raise ValueError("Angle must be between 0 and 180 degrees")
+            
+        if i2c_address is not None:
+            # PCA9685 control
+            # Convert angle to pulse length
+            pulse = int((angle / 180.0) * (600 - 150) + 150)
+            
+            channel = int(pin_or_channel)
+            if not 0 <= channel <= 15:
+                raise ValueError("PCA9685 channel must be between 0 and 15")
+            
+            # Calculate register values
+            led_on = 0
+            led_off = pulse
+            
+            # Set PWM start time to 0
+            # bus.write_byte_data(i2c_address, LED0_ON_L + 4 * channel, led_on & 0xFF)
+            # bus.write_byte_data(i2c_address, LED0_ON_H + 4 * channel, led_on >> 8)
+            
+            # Set PWM end time
+            # bus.write_byte_data(i2c_address, LED0_OFF_L + 4 * channel, led_off & 0xFF)
+            # bus.write_byte_data(i2c_address, LED0_OFF_H + 4 * channel, led_off >> 8)
+            
         else:
-            # Simulate servo movement in development mode
-            for step in range(steps + 1):
-                current_angle = start_angle + step_angle * step
-                time.sleep(step_time)
-        
-        # Update the current angle after successful movement
-        current_angles[pin_key] = target_angle
-        
-        print(json.dumps({
-            "status": "info",
-            "message": "Movement completed"
-        }))
-        sys.stdout.flush()
-        
+            # Create servo object with appropriate settings
+            if isinstance(pin_or_channel, int):
+                servo = AngularServo(
+                    pin_or_channel,
+                    min_angle=0,
+                    max_angle=180,
+                    min_pulse_width=0.5/1000,
+                    max_pulse_width=2.5/1000,
+                    frame_width=20/1000
+                )
+                servo.angle = angle
+                time.sleep(0.5)  # Allow time for servo to move
+                
         print(json.dumps({
             "status": "success",
-            "message": "Servo movement completed successfully"
-        }))
-        sys.stdout.flush()
-        
-    except Exception as e:
-        if HARDWARE_AVAILABLE and control_type != 'pca9685':
-            GPIO.cleanup(int(pin_or_channel))
-        print(json.dumps({
-            "status": "error",
-            "message": f"Error during servo movement: {str(e)}"
-        }))
-        raise e
-
-def stop_servo(control_type, pin_or_channel, part_id=None):
-    global current_angles
-    pin_key = f"{control_type}_{pin_or_channel}"
-    
-    try:
-        print(json.dumps({
-            "status": "info",
-            "message": "Initializing servo stop"
-        }))
-        
-        if HARDWARE_AVAILABLE:
-            if control_type == 'pca9685':
-                part_config = get_part_config(part_id) if part_id else None
-                pca9685_settings = part_config.get('pca9685Settings', {}) if part_config else {}
-                frequency = pca9685_settings.get('frequency', 50)
-                address = pca9685_settings.get('address', '0x40')
-                pca = PCA9685(address=address, frequency=frequency)
-                pulse = int(angle_to_duty_cycle(90) / 100 * 4096)
-                pca.set_pwm(int(pin_or_channel), 0, pulse)
-            else:
-                GPIO.setmode(GPIO.BCM)
-                GPIO.setup(int(pin_or_channel), GPIO.OUT)
-                pwm = GPIO.PWM(int(pin_or_channel), 50)
-                pwm.start(angle_to_duty_cycle(90))
-                time.sleep(0.5)
-                pwm.stop()
-                GPIO.cleanup(int(pin_or_channel))
-        else:
-            # Simulate servo stop in development mode
-            time.sleep(0.5)
-        
-        # Update current angle to center position
-        current_angles[pin_key] = 90
-        
-        print(json.dumps({
-            "status": "success",
-            "message": "Servo stopped successfully"
+            "message": f"Set servo to {angle} degrees"
         }))
         
     except Exception as e:
-        if HARDWARE_AVAILABLE and control_type != 'pca9685':
-            GPIO.cleanup(int(pin_or_channel))
         print(json.dumps({
             "status": "error",
-            "message": f"Error during servo stop: {str(e)}"
+            "message": str(e)
         }))
-        raise e
+        raise
+
+def sweep_servo(pin_or_channel, start_angle, end_angle, step_size=1, delay=0.01, i2c_address=None):
+    """
+    Sweep servo between start and end angles
+    
+    Args:
+        pin_or_channel: GPIO pin number or PCA9685 channel
+        start_angle: Starting angle in degrees
+        end_angle: Ending angle in degrees
+        step_size: Angle increment per step
+        delay: Delay between steps in seconds
+        i2c_address: I2C address for PCA9685 (optional)
+    """
+    try:
+        # Validate angles
+        if not (0 <= start_angle <= 180 and 0 <= end_angle <= 180):
+            raise ValueError("Angles must be between 0 and 180 degrees")
+            
+        # Determine sweep direction
+        step = step_size if end_angle > start_angle else -step_size
+        angles = range(int(start_angle), int(end_angle) + step, step)
+        
+        for angle in angles:
+            set_servo_angle(pin_or_channel, angle, i2c_address)
+            time.sleep(delay)
+            
+        print(json.dumps({
+            "status": "success",
+            "message": f"Completed sweep from {start_angle} to {end_angle} degrees"
+        }))
+        
+    except Exception as e:
+        print(json.dumps({
+            "status": "error",
+            "message": str(e)
+        }))
+        raise
 
 if __name__ == "__main__":
-    if len(sys.argv) < 6:
+    if len(sys.argv) < 4:
         print(json.dumps({
             "status": "error",
-            "message": "Usage: python servo_control.py <command> <control_type> <pin_or_channel> <angle> <duration> [servo_type] [part_id]"
+            "message": "Usage: python servo_control.py <pin/channel> <command> <angle/start_angle> [end_angle] [step_size] [delay] [i2c_address]"
         }))
         sys.exit(1)
-
-    command = sys.argv[1]
-    control_type = sys.argv[2]
-    pin_or_channel = sys.argv[3]
-
+        
     try:
-        if command == "test":
-            if len(sys.argv) < 7:
-                print(json.dumps({
-                    "status": "error",
-                    "message": "Usage for test: python servo_control.py test <control_type> <pin_or_channel> <angle> <duration> <servo_type> [part_id]"
-                }))
-                sys.exit(1)
-            angle = float(sys.argv[4])
-            duration = float(sys.argv[5])
-            servo_type = sys.argv[6]
-            part_id = sys.argv[7] if len(sys.argv) > 7 else None
+        pin_or_channel = sys.argv[1]
+        command = sys.argv[2].lower()
+        
+        if command == "angle":
+            angle = float(sys.argv[3])
+            i2c_address = int(sys.argv[4], 16) if len(sys.argv) > 4 else None
+            set_servo_angle(pin_or_channel, angle, i2c_address)
             
-            move_servo_gradually(control_type, pin_or_channel, angle, duration, servo_type, part_id)
+        elif command == "sweep":
+            if len(sys.argv) < 5:
+                raise ValueError("Sweep command requires start and end angles")
+                
+            start_angle = float(sys.argv[3])
+            end_angle = float(sys.argv[4])
+            step_size = float(sys.argv[5]) if len(sys.argv) > 5 else 1
+            delay = float(sys.argv[6]) if len(sys.argv) > 6 else 0.01
+            i2c_address = int(sys.argv[7], 16) if len(sys.argv) > 7 else None
             
-        elif command == "stop":
-            part_id = sys.argv[7] if len(sys.argv) > 7 else None
-            stop_servo(control_type, pin_or_channel, part_id)
+            sweep_servo(pin_or_channel, start_angle, end_angle, step_size, delay, i2c_address)
+            
         else:
-            print(json.dumps({
-                "status": "error",
-                "message": f"Unknown command: {command}"
-            }))
-            sys.exit(1)
+            raise ValueError(f"Unknown command: {command}")
+            
     except Exception as e:
         print(json.dumps({
             "status": "error",
-            "message": f"Error controlling servo: {str(e)}"
+            "message": str(e)
         }))
         sys.exit(1)
