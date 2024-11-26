@@ -135,4 +135,19 @@ describe('RPI Dependencies Check', function() {
         expect(result.output).to.match(/start_x=1/);
         expect(result.output).to.match(/dtparam=i2c_arm=on/);
     });
+
+    it('should have pigpio daemon running', async function() {
+        const result = await runCommand('systemctl status pigpiod');
+        expect(result.success).to.be.true;
+        expect(result.output).to.match(/Active: active \(running\)/);
+    });
+
+    it('should have gpiozero installed and configured', async function() {
+        const result = await runCommand('python3 -c "import gpiozero; print(gpiozero.__version__)"');
+        expect(result.success).to.be.true;
+        // Version should be at least 1.6.2
+        const version = result.output.trim().split('.');
+        expect(parseInt(version[0])).to.be.at.least(1);
+        expect(parseInt(version[1])).to.be.at.least(6);
+    });
 });

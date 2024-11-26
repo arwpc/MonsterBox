@@ -1,60 +1,70 @@
-import RPi.GPIO as GPIO
+from gpiozero import PWMLED
 import time
 import sys
+import json
 
-def setup_gpio():
-    GPIO.setmode(GPIO.BCM)
-    GPIO.setwarnings(False)
-
-def cleanup_gpio():
-    GPIO.cleanup()
-
-def control_light(gpio_pin, state, duration, brightness=None):
-    setup_gpio()
-    GPIO.setup(gpio_pin, GPIO.OUT)
-
+def control_led(pin, brightness=100, duration=None):
+    """
+    Control an LED with PWM brightness
+    
+    Args:
+        pin: GPIO pin number
+        brightness: brightness level (0-100)
+        duration: duration in milliseconds (optional)
+    """
     try:
-        if brightness is not None:
-            pwm = GPIO.PWM(gpio_pin, 100)  # 100 Hz frequency
-            pwm.start(0)
-            if state.lower() == 'on':
-                pwm.ChangeDutyCycle(int(brightness))
-                print(f"LED on GPIO pin {gpio_pin} is ON with brightness {brightness}%")
-            else:
-                pwm.ChangeDutyCycle(0)
-                print(f"LED on GPIO pin {gpio_pin} is OFF")
-        else:
-            if state.lower() == 'on':
-                GPIO.output(gpio_pin, GPIO.HIGH)
-                print(f"Light on GPIO pin {gpio_pin} is ON")
-            elif state.lower() == 'off':
-                GPIO.output(gpio_pin, GPIO.LOW)
-                print(f"Light on GPIO pin {gpio_pin} is OFF")
-            else:
-                print("Invalid state. Use 'on' or 'off'.")
-                return
-
-        time.sleep(float(duration) / 1000)  # Convert duration to seconds
-    finally:
-        if brightness is not None:
-            pwm.stop()
-        cleanup_gpio()
+        # Convert brightness to 0-1 range
+        brightness_value = max(0, min(100, brightness)) / 100.0
+        
+        # Initialize LED with PWM
+        led = PWMLED(pin)
+        
+        # Set brightness
+        led.value = brightness_value
+        print(json.dumps({
+            "status": "success",
+            "message": f"LED on pin {pin} set to {brightness}% brightness"
+        }))
+        
+        # If duration specified, wait then turn off
+        if duration is not None:
+            time.sleep(duration / 1000.0)  # Convert ms to seconds
+            led.off()
+            print(json.dumps({
+                "status": "success",
+                "message": f"LED on pin {pin} turned off after {duration}ms"
+            }))
+            
+    except Exception as e:
+        print(json.dumps({
+            "status": "error",
+            "message": str(e)
+        }))
+        sys.exit(1)
 
 if __name__ == "__main__":
-    if len(sys.argv) < 4 or len(sys.argv) > 5:
-        print("Usage: python light_control.py <gpio_pin> <state> <duration> [brightness]")
+    if len(sys.argv) < 2 or len(sys.argv) > 4:
+        print(json.dumps({
+            "status": "error",
+            "message": "Usage: python led_control.py <pin> [brightness] [duration]"
+        }))
         sys.exit(1)
-
-    gpio_pin = int(sys.argv[1])
-    state = sys.argv[2]
-    duration = int(sys.argv[3])
-    brightness = int(sys.argv[4]) if len(sys.argv) == 5 else None
-
+        
     try:
-        control_light(gpio_pin, state, duration, brightness)
-        print("Light control completed successfully")
-    except Exception as e:
-        print(f"Error: {str(e)}")
+        pin = int(sys.argv[1])
+        brightness = float(sys.argv[2]) if len(sys.argv) > 2 else 100
+        duration = float(sys.argv[3]) if len(sys.argv) > 3 else None
+        
+        if not (0 <= brightness <= 100):
+            raise ValueError("Brightness must be between 0 and 100")
+        if duration is not None and duration < 0:
+            raise ValueError("Duration must be positive")
+            
+        control_led(pin, brightness, duration)
+        
+    except ValueError as e:
+        print(json.dumps({
+            "status": "error",
+            "message": str(e)
+        }))
         sys.exit(1)
-    finally:
-        cleanup_gpio()

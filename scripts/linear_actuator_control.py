@@ -1,6 +1,6 @@
 # File: scripts/linear_actuator_control.py
 
-import RPi.GPIO as GPIO
+from gpiozero import PWMOutputDevice, DigitalOutputDevice
 import time
 import sys
 import json
@@ -17,24 +17,22 @@ def log_debug(message):
 def setup_gpio(dir_pin, pwm_pin):
     try:
         log_info(f"Setting up GPIO: dir_pin={dir_pin}, pwm_pin={pwm_pin}")
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(dir_pin, GPIO.OUT)
-        GPIO.setup(pwm_pin, GPIO.OUT)
-        pwm = GPIO.PWM(pwm_pin, 100)  # 100Hz frequency
+        dir_control = DigitalOutputDevice(dir_pin)
+        pwm_control = PWMOutputDevice(pwm_pin, frequency=100)
         log_info(f"GPIO setup complete. PWM frequency: 100Hz")
         
         # Test GPIO control
         log_info("Testing GPIO control")
-        GPIO.output(dir_pin, GPIO.HIGH)
+        dir_control.value = 1
         time.sleep(0.1)
-        dir_state = GPIO.input(dir_pin)
+        dir_state = dir_control.value
         log_info(f"Direction pin state after setting HIGH: {dir_state}")
-        GPIO.output(dir_pin, GPIO.LOW)
+        dir_control.value = 0
         time.sleep(0.1)
-        dir_state = GPIO.input(dir_pin)
+        dir_state = dir_control.value
         log_info(f"Direction pin state after setting LOW: {dir_state}")
         
-        return pwm
+        return dir_control, pwm_control
     except Exception as e:
         log_error(f"Error setting up GPIO: {str(e)}")
         raise
@@ -50,22 +48,22 @@ def validate_speed(speed):
         raise ValueError("Invalid speed value")
 
 def log_gpio_state(dir_pin, pwm_pin):
-    dir_state = GPIO.input(dir_pin)
-    pwm_state = GPIO.input(pwm_pin)
+    dir_state = DigitalOutputDevice(dir_pin).value
+    pwm_state = PWMOutputDevice(pwm_pin).value
     log_debug(f"GPIO states - Direction pin ({dir_pin}): {'HIGH' if dir_state else 'LOW'}, PWM pin ({pwm_pin}): {'HIGH' if pwm_state else 'LOW'}")
 
 def control_actuator(direction, speed, duration, dir_pin, pwm_pin, max_extension, max_retraction):
-    pwm = None
+    dir_control, pwm_control = None, None
     try:
-        pwm = setup_gpio(dir_pin, pwm_pin)
+        dir_control, pwm_control = setup_gpio(dir_pin, pwm_pin)
         speed_float = validate_speed(speed)
         
         # Set direction
         if direction == 'forward':
-            GPIO.output(dir_pin, GPIO.LOW)
+            dir_control.value = 0
             log_info(f"Set direction pin ({dir_pin}) to LOW (forward)")
         else:
-            GPIO.output(dir_pin, GPIO.HIGH)
+            dir_control.value = 1
             log_info(f"Set direction pin ({dir_pin}) to HIGH (backward)")
         
         time.sleep(0.1)  # Short delay to ensure direction is set
@@ -76,12 +74,12 @@ def control_actuator(direction, speed, duration, dir_pin, pwm_pin, max_extension
         
         log_info(f"Moving actuator {direction} at speed {speed_float}% for {actual_duration}ms")
         
-        pwm.start(speed_float)
+        pwm_control.value = speed_float / 100.0
         log_gpio_state(dir_pin, pwm_pin)
         
         time.sleep(actual_duration / 1000)
         
-        pwm.stop()
+        pwm_control.value = 0
         log_gpio_state(dir_pin, pwm_pin)
         
         return True  # Indicate successful completion
@@ -89,9 +87,10 @@ def control_actuator(direction, speed, duration, dir_pin, pwm_pin, max_extension
         log_error(f"Error during actuator control: {str(e)}")
         return False  # Indicate failure
     finally:
-        if pwm:
-            pwm.stop()
-        GPIO.cleanup([dir_pin, pwm_pin])
+        if dir_control:
+            dir_control.close()
+        if pwm_control:
+            pwm_control.close()
         log_info("GPIO cleanup completed")
 
 if __name__ == "__main__":
