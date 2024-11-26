@@ -6,6 +6,14 @@ const app = require('../app');
 chai.use(chaiHttp);
 chai.should();
 
+// Configure reporter
+if (process.env.NODE_ENV === 'test') {
+    const CleanReporter = require('./cleanReporter');
+    if (typeof Mocha !== 'undefined' && Mocha.reporters) {
+        Mocha.reporters.Clean = CleanReporter;
+    }
+}
+
 // Add custom assertion for version strings
 chai.Assertion.addMethod('validVersion', function() {
     const obj = this._obj;
@@ -19,14 +27,14 @@ chai.Assertion.addMethod('validVersion', function() {
 });
 
 // Add custom assertion for device paths
-chai.Assertion.addMethod('devicePath', function() {
+chai.Assertion.addMethod('validDevicePath', function() {
     const obj = this._obj;
-    const deviceRegex = /\/dev\/(video\d+|i2c-\d+|snd.*)/;
+    const pathRegex = /^\/dev\/(tty(USB|ACM|AMA)\d+|i2c-\d+)$/;
     this.assert(
-        deviceRegex.test(obj),
+        pathRegex.test(obj),
         'expected #{this} to be a valid device path',
         'expected #{this} to not be a valid device path',
-        '/dev/video* or /dev/i2c-* or /dev/snd*'
+        '/dev/ttyXXXn or /dev/i2c-n format'
     );
 });
 
