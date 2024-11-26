@@ -20,8 +20,21 @@ describe('GPIO Hardware Tests', function() {
 
     async function isPinAvailable(pin) {
         try {
-            const result = await execAsync(`gpio readall | grep "GPIO ${pin}"`);
-            return !result.stdout.includes('IN') && !result.stdout.includes('OUT');
+            // Use Python's gpiozero to check pin status
+            const checkScript = `
+                from gpiozero import Device
+                from gpiozero.pins.mock import MockFactory
+                Device.pin_factory = MockFactory() if Device.pin_factory is None else Device.pin_factory
+                try:
+                    # Try to reserve the pin
+                    Device.pin_factory.reserve_pin(${pin})
+                    print('available')
+                    Device.pin_factory.release_pin(${pin})
+                except:
+                    print('unavailable')
+            `;
+            const result = await execAsync(`python3 -c "${checkScript}"`);
+            return result.stdout.trim() === 'available';
         } catch (error) {
             console.warn(`Warning: Could not check pin ${pin} status: ${error.message}`);
             return true; // Assume available if we can't check
