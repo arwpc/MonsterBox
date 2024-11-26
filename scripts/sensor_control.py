@@ -1,4 +1,5 @@
-from gpiozero import DigitalInputDevice
+sudo apt-get update
+sudo apt-get install -y python3-gpiozero python3-pigpio pigpiofrom gpiozero import DigitalInputDevice
 import json
 import sys
 import signal

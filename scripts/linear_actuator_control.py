@@ -14,9 +14,44 @@ def log_error(message):
 def log_debug(message):
     print(json.dumps({"level": "debug", "message": message}), file=sys.stderr, flush=True)
 
+def validate_gpio_pins(dir_pin, pwm_pin):
+    """Validate GPIO pin numbers are within valid range."""
+    try:
+        dir_pin_int = int(dir_pin)
+        pwm_pin_int = int(pwm_pin)
+        if not (0 <= dir_pin_int <= 27 and 0 <= pwm_pin_int <= 27):
+            raise ValueError(f"GPIO pins must be between 0 and 27. Got dir_pin={dir_pin_int}, pwm_pin={pwm_pin_int}")
+        return dir_pin_int, pwm_pin_int
+    except ValueError as e:
+        raise ValueError(f"Invalid GPIO pin numbers: {str(e)}")
+
+def validate_direction(direction):
+    """Validate direction input."""
+    if direction.lower() not in ['forward', 'backward']:
+        raise ValueError(f"Direction must be 'forward' or 'backward'. Got '{direction}'")
+    return direction.lower()
+
 def setup_gpio(dir_pin, pwm_pin):
     try:
+        # Validate GPIO pins first
+        dir_pin, pwm_pin = validate_gpio_pins(dir_pin, pwm_pin)
+        
         log_info(f"Setting up GPIO: dir_pin={dir_pin}, pwm_pin={pwm_pin}")
+        
+        # Check if pins are already in use
+        try:
+            test_dir = DigitalOutputDevice(dir_pin)
+            test_dir.close()
+        except Exception as e:
+            raise RuntimeError(f"Direction pin {dir_pin} is already in use or inaccessible: {str(e)}")
+            
+        try:
+            test_pwm = PWMOutputDevice(pwm_pin)
+            test_pwm.close()
+        except Exception as e:
+            raise RuntimeError(f"PWM pin {pwm_pin} is already in use or inaccessible: {str(e)}")
+        
+        # Now set up the actual control objects
         dir_control = DigitalOutputDevice(dir_pin)
         pwm_control = PWMOutputDevice(pwm_pin, frequency=100)
         log_info(f"GPIO setup complete. PWM frequency: 100Hz")
@@ -26,10 +61,15 @@ def setup_gpio(dir_pin, pwm_pin):
         dir_control.value = 1
         time.sleep(0.1)
         dir_state = dir_control.value
+        if dir_state != 1:
+            raise RuntimeError(f"Failed to set direction pin HIGH. Expected 1, got {dir_state}")
         log_info(f"Direction pin state after setting HIGH: {dir_state}")
+        
         dir_control.value = 0
         time.sleep(0.1)
         dir_state = dir_control.value
+        if dir_state != 0:
+            raise RuntimeError(f"Failed to set direction pin LOW. Expected 0, got {dir_state}")
         log_info(f"Direction pin state after setting LOW: {dir_state}")
         
         return dir_control, pwm_control
@@ -55,8 +95,20 @@ def log_gpio_state(dir_pin, pwm_pin):
 def control_actuator(direction, speed, duration, dir_pin, pwm_pin, max_extension, max_retraction):
     dir_control, pwm_control = None, None
     try:
-        dir_control, pwm_control = setup_gpio(dir_pin, pwm_pin)
+        # Validate inputs first
+        direction = validate_direction(direction)
         speed_float = validate_speed(speed)
+        duration_int = int(duration)
+        max_extension_int = int(max_extension)
+        max_retraction_int = int(max_retraction)
+        
+        if duration_int <= 0:
+            raise ValueError(f"Duration must be positive. Got {duration_int}")
+        if max_extension_int <= 0 or max_retraction_int <= 0:
+            raise ValueError(f"Max extension/retraction must be positive. Got extension={max_extension_int}, retraction={max_retraction_int}")
+        
+        # Set up GPIO
+        dir_control, pwm_control = setup_gpio(dir_pin, pwm_pin)
         
         # Set direction
         if direction == 'forward':
@@ -70,16 +122,28 @@ def control_actuator(direction, speed, duration, dir_pin, pwm_pin, max_extension
         log_gpio_state(dir_pin, pwm_pin)
         
         # Calculate the actual duration based on direction and limits
-        actual_duration = min(int(duration), int(max_extension if direction == 'forward' else max_retraction))
+        actual_duration = min(duration_int, max_extension_int if direction == 'forward' else max_retraction_int)
+        if actual_duration != duration_int:
+            log_info(f"Duration limited from {duration_int}ms to {actual_duration}ms due to {direction} limit")
         
         log_info(f"Moving actuator {direction} at speed {speed_float}% for {actual_duration}ms")
         
+        # Set PWM value and verify
         pwm_control.value = speed_float / 100.0
+        time.sleep(0.1)  # Short delay to ensure PWM is set
+        actual_pwm = pwm_control.value
+        if abs(actual_pwm - (speed_float / 100.0)) > 0.01:
+            raise RuntimeError(f"Failed to set PWM value. Expected {speed_float/100.0}, got {actual_pwm}")
         log_gpio_state(dir_pin, pwm_pin)
         
+        # Run for specified duration
         time.sleep(actual_duration / 1000)
         
+        # Stop motor
         pwm_control.value = 0
+        time.sleep(0.1)  # Short delay to ensure PWM is stopped
+        if pwm_control.value > 0.01:
+            raise RuntimeError(f"Failed to stop motor. PWM value is {pwm_control.value}")
         log_gpio_state(dir_pin, pwm_pin)
         
         return True  # Indicate successful completion
@@ -103,8 +167,8 @@ if __name__ == "__main__":
         direction = sys.argv[1]
         speed = sys.argv[2]
         duration = sys.argv[3]
-        dir_pin = int(sys.argv[4])
-        pwm_pin = int(sys.argv[5])
+        dir_pin = sys.argv[4]
+        pwm_pin = sys.argv[5]
         max_extension = sys.argv[6]
         max_retraction = sys.argv[7]
 
