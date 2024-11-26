@@ -1,6 +1,6 @@
-# File: scripts/linear_actuator_control.py
+#!/usr/bin/env python3
 
-from gpiozero import PWMOutputDevice, DigitalOutputDevice
+import lgpio
 import time
 import sys
 import json
@@ -31,52 +31,6 @@ def validate_direction(direction):
         raise ValueError(f"Direction must be 'forward' or 'backward'. Got '{direction}'")
     return direction.lower()
 
-def setup_gpio(dir_pin, pwm_pin):
-    try:
-        # Validate GPIO pins first
-        dir_pin, pwm_pin = validate_gpio_pins(dir_pin, pwm_pin)
-        
-        log_info(f"Setting up GPIO: dir_pin={dir_pin}, pwm_pin={pwm_pin}")
-        
-        # Check if pins are already in use
-        try:
-            test_dir = DigitalOutputDevice(dir_pin)
-            test_dir.close()
-        except Exception as e:
-            raise RuntimeError(f"Direction pin {dir_pin} is already in use or inaccessible: {str(e)}")
-            
-        try:
-            test_pwm = PWMOutputDevice(pwm_pin)
-            test_pwm.close()
-        except Exception as e:
-            raise RuntimeError(f"PWM pin {pwm_pin} is already in use or inaccessible: {str(e)}")
-        
-        # Now set up the actual control objects
-        dir_control = DigitalOutputDevice(dir_pin)
-        pwm_control = PWMOutputDevice(pwm_pin, frequency=100)
-        log_info(f"GPIO setup complete. PWM frequency: 100Hz")
-        
-        # Test GPIO control
-        log_info("Testing GPIO control")
-        dir_control.value = 1
-        time.sleep(0.1)
-        dir_state = dir_control.value
-        if dir_state != 1:
-            raise RuntimeError(f"Failed to set direction pin HIGH. Expected 1, got {dir_state}")
-        log_info(f"Direction pin state after setting HIGH: {dir_state}")
-        
-        dir_control.value = 0
-        time.sleep(0.1)
-        dir_state = dir_control.value
-        if dir_state != 0:
-            raise RuntimeError(f"Failed to set direction pin LOW. Expected 0, got {dir_state}")
-        log_info(f"Direction pin state after setting LOW: {dir_state}")
-        
-        return dir_control, pwm_control
-    except Exception as e:
-        log_error(f"Error setting up GPIO: {str(e)}")
-        raise
-
 def validate_speed(speed):
     try:
         speed_float = float(speed)
@@ -87,18 +41,40 @@ def validate_speed(speed):
     except ValueError:
         raise ValueError("Invalid speed value")
 
-def log_gpio_state(dir_pin, pwm_pin):
-    dir_state = DigitalOutputDevice(dir_pin).value
-    pwm_state = PWMOutputDevice(pwm_pin).value
-    log_debug(f"GPIO states - Direction pin ({dir_pin}): {'HIGH' if dir_state else 'LOW'}, PWM pin ({pwm_pin}): {'HIGH' if pwm_state else 'LOW'}")
+def setup_gpio():
+    """Initialize GPIO connection."""
+    try:
+        # Open GPIO chip 0
+        h = lgpio.gpiochip_open(0)
+        log_info("GPIO initialized successfully")
+        return h
+    except Exception as e:
+        log_error(f"Failed to initialize GPIO: {str(e)}")
+        raise
+
+def setup_pins(h, dir_pin, pwm_pin):
+    """Set up GPIO pins for direction and PWM control."""
+    try:
+        # Set up direction pin as output
+        lgpio.gpio_claim_output(h, dir_pin)
+        
+        # Set up PWM pin
+        lgpio.tx_pwm(h, pwm_pin, 100, 0)  # 100Hz frequency, 0% duty cycle
+        
+        log_info(f"Pins configured - dir_pin: {dir_pin}, pwm_pin: {pwm_pin}")
+        return True
+    except Exception as e:
+        log_error(f"Failed to set up pins: {str(e)}")
+        raise
 
 def control_actuator(direction, speed, duration, dir_pin, pwm_pin, max_extension, max_retraction):
-    dir_control, pwm_control = None, None
+    h = None
     try:
-        # Validate inputs first
+        # Validate inputs
         direction = validate_direction(direction)
         speed_float = validate_speed(speed)
         duration_int = int(duration)
+        dir_pin, pwm_pin = validate_gpio_pins(dir_pin, pwm_pin)
         max_extension_int = int(max_extension)
         max_retraction_int = int(max_retraction)
         
@@ -107,55 +83,48 @@ def control_actuator(direction, speed, duration, dir_pin, pwm_pin, max_extension
         if max_extension_int <= 0 or max_retraction_int <= 0:
             raise ValueError(f"Max extension/retraction must be positive. Got extension={max_extension_int}, retraction={max_retraction_int}")
         
-        # Set up GPIO
-        dir_control, pwm_control = setup_gpio(dir_pin, pwm_pin)
+        # Initialize GPIO
+        h = setup_gpio()
         
-        # Set direction
-        if direction == 'forward':
-            dir_control.value = 0
-            log_info(f"Set direction pin ({dir_pin}) to LOW (forward)")
-        else:
-            dir_control.value = 1
-            log_info(f"Set direction pin ({dir_pin}) to HIGH (backward)")
+        # Set up pins
+        setup_pins(h, dir_pin, pwm_pin)
         
-        time.sleep(0.1)  # Short delay to ensure direction is set
-        log_gpio_state(dir_pin, pwm_pin)
-        
-        # Calculate the actual duration based on direction and limits
+        # Calculate actual duration
         actual_duration = min(duration_int, max_extension_int if direction == 'forward' else max_retraction_int)
         if actual_duration != duration_int:
             log_info(f"Duration limited from {duration_int}ms to {actual_duration}ms due to {direction} limit")
         
-        log_info(f"Moving actuator {direction} at speed {speed_float}% for {actual_duration}ms")
+        # Set direction
+        dir_value = 0 if direction == 'forward' else 1
+        lgpio.gpio_write(h, dir_pin, dir_value)
+        log_info(f"Set direction pin ({dir_pin}) to {'LOW' if dir_value == 0 else 'HIGH'} ({direction})")
         
-        # Set PWM value and verify
-        pwm_control.value = speed_float / 100.0
-        time.sleep(0.1)  # Short delay to ensure PWM is set
-        actual_pwm = pwm_control.value
-        if abs(actual_pwm - (speed_float / 100.0)) > 0.01:
-            raise RuntimeError(f"Failed to set PWM value. Expected {speed_float/100.0}, got {actual_pwm}")
-        log_gpio_state(dir_pin, pwm_pin)
+        # Set PWM duty cycle (0-255)
+        duty_cycle = int((speed_float / 100.0) * 255)
+        lgpio.tx_pwm(h, pwm_pin, 100, duty_cycle)  # 100Hz frequency
+        log_info(f"Set PWM duty cycle to {duty_cycle}/255 ({speed_float}%)")
         
-        # Run for specified duration
-        time.sleep(actual_duration / 1000)
+        # Wait for specified duration
+        time.sleep(actual_duration / 1000.0)
         
         # Stop motor
-        pwm_control.value = 0
-        time.sleep(0.1)  # Short delay to ensure PWM is stopped
-        if pwm_control.value > 0.01:
-            raise RuntimeError(f"Failed to stop motor. PWM value is {pwm_control.value}")
-        log_gpio_state(dir_pin, pwm_pin)
+        lgpio.tx_pwm(h, pwm_pin, 100, 0)
+        log_info("Motor stopped")
         
-        return True  # Indicate successful completion
+        return True
     except Exception as e:
         log_error(f"Error during actuator control: {str(e)}")
-        return False  # Indicate failure
+        return False
     finally:
-        if dir_control:
-            dir_control.close()
-        if pwm_control:
-            pwm_control.close()
-        log_info("GPIO cleanup completed")
+        if h is not None:
+            try:
+                # Clean up GPIO
+                lgpio.gpio_write(h, dir_pin, 0)
+                lgpio.tx_pwm(h, pwm_pin, 100, 0)
+                lgpio.gpiochip_close(h)
+                log_info("GPIO cleanup completed")
+            except Exception as e:
+                log_error(f"Error during GPIO cleanup: {str(e)}")
 
 if __name__ == "__main__":
     if len(sys.argv) < 8:
@@ -178,10 +147,11 @@ if __name__ == "__main__":
         if success:
             log_info("Linear actuator control completed successfully")
             print(json.dumps({"success": True}))
+            sys.exit(0)
         else:
             log_error("Linear actuator control failed")
             print(json.dumps({"success": False, "error": "Linear actuator control failed"}))
-        sys.exit(0 if success else 1)
+            sys.exit(1)
     except Exception as e:
         error_msg = f"Error controlling linear actuator: {str(e)}"
         log_error(error_msg)
