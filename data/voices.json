@@ -10,6 +10,7 @@
         "sampleRate": 44100,
         "bitRate": 128,
         "outputFormat": "wav",
+        "channels": 1,
         "languageCode": "en"
       },
       "metadata": {
@@ -19,7 +20,7 @@
         "tags": [],
         "notes": "",
         "created": "2024-10-28T16:24:54.907Z",
-        "lastModified": "2024-10-28T21:37:49.776Z"
+        "lastModified": "2024-11-01T23:47:56.168Z"
       },
       "history": [
         {
@@ -322,6 +323,146 @@
             "sampleRate": 44100,
             "bitRate": 128,
             "outputFormat": "wav",
+            "languageCode": "en"
+          }
+        },
+        {
+          "timestamp": "2024-10-31T22:47:17.580Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": -10,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en"
+          }
+        },
+        {
+          "timestamp": "2024-10-31T22:47:31.163Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": -10,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en"
+          }
+        },
+        {
+          "timestamp": "2024-10-31T23:16:20.675Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": -10,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en"
+          }
+        },
+        {
+          "timestamp": "2024-10-31T23:17:04.366Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": -10,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en"
+          }
+        },
+        {
+          "timestamp": "2024-10-31T23:17:57.954Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": -10,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en"
+          }
+        },
+        {
+          "timestamp": "2024-10-31T23:21:11.364Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": -10,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en"
+          }
+        },
+        {
+          "timestamp": "2024-11-01T00:40:30.876Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": -10,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en"
+          }
+        },
+        {
+          "timestamp": "2024-11-01T00:41:35.204Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": -10,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en"
+          }
+        },
+        {
+          "timestamp": "2024-11-01T23:44:12.555Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": -10,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en"
+          }
+        },
+        {
+          "timestamp": "2024-11-01T23:47:56.168Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": -10,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
             "languageCode": "en"
           }
         }
