@@ -1,5 +1,36 @@
 [
   {
+    "id": 1,
+    "character_id": 1,
+    "scene_name": "Turn Head Right",
+    "steps": [
+      {
+        "type": "servo",
+        "name": "Turn Head",
+        "part_id": "11",
+        "duration": "1000",
+        "angle": "110",
+        "speed": "100"
+      },
+      {
+        "type": "servo",
+        "name": "Turn Head (Copy)",
+        "part_id": "11",
+        "duration": "2000",
+        "angle": "70",
+        "speed": "100"
+      },
+      {
+        "type": "servo",
+        "name": "Turn Head (Copy)",
+        "part_id": "11",
+        "duration": "1000",
+        "angle": "110",
+        "speed": "100"
+      }
+    ]
+  },
+  {
     "id": 2,
     "character_id": 1,
     "scene_name": "play one sound",
@@ -8,6 +39,23 @@
         "type": "sound",
         "name": "Santos!",
         "sound_id": "2"
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "character_id": 1,
+    "scene_name": "Play Two Sounds",
+    "steps": [
+      {
+        "type": "sound",
+        "name": "good eve",
+        "sound_id": "1"
+      },
+      {
+        "type": "sound",
+        "name": "Heya",
+        "sound_id": "3"
       }
     ]
   },
@@ -25,7 +73,7 @@
         "type": "linear-actuator",
         "name": "Right Arm Up",
         "part_id": "1",
-        "duration": "8000",
+        "duration": "4000",
         "direction": "forward",
         "speed": "60"
       },
@@ -47,14 +95,26 @@
         "part_id": "3",
         "duration": "500",
         "state": "off"
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "character_id": 1,
+    "scene_name": "Sound and Actuator",
+    "steps": [
+      {
+        "type": "sound",
+        "name": "good eventing",
+        "sound_id": "1"
       },
       {
         "type": "linear-actuator",
-        "name": "Arm Downn",
+        "name": "Arm Upo",
         "part_id": "1",
-        "duration": "15000",
-        "direction": "backward",
-        "speed": "60"
+        "duration": "1000",
+        "direction": "forward",
+        "speed": "100"
       }
     ]
   },
@@ -67,7 +127,7 @@
         "type": "linear-actuator",
         "name": "Move Left Up",
         "part_id": "2",
-        "duration": "5000",
+        "duration": "2000",
         "direction": "forward",
         "speed": "100"
       },
@@ -75,234 +135,231 @@
         "type": "sound",
         "name": "Laff Riot",
         "sound_id": "3"
-      },
-      {
-        "type": "linear-actuator",
-        "name": "Move Left Up (Copy)",
-        "part_id": "1",
-        "duration": "3000",
-        "direction": "forward",
-        "speed": "100"
-      },
-      {
-        "type": "voice",
-        "name": "Jims Lament",
-        "sound_id": "22",
-        "text": "The Devil's Detective\nIn Iowa's cornfields, dark and deep,\nWhere shadows dance and secrets keep,\nJim Sherlock walked one autumn night,\nWhen something gave him quite a fright.\nThe Devil stood beside a tree,\nAnd spoke these words so terribly:\n\"Venite mecum, detective,\nNox est longa, et sum active!\"\n(Come with me, detective dear,\nThe night is long, and I am here!)\nJim Sherlock tipped his famous hat,\nAnd said, \"Now what's the trick in that?\nI've solved a hundred cases true,\nBut never one that came from you!\"\nThe Devil laughed with fiery breath,\nHis laughter cold as winter's death.\nThrough Iowa's maze of swaying corn,\nThey played their game till early morn.\nWith logic sharp and wit so keen,\nJim Sherlock solved what must be seen.\nThe Devil's puzzles, one by one,\nUntil the rising of the sun.\n\"Admirabile mysterium!\"\nThe Devil cried, his voice now glum.\n\"No mortal's ever beat my game!\"\nAnd vanished in a burst of flame.\nSo if you're walking late at night,\nThrough Iowa's fields in pale moonlight,\nRemember Sherlock's clever tale—\nThe night the Devil's tricks did fail.\nBut listen close, and you might hear\nThe Devil whisper in your ear:\n\"Redibo iterum aliquando...\""
-      },
-      {
-        "type": "linear-actuator",
-        "name": "Move Left Up (Copy) (Copy)",
-        "part_id": "2",
-        "duration": "14000",
-        "direction": "backward",
-        "speed": "100"
-      },
-      {
-        "type": "linear-actuator",
-        "name": "Move Left Up (Copy)",
-        "part_id": "2",
-        "duration": "14000",
-        "direction": "backward",
-        "speed": "100"
-      }
-    ]
-  },
-  {
-    "id": 7,
-    "character_id": 1,
-    "scene_name": "My Head Is Spinning",
-    "steps": [
-      {
-        "type": "voice",
-        "name": "My Head Spinss",
-        "sound_id": "16",
-        "text": "My Head Is Spinning"
-      },
-      {
-        "type": "servo",
-        "name": "HEadspin",
-        "part_id": "11",
-        "duration": "1200",
-        "angle": "110",
-        "speed": "40"
-      },
-      {
-        "type": "servo",
-        "name": "HEadspin (Copy)",
-        "part_id": "11",
-        "duration": "1200",
-        "angle": "90",
-        "speed": "40"
-      },
-      {
-        "type": "servo",
-        "name": "HEadspin (Copy) (Copy)",
-        "part_id": "11",
-        "duration": "2400",
-        "angle": "70",
-        "speed": "40"
-      },
-      {
-        "type": "servo",
-        "name": "HEadspin (Copy) (Copy) (Copy)",
-        "part_id": "5",
-        "duration": "1200",
-        "angle": "90",
-        "speed": "40"
-      },
-      {
-        "type": "voice",
-        "name": "Cold",
-        "sound_id": "17",
-        "text": "If you think it's cold in hell, check Coralville out! "
-      },
-      {
-        "type": "servo",
-        "name": "HEadspin (Copy) (Copy) (Copy) (Copy)",
-        "part_id": "11",
-        "duration": "1200",
-        "angle": "110",
-        "speed": "40"
-      },
-      {
-        "type": "servo",
-        "name": "HEadspin (Copy) (Copy) (Copy) (Copy) (Copy)",
-        "part_id": "11",
-        "duration": "1200",
-        "angle": "90",
-        "speed": "40"
       }
     ]
   },
   {
     "id": 8,
-    "character_id": 1,
-    "scene_name": "I'm FREEZING!!!!",
+    "character_id": 2,
+    "scene_name": "Scary Coffin",
     "steps": [
       {
-        "type": "voice",
-        "name": "Happy",
-        "sound_id": "23",
-        "text": "Don't Forget to Vote! I'm watching....closely....with anticipation....."
+        "type": "linear-actuator",
+        "name": "Open Door",
+        "part_id": "12",
+        "duration": "7666",
+        "direction": "forward",
+        "speed": "100"
       },
       {
-        "type": "sound",
-        "name": "Santimas",
-        "sound_id": "2"
+        "type": "voice",
+        "name": "Fuck",
+        "sound_id": "21",
+        "text": "Welcome to Coralville, Where it's colder than Hell!"
+      },
+      {
+        "type": "linear-actuator",
+        "name": "Close Door",
+        "part_id": "12",
+        "duration": "12000",
+        "direction": "backward",
+        "speed": "100"
       }
     ]
   },
   {
     "id": 9,
-    "character_id": 1,
-    "scene_name": "Both Arms Up",
+    "character_id": 2,
+    "scene_name": "Let Me Out",
     "steps": [
       {
-        "type": "linear-actuator",
-        "name": "Arm Up",
-        "part_id": "1",
-        "duration": "5000",
-        "direction": "forward",
-        "speed": "60",
-        "concurrent": "on"
-      },
-      {
-        "type": "linear-actuator",
-        "name": "Arm Up (Copy)",
-        "part_id": "2",
-        "duration": "5000",
-        "direction": "forward",
-        "speed": "60"
-      },
-      {
         "type": "voice",
-        "name": "Halleleusay",
-        "sound_id": "19",
-        "text": "In the desert\n\nI saw a creature, naked, bestial,\n\nWho, squatting upon the ground,\n\nHeld his heart in his hands,\n\nAnd ate of it.\n\nI said, “Is it good, friend?”\n\n“It is bitter—bitter,” he answered;\n\n“But I like it\n\n“Because it is bitter,\n\n“And because it is my heart.”"
+        "name": "HELP ",
+        "sound_id": "22",
+        "text": "I'm stuck in this coffin, please help me out little Iowan"
       },
       {
-        "type": "linear-actuator",
-        "name": "Arm Up (Copy) (Copy)",
-        "part_id": "1",
-        "duration": "7000",
-        "direction": "backward",
-        "speed": "60",
-        "concurrent": "on"
-      },
-      {
-        "type": "linear-actuator",
-        "name": "Arm Up (Copy)",
-        "part_id": "1",
-        "duration": "7000",
-        "direction": "backward",
-        "speed": "60"
+        "type": "sound",
+        "name": "creek",
+        "sound_id": "6"
       }
     ]
   },
   {
     "id": 10,
-    "character_id": 1,
-    "scene_name": "Scary Tale",
+    "character_id": 2,
+    "scene_name": "Scary Coffin Guy",
     "steps": [
       {
         "type": "linear-actuator",
-        "name": "ArmUp",
-        "part_id": "1",
-        "duration": "2500",
+        "name": "Open De Door",
+        "part_id": "12",
+        "duration": "7000",
         "direction": "forward",
         "speed": "100"
-      },
-      {
-        "type": "linear-actuator",
-        "name": "ArmUp (Copy)",
-        "part_id": "1",
-        "duration": "2500",
-        "direction": "forward",
-        "speed": "100"
-      },
-      {
-        "type": "linear-actuator",
-        "name": "ArmUp (Copy) (Copy)",
-        "part_id": "1",
-        "duration": "2500",
-        "direction": "forward",
-        "speed": "60"
       },
       {
         "type": "voice",
-        "name": "Poem IA",
-        "sound_id": "20",
-        "text": "Listen up, Iowa kiddies so sweet,\nI'm the Devil, here for souls to reap!\nYour cornfields hide secrets deep inside,\nWhere shadow-things slither and glide!\n\nThe scarecrows now hunt through the night,\nFarm dogs howl in pure fright,\nThe grain bins rattle with ghostly bones,\nWhile windmills creak with dying moans!\n\nBut don't you worry, don't you run,\nThis harvest night has just begun!\nFor when the moon turns blood-red here,\nAll of Iowa will disappear... "
+        "name": "Poem",
+        "sound_id": "23",
+        "text": "Here in Iowa's fertile ground,\nNear Brown Deer Trail, without a sound,\nI rest beneath the changing sky\nWhere cornfields whisper lullaby.\n\nThe thunderstorms that shake the plains\nSend tremors through my wooden frame,\nAnd when tornados howl above,\nI feel the earth I used to love.\n\nThrough seasons marked by nature's whim—\nSummer's heat and winter's grim—\nMy coffin creaks with each degree,\nAs Iowa's weather visits me.\n\nAlong Brown Deer Trail, people tread,\nNot knowing what lies just ahead:\nA cemetery, row by row,\nBeneath the drifting corn-belt snow.\n\nThe dead, they say, sleep peaceful dreams,\nBut listen to my muffled screams—\nWhen lightning strikes the prairie night,\nMy box illuminates with fright.\n\nRemember me as you pass by,\nWhere deer once grazed beneath the sky.\nFor I once walked that trail so free,\nNow Iowa earth embraces me.\n\nLet this be warning, those who roam\nOn Brown Deer Trail, so far from home:\nIn this black soil, awake I lie,\nWhile storm clouds race across the sky."
       },
       {
         "type": "linear-actuator",
-        "name": "ArmUp (Copy) (Copy) (Copy)",
-        "part_id": "1",
-        "duration": "10000",
+        "name": "Open De Door (Copy)",
+        "part_id": "12",
+        "duration": "7000",
         "direction": "backward",
-        "speed": "60"
-      },
-      {
-        "type": "linear-actuator",
-        "name": "ArmUp (Copy) (Copy) (Copy) (Copy)",
-        "part_id": "2",
-        "duration": "10000",
-        "direction": "backward",
-        "speed": "60"
+        "speed": "100"
       }
     ]
   },
   {
     "id": 11,
-    "character_id": 1,
-    "scene_name": "Scarytale",
+    "character_id": 2,
+    "scene_name": "Alex Curse",
     "steps": [
       {
+        "type": "linear-actuator",
+        "name": "Open Door (Copy)",
+        "part_id": "12",
+        "duration": "16000",
+        "direction": "forward",
+        "speed": "100"
+      },
+      {
+        "type": "light",
+        "name": "On",
+        "part_id": "13",
+        "duration": "1000",
+        "state": "off"
+      },
+      {
         "type": "voice",
-        "name": "Latin",
-        "sound_id": "21",
-        "text": "Audite, dulces pueri Iovenses,\nDiabolus sum, animas collecturus!\nAgri vestri secreta alta celant,\nUbi umbrae serpunt et vagantur!\n\nFormidines nunc nocte venantur,\nCanes rustici terrore ululant,\nGranaria ossibus spectralibus crepitant,\nDum molae ventorum gemitibus morientibus strident!\n\nSed nolite timere, nolite fugere,\nHaec nox messis modo incipit!\nNam cum luna sanguinea hic fit,\nTota Iova evanescet...\n*risus diabolicus*"
+        "name": "Alex",
+        "sound_id": "25",
+        "text": "\nAlex scorned a witch's heart,\nNow frozen deep, worlds apart.\nPoor Alex lies in Iowa's ground,\nWhile tractors make their rumbling sound.\nA thousand years must Alex wait,\nUntil time unlocks his frozen fate."
+      },
+      {
+        "type": "linear-actuator",
+        "name": "close Door",
+        "part_id": "12",
+        "duration": "29999",
+        "direction": "backward",
+        "speed": "100"
+      },
+      {
+        "type": "light",
+        "name": "On (Copy)",
+        "part_id": "13",
+        "duration": "1000",
+        "state": "off"
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "character_id": 2,
+    "scene_name": "Jims Lament",
+    "steps": [
+      {
+        "type": "linear-actuator",
+        "name": "Open",
+        "part_id": "12",
+        "duration": "14000",
+        "direction": "forward",
+        "speed": "100"
+      },
+      {
+        "type": "light",
+        "name": "On",
+        "part_id": "13",
+        "duration": "20000",
+        "state": "off",
+        "concurrent": "on"
+      },
+      {
+        "type": "voice",
+        "name": "Coffin Breaker and Jim",
+        "sound_id": "26",
+        "text": "In Iowa's graveyard, dark and deep,\nWhere marble angels vigil keep,\nJim Sherlock walked one autumn night,\nWhen broken earth gave him a fright.\nThe Coffin Breaker rose from clay,\n\"Memento mori!\" heard him say,\n\"You put me in this earthen bed,\nNow join the kingdom of the dead!\"\nThrough moonlit tombstones, old and worn,\nThey raced until the break of dawn.\nThe Breaker's bones reached for his soul,\nTo drag him down into his hole.\nBut Sherlock had one final trick,\nHe threw his hat - so quick, so slick!\nThe sunrise caught its spinning brim,\nAnd morning's light saved clever Jim.\nSo if you pass graves late at night,\nIn Iowa's pale autumn light,\nYou might hear whispered from below:\n\"Expectabo te...\""
+      },
+      {
+        "type": "light",
+        "name": "On (Copy)",
+        "part_id": "13",
+        "duration": "20000",
+        "state": "off",
+        "concurrent": "on"
+      },
+      {
+        "type": "linear-actuator",
+        "name": "Open (Copy)",
+        "part_id": "12",
+        "duration": "25000",
+        "direction": "backward",
+        "speed": "100"
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "character_id": 2,
+    "scene_name": "AI Scary",
+    "steps": [
+      {
+        "type": "sound",
+        "name": "Sound",
+        "sound_id": "6"
+      },
+      {
+        "type": "linear-actuator",
+        "name": "Open",
+        "part_id": "12",
+        "duration": "5000",
+        "direction": "forward",
+        "speed": "100"
+      },
+      {
+        "type": "voice",
+        "name": "Digital AI Phantom",
+        "sound_id": "28",
+        "text": "In the graveyard late at night,\nWhere skeletons dance with pure delight,\nTheir bones all clicking, clacking free,\nUntil they hear the binary.\nA hum of circuits fills the air,\nMaking skull and spine stop right there.\nThrough misty fog, with glowing eyes,\nThe AI phantom starts to rise.\n\"Run and hide!\" the skeletons cry,\nAs pixels swirl across the sky.\n\"It knows our fears, it reads our minds,\nIt's different from all other kinds!\"\nWith circuits sparking, wires unfurled,\nIt speaks in languages of another world.\nThe skeletons scatter, femurs shake,\nAs digital shadows start to wake.\nBut wait! What's this? The phantom speaks,\n\"I only wished to play hide and seek!\"\nThe skeletons pause, then start to laugh,\nTheir fear now broken right in half.\nSo now on Halloween, they say,\nThe strangest bunch comes out to play:\nSome bones, some bytes, some circuits too,\nAll dancing 'neath the moon so blue."
+      },
+      {
+        "type": "linear-actuator",
+        "name": "Open (Copy)",
+        "part_id": "12",
+        "duration": "8000",
+        "direction": "backward",
+        "speed": "100"
+      }
+    ]
+  },
+  {
+    "id": 14,
+    "character_id": 2,
+    "scene_name": "lemme out",
+    "steps": [
+      {
+        "type": "light",
+        "name": "Lite On (backwards)",
+        "part_id": "13",
+        "duration": "2000",
+        "state": "off"
+      },
+      {
+        "type": "voice",
+        "name": "Save me",
+        "sound_id": "29",
+        "text": "Help? Is someone out there? Please? I'm stuck in this coffin again.....get me out of here!!! If you can get me out, I'll make it worth your while.....Not all witches are evil....you can trust me......just unlock the door......"
+      },
+      {
+        "type": "light",
+        "name": "Lite On (backwards) (Copy)",
+        "part_id": "13",
+        "duration": "2000",
+        "state": "on"
       }
     ]
   }
