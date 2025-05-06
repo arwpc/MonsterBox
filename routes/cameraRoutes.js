@@ -204,11 +204,16 @@ router.get('/', async (req, res) => {
         const characterId = req.query.characterId || req.session.characterId;
         const settings = await loadCameraSettings();
         const servos = await getServosByCharacter(characterId);
+        const characterService = require('../services/characterService');
+        const characters = await characterService.getAllCharacters();
+        const selectedCharacter = characterId ? await characterService.getCharacterById(characterId) : null;
         res.render('camera', { 
             title: 'Camera Control',
             characterId: characterId || null,
             selectedCamera: settings.selectedCamera,
-            servos: servos
+            servos: servos,
+            characters: characters,
+            selectedCharacter: selectedCharacter
         });
     } catch (error) {
         logger.error('Failed to render camera view', { error: error.message });
