@@ -42,7 +42,6 @@ try {
 
     // Import services
     characterService = require('./services/characterService');
-
 } catch (err) {
     // Log to console and logger if possible
     let logger;
