@@ -139,6 +139,17 @@
 </head>
 <body>
     <div class="camera-container">
+        <div class="controls">
+            <div class="section">
+                <h3>Character</h3>
+                <select id="characterSelect">
+                    <option value="">Select Character...</option>
+                    <% characters.forEach(function(character) { %>
+                        <option value="<%= character.id %>" <% if (selectedCharacter && character.id === selectedCharacter.id) { %>selected<% } %>><%= character.char_name %></option>
+                    <% }); %>
+                </select>
+            </div>
+        </div>
         <div class="camera-view">
             <img id="cameraStream" src="/images/no-stream.jpg" alt="Camera Stream">
             <div id="statusMessage"></div>
@@ -201,6 +212,14 @@
     </div>
 
     <script>
+        document.getElementById('characterSelect').addEventListener('change', function() {
+            const selectedId = this.value;
+            if (selectedId) {
+                window.location.search = '?characterId=' + selectedId;
+            } else {
+                window.location.search = '';
+            }
+        });
         let streamUrl = null;
         let motionDetectionActive = false;
         let headTrackingActive = false;
