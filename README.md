@@ -1,133 +1,68 @@
-# MonsterBox Installation Guide
+# MonsterBox
 
-[Previous content remains the same until the Hardware Requirements section...]
+MonsterBox is a refactored scene builder application designed to manage scenes and steps efficiently. It leverages various hardware components and software libraries to provide a comprehensive solution for scene management.
 
-## Testing the Installation
+## Features
 
-After installation, you can run the automated tests to verify all dependencies are correctly installed and configured:
+- **Scene Management**: Create, modify, and manage scenes and steps.
+- **Hardware Integration**: Supports I2C devices, cameras, audio equipment, and more.
+- **Testing Suite**: Automated tests for verifying hardware and software dependencies.
+- **Web Interface**: User-friendly web interface built with EJS and Express.
 
+## Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/monsterbox.git
+   cd monsterbox
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Set up environment variables by creating a `.env` file. Refer to `.env.example` for required variables.
+
+4. Run the application:
+   ```bash
+   npm start
+   ```
+
+## Testing
+
+Run the following command to execute all tests:
 ```bash
-# Run all tests (including dependency checks)
-sudo npm test
-
-# Run only the RPI dependency checks
-sudo npm test tests/rpi-dependencies.test.js
+npm test
 ```
 
-The tests will verify:
-1. I2C functionality
-2. Camera availability and permissions
-3. Audio device configuration and volume settings
-4. FFmpeg installation and codecs
-5. MP3 playback capability
-6. GPU memory allocation
-7. User permissions and group memberships
+For specific tests, use:
+- **Sound Tests**: `npm run test:sound`
+- **RPI Dependencies**: `npm run test:rpi`
 
-### Test Requirements
+## Directory Structure
 
-- Tests must be run as root/sudo due to hardware access requirements
-- All hardware components should be connected (camera, I2C devices, audio)
-- System should be rebooted after installation before running tests
+- **controllers/**: Contains controllers for handling different aspects of the application.
+- **data/**: JSON files for configuration and data storage.
+- **public/**: Static files including CSS, images, and sounds.
+- **routes/**: Defines API routes for various functionalities.
+- **scripts/**: JavaScript and Python scripts for different operations.
+- **services/**: Service layer for business logic.
+- **tests/**: Test files for ensuring code quality.
+- **views/**: EJS templates for rendering the web interface.
 
-### Understanding Test Results
+## Dependencies
 
-The test output will show:
-- Success: Component is properly installed and configured
-- Failure: Component needs attention (check error message)
+Key dependencies include:
+- `express`: Web framework for Node.js
+- `ejs`: Embedded JavaScript templates
+- `i2c-bus`: I2C access and control
+- `onoff`: GPIO access and control
 
-Example successful output:
-```bash
-  RPI Dependencies Check
-    should have I2C working
-    should have camera available
-    should have audio devices configured
-    should have audio volume set correctly
-    should have ffmpeg installed with required codecs
-    should have MP3 playback capability
-    should have correct GPU memory allocation
-    should have correct permissions for video devices
-    should have I2C device node available
-    should have correct user groups configured
-    should have correct GPU configuration in boot config
+## Contributing
 
-  11 passing (3s)
-```
+Contributions are welcome! Please fork the repository and submit a pull request for any improvements or bug fixes.
 
-### Troubleshooting Failed Tests
+## License
 
-1. I2C Test Failures:
-```bash
-# Check I2C device
-ls -l /dev/i2c*
-# Check I2C configuration
-grep i2c /boot/config.txt
-```
-
-2. Camera Test Failures:
-```bash
-# Check video devices
-ls -l /dev/video*
-# Check camera module
-vcgencmd get_camera
-```
-
-3. Audio Test Failures:
-```bash
-# List audio devices
-aplay -l
-# Check volume controls
-amixer
-```
-
-4. GPU Memory Test Failures:
-```bash
-# Check current GPU memory
-vcgencmd get_mem gpu
-# Verify config.txt
-grep gpu_mem /boot/config.txt
-```
-
-5. Permission Test Failures:
-```bash
-# Check current user groups
-groups
-# Add missing groups
-sudo usermod -a -G video,i2c,gpio,audio $USER
-```
-
-## GPIO Control System
-
-The MonsterBox project uses modern GPIO libraries for hardware control:
-
-- Primary GPIO Library: `gpiozero` - Provides high-level interfaces for GPIO control
-- PWM Support: `pigpio` - Offers advanced PWM capabilities when needed
-- Hardware Support: Compatible with Raspberry Pi 3, 4, and 5
-
-### Key Features
-
-- Standardized GPIO control across all components
-- Robust error handling and status reporting
-- Flexible PWM and servo control
-- JSON-formatted responses for all operations
-
-### Hardware Components
-
-- Sensors: Digital and analog input processing
-- Motors: PWM-based speed control
-- Servos: Precise angular position control
-- Lights: On/off and PWM brightness control
-- LEDs: Advanced PWM effects
-- Linear Actuators: Position and speed control
-
-### Setup
-
-1. Install required packages:
-```bash
-pip install -r requirements.txt
-```
-2. Enable the pigpio daemon (for advanced PWM):
-```bash
-sudo systemctl enable pigpiod
-sudo systemctl start pigpiod
-```
-[Rest of the previous README content remains the same...]
+This project is licensed under the MIT License.
