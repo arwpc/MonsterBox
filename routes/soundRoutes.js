@@ -146,16 +146,30 @@ router.post('/:id/play', async (req, res) => {
     }
 });
 
+const sceneService = require('../services/sceneService');
+
 router.post('/:id/delete', async (req, res) => {
     try {
         const id = parseInt(req.params.id);
         const sound = await soundService.getSoundById(id);
-        if (sound && sound.filename) {
+        if (!sound) {
+            return res.status(404).json({ error: 'Sound not found' });
+        }
+        // Delete the sound file if present
+        if (sound.filename) {
             const filePath = path.join(__dirname, '../public/sounds', sound.filename);
             await fs.unlink(filePath).catch(err => logger.warn(`Failed to delete sound file: ${err.message}`));
         }
         await soundService.deleteSound(id);
-        res.status(200).json({ message: 'Sound deleted successfully' });
+        // After deleting the sound, check for affected scenes
+        const scenes = await sceneService.getAllScenes();
+        const affectedScenes = scenes.filter(scene =>
+            Array.isArray(scene.steps) && scene.steps.some(step => step.type === 'sound' && parseInt(step.sound_id) === id)
+        );
+        res.status(200).json({ 
+            message: 'Sound deleted successfully', 
+            affectedScenes: affectedScenes.map(scene => ({ id: scene.id, scene_name: scene.scene_name }))
+        });
     } catch (error) {
         logger.error('Error deleting sound:', error);
         res.status(500).json({ error: 'Internal Server Error', details: error.message });
