@@ -11,7 +11,7 @@ let messageId = 0;
 const eventEmitter = new EventEmitter();
 let playStatus = {};
 
-const COMMAND_TIMEOUT = 5000; // Reduced from 15s to 5s since we're relying on actual completion events
+const COMMAND_TIMEOUT = 10000; // Set to 10s for sound playback
 const STATUS_CHECK_INTERVAL = 100; // 100ms interval for status checks
 
 function setupAudioEnvironment() {
@@ -168,12 +168,19 @@ function sendCommand(command, timeout = COMMAND_TIMEOUT) {
         const fullCommand = `${id}|${command}\n`;
         logger.debug(`Sending command: ${fullCommand.trim()}`);
         
+        const startTime = Date.now();
         const timeoutId = setTimeout(() => {
             if (messageQueue.has(id)) {
                 messageQueue.delete(id);
-                // Use debug level for timeouts since they're expected
-                logger.debug('Command timed out - this is normal for long-running sounds');
-                reject(new Error('Command timed out'));
+                const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+                let fileInfo = '';
+                // Try to extract file info from command if present
+                if (typeof command === 'string' && command.includes('play')) {
+                    const match = command.match(/play\s+\d+,?\s*(.*)$/);
+                    if (match && match[1]) fileInfo = ` | file: ${match[1]}`;
+                }
+                logger.warn(`Sound command timed out after ${elapsed}s | command: ${command}${fileInfo}`);
+                reject(new Error(`Command timed out after ${elapsed}s | command: ${command}${fileInfo}`));
             }
         }, timeout);
 
