@@ -140,14 +140,23 @@
 <body>
     <div class="camera-container">
         <div class="controls">
-            <div class="section">
-                <h3>Character</h3>
-                <select id="characterSelect">
+            <div class="section" style="margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #003300;">
+                <h3 style="margin-bottom:5px;">Character</h3>
+                <select id="characterSelect" style="margin-bottom: 5px;">
                     <option value="">Select Character...</option>
                     <% characters.forEach(function(character) { %>
                         <option value="<%= character.id %>" <% if (selectedCharacter && character.id === selectedCharacter.id) { %>selected<% } %>><%= character.char_name %></option>
                     <% }); %>
                 </select>
+                <h3 style="margin-bottom:5px; margin-top:10px;">Camera Selection</h3>
+                <select id="cameraSelect" style="margin-bottom: 5px;">
+                    <option value="">Select Camera...</option>
+                </select>
+                <button onclick="applyCameraSelection()" style="margin-bottom: 5px;">Apply Camera Selection</button>
+                <div class="status" style="margin: 5px 0 0 0; padding: 2px 5px;">
+                    <span class="status-dot disconnected"></span>
+                    <span id="connectionStatus">Disconnected</span>
+                </div>
             </div>
         </div>
         <div class="camera-view">
@@ -155,18 +164,6 @@
             <div id="statusMessage"></div>
         </div>
         <div class="controls">
-            <div class="section">
-                <h3>Camera Selection</h3>
-                <select id="cameraSelect">
-                    <option value="">Select Camera...</option>
-                </select>
-                <button onclick="applyCameraSelection()">Apply Camera Selection</button>
-                <div class="status">
-                    <span class="status-dot disconnected"></span>
-                    <span id="connectionStatus">Disconnected</span>
-                </div>
-            </div>
-
             <div class="section">
                 <h3>Camera Settings</h3>
                 <select id="resolutionSelect">
