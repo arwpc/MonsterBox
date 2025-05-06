@@ -55,13 +55,18 @@ router.get('/', async (req, res) => {
     let driveInfo = [];
     try {
         const disks = await nodeDiskInfo.getDiskInfo();
-        driveInfo = disks.map(disk => ({
-            filesystem: disk.filesystem,
-            size: (disk.blocks / (1024 * 1024 * 1024)).toFixed(2) + ' GB',
-            used: (disk.used / (1024 * 1024 * 1024)).toFixed(2) + ' GB',
-            available: (disk.available / (1024 * 1024 * 1024)).toFixed(2) + ' GB',
-            mountpoint: disk.mounted
-        }));
+        // Filter out pseudo-filesystems
+        const ignoreFs = ['tmpfs', 'devtmpfs', 'udev', 'overlay', 'devfs', 'proc', 'sysfs', 'squashfs'];
+        driveInfo = disks
+            .filter(disk => !ignoreFs.includes(disk.filesystem.toLowerCase()))
+            .map(disk => ({
+                filesystem: disk.filesystem,
+                // node-disk-info returns blocks in 1K units on Linux, so divide by (1024 * 1024) for GB
+                size: (disk.blocks / (1024 * 1024)).toFixed(2) + ' GB',
+                used: (disk.used / (1024 * 1024)).toFixed(2) + ' GB',
+                available: (disk.available / (1024 * 1024)).toFixed(2) + ' GB',
+                mountpoint: disk.mounted
+            }));
     } catch (error) {
         logger.error('Error getting disk info:', error);
         driveInfo = [{ error: 'Unable to retrieve drive information' }];
