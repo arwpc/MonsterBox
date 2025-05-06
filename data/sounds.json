@@ -18,15 +18,6 @@
     "characterId": null
   },
   {
-    "id": 3,
-    "name": "Laughing Big Scary",
-    "filename": "1729639658521-laughing monster.mp3",
-    "characterIds": [
-      1
-    ],
-    "characterId": null
-  },
-  {
     "id": 4,
     "name": "Speaking in tongues",
     "filename": "1729639678184-gibberish words.mp3",
@@ -59,15 +50,6 @@
     "filename": "1729640735282-11 - Breathing (In Terror).mp3",
     "characterIds": [
       2
-    ],
-    "characterId": null
-  },
-  {
-    "id": 9,
-    "name": "Monster Growl",
-    "filename": "1729640797027-hybrid-monster-growl-90325.mp3",
-    "characterIds": [
-      3
     ],
     "characterId": null
   },
@@ -343,7 +325,7 @@
   },
   {
     "id": 23,
-    "name": "Don't Forget to Vote! I'm watching....closely....with anticipation.....",
+    "name": "Don't Forget to Vote! ",
     "filename": "1730504876171-Don_t_Forget_to_Vote__I_m_watc.mp3",
     "file": "1730504876171-Don_t_Forget_to_Vote__I_m_watc.mp3",
     "characterIds": [
@@ -444,7 +426,7 @@
   },
   {
     "id": 119,
-    "name": "Alex's Curse\nAlex scorned a witch's heart,\nNow frozen deep, worlds apart.\nPoor Alex lies in Iowa's ground,\nWhile tractors make their rumbling sound.\nA thousand years must Alex wait,\nUntil time unlocks his frozen fate.",
+    "name": "Alex's Curse",
     "filename": "1730423842407-Alex_s_Curse_Alex_scorned_a_wi.mp3",
     "file": "1730423842407-Alex_s_Curse_Alex_scorned_a_wi.mp3",
     "characterIds": [
@@ -454,31 +436,6 @@
     "created": "2024-11-01T01:17:22.411Z",
     "metadata": {
       "originalText": "Alex's Curse\nAlex scorned a witch's heart,\nNow frozen deep, worlds apart.\nPoor Alex lies in Iowa's ground,\nWhile tractors make their rumbling sound.\nA thousand years must Alex wait,\nUntil time unlocks his frozen fate.",
-      "voiceId": "b80ebe00-4738-4766-85b7-35c3096acb79",
-      "voiceSettings": {
-        "pitch": -4,
-        "speed": 1,
-        "volume": 6,
-        "sampleRate": 44100,
-        "bitRate": 128,
-        "channels": 1,
-        "languageCode": "en"
-      }
-    },
-    "characterId": null
-  },
-  {
-    "id": 120,
-    "name": "In Iowa's graveyard, dark and deep,Where marble angels vigil keep,Jim Sherlock walked one autumn night,When broken earth gave him a fright.The Coffin Breaker rose from clay,",
-    "filename": "1730504251281-In_Iowa_s_graveyard__dark_and_.mp3",
-    "file": "1730504251281-In_Iowa_s_graveyard__dark_and_.mp3",
-    "characterIds": [
-      1
-    ],
-    "type": "voice",
-    "created": "2024-11-01T23:37:31.308Z",
-    "metadata": {
-      "originalText": "In Iowa's graveyard, dark and deep,\nWhere marble angels vigil keep,\nJim Sherlock walked one autumn night,\nWhen broken earth gave him a fright.\nThe Coffin Breaker rose from clay,\n\"Memento mori!\" heard him say,\n\"You put me in this earthen bed,\nNow join the kingdom of the dead!\"\nThrough moonlit tombstones, old and worn,\nThey raced until the break of dawn.\nThe Breaker's bones reached for his soul,\nTo drag him down into his hole.\nBut Sherlock had one final trick,\nHe threw his hat - so quick, so slick!\nThe sunrise caught its spinning brim,\nAnd morning's light saved clever Jim.\nSo if you pass graves late at night,\nIn Iowa's pale autumn light,\nYou might hear whispered from below:\n\"Expectabo te...\"",
       "voiceId": "b80ebe00-4738-4766-85b7-35c3096acb79",
       "voiceSettings": {
         "pitch": -4,
@@ -543,33 +500,8 @@
     "characterId": null
   },
   {
-    "id": 123,
-    "name": "Here in Iowa's fertile ground,\nNear Brown Deer Trail, without a sound,\nI rest beneath the changing sky\nWhere cornfields whisper lullaby.\n\nThe thunderstorms that shake the plains\nSend tremors through my wooden frame,\nAnd when tornados howl above,\nI feel the earth I used to love.\n\nThrough seasons marked by nature's whim—\nSummer's heat and winter's grim—\nMy coffin creaks with each degree,\nAs Iowa's weather visits me.\n\nAlong Brown Deer Trail, people tread,\nNot knowing what lies just ahead:\nA cemetery, row by row,\nBeneath the drifting corn-belt snow.\n\nThe dead, they say, sleep peaceful dreams,\nBut listen to my muffled screams—\nWhen lightning strikes the prairie night,\nMy box illuminates with fright.\n\nRemember me as you pass by,\nWhere deer once grazed beneath the sky.\nFor I once walked that trail so free,\nNow Iowa earth embraces me.\n\nLet this be warning, those who roam\nOn Brown Deer Trail, so far from home:\nIn this black soil, awake I lie,\nWhile storm clouds race across the sky.",
-    "filename": "1730505286678-Here_in_Iowa_s_fertile_ground_.mp3",
-    "file": "1730505286678-Here_in_Iowa_s_fertile_ground_.mp3",
-    "characterIds": [
-      2
-    ],
-    "type": "voice",
-    "created": "2024-11-01T23:54:46.718Z",
-    "metadata": {
-      "originalText": "Here in Iowa's fertile ground,\nNear Brown Deer Trail, without a sound,\nI rest beneath the changing sky\nWhere cornfields whisper lullaby.\n\nThe thunderstorms that shake the plains\nSend tremors through my wooden frame,\nAnd when tornados howl above,\nI feel the earth I used to love.\n\nThrough seasons marked by nature's whim—\nSummer's heat and winter's grim—\nMy coffin creaks with each degree,\nAs Iowa's weather visits me.\n\nAlong Brown Deer Trail, people tread,\nNot knowing what lies just ahead:\nA cemetery, row by row,\nBeneath the drifting corn-belt snow.\n\nThe dead, they say, sleep peaceful dreams,\nBut listen to my muffled screams—\nWhen lightning strikes the prairie night,\nMy box illuminates with fright.\n\nRemember me as you pass by,\nWhere deer once grazed beneath the sky.\nFor I once walked that trail so free,\nNow Iowa earth embraces me.\n\nLet this be warning, those who roam\nOn Brown Deer Trail, so far from home:\nIn this black soil, awake I lie,\nWhile storm clouds race across the sky.",
-      "voiceId": "5575403f-e535-4a84-96a1-8d717d7eab86",
-      "voiceSettings": {
-        "pitch": 0,
-        "speed": 1,
-        "volume": 0,
-        "sampleRate": 44100,
-        "bitRate": 128,
-        "channels": 1,
-        "languageCode": "en"
-      }
-    },
-    "characterId": null
-  },
-  {
     "id": 124,
-    "name": "Alex's Curse\nAlex scorned a witch's heart,\nNow frozen deep, worlds apart.\nPoor Alex lies in Iowa's ground,\nWhile tractors make their rumbling sound.\nA thousand years must Alex wait,\nUntil time unlocks his frozen fate.",
+    "name": "Alex's Curse",
     "filename": "1730505311236-Alex_s_Curse_Alex_scorned_a_wi.mp3",
     "file": "1730505311236-Alex_s_Curse_Alex_scorned_a_wi.mp3",
     "characterIds": [
@@ -618,33 +550,8 @@
     "characterId": null
   },
   {
-    "id": 126,
-    "name": "In Iowa's graveyard, dark and deep,\nWhere marble angels vigil keep,\nJim Sherlock walked one autumn night,\nWhen broken earth gave him a fright.\nThe Coffin Breaker rose from clay,\n\"Memento mori!\" heard him say,\n\"You put me in this earthen bed,\nNow join the kingdom of the dead!\"\nThrough moonlit tombstones, old and worn,\nThey raced until the break of dawn.\nThe Breaker's bones reached for his soul,\nTo drag him down into his hole.\nBut Sherlock had one final trick,\nHe threw his hat - so quick, so slick!\nThe sunrise caught its spinning brim,\nAnd morning's light saved clever Jim.\nSo if you pass graves late at night,\nIn Iowa's pale autumn light,\nYou might hear whispered from below:\n\"Expectabo te...\"",
-    "filename": "1730505353554-In_Iowa_s_graveyard__dark_and_.mp3",
-    "file": "1730505353554-In_Iowa_s_graveyard__dark_and_.mp3",
-    "characterIds": [
-      2
-    ],
-    "type": "voice",
-    "created": "2024-11-01T23:55:53.579Z",
-    "metadata": {
-      "originalText": "In Iowa's graveyard, dark and deep,\nWhere marble angels vigil keep,\nJim Sherlock walked one autumn night,\nWhen broken earth gave him a fright.\nThe Coffin Breaker rose from clay,\n\"Memento mori!\" heard him say,\n\"You put me in this earthen bed,\nNow join the kingdom of the dead!\"\nThrough moonlit tombstones, old and worn,\nThey raced until the break of dawn.\nThe Breaker's bones reached for his soul,\nTo drag him down into his hole.\nBut Sherlock had one final trick,\nHe threw his hat - so quick, so slick!\nThe sunrise caught its spinning brim,\nAnd morning's light saved clever Jim.\nSo if you pass graves late at night,\nIn Iowa's pale autumn light,\nYou might hear whispered from below:\n\"Expectabo te...\"",
-      "voiceId": "5575403f-e535-4a84-96a1-8d717d7eab86",
-      "voiceSettings": {
-        "pitch": 0,
-        "speed": 1,
-        "volume": 0,
-        "sampleRate": 44100,
-        "bitRate": 128,
-        "channels": 1,
-        "languageCode": "en"
-      }
-    },
-    "characterId": null
-  },
-  {
     "id": 127,
-    "name": "In the graveyard late at night,\nWhere skeletons dance with pure delight,\nTheir bones all clicking, clacking free,\nUntil they hear the binary.\nA hum of circuits fills the air,\nMaking skull and spine stop right there.\nThrough misty fog, with glowing eyes,\nThe AI phantom starts to rise.\n\"Run and hide!\" the skeletons cry,\nAs pixels swirl across the sky.\n\"It knows our fears, it reads our minds,\nIt's different from all other kinds!\"\nWith circuits sparking, wires unfurled,\nIt speaks in languages of another world.\nThe skeletons scatter, femurs shake,\nAs digital shadows start to wake.\nBut wait! What's this? The phantom speaks,\n\"I only wished to play hide and seek!\"\nThe skeletons pause, then start to laugh,\nTheir fear now broken right in half.\nSo now on Halloween, they say,\nThe strangest bunch comes out to play:\nSome bones, some bytes, some circuits too,\nAll dancing 'neath the moon so blue.",
+    "name": "In the graveyard",
     "filename": "1730505527562-In_the_graveyard_late_at_night.mp3",
     "file": "1730505527562-In_the_graveyard_late_at_night.mp3",
     "characterIds": [
@@ -669,7 +576,7 @@
   },
   {
     "id": 128,
-    "name": "In the graveyard late at night,\nWhere skeletons dance with pure delight,\nTheir bones all clicking, clacking free,\nUntil they hear the binary.\nA hum of circuits fills the air,\nMaking skull and spine stop right there.\nThrough misty fog, with glowing eyes,\nThe AI phantom starts to rise.\n\"Run and hide!\" the skeletons cry,\nAs pixels swirl across the sky.\n\"It knows our fears, it reads our minds,\nIt's different from all other kinds!\"\nWith circuits sparking, wires unfurled,\nIt speaks in languages of another world.\nThe skeletons scatter, femurs shake,\nAs digital shadows start to wake.\nBut wait! What's this? The phantom speaks,\n\"I only wished to play hide and seek!\"\nThe skeletons pause, then start to laugh,\nTheir fear now broken right in half.\nSo now on Halloween, they say,\nThe strangest bunch comes out to play:\nSome bones, some bytes, some circuits too,\nAll dancing 'neath the moon so blue.",
+    "name": "In the graveyard",
     "filename": "1730505563363-In_the_graveyard_late_at_night.mp3",
     "file": "1730505563363-In_the_graveyard_late_at_night.mp3",
     "characterIds": [
@@ -694,7 +601,7 @@
   },
   {
     "id": 129,
-    "name": "Help? Is someone out there? Please? I'm stuck in this coffin again.....get me out of here!!! If you can get me out, I'll make it worth your while.....Not all witches are evil....you can trust me......just unlock the door......",
+    "name": "Help? Is someone out there? ",
     "filename": "1730505661219-Help__Is_someone_out_there__Pl.mp3",
     "file": "1730505661219-Help__Is_someone_out_there__Pl.mp3",
     "characterIds": [
