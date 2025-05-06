@@ -6,44 +6,45 @@ process.env.NODE_NO_WARNINGS = '1';
 
 // File: app.js
 
+let express, path, http, logger, app, server, port, audioStream, soundController, fs, os, session;
+let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, voiceRoutes;
+let characterService;
+
 try {
-    const express = require('express');
-    const path = require('path');
-    const http = require('http');
-    const logger = require('./scripts/logger');
-    const app = express();
-    const server = http.createServer(app);
-    const port = 3000;
-    const audioStream = require('./scripts/audio');
-    const soundController = require('./controllers/soundController');
-    const fs = require('fs');
-    const os = require('os');
-    const session = require('express-session');
+    express = require('express');
+    path = require('path');
+    http = require('http');
+    logger = require('./scripts/logger');
+    app = express();
+    server = http.createServer(app);
+    port = 3000;
+    audioStream = require('./scripts/audio');
+    soundController = require('./controllers/soundController');
+    fs = require('fs');
+    os = require('os');
+    session = require('express-session');
 
     // Import routes
-    const ledRoutes = require('./routes/ledRoutes');
-    const lightRoutes = require('./routes/lightRoutes');
-    const servoRoutes = require('./routes/servoRoutes');
-    const sensorRoutes = require('./routes/sensorRoutes');
-    const partRoutes = require('./routes/partRoutes');
-    const sceneRoutes = require('./routes/sceneRoutes');
-    const characterRoutes = require('./routes/characterRoutes');
-    const soundRoutes = require('./routes/soundRoutes');
-    const linearActuatorRoutes = require('./routes/linearActuatorRoutes');
-    const activeModeRoutes = require('./routes/activeModeRoutes');
-    const systemConfigRoutes = require('./routes/systemConfigRoutes');
-    const logRoutes = require('./routes/logRoutes');
-    const cameraRoutes = require('./routes/cameraRoutes');
-    const voiceRoutes = require('./routes/voiceRoutes');
+    ledRoutes = require('./routes/ledRoutes');
+    lightRoutes = require('./routes/lightRoutes');
+    servoRoutes = require('./routes/servoRoutes');
+    sensorRoutes = require('./routes/sensorRoutes');
+    partRoutes = require('./routes/partRoutes');
+    sceneRoutes = require('./routes/sceneRoutes');
+    characterRoutes = require('./routes/characterRoutes');
+    soundRoutes = require('./routes/soundRoutes');
+    linearActuatorRoutes = require('./routes/linearActuatorRoutes');
+    activeModeRoutes = require('./routes/activeModeRoutes');
+    systemConfigRoutes = require('./routes/systemConfigRoutes');
+    logRoutes = require('./routes/logRoutes');
+    cameraRoutes = require('./routes/cameraRoutes');
+    voiceRoutes = require('./routes/voiceRoutes');
 
     // Import services
-    const characterService = require('./services/characterService');
-
-    // The rest of your app.js code goes here...
+    characterService = require('./services/characterService');
 
 } catch (err) {
     // Log to console and logger if possible
-    // Try to require logger, but fallback to console if it fails
     let logger;
     try {
         logger = require('./scripts/logger');
@@ -53,7 +54,6 @@ try {
     }
     process.exit(1);
 }
-
 
 // Basic Express setup
 app.use(express.json());
