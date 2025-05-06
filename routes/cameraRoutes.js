@@ -527,26 +527,30 @@ router.post('/control', async (req, res) => {
                             continue;
                         }
 
+                        // Always try to parse as JSON before sending to client
+                        let result;
                         try {
-                            // Check if this is initialization output
-                            if (jsonStr.includes('"message":"Motion detection initialized"')) {
-                                continue;
-                            }
-
-                            // Try to parse as JSON
-                            const result = JSON.parse(jsonStr);
-                            
-                            // Only write valid motion detection results
-                            if (result.success && (result.motion_detected !== undefined)) {
-                                res.write(JSON.stringify(result) + '\n');
-                            } else if (!result.success) {
-                                logger.error('Motion detection error:', result.error);
-                            }
+                            result = JSON.parse(jsonStr);
                         } catch (e) {
                             // Only log parsing errors for non-empty strings that aren't debug output
-                            if (jsonStr.trim() && !jsonStr.startsWith('Device') && !jsonStr.includes('v4l2')) {
+                            if (!jsonStr.startsWith('Device') && !jsonStr.includes('v4l2')) {
                                 logger.error('Error parsing motion data:', e);
                             }
+                            // Do NOT send invalid JSON to client
+                            continue;
+                        }
+
+                        // Check if this is initialization output
+                        if (result && result.message === 'Motion detection initialized') {
+                            continue;
+                        }
+
+                        // Only write valid motion detection results
+                        if (result.success && (result.motion_detected !== undefined)) {
+                            res.write(JSON.stringify(result) + '\n');
+                        } else if (result && result.success === false) {
+                            logger.error('Motion detection error:', result.error);
+                        }
                         }
                     }
                 } catch (e) {
