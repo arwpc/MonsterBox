@@ -526,39 +526,16 @@ router.post('/control', async (req, res) => {
                         if (!jsonStr.trim()) {
                             continue;
                         }
-
-                        // Always try to parse as JSON before sending to client
-                        let result;
-                        try {
-                            result = JSON.parse(jsonStr);
-                        } catch (e) {
-                            // Only log parsing errors for non-empty strings that aren't debug output
-                            if (!jsonStr.startsWith('Device') && !jsonStr.includes('v4l2')) {
-                                logger.error('Error parsing motion data:', e);
-                            }
-                            // Do NOT send invalid JSON to client
-                            continue;
-                        }
-
-                        // Check if this is initialization output
-                        if (result && result.message === 'Motion detection initialized') {
-                            continue;
-                        }
-
-                        // Only write valid motion detection results
-                        if (result.success && (result.motion_detected !== undefined)) {
-                            res.write(JSON.stringify(result) + '\n');
-                        } else if (result && result.success === false) {
-                            logger.error('Motion detection error:', result.error);
-                        }
-                        }
+                        // WARNING: This handler sends all lines (even non-JSON) to the frontend.
+                        // This can cause log spam if the frontend tries to parse non-JSON lines.
+                        // To improve, make the frontend robust to non-JSON lines.
+                        res.write(jsonStr + '\n');
                     }
                 } catch (e) {
                     logger.error('Error processing motion data:', e);
                 }
             });
 
-            // Handle stderr output
             process.stderr.on('data', (data) => {
                 // Debug level for camera control output
                 logger.debug(`Camera control output: ${data}`);

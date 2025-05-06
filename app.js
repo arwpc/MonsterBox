@@ -43,11 +43,8 @@ try {
     // Import services
     characterService = require('./services/characterService');
 } catch (err) {
-    // Log to console and logger if possible
-    let logger;
     try {
-        logger = require('./scripts/logger');
-        logger.error('Fatal error during app initialization:', err);
+        require('./scripts/logger').error('Fatal error during app initialization:', err);
     } catch (e) {
         console.error('Fatal error during app initialization:', err);
     }
