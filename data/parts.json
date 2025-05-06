@@ -28,7 +28,7 @@
   },
   {
     "id": 4,
-    "name": "Eye of Baphomet",
+    "name": "Eye of Orlok",
     "type": "sensor",
     "characterId": 1,
     "gpioPin": 16,
