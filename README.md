@@ -2,6 +2,8 @@
 
 MonsterBox is a refactored scene builder application designed to manage scenes and steps efficiently. It leverages various hardware components and software libraries to provide a comprehensive solution for scene management.
 
+# It's also very cool. 
+
 ## Features
 
 - **Scene Management**: Create, modify, and manage scenes and steps.
