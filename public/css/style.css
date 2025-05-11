@@ -21,6 +21,24 @@ select option {
     color: #00ff00 !important;
 }
 
+/* Highlight selected and focused options for accessibility */
+select:focus, select:active {
+    outline: 2px solid #00ff00 !important;
+    box-shadow: 0 0 10px #00ff00 !important;
+}
+
+option:checked, option[selected], option:focus {
+    background-color: #00ff00 !important;
+    color: #000000 !important;
+}
+
+/* For multi-selects, ensure selected items are always visible */
+select[multiple] option:checked {
+    background-color: #00ff00 !important;
+    color: #000000 !important;
+    font-weight: bold;
+}
+
 /* Rest of the existing styles */
 h1, h2, h3, h4, h5, h6 {
     color: #00ff00;
