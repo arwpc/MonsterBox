@@ -203,6 +203,8 @@ function sendCommand(command, timeout = COMMAND_TIMEOUT) {
                     logger.error(`Error sending command: ${error.message}`);
                     messageQueue.delete(id);
                     reject(error);
+                } else {
+                    logger.debug(`Successfully wrote command to sound player stdin: ${fullCommand.trim()}`);
                 }
             });
         } catch (error) {
