@@ -618,6 +618,90 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="ElevenLabs Integration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-elevenlabs-is-integrated" class="md-nav__link">
+    <span class="md-ellipsis">
+      How ElevenLabs is Integrated
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#api-key-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      API Key Configuration
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#listing-and-using-voices" class="md-nav__link">
+    <span class="md-ellipsis">
+      Listing and Using Voices
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Listing and Using Voices">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sample-code-fetching-voices-frontend" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sample Code: Fetching Voices (Frontend)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#filtering-for-tts-capabilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      Filtering for TTS Capabilities
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generating-speech-preview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Generating Speech (Preview)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#typical-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      Typical Workflow
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#security-note" class="md-nav__link">
+    <span class="md-ellipsis">
+      Security Note
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -916,11 +1000,100 @@
   <h1>ElevenLabs TTS</h1>
 
 <h2 id="elevenlabs-integration">ElevenLabs Integration</h2>
+<p>MonsterBox integrates ElevenLabs Text-to-Speech (TTS) to generate high-quality voice lines for animatronic characters. This integration allows users to select from a variety of voices, preview generated speech, and assign voices to characters or scenes.</p>
+<h3 id="how-elevenlabs-is-integrated">How ElevenLabs is Integrated</h3>
 <ul>
-<li>Email: <code>arwpersonal@gmail.com</code></li>
-<li>API Key: <code>B&amp;uVpd@&amp;KRgYaPM5sLgvT^A*pY</code></li>
-<li>Use for custom Text-to-Speech in animatronic dialogues</li>
+<li>ElevenLabs TTS is accessed via the MonsterBox web interface ("Configure Voice" button, scene editor, and sound management).</li>
+<li>The backend uses a Node.js API wrapper that communicates with the ElevenLabs API using a secret API key stored in environment variables.</li>
+<li>Voices are fetched via <code>/api/voice/available</code>, filtered for TTS capabilities, and displayed in the UI for selection.</li>
+<li>Voice generation (TTS) is triggered via <code>/api/voice/generate</code> and <code>/api/voice/generate-for-scene</code> endpoints.</li>
 </ul>
+<h3 id="api-key-configuration">API Key Configuration</h3>
+<p>To use ElevenLabs, you must provide a valid API key. Set this in your <code>.env</code> file at the project root:</p>
+<pre><code class="language-env">ELEVENLABS_API_KEY=your_actual_api_key_here
+</code></pre>
+<p>Restart the application after changing the key.</p>
+<h3 id="listing-and-using-voices">Listing and Using Voices</h3>
+<p>MonsterBox fetches the list of available voices and displays them in the "Configure Voice" interface. Users can filter by gender, style, accent, and age, and preview each voice with different styles (e.g., neutral, happy, sad).</p>
+<h4 id="sample-code-fetching-voices-frontend">Sample Code: Fetching Voices (Frontend)</h4>
+<pre><code class="language-js">// scripts/voiceSelector.js (excerpt)
+async loadVoices() {
+    try {
+        this.showLoading('Loading voices...');
+        const response = await fetch('/api/voice/available');
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to load voices');
+        }
+        const voices = await response.json();
+        this.voices = voices;
+        this.populateVoiceTable();
+        await this.loadRecentlyUsed();
+    } catch (error) {
+        console.error('Error loading voices:', error);
+        this.showError('Failed to load voices: ' + error.message);
+    } finally {
+        this.hideLoading();
+    }
+}
+</code></pre>
+<h4 id="filtering-for-tts-capabilities">Filtering for TTS Capabilities</h4>
+<pre><code class="language-js">// scripts/voiceSelector.js (excerpt)
+getVoiceStyles(voice) {
+    const baseStyles = ['neutral'];
+    if (voice.capabilities &amp;&amp; voice.capabilities['tts.vox_2_0']) {
+        baseStyles.push('happy', 'sad', 'angry', 'fearful');
+    }
+    return baseStyles;
+}
+</code></pre>
+<h4 id="generating-speech-preview">Generating Speech (Preview)</h4>
+<pre><code class="language-js">// scripts/voiceSelector.js (excerpt)
+async generatePreview(style = 'neutral') {
+    try {
+        this.showLoading('Generating preview...');
+        const previewText = document.querySelector('#previewText').value;
+        const speakerId = this.currentPreviewVoice.speaker_id;
+        if (!speakerId) throw new Error('No valid speaker ID found for this voice');
+        const response = await fetch('/api/voice/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                speaker_id: speakerId,
+                text: previewText,
+                style,
+                characterId: this.characterId,
+                options: {
+                    speed: parseFloat(document.querySelector('#speed').value),
+                    pitch: parseInt(document.querySelector('#pitch').value),
+                    volume: parseInt(document.querySelector('#volume').value)
+                }
+            })
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to generate preview');
+        }
+        const data = await response.json();
+        this.lastGeneratedAudio = data;
+        // Play the audio preview...
+    } catch (error) {
+        // Handle errors
+    } finally {
+        this.hideLoading();
+    }
+}
+</code></pre>
+<h3 id="typical-workflow">Typical Workflow</h3>
+<ol>
+<li>Go to "Configure Voice" in the MonsterBox web UI.</li>
+<li>Browse and filter available voices (fetched from ElevenLabs).</li>
+<li>Preview voices with different styles and settings.</li>
+<li>Assign a selected voice to a character or scene.</li>
+<li>When a scene is played, MonsterBox generates and plays the TTS audio using the selected voice.</li>
+</ol>
+<h3 id="security-note">Security Note</h3>
+<p>Never share your ElevenLabs API key publicly. The example above is for documentation only. Always use your own key and keep it secret.</p>
 
 
 

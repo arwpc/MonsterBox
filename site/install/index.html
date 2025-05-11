@@ -70,7 +70,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#installation" class="md-skip">
+        <a href="#installation-guide" class="md-skip">
           Skip to content
         </a>
       
@@ -351,6 +351,8 @@
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
+        
+      
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
           
@@ -383,6 +385,8 @@
   
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -391,62 +395,56 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#installation" class="md-nav__link">
+  <a href="#1-prepare-your-raspberry-pi-4b" class="md-nav__link">
     <span class="md-ellipsis">
-      Installation
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Installation">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-clone-the-repository" class="md-nav__link">
-    <span class="md-ellipsis">
-      1. Clone the repository
+      1. Prepare Your Raspberry Pi 4B
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#2-first-time-setup-full-system" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#2-set-up-github-access" class="md-nav__link">
     <span class="md-ellipsis">
-      2. First-Time Setup (Full System)
+      2. Set Up GitHub Access
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#3-set-up-environment-variables" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#3-download-monsterbox-files" class="md-nav__link">
     <span class="md-ellipsis">
-      3. Set up environment variables
+      3. Download MonsterBox Files
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#4-routine-updates-dependenciesservices" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#4-run-the-installation-script" class="md-nav__link">
     <span class="md-ellipsis">
-      4. Routine Updates (Dependencies/Services)
+      4. Run the Installation Script
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#5-run-the-application" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#5-set-up-environment-variables" class="md-nav__link">
     <span class="md-ellipsis">
-      5. Run the application
+      5. Set Up Environment Variables
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
+      
+        <li class="md-nav__item">
+  <a href="#6-start-the-application" class="md-nav__link">
+    <span class="md-ellipsis">
+      6. Start the Application
+    </span>
+  </a>
   
 </li>
       
@@ -962,27 +960,73 @@
 
 
 
-  <h1>Installation</h1>
-
-<h2 id="installation">Installation</h2>
-<h3 id="1-clone-the-repository">1. Clone the repository</h3>
-<pre><code class="language-bash">git clone https://github.com/yourusername/monsterbox.git
-cd monsterbox
-</code></pre>
-<h3 id="2-first-time-setup-full-system">2. First-Time Setup (Full System)</h3>
-<p>Use this for a fresh Raspberry Pi or major re-deployment. This will upgrade the OS, install all dependencies, configure hardware, and set permissions:</p>
-<pre><code class="language-bash">sudo bash install.sh
-</code></pre>
-<h3 id="3-set-up-environment-variables">3. Set up environment variables</h3>
-<p>Create a <code>.env</code> file in the project root. See <code>.env.example</code> for variables.</p>
-<h3 id="4-routine-updates-dependenciesservices">4. Routine Updates (Dependencies/Services)</h3>
-<p>For regular updates (after initial setup), use:</p>
-<pre><code class="language-bash">sudo bash update.sh
-</code></pre>
-<p>This script updates only project dependencies and ensures required services are running (no full OS upgrade).</p>
-<h3 id="5-run-the-application">5. Run the application</h3>
-<pre><code class="language-bash">npm start
-</code></pre>
+<h1 id="installation-guide">Installation Guide</h1>
+<p>MonsterBox supports easy setup on a Raspberry Pi 4B. Follow these steps for a fresh install or major redeployment.</p>
+<h2 id="1-prepare-your-raspberry-pi-4b">1. Prepare Your Raspberry Pi 4B</h2>
+<ul>
+<li>Install the latest Raspberry Pi OS (Lite or Desktop) on your microSD card using the <a href="https://www.raspberrypi.com/software/">Raspberry Pi Imager</a>.</li>
+<li>Boot the Pi, connect to your network, and perform initial setup (locale, WiFi, etc.).</li>
+<li>Ensure your Pi is connected to the Internet.</li>
+</ul>
+<h2 id="2-set-up-github-access">2. Set Up GitHub Access</h2>
+<ul>
+<li>Install Git:
+  <code>bash
+  sudo apt-get update
+  sudo apt-get install -y git</code></li>
+<li>(Optional but recommended) <a href="https://docs.github.com/en/authentication/connecting-to-github-with-ssh">Generate SSH keys</a> and add them to your GitHub account for secure access:
+  <code>bash
+  ssh-keygen -t ed25519 -C "your_email@example.com"
+  cat ~/.ssh/id_ed25519.pub
+  # Copy this key to your GitHub SSH keys</code></li>
+</ul>
+<h2 id="3-download-monsterbox-files">3. Download MonsterBox Files</h2>
+<ul>
+<li>Clone the repository:
+  <code>bash
+  git clone https://github.com/yourusername/monsterbox.git
+  cd monsterbox</code></li>
+</ul>
+<h2 id="4-run-the-installation-script">4. Run the Installation Script</h2>
+<ul>
+<li>The install script will upgrade your OS, install all system and Python/Node dependencies, configure hardware interfaces, and set permissions:
+  <code>bash
+  sudo bash install.sh</code><blockquote>
+<p><strong>Note:</strong> This may take several minutes. The script will prompt if any errors occur.</p>
+</blockquote>
+</li>
+</ul>
+<h2 id="5-set-up-environment-variables">5. Set Up Environment Variables</h2>
+<ul>
+<li>Create a <code>.env</code> file in the project root. See <code>.env.example</code> for required variables (e.g., PORT, NODE_ENV, hardware settings).</li>
+</ul>
+<h2 id="6-start-the-application">6. Start the Application</h2>
+<ul>
+<li>Launch MonsterBox:
+  <code>bash
+  npm start</code></li>
+<li>Access the web interface at <code>http://&lt;your-pi-ip&gt;:3000</code> from your browser.</li>
+</ul>
+<hr />
+<h1 id="update-guide">Update Guide</h1>
+<p>Routine updates keep your MonsterBox system and dependencies current without a full OS upgrade.</p>
+<h2 id="1-update-monsterbox-files">1. Update MonsterBox Files</h2>
+<ul>
+<li>Pull the latest changes from GitHub:
+  <code>bash
+  git pull origin main</code></li>
+</ul>
+<h2 id="2-run-the-update-script">2. Run the Update Script</h2>
+<ul>
+<li>This updates project dependencies and ensures required services are running:
+  <code>bash
+  sudo bash update.sh</code><blockquote>
+<p><strong>Note:</strong> No OS upgrade is performed. For major upgrades or after long periods, re-run the full install script.</p>
+</blockquote>
+</li>
+</ul>
+<hr />
+<p>For troubleshooting, see the FAQ or contact the project maintainer.</p>
 
 
 
