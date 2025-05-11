@@ -1,5 +1,4 @@
 # PumpkinHead — Cyberpunk Character Sheet
-
 <style>
 .cyberpunk-sheet {
   background: #0d0d0d;
@@ -49,48 +48,32 @@
   font-size: 1em;
 }
 </style>
-
 <div class="cyberpunk-sheet">
-  <h1>PumpkinHead</h1>
-  <div class="section">
-    <img src="img/c61727bf720f20508d93c2c0af5aa498.png" alt="PumpkinHead Picture">
+<h1>PumpkinHead</h1>
+<div class="section">
+  <span class="label">Description:</span>
+  <span>The pumpkin patch has been full of the little guys, but who minds them? Pumpkinhead!</span>
+</div>
+<div class="section">
+  <span class="label">Hardware Overview:</span>
+  <div class="hardware-list">
+    <div>Body Swing (motor), DIR: 26, PWM: 13</div>
+    <div>Punkin Motion Detector (sensor), GPIO: 16</div>
+    <div>Head Light (led), GPIO: 17</div>
+    <div>Scary Body Mover (motor), DIR: 6, PWM: 13</div>
   </div>
-  <div class="section">
-    <span class="label">Description:</span>
-    <span>The pumpkin patch has been full of the little guys, but who minds them? Pumpkinhead!</span>
+</div>
+<div class="section">
+  <span class="label">Sound List:</span>
+  <div class="sound-list">
+    <div>Monster Howl (1729640808280-monster-howl-85304.mp3)</div>
+    <div>Monster Snarl (1729640824676-monster-snarl-5-69062.mp3)</div>
+    <div>Big Roar (1729640841292-Roar.mp3)</div>
+    <div>Random Growling Sounds (1729640860311-random-monster-sounds-29328.mp3)</div>
   </div>
-  <div class="section">
-    <span class="label">IP Address:</span> <span>—</span>
-  </div>
-  <div class="section">
-    <span class="label">Samba Login:</span> <span>—</span><br>
-    <span class="label">Samba Password:</span> <span>—</span>
-  </div>
-  <div class="section">
-    <span class="label">SSH Login:</span> <span>—</span><br>
-    <span class="label">SSH Password:</span> <span>—</span>
-  </div>
-  <div class="section">
-    <span class="label">Hardware Overview:</span>
-    <div class="hardware-list">
-      <ul>
-        <li>—</li>
-      </ul>
-    </div>
-  </div>
-  <div class="section">
-    <span class="label">Video Usage:</span> <span>—</span>
-  </div>
-  <div class="section">
-    <span class="label">Sound List:</span>
-    <div class="sound-list">
-      <ul>
-        <li>—</li>
-      </ul>
-    </div>
-  </div>
-  <div class="section">
-    <span class="label">Notes/Improvements:</span>
-    <div class="note">—</div>
-  </div>
+</div>
+<div class="section">
+  <span class="label">Notes/Improvements:</span>
+  <div class="note">–</div>
+</div>
 </div>
