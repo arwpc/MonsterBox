@@ -71,7 +71,9 @@ class SoundPlayer:
             log_message({"status": "info", "message": f"Starting playback: {file_path}"})
             process = subprocess.Popen(
                 [
+                    'chrt', '-r', '80',
                     'mpg123',
+                    '-b', '2048',
                     '--quiet',
                     file_path
                 ],
