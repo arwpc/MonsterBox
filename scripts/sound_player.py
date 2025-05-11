@@ -179,9 +179,11 @@ if __name__ == "__main__":
         while True:
             try:
                 command = input().strip()
+                with open('/tmp/sound_player_debug.log', 'a') as f:
+                    f.write(f"Received command: {command}\n")
                 if not command:
                     continue
-                    
+                
                 log_message({"status": "info", "message": f"Received command: {command}"})
                 if command == "EXIT":
                     break
