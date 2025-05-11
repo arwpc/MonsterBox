@@ -87,20 +87,25 @@ function startSoundPlayer() {
                             logger.debug(`Emitting soundFinished event for ${jsonOutput.sound_id}`);
                             playStatus[jsonOutput.sound_id] = 'finished';
                             eventEmitter.emit('soundFinished', jsonOutput.sound_id);
-                        }
-                        
-                        // Handle message queue responses
-                        if (jsonOutput.messageId !== undefined) {
+                            // If a messageId is present, resolve the corresponding messageQueue promise
+                            if (jsonOutput.messageId !== undefined) {
+                                const queueItem = messageQueue.get(jsonOutput.messageId);
+                                if (queueItem) {
+                                    const { resolve } = queueItem;
+                                    messageQueue.delete(jsonOutput.messageId);
+                                    resolve(jsonOutput);
+                                }
+                            }
+                        } else if (jsonOutput.messageId !== undefined) {
+                            // Handle message queue responses for other statuses
                             const queueItem = messageQueue.get(jsonOutput.messageId);
                             if (queueItem) {
                                 const { resolve } = queueItem;
                                 messageQueue.delete(jsonOutput.messageId);
-                                
                                 // Update playStatus if status is included
                                 if (jsonOutput.status && jsonOutput.sound_id) {
                                     playStatus[jsonOutput.sound_id] = jsonOutput.status;
                                 }
-                                
                                 resolve(jsonOutput);
                             }
                         }
