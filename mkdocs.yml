@@ -12,7 +12,10 @@ theme:
 
 nav:
   - Home: index.md
-  - Cyberpunk Character Sheet: character_sheet.md
+  - Character Sheets:
+      - Orlok: character_orlok.md
+      - Coffin Breaker: character_coffin_breaker.md
+      - PumpkinHead: character_pumpkinhead.md
   - Installation: install.md
   - Usage Guide: usage.md
   - Configuration: config.md

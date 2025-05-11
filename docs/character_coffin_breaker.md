@@ -1,4 +1,4 @@
-
+# Coffin Breaker — Cyberpunk Character Sheet
 
 <style>
 .cyberpunk-sheet {
@@ -51,55 +51,46 @@
 </style>
 
 <div class="cyberpunk-sheet">
-  <h1>Cyberpunk Character Sheet</h1>
-
+  <h1>Coffin Breaker</h1>
   <div class="section">
-    <span class="label">Name:</span> <span>NeoSynth</span>
-  </div>
-  <div class="section">
-    <img src="img/character_sample.png" alt="Character Picture">
+    <img src="img/4bb0547f2f26bef028a80b9071365227.png" alt="Coffin Breaker Picture">
   </div>
   <div class="section">
     <span class="label">Description:</span>
-    <span>Elite netrunner with a mysterious past. Master of digital infiltration.</span>
+    <span>Our spanish lady has been trapped in the coffin for a thousand years, and now she's breaking out!</span>
   </div>
   <div class="section">
-    <span class="label">IP Address:</span> <span>192.168.1.42</span>
+    <span class="label">IP Address:</span> <span>—</span>
   </div>
   <div class="section">
-    <span class="label">Samba Login:</span> <span>neosynth</span><br>
-    <span class="label">Samba Password:</span> <span>********</span>
+    <span class="label">Samba Login:</span> <span>—</span><br>
+    <span class="label">Samba Password:</span> <span>—</span>
   </div>
   <div class="section">
-    <span class="label">SSH Login:</span> <span>neo@cyberdeck</span><br>
-    <span class="label">SSH Password:</span> <span>********</span>
+    <span class="label">SSH Login:</span> <span>—</span><br>
+    <span class="label">SSH Password:</span> <span>—</span>
   </div>
   <div class="section">
     <span class="label">Hardware Overview:</span>
     <div class="hardware-list">
       <ul>
-        <li>Raspberry Pi 4B</li>
-        <li>USB Camera (active)</li>
-        <li>Adafruit Audio FX Sound Board</li>
-        <li>Servo Controller (PCA9685)</li>
+        <li>—</li>
       </ul>
     </div>
   </div>
   <div class="section">
-    <span class="label">Video Usage:</span> <span>Camera active, streaming to HQ</span>
+    <span class="label">Video Usage:</span> <span>—</span>
   </div>
   <div class="section">
     <span class="label">Sound List:</span>
     <div class="sound-list">
       <ul>
-        <li>startup.wav (2s)</li>
-        <li>alarm.wav (5s)</li>
-        <li>greeting.wav (3s)</li>
+        <li>—</li>
       </ul>
     </div>
   </div>
   <div class="section">
     <span class="label">Notes/Improvements:</span>
-    <div class="note">Upgrade to infrared camera. Add voice modulation for disguise operations.</div>
+    <div class="note">—</div>
   </div>
 </div>
