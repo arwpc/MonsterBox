@@ -1,6 +1,22 @@
 # MonsterBox
 
-MonsterBox is a refactored scene builder application designed to manage scenes and steps efficiently for animatronic automation. It integrates hardware components (I2C, GPIO, servos, sensors, audio, cameras) and provides a web-based interface for easy control and configuration.
+MonsterBox is a next-generation platform for building, programming, and running interactive animatronic characters and scenes. With MonsterBox, you can:
+
+- **Create Animatronics:** Easily define new animatronic characters, each with their own set of hardware parts and personality.
+- **Configure Parts:** Assign and configure a wide range of animatronic part types, including:
+  - `motor`: For spinning or moving parts
+  - `linear-actuator`: For precise linear movement (e.g., opening a coffin lid)
+  - `servo`: For rotational movement (e.g., head turning, arm waving)
+  - `led`: For simple on/off or variable-brightness lighting
+  - `light`: For lighting effects
+  - `sensor`: For detecting motion or sound and triggering actions
+- **Steps:** The fundamental building blocks of animation. Each Step represents an individual action—moving a part, playing a sound, or triggering a light. Steps can be run one at a time (serially), or marked to run concurrently with the next step (for example, play a sound while a servo moves).
+- **Scenes:** A Scene is an ordered sequence of Steps. Scenes can include waiting for sensor input and executing specific actions. Steps within a Scene can be arranged to run in sequence or with concurrency, allowing for complex, synchronized behaviors.
+- **Active Mode:** Select one or more Scenes to run automatically. In Active Mode, MonsterBox cycles through the chosen Scenes with a configurable delay between each, enabling unattended operation or live, looping performances. Scenes can include sensor waits, so your animatronic can react to the environment before proceeding.
+- **Integrated Audio & TTS:** Assign sounds or AI-generated voices to scenes or steps, leveraging ElevenLabs or other TTS providers for lifelike speech.
+- **Web-based Control:** Manage everything through a modern, user-friendly web interface. Configure hardware, build scenes, monitor logs, and trigger actions from any device on your network.
+
+MonsterBox is designed for extensibility—add new part types, sensors, or behaviors as your project grows. Whether you're building a single talking skull or a whole cast of interactive monsters, MonsterBox gives you the creative control and technical power to bring your animatronics to life.
 
 ---
 
