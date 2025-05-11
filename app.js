@@ -1,3 +1,8 @@
+// Print uncaught exceptions for debugging
+process.on('uncaughtException', function (err) {
+  console.error('Uncaught Exception:', err.stack || err);
+});
+
 // Load environment variables first
 require('dotenv').config();
 
