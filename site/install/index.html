@@ -225,28 +225,6 @@
   
   
   
-    <li class="md-nav__item">
-      <a href="../character_sheet/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Cyberpunk Character Sheet
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
     
     
     
@@ -261,10 +239,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
             
   
   
@@ -277,8 +255,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             Character Sheets
           </label>
@@ -419,6 +397,57 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Installation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-clone-the-repository" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Clone the repository
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-first-time-setup-full-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. First-Time Setup (Full System)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-set-up-environment-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Set up environment variables
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-routine-updates-dependenciesservices" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Routine Updates (Dependencies/Services)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-run-the-application" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. Run the application
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -442,6 +471,28 @@
   
   <span class="md-ellipsis">
     Usage Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage.md#system-maintenance" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Routine Updates
     
   </span>
   
@@ -914,27 +965,22 @@
   <h1>Installation</h1>
 
 <h2 id="installation">Installation</h2>
-<ol>
-<li><strong>Clone the repository</strong></li>
-</ol>
+<h3 id="1-clone-the-repository">1. Clone the repository</h3>
 <pre><code class="language-bash">git clone https://github.com/yourusername/monsterbox.git
 cd monsterbox
 </code></pre>
-<ol>
-<li><strong>Install Node.js dependencies</strong></li>
-</ol>
-<pre><code class="language-bash">npm install
+<h3 id="2-first-time-setup-full-system">2. First-Time Setup (Full System)</h3>
+<p>Use this for a fresh Raspberry Pi or major re-deployment. This will upgrade the OS, install all dependencies, configure hardware, and set permissions:</p>
+<pre><code class="language-bash">sudo bash install.sh
 </code></pre>
-<ol>
-<li><strong>Install Python dependencies</strong></li>
-</ol>
-<pre><code class="language-bash">pip install -r requirements.txt
+<h3 id="3-set-up-environment-variables">3. Set up environment variables</h3>
+<p>Create a <code>.env</code> file in the project root. See <code>.env.example</code> for variables.</p>
+<h3 id="4-routine-updates-dependenciesservices">4. Routine Updates (Dependencies/Services)</h3>
+<p>For regular updates (after initial setup), use:</p>
+<pre><code class="language-bash">sudo bash update.sh
 </code></pre>
-<ol>
-<li><strong>Set up environment variables</strong>
-Create a <code>.env</code> file. See <code>.env.example</code> for variables.</li>
-<li><strong>Run the application</strong></li>
-</ol>
+<p>This script updates only project dependencies and ensures required services are running (no full OS upgrade).</p>
+<h3 id="5-run-the-application">5. Run the application</h3>
 <pre><code class="language-bash">npm start
 </code></pre>
 
