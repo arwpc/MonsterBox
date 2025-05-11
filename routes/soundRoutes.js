@@ -81,6 +81,10 @@ router.post('/', upload.array('sound_files'), async (req, res) => {
 router.post('/:id', upload.single('sound_files'), async (req, res) => {
     try {
         const id = parseInt(req.params.id);
+        if (!id || isNaN(id)) {
+            logger.warn('Attempted to update sound with invalid id:', req.params.id);
+            return res.status(400).render('error', { error: 'Invalid sound ID' });
+        }
         const characterIds = req.body.characterIds ? (Array.isArray(req.body.characterIds) ? req.body.characterIds.map(Number) : [Number(req.body.characterIds)]) : [];
         const updatedSound = {
             name: req.body.name,
@@ -151,6 +155,10 @@ const sceneService = require('../services/sceneService');
 router.post('/:id/delete', async (req, res) => {
     try {
         const id = parseInt(req.params.id);
+        if (!id || isNaN(id)) {
+            logger.warn('Attempted to delete sound with invalid id:', req.params.id);
+            return res.status(400).json({ error: 'Invalid sound ID' });
+        }
         const sound = await soundService.getSoundById(id);
         if (!sound) {
             return res.status(404).json({ error: 'Sound not found' });
