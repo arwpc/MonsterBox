@@ -280,14 +280,40 @@ async function playSound(soundId, filePath) {
     }
     
     logger.info(`Attempting to play sound: ${soundId}, file: ${filePath}`);
-    
+    let duration = null;
+    let timeout = COMMAND_TIMEOUT;
     try {
-        // Send play command with the raw file path
-        await sendCommand(`PLAY|${soundId}|${filePath}`);
-        
+        // Try to get duration using mpg123
+        const spawnSync = require('child_process').spawnSync;
+        const durationResult = spawnSync('mpg123', ['--skip', '0', '-t', filePath], { encoding: 'utf8' });
+        if (durationResult.stderr) {
+            const lines = durationResult.stderr.split('\n');
+            for (const line of lines) {
+                if (line.includes('Time:')) {
+                    const parts = line.trim().split(' ');
+                    const last = parts[parts.length - 1];
+                    const parsed = parseFloat(last);
+                    if (!isNaN(parsed)) {
+                        duration = parsed;
+                        break;
+                    }
+                }
+            }
+        }
+        if (duration && duration > 0) {
+            timeout = Math.ceil(duration * 1000 + 3000); // duration in ms + 3s buffer
+            logger.info(`Auto-calculated timeout for soundId ${soundId}: ${timeout} ms (duration: ${duration}s + 3s buffer)`);
+        } else {
+            logger.warn(`Could not determine duration for ${filePath}, using default timeout.`);
+        }
+    } catch (err) {
+        logger.warn(`Failed to determine duration for ${filePath}: ${err.message}`);
+    }
+    try {
+        // Send play command with the raw file path and dynamic timeout
+        await sendCommand(`PLAY|${soundId}|${filePath}`, timeout);
         // Wait for playing status
-        await waitForStatus(soundId, 'playing');
-        
+        await waitForStatus(soundId, 'playing', timeout);
         logger.info(`Sound ${soundId} is now playing`);
         return { status: 'success', message: 'Sound playback started' };
     } catch (error) {
