@@ -176,4 +176,30 @@ router.post('/:id/delete', async (req, res) => {
     }
 });
 
+// Analyze unused sound files
+router.post('/cleanup/analyze', async (req, res) => {
+    try {
+        const unused = await soundService.analyzeUnusedSounds();
+        res.json({ success: true, unused });
+    } catch (err) {
+        logger.error('Cleanup analysis failed:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Cleanup unused sound files (delete provided list)
+router.post('/cleanup', async (req, res) => {
+    try {
+        const { files } = req.body;
+        if (!Array.isArray(files)) {
+            return res.status(400).json({ success: false, error: 'No files provided' });
+        }
+        const result = await soundService.deleteUnusedSounds(files);
+        res.json({ success: true, ...result });
+    } catch (err) {
+        logger.error('Cleanup failed:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
 module.exports = router;
