@@ -192,6 +192,7 @@ router.post('/cleanup/analyze', async (req, res) => {
 // Cleanup unused sound files (delete provided list)
 router.post('/cleanup', async (req, res) => {
     try {
+        logger.info('Full req.body received on cleanup:', req.body);
         const { files } = req.body;
         logger.info(`Cleanup request received. Files to delete: ${JSON.stringify(files)}`);
         if (!Array.isArray(files)) {
