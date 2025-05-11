@@ -28,6 +28,8 @@ class SoundPlayer:
         log_message({"status": "ready", "message": "SoundPlayer initialized and ready"})
 
     def play_sound(self, sound_id, file_path):
+        with open('/tmp/sound_player_play.log', 'a') as f:
+            f.write(f"play_sound called with sound_id={sound_id}, file_path={file_path}\n")
         try:
             if not os.path.exists(file_path):
                 raise FileNotFoundError(f"Sound file not found: {file_path}")
@@ -72,8 +74,12 @@ class SoundPlayer:
             Thread(target=self._wait_for_sound_end, args=(sound_id, process, file_path, duration)).start()
             
         except FileNotFoundError as e:
+            with open('/tmp/sound_player_play.log', 'a') as f:
+                f.write(f"FileNotFoundError: {str(e)}\n")
             log_message({"status": "error", "sound_id": sound_id, "file": file_path, "message": str(e)})
         except Exception as e:
+            with open('/tmp/sound_player_play.log', 'a') as f:
+                f.write(f"Exception: {str(e)}\nTraceback: {traceback.format_exc()}\n")
             log_message({"status": "error", "sound_id": sound_id, "file": file_path, "message": str(e), "traceback": traceback.format_exc()})
 
     def _wait_for_sound_end(self, sound_id, process, file_path, duration):
