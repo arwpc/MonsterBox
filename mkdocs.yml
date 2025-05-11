@@ -18,6 +18,7 @@ nav:
       - PumpkinHead: character_pumpkinhead.md
   - Installation: install.md
   - Usage Guide: usage.md
+  - Routine Updates: usage.md#system-maintenance
   - Configuration: config.md
   - Directory Structure: structure.md
   - FAQ / Troubleshooting: faq.md
