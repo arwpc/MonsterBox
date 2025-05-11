@@ -20,11 +20,11 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-# Update package lists
-print_status "Updating package lists..."
-apt-get update
+# 1. Full OS and package upgrade for first-time setup
+print_status "Updating OS and upgrading all packages..."
+apt-get update && apt-get upgrade -y && apt-get dist-upgrade -y && apt-get autoremove -y
 
-# Install system dependencies
+# 2. Install system dependencies
 print_status "Installing system dependencies..."
 apt-get install -y \
     v4l-utils \
@@ -39,11 +39,9 @@ apt-get install -y \
     build-essential \
     alsa-utils \
     libasound2 \
-    libasound2-dev
-
-# Install Python and core dependencies
-print_status "Installing Python dependencies..."
-apt-get install -y \
+    libasound2-dev \
+    python3-pigpio \
+    python3-pip \
     python3-dev \
     python3-numpy \
     python3-opencv \
@@ -55,7 +53,35 @@ apt-get install -y \
     python3-psutil \
     python3-setuptools \
     python3-wheel \
+    python3-pyaudio \
+    libopencv-dev \
+    libatlas-base-dev \
+    libhdf5-dev \
+    libgtk-3-0 \
+    libavcodec-dev \
+    libavformat-dev \
+    libswscale-dev \
+    libv4l-dev \
+    libxvidcore-dev \
+    libx264-dev \
+    libavcodec-extra
+
+# Install Python dependencies
+print_status "Installing Python dependencies..."
+apt-get install -y \
+    python3-pigpio \
     python3-pip \
+    python3-dev \
+    python3-numpy \
+    python3-opencv \
+    python3-rpi.gpio \
+    python3-smbus \
+    python3-pygame \
+    python3-flask \
+    python3-gpiozero \
+    python3-psutil \
+    python3-setuptools \
+    python3-wheel \
     python3-pyaudio
 
 # Install OpenCV dependencies for Debian Bookworm
@@ -80,7 +106,14 @@ apt-get install -y \
     libx264-dev \
     libavcodec-extra
 
-# Enable I2C interface
+# Enable I2C and GPIO interfaces
+print_status "Enabling I2C and GPIO interfaces..."
+if ! grep -q "^dtparam=i2c_arm=on" /boot/config.txt; then
+    echo "dtparam=i2c_arm=on" | tee -a /boot/config.txt
+fi
+if ! grep -q "^dtparam=gpio=on" /boot/config.txt; then
+    echo "dtparam=gpio=on" | tee -a /boot/config.txt
+fi
 print_status "Enabling I2C interface..."
 if ! grep -q "i2c-dev" /etc/modules; then
     echo "i2c-dev" >> /etc/modules
@@ -111,6 +144,11 @@ print_status "Installing Node.js dependencies..."
 cd "$(dirname "$0")"
 npm install
 
+# Enable and start pigpiod daemon
+print_status "Enabling and starting pigpiod service..."
+systemctl enable pigpiod
+systemctl start pigpiod
+
 # Set up video device permissions
 print_status "Setting up video device permissions..."
 if ! grep -q "SUBSYSTEM==\"video4linux\"" /etc/udev/rules.d/99-camera.rules 2>/dev/null; then
@@ -139,8 +177,7 @@ ctl.!default {
 }" > /etc/asound.conf
 fi
 
-print_success "Installation completed!"
-print_status "Please reboot your system to ensure all changes take effect."
+print_success "Installation complete! Please reboot your system for all changes to take effect."
 print_status "After reboot:"
 print_status "1. Run 'sudo i2cdetect -y 1' to verify I2C is working"
 print_status "2. Check camera with 'v4l2-ctl --list-devices'"
