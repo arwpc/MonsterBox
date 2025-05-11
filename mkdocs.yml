@@ -12,6 +12,7 @@ theme:
 
 nav:
   - Home: index.md
+  - Cyberpunk Character Sheet: character_sheet.md
   - Installation: install.md
   - Usage Guide: usage.md
   - Configuration: config.md
