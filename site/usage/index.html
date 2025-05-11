@@ -419,6 +419,39 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Usage Instructions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      Steps
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scenes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Scenes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#active-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      Active Mode
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -923,8 +956,27 @@
   <h1>Usage Guide</h1>
 
 <h2 id="usage-instructions">Usage Instructions</h2>
+<h3 id="steps">Steps</h3>
 <ul>
-<li>Access the MonsterBox web interface at <code>http://localhost:3000</code> (or your configured port).</li>
+<li><strong>Steps</strong> are the fundamental actions in MonsterBox. Each Step represents a single operation, such as moving a part, playing a sound, or turning on a light.</li>
+<li>Steps can be set to run <strong>serially</strong> (one after another) or <strong>concurrently</strong> (at the same time as the next step). For example, you can play a sound while a servo moves by marking both steps as concurrent.</li>
+</ul>
+<h3 id="scenes">Scenes</h3>
+<ul>
+<li><strong>Scenes</strong> are ordered sequences of Steps. Scenes let you create complex behaviors by arranging Steps in the desired order.</li>
+<li>Scenes can include Steps that wait for sensor input before proceeding, allowing for interactive or reactive behaviors.</li>
+<li>Steps within a Scene can be run in sequence or concurrently, enabling synchronized actions.</li>
+</ul>
+<h3 id="active-mode">Active Mode</h3>
+<ul>
+<li><strong>Active Mode</strong> allows you to select one or more Scenes to run automatically.</li>
+<li>In Active Mode, MonsterBox cycles through the selected Scenes with a configurable delay between each Scene. This enables unattended operation or looping performances.</li>
+<li>
+<p>Scenes in Active Mode can include sensor waits, so your animatronic can react to the environment before moving to the next Scene.</p>
+</li>
+<li>
+<p>Access the MonsterBox web interface at <code>http://localhost:3000</code> (or your configured port).</p>
+</li>
 <li>Select a character and navigate through Characters, Parts, Sounds, Scenes, etc.</li>
 <li>Trigger scenes, view logs, and control devices in real time.</li>
 </ul>
