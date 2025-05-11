@@ -179,7 +179,9 @@ router.post('/:id/delete', async (req, res) => {
 // Analyze unused sound files
 router.post('/cleanup/analyze', async (req, res) => {
     try {
+        logger.info('Received cleanup analysis request');
         const unused = await soundService.analyzeUnusedSounds();
+        logger.info(`Unused files found: ${JSON.stringify(unused)}`);
         res.json({ success: true, unused });
     } catch (err) {
         logger.error('Cleanup analysis failed:', err);
@@ -191,14 +193,17 @@ router.post('/cleanup/analyze', async (req, res) => {
 router.post('/cleanup', async (req, res) => {
     try {
         const { files } = req.body;
+        logger.info(`Cleanup request received. Files to delete: ${JSON.stringify(files)}`);
         if (!Array.isArray(files)) {
+            logger.warn('Cleanup request received with invalid files array:', files);
             return res.status(400).json({ success: false, error: 'No files provided' });
         }
         const result = await soundService.deleteUnusedSounds(files);
+        logger.info(`Cleanup result: ${JSON.stringify(result)}`);
         res.json({ success: true, ...result });
     } catch (err) {
         logger.error('Cleanup failed:', err);
-        res.status(500).json({ success: false, error: err.message });
+        res.status(500).json({ success: false, error: err.message, stack: err.stack });
     }
 });
 
