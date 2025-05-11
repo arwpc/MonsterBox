@@ -166,7 +166,7 @@ function sendCommand(command, timeout = COMMAND_TIMEOUT) {
 
         const id = messageId++;
         const fullCommand = `${id}|${command}\n`;
-        logger.debug(`Sending command: ${fullCommand.trim()}`);
+        logger.info(`About to write to sound player stdin: ${fullCommand.trim()}`);
         
         const startTime = Date.now();
         const timeoutId = setTimeout(() => {
@@ -204,7 +204,7 @@ function sendCommand(command, timeout = COMMAND_TIMEOUT) {
                     messageQueue.delete(id);
                     reject(error);
                 } else {
-                    logger.debug(`Successfully wrote command to sound player stdin: ${fullCommand.trim()}`);
+                    logger.info(`Successfully wrote command to sound player stdin: ${fullCommand.trim()}`);
                 }
             });
         } catch (error) {
