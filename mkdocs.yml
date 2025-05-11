@@ -1,0 +1,35 @@
+site_name: MonsterBox Documentation
+theme:
+  name: material
+  palette:
+    primary: indigo
+    accent: deep orange
+  features:
+    - navigation.instant
+    - navigation.sections
+    - toc.integrate
+    - content.code.annotate
+
+nav:
+  - Home: index.md
+  - Installation: install.md
+  - Usage Guide: usage.md
+  - Configuration: config.md
+  - Directory Structure: structure.md
+  - FAQ / Troubleshooting: faq.md
+  - License: license.md
+  - Networking: networking.md
+
+  - Integration:
+      - ElevenLabs TTS: integration/elevenlabs.md
+
+  - Hardware:
+      - GPIO Assignments: hardware/gpio_assignments.md
+      - Hardware Schedule: hardware/hardware_schedule.md
+
+  - Animatronics Workshop:
+      - Overview: animatronics/index.md
+      - Familiarization: animatronics/familiarization.md
+      - Simple Steps: animatronics/simple_steps.md
+      - Hands-On Activities: animatronics/hands_on.md
+      - Final Presentation: animatronics/presentation.md
