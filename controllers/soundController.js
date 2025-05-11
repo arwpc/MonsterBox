@@ -283,19 +283,55 @@ async function playSound(soundId, filePath) {
     let duration = null;
     let timeout = COMMAND_TIMEOUT;
     try {
-        // Try to get duration using mpg123
+        // Try to get duration using mpg123 and awk
         const spawnSync = require('child_process').spawnSync;
-        const durationResult = spawnSync('mpg123', ['--skip', '0', '-t', filePath], { encoding: 'utf8' });
-        if (durationResult.stderr) {
-            const lines = durationResult.stderr.split('\n');
-            for (const line of lines) {
-                if (line.includes('Time:')) {
-                    const parts = line.trim().split(' ');
-                    const last = parts[parts.length - 1];
-                    const parsed = parseFloat(last);
-                    if (!isNaN(parsed)) {
-                        duration = parsed;
-                        break;
+        let awkDuration = null;
+        try {
+            const awkCmd = `mpg123 -t "${filePath}" 2>&1 | awk '/Decoding/ {print $1}'`;
+            const awkResult = spawnSync(awkCmd, { shell: true, encoding: 'utf8' });
+            if (awkResult.stdout) {
+                const match = awkResult.stdout.trim().match(/\[(\d+):(\d+)\]/);
+                if (match) {
+                    const minutes = parseInt(match[1], 10);
+                    const seconds = parseInt(match[2], 10);
+                    if (!isNaN(minutes) && !isNaN(seconds)) {
+                        awkDuration = minutes * 60 + seconds;
+                        logger.info(`Parsed duration from mpg123|awk: ${minutes}m${seconds}s = ${awkDuration}s`);
+                    }
+                }
+            }
+        } catch (err) {
+            logger.warn(`Failed awk-based duration extraction: ${err.message}`);
+        }
+        if (awkDuration && awkDuration > 0) {
+            duration = awkDuration;
+        } else {
+            // Fallback: previous logic
+            const durationResult = spawnSync('mpg123', ['--skip', '0', '-t', filePath], { encoding: 'utf8' });
+            if (durationResult.stderr) {
+                const lines = durationResult.stderr.split('\n');
+                for (const line of lines) {
+                    // Support mpg123 output: [mm:ss] Decoding of ... finished.
+                    const match = line.match(/\[(\d+):(\d+)\] Decoding of/);
+                    if (match) {
+                        const minutes = parseInt(match[1], 10);
+                        const seconds = parseInt(match[2], 10);
+                        if (!isNaN(minutes) && !isNaN(seconds)) {
+                            duration = minutes * 60 + seconds;
+                            logger.info(`Parsed duration from mpg123 output: ${minutes}m${seconds}s = ${duration}s`);
+                            break;
+                        }
+                    }
+                    // Fallback: old Time: float format
+                    if (line.includes('Time:')) {
+                        const parts = line.trim().split(' ');
+                        const last = parts[parts.length - 1];
+                        const parsed = parseFloat(last);
+                        if (!isNaN(parsed)) {
+                            duration = parsed;
+                            logger.info(`Parsed duration from Time: line: ${duration}s`);
+                            break;
+                        }
                     }
                 }
             }
