@@ -22,6 +22,10 @@ try {
     logger = require('./scripts/logger');
     app = express();
     server = http.createServer(app);
+
+    // Ensure JSON and URL-encoded body parsing is enabled before routes
+    app.use(express.json());
+    app.use(express.urlencoded({ extended: true }));
     port = 3000;
     audioStream = require('./scripts/audio');
     soundController = require('./controllers/soundController');
