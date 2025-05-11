@@ -73,6 +73,8 @@ class SoundPlayer:
                 [
                     'chrt', '-r', '80',
                     'mpg123',
+                    '-o', 'alsa',
+                    '-a', 'hw:3,0',
                     '-b', '2048',
                     '--quiet',
                     file_path
