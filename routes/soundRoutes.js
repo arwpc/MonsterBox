@@ -220,11 +220,28 @@ router.post('/cleanup', async (req, res) => {
         const existingFiles = await fs.readdir(soundsDir);
         const filesToDelete = files.filter(file => existingFiles.includes(file));
         
+        // Get all sounds to verify none are referencing these files
+        // This helps prevent orphaned database entries
+        const sounds = await soundService.getAllSounds();
+        const usedFilenames = new Set();
+        for (const sound of sounds) {
+            if (sound.filename) usedFilenames.add(sound.filename);
+            if (sound.file) usedFilenames.add(sound.file);
+        }
+        
+        // Double-check that none of the files we're about to delete are actually referenced
+        // This is an additional safety check
+        const safeToDelete = filesToDelete.filter(file => !usedFilenames.has(file));
+        
+        if (safeToDelete.length !== filesToDelete.length) {
+            logger.warn(`Found ${filesToDelete.length - safeToDelete.length} referenced files in the deletion list. These will be skipped.`);
+        }
+        
         // Delete the files
         let deletedCount = 0;
         const errors = [];
         
-        for (const file of filesToDelete) {
+        for (const file of safeToDelete) {
             try {
                 const filePath = path.join(soundsDir, file);
                 await fs.unlink(filePath);
@@ -236,10 +253,10 @@ router.post('/cleanup', async (req, res) => {
             }
         }
         
-        logger.info(`Cleanup complete: deleted ${deletedCount} out of ${filesToDelete.length} unused sound files`);
+        logger.info(`Cleanup complete: deleted ${deletedCount} out of ${safeToDelete.length} unused sound files`);
         res.json({
             success: true,
-            totalProcessed: filesToDelete.length,
+            totalProcessed: safeToDelete.length,
             totalDeleted: deletedCount,
             errors: errors.length > 0 ? errors : undefined
         });
