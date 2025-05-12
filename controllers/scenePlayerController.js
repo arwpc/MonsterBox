@@ -174,9 +174,13 @@ async function executeScene(scene, startStep, res) {
             currentSceneState.messages.push(message);
             
             try {
+                // Send SSE update immediately
                 sendSSEMessage(res, { message, currentStep: i });
                 logger.debug(`Sent SSE update for step ${i + 1}`);
 
+                // Skip delay for sound-only scenes with one step
+                const isSingleSoundScene = scene.steps.length === 1 && step.type === 'sound';
+                
                 if (step.concurrent === "on") {
                     concurrentSteps.push(executeStep(scene.id, step));
                 } else {
@@ -187,8 +191,12 @@ async function executeScene(scene, startStep, res) {
                     await executeStep(scene.id, step);
                 }
 
-                // Add a small delay between steps
-                await new Promise(resolve => setTimeout(resolve, INTER_STEP_DELAY));
+                // Only add delay between steps if not the last step and not a single sound scene
+                const isLastStep = i === scene.steps.length - 1;
+                if (!isLastStep && !isSingleSoundScene) {
+                    // Shorter delay (100ms) instead of the default longer delay
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
             } catch (error) {
                 logger.error(`Error executing step ${i + 1}: ${error.message}`);
                 // Don't throw error, continue with next step
@@ -221,19 +229,8 @@ async function executeScene(scene, startStep, res) {
         }
     } finally {
         isExecuting = false;
-        try {
-            await stopAllParts();
-            try {
-                await soundController.stopAllSounds();
-            } catch (error) {
-                // Ignore sound stop errors during cleanup
-                logger.warn(`Non-critical error stopping sounds during cleanup: ${error.message}`);
-            }
-            logger.info(`Scene ${scene.id} cleanup completed`);
-        } catch (error) {
-            logger.warn(`Non-critical error during scene cleanup: ${error.message}`);
-        }
         
+        // Send the completion message first so the UI can update immediately
         try {
             const cleanupMessage = 'Scene cleanup completed';
             currentSceneState.messages.push(cleanupMessage);
@@ -241,6 +238,29 @@ async function executeScene(scene, startStep, res) {
         } catch (error) {
             logger.error(`Error sending cleanup message: ${error.message}`);
         }
+        
+        // Then clean up asynchronously without waiting
+        setTimeout(async () => {
+            try {
+                // Non-blocking - just fire the request to stop all parts
+                stopAllParts().catch(error => {
+                    logger.warn(`Non-critical error stopping parts during cleanup: ${error.message}`);
+                });
+                
+                // Also try to stop all sounds without waiting for the response
+                try {
+                    soundController.stopAllSounds().catch(error => {
+                        logger.warn(`Non-critical error stopping sounds during cleanup: ${error.message}`);
+                    });
+                } catch (error) {
+                    logger.warn(`Error stopping sounds during cleanup: ${error.message}`);
+                }
+                
+                logger.info(`Scene ${scene.id} cleanup initiated`);
+            } catch (error) {
+                logger.warn(`Non-critical error during scene cleanup: ${error.message}`);
+            }
+        }, 0); // Run on next event loop iteration
     }
 }
 
