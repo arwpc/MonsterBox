@@ -1,24 +1,46 @@
-from gpiozero import PWMOutputDevice, DigitalOutputDevice
+#!/usr/bin/env python3
+
+import lgpio
 import time
 import sys
 import json
 
 def log_message(message):
-    print(json.dumps(message))
-    sys.stdout.flush()
+    print(json.dumps(message), flush=True)
+
+def validate_pin(pin):
+    try:
+        pin_num = int(pin)
+        if not 0 <= pin_num <= 27:
+            raise ValueError(f"Pin must be between 0 and 27. Got {pin_num}")
+        return pin_num
+    except ValueError as e:
+        raise ValueError(f"Invalid pin number: {str(e)}")
 
 def control_motor(dir_pin, pwm_pin, direction, speed, duration):
     try:
-        # Create motor control objects
-        dir_control = DigitalOutputDevice(dir_pin)
-        pwm_control = PWMOutputDevice(pwm_pin, frequency=100)
+        # Validate pins
+        dir_pin_num = validate_pin(dir_pin)
+        pwm_pin_num = validate_pin(pwm_pin)
+        
+        # Initialize GPIO
+        h = lgpio.gpiochip_open(0)
+        
+        # Configure pins
+        lgpio.gpio_claim_output(h, dir_pin_num)
         
         # Set direction
-        dir_control.value = 1 if direction == 'forward' else 0
+        lgpio.gpio_write(h, dir_pin_num, 1 if direction == 'forward' else 0)
         
-        # Set speed (0 to 1)
+        # Set up PWM
+        frequency = 100  # 100Hz frequency
+        
+        # Convert speed (0-100) to duty cycle (0-1000000)
         speed_value = float(speed) / 100.0
-        pwm_control.value = speed_value
+        duty_cycle = int(speed_value * 1000000)
+        
+        # Configure PWM
+        lgpio.tx_pwm(h, pwm_pin_num, frequency, duty_cycle)
         
         log_message({
             "status": "success",
@@ -29,7 +51,7 @@ def control_motor(dir_pin, pwm_pin, direction, speed, duration):
         time.sleep(float(duration))
         
         # Stop motor
-        pwm_control.value = 0
+        lgpio.tx_pwm(h, pwm_pin_num, frequency, 0)
         
         log_message({
             "status": "success",
@@ -43,8 +65,12 @@ def control_motor(dir_pin, pwm_pin, direction, speed, duration):
         })
         raise
     finally:
-        # gpiozero handles cleanup automatically
-        pass
+        # Clean up GPIO resources
+        try:
+            lgpio.gpio_free(h, dir_pin_num)
+            lgpio.gpiochip_close(h)
+        except:
+            pass
 
 if __name__ == "__main__":
     if len(sys.argv) != 6:
