@@ -3,8 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Config</title>
+    <title>System Configuration</title>
     <link rel="stylesheet" href="/css/style.css">
+    <style>
+        /* Custom modal styling */
+        .modal-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: #000;
+            border: 2px solid #00ff00;
+            padding: 20px;
+            border-radius: 5px;
+            width: 300px;
+            text-align: center;
+            margin: auto;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .modal-visible {
+            display: block;
+        }
+    </style>
 </head>
 <body>
     <h1>System Config</h1>
@@ -18,8 +49,8 @@
             <a href="/" class="button primary-btn">Back to Main Menu</a>
         </div>
         <!-- Reboot confirmation modal -->
-        <div id="rebootModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); z-index: 1000; display: flex; align-items: center; justify-content: center;">
-            <div style="background: #000; border: 2px solid #00ff00; padding: 20px; border-radius: 5px; width: 300px; text-align: center;">
+        <div id="rebootModal" class="modal-container">
+            <div class="modal-content">
                 <h3 style="color: #00ff00;">Confirm System Reboot</h3>
                 <p style="color: #00ff00;">Are you sure you want to reboot the system? This will disconnect all users and stop all running processes.</p>
                 <div style="margin-top: 20px;">
@@ -98,15 +129,15 @@
 
             if (rebootBtn) {
                 rebootBtn.addEventListener('click', function() {
-                    // Show confirmation modal
-                    rebootModal.style.display = 'flex';
+                    // Show confirmation modal using the class approach
+                    rebootModal.classList.add('modal-visible');
                 });
             }
 
             if (cancelRebootBtn) {
                 cancelRebootBtn.addEventListener('click', function() {
                     // Hide modal on cancel
-                    rebootModal.style.display = 'none';
+                    rebootModal.classList.remove('modal-visible');
                 });
             }
 
@@ -121,7 +152,7 @@
                         const response = await axios.post('/system-config/reboot');
                         
                         // Hide modal
-                        rebootModal.style.display = 'none';
+                        rebootModal.classList.remove('modal-visible');
                         
                         // Show message to user
                         rebootResult.textContent = response.data.message || 'System is rebooting now...';
@@ -144,7 +175,7 @@
                         confirmRebootBtn.textContent = 'Yes, Reboot Now';
                         
                         // Hide modal
-                        rebootModal.style.display = 'none';
+                        rebootModal.classList.remove('modal-visible');
                         
                         // Show error message
                         rebootResult.textContent = 'Error: Failed to reboot system. ' + 
