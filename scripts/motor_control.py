@@ -76,16 +76,16 @@ if __name__ == "__main__":
     if len(sys.argv) != 6:
         log_message({
             "status": "error",
-            "message": "Usage: python motor_control.py <dir_pin> <pwm_pin> <direction> <speed> <duration>"
+            "message": "Usage: python motor_control.py <direction> <speed> <duration> <dir_pin> <pwm_pin>"
         })
         sys.exit(1)
 
     try:
-        dir_pin = int(sys.argv[1])
-        pwm_pin = int(sys.argv[2])
-        direction = sys.argv[3]
-        speed = float(sys.argv[4])
-        duration = float(sys.argv[5])
+        direction = sys.argv[1]
+        speed = float(sys.argv[2])
+        duration = float(sys.argv[3])
+        dir_pin = int(sys.argv[4])
+        pwm_pin = int(sys.argv[5])
 
         if direction not in ['forward', 'reverse']:
             raise ValueError("Direction must be 'forward' or 'reverse'")
