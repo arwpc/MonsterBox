@@ -335,10 +335,14 @@ async function executeSound(step) {
                 
                 // For scene playback, use a much faster approach based purely on duration
                 if (isScenePlayback) {
-                    // For scene playback, just wait a fixed percentage of the estimated duration
-                    // This is much faster than waiting for all the status checks
-                    const waitTime = Math.min(Math.max(duration * 900, 1500), 5000); // 90% of duration but min 1.5s, max 5s
-                    logger.debug(`Using ultra-fast path for sound ${sound.id} - waiting ${waitTime}ms`);
+                    // For ultra-optimized scene playback, significantly reduce wait times
+                    // For very short sounds (5 seconds or less), wait minimal time with slightly longer for longer sounds
+                    const isShortSound = duration <= 5;
+                    const waitTime = isShortSound ? 
+                        Math.max(duration * 500, 500) : // For short sounds, wait just 50% of duration, minimum 0.5s
+                        Math.min(Math.max(duration * 700, 1000), 4000); // For longer sounds, 70% with max 4s
+                    
+                    logger.debug(`Using hyper-optimized path for sound ${sound.id} (${duration}s) - waiting ${waitTime}ms`);
                     await new Promise(resolve => setTimeout(resolve, waitTime));
                 } else if (duration && duration < 3) {
                     // For very short sounds, use simple timeout
