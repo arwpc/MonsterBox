@@ -287,12 +287,76 @@ router.post('/cleanup', async (req, res) => {
 // Direct cleanup route using the dedicated script
 router.post('/direct-cleanup', async (req, res) => {
     try {
-        logger.info('Starting direct cleanup of unused sound files');
-        const cleanupSounds = require('../scripts/cleanup_sounds');
-        const result = await cleanupSounds();
+        const dryRun = req.body && req.body.dryRun === true;
         
-        logger.info(`Direct cleanup completed: ${result.deletedCount} files deleted`);
-        res.json(result);
+        if (dryRun) {
+            logger.info('Starting analysis of unused sound files (dry run)');
+        } else {
+            logger.info('Starting direct cleanup of unused sound files');
+        }
+        
+        // Path to sounds directory and sounds.json
+        const soundsDir = path.join(__dirname, '../public/sounds');
+        const soundsJsonPath = path.join(__dirname, '../data/sounds.json');
+        
+        // Get all files in the sounds directory
+        const files = await fs.readdir(soundsDir);
+        logger.info(`Found ${files.length} files in sounds directory`);
+        
+        // Read and parse sounds.json directly to avoid triggering any service calls
+        const soundsData = await fs.readFile(soundsJsonPath, 'utf8');
+        const sounds = JSON.parse(soundsData);
+        logger.info(`Found ${sounds.length} sound entries in sounds.json`);
+        
+        // Collect all filenames used in sounds.json
+        const usedFilenames = new Set();
+        for (const sound of sounds) {
+            if (sound && sound.filename) usedFilenames.add(sound.filename);
+            if (sound && sound.file) usedFilenames.add(sound.file);
+        }
+        logger.info(`${usedFilenames.size} unique filenames referenced in sounds.json`);
+        
+        // Find unused files
+        const unusedFiles = files.filter(file => !usedFilenames.has(file));
+        logger.info(`Found ${unusedFiles.length} unused files`);
+        
+        // For dry run, just return the analysis results
+        if (dryRun) {
+            return res.json({
+                success: true,
+                totalFiles: files.length,
+                referencedFiles: usedFilenames.size,
+                unusedFilesFound: unusedFiles.length,
+                unusedFiles: unusedFiles
+            });
+        }
+        
+        // Delete unused files
+        let deletedCount = 0;
+        const failures = [];
+        
+        for (const file of unusedFiles) {
+            try {
+                const filePath = path.join(soundsDir, file);
+                await fs.unlink(filePath);
+                deletedCount++;
+                logger.debug(`Deleted unused sound file: ${file}`);
+            } catch (error) {
+                logger.error(`Failed to delete ${file}:`, error);
+                failures.push({ file, error: error.message });
+            }
+        }
+        
+        logger.info(`Direct cleanup completed: ${deletedCount} files deleted`);
+        
+        res.json({
+            success: true,
+            totalFiles: files.length,
+            referencedFiles: usedFilenames.size,
+            unusedFilesFound: unusedFiles.length,
+            deletedCount: deletedCount,
+            failures: failures
+        });
     } catch (error) {
         logger.error('Error during direct cleanup:', error);
         res.status(500).json({
