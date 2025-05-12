@@ -45,17 +45,23 @@
   {
     "id": 3,
     "character_id": 1,
-    "scene_name": "Play Two Sounds",
+    "scene_name": "Play Three Sounds",
     "steps": [
       {
         "type": "sound",
-        "name": "good eve",
-        "sound_id": "1"
+        "name": "background weather",
+        "sound_id": "130",
+        "concurrent": "on"
       },
       {
         "type": "sound",
-        "name": "Heya",
-        "sound_id": "3"
+        "name": "first sound",
+        "sound_id": "14"
+      },
+      {
+        "type": "sound",
+        "name": "second sound",
+        "sound_id": "2"
       }
     ]
   },
@@ -64,6 +70,12 @@
     "character_id": 1,
     "scene_name": "Full Scene - Raise Arm light and lower",
     "steps": [
+      {
+        "type": "sound",
+        "name": "background weather",
+        "sound_id": "130",
+        "concurrent": "on"
+      },
       {
         "type": "sound",
         "name": "Santos!",
@@ -115,26 +127,6 @@
         "duration": "1000",
         "direction": "forward",
         "speed": "100"
-      }
-    ]
-  },
-  {
-    "id": 6,
-    "character_id": 1,
-    "scene_name": "Left Arm Trial with Sound (two moves)",
-    "steps": [
-      {
-        "type": "linear-actuator",
-        "name": "Move Left Up",
-        "part_id": "2",
-        "duration": "2000",
-        "direction": "forward",
-        "speed": "100"
-      },
-      {
-        "type": "sound",
-        "name": "Laff Riot",
-        "sound_id": "3"
       }
     ]
   },
@@ -360,6 +352,67 @@
         "part_id": "13",
         "duration": "2000",
         "state": "on"
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "character_id": 1,
+    "scene_name": "test servos",
+    "steps": [
+      {
+        "type": "servo",
+        "name": "move around",
+        "part_id": "5",
+        "duration": "1000",
+        "angle": "180",
+        "speed": "100"
+      },
+      {
+        "type": "servo",
+        "name": "move around (Copy)",
+        "part_id": "6",
+        "duration": "1000",
+        "angle": "180",
+        "speed": "100"
+      },
+      {
+        "type": "servo",
+        "name": "move around (Copy) (Copy)",
+        "part_id": "11",
+        "duration": "1000",
+        "angle": "180",
+        "speed": "100"
+      }
+    ]
+  },
+  {
+    "id": 16,
+    "character_id": 1,
+    "scene_name": "Light Check with Arm",
+    "steps": [
+      {
+        "type": "linear-actuator",
+        "name": "Arm Upo",
+        "part_id": "1",
+        "duration": "4000",
+        "direction": "forward",
+        "speed": "60"
+      },
+      {
+        "type": "light",
+        "name": "asdasdasd",
+        "part_id": "3",
+        "duration": "10000",
+        "state": "on"
+      },
+      {
+        "type": "linear-actuator",
+        "name": "Arm Upo (Copy)",
+        "part_id": "1",
+        "duration": "4000",
+        "direction": "backward",
+        "speed": "80"
       }
     ]
   }
