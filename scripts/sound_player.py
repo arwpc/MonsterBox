@@ -71,11 +71,13 @@ class SoundPlayer:
             log_message({"status": "info", "message": f"Starting playback: {file_path}"})
             process = subprocess.Popen(
                 [
-                    'chrt', '-r', '80',
+                    'taskset', '-c', '3',  # Pin to last CPU core
+                    'chrt', '-f', '95',    # FIFO scheduling (more reliable than -r)
                     'mpg123',
                     '-o', 'alsa',
                     '-a', 'hw:3,0',
-                    '-b', '2048',
+                    '-b', '4096',         # Increased buffer for more stability
+                    '--no-resync',      # Prevent resampling glitches
                     '--quiet',
                     file_path
                 ],
