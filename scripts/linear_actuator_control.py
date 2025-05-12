@@ -99,10 +99,11 @@ def control_actuator(direction, speed, duration, dir_pin, pwm_pin, max_extension
         lgpio.gpio_write(h, dir_pin, dir_value)
         log_info(f"Set direction pin ({dir_pin}) to {'LOW' if dir_value == 0 else 'HIGH'} ({direction})")
         
-        # Set PWM duty cycle (0-255)
-        duty_cycle = int((speed_float / 100.0) * 255)
+        # Set PWM duty cycle (0-1000000 for lgpio)
+        # PWM range for lgpio.tx_pwm is 0-1000000
+        duty_cycle = int((speed_float / 100.0) * 1000000)
         lgpio.tx_pwm(h, pwm_pin, 100, duty_cycle)  # 100Hz frequency
-        log_info(f"Set PWM duty cycle to {duty_cycle}/255 ({speed_float}%)")
+        log_info(f"Set PWM duty cycle to {duty_cycle}/1000000 ({speed_float}%)")
         
         # Wait for specified duration
         time.sleep(actual_duration / 1000.0)
