@@ -162,6 +162,10 @@ router.post('/:id/delete', async (req, res) => {
     }
 });
 
+// NOTE: The following routes are deprecated and replaced by the Python-based cleanup
+// They are kept commented for reference but not used anymore
+
+/*
 // Analyze unused sound files
 router.post('/cleanup/analyze', async (req, res) => {
     try {
@@ -204,7 +208,9 @@ router.post('/cleanup/analyze', async (req, res) => {
         });
     }
 });
+*/
 
+/*
 // Delete unused sound files
 router.post('/cleanup', async (req, res) => {
     try {
@@ -283,7 +289,8 @@ router.post('/cleanup', async (req, res) => {
         });
     }
 });
-
+*/
+/*
 // Direct cleanup route using the dedicated script
 router.post('/direct-cleanup', async (req, res) => {
     try {
@@ -366,6 +373,7 @@ router.post('/direct-cleanup', async (req, res) => {
         });
     }
 });
+*/
 
 // Python-based cleanup route (this should be more reliable on Raspberry Pi)
 router.post('/python-cleanup', async (req, res) => {
