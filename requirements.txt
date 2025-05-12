@@ -1,6 +1,6 @@
 numpy>=1.19.0
 opencv-python>=4.5.0
-gpiozero>=1.6.2
+lgpio>=1.0.0
 pigpio>=1.78
 pygame>=2.0.0
 Flask>=2.0.0
@@ -8,6 +8,6 @@ pyaudio>=0.2.11
 psutil>=5.8.0
 pytest>=7.0.0
 pytest-asyncio>=0.18.0
-colorzero>=2.0
 setuptools>=65.5.1
 wheel>=0.38.0
+python-dotenv>=0.19.0
