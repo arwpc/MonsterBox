@@ -27,7 +27,7 @@ class SoundPlayer:
 
         log_message({"status": "ready", "message": "SoundPlayer initialized and ready"})
 
-    def play_sound(self, sound_id, file_path):
+    def play_sound(self, sound_id, file_path, message_id=None):
         try:
             if not os.path.exists(file_path):
                 raise FileNotFoundError(f"Sound file not found: {file_path}")
@@ -93,9 +93,10 @@ class SoundPlayer:
                            "message": f"MPG123 error (code {process.returncode}): {stderr.decode('utf-8', errors='ignore')}"})
             
             log_message({
-                "status": "finished", 
-                "sound_id": sound_id, 
+                "status": "finished",
+                "sound_id": sound_id,
                 "duration": actual_duration,
+                "messageId": message_id,
                 "expected_duration": duration
             })
         except Exception as e:
