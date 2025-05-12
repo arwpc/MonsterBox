@@ -123,24 +123,42 @@ const createMultipleSounds = async (soundDataArray) => {
 };
 
 const updateSound = async (id, soundData) => {
+    // Early validation to prevent NaN issues
+    if (id === undefined || id === null || isNaN(id) || id === 'NaN') {
+        logger.warn(`Invalid sound ID provided for update: ${id}`);
+        throw new Error('Invalid sound ID');
+    }
+    
     try {
+        // Convert to number immediately to ensure consistent comparison
+        const numericId = parseInt(id);
+        if (isNaN(numericId)) {
+            logger.warn(`Invalid sound ID after parsing: ${id}`);
+            throw new Error('Invalid sound ID');
+        }
+        
         const sounds = await getAllSounds();
-        const index = sounds.findIndex(sound => sound && sound.id === parseInt(id));
+        const index = sounds.findIndex(sound => sound && sound.id === numericId);
+        
         if (index !== -1) {
             sounds[index] = { 
                 ...sounds[index], 
                 ...soundData, 
-                id: parseInt(id),
+                id: numericId,
                 characterIds: soundData.characterIds ? 
-                    soundData.characterIds.map(id => parseInt(id)) : 
+                    soundData.characterIds.map(charId => {
+                        const parsed = parseInt(charId);
+                        return isNaN(parsed) ? null : parsed;
+                    }).filter(Boolean) : 
                     (sounds[index].characterIds || []),
                 characterId: null // Keep this for backward compatibility but set to null
             };
             await fs.writeFile(dataPath, JSON.stringify(sounds, null, 2));
-            logger.info(`Updated sound with id ${id}`);
+            logger.info(`Updated sound with id ${numericId}`);
             return sounds[index];
         }
-        logger.warn(`Attempt to update non-existent sound with id ${id}`);
+        
+        logger.warn(`Attempt to update non-existent sound with id ${numericId}`);
         throw new Error('Sound not found');
     } catch (error) {
         logger.error(`Error updating sound with id ${id}:`, error);
