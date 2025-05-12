@@ -164,39 +164,6 @@ const deleteSound = async (id) => {
     }
 };
 
-// Analyze unused sound files: returns list of files not referenced in sounds.json
-const analyzeUnusedSounds = async () => {
-    const soundsDir = path.join(__dirname, '../public/sounds');
-    try {
-        const sounds = await getAllSounds();
-        const referencedFiles = new Set(sounds.map(s => s.filename).filter(Boolean));
-        const files = await fs.readdir(soundsDir);
-        const unused = files.filter(file => !referencedFiles.has(file));
-        return unused;
-    } catch (err) {
-        logger.error('Error during sound analysis:', err);
-        throw err;
-    }
-};
-
-// Delete provided list of files in /public/sounds
-const deleteUnusedSounds = async (filesToDelete) => {
-    const soundsDir = path.join(__dirname, '../public/sounds');
-    let deleted = [];
-    let errors = [];
-    for (const file of filesToDelete) {
-        try {
-            await fs.unlink(path.join(soundsDir, file));
-            logger.info(`Deleted unused sound file: ${file}`);
-            deleted.push(file);
-        } catch (err) {
-            logger.warn(`Failed to delete ${file}: ${err.message}`);
-            errors.push({ file, error: err.message });
-        }
-    }
-    return { deleted, errors, totalDeleted: deleted.length };
-};
-
 module.exports = {
     getAllSounds,
     getSoundsByCharacter,
@@ -204,7 +171,5 @@ module.exports = {
     createSound,
     createMultipleSounds,
     updateSound,
-    deleteSound,
-    analyzeUnusedSounds,
-    deleteUnusedSounds
+    deleteSound
 };
