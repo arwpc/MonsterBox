@@ -328,30 +328,35 @@ async function executeSound(step) {
             await soundController.playSound(sound.id, absolutePath);
             logger.info(`Sound started playing: ${sound.name}`);
 
+            // For concurrent sounds, we return immediately after starting the sound
+            // This allows the sound to play in the background while other steps execute
+            if (step.concurrent === "on") {
+                logger.info(`Sound ${sound.name} (ID: ${sound.id}) playing concurrently in background`);
+                return true;
+            }
+            
             // For non-concurrent sounds, use ultra-optimized waiting
-            if (step.concurrent !== "on") {
-                // Get the duration from playStatus
-                const duration = soundController.getStoredSoundDuration(sound.id) || 5; // Default 5s if unknown
+            // Get the duration from playStatus
+            const duration = soundController.getStoredSoundDuration(sound.id) || 5; // Default 5s if unknown
+            
+            // For scene playback, use a much faster approach based purely on duration
+            if (isScenePlayback) {
+                // For ultra-optimized scene playback, significantly reduce wait times
+                // For very short sounds (5 seconds or less), wait minimal time with slightly longer for longer sounds
+                const isShortSound = duration <= 5;
+                const waitTime = isShortSound ? 
+                    Math.max(duration * 500, 500) : // For short sounds, wait just 50% of duration, minimum 0.5s
+                    Math.min(Math.max(duration * 700, 1000), 4000); // For longer sounds, 70% with max 4s
                 
-                // For scene playback, use a much faster approach based purely on duration
-                if (isScenePlayback) {
-                    // For ultra-optimized scene playback, significantly reduce wait times
-                    // For very short sounds (5 seconds or less), wait minimal time with slightly longer for longer sounds
-                    const isShortSound = duration <= 5;
-                    const waitTime = isShortSound ? 
-                        Math.max(duration * 500, 500) : // For short sounds, wait just 50% of duration, minimum 0.5s
-                        Math.min(Math.max(duration * 700, 1000), 4000); // For longer sounds, 70% with max 4s
-                    
-                    logger.debug(`Using hyper-optimized path for sound ${sound.id} (${duration}s) - waiting ${waitTime}ms`);
-                    await new Promise(resolve => setTimeout(resolve, waitTime));
-                } else if (duration && duration < 3) {
-                    // For very short sounds, use simple timeout
-                    logger.debug(`Sound is short (${duration}s), using optimized timing`);
-                    await new Promise(resolve => setTimeout(resolve, (duration * 1000) + 300));
-                } else {
-                    // For longer sounds outside scene context, use the standard waiting mechanism
-                    await soundController.waitForSoundToFinish(sound.id);
-                }
+                logger.debug(`Using hyper-optimized path for sound ${sound.id} (${duration}s) - waiting ${waitTime}ms`);
+                await new Promise(resolve => setTimeout(resolve, waitTime));
+            } else if (duration && duration < 3) {
+                // For very short sounds, use simple timeout
+                logger.debug(`Sound is short (${duration}s), using optimized timing`);
+                await new Promise(resolve => setTimeout(resolve, (duration * 1000) + 300));
+            } else {
+                // For longer sounds outside scene context, use the standard waiting mechanism
+                await soundController.waitForSoundToFinish(sound.id);
             }
         } catch (error) {
             // Log but ignore play errors
