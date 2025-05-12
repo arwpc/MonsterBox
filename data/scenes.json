@@ -415,5 +415,34 @@
         "speed": "80"
       }
     ]
+  },
+  {
+    "id": 17,
+    "character_id": 3,
+    "scene_name": "shake back and forth",
+    "steps": [
+      {
+        "type": "sound",
+        "name": "Scary Roars",
+        "sound_id": "12",
+        "concurrent": "on"
+      },
+      {
+        "type": "motor",
+        "name": "move around",
+        "part_id": "9",
+        "duration": "5000",
+        "direction": "forward",
+        "speed": "50"
+      },
+      {
+        "type": "motor",
+        "name": "move around (Copy)",
+        "part_id": "9",
+        "duration": "5000",
+        "direction": "backward",
+        "speed": "50"
+      }
+    ]
   }
 ]
