@@ -159,30 +159,50 @@
                     cleanupModalError.textContent = '';
                     
                     try {
-                        const response = await axios.post('/sounds/cleanup', { files: filesToDelete });
-                        if (response.data.success) {
-                            cleanupModal.style.display = 'none';
-                            
-                            // Show success message with stats
-                            let successMsg = `Cleanup complete: ${response.data.totalDeleted} file(s) deleted.`;
-                            if (response.data.errors && response.data.errors.length > 0) {
-                                successMsg += ` (${response.data.errors.length} errors occurred)`;
+                        // Clear previous error message
+                        cleanupModalError.textContent = '';
+                        
+                        try {
+                            const response = await axios.post('/sounds/cleanup', { files: filesToDelete });
+                            if (response.data.success) {
+                                cleanupModal.style.display = 'none';
+                                
+                                // Show success message with stats
+                                let successMsg = `Cleanup complete: ${response.data.totalDeleted} file(s) deleted.`;
+                                if (response.data.errors && response.data.errors.length > 0) {
+                                    successMsg += ` (${response.data.errors.length} errors occurred)`;
+                                }
+                                document.getElementById('soundInfo').textContent = successMsg;
+                                document.getElementById('errorInfo').textContent = '';
+                                
+                                // Refresh the page to reflect changes after a delay
+                                setTimeout(() => {
+                                    window.location.reload();
+                                }, 2000); // 2-second delay to show the success message
+                            } else {
+                                cleanupModalError.textContent = 'Cleanup failed: ' + (response.data.error || 'Unknown error.');
                             }
-                            document.getElementById('soundInfo').textContent = successMsg;
-                            document.getElementById('errorInfo').textContent = '';
+                        } catch (err) {
+                            console.error('Cleanup request error:', err);
+                            let errorMessage = 'Cleanup failed: ';
                             
-                            // If we need to refresh the page to reflect changes
-                            // Uncomment the following line
-                            // window.location.reload();
-                        } else {
-                            cleanupModalError.textContent = 'Cleanup failed: ' + (response.data.error || 'Unknown error.');
-                            confirmCleanupBtn.disabled = false;
-                            cancelCleanupBtn.disabled = false;
+                            if (err.response && err.response.data && err.response.data.details) {
+                                errorMessage += err.response.data.details;
+                            } else if (err.response && err.response.data && err.response.data.error) {
+                                errorMessage += err.response.data.error;
+                            } else if (err.message) {
+                                errorMessage += err.message;
+                            } else {
+                                errorMessage += 'Unknown error occurred';
+                            }
+                            
+                            cleanupModalError.textContent = errorMessage;
                         }
-                    } catch (err) {
-                        cleanupModalError.textContent = 'Cleanup failed: ' + (err.response?.data?.error || err.message);
+                    } finally {
+                        // Always re-enable buttons
                         confirmCleanupBtn.disabled = false;
                         cancelCleanupBtn.disabled = false;
+                        confirmCleanupBtn.textContent = 'Delete Files';
                     }
                     
                     if (!cleanupModalError.textContent) {

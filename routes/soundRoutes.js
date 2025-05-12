@@ -176,7 +176,10 @@ router.post('/cleanup/analyze', async (req, res) => {
         
         // Create a set of filenames that are in use
         const usedFilenames = new Set();
-        for (const sound of sounds) {
+        const validSounds = sounds.filter(s => s && typeof s.id === 'number');
+        
+        // Prevent NaN issues by only processing valid sounds
+        for (const sound of validSounds) {
             if (sound.filename) usedFilenames.add(sound.filename);
             if (sound.file) usedFilenames.add(sound.file);
         }
