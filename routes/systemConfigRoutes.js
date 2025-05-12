@@ -2,10 +2,13 @@ const express = require('express');
 const router = express.Router();
 const os = require('os');
 const { exec } = require('child_process');
+const { promisify } = require('util');
 const nodeDiskInfo = require('node-disk-info');
 const logger = require('../scripts/logger');
 const fs = require('fs');
 const path = require('path');
+
+const execAsync = promisify(exec);
 
 // Function to read servo configurations
 const getServoConfigs = () => {
@@ -199,6 +202,36 @@ router.delete('/servos/:index', (req, res) => {
     } catch (error) {
         logger.error('Error deleting servo configuration:', error);
         res.status(500).json({ success: false, message: 'Error deleting servo configuration' });
+    }
+});
+
+// Route to handle system reboot
+router.post('/reboot', async (req, res) => {
+    try {
+        logger.info('System reboot requested');
+        
+        // Send response before executing reboot command
+        res.status(200).json({ 
+            success: true, 
+            message: 'Reboot command initiated. System will restart in a few seconds.' 
+        });
+        
+        // Execute reboot command after response is sent
+        setTimeout(async () => {
+            try {
+                logger.info('Executing system reboot command');
+                await execAsync('sudo reboot');
+            } catch (error) {
+                logger.error('Failed to execute reboot command:', error);
+            }
+        }, 1000);
+    } catch (error) {
+        logger.error('Error processing reboot request:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Failed to initiate system reboot',
+            details: error.message 
+        });
     }
 });
 
