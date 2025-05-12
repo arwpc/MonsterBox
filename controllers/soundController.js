@@ -190,8 +190,8 @@ function sendCommand(command, timeout = COMMAND_TIMEOUT) {
                 messageQueue.delete(id);
                 const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
                 
-                // Log timeout warning but don't treat as error for PLAY commands
-                // since the sound might still be playing even if we don't get a response
+                // Handle timeouts differently based on command type
+                // Don't treat timeouts as errors for common operations
                 if (command.startsWith('PLAY|')) {
                     logger.debug(`Sound command timed out after ${elapsed}s | command: ${command} - this is normal for ongoing playback`);
                     // Mark the sound as playing even though we timed out waiting for confirmation
@@ -203,6 +203,34 @@ function sendCommand(command, timeout = COMMAND_TIMEOUT) {
                         status: 'playing',
                         sound_id: soundId,
                         message: 'Sound playback initiated (timeout occurred but playback may be ongoing)'
+                    });
+                } else if (command.startsWith('STATUS|')) {
+                    // For status commands, return the last known status
+                    const statusSoundId = command.split('|')[1];
+                    logger.debug(`Status command timed out after ${elapsed}s | command: ${command} - returning last known status`);
+                    resolve({
+                        status: playStatus[statusSoundId] || 'unknown',
+                        sound_id: statusSoundId,
+                        message: 'Status request timed out - returning last known status'
+                    });
+                } else if (command === 'STOP_ALL' || command.startsWith('STOP|')) {
+                    // For stop commands, assume success
+                    logger.debug(`Stop command timed out after ${elapsed}s | command: ${command} - assuming successful stop`);
+                    
+                    // If stopping a specific sound, mark it as stopped
+                    if (command.startsWith('STOP|')) {
+                        const stopSoundId = command.split('|')[1];
+                        if (stopSoundId) {
+                            playStatus[stopSoundId] = 'stopped';
+                        }
+                    } else if (command === 'STOP_ALL') {
+                        // Clear all play statuses if stopping all
+                        playStatus = {};
+                    }
+                    
+                    resolve({
+                        status: 'success',
+                        message: 'Stop command processed (timeout occurred but stop may have succeeded)'
                     });
                 } else {
                     logger.warn(`Sound command timed out after ${elapsed}s | command: ${command}`);
