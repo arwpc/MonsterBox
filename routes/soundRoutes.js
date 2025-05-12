@@ -367,4 +367,117 @@ router.post('/direct-cleanup', async (req, res) => {
     }
 });
 
+// Python-based cleanup route (this should be more reliable on Raspberry Pi)
+router.post('/python-cleanup', async (req, res) => {
+    try {
+        const { spawn } = require('child_process');
+        const pythonScriptPath = path.join(__dirname, '../scripts/cleanup_sounds.py');
+        
+        logger.info(`Running Python cleanup script: ${pythonScriptPath}`);
+        
+        // First run to analyze (without --delete flag)
+        const analyzeProcess = spawn('python3', [pythonScriptPath]);
+        
+        let analysisOutput = '';
+        let unusedFilesCount = 0;
+        
+        analyzeProcess.stdout.on('data', (data) => {
+            const output = data.toString();
+            analysisOutput += output;
+            logger.debug(`Python script output: ${output}`);
+            
+            // Try to extract the count of unused files
+            const match = output.match(/Found (\d+) unused sound files/);
+            if (match && match[1]) {
+                unusedFilesCount = parseInt(match[1]);
+            }
+        });
+        
+        analyzeProcess.stderr.on('data', (data) => {
+            logger.error(`Python script error: ${data}`);
+        });
+        
+        await new Promise((resolve, reject) => {
+            analyzeProcess.on('close', (code) => {
+                if (code === 0) {
+                    logger.info(`Analysis completed successfully, found ${unusedFilesCount} unused files`);
+                    resolve();
+                } else {
+                    logger.error(`Analysis process exited with code ${code}`);
+                    reject(new Error(`Python script exited with code ${code}`));
+                }
+            });
+        });
+        
+        // If analysis found no unused files, we're done
+        if (unusedFilesCount === 0) {
+            return res.json({
+                success: true,
+                message: 'No unused sound files found.',
+                deletedCount: 0
+            });
+        }
+        
+        // If we should delete, run with --delete flag
+        if (req.body && req.body.delete === true) {
+            logger.info('Running Python cleanup script with --delete flag');
+            
+            const deleteProcess = spawn('python3', [pythonScriptPath, '--delete']);
+            let deleteOutput = '';
+            let deletedCount = 0;
+            
+            deleteProcess.stdout.on('data', (data) => {
+                const output = data.toString();
+                deleteOutput += output;
+                logger.debug(`Python delete script output: ${output}`);
+                
+                // Try to extract the count of deleted files
+                const match = output.match(/Deleted (\d+) unused sound files/);
+                if (match && match[1]) {
+                    deletedCount = parseInt(match[1]);
+                }
+            });
+            
+            deleteProcess.stderr.on('data', (data) => {
+                logger.error(`Python delete script error: ${data}`);
+            });
+            
+            await new Promise((resolve, reject) => {
+                deleteProcess.on('close', (code) => {
+                    if (code === 0) {
+                        logger.info(`Deletion completed successfully, deleted ${deletedCount} files`);
+                        resolve();
+                    } else {
+                        logger.error(`Deletion process exited with code ${code}`);
+                        reject(new Error(`Python delete script exited with code ${code}`));
+                    }
+                });
+            });
+            
+            return res.json({
+                success: true,
+                message: `Successfully deleted ${deletedCount} unused sound files.`,
+                deletedCount,
+                output: deleteOutput
+            });
+        }
+        
+        // If we're just analyzing, return the analysis results
+        return res.json({
+            success: true,
+            message: `Found ${unusedFilesCount} unused sound files.`,
+            unusedFilesCount,
+            output: analysisOutput
+        });
+        
+    } catch (error) {
+        logger.error('Error running Python cleanup script:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to perform Python-based cleanup',
+            details: error.message
+        });
+    }
+});
+
 module.exports = router;
