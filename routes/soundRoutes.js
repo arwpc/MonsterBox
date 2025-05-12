@@ -284,4 +284,23 @@ router.post('/cleanup', async (req, res) => {
     }
 });
 
+// Direct cleanup route using the dedicated script
+router.post('/direct-cleanup', async (req, res) => {
+    try {
+        logger.info('Starting direct cleanup of unused sound files');
+        const cleanupSounds = require('../scripts/cleanup_sounds');
+        const result = await cleanupSounds();
+        
+        logger.info(`Direct cleanup completed: ${result.deletedCount} files deleted`);
+        res.json(result);
+    } catch (error) {
+        logger.error('Error during direct cleanup:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to perform direct cleanup',
+            details: error.message
+        });
+    }
+});
+
 module.exports = router;
