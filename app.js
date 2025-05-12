@@ -48,6 +48,7 @@ try {
     logRoutes = require('./routes/logRoutes');
     cameraRoutes = require('./routes/cameraRoutes');
     voiceRoutes = require('./routes/voiceRoutes');
+    cleanupRoutes = require('./routes/cleanup');
 
     // Import services
     characterService = require('./services/characterService');
@@ -98,7 +99,7 @@ app.use((req, res, next) => {
     next();
 });
 
-// Use routes
+// Set up routes
 app.use('/parts/led', ledRoutes);
 app.use('/parts/light', lightRoutes);
 app.use('/parts/servo', servoRoutes);
@@ -112,6 +113,7 @@ app.use('/system-config', systemConfigRoutes);
 app.use('/logs', logRoutes);
 app.use('/camera', cameraRoutes);
 app.use('/api/voice', voiceRoutes);
+app.use('/cleanup', cleanupRoutes);
 
 // Root route
 app.get('/', async (req, res) => {

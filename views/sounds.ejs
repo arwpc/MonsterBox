@@ -167,89 +167,42 @@
                     cleanupModalError.textContent = '';
                     
                     try {
-                        // Clear previous error message
-                        cleanupModalError.textContent = '';
+                        // Just run the freaking cleanup script directly
+                        const response = await axios.post('/cleanup/run');
                         
-                        try {
-                            // First do analysis using the simple Python script (no deletion yet)
-                            const analysisResponse = await axios.post('/sounds/simple-cleanup');
-                            
-                            if (!analysisResponse.data.success) {
-                                throw new Error(analysisResponse.data.error || 'Analysis failed');
-                            }
-                            
-                            if (analysisResponse.data.unusedFilesCount === 0) {
-                                cleanupModal.style.display = 'none';
-                                document.getElementById('soundInfo').textContent = 'No unused sound files found.';
-                                return;
-                            }
-                            
-                            // When delete button is clicked, run the actual deletion
-                            const deleteFiles = async () => {
-                                try {
-                                    confirmCleanupBtn.disabled = true;
-                                    confirmCleanupBtn.textContent = 'Deleting...';
-                                    
-                                    const deleteResponse = await axios.post('/sounds/simple-cleanup', { delete: true });
-                                    
-                                    cleanupModal.style.display = 'none';
-                                    
-                                    // Show success message with stats
-                                    const successMsg = `Cleanup complete: ${deleteResponse.data.deletedCount} file(s) deleted.`;
-                                    document.getElementById('soundInfo').textContent = successMsg;
-                                    document.getElementById('errorInfo').textContent = '';
-                                    
-                                    // Refresh the page to reflect changes after a delay
-                                    setTimeout(() => {
-                                        window.location.reload();
-                                    }, 2000); // 2-second delay to show the success message
-                                    
-                                } catch (deleteErr) {
-                                    console.error('Error during file deletion:', deleteErr);
-                                    cleanupModalError.textContent = 'Deletion failed: ' + (deleteErr.message || 'Unknown error');
-                                    confirmCleanupBtn.disabled = false;
-                                    confirmCleanupBtn.textContent = 'Delete Files';
-                                }
-                            };
-                            
-                            // Remove previous event listener if any
-                            const newConfirmBtn = confirmCleanupBtn.cloneNode(true);
-                            confirmCleanupBtn.parentNode.replaceChild(newConfirmBtn, confirmCleanupBtn);
-                            confirmCleanupBtn = newConfirmBtn;
-                            
-                            // Add new event listener for deletion
-                            confirmCleanupBtn.addEventListener('click', deleteFiles);
-                            
-                            // Update the modal with the analysis info
-                            const message = `Found ${analysisResponse.data.unusedFilesCount} unused sound files.`;
-                            cleanupFileStats.innerHTML = message;
-                            cleanupFileList.innerHTML = '<div>File list available on server - run with --delete flag to remove</div>';
-                            cleanupModal.style.display = 'flex';
-                            
-                        } catch (err) {
-                            console.error('Cleanup analysis error:', err);
-                            let errorMessage = 'Analysis failed: ';
-                            
-                            if (err.response && err.response.data && err.response.data.details) {
-                                errorMessage += err.response.data.details;
-                            } else if (err.response && err.response.data && err.response.data.error) {
-                                errorMessage += err.response.data.error;
-                            } else if (err.message) {
-                                errorMessage += err.message;
-                            } else {
-                                errorMessage += 'Unknown error occurred';
-                            }
-                            
-                            cleanupModalError.textContent = errorMessage;
+                        if (!response.data.success) {
+                            throw new Error(response.data.error || 'Cleanup failed');
                         }
+                        
+                        // Close the modal and show result
+                        cleanupModal.style.display = 'none';
+                        
+                        // Show success message
+                        const message = response.data.message || 'Cleanup completed';
+                        document.getElementById('soundInfo').textContent = message;
+                        document.getElementById('errorInfo').textContent = '';
+                        
+                        // Refresh the page after a short delay
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000); // 2-second delay to show the message
+                    } catch (error) {
+                        console.error('Cleanup error:', error);
+                        let errorMessage = 'Cleanup failed: ';
+                        
+                        if (error.response && error.response.data && error.response.data.details) {
+                            errorMessage += error.response.data.details;
+                        } else if (error.response && error.response.data && error.response.data.error) {
+                            errorMessage += error.response.data.error;
+                        } else if (error.message) {
+                            errorMessage += error.message;
+                        } else {
+                            errorMessage += 'Unknown error occurred';
+                        }
+                        
+                        cleanupModalError.textContent = errorMessage;
                     } finally {
                         // Always re-enable buttons
-                        confirmCleanupBtn.disabled = false;
-                        cancelCleanupBtn.disabled = false;
-                        confirmCleanupBtn.textContent = 'Delete Files';
-                    }
-                    
-                    if (!cleanupModalError.textContent) {
                         confirmCleanupBtn.disabled = false;
                         cancelCleanupBtn.disabled = false;
                         confirmCleanupBtn.textContent = 'Delete Files';
