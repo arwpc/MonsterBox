@@ -1,14 +1,5 @@
 [
   {
-    "id": 1,
-    "name": "Good Evening",
-    "filename": "1729639541789-Evening.mp3",
-    "characterIds": [
-      1
-    ],
-    "characterId": null
-  },
-  {
     "id": 2,
     "name": "Satanas Lucifer",
     "filename": "1729639570661-satanas-lucifer.mp3",
@@ -90,58 +81,6 @@
     "characterId": null
   },
   {
-    "id": 14,
-    "name": "I have bad weather",
-    "filename": "1730414837585-I_have_bad_weather.mp3",
-    "file": "1730414837585-I_have_bad_weather.mp3",
-    "characterIds": [
-      1
-    ],
-    "type": "voice",
-    "created": "2024-10-31T22:47:17.594Z",
-    "metadata": {
-      "originalText": "I have bad weather",
-      "voiceId": "b80ebe00-4738-4766-85b7-35c3096acb79",
-      "voiceSettings": {
-        "pitch": -10,
-        "speed": 1,
-        "volume": 0,
-        "sampleRate": 44100,
-        "bitRate": 128,
-        "outputFormat": "wav",
-        "channels": 1,
-        "languageCode": "en"
-      }
-    },
-    "characterId": null
-  },
-  {
-    "id": 15,
-    "name": "I hate bad weather",
-    "filename": "1730414851165-I_hate_bad_weather.mp3",
-    "file": "1730414851165-I_hate_bad_weather.mp3",
-    "characterIds": [
-      1
-    ],
-    "type": "voice",
-    "created": "2024-10-31T22:47:31.171Z",
-    "metadata": {
-      "originalText": "I hate bad weather",
-      "voiceId": "b80ebe00-4738-4766-85b7-35c3096acb79",
-      "voiceSettings": {
-        "pitch": -10,
-        "speed": 1,
-        "volume": 0,
-        "sampleRate": 44100,
-        "bitRate": 128,
-        "outputFormat": "wav",
-        "channels": 1,
-        "languageCode": "en"
-      }
-    },
-    "characterId": null
-  },
-  {
     "id": 16,
     "name": "My Head Is Spinning",
     "filename": "1730416580678-My_Head_Is_Spinning.mp3",
@@ -168,110 +107,6 @@
     "characterId": null
   },
   {
-    "id": 17,
-    "name": "If you think it's cold in hell, check Coralville out! ",
-    "filename": "1730416624369-If_you_think_it_s_cold_in_hell.mp3",
-    "file": "1730416624369-If_you_think_it_s_cold_in_hell.mp3",
-    "characterIds": [
-      1
-    ],
-    "type": "voice",
-    "created": "2024-10-31T23:17:04.379Z",
-    "metadata": {
-      "originalText": "If you think it's cold in hell, check Coralville out! ",
-      "voiceId": "b80ebe00-4738-4766-85b7-35c3096acb79",
-      "voiceSettings": {
-        "pitch": -10,
-        "speed": 1,
-        "volume": 0,
-        "sampleRate": 44100,
-        "bitRate": 128,
-        "outputFormat": "wav",
-        "channels": 1,
-        "languageCode": "en"
-      }
-    },
-    "characterId": null
-  },
-  {
-    "id": 18,
-    "name": "Happy Halloween Coralville! ",
-    "filename": "1730416677959-Happy_Halloween_Coralville__.mp3",
-    "file": "1730416677959-Happy_Halloween_Coralville__.mp3",
-    "characterIds": [
-      1
-    ],
-    "type": "voice",
-    "created": "2024-10-31T23:17:57.964Z",
-    "metadata": {
-      "originalText": "Happy Halloween Coralville! ",
-      "voiceId": "b80ebe00-4738-4766-85b7-35c3096acb79",
-      "voiceSettings": {
-        "pitch": -10,
-        "speed": 1,
-        "volume": 0,
-        "sampleRate": 44100,
-        "bitRate": 128,
-        "outputFormat": "wav",
-        "channels": 1,
-        "languageCode": "en"
-      }
-    },
-    "characterId": null
-  },
-  {
-    "id": 19,
-    "name": "IN The DESERT BY Stephen Crane",
-    "filename": "1730416871366-IN_The_DESERT__BY_Stephen_Cran.mp3",
-    "file": "1730416871366-IN_The_DESERT__BY_Stephen_Cran.mp3",
-    "characterIds": [
-      1
-    ],
-    "type": "voice",
-    "created": "2024-10-31T23:21:11.371Z",
-    "metadata": {
-      "originalText": "IN The DESERT\n\nBY Stephen Crane\n\nIn the desert\n\nI saw a creature, naked, bestial,\n\nWho, squatting upon the ground,\n\nHeld his heart in his hands,\n\nAnd ate of it.\n\nI said, “Is it good, friend?”\n\n“It is bitter—bitter,” he answered;\n\n“But I like it\n\n“Because it is bitter,\n\n“And because it is my heart.”",
-      "voiceId": "b80ebe00-4738-4766-85b7-35c3096acb79",
-      "voiceSettings": {
-        "pitch": -10,
-        "speed": 1,
-        "volume": 0,
-        "sampleRate": 44100,
-        "bitRate": 128,
-        "outputFormat": "wav",
-        "channels": 1,
-        "languageCode": "en"
-      }
-    },
-    "characterId": null
-  },
-  {
-    "id": 20,
-    "name": "Listen up, Iowa kiddies",
-    "filename": "1730421630880-Listen_up__Iowa_kiddies_so_swe.mp3",
-    "file": "1730421630880-Listen_up__Iowa_kiddies_so_swe.mp3",
-    "characterIds": [
-      1
-    ],
-    "type": "voice",
-    "created": "2024-11-01T00:40:30.891Z",
-    "metadata": {
-      "originalText": "Listen up, Iowa kiddies so sweet,\nI'm the Devil, here for souls to reap!\nYour cornfields hide secrets deep inside,\nWhere shadow-things slither and glide!\n\nThe scarecrows now hunt through the night,\nFarm dogs howl in pure fright,\nThe grain bins rattle with ghostly bones,\nWhile windmills creak with dying moans!\n\nBut don't you worry, don't you run,\nThis harvest night has just begun!\nFor when the moon turns blood-red here,\nAll of Iowa will disappear... ",
-      "voiceId": "b80ebe00-4738-4766-85b7-35c3096acb79",
-      "voiceSettings": {
-        "pitch": -10,
-        "speed": 1,
-        "volume": 0,
-        "sampleRate": 44100,
-        "bitRate": 128,
-        "outputFormat": "wav",
-        "channels": 1,
-        "languageCode": "en"
-      }
-    },
-    "characterId": null
-  },
-  {
     "id": 21,
     "name": "Scary Latin",
     "filename": "1730421695207-Audite__dulces_pueri_Iovenses_.mp3",
@@ -283,58 +118,6 @@
     "created": "2024-11-01T00:41:35.212Z",
     "metadata": {
       "originalText": "Audite, dulces pueri Iovenses,\nDiabolus sum, animas collecturus!\nAgri vestri secreta alta celant,\nUbi umbrae serpunt et vagantur!\n\nFormidines nunc nocte venantur,\nCanes rustici terrore ululant,\nGranaria ossibus spectralibus crepitant,\nDum molae ventorum gemitibus morientibus strident!\n\nSed nolite timere, nolite fugere,\nHaec nox messis modo incipit!\nNam cum luna sanguinea hic fit,\nTota Iova evanescet...\n*risus diabolicus*",
-      "voiceId": "b80ebe00-4738-4766-85b7-35c3096acb79",
-      "voiceSettings": {
-        "pitch": -10,
-        "speed": 1,
-        "volume": 0,
-        "sampleRate": 44100,
-        "bitRate": 128,
-        "outputFormat": "wav",
-        "channels": 1,
-        "languageCode": "en"
-      }
-    },
-    "characterId": null
-  },
-  {
-    "id": 22,
-    "name": "The Devil's Detective",
-    "filename": "1730504652559-The_Devil_s_Detective_In_Iowa_.mp3",
-    "file": "1730504652559-The_Devil_s_Detective_In_Iowa_.mp3",
-    "characterIds": [
-      1
-    ],
-    "type": "voice",
-    "created": "2024-11-01T23:44:12.600Z",
-    "metadata": {
-      "originalText": "The Devil's Detective\nIn Iowa's cornfields, dark and deep,\nWhere shadows dance and secrets keep,\nJim Sherlock walked one autumn night,\nWhen something gave him quite a fright.\nThe Devil stood beside a tree,\nAnd spoke these words so terribly:\n\"Venite mecum, detective,\nNox est longa, et sum active!\"\n(Come with me, detective dear,\nThe night is long, and I am here!)\nJim Sherlock tipped his famous hat,\nAnd said, \"Now what's the trick in that?\nI've solved a hundred cases true,\nBut never one that came from you!\"\nThe Devil laughed with fiery breath,\nHis laughter cold as winter's death.\nThrough Iowa's maze of swaying corn,\nThey played their game till early morn.\nWith logic sharp and wit so keen,\nJim Sherlock solved what must be seen.\nThe Devil's puzzles, one by one,\nUntil the rising of the sun.\n\"Admirabile mysterium!\"\nThe Devil cried, his voice now glum.\n\"No mortal's ever beat my game!\"\nAnd vanished in a burst of flame.\nSo if you're walking late at night,\nThrough Iowa's fields in pale moonlight,\nRemember Sherlock's clever tale—\nThe night the Devil's tricks did fail.\nBut listen close, and you might hear\nThe Devil whisper in your ear:\n\"Redibo iterum aliquando...\"",
-      "voiceId": "b80ebe00-4738-4766-85b7-35c3096acb79",
-      "voiceSettings": {
-        "pitch": -10,
-        "speed": 1,
-        "volume": 0,
-        "sampleRate": 44100,
-        "bitRate": 128,
-        "outputFormat": "wav",
-        "channels": 1,
-        "languageCode": "en"
-      }
-    },
-    "characterId": null
-  },
-  {
-    "id": 23,
-    "name": "Don't Forget to Vote! ",
-    "filename": "1730504876171-Don_t_Forget_to_Vote__I_m_watc.mp3",
-    "file": "1730504876171-Don_t_Forget_to_Vote__I_m_watc.mp3",
-    "characterIds": [
-      1
-    ],
-    "type": "voice",
-    "created": "2024-11-01T23:47:56.174Z",
-    "metadata": {
-      "originalText": "Don't Forget to Vote! I'm watching....closely....with anticipation.....",
       "voiceId": "b80ebe00-4738-4766-85b7-35c3096acb79",
       "voiceSettings": {
         "pitch": -10,
@@ -411,31 +194,6 @@
     "created": "2024-11-01T00:12:36.520Z",
     "metadata": {
       "originalText": "Here in Iowa's fertile ground,\nNear Brown Deer Trail, without a sound,\nI rest beneath the changing sky\nWhere cornfields whisper lullaby.\n\nThe thunderstorms that shake the plains\nSend tremors through my wooden frame,\nAnd when tornados howl above,\nI feel the earth I used to love.\n\nThrough seasons marked by nature's whim—\nSummer's heat and winter's grim—\nMy coffin creaks with each degree,\nAs Iowa's weather visits me.\n\nAlong Brown Deer Trail, people tread,\nNot knowing what lies just ahead:\nA cemetery, row by row,\nBeneath the drifting corn-belt snow.\n\nThe dead, they say, sleep peaceful dreams,\nBut listen to my muffled screams—\nWhen lightning strikes the prairie night,\nMy box illuminates with fright.\n\nRemember me as you pass by,\nWhere deer once grazed beneath the sky.\nFor I once walked that trail so free,\nNow Iowa earth embraces me.\n\nLet this be warning, those who roam\nOn Brown Deer Trail, so far from home:\nIn this black soil, awake I lie,\nWhile storm clouds race across the sky.",
-      "voiceId": "b80ebe00-4738-4766-85b7-35c3096acb79",
-      "voiceSettings": {
-        "pitch": -4,
-        "speed": 1,
-        "volume": 6,
-        "sampleRate": 44100,
-        "bitRate": 128,
-        "channels": 1,
-        "languageCode": "en"
-      }
-    },
-    "characterId": null
-  },
-  {
-    "id": 119,
-    "name": "Alex's Curse",
-    "filename": "1730423842407-Alex_s_Curse_Alex_scorned_a_wi.mp3",
-    "file": "1730423842407-Alex_s_Curse_Alex_scorned_a_wi.mp3",
-    "characterIds": [
-      2
-    ],
-    "type": "voice",
-    "created": "2024-11-01T01:17:22.411Z",
-    "metadata": {
-      "originalText": "Alex's Curse\nAlex scorned a witch's heart,\nNow frozen deep, worlds apart.\nPoor Alex lies in Iowa's ground,\nWhile tractors make their rumbling sound.\nA thousand years must Alex wait,\nUntil time unlocks his frozen fate.",
       "voiceId": "b80ebe00-4738-4766-85b7-35c3096acb79",
       "voiceSettings": {
         "pitch": -4,
@@ -575,31 +333,6 @@
     "characterId": null
   },
   {
-    "id": 128,
-    "name": "In the graveyard",
-    "filename": "1730505563363-In_the_graveyard_late_at_night.mp3",
-    "file": "1730505563363-In_the_graveyard_late_at_night.mp3",
-    "characterIds": [
-      2
-    ],
-    "type": "voice",
-    "created": "2024-11-01T23:59:23.403Z",
-    "metadata": {
-      "originalText": "In the graveyard late at night,\nWhere skeletons dance with pure delight,\nTheir bones all clicking, clacking free,\nUntil they hear the binary.\nA hum of circuits fills the air,\nMaking skull and spine stop right there.\nThrough misty fog, with glowing eyes,\nThe AI phantom starts to rise.\n\"Run and hide!\" the skeletons cry,\nAs pixels swirl across the sky.\n\"It knows our fears, it reads our minds,\nIt's different from all other kinds!\"\nWith circuits sparking, wires unfurled,\nIt speaks in languages of another world.\nThe skeletons scatter, femurs shake,\nAs digital shadows start to wake.\nBut wait! What's this? The phantom speaks,\n\"I only wished to play hide and seek!\"\nThe skeletons pause, then start to laugh,\nTheir fear now broken right in half.\nSo now on Halloween, they say,\nThe strangest bunch comes out to play:\nSome bones, some bytes, some circuits too,\nAll dancing 'neath the moon so blue.",
-      "voiceId": "5575403f-e535-4a84-96a1-8d717d7eab86",
-      "voiceSettings": {
-        "pitch": 0,
-        "speed": 1,
-        "volume": 0,
-        "sampleRate": 44100,
-        "bitRate": 128,
-        "channels": 1,
-        "languageCode": "en"
-      }
-    },
-    "characterId": null
-  },
-  {
     "id": 129,
     "name": "Help? Is someone out there? ",
     "filename": "1730505661219-Help__Is_someone_out_there__Pl.mp3",
@@ -622,6 +355,17 @@
         "languageCode": "en"
       }
     },
+    "characterId": null
+  },
+  {
+    "id": 130,
+    "name": "Background Stormy Weather",
+    "filename": "1747082672361-converted-rain-thunder.mp3",
+    "characterIds": [
+      1,
+      2,
+      3
+    ],
     "characterId": null
   }
 ]
