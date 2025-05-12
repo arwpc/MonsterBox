@@ -171,8 +171,8 @@
                         cleanupModalError.textContent = '';
                         
                         try {
-                            // First do analysis using the Python script (no deletion yet)
-                            const analysisResponse = await axios.post('/sounds/python-cleanup');
+                            // First do analysis using the simple Python script (no deletion yet)
+                            const analysisResponse = await axios.post('/sounds/simple-cleanup');
                             
                             if (!analysisResponse.data.success) {
                                 throw new Error(analysisResponse.data.error || 'Analysis failed');
@@ -190,7 +190,7 @@
                                     confirmCleanupBtn.disabled = true;
                                     confirmCleanupBtn.textContent = 'Deleting...';
                                     
-                                    const deleteResponse = await axios.post('/sounds/python-cleanup', { delete: true });
+                                    const deleteResponse = await axios.post('/sounds/simple-cleanup', { delete: true });
                                     
                                     cleanupModal.style.display = 'none';
                                     
