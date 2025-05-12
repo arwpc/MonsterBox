@@ -30,17 +30,25 @@ class SoundPlayer:
     def play_sound(self, sound_id, file_path, message_id=None):
         try:
             if not os.path.exists(file_path):
-                raise FileNotFoundError(f"Sound file not found: {file_path}")
+                error_msg = {"status": "error", "sound_id": sound_id, "file": file_path, "message": f"Sound file not found: {file_path}"}
+                if message_id:
+                    error_msg["messageId"] = message_id
+                log_message(error_msg)
+                return
             
             file_size = os.path.getsize(file_path)
             log_message({"status": "info", "message": f"Playing sound file: {file_path}, size: {file_size} bytes"})
             
             if file_size == 0:
-                raise Exception(f"Sound file is empty: {file_path}")
+                error_msg = {"status": "error", "sound_id": sound_id, "file": file_path, "message": f"Sound file is empty: {file_path}"}
+                if message_id:
+                    error_msg["messageId"] = message_id
+                log_message(error_msg)
+                return
             
             # Get duration first
             duration_result = subprocess.run(['mpg123', '--skip', '0', '-t', file_path], 
-                                          capture_output=True, text=True)
+                                           capture_output=True, text=True)
             duration = None
             for line in duration_result.stderr.split('\n'):
                 if 'Time:' in line:
@@ -65,18 +73,27 @@ class SoundPlayer:
             with self.sounds_lock:
                 self.sounds[sound_id] = process
             
-            # Send initial playing status
-            log_message({"status": "playing", "sound_id": sound_id, "file": file_path})
+            # Send initial playing status with messageId
+            status_msg = {"status": "playing", "sound_id": sound_id, "file": file_path}
+            if message_id:
+                status_msg["messageId"] = message_id
+            log_message(status_msg)
             
             # Start a new thread to wait for the sound to finish
-            Thread(target=self._wait_for_sound_end, args=(sound_id, process, file_path, duration)).start()
+            Thread(target=self._wait_for_sound_end, args=(sound_id, process, file_path, duration, message_id)).start()
             
         except FileNotFoundError as e:
-            log_message({"status": "error", "sound_id": sound_id, "file": file_path, "message": str(e)})
+            error_msg = {"status": "error", "sound_id": sound_id, "file": file_path, "message": str(e)}
+            if message_id:
+                error_msg["messageId"] = message_id
+            log_message(error_msg)
         except Exception as e:
-            log_message({"status": "error", "sound_id": sound_id, "file": file_path, "message": str(e), "traceback": traceback.format_exc()})
+            error_msg = {"status": "error", "sound_id": sound_id, "file": file_path, "message": str(e), "traceback": traceback.format_exc()}
+            if message_id:
+                error_msg["messageId"] = message_id
+            log_message(error_msg)
 
-    def _wait_for_sound_end(self, sound_id, process, file_path, duration):
+    def _wait_for_sound_end(self, sound_id, process, file_path, duration, message_id=None):
         start_time = time.time()
         try:
             stdout, stderr = process.communicate()
@@ -89,16 +106,21 @@ class SoundPlayer:
                 log_message({"status": "info", "message": f"MPG123 stderr: {stderr.decode('utf-8', errors='ignore')}"})
             
             if process.returncode != 0 and process.returncode != -15:  # -15 is SIGTERM, which is normal for stopped sounds
-                log_message({"status": "error", "sound_id": sound_id, "file": file_path, 
-                           "message": f"MPG123 error (code {process.returncode}): {stderr.decode('utf-8', errors='ignore')}"})
+                error_msg = {"status": "error", "sound_id": sound_id, "file": file_path, 
+                           "message": f"MPG123 error (code {process.returncode}): {stderr.decode('utf-8', errors='ignore')}"}  
+                if message_id:
+                    error_msg["messageId"] = message_id
+                log_message(error_msg)
             
-            log_message({
+            finished_msg = {
                 "status": "finished",
                 "sound_id": sound_id,
                 "duration": actual_duration,
-                "messageId": message_id,
                 "expected_duration": duration
-            })
+            }
+            if message_id:
+                finished_msg["messageId"] = message_id
+            log_message(finished_msg)
         except Exception as e:
             log_message({"status": "error", "sound_id": sound_id, "message": str(e), 
                         "traceback": traceback.format_exc()})
@@ -204,9 +226,12 @@ if __name__ == "__main__":
                         response["message"] = f"Invalid PLAY command format: {command}"
                     else:
                         sound_id, file_path = parts[2], parts[3]
-                        player.play_sound(sound_id, file_path)
-                        response["status"] = "success"
-                        response["message"] = "Sound playback started"
+                        player.play_sound(sound_id, file_path, message_id)
+                        # The full response will be sent by the play_sound function
+                        # Just acknowledge receipt of command immediately
+                        response["status"] = "starting"
+                        response["sound_id"] = sound_id
+                        response["message"] = "Sound playback starting"
                 elif cmd == "STOP":
                     if len(parts) != 3:
                         response["status"] = "error"
