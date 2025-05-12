@@ -111,41 +111,16 @@
                     cleanupModalError.textContent = '';
                     
                     try {
-                        // Use our standalone script to perform a dry run that just returns info without deleting
-                        const scriptPath = '/scripts/cleanup_sounds.js';
-                        const dryRunResponse = await axios.get(scriptPath, { responseType: 'text' });
-                        
-                        // If we can't fetch the script, just run direct cleanup
-                        const result = await fetch('/sounds/direct-cleanup', { 
-                            method: 'POST', 
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ dryRun: true }) 
-                        }).then(r => r.json());
-                        
-                        if (result.unusedFilesFound === 0) {
-                            document.getElementById('soundInfo').textContent = 'No unused sound files found.';
-                            cleanupBtn.disabled = false;
-                            cleanupBtn.textContent = 'Cleanup Unused Files';
-                            return;
-                        }
-                        
-                        // Show modal with results from direct script
-                        const filesHtml = result.unusedFiles ? 
-                            result.unusedFiles.map(f => `<div>${f}</div>`).join('') : 
-                            '<div>Unable to show file list</div>';
-                        
-                        cleanupFileList.innerHTML = filesHtml;
-                        cleanupFileStats.innerHTML = `<strong>${result.unusedFilesFound}</strong> unused files out of <strong>${result.totalFiles}</strong> total files will be deleted.`;
-                        
+                        // Show cleanup confirmation modal
+                        cleanupFileList.innerHTML = '<div>Sound files will be analyzed and unused files will be deleted</div>';
+                        cleanupFileStats.innerHTML = 'Click "Delete Files" to remove any unused sound files';
                         cleanupModalError.textContent = '';
                         cleanupModal.style.display = 'flex';
                     } catch (err) {
-                        console.error('Error analyzing files:', err);
-                        // If analysis fails, just show modal with generic message
-                        cleanupFileList.innerHTML = '<div>File list unavailable - will still clean up unused files safely</div>';
-                        cleanupFileStats.innerHTML = 'Unused files will be safely deleted';
-                        cleanupModalError.textContent = '';
-                        cleanupModal.style.display = 'flex';
+                        console.error('Cleanup preparation error:', err);
+                        document.getElementById('errorInfo').textContent = 'Error preparing for cleanup: ' + err.message;
+                        cleanupBtn.disabled = false;
+                        cleanupBtn.textContent = 'Cleanup Unused Files';
                     }
                     
                     cleanupBtn.disabled = false;
