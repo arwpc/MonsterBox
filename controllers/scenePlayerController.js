@@ -134,19 +134,32 @@ const scenePlayerController = {
         res.json(currentSceneState);
     },
 
-    stopScene: async (req, res) => {
-        logger.info('Stopping all steps and terminating processes');
+    stopScene: (req, res) => {
+        const sceneId = req.params.id;
+        logger.info(`Stopping scene ${sceneId}`);
         isExecuting = false;
-        try {
-            await stopAllParts();
-            await soundController.stopAllSounds().catch(error => {
-                logger.error(`Error stopping sounds: ${error.message}`);
-            });
-            res.json({ message: 'All steps stopped and processes terminated' });
-        } catch (error) {
-            logger.error('Error stopping all steps:', error);
-            res.status(500).json({ error: 'Failed to stop all steps', details: error.message });
-        }
+        
+        // Respond to client immediately
+        res.json({ message: 'Scene stopping initiated' });
+        
+        // Then perform cleanup asynchronously
+        setTimeout(() => {
+            try {
+                // Stop all parts without waiting
+                stopAllParts().catch(error => {
+                    logger.debug(`Non-critical error stopping parts: ${error.message}`);
+                });
+                
+                // Stop all sounds without waiting
+                soundController.stopAllSounds().catch(error => {
+                    logger.debug(`Non-critical error stopping sounds: ${error.message}`);
+                });
+                
+                logger.info(`Scene ${sceneId} stop processing initiated`);
+            } catch (error) {
+                logger.warn(`Non-critical error during scene cleanup: ${error.message}`);
+            }
+        }, 0);
     }
 };
 
@@ -300,7 +313,6 @@ async function executeSound(step) {
         
         // Get the absolute path to the sound file
         const absolutePath = path.resolve(__dirname, '..', 'public', 'sounds', sound.filename);
-        logger.debug(`Sound absolute file path: ${absolutePath}`);
         
         // Verify file exists
         if (!fs.existsSync(absolutePath)) {
@@ -309,22 +321,31 @@ async function executeSound(step) {
         }
         
         try {
+            // If it's a scene playback, apply ultra-fast path for sounds
+            const isScenePlayback = true; // We're always in a scene context here
+            
+            // Fast path: Start the sound playing
             await soundController.playSound(sound.id, absolutePath);
             logger.info(`Sound started playing: ${sound.name}`);
 
-            // For non-concurrent sounds, wait for completion but with optimized timing
+            // For non-concurrent sounds, use ultra-optimized waiting
             if (step.concurrent !== "on") {
-                // Get the duration directly from playStatus if available
-                const duration = soundController.getStoredSoundDuration(sound.id);
+                // Get the duration from playStatus
+                const duration = soundController.getStoredSoundDuration(sound.id) || 5; // Default 5s if unknown
                 
-                // If it's a very short sound (under 2 seconds), just wait a shorter time
-                if (duration && duration < 2) {
-                    // For very short sounds, wait slightly longer than duration but don't
-                    // go through the potentially slower waitForSoundToFinish process
+                // For scene playback, use a much faster approach based purely on duration
+                if (isScenePlayback) {
+                    // For scene playback, just wait a fixed percentage of the estimated duration
+                    // This is much faster than waiting for all the status checks
+                    const waitTime = Math.min(Math.max(duration * 900, 1500), 5000); // 90% of duration but min 1.5s, max 5s
+                    logger.debug(`Using ultra-fast path for sound ${sound.id} - waiting ${waitTime}ms`);
+                    await new Promise(resolve => setTimeout(resolve, waitTime));
+                } else if (duration && duration < 3) {
+                    // For very short sounds, use simple timeout
                     logger.debug(`Sound is short (${duration}s), using optimized timing`);
-                    await new Promise(resolve => setTimeout(resolve, (duration * 1000) + 500));
+                    await new Promise(resolve => setTimeout(resolve, (duration * 1000) + 300));
                 } else {
-                    // For longer sounds, use the standard waiting mechanism
+                    // For longer sounds outside scene context, use the standard waiting mechanism
                     await soundController.waitForSoundToFinish(sound.id);
                 }
             }
