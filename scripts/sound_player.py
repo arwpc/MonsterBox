@@ -256,17 +256,28 @@ if __name__ == "__main__":
                         response["status"] = "success"
                         response["message"] = "Sound stopped"
                 elif cmd == "STOP_ALL":
-                    player.stop_all_sounds()
+                    # Send immediate response
                     response["status"] = "success"
-                    response["message"] = "All sounds stopped"
+                    response["message"] = "All sounds stopping"
+                    log_message(response)
+                    
+                    # Then stop sounds in a separate thread
+                    from threading import Thread
+                    Thread(target=player.stop_all_sounds).start()
+                    
+                    # Skip the final log_message for this command
+                    continue
                 elif cmd == "STATUS":
                     if len(parts) != 3:
                         response["status"] = "error"
                         response["message"] = f"Invalid STATUS command format: {command}"
                     else:
                         sound_id = parts[2]
+                        # Get status immediately and respond
                         status = player.get_sound_status(sound_id)
                         response.update(status)
+                        log_message(response)
+                        continue
                 else:
                     response["status"] = "error"
                     response["message"] = f"Unknown command: {cmd}"
