@@ -50,13 +50,36 @@ router.post('/run', async (req, res) => {
             });
         });
         
-        // Return the result
+        // Parse the JSON summary from the output
+        let summaryData = {};
+        const summaryMatch = output.match(/##SUMMARY_JSON##\n(.+?)\n##END_SUMMARY##/s);
+        if (summaryMatch && summaryMatch[1]) {
+            try {
+                summaryData = JSON.parse(summaryMatch[1]);
+            } catch (e) {
+                logger.error(`Error parsing summary JSON: ${e.message}`);
+            }
+        }
+        
+        // Generate message with both unused and missing file information
+        let message = '';
+        if (deletedCount > 0) {
+            message = `Successfully deleted ${deletedCount} unused sound files.`;
+        } else {
+            message = 'No unused sound files found.';
+        }
+        
+        if (summaryData.missing_files_count > 0) {
+            message += ` Found ${summaryData.missing_files_count} JSON entries with missing sound files.`;
+        }
+        
+        // Return the result with both unused and missing file information
         return res.json({
             success: true,
-            message: deletedCount > 0 
-                ? `Successfully deleted ${deletedCount} unused sound files.` 
-                : 'No unused sound files found.',
-            deletedCount
+            message: message,
+            deletedCount,
+            missingFilesCount: summaryData.missing_files_count || 0,
+            missingFiles: summaryData.missing_files || []
         });
         
     } catch (error) {
