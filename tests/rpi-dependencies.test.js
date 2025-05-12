@@ -2,7 +2,12 @@ const { exec } = require('child_process');
 const { promisify } = require('util');
 const execAsync = promisify(exec);
 
-describe('RPI Dependencies Check', function() {
+if (process.env.SKIP_CI_INTEGRATION) {
+    describe.skip('RPI Dependencies Check', function() {
+        it('skipped in CI', function() {});
+    });
+} else {
+    describe('RPI Dependencies Check', function() {
     // Increase timeout for slower operations
     this.timeout(10000);
 
