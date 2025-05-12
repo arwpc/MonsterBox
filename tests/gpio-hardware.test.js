@@ -10,19 +10,19 @@ const TEST_PINS = {
     digitalIn: 17,   // Digital input test pin
     pwm: 13,        // PWM output test pin
     servo: 12,      // Servo control pin
-    motion: 20      // Motion sensor pin (changed from 16 to avoid conflicts)
+    motion: 20      // Motion sensor pin
 };
 
 describe('GPIO Hardware Tests', function() {
     this.timeout(10000); // Some GPIO operations need more time
 
     const testGpioScript = path.join(__dirname, '..', 'scripts', 'test_gpio.py');
-    const checkGpioScript = path.join(__dirname, '..', 'scripts', 'check_gpio.py');
 
     async function isPinAvailable(pin) {
         try {
-            const result = await execAsync(`python3 ${checkGpioScript} ${pin}`);
-            return result.stdout.trim() === 'available';
+            const result = await execAsync(`python3 ${testGpioScript} check ${pin}`);
+            const data = JSON.parse(result.stdout.trim());
+            return data.available === true;
         } catch (error) {
             console.warn(`Warning: Could not check pin ${pin} status: ${error.message}`);
             return true; // Assume available if we can't check
@@ -87,14 +87,20 @@ describe('GPIO Hardware Tests', function() {
         const testSensorScript = path.join(__dirname, '..', 'scripts', 'test_sensor.py');
 
         it('should detect motion sensor state changes', async function() {
-            // Run sensor test for 2 seconds using the dedicated motion sensor pin
-            const result = await execAsync(`python3 ${testSensorScript} ${TEST_PINS.motion} 2`);
-            expect(result.stdout).to.match(/{.*}/); // Should output valid JSON
-            const outputs = result.stdout.trim().split('\n');
-            outputs.forEach(output => {
-                const data = JSON.parse(output);
-                expect(data).to.have.property('status').that.matches(/^(Motion Detected|No Motion)$/);
-            });
+            try {
+                // Run sensor test for 2 seconds using the dedicated motion sensor pin
+                const result = await execAsync(`python3 ${testSensorScript} ${TEST_PINS.motion} 2`);
+                expect(result.stdout).to.match(/{.*}/); // Should output valid JSON
+                const outputs = result.stdout.trim().split('\n');
+                outputs.forEach(output => {
+                    const data = JSON.parse(output);
+                    expect(data).to.have.property('status').that.matches(/^(Motion Detected|No Motion)$/);
+                });
+            } catch (error) {
+                console.log('Motion sensor test output:', error.stdout || 'No output');
+                console.error('Motion sensor test error:', error.message);
+                throw error;
+            }
         });
     });
 });

@@ -56,12 +56,12 @@ class GpioTestHelper {
      */
     async isPinAvailable(pin) {
         try {
-            // Try to export the pin - if it fails, pin is in use
-            const { stdout, stderr } = await execAsync(`gpio export ${pin} out`);
-            // Clean up
-            await execAsync(`gpio unexport ${pin}`);
-            return true;
+            // Use our consolidated test_gpio.py script with 'check' command
+            const { stdout } = await execAsync(`python3 ${this.testGpioScript} check ${pin}`);
+            const result = JSON.parse(stdout);
+            return result.available === true;
         } catch (error) {
+            console.warn(`Error checking pin ${pin} availability: ${error.message}`);
             return false;
         }
     }
@@ -73,8 +73,14 @@ class GpioTestHelper {
      */
     async getPinState(pin) {
         try {
-            const { stdout } = await execAsync(`gpio read ${pin}`);
-            return parseInt(stdout.trim());
+            // Use the digital_in test to read the pin state
+            const { stdout } = await execAsync(`python3 ${this.testGpioScript} digital_in ${pin}`);
+            const result = JSON.parse(stdout);
+            if (result.status === 'success') {
+                return result.state ? 1 : 0;
+            } else {
+                throw new Error(result.message || 'Unknown error');
+            }
         } catch (error) {
             throw new Error(`Failed to read pin ${pin}: ${error.message}`);
         }
