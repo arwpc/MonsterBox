@@ -164,17 +164,38 @@ print_status "Adding user to required groups..."
 usermod -a -G video,i2c,gpio,audio $SUDO_USER
 
 # Configure audio settings
-print_status "Configuring additional audio settings..."
-if [ ! -f /etc/asound.conf ]; then
-    echo "pcm.!default {
-    type hw
-    card 0
+echo "Detecting USB Audio Device for /etc/asound.conf..."
+USB_CARD_LINE=$(aplay -l | grep -m1 'USB Audio Device')
+if [ -n "$USB_CARD_LINE" ]; then
+    USB_CARD_NUM=$(echo "$USB_CARD_LINE" | awk '{print $2}' | tr -d ':')
+    echo "Found USB Audio Device at card $USB_CARD_NUM"
+    cat << EOF > /etc/asound.conf
+pcm.!default {
+    type plug
+    slave.pcm "hw:${USB_CARD_NUM},0"
 }
-
 ctl.!default {
     type hw
-    card 0
-}" > /etc/asound.conf
+    card ${USB_CARD_NUM}
+}
+EOF
+    print_success "/etc/asound.conf configured for USB Audio Device (card $USB_CARD_NUM)"
+else
+    print_error "No USB Audio Device found! Skipping /etc/asound.conf configuration."
+fi
+
+# Set Master volume to 100%
+echo "Setting Master volume to 100%..."
+amixer sset 'Master' 100% || true
+
+# Ensure GPU memory allocation is 1024MB
+echo "Setting GPU memory allocation to 1024MB..."
+sed -i '/^gpu_mem=/d' /boot/config.txt
+GPU_MEM_SETTING=$(grep '^gpu_mem=' /boot/config.txt)
+if [ -z "$GPU_MEM_SETTING" ]; then
+    echo "gpu_mem=1024" >> /boot/config.txt
+else
+    sed -i 's/^gpu_mem=.*/gpu_mem=1024/' /boot/config.txt
 fi
 
 print_success "Installation complete! Please reboot your system for all changes to take effect."
