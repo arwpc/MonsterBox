@@ -195,12 +195,16 @@ async function executeScene(scene, startStep, res) {
                 const isSingleSoundScene = scene.steps.length === 1 && step.type === 'sound';
                 
                 if (step.concurrent === "on") {
-                    concurrentSteps.push(executeStep(scene.id, step));
+                    // Start concurrent step immediately and don't wait for it to finish
+                    // This allows sounds to play in parallel with subsequent steps
+                    logger.info(`Starting concurrent step: ${step.name}`);
+                    executeStep(scene.id, step).catch(error => {
+                        logger.warn(`Non-critical error in concurrent step: ${error.message}`);
+                    });
+                    // Don't add to concurrentSteps to avoid waiting for it later
+                    // Just continue to the next step immediately
                 } else {
-                    if (concurrentSteps.length > 0) {
-                        await Promise.all(concurrentSteps);
-                        concurrentSteps.length = 0;
-                    }
+                    // For non-concurrent steps, execute and wait for completion before moving on
                     await executeStep(scene.id, step);
                 }
 
@@ -216,10 +220,8 @@ async function executeScene(scene, startStep, res) {
             }
         }
 
-        // Wait for any remaining concurrent steps
-        if (concurrentSteps.length > 0) {
-            await Promise.all(concurrentSteps);
-        }
+        // We no longer wait for concurrent steps at all - they run independently
+        // Background sounds will continue playing until stopped explicitly or scene ends
 
         currentSceneState.isCompleted = true;
         const completionMessage = 'Scene execution completed';
