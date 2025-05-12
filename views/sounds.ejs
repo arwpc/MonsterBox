@@ -163,14 +163,15 @@
                         cleanupModalError.textContent = '';
                         
                         try {
-                            const response = await axios.post('/sounds/cleanup', { files: filesToDelete });
+                            // Using the direct cleanup endpoint that doesn't touch the sound database
+                            const response = await axios.post('/sounds/direct-cleanup');
                             if (response.data.success) {
                                 cleanupModal.style.display = 'none';
                                 
                                 // Show success message with stats
-                                let successMsg = `Cleanup complete: ${response.data.totalDeleted} file(s) deleted.`;
-                                if (response.data.errors && response.data.errors.length > 0) {
-                                    successMsg += ` (${response.data.errors.length} errors occurred)`;
+                                let successMsg = `Cleanup complete: ${response.data.deletedCount} file(s) deleted.`;
+                                if (response.data.failures && response.data.failures.length > 0) {
+                                    successMsg += ` (${response.data.failures.length} errors occurred)`;
                                 }
                                 document.getElementById('soundInfo').textContent = successMsg;
                                 document.getElementById('errorInfo').textContent = '';
