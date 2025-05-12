@@ -4,6 +4,7 @@ const path = require('path');
 const { spawn } = require('child_process');
 const router = express.Router();
 const logger = require('../scripts/logger');
+const os = require('os');
 
 // Simple endpoint that runs our cleanup script with --delete flag
 router.post('/run', async (req, res) => {
@@ -12,15 +13,16 @@ router.post('/run', async (req, res) => {
         logger.info(`Running cleanup script: ${scriptPath}`);
         
         // Use python on Windows, python3 on Linux
-        const pythonCommand = process.platform === 'win32' ? 'python' : 'python3';
+        const isWindows = os.platform() === 'win32';
+        const pythonCommand = isWindows ? 'python' : 'python3';
         const args = ['--delete']; // Always delete the files
         
-        const process = spawn(pythonCommand, [scriptPath, ...args]);
+        const pythonProcess = spawn(pythonCommand, [scriptPath, ...args]);
         
         let output = '';
         let deletedCount = 0;
         
-        process.stdout.on('data', (data) => {
+        pythonProcess.stdout.on('data', (data) => {
             const chunk = data.toString();
             output += chunk;
             logger.info(`Cleanup output: ${chunk}`);
@@ -32,12 +34,12 @@ router.post('/run', async (req, res) => {
             }
         });
         
-        process.stderr.on('data', (data) => {
+        pythonProcess.stderr.on('data', (data) => {
             logger.error(`Cleanup error: ${data}`);
         });
         
         await new Promise((resolve, reject) => {
-            process.on('close', (code) => {
+            pythonProcess.on('close', (code) => {
                 if (code === 0) {
                     logger.info('Cleanup completed successfully');
                     resolve();
