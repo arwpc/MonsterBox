@@ -13,12 +13,17 @@ const TEST_PINS = {
     motion: 20      // Motion sensor pin
 };
 
-describe('GPIO Hardware Tests', function() {
-    this.timeout(10000); // Some GPIO operations need more time
+if (process.env.SKIP_CI_INTEGRATION) {
+    describe.skip('GPIO Hardware Tests', function() {
+        it('skipped in CI', function() {});
+    });
+} else {
+    describe('GPIO Hardware Tests', function() {
+        this.timeout(10000); // Some GPIO operations need more time
 
-    const testGpioScript = path.join(__dirname, '..', 'scripts', 'test_gpio.py');
+        const testGpioScript = path.join(__dirname, '..', 'scripts', 'test_gpio.py');
 
-    async function isPinAvailable(pin) {
+        async function isPinAvailable(pin) {
         try {
             const result = await execAsync(`python3 ${testGpioScript} check ${pin}`);
             const data = JSON.parse(result.stdout.trim());

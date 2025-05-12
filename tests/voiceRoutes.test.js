@@ -3,7 +3,12 @@ const fs = require('fs').promises;
 const path = require('path');
 const characterService = require('../services/characterService');
 
-describe('Voice Routes', () => {
+if (process.env.SKIP_CI_INTEGRATION) {
+    describe.skip('Voice Routes', () => {
+        it('skipped in CI', () => {});
+    });
+} else {
+    describe('Voice Routes', () => {
     let testCharacterId;
     let createdSoundId;
     let originalVoicesData;
