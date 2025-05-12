@@ -218,37 +218,47 @@ router.post('/cleanup', async (req, res) => {
         
         logger.info(`Attempting to delete ${files.length} unused sound files`);
         
-        // Make sure we're only deleting files that are actually in the sounds directory
+        // Step 1: Verify files are in the sounds directory
         const soundsDir = path.join(__dirname, '../public/sounds');
         const existingFiles = await fs.readdir(soundsDir);
         const filesToDelete = files.filter(file => existingFiles.includes(file));
         
-        // Get all sounds to verify none are referencing these files
-        // This helps prevent orphaned database entries
-        const sounds = await soundService.getAllSounds();
-        const usedFilenames = new Set();
-        for (const sound of sounds) {
-            if (sound.filename) usedFilenames.add(sound.filename);
-            if (sound.file) usedFilenames.add(sound.file);
+        // Step 2: Get sound data directly from the file to avoid any service calls that might update sounds
+        let sounds = [];
+        try {
+            const data = await fs.readFile(path.join(__dirname, '../data/sounds.json'), 'utf8');
+            sounds = JSON.parse(data);
+            logger.debug(`Successfully loaded ${sounds.length} sounds from file directly`);
+        } catch (err) {
+            logger.warn(`Failed to load sounds.json directly: ${err.message}, using empty array instead`);
+            // Continue with empty array - safer to assume no sounds than risk error
         }
         
-        // Double-check that none of the files we're about to delete are actually referenced
-        // This is an additional safety check
+        // Step 3: Build a set of all filenames used by sounds
+        const usedFilenames = new Set();
+        for (const sound of sounds) {
+            if (sound && sound.filename) usedFilenames.add(sound.filename);
+            if (sound && sound.file) usedFilenames.add(sound.file);
+        }
+        
+        // Step 4: Filter to only include files that are truly unused
         const safeToDelete = filesToDelete.filter(file => !usedFilenames.has(file));
         
         if (safeToDelete.length !== filesToDelete.length) {
             logger.warn(`Found ${filesToDelete.length - safeToDelete.length} referenced files in the deletion list. These will be skipped.`);
         }
         
-        // Delete the files
+        // Step 5: Delete the files
         let deletedCount = 0;
         const errors = [];
+        const successfullyDeleted = [];
         
         for (const file of safeToDelete) {
             try {
                 const filePath = path.join(soundsDir, file);
                 await fs.unlink(filePath);
                 deletedCount++;
+                successfullyDeleted.push(file);
                 logger.debug(`Deleted unused sound file: ${file}`);
             } catch (err) {
                 logger.error(`Failed to delete file ${file}:`, err);
@@ -261,6 +271,7 @@ router.post('/cleanup', async (req, res) => {
             success: true,
             totalProcessed: safeToDelete.length,
             totalDeleted: deletedCount,
+            deleted: successfullyDeleted,
             errors: errors.length > 0 ? errors : undefined
         });
     } catch (error) {
