@@ -14,15 +14,17 @@
         <div class="button-group">
     <a href="/sounds/new" class="button primary-btn">Add New Sound</a>
     <a href="/api/voice/configure?characterId=<%- characters[0].id %>" id="configureVoiceBtn" class="button primary-btn">Configure Voice</a>
-    <button id="cleanupBtn" class="button primary-btn" style="margin-left: 10px;">Cleanup</button>
+    <button id="cleanupBtn" class="button primary-btn">Cleanup Unused Files</button>
 <!-- Modal for cleanup confirmation -->
 <div id="cleanupModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); z-index:1000; align-items:center; justify-content:center;">
   <div style="background:#000; color:#00ff00; padding:24px; border-radius:8px; max-width:500px; margin:auto; border:2px solid #00ff00;">
     <h3 style="color:#00ff00;">Confirm Cleanup</h3>
+    <p style="color:#00ff00;">The following sound files are not referenced in any character configuration:</p>
     <div id="cleanupFileList" style="max-height:200px; overflow:auto; border:1px solid #00ff00; margin-bottom:16px; padding:8px; color:#00ff00;"></div>
-    <div id="cleanupModalError" style="color:#ff4444;"></div>
-    <button id="confirmCleanupBtn" class="button primary-btn" style="margin-right:8px;">Delete junk files</button>
-    <button id="cancelCleanupBtn" class="button">Cancel</button>
+    <div id="cleanupFileStats" style="margin-bottom:12px; color:#00ff00;"></div>
+    <div id="cleanupModalError" style="margin-bottom:12px; color:#ff4444;"></div>
+    <button id="confirmCleanupBtn" class="button primary-btn">Delete Files</button>
+    <button id="cancelCleanupBtn" class="button primary-btn" style="background-color:#550000; margin-left:8px;">Cancel</button>
   </div>
 </div>
 </div>
@@ -93,28 +95,42 @@
             const cleanupBtn = document.getElementById('cleanupBtn');
             const cleanupModal = document.getElementById('cleanupModal');
             const cleanupFileList = document.getElementById('cleanupFileList');
+            const cleanupFileStats = document.getElementById('cleanupFileStats');
             const cleanupModalError = document.getElementById('cleanupModalError');
             const confirmCleanupBtn = document.getElementById('confirmCleanupBtn');
             const cancelCleanupBtn = document.getElementById('cancelCleanupBtn');
             let filesToDelete = [];
+            
             if (cleanupBtn) {
                 cleanupBtn.addEventListener('click', async function() {
+                    // Reset state
                     cleanupBtn.disabled = true;
                     cleanupBtn.textContent = 'Analyzing...';
                     document.getElementById('soundInfo').textContent = '';
                     document.getElementById('errorInfo').textContent = '';
+                    cleanupModalError.textContent = '';
+                    
                     try {
                         const response = await axios.post('/sounds/cleanup/analyze');
                         if (response.data.success) {
                             filesToDelete = response.data.unused;
+                            
                             if (filesToDelete.length === 0) {
                                 document.getElementById('soundInfo').textContent = 'No unused sound files found.';
                                 cleanupBtn.disabled = false;
-                                cleanupBtn.textContent = 'Cleanup';
+                                cleanupBtn.textContent = 'Cleanup Unused Files';
                                 return;
                             }
+                            
+                            // Calculate total size of files to delete 
+                            const totalFiles = response.data.total;
+                            const usedFiles = response.data.used;
+                            const unusedFiles = response.data.unusedCount;
+                            
                             // Show modal with file list
                             cleanupFileList.innerHTML = filesToDelete.map(f => `<div>${f}</div>`).join('');
+                            cleanupFileStats.innerHTML = `<strong>${unusedFiles}</strong> unused files out of <strong>${totalFiles}</strong> total files will be deleted.`;
+                            
                             cleanupModalError.textContent = '';
                             cleanupModal.style.display = 'flex';
                         } else {
@@ -123,34 +139,57 @@
                     } catch (err) {
                         document.getElementById('errorInfo').textContent = 'Analysis failed: ' + (err.response?.data?.error || err.message);
                     }
+                    
                     cleanupBtn.disabled = false;
-                    cleanupBtn.textContent = 'Cleanup';
+                    cleanupBtn.textContent = 'Cleanup Unused Files';
                 });
             }
+            
             if (cancelCleanupBtn) {
                 cancelCleanupBtn.addEventListener('click', function() {
                     cleanupModal.style.display = 'none';
                 });
             }
+            
             if (confirmCleanupBtn) {
                 confirmCleanupBtn.addEventListener('click', async function() {
                     confirmCleanupBtn.disabled = true;
+                    cancelCleanupBtn.disabled = true;
                     confirmCleanupBtn.textContent = 'Deleting...';
                     cleanupModalError.textContent = '';
+                    
                     try {
                         const response = await axios.post('/sounds/cleanup', { files: filesToDelete });
                         if (response.data.success) {
                             cleanupModal.style.display = 'none';
-                            document.getElementById('soundInfo').textContent = `Cleanup complete: ${response.data.totalDeleted} file(s) deleted.`;
+                            
+                            // Show success message with stats
+                            let successMsg = `Cleanup complete: ${response.data.totalDeleted} file(s) deleted.`;
+                            if (response.data.errors && response.data.errors.length > 0) {
+                                successMsg += ` (${response.data.errors.length} errors occurred)`;
+                            }
+                            document.getElementById('soundInfo').textContent = successMsg;
                             document.getElementById('errorInfo').textContent = '';
+                            
+                            // If we need to refresh the page to reflect changes
+                            // Uncomment the following line
+                            // window.location.reload();
                         } else {
                             cleanupModalError.textContent = 'Cleanup failed: ' + (response.data.error || 'Unknown error.');
+                            confirmCleanupBtn.disabled = false;
+                            cancelCleanupBtn.disabled = false;
                         }
                     } catch (err) {
                         cleanupModalError.textContent = 'Cleanup failed: ' + (err.response?.data?.error || err.message);
+                        confirmCleanupBtn.disabled = false;
+                        cancelCleanupBtn.disabled = false;
                     }
-                    confirmCleanupBtn.disabled = false;
-                    confirmCleanupBtn.textContent = 'Delete junk files';
+                    
+                    if (!cleanupModalError.textContent) {
+                        confirmCleanupBtn.disabled = false;
+                        cancelCleanupBtn.disabled = false;
+                        confirmCleanupBtn.textContent = 'Delete Files';
+                    }
                 });
             }
         });

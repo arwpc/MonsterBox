@@ -162,4 +162,95 @@ router.post('/:id/delete', async (req, res) => {
     }
 });
 
+// Analyze unused sound files
+router.post('/cleanup/analyze', async (req, res) => {
+    try {
+        logger.info('Analyzing unused sound files');
+        
+        // Get all sound files in the directory
+        const soundsDir = path.join(__dirname, '../public/sounds');
+        const allFiles = await fs.readdir(soundsDir);
+        
+        // Get all sounds from database
+        const sounds = await soundService.getAllSounds();
+        
+        // Create a set of filenames that are in use
+        const usedFilenames = new Set();
+        for (const sound of sounds) {
+            if (sound.filename) usedFilenames.add(sound.filename);
+            if (sound.file) usedFilenames.add(sound.file);
+        }
+        
+        // Find unused files
+        const unusedFiles = allFiles.filter(file => !usedFilenames.has(file));
+        
+        logger.info(`Analysis complete: ${unusedFiles.length} unused files found out of ${allFiles.length} total files`);
+        res.json({
+            success: true, 
+            total: allFiles.length,
+            used: usedFilenames.size,
+            unused: unusedFiles,
+            unusedCount: unusedFiles.length
+        });
+    } catch (error) {
+        logger.error('Error analyzing unused sound files:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Failed to analyze unused sound files',
+            details: error.message 
+        });
+    }
+});
+
+// Delete unused sound files
+router.post('/cleanup', async (req, res) => {
+    try {
+        const { files } = req.body;
+        if (!files || !Array.isArray(files)) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Invalid request: files array is required' 
+            });
+        }
+        
+        logger.info(`Attempting to delete ${files.length} unused sound files`);
+        
+        // Make sure we're only deleting files that are actually in the sounds directory
+        const soundsDir = path.join(__dirname, '../public/sounds');
+        const existingFiles = await fs.readdir(soundsDir);
+        const filesToDelete = files.filter(file => existingFiles.includes(file));
+        
+        // Delete the files
+        let deletedCount = 0;
+        const errors = [];
+        
+        for (const file of filesToDelete) {
+            try {
+                const filePath = path.join(soundsDir, file);
+                await fs.unlink(filePath);
+                deletedCount++;
+                logger.debug(`Deleted unused sound file: ${file}`);
+            } catch (err) {
+                logger.error(`Failed to delete file ${file}:`, err);
+                errors.push({ file, error: err.message });
+            }
+        }
+        
+        logger.info(`Cleanup complete: deleted ${deletedCount} out of ${filesToDelete.length} unused sound files`);
+        res.json({
+            success: true,
+            totalProcessed: filesToDelete.length,
+            totalDeleted: deletedCount,
+            errors: errors.length > 0 ? errors : undefined
+        });
+    } catch (error) {
+        logger.error('Error cleaning up unused sound files:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Failed to clean up unused sound files',
+            details: error.message 
+        });
+    }
+});
+
 module.exports = router;

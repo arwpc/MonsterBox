@@ -12,10 +12,23 @@
     <div class="config-section">
         <h2>Quick Links</h2>
         <div class="button-group">
-            <a href="/system-config/servos" class="button">Servo Configurations</a>
-            <a href="/logs" class="button">View Logs</a>
-            <a href="/" class="button">Back to Main Menu</a>
+            <a href="/system-config/servos" class="button primary-btn">Servo Configurations</a>
+            <a href="/logs" class="button primary-btn">View Logs</a>
+            <button id="rebootBtn" class="button primary-btn">Reboot System</button>
+            <a href="/" class="button primary-btn">Back to Main Menu</a>
         </div>
+        <!-- Reboot confirmation modal -->
+        <div id="rebootModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); z-index: 1000; display: flex; align-items: center; justify-content: center;">
+            <div style="background: #000; border: 2px solid #00ff00; padding: 20px; border-radius: 5px; width: 300px; text-align: center;">
+                <h3 style="color: #00ff00;">Confirm System Reboot</h3>
+                <p style="color: #00ff00;">Are you sure you want to reboot the system? This will disconnect all users and stop all running processes.</p>
+                <div style="margin-top: 20px;">
+                    <button id="confirmRebootBtn" class="button primary-btn">Yes, Reboot Now</button>
+                    <button id="cancelRebootBtn" class="button primary-btn" style="background-color: #550000; margin-left: 10px;">Cancel</button>
+                </div>
+            </div>
+        </div>
+        <div id="rebootResult" style="margin-top: 10px; color: #00ff00;"></div>
     </div>
 
     <div class="config-section">
@@ -73,5 +86,74 @@
             <p class="error-message">Unable to retrieve drive information.</p>
         <% } %>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        // Reboot button functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const rebootBtn = document.getElementById('rebootBtn');
+            const rebootModal = document.getElementById('rebootModal');
+            const confirmRebootBtn = document.getElementById('confirmRebootBtn');
+            const cancelRebootBtn = document.getElementById('cancelRebootBtn');
+            const rebootResult = document.getElementById('rebootResult');
+
+            if (rebootBtn) {
+                rebootBtn.addEventListener('click', function() {
+                    // Show confirmation modal
+                    rebootModal.style.display = 'flex';
+                });
+            }
+
+            if (cancelRebootBtn) {
+                cancelRebootBtn.addEventListener('click', function() {
+                    // Hide modal on cancel
+                    rebootModal.style.display = 'none';
+                });
+            }
+
+            if (confirmRebootBtn) {
+                confirmRebootBtn.addEventListener('click', async function() {
+                    try {
+                        // Disable button to prevent multiple clicks
+                        confirmRebootBtn.disabled = true;
+                        confirmRebootBtn.textContent = 'Rebooting...';
+                        
+                        // Send reboot request
+                        const response = await axios.post('/system-config/reboot');
+                        
+                        // Hide modal
+                        rebootModal.style.display = 'none';
+                        
+                        // Show message to user
+                        rebootResult.textContent = response.data.message || 'System is rebooting now...';
+                        
+                        // Add countdown
+                        let countdown = 5;
+                        const interval = setInterval(function() {
+                            rebootResult.textContent = `System is rebooting now... Disconnecting in ${countdown} seconds.`;
+                            countdown--;
+                            
+                            if (countdown < 0) {
+                                clearInterval(interval);
+                                rebootResult.textContent = 'Disconnected. Please wait for system to restart.';
+                            }
+                        }, 1000);
+                        
+                    } catch (error) {
+                        // Enable button again
+                        confirmRebootBtn.disabled = false;
+                        confirmRebootBtn.textContent = 'Yes, Reboot Now';
+                        
+                        // Hide modal
+                        rebootModal.style.display = 'none';
+                        
+                        // Show error message
+                        rebootResult.textContent = 'Error: Failed to reboot system. ' + 
+                            (error.response?.data?.error || error.message || 'Unknown error');
+                        rebootResult.style.color = '#ff0000';
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>
