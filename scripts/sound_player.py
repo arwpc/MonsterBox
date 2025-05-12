@@ -9,7 +9,14 @@ import subprocess
 import psutil
 
 def log_message(message):
-    print(json.dumps(message), flush=True)
+    # Make sure the message is properly formatted as JSON
+    try:
+        output = json.dumps(message)
+        print(output, flush=True)
+        sys.stdout.flush()  # Extra flush to ensure output is sent immediately
+    except Exception as e:
+        print(json.dumps({"status": "error", "message": f"Error formatting log message: {str(e)}"}), flush=True)
+        sys.stdout.flush()
 
 class SoundPlayer:
     def __init__(self):
@@ -226,12 +233,19 @@ if __name__ == "__main__":
                         response["message"] = f"Invalid PLAY command format: {command}"
                     else:
                         sound_id, file_path = parts[2], parts[3]
-                        player.play_sound(sound_id, file_path, message_id)
-                        # The full response will be sent by the play_sound function
-                        # Just acknowledge receipt of command immediately
-                        response["status"] = "starting"
+                        
+                        # Send immediate response before starting playback
+                        response["status"] = "playing"
                         response["sound_id"] = sound_id
-                        response["message"] = "Sound playback starting"
+                        response["message"] = "Sound playback initiated"
+                        log_message(response)
+                        
+                        # Now start the sound playback in a separate thread
+                        from threading import Thread
+                        Thread(target=player.play_sound, args=(sound_id, file_path, message_id)).start()
+                        
+                        # Skip the final log_message for this command since we already sent the response
+                        continue
                 elif cmd == "STOP":
                     if len(parts) != 3:
                         response["status"] = "error"

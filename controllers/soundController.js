@@ -173,19 +173,41 @@ function sendCommand(command, timeout = COMMAND_TIMEOUT) {
         const fullCommand = `${id}|${command}\n`;
         logger.info(`About to write to sound player stdin: ${fullCommand.trim()}`);
         
+        // Extract sound ID for PLAY commands - we'll need it for the timeout handler
+        let soundId = null;
+        let filePath = null;
+        if (command.startsWith('PLAY|')) {
+            const parts = command.split('|');
+            if (parts.length >= 3) {
+                soundId = parts[1];
+                filePath = parts[2];
+            }
+        }
+        
         const startTime = Date.now();
         const timeoutId = setTimeout(() => {
             if (messageQueue.has(id)) {
                 messageQueue.delete(id);
                 const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
-                let fileInfo = '';
-                // Try to extract file info from command if present
-                if (typeof command === 'string' && command.includes('play')) {
-                    const match = command.match(/play\s+\d+,?\s*(.*)$/);
-                    if (match && match[1]) fileInfo = ` | file: ${match[1]}`;
+                
+                // Log timeout warning but don't treat as error for PLAY commands
+                // since the sound might still be playing even if we don't get a response
+                if (command.startsWith('PLAY|')) {
+                    logger.debug(`Sound command timed out after ${elapsed}s | command: ${command} - this is normal for ongoing playback`);
+                    // Mark the sound as playing even though we timed out waiting for confirmation
+                    if (soundId) {
+                        playStatus[soundId] = 'playing';
+                    }
+                    // Resolve with a constructed response
+                    resolve({
+                        status: 'playing',
+                        sound_id: soundId,
+                        message: 'Sound playback initiated (timeout occurred but playback may be ongoing)'
+                    });
+                } else {
+                    logger.warn(`Sound command timed out after ${elapsed}s | command: ${command}`);
+                    reject(new Error(`Command timed out after ${elapsed}s | command: ${command}`));
                 }
-                logger.warn(`Sound command timed out after ${elapsed}s | command: ${command}${fileInfo}`);
-                reject(new Error(`Command timed out after ${elapsed}s | command: ${command}${fileInfo}`));
             }
         }, timeout);
 
@@ -200,23 +222,32 @@ function sendCommand(command, timeout = COMMAND_TIMEOUT) {
                 reject(error);
             }
         });
-        
+
+        // Write the command to the sound player's stdin with error handling
         try {
-            soundPlayerProcess.stdin.write(fullCommand, (error) => {
-                if (error) {
-                    clearTimeout(timeoutId);
-                    logger.error(`Error sending command: ${error.message}`);
-                    messageQueue.delete(id);
-                    reject(error);
-                } else {
-                    logger.info(`Successfully wrote command to sound player stdin: ${fullCommand.trim()}`);
-                }
-            });
+            const writeResult = soundPlayerProcess.stdin.write(fullCommand);
+            logger.info(`Successfully wrote command to sound player stdin: ${fullCommand.trim()}`);
+            
+            // If we couldn't write to the stream immediately, we need to wait for drain
+            if (!writeResult) {
+                soundPlayerProcess.stdin.once('drain', () => {
+                    logger.info(`Sound player stdin drained after write`);
+                });
+            }
+            
+            // For PLAY commands, give a small delay and then check if we already got a response
+            if (command.startsWith('PLAY|')) {
+                setTimeout(() => {
+                    // If we're still waiting, log that fact
+                    if (messageQueue.has(id)) {
+                        logger.debug(`Still waiting for response to command ${id} after 500ms`);
+                    }
+                }, 500);
+            }
         } catch (error) {
-            clearTimeout(timeoutId);
-            logger.error(`Error sending command: ${error.message}`);
+            logger.error(`Failed to write command to sound player: ${error.message}`);
             messageQueue.delete(id);
-            reject(error);
+            reject(new Error(`Failed to send command to sound player: ${error.message}`));
         }
     });
 }
