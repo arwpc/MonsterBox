@@ -44,9 +44,30 @@ def cleanup_sounds():
     
     if not unused_files:
         print("No unused sound files to delete.")
+    
+    # Step 5: Check for entries in sounds.json that do not have corresponding files in /public/sounds
+    missing_files = []
+    for sound in sounds_data:
+        filename = sound.get('filename')
+        if filename and filename not in all_files:
+            missing_files.append({
+                'id': sound.get('id'),
+                'name': sound.get('name'),
+                'filename': filename
+            })
+    
+    # Print missing files results
+    if missing_files:
+        print(f"\nFound {len(missing_files)} JSON entries with missing sound files:")
+        for sound in missing_files:
+            print(f"  ID: {sound['id']}, Name: {sound['name']}, Missing file: {sound['filename']}")
+    else:
+        print("\nAll JSON sound entries have corresponding files on disk.")
+    
+    if not unused_files and not missing_files:
         return
     
-    # Step 5: Delete the unused files
+    # Step 6: Delete the unused files
     delete_mode = len(sys.argv) > 1 and sys.argv[1] == '--delete'
     
     if not delete_mode:
@@ -63,11 +84,23 @@ def cleanup_sounds():
         try:
             os.remove(file_path)
             deleted_count += 1
-            print(f"Deleted: {file}")
+            print(f"  Deleted: {file}")
         except Exception as e:
-            print(f"Error deleting {file}: {e}")
+            print(f"  Error deleting {file}: {e}")
     
-    print(f"\nSuccessfully deleted {deleted_count} unused sound files.")
+    print(f"Successfully deleted {deleted_count} unused sound files.")
+    
+    # Output JSON summary for easier parsing by Node.js
+    summary = {
+        "unused_files_count": len(unused_files),
+        "missing_files_count": len(missing_files),
+        "unused_files": unused_files,
+        "missing_files": missing_files
+    }
+    
+    print("\n##SUMMARY_JSON##")
+    print(json.dumps(summary))
+    print("##END_SUMMARY##")
 
 if __name__ == "__main__":
     cleanup_sounds()

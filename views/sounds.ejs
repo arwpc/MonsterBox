@@ -154,7 +154,17 @@
                         
                         // Show success message
                         const message = response.data.message || 'Cleanup completed';
-                        document.getElementById('soundInfo').textContent = message;
+                        let displayMessage = message;
+                        
+                        // Display missing files information if available
+                        if (response.data.missingFiles && response.data.missingFiles.length > 0) {
+                            const missingFilesList = response.data.missingFiles.map(f => 
+                                `ID: ${f.id}, Name: ${f.name}, Missing file: ${f.filename}`
+                            ).join('<br>');
+                            displayMessage += '<br><br><strong>Files missing from disk:</strong><br>' + missingFilesList;
+                        }
+                        
+                        document.getElementById('soundInfo').innerHTML = displayMessage;
                         document.getElementById('errorInfo').textContent = '';
                         
                         // Refresh the page after a short delay
