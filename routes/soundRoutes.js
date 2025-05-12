@@ -80,7 +80,26 @@ router.post('/', upload.array('sound_files'), async (req, res) => {
 
 router.post('/:id', upload.single('sound_files'), async (req, res) => {
     try {
-        const id = parseInt(req.params.id);
+        // Enhanced ID validation
+        const rawId = req.params.id;
+        if (!rawId || rawId === 'undefined' || rawId === 'null') {
+            logger.error(`Invalid sound ID provided in URL: ${rawId}`);
+            return res.status(400).render('error', { error: 'Invalid sound ID provided' });
+        }
+        
+        const id = parseInt(rawId, 10);
+        if (isNaN(id) || id <= 0) {
+            logger.error(`Sound ID is not a valid number: ${rawId}`);
+            return res.status(400).render('error', { error: 'Sound ID must be a valid number' });
+        }
+        
+        // Check if sound exists before proceeding
+        const existingSound = await soundService.getSoundById(id);
+        if (!existingSound) {
+            logger.error(`Sound with ID ${id} not found`);
+            return res.status(404).render('error', { error: `Sound with ID ${id} not found` });
+        }
+        
         const characterIds = req.body.characterIds ? (Array.isArray(req.body.characterIds) ? req.body.characterIds.map(Number) : [Number(req.body.characterIds)]) : [];
         const updatedSound = {
             name: req.body.name,
@@ -88,9 +107,8 @@ router.post('/:id', upload.single('sound_files'), async (req, res) => {
         };
         
         if (req.body.file_option === 'replace' && req.file) {
-            const sound = await soundService.getSoundById(id);
-            if (sound && sound.filename) {
-                const oldFilePath = path.join(__dirname, '../public/sounds', sound.filename);
+            if (existingSound.filename) {
+                const oldFilePath = path.join(__dirname, '../public/sounds', existingSound.filename);
                 await fs.unlink(oldFilePath).catch(err => logger.warn(`Failed to delete old sound file: ${err.message}`));
             }
             updatedSound.filename = req.file.filename;
@@ -106,7 +124,25 @@ router.post('/:id', upload.single('sound_files'), async (req, res) => {
 
 router.post('/:id/play', async (req, res) => {
     try {
-        const soundId = parseInt(req.params.id);
+        // Enhanced ID validation
+        const rawId = req.params.id;
+        if (!rawId || rawId === 'undefined' || rawId === 'null') {
+            logger.error(`Invalid sound ID provided in URL: ${rawId}`);
+            return res.status(400).json({ 
+                error: 'Invalid sound ID', 
+                details: `Sound ID is invalid: ${rawId}` 
+            });
+        }
+        
+        const soundId = parseInt(rawId, 10);
+        if (isNaN(soundId) || soundId <= 0) {
+            logger.error(`Sound ID is not a valid number: ${rawId}`);
+            return res.status(400).json({ 
+                error: 'Invalid sound ID', 
+                details: `Sound ID must be a valid number, received: ${rawId}` 
+            });
+        }
+        
         logger.info('Attempting to play sound with ID:', soundId);
 
         const sound = await soundService.getSoundById(soundId);
@@ -117,6 +153,15 @@ router.post('/:id/play', async (req, res) => {
         }
 
         logger.info('Found sound:', sound);
+        
+        // Validate that sound has a filename
+        if (!sound.filename) {
+            logger.error(`Sound ${soundId} has no associated filename`);
+            return res.status(400).json({ 
+                error: 'Invalid sound configuration', 
+                details: `Sound ${soundId} has no associated file` 
+            });
+        }
 
         const filePath = path.resolve(__dirname, '..', 'public', 'sounds', sound.filename);
         logger.info('Absolute file path:', filePath);
@@ -148,12 +193,42 @@ router.post('/:id/play', async (req, res) => {
 
 router.post('/:id/delete', async (req, res) => {
     try {
-        const id = parseInt(req.params.id);
+        // Enhanced ID validation
+        const rawId = req.params.id;
+        if (!rawId || rawId === 'undefined' || rawId === 'null') {
+            logger.error(`Invalid sound ID provided in URL: ${rawId}`);
+            return res.status(400).json({ 
+                error: 'Invalid sound ID', 
+                details: `Sound ID is invalid: ${rawId}` 
+            });
+        }
+        
+        const id = parseInt(rawId, 10);
+        if (isNaN(id) || id <= 0) {
+            logger.error(`Sound ID is not a valid number: ${rawId}`);
+            return res.status(400).json({ 
+                error: 'Invalid sound ID', 
+                details: `Sound ID must be a valid number, received: ${rawId}` 
+            });
+        }
+        
+        // Check if sound exists before attempting to delete
         const sound = await soundService.getSoundById(id);
-        if (sound && sound.filename) {
+        if (!sound) {
+            logger.warn(`Sound with ID ${id} not found for deletion`);
+            return res.status(404).json({ 
+                error: 'Sound not found', 
+                details: `No sound with id ${id} exists` 
+            });
+        }
+        
+        // Delete the associated file if it exists
+        if (sound.filename) {
             const filePath = path.join(__dirname, '../public/sounds', sound.filename);
             await fs.unlink(filePath).catch(err => logger.warn(`Failed to delete sound file: ${err.message}`));
         }
+        
+        // Delete the sound record itself
         await soundService.deleteSound(id);
         res.status(200).json({ message: 'Sound deleted successfully' });
     } catch (error) {
@@ -375,34 +450,47 @@ router.post('/direct-cleanup', async (req, res) => {
 });
 */
 
-// Python-based cleanup route (this should be more reliable on Raspberry Pi)
-router.post('/python-cleanup', async (req, res) => {
+// Simple cleanup route that calls our simplified Python script
+router.post('/simple-cleanup', async (req, res) => {
     try {
         const { spawn } = require('child_process');
-        const pythonScriptPath = path.join(__dirname, '../scripts/cleanup_sounds.py');
+        const scriptPath = path.join(__dirname, '../simple_cleanup_sounds.py');
         
-        logger.info(`Running Python cleanup script: ${pythonScriptPath}`);
+        logger.info(`Running simple cleanup script: ${scriptPath}`);
         
-        // First run to analyze (without --delete flag)
-        const analyzeProcess = spawn('python3', [pythonScriptPath]);
+        // First run without --delete to analyze only
+        const analyzeCommand = process.platform === 'win32' ? 'python' : 'python3';
+        const analyzeProcess = spawn(analyzeCommand, [scriptPath]);
         
-        let analysisOutput = '';
+        let output = '';
         let unusedFilesCount = 0;
+        let unusedFilesList = [];
         
         analyzeProcess.stdout.on('data', (data) => {
-            const output = data.toString();
-            analysisOutput += output;
-            logger.debug(`Python script output: ${output}`);
+            const chunk = data.toString();
+            output += chunk;
+            logger.debug(`Script output: ${chunk}`);
             
-            // Try to extract the count of unused files
-            const match = output.match(/Found (\d+) unused sound files/);
-            if (match && match[1]) {
-                unusedFilesCount = parseInt(match[1]);
+            // Extract the count of unused files
+            const countMatch = chunk.match(/Found (\d+) unused files/);
+            if (countMatch && countMatch[1]) {
+                unusedFilesCount = parseInt(countMatch[1]);
+            }
+            
+            // Extract the list of files (if any)
+            const fileMatches = chunk.match(/\s\s(.+)$/gm);
+            if (fileMatches) {
+                fileMatches.forEach(match => {
+                    const file = match.trim();
+                    if (file && !file.startsWith('Found') && !file.startsWith('No unused')) {
+                        unusedFilesList.push(file);
+                    }
+                });
             }
         });
         
         analyzeProcess.stderr.on('data', (data) => {
-            logger.error(`Python script error: ${data}`);
+            logger.error(`Script error: ${data}`);
         });
         
         await new Promise((resolve, reject) => {
@@ -412,7 +500,7 @@ router.post('/python-cleanup', async (req, res) => {
                     resolve();
                 } else {
                     logger.error(`Analysis process exited with code ${code}`);
-                    reject(new Error(`Python script exited with code ${code}`));
+                    reject(new Error(`Script exited with code ${code}`));
                 }
             });
         });
@@ -422,32 +510,35 @@ router.post('/python-cleanup', async (req, res) => {
             return res.json({
                 success: true,
                 message: 'No unused sound files found.',
-                deletedCount: 0
+                unusedFilesCount: 0,
+                unusedFiles: []
             });
         }
         
-        // If we should delete, run with --delete flag
+        // If delete was requested, run again with the --delete flag
         if (req.body && req.body.delete === true) {
-            logger.info('Running Python cleanup script with --delete flag');
+            logger.info('Running cleanup script with --delete flag');
             
-            const deleteProcess = spawn('python3', [pythonScriptPath, '--delete']);
+            const deleteCommand = process.platform === 'win32' ? 'python' : 'python3';
+            const deleteProcess = spawn(deleteCommand, [scriptPath, '--delete']);
+            
             let deleteOutput = '';
             let deletedCount = 0;
             
             deleteProcess.stdout.on('data', (data) => {
-                const output = data.toString();
-                deleteOutput += output;
-                logger.debug(`Python delete script output: ${output}`);
+                const chunk = data.toString();
+                deleteOutput += chunk;
+                logger.debug(`Delete script output: ${chunk}`);
                 
-                // Try to extract the count of deleted files
-                const match = output.match(/Deleted (\d+) unused sound files/);
+                // Extract the count of deleted files
+                const match = chunk.match(/Successfully deleted (\d+) unused sound files/);
                 if (match && match[1]) {
                     deletedCount = parseInt(match[1]);
                 }
             });
             
             deleteProcess.stderr.on('data', (data) => {
-                logger.error(`Python delete script error: ${data}`);
+                logger.error(`Delete script error: ${data}`);
             });
             
             await new Promise((resolve, reject) => {
@@ -457,7 +548,7 @@ router.post('/python-cleanup', async (req, res) => {
                         resolve();
                     } else {
                         logger.error(`Deletion process exited with code ${code}`);
-                        reject(new Error(`Python delete script exited with code ${code}`));
+                        reject(new Error(`Delete script exited with code ${code}`));
                     }
                 });
             });
@@ -465,24 +556,24 @@ router.post('/python-cleanup', async (req, res) => {
             return res.json({
                 success: true,
                 message: `Successfully deleted ${deletedCount} unused sound files.`,
-                deletedCount,
+                deletedCount: deletedCount,
                 output: deleteOutput
             });
         }
         
-        // If we're just analyzing, return the analysis results
+        // Just return the analysis results
         return res.json({
             success: true,
             message: `Found ${unusedFilesCount} unused sound files.`,
-            unusedFilesCount,
-            output: analysisOutput
+            unusedFilesCount: unusedFilesCount,
+            unusedFiles: unusedFilesList
         });
         
     } catch (error) {
-        logger.error('Error running Python cleanup script:', error);
+        logger.error('Error running cleanup script:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to perform Python-based cleanup',
+            error: 'Failed to perform cleanup',
             details: error.message
         });
     }
