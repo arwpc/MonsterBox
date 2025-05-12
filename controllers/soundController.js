@@ -403,8 +403,12 @@ async function playSound(soundId, filePath) {
         if (duration && duration > 0) {
             timeout = Math.ceil(duration * 1000 + 3000); // duration in ms + 3s buffer
             logger.info(`Auto-calculated timeout for soundId ${soundId}: ${timeout} ms (duration: ${duration}s + 3s buffer)`);
+            // Store the duration in the playStatus object for later reference
+            playStatus[`${soundId}_duration`] = duration;
         } else {
             logger.warn(`Could not determine duration for ${filePath}, using default timeout.`);
+            // Use a default duration estimate
+            playStatus[`${soundId}_duration`] = 5; // default 5 seconds
         }
     } catch (err) {
         logger.warn(`Failed to determine duration for ${filePath}: ${err.message}`);
@@ -501,17 +505,33 @@ function isSoundPlayerRunning() {
 
 function waitForSoundToFinish(soundId) {
     return new Promise((resolve) => {
+        // Default timeout is the sound duration + 1 second, or 5 seconds if we don't know duration
+        const soundDuration = playStatus[`${soundId}_duration`] || 5;
+        const timeoutDuration = (soundDuration * 1000) + 1000;
+        
+        // Set a maximum timeout to ensure we don't wait forever
+        const timeoutId = setTimeout(() => {
+            logger.debug(`Auto-resolving waitForSoundToFinish after ${timeoutDuration}ms for sound ${soundId}`);
+            cleanupAndResolve();
+        }, timeoutDuration);
+        
+        // Function to clean up listeners and resolve
+        const cleanupAndResolve = () => {
+            clearTimeout(timeoutId);
+            eventEmitter.removeListener('soundFinished', finishListener);
+            eventEmitter.removeListener('statusUpdate', statusListener);
+            resolve();
+        };
+
         const finishListener = (finishedSoundId) => {
             if (finishedSoundId === soundId) {
-                eventEmitter.removeListener('statusUpdate', statusListener);
-                resolve();
+                cleanupAndResolve();
             }
         };
 
         const statusListener = (updatedSoundId, status) => {
             if (updatedSoundId === soundId && (status === 'finished' || status === 'stopped')) {
-                eventEmitter.removeListener('soundFinished', finishListener);
-                resolve();
+                cleanupAndResolve();
             }
         };
 
@@ -519,16 +539,21 @@ function waitForSoundToFinish(soundId) {
         eventEmitter.on('statusUpdate', statusListener);
 
         // Check if the sound has already finished
-        getSoundStatus(soundId).then(status => {
-            if (status.status === 'finished' || status.status === 'stopped' || status.status === 'not_found') {
-                eventEmitter.removeListener('soundFinished', finishListener);
-                eventEmitter.removeListener('statusUpdate', statusListener);
-                resolve();
-            }
-        }).catch(() => {
-            // If we can't get the status, wait for the events
-        });
+        getSoundStatus(soundId)
+            .then(status => {
+                if (status.status === 'finished' || status.status === 'stopped' || status.status === 'not_found') {
+                    cleanupAndResolve();
+                }
+            })
+            .catch(() => {
+                // If we can't get status, continue waiting with the timeout
+                logger.debug(`Couldn't get initial status for sound ${soundId}, waiting for events with timeout`);
+            });
     });
+}
+
+function getStoredSoundDuration(soundId) {
+    return playStatus[`${soundId}_duration`] || null;
 }
 
 module.exports = {
@@ -538,5 +563,6 @@ module.exports = {
     stopAllSounds,
     getSoundStatus,
     isSoundPlayerRunning,
-    waitForSoundToFinish
+    waitForSoundToFinish,
+    getStoredSoundDuration
 };

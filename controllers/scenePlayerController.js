@@ -292,9 +292,21 @@ async function executeSound(step) {
             await soundController.playSound(sound.id, absolutePath);
             logger.info(`Sound started playing: ${sound.name}`);
 
-            // For non-concurrent sounds, wait for completion
+            // For non-concurrent sounds, wait for completion but with optimized timing
             if (step.concurrent !== "on") {
-                await soundController.waitForSoundToFinish(sound.id);
+                // Get the duration directly from playStatus if available
+                const duration = soundController.getStoredSoundDuration(sound.id);
+                
+                // If it's a very short sound (under 2 seconds), just wait a shorter time
+                if (duration && duration < 2) {
+                    // For very short sounds, wait slightly longer than duration but don't
+                    // go through the potentially slower waitForSoundToFinish process
+                    logger.debug(`Sound is short (${duration}s), using optimized timing`);
+                    await new Promise(resolve => setTimeout(resolve, (duration * 1000) + 500));
+                } else {
+                    // For longer sounds, use the standard waiting mechanism
+                    await soundController.waitForSoundToFinish(sound.id);
+                }
             }
         } catch (error) {
             // Log but ignore play errors
