@@ -21,40 +21,6 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// --- CLEANUP ROUTES MUST COME FIRST ---
-// Analyze unused sound files
-router.post('/cleanup/analyze', async (req, res) => {
-    try {
-        logger.info('Received cleanup analysis request');
-        const unused = await soundService.analyzeUnusedSounds();
-        logger.info(`Unused files found: ${JSON.stringify(unused)}`);
-        res.json({ success: true, unused });
-    } catch (err) {
-        logger.error('Cleanup analysis failed:', err);
-        res.status(500).json({ success: false, error: err.message });
-    }
-});
-
-// Cleanup unused sound files (delete provided list)
-router.post('/cleanup', async (req, res) => {
-    try {
-        logger.info('Full req.body received on cleanup:', req.body);
-        const { files } = req.body;
-        logger.info(`Cleanup request received. Files to delete: ${JSON.stringify(files)}`);
-        if (!Array.isArray(files)) {
-            logger.warn('Cleanup request received with invalid files array:', files);
-            return res.status(400).json({ success: false, error: 'No files provided' });
-        }
-        const result = await soundService.deleteUnusedSounds(files);
-        logger.info(`Cleanup result: ${JSON.stringify(result)}`);
-        res.json({ success: true, ...result });
-    } catch (err) {
-        logger.error('Cleanup failed:', err);
-        res.status(500).json({ success: false, error: err.message, stack: err.stack });
-    }
-});
-// --- END CLEANUP ROUTES ---
-
 router.get('/', async (req, res) => {
     try {
         const [characters, sounds] = await Promise.all([
@@ -115,10 +81,6 @@ router.post('/', upload.array('sound_files'), async (req, res) => {
 router.post('/:id', upload.single('sound_files'), async (req, res) => {
     try {
         const id = parseInt(req.params.id);
-        if (!id || isNaN(id)) {
-            logger.warn('Attempted to update sound with invalid id:', req.params.id);
-            return res.status(400).render('error', { error: 'Invalid sound ID' });
-        }
         const characterIds = req.body.characterIds ? (Array.isArray(req.body.characterIds) ? req.body.characterIds.map(Number) : [Number(req.body.characterIds)]) : [];
         const updatedSound = {
             name: req.body.name,
@@ -184,39 +146,20 @@ router.post('/:id/play', async (req, res) => {
     }
 });
 
-const sceneService = require('../services/sceneService');
-
 router.post('/:id/delete', async (req, res) => {
     try {
         const id = parseInt(req.params.id);
-        if (!id || isNaN(id)) {
-            logger.warn('Attempted to delete sound with invalid id:', req.params.id);
-            return res.status(400).json({ error: 'Invalid sound ID' });
-        }
         const sound = await soundService.getSoundById(id);
-        if (!sound) {
-            return res.status(404).json({ error: 'Sound not found' });
-        }
-        // Delete the sound file if present
-        if (sound.filename) {
+        if (sound && sound.filename) {
             const filePath = path.join(__dirname, '../public/sounds', sound.filename);
             await fs.unlink(filePath).catch(err => logger.warn(`Failed to delete sound file: ${err.message}`));
         }
         await soundService.deleteSound(id);
-        // After deleting the sound, check for affected scenes
-        const scenes = await sceneService.getAllScenes();
-        const affectedScenes = scenes.filter(scene =>
-            Array.isArray(scene.steps) && scene.steps.some(step => step.type === 'sound' && parseInt(step.sound_id) === id)
-        );
-        res.status(200).json({ 
-            message: 'Sound deleted successfully', 
-            affectedScenes: affectedScenes.map(scene => ({ id: scene.id, scene_name: scene.scene_name }))
-        });
+        res.status(200).json({ message: 'Sound deleted successfully' });
     } catch (error) {
         logger.error('Error deleting sound:', error);
         res.status(500).json({ error: 'Internal Server Error', details: error.message });
     }
 });
-
 
 module.exports = router;
