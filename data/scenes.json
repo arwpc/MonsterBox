@@ -442,6 +442,11 @@
         "duration": "5000",
         "direction": "backward",
         "speed": "50"
+      },
+      {
+        "type": "sound",
+        "name": "growleror",
+        "sound_id": "13"
       }
     ]
   }
