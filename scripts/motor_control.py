@@ -243,11 +243,12 @@ if __name__ == "__main__":
         success = control_motor(direction, speed, duration, dir_pin, pwm_pin)
         if success:
             log_info("Motor control completed successfully")
-            print(json.dumps({"status": "success", "message": "Motor control completed"}))
+            # UI expects a very specific format - must include status field but no "level" field
+            print(json.dumps({"status": "success", "message": "Motor control completed successfully"}), flush=True)
             sys.exit(0)
         else:
             log_error("Motor control failed")
-            print(json.dumps({"status": "error", "message": "Motor control failed"}))
+            print(json.dumps({"status": "error", "message": "Motor control failed"}), flush=True)
             sys.exit(1)
     except Exception as e:
         error_msg = f"Error controlling motor: {str(e)}"
