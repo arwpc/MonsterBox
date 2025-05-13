@@ -68,12 +68,17 @@ def control_motor(direction, speed, duration, dir_pin, pwm_pin):
                 freq = 50  # Hz
                 
                 # Map speed to appropriate duty cycle (0-255 for lgpio)
-                # Use conservative range (up to 50) to avoid PWM errors
-                pwm_duty = int((speed_value / 100.0) * 50.0)
-                pwm_duty = max(20, pwm_duty)  # Ensure at least 20 for reliable starting
-                
-                # Start PWM
-                lgpio.tx_pwm(h, pwm_pin, freq, pwm_duty)
+                pwm_duty = int((speed_value / 100.0) * 255)
+                pwm_duty = max(0, min(255, pwm_duty))  # Clamp between 0 and 255
+                if pwm_duty < 20 and speed_value > 0:
+                    pwm_duty = 20  # Ensure at least 20 for reliable starting, but only if speed > 0
+                try:
+                    lgpio.tx_pwm(h, pwm_pin, freq, pwm_duty)
+                except Exception as pwm_error:
+                    lgpio.gpio_free(h, dir_pin)
+                    lgpio.gpio_free(h, pwm_pin)
+                    lgpio.gpiochip_close(h)
+                    return {"status": "error", "message": f"Failed to set PWM: {pwm_error}. Tried duty cycle: {pwm_duty}"}
             else:
                 # For non-hardware-PWM pins, just use digital HIGH
                 lgpio.gpio_write(h, pwm_pin, 1)
