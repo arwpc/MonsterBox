@@ -112,19 +112,23 @@ if __name__ == "__main__":
         duration = sys.argv[3]
         dir_pin = sys.argv[4]
         pwm_pin = sys.argv[5]
-        
+
         # Run motor control and get result
         result = control_motor(direction, speed, duration, dir_pin, pwm_pin)
-        
+
         # Print result in exact format the UI expects
         print(json.dumps(result), flush=True)
-        
+
+        # Also log errors to stderr for backend diagnostics
+        if result["status"] != "success":
+            print(f"[motor_control.py ERROR] {result['message']}", file=sys.stderr, flush=True)
+
         # Exit with appropriate code
-        if result["status"] == "success":
-            sys.exit(0)
-        else:
-            sys.exit(1)
-            
+        sys.exit(0 if result["status"] == "success" else 1)
+
     except Exception as e:
-        print(json.dumps({"status": "error", "message": str(e)}), flush=True)
+        # Log unexpected error to stderr
+        import traceback
+        traceback.print_exc(file=sys.stderr)
+        print(json.dumps({"status": "error", "message": f"Unexpected error: {str(e)}"}), flush=True)
         sys.exit(1)
