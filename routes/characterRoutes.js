@@ -33,10 +33,19 @@ router.get('/new', async (req, res) => {
         const parts = allParts.filter(part => !part.characterId);
         const sounds = allSounds.filter(sound => !sound.characterIds || sound.characterIds.length === 0);
         
+        // Provide a temporary character object with null ID to ensure the form 
+        // behaves consistently with the edit form, but prevents actual API calls
+        const tempCharacter = {
+            id: null,  // null ID prevents actual API calls but allows conditional rendering
+            char_name: '',
+            char_description: '',
+            image: null
+        };
+        
         res.render('character-form', { 
             title: 'Add New Character', 
             action: '/characters', 
-            character: {}, 
+            character: tempCharacter, 
             parts, 
             sounds 
         });
