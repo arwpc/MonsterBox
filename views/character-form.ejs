@@ -89,9 +89,9 @@
                                 <label class="select-label">Available Sounds</label>
                                 <select id="available-sounds" multiple>
                                     <% sounds.forEach(function(sound) { %>
-                                        <% if ((!sound.characterIds || sound.characterIds.length === 0) || 
-                                              (character && character.id === 'new') || 
-                                              (sound.characterIds && character && character.id && !sound.characterIds.includes(character.id))) { %>
+                                        <% if (!sound.characterIds || 
+                                              sound.characterIds.length === 0 || 
+                                              !sound.characterIds.includes(character.id)) { %>
                                             <option value="<%= sound.id %>"><%= sound.name %></option>
                                         <% } %>
                                     <% }); %>
