@@ -26,17 +26,20 @@ router.get('/', async (req, res) => {
 
 router.get('/new', async (req, res) => {
     try {
-        // For new character, only show unassigned parts and sounds
+        // Get all parts and sounds
         const allParts = await partService.getAllParts();
         const allSounds = await soundService.getAllSounds();
         
+        // For new character, only show unassigned parts
         const parts = allParts.filter(part => !part.characterId);
-        const sounds = allSounds.filter(sound => !sound.characterIds || sound.characterIds.length === 0);
         
-        // Provide a temporary character object with null ID to ensure the form 
-        // behaves consistently with the edit form, but prevents actual API calls
+        // Show all sounds for new character (same as edit form)
+        const sounds = allSounds;
+        
+        // Provide a temporary character object with temporary ID to ensure the form 
+        // behaves consistently with the edit form
         const tempCharacter = {
-            id: null,  // null ID prevents actual API calls but allows conditional rendering
+            id: 'new',  // Using 'new' instead of null so template conditions work
             char_name: '',
             char_description: '',
             image: null
@@ -47,7 +50,8 @@ router.get('/new', async (req, res) => {
             action: '/characters', 
             character: tempCharacter, 
             parts, 
-            sounds 
+            sounds,
+            isNewCharacter: true  // Flag to help template distinguish new vs edit
         });
     } catch (error) {
         logger.error('Error rendering new character form:', error);
