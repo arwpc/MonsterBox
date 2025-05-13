@@ -94,6 +94,9 @@ def control_motor(direction, speed, duration, dir_pin, pwm_pin):
             log_message({"status": "info", "message": f"Motor ran for {max_runtime*1000} ms"})
         except KeyboardInterrupt:
             log_message({"status": "warning", "message": "Motor stopped by user interrupt"})
+        except Exception as e:
+            log_message({"status": "error", "message": f"Error during motor run: {str(e)}"})
+            # Continue to the ramp down to ensure motor stops
         
         # Ramp down safely
         for step in range(10, -1, -1):
@@ -138,17 +141,25 @@ def control_motor(direction, speed, duration, dir_pin, pwm_pin):
             except Exception as e:
                 log_message({"status": "error", "message": f"Error during cleanup: {str(e)}"})
                 
-        # As a fallback, try to create a new handle and stop the motor
-        # This helps in case the original handle is corrupted
+        # As a fallback, try multiple emergency stop approaches to ensure motor stops
         try:
+            # First approach: new handle for PWM pin
             emergency_h = lgpio.gpiochip_open(0)
             lgpio.gpio_claim_output(emergency_h, pwm_pin)
-            lgpio.gpio_write(emergency_h, pwm_pin, 0)
+            lgpio.gpio_write(emergency_h, pwm_pin, 0)  # Force to low
+            lgpio.tx_pwm(emergency_h, pwm_pin, 0, 0)   # Force PWM off
+            time.sleep(0.1)  # Short delay
             lgpio.gpio_free(emergency_h, pwm_pin)
+            
+            # Second approach: also try dir pin
+            lgpio.gpio_claim_output(emergency_h, dir_pin)
+            lgpio.gpio_write(emergency_h, dir_pin, 0)  # Force to low
+            lgpio.gpio_free(emergency_h, dir_pin)
+            
             lgpio.gpiochip_close(emergency_h)
             log_message({"status": "info", "message": "Emergency motor stop performed"})
-        except:
-            pass
+        except Exception as e:
+            log_message({"status": "error", "message": f"Emergency stop failed: {str(e)}"})
 
 if __name__ == "__main__":
     log_messages = []
@@ -156,7 +167,7 @@ if __name__ == "__main__":
     if len(sys.argv) != 6:
         error_message = "Incorrect number of arguments. Usage: python motor_control.py <direction> <speed> <duration> <dir_pin> <pwm_pin>"
         log_message({"status": "error", "message": error_message})
-        print(json.dumps({"success": False, "error": error_message, "logs": log_messages}))
+        print(json.dumps({"status": "error", "message": error_message, "logs": log_messages}))
         sys.exit(1)
 
     direction = sys.argv[1]
@@ -181,5 +192,16 @@ if __name__ == "__main__":
         log_message({"status": "error", "message": error_message})
         result = {"success": False, "error": error_message}
 
-    # Print a single JSON object containing both the result and logs
-    print(json.dumps({"result": result, "logs": log_messages}))
+    # Format output to match exactly what the UI expects
+    # The UI expects a simple JSON object with status and message fields
+    if result.get("success", False):
+        print(json.dumps({
+            "status": "success", 
+            "message": result.get("message", "Motor control completed successfully")
+        }))
+    else:
+        # On error, just output the error message
+        print(json.dumps({
+            "status": "error", 
+            "message": result.get("error", "Unknown error occurred")
+        }))
