@@ -7,7 +7,11 @@ import os
 import tempfile
 
 def log_message(message):
+    # Make sure messages are very visible
+    print("\n" + "=" * 50)
     print(json.dumps(message), flush=True)
+    print("=" * 50 + "\n")
+    sys.stdout.flush()
 
 # Create a minimal helper script for GPIO control that will run in a separate process
 def create_helper_script():
@@ -81,7 +85,14 @@ if __name__ == "__main__":
     speed = sys.argv[4]
     duration = sys.argv[5]
     
+    # Print directly to stderr for visibility in parent process
+    print(f"HELPER STARTING: DIR={dir_pin}, PWM={pwm_pin}, direction={direction}", file=sys.stderr)
+    
+    # Run the motor control
     control_motor_helper(dir_pin, pwm_pin, direction, speed, duration)
+    
+    # Confirm completion
+    print(f"HELPER COMPLETED", file=sys.stderr)
 """
     
     # Create a temporary file
@@ -106,15 +117,31 @@ def control_motor(direction, speed, duration, dir_pin, pwm_pin):
         # This isolates the GPIO operations from the SSH session
         log_message({"status": "info", "message": "Starting motor control in isolated process"})
         
-        # Use subprocess with a timeout
+        # Use subprocess with a timeout - very verbose output
+        log_message({"status": "info", "message": f"ATTEMPTING MOTOR CONTROL NOW: DIR={dir_pin}, PWM={pwm_pin}, speed={speed}%"})
+        
         # Note: Our helper script expects pin args first, then direction and other params
         cmd = ["python3", helper_script, str(dir_pin), str(pwm_pin), direction, str(speed), str(duration)]
-        result = subprocess.run(cmd, timeout=5, capture_output=True, text=True)
         
-        if result.returncode == 0:
-            log_message({"status": "success", "message": "Motor control successful"})
-        else:
-            log_message({"status": "error", "message": f"Helper script error: {result.stderr}"})
+        # Use subprocess.Popen for better output visibility
+        log_message({"status": "info", "message": "Running motor control - watch for motor movement..."})
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        
+        # Wait for completion with timeout
+        try:
+            stdout, stderr = process.communicate(timeout=5)
+            
+            # Display any output
+            if stdout:
+                log_message({"status": "info", "message": f"Helper output: {stdout}"})
+            
+            if process.returncode == 0:
+                log_message({"status": "success", "message": "MOTOR CONTROL SUCCESSFUL! Did the motor move?"})
+            else:
+                log_message({"status": "error", "message": f"Helper error: {stderr}"})
+        except subprocess.TimeoutExpired:
+            process.kill()
+            log_message({"status": "warning", "message": "Process timeout - killed subprocess"})
             
     except subprocess.TimeoutExpired:
         log_message({"status": "warning", "message": "Motor control timeout - script may still be running"})
