@@ -10,17 +10,17 @@
         "sampleRate": 44100,
         "bitRate": 128,
         "outputFormat": "wav",
-        "languageCode": "en",
-        "channels": 1
+        "channels": 1,
+        "languageCode": "en"
       },
       "metadata": {
         "lastUsed": null,
         "useCount": 0,
-        "favorited": false,
+        "favorited": true,
         "tags": [],
         "notes": "",
         "created": "2024-10-28T16:24:54.907Z",
-        "lastModified": "2024-11-01T23:47:56.168Z"
+        "lastModified": "2025-05-13T00:12:30.200Z"
       },
       "history": [
         {
@@ -454,6 +454,34 @@
         },
         {
           "timestamp": "2024-11-01T23:47:56.168Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": -10,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en"
+          }
+        },
+        {
+          "timestamp": "2025-05-13T00:12:23.191Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": -10,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en"
+          }
+        },
+        {
+          "timestamp": "2025-05-13T00:12:30.200Z",
           "type": "settings_update",
           "settings": {
             "pitch": -10,
@@ -999,6 +1027,108 @@
         },
         {
           "timestamp": "2025-05-02T21:11:22.986Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "channels": 1,
+            "languageCode": "en"
+          }
+        }
+      ]
+    },
+    {
+      "characterId": 4,
+      "speaker_id": "55a0aad5-a739-402f-9cec-36b01ff81a41",
+      "settings": {
+        "pitch": 0,
+        "speed": 1,
+        "volume": 0,
+        "sampleRate": 44100,
+        "bitRate": 128,
+        "channels": 1,
+        "languageCode": "en"
+      },
+      "metadata": {
+        "lastUsed": null,
+        "useCount": 0,
+        "favorited": false,
+        "tags": [],
+        "notes": "",
+        "created": "2025-05-13T00:35:07.630Z",
+        "lastModified": "2025-05-13T00:51:14.338Z"
+      },
+      "history": [
+        {
+          "timestamp": "2025-05-13T00:35:07.631Z",
+          "type": "created",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "channels": 1,
+            "languageCode": "en"
+          }
+        },
+        {
+          "timestamp": "2025-05-13T00:35:10.476Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "channels": 1,
+            "languageCode": "en"
+          }
+        },
+        {
+          "timestamp": "2025-05-13T00:50:48.429Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "channels": 1,
+            "languageCode": "en"
+          }
+        },
+        {
+          "timestamp": "2025-05-13T00:51:07.664Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "channels": 1,
+            "languageCode": "en"
+          }
+        },
+        {
+          "timestamp": "2025-05-13T00:51:08.033Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "channels": 1,
+            "languageCode": "en"
+          }
+        },
+        {
+          "timestamp": "2025-05-13T00:51:14.338Z",
           "type": "settings_update",
           "settings": {
             "pitch": 0,

@@ -22,5 +22,13 @@
     "parts": [],
     "sounds": [],
     "image": "c61727bf720f20508d93c2c0af5aa498"
+  },
+  {
+    "id": 4,
+    "char_name": "Skulltalker Ded",
+    "char_description": "Just a skull with a camera, speakers, and an attitude",
+    "parts": [],
+    "sounds": [],
+    "image": "94e0dca132f0e88d51d2eecff4e9348e"
   }
 ]
