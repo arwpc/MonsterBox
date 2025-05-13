@@ -7,73 +7,84 @@ import os
 import tempfile
 
 def log_message(message):
-    # Make sure messages are very visible
-    print("\n" + "=" * 50)
+    # Only output clean JSON - the web interface expects this format
     print(json.dumps(message), flush=True)
-    print("=" * 50 + "\n")
     sys.stdout.flush()
 
 # Create a minimal helper script for GPIO control that will run in a separate process
 def create_helper_script():
     script_content = """
 #!/usr/bin/env python3
-import RPi.GPIO as GPIO
+import lgpio
 import time
 import sys
 import os
+import json
+
+# For consistent output format with other scripts
+def log_message(message):
+    print(json.dumps(message), flush=True)
 
 # Run in a separate process with limited duration
 def control_motor_helper(dir_pin, pwm_pin, direction, speed, duration):
+    # Initialize handle
+    h = None
+    
     try:
         dir_pin = int(dir_pin)
         pwm_pin = int(pwm_pin)
         speed = int(speed)
         duration = float(duration) / 1000.0  # Convert to seconds
         
-        # Make sure we are using non-root access
-        os.environ['GPIOZERO_PIN_FACTORY'] = 'rpigpio'
+        # Initialize GPIO
+        h = lgpio.gpiochip_open(0)
         
-        # Set up GPIO - use BCM numbering
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(dir_pin, GPIO.OUT)
-        GPIO.setup(pwm_pin, GPIO.OUT)
+        # Setup pins
+        lgpio.gpio_claim_output(h, dir_pin)
+        lgpio.gpio_claim_output(h, pwm_pin)
         
         # Set direction
-        GPIO.output(dir_pin, GPIO.HIGH if direction == 'forward' else GPIO.LOW)
+        lgpio.gpio_write(h, dir_pin, 1 if direction == 'forward' else 0)
         
-        # Set up PWM for pin 13 (optimized for hardware PWM pin)
-        freq = 100  # 100 Hz is good for DC motors
-        if pwm_pin == 13 or pwm_pin == 18 or pwm_pin == 12 or pwm_pin == 19:
-            # These are hardware PWM pins, can use higher frequency
-            freq = 200  # Higher frequency for hardware PWM pins
-            
-        pwm = GPIO.PWM(pwm_pin, freq)
-        pwm.start(0)
+        # Set PWM frequency based on pin (hardware PWM pins can use higher freq)
+        freq = 100  # Default for DC motors
+        if pwm_pin in [12, 13, 18, 19]:  # Hardware PWM pins
+            freq = 200
         
-        # Ramp up safely to specified speed
-        for dc in range(0, speed + 1, 10):
-            pwm.ChangeDutyCycle(dc)
+        # Setup for PWM control
+        # Convert 0-100 speed to 0-255 duty cycle for consistency with other scripts
+        max_duty = 255
+        
+        # Ramp up safely to prevent current spikes
+        for step in range(0, 11):
+            duty = int((speed * max_duty / 100.0) * (step / 10.0))
+            lgpio.tx_pwm(h, pwm_pin, freq, duty)
             time.sleep(0.05)
-        
+            
         # Hold at specified speed
         time.sleep(max(0.1, min(duration, 0.5)))
         
-        # Ramp down
-        for dc in range(speed, -1, -10):
-            pwm.ChangeDutyCycle(dc)
+        # Ramp down safely
+        for step in range(10, -1, -1):
+            duty = int((speed * max_duty / 100.0) * (step / 10.0))
+            lgpio.tx_pwm(h, pwm_pin, freq, duty)
             time.sleep(0.05)
         
-        # Cleanup
-        pwm.stop()
-        GPIO.cleanup()
+        # Stop motor completely
+        lgpio.tx_pwm(h, pwm_pin, freq, 0)
         sys.exit(0)
     except Exception as e:
-        # Make sure to exit cleanly even on error
-        try:
-            GPIO.cleanup()
-        except:
-            pass
+        log_message({"status": "error", "message": str(e)})
         sys.exit(1)
+    finally:
+        # Always clean up GPIO resources
+        if h is not None:
+            try:
+                lgpio.gpio_free(h, dir_pin)
+                lgpio.gpio_free(h, pwm_pin)
+                lgpio.gpiochip_close(h)
+            except:
+                pass
 
 if __name__ == "__main__":
     if len(sys.argv) < 6:
@@ -85,14 +96,8 @@ if __name__ == "__main__":
     speed = sys.argv[4]
     duration = sys.argv[5]
     
-    # Print directly to stderr for visibility in parent process
-    print(f"HELPER STARTING: DIR={dir_pin}, PWM={pwm_pin}, direction={direction}", file=sys.stderr)
-    
-    # Run the motor control
+    # Helper process should not output anything except through controlled channels
     control_motor_helper(dir_pin, pwm_pin, direction, speed, duration)
-    
-    # Confirm completion
-    print(f"HELPER COMPLETED", file=sys.stderr)
 """
     
     # Create a temporary file
@@ -117,28 +122,23 @@ def control_motor(direction, speed, duration, dir_pin, pwm_pin):
         # This isolates the GPIO operations from the SSH session
         log_message({"status": "info", "message": "Starting motor control in isolated process"})
         
-        # Use subprocess with a timeout - very verbose output
-        log_message({"status": "info", "message": f"ATTEMPTING MOTOR CONTROL NOW: DIR={dir_pin}, PWM={pwm_pin}, speed={speed}%"})
+        # Use subprocess with minimal output for web compatibility
+        log_message({"status": "info", "message": f"Controlling motor: DIR={dir_pin}, PWM={pwm_pin}, speed={speed}%"})
         
         # Note: Our helper script expects pin args first, then direction and other params
         cmd = ["python3", helper_script, str(dir_pin), str(pwm_pin), direction, str(speed), str(duration)]
         
-        # Use subprocess.Popen for better output visibility
-        log_message({"status": "info", "message": "Running motor control - watch for motor movement..."})
-        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        # Run the subprocess with all output suppressed
+        process = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         
-        # Wait for completion with timeout
+        # Wait with timeout
         try:
-            stdout, stderr = process.communicate(timeout=5)
-            
-            # Display any output
-            if stdout:
-                log_message({"status": "info", "message": f"Helper output: {stdout}"})
+            process.wait(timeout=5)
             
             if process.returncode == 0:
-                log_message({"status": "success", "message": "MOTOR CONTROL SUCCESSFUL! Did the motor move?"})
+                log_message({"status": "success", "message": "Motor control completed successfully"})
             else:
-                log_message({"status": "error", "message": f"Helper error: {stderr}"})
+                log_message({"status": "error", "message": "Motor control failed"})
         except subprocess.TimeoutExpired:
             process.kill()
             log_message({"status": "warning", "message": "Process timeout - killed subprocess"})
