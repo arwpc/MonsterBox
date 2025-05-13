@@ -60,44 +60,35 @@ def control_motor(direction, speed, duration, dir_pin, pwm_pin):
         # Short delay after setting direction
         time.sleep(0.05)
         
-        # Motor control - for Jeep Wagoneer wiper motor
+        # Motor control - Jeep wiper motor: simple ON/OFF control
         if speed_value > 0:
-            # For hardware PWM pins (12, 13, 18, 19)
-            if pwm_pin in [12, 13, 18, 19]:
-                # Use low frequency for auto wiper motors (50Hz works well)
-                freq = 50  # Hz
-                
-                # Map speed to appropriate duty cycle (0-255 for lgpio)
-                pwm_duty = int((speed_value / 100.0) * 255)
-                pwm_duty = max(0, min(255, pwm_duty))  # Clamp between 0 and 255
-                if pwm_duty < 20 and speed_value > 0:
-                    pwm_duty = 20  # Ensure at least 20 for reliable starting, but only if speed > 0
-                try:
-                    lgpio.tx_pwm(h, pwm_pin, freq, pwm_duty)
-                except Exception as pwm_error:
-                    lgpio.gpio_free(h, dir_pin)
-                    lgpio.gpio_free(h, pwm_pin)
-                    lgpio.gpiochip_close(h)
-                    return {"status": "error", "message": f"Failed to set PWM: {pwm_error}. Tried duty cycle: {pwm_duty}"}
-            else:
-                # For non-hardware-PWM pins, just use digital HIGH
-                lgpio.gpio_write(h, pwm_pin, 1)
-                
-            # Run for specified duration
+            try:
+                lgpio.gpio_write(h, pwm_pin, 1)  # Turn motor ON
+            except Exception as motor_error:
+                lgpio.gpio_free(h, dir_pin)
+                lgpio.gpio_free(h, pwm_pin)
+                lgpio.gpiochip_close(h)
+                return {"status": "error", "message": f"Failed to start wiper motor: {motor_error}"}
+
             time.sleep(duration_sec)
-            
+
             # Stop the motor
-            if pwm_pin in [12, 13, 18, 19]:
-                lgpio.tx_pwm(h, pwm_pin, 0, 0)  # Stop PWM
-            lgpio.gpio_write(h, pwm_pin, 0)  # Ensure pin is LOW
-        
+            try:
+                lgpio.gpio_write(h, pwm_pin, 0)  # Turn motor OFF
+            except Exception as stop_error:
+                # Still clean up, but report stop error
+                lgpio.gpio_free(h, dir_pin)
+                lgpio.gpio_free(h, pwm_pin)
+                lgpio.gpiochip_close(h)
+                return {"status": "error", "message": f"Failed to stop wiper motor: {stop_error}"}
+
         # Clean up GPIO resources
         lgpio.gpio_free(h, dir_pin)
         lgpio.gpio_free(h, pwm_pin)
         lgpio.gpiochip_close(h)
-        
+
         # Return success message in the exact format the UI expects
-        return {"status": "success", "message": f"Motor ran for {duration_ms}ms at {speed_value}% speed"}
+        return {"status": "success", "message": f"Wiper motor ran for {duration_ms}ms at {speed_value}% power (ON/OFF mode)"}
         
     except Exception as e:
         # Return error in the exact format the UI expects
