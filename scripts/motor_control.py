@@ -41,8 +41,11 @@ def control_motor(dir_pin, pwm_pin, direction, speed, duration):
             # Calculate total run time in seconds
             total_runtime = float(duration) / 1000.0
             
-            # Basic PWM cycle timing - 20ms total cycle time (50Hz)
-            cycle_time = 0.02
+            # Set PWM cycle timing - 50ms per cycle (20Hz)
+            # This frequency is good for DC motors and reduces CPU load
+            cycle_time = 0.05
+            
+            # Calculate duty cycle for PWM
             on_time = cycle_time * (adjusted_speed / 100.0)
             off_time = cycle_time - on_time
             
@@ -51,17 +54,8 @@ def control_motor(dir_pin, pwm_pin, direction, speed, duration):
                 "message": f"Motor started: direction={direction}, speed={adjusted_speed}%"
             })
             
-            # Run the motor with a more efficient PWM implementation
-            # We'll use fewer cycles to reduce CPU load
+            # Run the motor with a software PWM implementation
             start_time = time.time()
-            
-            # Longer cycle time to reduce CPU usage - 50ms per cycle (20Hz)
-            # This is still fast enough for DC motor control
-            cycle_time = 0.05
-            
-            # Recalculate timing based on adjusted cycle time
-            on_time = cycle_time * (adjusted_speed / 100.0)
-            off_time = cycle_time - on_time
             
             # Calculate number of cycles needed
             num_cycles = int(total_runtime / cycle_time)
@@ -114,7 +108,7 @@ def control_motor(dir_pin, pwm_pin, direction, speed, duration):
         raise
 
 if __name__ == "__main__":
-    if len(sys.argv) != 6:
+    if len(sys.argv) < 6:
         log_message({
             "status": "error",
             "message": "Usage: python motor_control.py <direction> <speed> <duration> <dir_pin> <pwm_pin>"
@@ -122,12 +116,22 @@ if __name__ == "__main__":
         sys.exit(1)
 
     try:
-        direction = sys.argv[1]
-        speed = float(sys.argv[2])     # We'll keep this parameter for compatibility
-        duration = float(sys.argv[3])  # Duration in milliseconds
-        dir_pin = int(sys.argv[4])
-        pwm_pin = int(sys.argv[5])
+        # Handle parameters more robustly for web interface compatibility
+        direction = sys.argv[1].strip().lower()
+        
+        try:
+            speed = float(sys.argv[2])     # Speed as percentage (0-100)
+            duration = float(sys.argv[3])  # Duration in milliseconds
+            dir_pin = int(sys.argv[4])     # Direction pin
+            pwm_pin = int(sys.argv[5])     # PWM pin
+        except (ValueError, IndexError) as e:
+            log_message({
+                "status": "error",
+                "message": f"Parameter error: {str(e)}"
+            })
+            sys.exit(1)
 
+        # Validate parameters
         if direction not in ['forward', 'reverse']:
             raise ValueError("Direction must be 'forward' or 'reverse'")
         if not (0 <= speed <= 100):
@@ -136,7 +140,7 @@ if __name__ == "__main__":
             raise ValueError("Duration must be positive")
             
         # Safety limit on duration to prevent excessive resource usage
-        # Cap at 5 seconds for testing
+        # Cap at 5 seconds for web interface testing 
         duration = min(duration, 5000)
 
         control_motor(dir_pin, pwm_pin, direction, speed, duration)
