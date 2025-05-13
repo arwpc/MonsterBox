@@ -23,48 +23,78 @@ def control_motor(dir_pin, pwm_pin, direction, speed, duration):
         dir_pin_num = validate_pin(dir_pin)
         pwm_pin_num = validate_pin(pwm_pin)
         
+        # Make sure speed is at least 30% to overcome initial friction,
+        # as per the provided guidelines
+        adjusted_speed = max(30, float(speed))
+        
         # Initialize GPIO
         h = lgpio.gpiochip_open(0)
         
-        # Configure direction pin
-        lgpio.gpio_claim_output(h, dir_pin_num)
+        try:
+            # Configure pins as outputs
+            lgpio.gpio_claim_output(h, dir_pin_num)
+            lgpio.gpio_claim_output(h, pwm_pin_num)
+            
+            # Set direction pin based on direction parameter
+            lgpio.gpio_write(h, dir_pin_num, 1 if direction == 'forward' else 0)
+            
+            # Instead of using PWM functions, we'll implement a simple
+            # software-based PWM approach by toggling the pin
+            
+            # Calculate total run time in seconds
+            total_runtime = float(duration) / 1000.0
+            
+            # Basic PWM cycle timing - 10ms total cycle time
+            cycle_time = 0.01  # 10ms per cycle (100Hz)
+            on_time = cycle_time * (adjusted_speed / 100.0)
+            off_time = cycle_time - on_time
+            
+            # Number of cycles to run
+            num_cycles = int(total_runtime / cycle_time)
+            
+            log_message({
+                "status": "success",
+                "message": f"Motor started: direction={direction}, speed={adjusted_speed}%"
+            })
+            
+            # Run the motor with software PWM
+            start_time = time.time()
+            for _ in range(num_cycles):
+                # Check if we've exceeded the total run time
+                if (time.time() - start_time) >= total_runtime:
+                    break
+                    
+                # Turn motor on
+                lgpio.gpio_write(h, pwm_pin_num, 1)
+                time.sleep(on_time)
+                
+                # Turn motor off
+                if adjusted_speed < 100:  # Skip off time if at full speed
+                    lgpio.gpio_write(h, pwm_pin_num, 0)
+                    time.sleep(off_time)
+            
+            # Ensure the motor is stopped
+            lgpio.gpio_write(h, pwm_pin_num, 0)
+            
+            log_message({
+                "status": "success",
+                "message": "Motor stopped"
+            })
         
-        # Set direction
-        lgpio.gpio_write(h, dir_pin_num, 1 if direction == 'forward' else 0)
-        
-        # Setup PWM
-        # First claim the PWM pin as output
-        lgpio.gpio_claim_output(h, pwm_pin_num)
-        
-        # Lower frequency for DC motor - typically 20-50Hz works well for DC motors
-        # Windshield wiper motors respond well to lower frequencies
-        pwm_freq = 50
-        
-        # For a DC motor, we can use a simpler PWM calculation
-        # Convert speed (0-100) to duty cycle (0-1000000 range for lgpio)
-        # We need to ensure duty_cycle is an integer between 0-1000000
-        duty_cycle = max(0, min(1000000, int(float(speed) * 10000)))
-        
-        # Start PWM on the pin
-        status = lgpio.tx_pwm(h, pwm_pin_num, pwm_freq, duty_cycle)
-        if status < 0:
-            raise Exception(f"Failed to setup PWM on pin {pwm_pin_num}, error: {status}")
-        
-        log_message({
-            "status": "success",
-            "message": f"Motor started: direction={direction}, speed={speed}%"
-        })
-        
-        # Run for specified duration
-        time.sleep(float(duration))
-        
-        # Stop motor by setting duty cycle to 0
-        lgpio.tx_pwm(h, pwm_pin_num, pwm_freq, 0)
-        
-        log_message({
-            "status": "success",
-            "message": "Motor stopped"
-        })
+        finally:
+            # Clean up GPIO resources
+            try:               
+                # Free GPIO pins
+                lgpio.gpio_free(h, dir_pin_num)
+                lgpio.gpio_free(h, pwm_pin_num)
+                
+                # Close chip
+                lgpio.gpiochip_close(h)
+            except Exception as cleanup_error:
+                log_message({
+                    "status": "warning",
+                    "message": f"Cleanup error: {str(cleanup_error)}"
+                })
         
     except Exception as e:
         log_message({
@@ -72,20 +102,6 @@ def control_motor(dir_pin, pwm_pin, direction, speed, duration):
             "message": str(e)
         })
         raise
-    finally:
-        # Clean up GPIO resources
-        try:               
-            # Free GPIO pins
-            lgpio.gpio_free(h, dir_pin_num)
-            lgpio.gpio_free(h, pwm_pin_num)
-            
-            # Close chip
-            lgpio.gpiochip_close(h)
-        except Exception as cleanup_error:
-            log_message({
-                "status": "warning",
-                "message": f"Cleanup error: {str(cleanup_error)}"
-            })
 
 if __name__ == "__main__":
     if len(sys.argv) != 6:
@@ -97,8 +113,8 @@ if __name__ == "__main__":
 
     try:
         direction = sys.argv[1]
-        speed = float(sys.argv[2])
-        duration = float(sys.argv[3])
+        speed = float(sys.argv[2])     # We'll keep this parameter for compatibility
+        duration = float(sys.argv[3])  # Duration in milliseconds
         dir_pin = int(sys.argv[4])
         pwm_pin = int(sys.argv[5])
 
