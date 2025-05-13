@@ -51,21 +51,40 @@ def control_motor(dir_pin, pwm_pin, direction, speed, duration):
                 "message": f"Motor started: direction={direction}, speed={adjusted_speed}%"
             })
             
-            # Run the motor with manually implemented PWM
+            # Run the motor with a more efficient PWM implementation
+            # We'll use fewer cycles to reduce CPU load
             start_time = time.time()
-            elapsed = 0
             
-            while elapsed < total_runtime:
-                # Turn motor on
+            # Longer cycle time to reduce CPU usage - 50ms per cycle (20Hz)
+            # This is still fast enough for DC motor control
+            cycle_time = 0.05
+            
+            # Recalculate timing based on adjusted cycle time
+            on_time = cycle_time * (adjusted_speed / 100.0)
+            off_time = cycle_time - on_time
+            
+            # Calculate number of cycles needed
+            num_cycles = int(total_runtime / cycle_time)
+            max_cycles = min(num_cycles, 100)  # Limit to 100 cycles max for safety
+            
+            # If going at 100% speed, just turn it on and sleep
+            if adjusted_speed >= 98:  # Allow for small rounding errors
                 lgpio.gpio_write(h, pwm_pin_num, 1)
-                time.sleep(on_time)
-                
-                # Turn motor off (unless at 100% speed)
-                if adjusted_speed < 100:
+                time.sleep(total_runtime)
+            else:
+                # Run fewer cycles with longer sleeps to minimize system impact
+                for _ in range(max_cycles):
+                    # Check if we've been running too long
+                    if (time.time() - start_time) >= total_runtime:
+                        break
+                        
+                    # Turn motor on
+                    lgpio.gpio_write(h, pwm_pin_num, 1)
+                    time.sleep(on_time)
+                    
+                    # Turn motor off 
                     lgpio.gpio_write(h, pwm_pin_num, 0)
                     time.sleep(off_time)
-                    
-                elapsed = time.time() - start_time
             
             # Ensure the motor is stopped
             lgpio.gpio_write(h, pwm_pin_num, 0)
@@ -115,6 +134,10 @@ if __name__ == "__main__":
             raise ValueError("Speed must be between 0 and 100")
         if duration <= 0:
             raise ValueError("Duration must be positive")
+            
+        # Safety limit on duration to prevent excessive resource usage
+        # Cap at 5 seconds for testing
+        duration = min(duration, 5000)
 
         control_motor(dir_pin, pwm_pin, direction, speed, duration)
 
