@@ -97,7 +97,7 @@
     "sensorType": "motion"
   },
   {
-	  "id": 9,
+    "id": 9,
     "type": "motor",
     "name": "Body Swing",
     "characterId": 3,
@@ -165,13 +165,5 @@
     "type": "led",
     "characterId": 3,
     "gpioPin": 17
-  },
-  {
-    "id": 16,
-    "type": "motor",
-    "name": "Scary Body Mover",
-    "characterId": 3,
-    "directionPin": "6",
-    "pwmPin": "13"
   }
 ]
