@@ -134,31 +134,6 @@
     "characterId": null
   },
   {
-    "id": 115,
-    "name": "Welcome to Coralville, Where it's colder than Hell!",
-    "filename": "1730419782061-Welcome_to_Coralville__Where_i.mp3",
-    "file": "1730419782061-Welcome_to_Coralville__Where_i.mp3",
-    "characterIds": [
-      2
-    ],
-    "type": "voice",
-    "created": "2024-11-01T00:09:42.064Z",
-    "metadata": {
-      "originalText": "Welcome to Coralville, Where it's colder than Hell!",
-      "voiceId": "b80ebe00-4738-4766-85b7-35c3096acb79",
-      "voiceSettings": {
-        "pitch": -4,
-        "speed": 1,
-        "volume": 6,
-        "sampleRate": 44100,
-        "bitRate": 128,
-        "channels": 1,
-        "languageCode": "en"
-      }
-    },
-    "characterId": null
-  },
-  {
     "id": 116,
     "name": "I'm stuck in this coffin, please help me out little Iowan",
     "filename": "1730419838788-I_m_stuck_in_this_coffin__plea.mp3",
@@ -220,81 +195,6 @@
     "created": "2024-11-01T23:54:06.293Z",
     "metadata": {
       "originalText": "Welcome to Coralville, Where it's colder than Hell!",
-      "voiceId": "5575403f-e535-4a84-96a1-8d717d7eab86",
-      "voiceSettings": {
-        "pitch": 0,
-        "speed": 1,
-        "volume": 0,
-        "sampleRate": 44100,
-        "bitRate": 128,
-        "channels": 1,
-        "languageCode": "en"
-      }
-    },
-    "characterId": null
-  },
-  {
-    "id": 122,
-    "name": "I'm stuck in this coffin, please help me out little Iowan",
-    "filename": "1730505257581-I_m_stuck_in_this_coffin__plea.mp3",
-    "file": "1730505257581-I_m_stuck_in_this_coffin__plea.mp3",
-    "characterIds": [
-      2
-    ],
-    "type": "voice",
-    "created": "2024-11-01T23:54:17.583Z",
-    "metadata": {
-      "originalText": "I'm stuck in this coffin, please help me out little Iowan",
-      "voiceId": "5575403f-e535-4a84-96a1-8d717d7eab86",
-      "voiceSettings": {
-        "pitch": 0,
-        "speed": 1,
-        "volume": 0,
-        "sampleRate": 44100,
-        "bitRate": 128,
-        "channels": 1,
-        "languageCode": "en"
-      }
-    },
-    "characterId": null
-  },
-  {
-    "id": 124,
-    "name": "Alex's Curse",
-    "filename": "1730505311236-Alex_s_Curse_Alex_scorned_a_wi.mp3",
-    "file": "1730505311236-Alex_s_Curse_Alex_scorned_a_wi.mp3",
-    "characterIds": [
-      2
-    ],
-    "type": "voice",
-    "created": "2024-11-01T23:55:11.240Z",
-    "metadata": {
-      "originalText": "Alex's Curse\nAlex scorned a witch's heart,\nNow frozen deep, worlds apart.\nPoor Alex lies in Iowa's ground,\nWhile tractors make their rumbling sound.\nA thousand years must Alex wait,\nUntil time unlocks his frozen fate.",
-      "voiceId": "5575403f-e535-4a84-96a1-8d717d7eab86",
-      "voiceSettings": {
-        "pitch": 0,
-        "speed": 1,
-        "volume": 0,
-        "sampleRate": 44100,
-        "bitRate": 128,
-        "channels": 1,
-        "languageCode": "en"
-      }
-    },
-    "characterId": null
-  },
-  {
-    "id": 125,
-    "name": "\nAlex scorned a witch's heart,\nNow frozen deep, worlds apart.\nPoor Alex lies in Iowa's ground,\nWhile tractors make their rumbling sound.\nA thousand years must Alex wait,\nUntil time unlocks his frozen fate.",
-    "filename": "1730505326248-_Alex_scorned_a_witch_s_heart_.mp3",
-    "file": "1730505326248-_Alex_scorned_a_witch_s_heart_.mp3",
-    "characterIds": [
-      2
-    ],
-    "type": "voice",
-    "created": "2024-11-01T23:55:26.251Z",
-    "metadata": {
-      "originalText": "\nAlex scorned a witch's heart,\nNow frozen deep, worlds apart.\nPoor Alex lies in Iowa's ground,\nWhile tractors make their rumbling sound.\nA thousand years must Alex wait,\nUntil time unlocks his frozen fate.",
       "voiceId": "5575403f-e535-4a84-96a1-8d717d7eab86",
       "voiceSettings": {
         "pitch": 0,
