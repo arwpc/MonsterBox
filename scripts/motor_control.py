@@ -13,8 +13,9 @@ def log_message(message):
     log_messages.append(message)
 
 def validate_inputs(direction, speed, duration):
-    if direction not in ['forward', 'backward']:
-        raise ValueError(f"Invalid direction: {direction}. Must be 'forward' or 'backward'.")
+    # Accept either 'backward' or 'reverse' for backward motion
+    if direction not in ['forward', 'backward', 'reverse']:
+        raise ValueError(f"Invalid direction: {direction}. Must be 'forward', 'backward', or 'reverse'.")
     
     try:
         speed = int(speed)
@@ -57,7 +58,7 @@ def control_motor(direction, speed, duration, dir_pin, pwm_pin):
         if not h:
             raise Exception("Failed to set up GPIO")
         
-        # Set direction pin (HIGH for forward, LOW for backward)
+        # Set direction pin (HIGH for forward, LOW for backward or reverse)
         lgpio.gpio_write(h, dir_pin, 1 if direction == 'forward' else 0)
         
         # Set PWM frequency (100Hz is typical for DC motors)
@@ -84,9 +85,15 @@ def control_motor(direction, speed, duration, dir_pin, pwm_pin):
         lgpio.tx_pwm(h, pwm_pin, freq, duty)
         log_message({"status": "info", "message": f"Changed duty cycle to {duty}"})
         
-        # Run for specified duration
-        time.sleep(duration / 1000.0)  # Convert duration to seconds
-        log_message({"status": "info", "message": f"Motor ran for {duration} ms"})
+        # Run for specified duration with safety timeout
+        start_time = time.time()
+        max_runtime = min(duration / 1000.0, 5.0)  # Cap at 5 seconds for safety
+        
+        try:
+            time.sleep(max_runtime)  # Convert duration to seconds
+            log_message({"status": "info", "message": f"Motor ran for {max_runtime*1000} ms"})
+        except KeyboardInterrupt:
+            log_message({"status": "warning", "message": "Motor stopped by user interrupt"})
         
         # Ramp down safely
         for step in range(10, -1, -1):
@@ -104,16 +111,44 @@ def control_motor(direction, speed, duration, dir_pin, pwm_pin):
         log_message({"status": "error", "message": error_message})
         return {"success": False, "error": error_message}
     finally:
-        if h:
+        # Always ensure motor is stopped, even if there's an error
+        if h is not None:
             try:
-                # Clean up resources
+                # Emergency stop - stop PWM first
                 lgpio.tx_pwm(h, pwm_pin, 0, 0)  # Stop PWM
-                lgpio.gpio_free(h, dir_pin)
-                lgpio.gpio_free(h, pwm_pin)
-                lgpio.gpiochip_close(h)
+                time.sleep(0.05)  # Brief pause to ensure PWM stops
+                
+                # Free resources
+                try:
+                    lgpio.gpio_free(h, dir_pin)
+                except:
+                    pass
+                    
+                try:
+                    lgpio.gpio_free(h, pwm_pin)
+                except:
+                    pass
+                    
+                try:
+                    lgpio.gpiochip_close(h)
+                except:
+                    pass
+                    
                 log_message({"status": "info", "message": "GPIO resources cleaned up"})
             except Exception as e:
                 log_message({"status": "error", "message": f"Error during cleanup: {str(e)}"})
+                
+        # As a fallback, try to create a new handle and stop the motor
+        # This helps in case the original handle is corrupted
+        try:
+            emergency_h = lgpio.gpiochip_open(0)
+            lgpio.gpio_claim_output(emergency_h, pwm_pin)
+            lgpio.gpio_write(emergency_h, pwm_pin, 0)
+            lgpio.gpio_free(emergency_h, pwm_pin)
+            lgpio.gpiochip_close(emergency_h)
+            log_message({"status": "info", "message": "Emergency motor stop performed"})
+        except:
+            pass
 
 if __name__ == "__main__":
     log_messages = []
