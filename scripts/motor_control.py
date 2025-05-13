@@ -130,8 +130,9 @@ def control_motor(direction, speed, duration, dir_pin, pwm_pin):
             current_duty = int((duty_cycle / 10.0) * step)
             # For hardware PWM pins, use hardware PWM
             if pwm_pin_int in [12, 13, 18, 19]:
-                # Hardware PWM uses 0-255 range
-                hw_duty = int((current_duty / 100.0) * 255)
+                # Hardware PWM in lgpio uses 0-1000000 range (microseconds)
+                # Current duty is 0-100, convert to 0-1000000
+                hw_duty = int((current_duty / 100.0) * 1000000)
                 lgpio.tx_pwm(h, pwm_pin_int, 100, hw_duty)  # 100Hz frequency
             else:
                 # For other pins, we'll use software PWM implementation
@@ -153,7 +154,8 @@ def control_motor(direction, speed, duration, dir_pin, pwm_pin):
         
         if pwm_pin_int in [12, 13, 18, 19]:
             # For hardware PWM pins, set the duty cycle once and wait
-            hw_duty = int((duty_cycle / 100.0) * 255)
+            # lgpio tx_pwm uses 0-1000000 duty cycle range (microseconds)
+            hw_duty = int((duty_cycle / 100.0) * 1000000)
             lgpio.tx_pwm(h, pwm_pin_int, 100, hw_duty)  # 100Hz frequency
             time.sleep(max_runtime)
         else:
@@ -179,7 +181,8 @@ def control_motor(direction, speed, duration, dir_pin, pwm_pin):
             
             # For hardware PWM pins, use hardware PWM
             if pwm_pin_int in [12, 13, 18, 19]:
-                hw_duty = int((current_duty / 100.0) * 255)
+                # lgpio tx_pwm uses 0-1000000 duty cycle range (microseconds)
+                hw_duty = int((current_duty / 100.0) * 1000000)
                 lgpio.tx_pwm(h, pwm_pin_int, 100, hw_duty)  # 100Hz frequency
             else:
                 # For other pins, implement a PWM cycle
