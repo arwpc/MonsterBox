@@ -28,6 +28,8 @@ def control_motor(dir_pin, pwm_pin, direction, speed, duration):
         
         # Configure pins
         lgpio.gpio_claim_output(h, dir_pin_num)
+        # Also claim PWM pin as output
+        lgpio.gpio_claim_output(h, pwm_pin_num)
         
         # Set direction
         lgpio.gpio_write(h, dir_pin_num, 1 if direction == 'forward' else 0)
@@ -35,9 +37,10 @@ def control_motor(dir_pin, pwm_pin, direction, speed, duration):
         # Set up PWM
         frequency = 100  # 100Hz frequency
         
-        # Convert speed (0-100) to duty cycle (0-1000000)
+        # Convert speed (0-100) to duty cycle (0-255)
+        # The lgpio library often expects PWM duty cycle in range 0-255
         speed_value = float(speed) / 100.0
-        duty_cycle = int(speed_value * 1000000)
+        duty_cycle = int(speed_value * 255)
         
         # Configure PWM
         lgpio.tx_pwm(h, pwm_pin_num, frequency, duty_cycle)
@@ -50,7 +53,7 @@ def control_motor(dir_pin, pwm_pin, direction, speed, duration):
         # Run for specified duration
         time.sleep(float(duration))
         
-        # Stop motor
+        # Stop motor by setting duty cycle to 0
         lgpio.tx_pwm(h, pwm_pin_num, frequency, 0)
         
         log_message({
@@ -68,6 +71,7 @@ def control_motor(dir_pin, pwm_pin, direction, speed, duration):
         # Clean up GPIO resources
         try:
             lgpio.gpio_free(h, dir_pin_num)
+            lgpio.gpio_free(h, pwm_pin_num)
             lgpio.gpiochip_close(h)
         except:
             pass
