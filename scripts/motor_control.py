@@ -26,24 +26,24 @@ def control_motor(dir_pin, pwm_pin, direction, speed, duration):
         # Initialize GPIO
         h = lgpio.gpiochip_open(0)
         
-        # Configure pins
+        # Configure direction pin
         lgpio.gpio_claim_output(h, dir_pin_num)
-        # Also claim PWM pin as output
-        lgpio.gpio_claim_output(h, pwm_pin_num)
         
         # Set direction
         lgpio.gpio_write(h, dir_pin_num, 1 if direction == 'forward' else 0)
         
-        # Set up PWM
-        frequency = 100  # 100Hz frequency
+        # PWM frequency in Hz
+        frequency = 100
         
-        # Convert speed (0-100) to duty cycle (0-255)
-        # The lgpio library often expects PWM duty cycle in range 0-255
-        speed_value = float(speed) / 100.0
-        duty_cycle = int(speed_value * 255)
+        # Convert speed (0-100) to duty cycle (0-100)
+        # duty_cycle is the percentage of the cycle that the signal is active
+        duty_cycle = int(float(speed))
         
-        # Configure PWM
-        lgpio.tx_pwm(h, pwm_pin_num, frequency, duty_cycle)
+        # PWM setup - use hardware PWM properly
+        # First, claim the PWM pin
+        pwm_handle = lgpio.tx_pwm_init(h, pwm_pin_num, frequency, duty_cycle)
+        if pwm_handle < 0:
+            raise Exception(f"Failed to initialize PWM on pin {pwm_pin_num}")
         
         log_message({
             "status": "success",
@@ -54,7 +54,7 @@ def control_motor(dir_pin, pwm_pin, direction, speed, duration):
         time.sleep(float(duration))
         
         # Stop motor by setting duty cycle to 0
-        lgpio.tx_pwm(h, pwm_pin_num, frequency, 0)
+        lgpio.tx_pwm_duty(h, pwm_handle, 0)
         
         log_message({
             "status": "success",
@@ -70,11 +70,20 @@ def control_motor(dir_pin, pwm_pin, direction, speed, duration):
     finally:
         # Clean up GPIO resources
         try:
+            # Clean up PWM
+            if 'pwm_handle' in locals() and pwm_handle >= 0:
+                lgpio.tx_pwm_close(h, pwm_handle)
+                
+            # Free GPIO pins
             lgpio.gpio_free(h, dir_pin_num)
-            lgpio.gpio_free(h, pwm_pin_num)
+            
+            # Close chip
             lgpio.gpiochip_close(h)
-        except:
-            pass
+        except Exception as cleanup_error:
+            log_message({
+                "status": "warning",
+                "message": f"Cleanup error: {str(cleanup_error)}"
+            })
 
 if __name__ == "__main__":
     if len(sys.argv) != 6:
