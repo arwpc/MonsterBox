@@ -97,14 +97,6 @@
     "sensorType": "motion"
   },
   {
-    "id": 9,
-    "type": "motor",
-    "name": "Body Swing",
-    "characterId": 3,
-    "directionPin": "26",
-    "pwmPin": "13"
-  },
-  {
     "id": 10,
     "name": "Punkin Motion Detector",
     "type": "sensor",
@@ -165,5 +157,13 @@
     "type": "led",
     "characterId": 3,
     "gpioPin": 17
+  },
+  {
+    "id": 15,
+    "type": "motor",
+    "name": "Body Move",
+    "characterId": 3,
+    "directionPin": "6",
+    "pwmPin": "13"
   }
 ]
