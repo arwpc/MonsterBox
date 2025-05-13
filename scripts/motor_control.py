@@ -36,12 +36,14 @@ def control_motor(dir_pin, pwm_pin, direction, speed, duration):
         # First claim the PWM pin as output
         lgpio.gpio_claim_output(h, pwm_pin_num)
         
-        # Set PWM frequency (in Hz)
-        pwm_freq = 100
+        # Lower frequency for DC motor - typically 20-50Hz works well for DC motors
+        # Windshield wiper motors respond well to lower frequencies
+        pwm_freq = 50
         
-        # Convert speed (0-100) to duty cycle (0-255 range for lgpio)
-        # Different lgpio implementations may use different ranges
-        duty_cycle = int(float(speed) * 2.55)  # Scale from 0-100 to 0-255
+        # For a DC motor, we can use a simpler PWM calculation
+        # Convert speed (0-100) to duty cycle (0-1000000 range for lgpio)
+        # We need to ensure duty_cycle is an integer between 0-1000000
+        duty_cycle = max(0, min(1000000, int(float(speed) * 10000)))
         
         # Start PWM on the pin
         status = lgpio.tx_pwm(h, pwm_pin_num, pwm_freq, duty_cycle)
