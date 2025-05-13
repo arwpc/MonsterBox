@@ -22,7 +22,8 @@
     "name": "Coffin Creaking",
     "filename": "1729640529230-coffin_door_creaking.mp3",
     "characterIds": [
-      2
+      2,
+      4
     ],
     "characterId": null
   },
@@ -338,7 +339,8 @@
     "filename": "1730505661219-Help__Is_someone_out_there__Pl.mp3",
     "file": "1730505661219-Help__Is_someone_out_there__Pl.mp3",
     "characterIds": [
-      2
+      2,
+      4
     ],
     "type": "voice",
     "created": "2024-11-02T00:01:01.225Z",
