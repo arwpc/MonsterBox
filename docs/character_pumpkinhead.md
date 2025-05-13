@@ -57,10 +57,9 @@
 <div class="section">
   <span class="label">Hardware Overview:</span>
   <div class="hardware-list">
-    <div>Body Swing (motor), DIR: 26, PWM: 13</div>
     <div>Punkin Motion Detector (sensor), GPIO: 16</div>
     <div>Head Light (led), GPIO: 17</div>
-    <div>Scary Body Mover (motor), DIR: 6, PWM: 13</div>
+    <div>Body Move (motor), DIR: 6, PWM: 13</div>
   </div>
 </div>
 <div class="section">
