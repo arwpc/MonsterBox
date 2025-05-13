@@ -76,12 +76,8 @@ router.get('/:id/edit', async (req, res) => {
             !part.characterId || part.characterId === characterId
         );
 
-        // Filter sounds to show only unassigned sounds and sounds assigned to this character
-        const sounds = allSounds.filter(sound => 
-            !sound.characterIds || 
-            sound.characterIds.length === 0 || 
-            sound.characterIds.includes(characterId)
-        );
+        // Show all available sounds in the database for character edit form
+        const sounds = allSounds;
 
         res.render('character-form', { 
             title: 'Edit Character', 
