@@ -40,13 +40,17 @@ class VoiceSelector {
     }
 
     showError(message, isSuccess = false) {
-        const errorElement = document.querySelector('#errorMessage');
-        if (errorElement) {
-            errorElement.textContent = message;
-            errorElement.style.backgroundColor = isSuccess ? '#4CAF50' : '#ff5252';
-            errorElement.style.display = 'block';
+        const statusElement = document.querySelector('#statusMessage');
+        if (statusElement) {
+            statusElement.textContent = message;
+            statusElement.style.backgroundColor = isSuccess ? '#4CAF50' : '#ff5252';
+            statusElement.style.color = '#ffffff';
+            statusElement.style.padding = '10px';
+            statusElement.style.borderRadius = '4px';
+            statusElement.style.marginBottom = '10px';
+            statusElement.style.display = 'block';
             setTimeout(() => {
-                errorElement.style.display = 'none';
+                statusElement.style.display = 'none';
             }, 5000);
         }
     }
@@ -100,6 +104,20 @@ class VoiceSelector {
             });
         });
 
+        // Add event listener for the new Save Settings button
+        const saveSettingsButton = document.querySelector('#saveVoiceSettings');
+        if (saveSettingsButton) {
+            saveSettingsButton.addEventListener('click', () => {
+                if (this.selectedVoice && this.characterId) {
+                    this.saveVoiceConfiguration();
+                } else {
+                    this.showError('Please select a voice before saving');
+                }
+            });
+            // Disable initially until a voice is selected
+            saveSettingsButton.disabled = !this.selectedVoice;
+        }
+
         document.querySelector('#saveToLibrary').addEventListener('click', () => {
             if (this.lastGeneratedAudio) {
                 this.saveToSoundLibrary();
@@ -131,6 +149,21 @@ class VoiceSelector {
             const voices = await response.json();
             this.voices = voices;
             
+            // If we have a character ID, get the current voice settings
+            if (this.characterId) {
+                try {
+                    const voiceSettingsResponse = await fetch(`/api/voice/settings/${this.characterId}`);
+                    if (voiceSettingsResponse.ok) {
+                        const voiceSettings = await voiceSettingsResponse.json();
+                        if (voiceSettings && voiceSettings.speaker_id) {
+                            this.selectedVoice = this.voices.find(v => v.speaker_id === voiceSettings.speaker_id);
+                        }
+                    }
+                } catch (settingsError) {
+                    console.warn('Could not load current voice settings:', settingsError);
+                }
+            }
+            
             this.populateVoiceTable();
             await this.loadRecentlyUsed();
         } catch (error) {
@@ -158,6 +191,7 @@ class VoiceSelector {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${voice.name}</td>
+                <td>${voice.description || 'No description available'}</td>
                 <td>${voice.gender || 'Unknown'}</td>
                 <td>${voice.age || 'Unknown'}</td>
                 <td>${voice.accent || 'None'}</td>
@@ -169,9 +203,7 @@ class VoiceSelector {
                     `).join('')}
                 </td>
                 <td>
-                    <button class="action-btn favorite-btn" title="Add to favorites">
-                        <i class="far fa-star"></i>
-                    </button>
+                    <input type="checkbox" class="voice-select-checkbox" data-voice-id="${voice.uuid}" name="selectedVoice" title="Select this voice" ${this.selectedVoice && this.selectedVoice.uuid === voice.uuid ? 'checked' : ''} />
                 </td>
             `;
 
@@ -200,12 +232,24 @@ class VoiceSelector {
             });
         });
 
-        document.querySelectorAll('.favorite-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.voice-select-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', (e) => {
                 e.stopPropagation();
-                const row = btn.closest('tr');
-                const voice = this.voices.find(v => v.name === row.cells[0].textContent);
-                this.toggleFavorite(voice, btn);
+                
+                // Uncheck all other checkboxes
+                document.querySelectorAll('.voice-select-checkbox').forEach(cb => {
+                    if (cb !== e.target) cb.checked = false;
+                });
+                
+                // Get the selected voice
+                const voiceId = e.target.dataset.voiceId;
+                const voice = this.voices.find(v => v.uuid === voiceId);
+                
+                if (voice) {
+                    this.selectVoice(voice);
+                    // Enable the save button
+                    document.getElementById('saveVoiceSettings').disabled = false;
+                }
             });
         });
     }

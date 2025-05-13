@@ -101,9 +101,7 @@
     </header>
 
     <main class="voice-config-container">
-        <a href="/characters" class="back-link">
-            <i class="fas fa-arrow-left"></i> Back to Characters
-        </a>
+        <!-- Removed back link as it's now a button above -->
 
         <!-- Loading Overlay -->
         <div id="loadingOverlay">
@@ -111,8 +109,18 @@
             <div class="loading-text">Loading...</div>
         </div>
 
-        <!-- Error Message -->
-        <div id="errorMessage"></div>
+        <!-- Action Buttons -->
+        <div class="button-group" style="margin-bottom: 20px; display: flex; gap: 10px;">
+            <a href="/characters" class="button secondary-btn">
+                <i class="fas fa-arrow-left"></i> Back to Characters
+            </a>
+            <button id="saveVoiceSettings" class="button primary-btn">
+                <i class="fas fa-save"></i> Save Settings
+            </button>
+        </div>
+        
+        <!-- Status Message -->
+        <div id="statusMessage" style="display:none;"></div>
 
         <div id="voiceSelector">
             <!-- Recently Used Section -->
@@ -177,11 +185,12 @@
                     <thead>
                         <tr>
                             <th>Name <i class="fas fa-sort"></i></th>
+                            <th>Description</th>
                             <th>Gender <i class="fas fa-sort"></i></th>
                             <th>Age <i class="fas fa-sort"></i></th>
                             <th>Accent <i class="fas fa-sort"></i></th>
                             <th>Styles</th>
-                            <th>Actions</th>
+                            <th>Selection</th>
                         </tr>
                     </thead>
                     <tbody id="voiceTableBody">

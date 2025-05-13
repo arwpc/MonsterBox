@@ -278,18 +278,69 @@ exports.getVoiceHistory = async (req, res) => {
 exports.updateVoiceMetadata = async (req, res) => {
     try {
         const { characterId } = req.params;
-        const { metadata } = req.body;
+        const { metadata, speaker_id } = req.body;
 
         if (!characterId) {
             return handleError(res, new Error('Character ID is required'), 400);
         }
 
-        const voice = await voiceService.getVoiceByCharacterId(characterId);
+        let voice = await voiceService.getVoiceByCharacterId(characterId);
         
+        // If voice doesn't exist, create a new voice entry with default settings
         if (!voice) {
-            return handleError(res, new Error('Voice not found'), 404);
+            if (!speaker_id) {
+                // If updating favorites, create voice with the first available voice
+                if (metadata && metadata.hasOwnProperty('favorited')) {
+                    try {
+                        // Get available voices and use the first one as default
+                        const voices = await voiceService.getAvailableVoices();
+                        if (voices && voices.length > 0) {
+                            const defaultVoice = voices[0];
+                            
+                            voice = {
+                                characterId: parseInt(characterId),
+                                speaker_id: defaultVoice.speaker_id,
+                                settings: {}, // Will use default settings
+                                metadata: {
+                                    lastUsed: null,
+                                    useCount: 0,
+                                    favorited: false,
+                                    tags: [],
+                                    notes: ''
+                                },
+                                history: []
+                            };
+                            
+                            logger.info(`Created default voice for character ${characterId}`);
+                        } else {
+                            return handleError(res, new Error('No voices available to create default voice'), 404);
+                        }
+                    } catch (voiceError) {
+                        return handleError(res, new Error('Failed to get available voices: ' + voiceError.message), 500);
+                    }
+                } else {
+                    return handleError(res, new Error('Voice not found and no speaker_id provided for creation'), 404);
+                }
+            } else {
+                // Create new voice with provided speaker_id
+                voice = {
+                    characterId: parseInt(characterId),
+                    speaker_id: speaker_id,
+                    settings: {}, // Will use default settings
+                    metadata: {
+                        lastUsed: null,
+                        useCount: 0,
+                        favorited: false,
+                        tags: [],
+                        notes: ''
+                    },
+                    history: []
+                };
+                logger.info(`Created new voice for character ${characterId} with speaker_id ${speaker_id}`);
+            }
         }
 
+        // Update the metadata
         voice.metadata = {
             ...voice.metadata,
             ...metadata,
