@@ -430,7 +430,7 @@
       {
         "type": "motor",
         "name": "move around",
-        "part_id": "9",
+        "part_id": "15",
         "duration": "5000",
         "direction": "forward",
         "speed": "50"
@@ -438,7 +438,7 @@
       {
         "type": "motor",
         "name": "move around (Copy)",
-        "part_id": "9",
+        "part_id": "15",
         "duration": "5000",
         "direction": "backward",
         "speed": "50"
