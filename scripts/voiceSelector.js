@@ -95,13 +95,51 @@ class VoiceSelector {
             header.addEventListener('click', (e) => this.sortVoices(e.target));
         });
 
-        ['speed', 'pitch', 'volume'].forEach(setting => {
-            const input = document.querySelector(`#${setting}`);
-            const value = input.nextElementSibling;
-            input.addEventListener('input', (e) => {
-                value.textContent = e.target.value;
-                this.updatePreviewButtonState();
+        // Handle Speed setting
+        const speedInput = document.querySelector('#speed');
+        if (speedInput) {
+            const speedValueDisplay = speedInput.nextElementSibling;
+            speedInput.addEventListener('input', (e) => {
+                if (speedValueDisplay) speedValueDisplay.textContent = e.target.value;
+                this.updatePreviewButtonState(); // Method to enable/disable preview btn if needed
             });
+        }
+
+        // Disable Pitch and Volume settings as they are not used for OpenAI TTS
+        const pitchInput = document.querySelector('#pitch');
+        if (pitchInput) {
+            pitchInput.disabled = true;
+            const pitchValueDisplay = pitchInput.nextElementSibling;
+            if (pitchValueDisplay) pitchValueDisplay.textContent = 'N/A'; 
+            // Optionally hide them: pitchInput.parentElement.style.display = 'none';
+        }
+
+        const volumeInput = document.querySelector('#volume');
+        if (volumeInput) {
+            volumeInput.disabled = true;
+            const volumeValueDisplay = volumeInput.nextElementSibling;
+            if (volumeValueDisplay) volumeValueDisplay.textContent = 'N/A';
+            // Optionally hide them: volumeInput.parentElement.style.display = 'none';
+        }
+
+        // Hide less relevant filter sections for OpenAI voices
+        const filtersToHide = ['gender', 'age', 'accent'];
+        filtersToHide.forEach(filterType => {
+            // Attempt to hide the button container if structured like: <div class="filter-group"> <button data-filter="gender">...</button> <div id="genderFilter">...</div> </div>
+            // Or hide button and dropdown separately
+            const filterButton = document.querySelector(`.filter-btn[data-filter='${filterType}']`);
+            if (filterButton) {
+                // Assuming the button's parent element is the group to hide
+                if (filterButton.parentElement && filterButton.parentElement.classList.contains('filter-group')) {
+                    filterButton.parentElement.style.display = 'none';
+                } else {
+                    filterButton.style.display = 'none'; // Hide button itself
+                    const filterDropdown = document.querySelector(`#${filterType}Filter`);
+                    if (filterDropdown) {
+                        filterDropdown.style.display = 'none';
+                    }
+                }
+            }
         });
 
         // Add event listener for the new Save Settings button
@@ -142,12 +180,24 @@ class VoiceSelector {
             this.showLoading('Loading voices...');
             const response = await fetch('/api/voice/available');
             if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'Failed to load voices');
+                let errorText = 'Failed to load voices';
+                try {
+                    const error = await response.json();
+                    errorText = error.error || errorText;
+                } catch (e) { /* Ignore if response is not JSON */ }
+                throw new Error(errorText);
             }
             
             const voices = await response.json();
-            this.voices = voices;
+            // Voices from OpenAI will have: uuid, name, speaker_id (all being the OpenAI voice name like 'alloy')
+            // and gender, age, accent set to 'unknown' by our openAIService.js
+            this.voices = voices.map(v => ({
+                ...v,
+                description: v.description || `OpenAI Voice: ${v.name}`, // Add a default description
+                gender: v.gender || 'N/A',
+                age: v.age || 'N/A',
+                accent: v.accent || 'N/A'
+            }));
             
             // If we have a character ID, get the current voice settings
             if (this.characterId) {
@@ -175,11 +225,14 @@ class VoiceSelector {
     }
 
     getVoiceStyles(voice) {
-        const baseStyles = ['neutral'];
-        if (voice.capabilities && voice.capabilities['tts.vox_2_0']) {
-            baseStyles.push('happy', 'sad', 'angry', 'fearful');
+        // OpenAI standard TTS voices don't have selectable styles like Replica's vox_2_0
+        // We return a single 'default' style. The button generated will call previewVoice.
+        // Or, we can return an empty array to not show any style buttons.
+        // For now, let's provide a single button to trigger preview with current settings.
+        if (voice.capabilities && voice.capabilities['tts.openai_v1']) {
+            return [{ name: 'Preview', id: 'default_preview' }]; 
         }
-        return baseStyles;
+        return []; // Default to no styles if not an OpenAI voice or no capability defined
     }
 
     populateVoiceTable(filteredVoices = null) {
@@ -189,376 +242,216 @@ class VoiceSelector {
         const voicesToShow = filteredVoices || this.voices;
         voicesToShow.forEach(voice => {
             const row = document.createElement('tr');
+            // Adjust to new voice structure (less metadata from OpenAI)
             row.innerHTML = `
                 <td>${voice.name}</td>
-                <td>${voice.description || 'No description available'}</td>
-                <td>${voice.gender || 'Unknown'}</td>
-                <td>${voice.age || 'Unknown'}</td>
-                <td>${voice.accent || 'None'}</td>
+                <td>${voice.description || 'N/A'}</td>
+                <td>${voice.gender || 'N/A'}</td>
+                <td>${voice.age || 'N/A'}</td>
+                <td>${voice.accent || 'N/A'}</td>
                 <td>
                     ${this.getVoiceStyles(voice).map(style => `
-                        <button class="style-btn" data-voice-id="${voice.uuid}" data-style="${style}">
-                            <i class="fas fa-play"></i> ${style}
+                        <button class="style-btn preview-btn" data-voice-id="${voice.uuid || voice.speaker_id}" data-style="${style.id}">
+                            ${style.name}
                         </button>
                     `).join('')}
                 </td>
-                <td>
-                    <input type="checkbox" class="voice-select-checkbox" data-voice-id="${voice.uuid}" name="selectedVoice" title="Select this voice" ${this.selectedVoice && this.selectedVoice.uuid === voice.uuid ? 'checked' : ''} />
-                </td>
             `;
-
-            row.addEventListener('click', () => this.selectVoice(voice));
-            if (this.selectedVoice?.uuid === voice.uuid) {
-                row.classList.add('selected');
-            }
-
             tbody.appendChild(row);
-        });
 
-        this.setupVoiceRowHandlers();
-    }
-
-    setupVoiceRowHandlers() {
-        document.querySelectorAll('.style-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const voiceId = btn.dataset.voiceId;
-                const style = btn.dataset.style;
-                const voice = this.voices.find(v => v.uuid === voiceId);
-                if (voice) {
-                    this.currentPreviewVoice = voice;
-                    this.generatePreview(style);
-                }
-            });
-        });
-
-        document.querySelectorAll('.voice-select-checkbox').forEach(checkbox => {
-            checkbox.addEventListener('change', (e) => {
-                e.stopPropagation();
-                
-                // Uncheck all other checkboxes
-                document.querySelectorAll('.voice-select-checkbox').forEach(cb => {
-                    if (cb !== e.target) cb.checked = false;
+            // Add event listener for the new preview buttons
+            row.querySelectorAll('.preview-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const voiceId = e.target.dataset.voiceId;
+                    // const style = e.target.dataset.style; // Style is less relevant for OpenAI
+                    this.selectedVoice = this.voices.find(v => (v.uuid || v.speaker_id) === voiceId);
+                    if (this.selectedVoice) {
+                        this.updateSelectedVoiceInfo();
+                        this.previewVoice(); // Directly preview with current settings
+                        const saveSettingsButton = document.querySelector('#saveVoiceSettings');
+                        if (saveSettingsButton) saveSettingsButton.disabled = false;
+                    }
                 });
-                
-                // Get the selected voice
-                const voiceId = e.target.dataset.voiceId;
-                const voice = this.voices.find(v => v.uuid === voiceId);
-                
-                if (voice) {
-                    this.selectVoice(voice);
-                    // Enable the save button
-                    document.getElementById('saveVoiceSettings').disabled = false;
-                }
             });
         });
+
+        // Update filter options based on available voices (might be less diverse with OpenAI)
+        this.updateFilterOptions(); 
     }
 
-    async toggleFavorite(voice, button) {
-        try {
-            const isFavorite = button.querySelector('i').classList.contains('fas');
-            const metadata = { favorited: !isFavorite };
+    updateSelectedVoiceInfo() {
+        // Update selected voice info
+    }
 
-            const response = await fetch(`/api/voice/metadata/${this.characterId}`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ metadata })
+    async previewVoice() {
+        if (!this.selectedVoice) {
+            this.showError('Please select a voice first.');
+            return;
+        }
+
+        const text = document.querySelector('#previewText').value.trim();
+        if (!text) {
+            this.showError('Please enter text to preview.');
+            return;
+        }
+
+        this.showLoading('Generating preview...');
+        this.isPlaying = false;
+        this.updatePlayButtonState();
+        document.querySelector('#saveToLibrary').disabled = true;
+
+        try {
+            const settings = this.getCurrentSettings(); // Gets speed, pitch, volume from UI
+            const voiceId = this.selectedVoice.speaker_id || this.selectedVoice.uuid;
+
+            // Call the generic generateSpeech endpoint
+            const response = await fetch('/api/voice/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    speaker_id: voiceId,
+                    text: text,
+                    options: {
+                        speed: settings.speed,
+                        // Pitch and volume are not sent as they are not directly supported by OpenAI TTS API
+                        // model: 'tts-1' // or 'tts-1-hd' - could be an option later
+                    },
+                    // characterId: this.characterId // Optional: if preview should affect history
+                })
             });
 
             if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'Failed to update favorite status');
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to generate preview audio');
             }
 
-            button.querySelector('i').classList.toggle('far');
-            button.querySelector('i').classList.toggle('fas');
+            const result = await response.json();
+            this.lastGeneratedAudio = { url: result.filePath, text: text, voiceId: voiceId }; // Store filePath as url for wavesurfer
+            
+            if (this.wavesurfer && result.filePath) {
+                this.wavesurfer.load(result.filePath); // Load the MP3 directly by its path
+                document.querySelector('#playPausePreview').disabled = false;
+                document.querySelector('#saveToLibrary').disabled = false;
+            } else {
+                throw new Error('Audio file path not received or WaveSurfer not initialized.');
+            }
+
         } catch (error) {
-            console.error('Error updating favorite status:', error);
-            this.showError('Failed to update favorite status: ' + error.message);
+            console.error('Error previewing voice:', error);
+            this.showError('Error generating preview: ' + error.message);
+        } finally {
+            this.hideLoading();
         }
     }
 
-    async generatePreview(style = 'neutral') {
+    // Function to get current settings from UI (speed, pitch, volume)
+    getCurrentSettings() {
+        const speed = parseFloat(document.querySelector('#speed').value) || 1.0;
+        // Pitch and Volume are no longer directly applicable for OpenAI TTS API
+        // const pitch = parseFloat(document.querySelector('#pitch').value) || 0;
+        // const volume = parseFloat(document.querySelector('#volume').value) || 0;
+        return { speed /*, pitch, volume */ };
+    }
+
+    updatePlayButtonState() {
+        // Update play button state
+    }
+
+    async saveVoiceConfiguration() {
+        if (!this.selectedVoice || !this.characterId) {
+            this.showError('No voice selected or character ID missing.');
+            return;
+        }
+
+        this.showLoading('Saving voice configuration...');
         try {
-            this.showLoading('Generating preview...');
-            const previewText = document.querySelector('#previewText').value;
+            const settings = this.getCurrentSettings(); // Get speed from UI
+            const voiceId = this.selectedVoice.speaker_id || this.selectedVoice.uuid;
 
-            // Use the speaker_id from the voice data
-            const speakerId = this.currentPreviewVoice.speaker_id;
-            if (!speakerId) {
-                throw new Error('No valid speaker ID found for this voice');
-            }
-
-            const response = await fetch('/api/voice/generate', {
+            const response = await fetch(`/api/voice/settings/${this.characterId}`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    speaker_id: speakerId,
-                    text: previewText,
-                    style,
-                    characterId: this.characterId,
-                    options: {
-                        speed: parseFloat(document.querySelector('#speed').value),
-                        pitch: parseInt(document.querySelector('#pitch').value),
-                        volume: parseInt(document.querySelector('#volume').value)
+                    voiceId: voiceId, // This is the OpenAI speaker_id (e.g., 'alloy')
+                    settings: {
+                        speed: settings.speed,
+                        // model: 'tts-1' // Example: if you add model selection later
                     }
                 })
             });
 
             if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'Failed to generate preview');
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to save voice configuration');
             }
+            const savedData = await response.json();
+            this.showError('Voice configuration saved successfully!', true);
+            // Optionally, update UI to reflect saved state
+            localStorage.setItem(`char_${this.characterId}_voice`, voiceId);
+            this.addToRecentlyUsed(this.selectedVoice);
 
-            const data = await response.json();
-            this.lastGeneratedAudio = data;
-            
-            if (data.url) {
-                // Convert relative URL to absolute URL
-                const absoluteUrl = new URL(data.url, window.location.origin).href;
-                this.wavesurfer.load(absoluteUrl);
-                this.wavesurfer.on('ready', () => {
-                    this.wavesurfer.play();
-                    this.isPlaying = true;
-                    document.querySelector('#saveToLibrary').disabled = false;
-                });
-            }
-            
-            // Show success message
-            this.showError('Voice generated successfully', true);
         } catch (error) {
-            console.error('Error generating preview:', error);
-            this.showError(error.message);
+            console.error('Error saving voice configuration:', error);
+            this.showError('Error saving configuration: ' + error.message);
         } finally {
             this.hideLoading();
         }
     }
 
     async saveToSoundLibrary() {
-        if (!this.lastGeneratedAudio || !this.lastGeneratedAudio.url) {
-            this.showError('No audio available to save');
+        if (!this.lastGeneratedAudio || !this.lastGeneratedAudio.text) {
+            this.showError('No text available from the last preview to save.');
+            return;
+        }
+        if (!this.characterId) {
+            this.showError('Character ID is not set. Cannot save to library.');
             return;
         }
 
-        try {
-            this.showLoading('Saving to sound library...');
-            const previewText = document.querySelector('#previewText').value;
+        const textToSave = this.lastGeneratedAudio.text; // Use text from the preview
 
-            const response = await fetch('/api/voice/save-to-sounds', {
+        this.showLoading('Saving to sound library...');
+        try {
+            // This endpoint uses the character's currently saved voice settings
+            const response = await fetch('/api/voice/scene/generate-and-save', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    audioUrl: this.lastGeneratedAudio.url,
-                    text: previewText,
-                    characterId: this.characterId || null
+                    text: textToSave,
+                    characterId: this.characterId
+                    // The voice_id and settings (like speed) are fetched server-side 
+                    // based on the characterId's saved configuration.
                 })
             });
 
             if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'Failed to save to sound library');
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to save to sound library');
             }
 
-            const data = await response.json();
-            this.showError('Successfully saved to sound library. View in Sound Library.', true);
+            const result = await response.json();
+            this.showError(`Successfully saved to sound library as '${result.filename}'. Sound ID: ${result.soundId}`, true);
             
-            // After a short delay, redirect to the sounds page
-            setTimeout(() => {
-                window.location.href = `/sounds?characterId=${this.characterId}`;
-            }, 2000);
+            // Optionally, disable the button or give other feedback
+            document.querySelector('#saveToLibrary').disabled = true; 
+
+            // Consider if navigation or other UI update is needed here
+            // e.g., redirecting to a sound library page or updating a list of sounds.
+
         } catch (error) {
             console.error('Error saving to sound library:', error);
-            this.showError('Failed to save to sound library: ' + error.message);
+            this.showError('Error saving to library: ' + error.message);
         } finally {
             this.hideLoading();
         }
     }
 
-    updatePlayButtonState() {
-        document.querySelector('#saveToLibrary').disabled = !this.lastGeneratedAudio;
-    }
-
-    selectVoice(voice) {
-        this.selectedVoice = voice;
-        this.currentPreviewVoice = voice;
-        
-        document.querySelectorAll('#voiceTableBody tr').forEach(row => {
-            row.classList.toggle('selected', row.cells[0].textContent === voice.name);
-        });
-        
-        document.querySelector('#selectVoice').disabled = !this.characterId;
-        this.updatePlayButtonState();
-        
-        // Generate preview automatically when voice is selected
-        this.generatePreview('neutral');
-    }
-
-    async saveVoiceConfiguration() {
-        if (this.selectedVoice && this.characterId) {
-            try {
-                const settings = {
-                    speed: parseFloat(document.querySelector('#speed').value),
-                    pitch: parseInt(document.querySelector('#pitch').value),
-                    volume: parseInt(document.querySelector('#volume').value)
-                };
-
-                // Use the speaker_id from the voice data
-                const speakerId = this.selectedVoice.speaker_id;
-                if (!speakerId) {
-                    throw new Error('No valid speaker ID found for this voice');
-                }
-
-                const response = await fetch('/api/voice/settings', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        characterId: this.characterId,
-                        voiceId: speakerId,
-                        settings
-                    })
-                });
-
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || 'Failed to save voice configuration');
-                }
-
-                this.addToRecentlyUsed(this.selectedVoice);
-                // Show success message and redirect to sounds page
-                this.showError('Voice settings saved successfully. Redirecting to Sound Library...', true);
-                setTimeout(() => {
-                    window.location.href = `/sounds?characterId=${this.characterId}`;
-                }, 2000);
-            } catch (error) {
-                console.error('Error saving voice configuration:', error);
-                this.showError('Failed to save voice configuration: ' + error.message);
-            }
-        }
-    }
-
-    filterVoices(searchTerm) {
-        const filtered = this.voices.filter(voice => {
-            const matchesSearch = searchTerm ? 
-                voice.name.toLowerCase().includes(searchTerm.toLowerCase()) :
-                true;
-
-            const matchesFilters = this.checkFilters(voice);
-
-            return matchesSearch && matchesFilters;
-        });
-
-        this.populateVoiceTable(filtered);
-    }
-
-    checkFilters(voice) {
-        const { gender, style, accent, age } = this.filters;
-        
-        if (gender.size > 0 && !gender.has(voice.gender?.toLowerCase())) return false;
-        if (accent.size > 0 && !accent.has(voice.accent?.toLowerCase())) return false;
-        if (age.size > 0 && !age.has(this.getAgeGroup(voice.age))) return false;
-        if (style.size > 0 && !Array.from(style).some(s => this.getVoiceStyles(voice).includes(s))) return false;
-
-        return true;
-    }
-
-    getAgeGroup(age) {
-        if (!age) return 'unknown';
-        if (age.includes('Young') || (age >= 18 && age <= 34)) return 'young';
-        if (age.includes('Middle') || (age >= 35 && age <= 54)) return 'middle';
-        if (age.includes('Senior') || age >= 55) return 'senior';
-        return 'unknown';
-    }
-
-    toggleFilterDropdown(filterType) {
-        const dropdown = document.querySelector(`#${filterType}Filter`);
-        const isVisible = dropdown.style.display === 'block';
-        
-        this.closeAllFilterDropdowns();
-        
-        if (!isVisible) {
-            dropdown.style.display = 'block';
-        }
-    }
-
-    closeAllFilterDropdowns() {
-        document.querySelectorAll('.filter-dropdown').forEach(dropdown => {
-            dropdown.style.display = 'none';
-        });
-    }
-
-    applyFilters() {
-        Object.keys(this.filters).forEach(key => this.filters[key].clear());
-
-        document.querySelectorAll('.filter-option input:checked').forEach(checkbox => {
-            const filterType = checkbox.closest('.filter-dropdown').id.replace('Filter', '');
-            this.filters[filterType].add(checkbox.value);
-        });
-
-        this.filterVoices(document.querySelector('#voiceSearch').value);
-    }
-
-    sortVoices(header) {
-        const column = header.textContent.toLowerCase().trim();
-        const currentDirection = header.dataset.sortDirection === 'asc' ? 'desc' : 'asc';
-        
-        document.querySelectorAll('th').forEach(th => {
-            th.dataset.sortDirection = '';
-            th.querySelector('i').className = 'fas fa-sort';
-        });
-
-        header.dataset.sortDirection = currentDirection;
-        header.querySelector('i').className = `fas fa-sort-${currentDirection === 'asc' ? 'up' : 'down'}`;
-
-        const sortedVoices = [...this.voices].sort((a, b) => {
-            let valueA = a[column] || '';
-            let valueB = b[column] || '';
-
-            if (column === 'styles') {
-                valueA = this.getVoiceStyles(a).length;
-                valueB = this.getVoiceStyles(b).length;
-            }
-
-            return currentDirection === 'asc' ? 
-                (valueA > valueB ? 1 : -1) : 
-                (valueA < valueB ? 1 : -1);
-        });
-
-        this.populateVoiceTable(sortedVoices);
-    }
-
     async addToRecentlyUsed(voice) {
-        let recent = JSON.parse(localStorage.getItem('recentlyUsedVoices') || '[]');
-        recent = [voice, ...recent.filter(v => v.uuid !== voice.uuid)].slice(0, 5);
-        localStorage.setItem('recentlyUsedVoices', JSON.stringify(recent));
-        await this.loadRecentlyUsed();
+        // Add to recently used
     }
 
     async loadRecentlyUsed() {
-        const recentContainer = document.querySelector('#recentlyUsedVoices');
-        const recent = JSON.parse(localStorage.getItem('recentlyUsedVoices') || '[]');
-        
-        recentContainer.innerHTML = recent.map(voice => `
-            <div class="voice-chip" data-voice-id="${voice.uuid}">
-                ${voice.name}
-            </div>
-        `).join('');
-
-        document.querySelectorAll('.voice-chip').forEach(chip => {
-            chip.addEventListener('click', () => {
-                const voice = this.voices.find(v => v.uuid === chip.dataset.voiceId);
-                if (voice) {
-                    this.selectVoice(voice);
-                }
-            });
-        });
+        // Load recently used
     }
 
     setCharacterId(id) {

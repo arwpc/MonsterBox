@@ -1,23 +1,29 @@
 const fs = require('fs').promises;
 const path = require('path');
 const logger = require('../scripts/logger');
-const ReplicaAPI = require('../scripts/replicaAPI');
+const OpenAIService = require('../scripts/openAIService');
 
 class VoiceService {
     constructor() {
         this.voicesPath = path.join(__dirname, '../data/voices.json');
-        this.replicaAPI = new ReplicaAPI();
+        this.openAIService = new OpenAIService();
+        this.generatedAudioDir = path.join(__dirname, '../../public/audio/generated');
+
         this.defaultSettings = {
-            pitch: 0,
-            speed: 1,
-            volume: 0,
-            // Use the standardized audio settings from ReplicaAPI
-            sampleRate: this.replicaAPI.audioSettings.sampleRate,
-            bitRate: this.replicaAPI.audioSettings.bitRate,
-            outputFormat: this.replicaAPI.audioSettings.format,
-            channels: this.replicaAPI.audioSettings.channels,
-            languageCode: 'en'
+            model: 'tts-1',
+            speed: 1.0,
+            outputFormat: 'mp3'
         };
+        this._ensureGeneratedAudioDir();
+    }
+
+    async _ensureGeneratedAudioDir() {
+        try {
+            await fs.mkdir(this.generatedAudioDir, { recursive: true });
+            logger.info(`Ensured generated audio directory exists: ${this.generatedAudioDir}`);
+        } catch (error) {
+            logger.error(`Error creating generated audio directory ${this.generatedAudioDir}: ${error.message}`);
+        }
     }
 
     async getAllVoices() {
@@ -27,7 +33,7 @@ class VoiceService {
             const voices = JSON.parse(data).voices;
             return voices.map(voice => this.normalizeVoiceData(voice));
         } catch (error) {
-            logger.error(`Error reading voices: ${error.message}`);
+            logger.error(`Error reading voices from ${this.voicesPath}: ${error.message}`);
             throw new Error(`Failed to read voices: ${error.message}`);
         }
     }
@@ -36,7 +42,12 @@ class VoiceService {
         const normalized = {
             characterId: parseInt(voice.characterId),
             speaker_id: voice.speaker_id,
-            settings: { ...this.defaultSettings, ...voice.settings },
+            settings: { 
+                ...this.defaultSettings, 
+                ...(voice.settings || {}),
+                model: voice.settings?.model || this.defaultSettings.model,
+                speed: voice.settings?.speed || this.defaultSettings.speed,
+            },
             metadata: voice.metadata || {
                 lastUsed: null,
                 useCount: 0,
@@ -123,31 +134,11 @@ class VoiceService {
 
     async getAvailableVoices() {
         try {
-            const voices = await this.replicaAPI.getVoices();
+            const voices = await this.openAIService.getAvailableVoices();
             return voices;
         } catch (error) {
-            logger.error(`Error fetching available voices: ${error.message}`);
+            logger.error(`Error fetching available voices from OpenAIService: ${error.message}`);
             throw new Error(`Failed to fetch available voices: ${error.message}`);
-        }
-    }
-
-    async determineModelChain(speaker_id) {
-        const voices = await this.getAvailableVoices();
-        const voice = voices.find(v => v.speaker_id === speaker_id);
-        
-        if (!voice) {
-            throw new Error('Voice not found');
-        }
-
-        const capabilities = voice.capabilities || {};
-        
-        // Check for vox_2_0 first, fall back to vox_1_0 if available
-        if (capabilities['tts.vox_2_0']) {
-            return 'vox_2_0';
-        } else if (capabilities['tts.vox_1_0']) {
-            return 'vox_1_0';
-        } else {
-            throw new Error('Voice does not support any available model chains');
         }
     }
 
@@ -156,48 +147,71 @@ class VoiceService {
             if (!text?.trim()) {
                 throw new Error('Text parameter is required and must not be empty');
             }
-
             if (!speaker_id) {
-                throw new Error('Speaker ID is required');
+                throw new Error('Speaker ID (OpenAI Voice ID) is required');
             }
 
-            // Determine the appropriate model chain for this voice
-            const modelChain = await this.determineModelChain(speaker_id);
+            const timestamp = Date.now();
+            const filename = `${characterId || 'unknown_char'}_${speaker_id}_${timestamp}.mp3`;
+            const outputPath = path.join(this.generatedAudioDir, filename);
 
-            // Use the standardized audio settings from ReplicaAPI
-            const result = await this.replicaAPI.textToSpeech({
-                voiceId: speaker_id,
+            let characterSettings = this.defaultSettings;
+            if (characterId) {
+                const voiceProfile = await this.getVoiceByCharacterId(characterId);
+                if (voiceProfile && voiceProfile.settings) {
+                    characterSettings = { ...characterSettings, ...voiceProfile.settings };
+                }
+            }
+            
+            const combinedOptions = {
+                ...characterSettings, 
+                ...options,         
+                model: options.model || characterSettings.model || this.defaultSettings.model,
+                speed: options.speed || characterSettings.speed || this.defaultSettings.speed,
+            };
+
+            const result = await this.openAIService.textToSpeech({
                 text: text.trim(),
+                voiceId: speaker_id,
+                outputPath: outputPath,
                 options: {
-                    ...this.defaultSettings,
-                    ...options,
-                    modelChain
+                    model: combinedOptions.model,
+                    speed: combinedOptions.speed,
                 }
             });
 
-            // Add generation to voice history if associated with a character
             if (characterId) {
                 const voice = await this.getVoiceByCharacterId(characterId);
                 if (voice) {
+                    if (!Array.isArray(voice.history)) {
+                        voice.history = [];
+                    }
                     voice.history.push({
                         timestamp: new Date().toISOString(),
-                        type: 'generation',
+                        type: 'generation_openai',
                         textLength: text.length,
-                        settings: { 
-                            ...options, 
-                            modelChain,
-                            audioSettings: this.replicaAPI.audioSettings
+                        settings: {
+                            model: combinedOptions.model,
+                            speed: combinedOptions.speed,
+                            voice: speaker_id
                         },
-                        duration: result.duration
+                        filePath: result.outputPath 
                     });
+                    voice.metadata = {
+                        ...voice.metadata,
+                        lastUsed: new Date().toISOString(),
+                        useCount: (voice.metadata.useCount || 0) + 1
+                    };
                     await this.saveVoice(voice);
                 }
             }
 
-            return result;
+            return { 
+                filePath: result.outputPath, 
+            };
         } catch (error) {
-            logger.error(`Error generating speech: ${error.message}`);
-            throw new Error(`Speech generation failed: ${error.message}`);
+            logger.error(`Error generating speech with OpenAI: ${error.message}`);
+            throw new Error(`OpenAI speech generation failed: ${error.message}`);
         }
     }
 
