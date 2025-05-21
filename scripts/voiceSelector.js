@@ -276,7 +276,7 @@ class VoiceSelector {
         });
 
         // Update filter options based on available voices (might be less diverse with OpenAI)
-        this.updateFilterOptions(); 
+        // this.updateFilterOptions(); 
     }
 
     updateSelectedVoiceInfo() {

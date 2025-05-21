@@ -7,7 +7,7 @@ class VoiceService {
     constructor() {
         this.voicesPath = path.join(__dirname, '../data/voices.json');
         this.openAIService = new OpenAIService();
-        this.generatedAudioDir = path.join(__dirname, '../../public/audio/generated');
+        this.generatedAudioDir = path.join(__dirname, '../../public/sounds');
 
         this.defaultSettings = {
             model: 'tts-1',
@@ -153,6 +153,7 @@ class VoiceService {
 
             const timestamp = Date.now();
             const filename = `${characterId || 'unknown_char'}_${speaker_id}_${timestamp}.mp3`;
+            await this._ensureGeneratedAudioDir(); 
             const outputPath = path.join(this.generatedAudioDir, filename);
 
             let characterSettings = this.defaultSettings;
@@ -195,20 +196,27 @@ class VoiceService {
                             speed: combinedOptions.speed,
                             voice: speaker_id
                         },
-                        filePath: result.outputPath 
+                        filePath: `/sounds/${filename}` 
                     });
                     voice.metadata = {
-                        ...voice.metadata,
+                        ...(voice.metadata || {}),
                         lastUsed: new Date().toISOString(),
-                        useCount: (voice.metadata.useCount || 0) + 1
+                        useCount: (voice.metadata?.useCount || 0) + 1
                     };
-                    await this.saveVoice(voice);
+                    await this.saveVoice(voice); 
                 }
             }
 
-            return { 
-                filePath: result.outputPath, 
+            logger.info(`Generic speech generated: /sounds/${filename}`); 
+            return {
+                success: true,
+                filePath: `/sounds/${filename}`, 
+                characterId: characterId,
+                text: text.trim(),
+                voiceId: speaker_id,
+                fullDiskPath: outputPath 
             };
+
         } catch (error) {
             logger.error(`Error generating speech with OpenAI: ${error.message}`);
             throw new Error(`OpenAI speech generation failed: ${error.message}`);
