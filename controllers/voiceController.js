@@ -202,14 +202,11 @@ exports.generateSpeech = async (req, res) => {
             return handleError(res, new Error('Speech generation failed'), 500);
         }
 
-        const generatedFilename = path.basename(result.filePath);
-        const webPath = `/audio/generated/${generatedFilename}`;
-
-        logger.info(`Generic speech generated: ${webPath}`);
+        logger.info(`Generic speech generated: ${result.filePath}`);
 
         res.json({
             success: true,
-            filePath: webPath,
+            filePath: result.filePath,
             message: 'Speech generated successfully. Note: This endpoint does not save to sound library.'
         });
 

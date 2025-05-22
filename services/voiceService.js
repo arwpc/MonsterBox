@@ -207,10 +207,13 @@ class VoiceService {
                 }
             }
 
-            logger.info(`Generic speech generated: /sounds/${filename}`); 
+            const finalFilePathForReturn = `/sounds/${filename}`;
+            console.log('>>>> DEBUG VOICE_SERVICE: FilePath before logging and return:', finalFilePathForReturn);
+
+            logger.info(`Generic speech generated: ${finalFilePathForReturn}`); 
             return {
                 success: true,
-                filePath: `/sounds/${filename}`, 
+                filePath: finalFilePathForReturn, 
                 characterId: characterId,
                 text: text.trim(),
                 voiceId: speaker_id,
