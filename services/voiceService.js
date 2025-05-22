@@ -29,7 +29,7 @@ class VoiceService {
     async getAllVoices() {
         try {
             const data = await fs.readFile(this.voicesPath, 'utf8');
-            logger.info(`Read voices data: ${data}`);
+            logger.info(`Read voices data from ${this.voicesPath} (length: ${data ? data.length : 0})`);
             const voices = JSON.parse(data).voices;
             return voices.map(voice => this.normalizeVoiceData(voice));
         } catch (error) {
@@ -57,7 +57,7 @@ class VoiceService {
             },
             history: voice.history || []
         };
-        logger.info(`Normalized voice data: ${JSON.stringify(normalized)}`);
+        logger.debug(`Normalized voice data for charId: ${normalized.characterId}, speaker_id: ${normalized.speaker_id}`);
         return normalized;
     }
 
@@ -68,12 +68,11 @@ class VoiceService {
 
         logger.info(`Getting voice for character ID: ${characterId}`);
         const voices = await this.getAllVoices();
-        logger.info(`Found ${voices.length} voices`);
         const parsedCharacterId = parseInt(characterId);
         logger.info(`Looking for character ID: ${parsedCharacterId}`);
         const voice = voices.find(v => v.characterId === parsedCharacterId);
-        logger.info(`Found voice: ${voice ? JSON.stringify(voice) : 'null'}`);
-        return voice ? this.normalizeVoiceData(voice) : null;
+        logger.info(`Voice lookup for charId ${parsedCharacterId}: ${voice ? 'Found (speaker_id: ' + voice.speaker_id + ')' : 'Not found'}`);
+        return voice ? this.normalizeVoiceData(voice) : null; 
     }
 
     async saveVoice(voiceData) {
@@ -208,7 +207,6 @@ class VoiceService {
             }
 
             const finalFilePathForReturn = `/sounds/${filename}`;
-            console.log('>>>> DEBUG VOICE_SERVICE: FilePath before logging and return:', finalFilePathForReturn);
 
             logger.info(`Generic speech generated: ${finalFilePathForReturn}`); 
             return {
