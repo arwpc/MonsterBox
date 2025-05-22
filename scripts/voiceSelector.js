@@ -283,6 +283,10 @@ class VoiceSelector {
         // Update selected voice info
     }
 
+    updatePlayButtonState() {
+        console.log('updatePlayButtonState called - doing nothing currently.');
+    }
+
     async previewVoice() {
         if (!this.selectedVoice) {
             this.showError('Please select a voice first.');
@@ -298,7 +302,15 @@ class VoiceSelector {
         this.showLoading('Generating preview...');
         this.isPlaying = false;
         this.updatePlayButtonState();
-        document.querySelector('#saveToLibrary').disabled = true;
+
+        const saveToLibraryButton = document.querySelector('#saveToLibrary');
+        console.log('Save to Library button element:', saveToLibraryButton); 
+
+        if (saveToLibraryButton) {
+            saveToLibraryButton.disabled = true;
+        } else {
+            console.error('#saveToLibrary button not found when trying to disable it in previewVoice!');
+        }
 
         try {
             const settings = this.getCurrentSettings(); // Gets speed, pitch, volume from UI
@@ -328,10 +340,14 @@ class VoiceSelector {
             const result = await response.json();
             this.lastGeneratedAudio = { url: result.filePath, text: text, voiceId: voiceId }; // Store filePath as url for wavesurfer
             
+            const playPauseButton = document.querySelector('#playPausePreview');
+
             if (this.wavesurfer && result.filePath) {
                 this.wavesurfer.load(result.filePath); // Load the MP3 directly by its path
-                document.querySelector('#playPausePreview').disabled = false;
-                document.querySelector('#saveToLibrary').disabled = false;
+                if (playPauseButton) playPauseButton.disabled = false;
+                else console.error('#playPausePreview button not found!');
+                
+                if (saveToLibraryButton) saveToLibraryButton.disabled = false;
             } else {
                 throw new Error('Audio file path not received or WaveSurfer not initialized.');
             }
@@ -351,10 +367,6 @@ class VoiceSelector {
         // const pitch = parseFloat(document.querySelector('#pitch').value) || 0;
         // const volume = parseFloat(document.querySelector('#volume').value) || 0;
         return { speed /*, pitch, volume */ };
-    }
-
-    updatePlayButtonState() {
-        // Update play button state
     }
 
     async saveVoiceConfiguration() {
