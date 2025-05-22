@@ -7,7 +7,7 @@ class VoiceService {
     constructor() {
         this.voicesPath = path.join(__dirname, '../data/voices.json');
         this.openAIService = new OpenAIService();
-        this.generatedAudioDir = path.join(__dirname, '../../public/sounds');
+        this.generatedAudioDir = path.join(__dirname, '../public/sounds');
 
         this.defaultSettings = {
             model: 'tts-1',
