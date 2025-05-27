@@ -1,6 +1,6 @@
 #!/bin/bash
 # This is a bash script and should be run with: sudo bash install.sh
-
+# update
 # Function to print colored output
 print_status() {
     echo -e "\e[1;34m>>> $1\e[0m"
