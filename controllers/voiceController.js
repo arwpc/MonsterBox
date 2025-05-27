@@ -111,146 +111,106 @@ exports.saveVoiceSettings = async (req, res) => {
 exports.generateAndSaveForScene = async (req, res) => {
     try {
         const { text, characterId } = req.body;
-        logger.info(`Generating voice for character ${characterId} with text: ${text}`);
+        logger.info(`Generating voice for character ${characterId} with text: ${text} (OpenAI)`);
 
         if (!text || !characterId) {
             return handleError(res, new Error('Text and character ID are required'), 400);
         }
 
-        // Get voice settings for the character
         logger.info(`Getting voice settings for character ${characterId}`);
         const voice = await voiceService.getVoiceByCharacterId(characterId);
-        logger.info(`Voice settings retrieved:`, voice);
+        // logger.info(`Voice settings retrieved:`, voice); // Can be verbose
 
         if (!voice || !voice.speaker_id) {
             logger.error(`No voice configuration found for character ${characterId}`);
             return handleError(res, new Error('No voice configured for this character'), 404);
         }
 
-        // Generate the speech using character's voice settings
-        logger.info(`Generating speech with speaker_id: ${voice.speaker_id}`);
-        const result = await voiceService.generateSpeech(text, voice.speaker_id, voice.settings || {}, characterId);
-        logger.info(`Speech generation result:`, result);
+        logger.info(`Generating speech with OpenAI voice_id: ${voice.speaker_id}, settings: ${JSON.stringify(voice.settings)}`);
+        // voice.settings will be merged with defaults in voiceService.generateSpeech
+        const generationResult = await voiceService.generateSpeech(text, voice.speaker_id, voice.settings || {}, characterId);
+        logger.info(`Speech generation result:`, generationResult);
 
-        // Create filename and path
-        const timestamp = Date.now();
-        const sanitizedText = text.substring(0, 30).replace(/[^a-zA-Z0-9]/g, '_');
-        const filename = `${timestamp}-${sanitizedText}.mp3`;
-        const filePath = path.join('public', 'sounds', filename);
-        const absolutePath = path.resolve(__dirname, '..', filePath);
-        logger.info(`File path: ${absolutePath}`);
-
-        try {
-            // Download the audio file
-            logger.info(`Downloading audio from ${result.url}`);
-            await downloadAudio(result.url, absolutePath);
-            logger.info(`Audio saved to ${absolutePath}`);
-
-            // Create sound entry in the library
-            logger.info(`Creating sound entry in library`);
-            const soundEntry = await soundService.createSound({
-                name: text,
-                filename: path.basename(absolutePath),
-                file: path.basename(absolutePath),
-                characterIds: [parseInt(characterId)],
-                type: 'voice',
-                created: new Date().toISOString(),
-                metadata: {
-                    originalText: text,
-                    voiceId: voice.speaker_id,
-                    voiceSettings: voice.settings || {}
-                }
-            });
-            logger.info(`Sound entry created:`, soundEntry);
-
-            res.json({
-                success: true,
-                soundId: soundEntry.id,
-                filename: path.basename(absolutePath),
-                path: `/sounds/${path.basename(absolutePath)}` // Return web-accessible path
-            });
-        } catch (err) {
-            logger.error(`Failed to process audio file: ${err.message}`);
-            if (fs.existsSync(absolutePath)) {
-                try {
-                    fs.unlinkSync(absolutePath);
-                    logger.info(`Cleaned up file after error`);
-                } catch (cleanupError) {
-                    logger.error(`Failed to clean up file: ${cleanupError.message}`);
-                }
-            }
-            throw err;
+        if (!generationResult || !generationResult.filePath) {
+            logger.error('Speech generation failed to return a file path.');
+            return handleError(res, new Error('Speech generation failed'), 500);
         }
+
+        const absolutePath = generationResult.filePath;
+        const generatedFilename = path.basename(absolutePath);
+        // Web-accessible path: /audio/generated/filename.mp3
+        const webPath = `/audio/generated/${generatedFilename}`;
+
+        logger.info(`Audio generated and saved to ${absolutePath}`);
+        logger.info(`Web-accessible path: ${webPath}`);
+
+        // Create sound entry in the library
+        logger.info(`Creating sound entry in library for ${generatedFilename}`);
+        const soundEntry = await soundService.createSound({
+            name: text.substring(0, 50), // Use a portion of text as name
+            filename: generatedFilename, // Just the filename
+            file: generatedFilename,     // Redundant, but matches existing structure
+            characterIds: [parseInt(characterId)],
+            type: 'voice_openai', // Indicate it's an OpenAI voice
+            created: new Date().toISOString(),
+            metadata: {
+                originalText: text,
+                voiceId: voice.speaker_id, // OpenAI voice ID
+                voiceSettings: voice.settings || {},
+                source: 'openai-tts'
+            }
+        });
+        logger.info(`Sound entry created:`, soundEntry);
+
+        res.json({
+            success: true,
+            soundId: soundEntry.id,
+            filename: generatedFilename,
+            path: webPath 
+        });
+
     } catch (error) {
+        // Error handling for file cleanup is tricky if voiceService already wrote it.
+        // For now, rely on voiceService not creating a file if it throws an error before that point.
+        // If voiceService creates a file then throws, that file might remain.
         handleError(res, error);
     }
 };
 
 exports.generateSpeech = async (req, res) => {
     try {
-        const { speaker_id, text, options = {}, characterId } = req.body;
+        const { speaker_id, text, options = {}, characterId = null } = req.body; // Added characterId, defaulting to null
 
         if (!speaker_id || !text) {
-            return handleError(res, new Error('Speaker ID and text are required'), 400);
+            return handleError(res, new Error('Speaker ID (OpenAI Voice ID) and text are required'), 400);
         }
 
-        // Transform options into generation options
+        // Ensure options are structured as expected by voiceService
         const generationOptions = {
-            ...options,
-            speed: options?.speed || 1.0,
-            pitch: options?.pitch || 0,
-            volume: options?.volume || 0,
-            extensions: ['mp3'],  // Request MP3 format directly
-            bitRate: 128  // Standard MP3 bitrate
+            model: options.model, // Will use default from voiceService if undefined
+            speed: options.speed  // Will use default from voiceService if undefined
         };
 
-        // Generate the speech
+        logger.info(`Generic speech generation request: voice='${speaker_id}', charId='${characterId}'`);
+
+        // Call voiceService.generateSpeech
+        // The characterId is passed for potential history logging in voiceService, even if not used for soundService here
         const result = await voiceService.generateSpeech(text, speaker_id, generationOptions, characterId);
 
-        // Create filename and path
-        const timestamp = Date.now();
-        const sanitizedText = text.substring(0, 30).replace(/[^a-zA-Z0-9]/g, '_');
-        const filename = `${timestamp}-${sanitizedText}.mp3`;
-        const filePath = path.join('public', 'sounds', filename);
-        const absolutePath = path.resolve(__dirname, '..', filePath);
-
-        try {
-            // Download the audio file
-            await downloadAudio(result.url, absolutePath);
-            logger.info(`Downloaded audio file to ${absolutePath}`);
-
-            res.json({
-                success: true,
-                filename: path.basename(absolutePath),
-                path: `/sounds/${path.basename(absolutePath)}`, // Return web-accessible path
-                url: result.url,
-                duration: result.duration,
-                metadata: result.metadata
-            });
-        } catch (err) {
-            logger.error(`Failed to process audio file: ${err.message}`);
-            if (fs.existsSync(absolutePath)) {
-                try {
-                    fs.unlinkSync(absolutePath);
-                } catch (cleanupError) {
-                    logger.error(`Failed to clean up file: ${cleanupError.message}`);
-                }
-            }
-            throw err;
+        if (!result || !result.filePath) {
+            logger.error('Generic speech generation failed to return a file path.');
+            return handleError(res, new Error('Speech generation failed'), 500);
         }
+
+        logger.info(`Generic speech generated: ${result.filePath}`);
+
+        res.json({
+            success: true,
+            filePath: result.filePath,
+            message: 'Speech generated successfully. Note: This endpoint does not save to sound library.'
+        });
+
     } catch (error) {
-        if (error.message.includes('API key is required')) {
-            return handleError(res, error, 401);
-        }
-        if (error.message.includes('Rate limit')) {
-            return handleError(res, error, 429);
-        }
-        if (error.message.includes('not found')) {
-            return handleError(res, error, 404);
-        }
-        if (error.message.includes('timed out')) {
-            return handleError(res, error, 504);
-        }
         handleError(res, error);
     }
 };
@@ -416,7 +376,7 @@ exports.testVoiceConnection = async (req, res) => {
         res.json(testResult);
     } catch (error) {
         if (error.message.includes('API key is required')) {
-            return handleError(res, error, 401);
+            return handleError(res, new Error('API key is required'), 401);
         }
         handleError(res, error);
     }

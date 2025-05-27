@@ -7,4 +7,4 @@ node_modules/
 *.log
 MonsterBox*.log
 /log/
-
+.env

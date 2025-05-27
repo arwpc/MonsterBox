@@ -67,6 +67,12 @@ app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+// Middleware to log requests before static serving
+app.use((req, res, next) => {
+  console.log('Request URL for static check:', req.url);
+  next();
+});
+
 // Serve static files with correct MIME types
 app.use(express.static(path.join(__dirname, 'public'), {
     setHeaders: (res, path) => {
