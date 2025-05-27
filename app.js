@@ -12,6 +12,7 @@ process.env.NODE_NO_WARNINGS = '1';
 // File: app.js
 
 let express, path, http, logger, app, server, port, audioStream, soundController, fs, os, session;
+let videoStream; // <-- Add videoStream variable
 let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, voiceRoutes;
 let characterService;
 
@@ -28,6 +29,7 @@ try {
     app.use(express.urlencoded({ extended: true }));
     port = 3000;
     audioStream = require('./scripts/audio');
+    videoStream = require('./scripts/video'); // <-- Require video.js
     soundController = require('./controllers/soundController');
     fs = require('fs');
     os = require('os');
@@ -179,6 +181,13 @@ function startServer() {
         console.log(`MonsterBox server running at http://localhost:${port}`);
         console.log(`Local IP address: ${localIp}, system name ${hostname}`);
         logger.info('Server started successfully');
+
+        // Start the audio stream WebSocket server
+        audioStream.startStream(server);
+
+        // Start the video stream WebSocket server
+        videoStream.startStream(server); // <-- Call startStream for video
+
         logger.info('Ready for Halloween, Sir.');
     });
 
@@ -205,10 +214,6 @@ function startServer() {
 // Initialize the application
 async function initializeApp() {
     try {
-        // Start the audio stream
-        audioStream.startStream(server);
-        logger.info('Audio stream started successfully');
-
         // Initialize the sound controller
         await soundController.startSoundPlayer();
         logger.info('Sound player initialized successfully');
