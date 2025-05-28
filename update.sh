@@ -1,6 +1,6 @@
 #!/bin/bash
 # This script updates MonsterBox project dependencies and ensures services are running. No full OS upgrade is performed.
-
+#chqnge
 print_status() {
     echo -e "\e[1;34m>>> $1\e[0m"
 }
