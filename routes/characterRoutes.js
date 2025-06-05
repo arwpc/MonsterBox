@@ -7,6 +7,9 @@ const fs = require('fs').promises;
 const path = require('path');
 const multer = require('multer');
 const logger = require('../scripts/logger');
+const { exec } = require('child_process');
+const util = require('util');
+const execAsync = util.promisify(exec);
 
 const upload = multer({
     dest: path.join(__dirname, '../public/images/characters')
@@ -141,6 +144,57 @@ router.post('/', upload.single('character_image'), async (req, res) => {
             image: req.file ? req.file.filename : null
         };
 
+        // Add animatronic configuration if enabled
+        if (req.body.animatronic_enabled === 'on') {
+            newCharacter.animatronic = {
+                enabled: true,
+                status: req.body.animatronic_status || 'offline',
+                character_type: req.body.character_type || '',
+                description: req.body.animatronic_description || '',
+                hardware_monitoring: req.body.hardware_monitoring === 'on',
+                services: [
+                    "monsterbox",
+                    "nginx",
+                    "ssh",
+                    "systemd-resolved",
+                    "bluetooth",
+                    "gpio-control"
+                ],
+                log_types: [
+                    "system",
+                    "auth",
+                    "kernel",
+                    "daemon",
+                    "user"
+                ],
+                animatronic_parts: []
+            };
+
+            // Add RPI configuration if host is provided
+            if (req.body.rpi_host) {
+                newCharacter.animatronic.rpi_config = {
+                    host: req.body.rpi_host,
+                    user: req.body.rpi_user || 'remote',
+                    password_env: req.body.password_env || '',
+                    ssh_key_path: "~/.ssh/id_rsa",
+                    collection_interval: parseInt(req.body.collection_interval) || 300,
+                    max_lines: parseInt(req.body.max_lines) || 1000
+                };
+            }
+        } else {
+            newCharacter.animatronic = {
+                enabled: false,
+                status: 'virtual',
+                character_type: 'Virtual Character',
+                description: 'Software-only character',
+                rpi_config: null,
+                services: ["monsterbox"],
+                log_types: ["system", "application"],
+                hardware_monitoring: false,
+                animatronic_parts: []
+            };
+        }
+
         const character = await characterService.createCharacter(newCharacter);
 
         const selectedPartIds = req.body.parts ? 
@@ -166,6 +220,57 @@ router.post('/:id', upload.single('character_image'), async (req, res) => {
             parts: [],
             sounds: []
         };
+
+        // Add animatronic configuration if enabled
+        if (req.body.animatronic_enabled === 'on') {
+            updatedCharacter.animatronic = {
+                enabled: true,
+                status: req.body.animatronic_status || 'offline',
+                character_type: req.body.character_type || '',
+                description: req.body.animatronic_description || '',
+                hardware_monitoring: req.body.hardware_monitoring === 'on',
+                services: [
+                    "monsterbox",
+                    "nginx",
+                    "ssh",
+                    "systemd-resolved",
+                    "bluetooth",
+                    "gpio-control"
+                ],
+                log_types: [
+                    "system",
+                    "auth",
+                    "kernel",
+                    "daemon",
+                    "user"
+                ],
+                animatronic_parts: []
+            };
+
+            // Add RPI configuration if host is provided
+            if (req.body.rpi_host) {
+                updatedCharacter.animatronic.rpi_config = {
+                    host: req.body.rpi_host,
+                    user: req.body.rpi_user || 'remote',
+                    password_env: req.body.password_env || '',
+                    ssh_key_path: "~/.ssh/id_rsa",
+                    collection_interval: parseInt(req.body.collection_interval) || 300,
+                    max_lines: parseInt(req.body.max_lines) || 1000
+                };
+            }
+        } else {
+            updatedCharacter.animatronic = {
+                enabled: false,
+                status: 'virtual',
+                character_type: 'Virtual Character',
+                description: 'Software-only character',
+                rpi_config: null,
+                services: ["monsterbox"],
+                log_types: ["system", "application"],
+                hardware_monitoring: false,
+                animatronic_parts: []
+            };
+        }
 
         if (req.file) {
             const character = await characterService.getCharacterById(id);
@@ -221,6 +326,67 @@ router.get('/:id/parts', async (req, res) => {
     } catch (error) {
         logger.error('Error in GET /characters/:id/parts route:', error);
         res.status(500).json({ error: 'An error occurred while fetching character parts' });
+    }
+});
+
+// SSH Test endpoint
+router.post('/test-ssh', async (req, res) => {
+    try {
+        const { host, user, passwordEnv } = req.body;
+
+        if (!host || !user) {
+            return res.status(400).json({
+                success: false,
+                error: 'Host and user are required'
+            });
+        }
+
+        // First test basic connectivity (ping)
+        try {
+            await execAsync(`ping -n 1 -w 1000 ${host}`);
+        } catch (error) {
+            return res.json({
+                success: false,
+                error: `Host ${host} is not reachable`
+            });
+        }
+
+        // Test SSH connection
+        const sshCredentials = require('../scripts/ssh-credentials');
+        const sshCommand = sshCredentials.buildSSHCommand(
+            host.split('.').pop(), // Use last octet as ID
+            host,
+            "echo 'SSH test successful'",
+            { batchMode: true }
+        );
+
+        try {
+            const { stdout } = await execAsync(sshCommand);
+
+            if (stdout.includes('SSH test successful')) {
+                res.json({
+                    success: true,
+                    message: 'SSH connection successful'
+                });
+            } else {
+                res.json({
+                    success: false,
+                    error: 'SSH test command failed'
+                });
+            }
+        } catch (sshError) {
+            res.json({
+                success: false,
+                error: `SSH connection failed: ${sshError.message}`
+            });
+        }
+
+    } catch (error) {
+        logger.error('Error testing SSH connection:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Internal server error during SSH test'
+        });
     }
 });
 

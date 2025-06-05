@@ -19,6 +19,7 @@ const { spawn, exec } = require('child_process');
 const util = require('util');
 const execAsync = util.promisify(exec);
 const sshCredentials = require('./ssh-credentials');
+const ConfigAdapter = require('./config-adapter');
 
 // Load environment variables
 require('dotenv').config();
@@ -26,6 +27,7 @@ require('dotenv').config();
 class MCPSetupTester {
     constructor() {
         this.baseURL = 'http://localhost:3000';
+        this.configAdapter = new ConfigAdapter();
         this.results = {
             timestamp: new Date().toISOString(),
             tests: {},
@@ -215,10 +217,8 @@ class MCPSetupTester {
         console.log('🔍 Testing animatronic SSH connectivity...');
 
         try {
-            // Load animatronic configuration
-            const configPath = path.join(process.cwd(), 'config', 'animatronics.json');
-            const configData = await fs.readFile(configPath, 'utf8');
-            const config = JSON.parse(configData);
+            // Load animatronic configuration from unified character config
+            const config = await this.configAdapter.getEnabledAnimatronics();
 
             const credentialsValidation = sshCredentials.validateCredentials();
 
@@ -239,8 +239,24 @@ class MCPSetupTester {
                 }
             }
 
-            // Test each animatronic
-            for (const [id, animatronic] of Object.entries(config.animatronics)) {
+            // Filter and test only enabled animatronics
+            const enabledAnimatronics = Object.entries(config.animatronics)
+                .filter(([id, animatronic]) => animatronic.enabled !== false);
+
+            const disabledCount = Object.keys(config.animatronics).length - enabledAnimatronics.length;
+
+            console.log(`\n   📊 Animatronic Status:`);
+            console.log(`      Total: ${Object.keys(config.animatronics).length}`);
+            console.log(`      Enabled: ${enabledAnimatronics.length}`);
+            console.log(`      Disabled: ${disabledCount}`);
+
+            if (enabledAnimatronics.length === 0) {
+                console.log('   ⚠️  No enabled animatronics found for testing');
+                return;
+            }
+
+            // Test each enabled animatronic
+            for (const [id, animatronic] of enabledAnimatronics) {
                 console.log(`\n   🤖 Testing ${animatronic.name} (${animatronic.host})...`);
 
                 try {

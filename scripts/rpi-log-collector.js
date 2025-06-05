@@ -17,25 +17,25 @@ const execAsync = util.promisify(exec);
 const logger = require('./logger');
 const fs = require('fs').promises;
 const path = require('path');
+const ConfigAdapter = require('./config-adapter');
 
 class RPiLogCollector {
     constructor(options = {}) {
         this.options = {
-            configFile: path.join(process.cwd(), 'config', 'rpi-config.json'),
             logDir: path.join(process.cwd(), 'log'),
             ...options
         };
-        
+
         this.config = null;
+        this.configAdapter = new ConfigAdapter();
     }
 
     async loadConfig() {
         try {
-            const configData = await fs.readFile(this.options.configFile, 'utf8');
-            this.config = JSON.parse(configData);
-            logger.info('RPI configuration loaded', { 
+            this.config = await this.configAdapter.getEnabledRpiSystems();
+            logger.info('RPI configuration loaded from unified character config', {
                 rpiSystems: this.config.rpi_systems.length,
-                ubuntuSystems: this.config.ubuntu_systems.length 
+                ubuntuSystems: this.config.ubuntu_systems.length
             });
         } catch (error) {
             logger.error('Failed to load RPI configuration', { error: error.message });
@@ -57,15 +57,27 @@ class RPiLogCollector {
             errors: []
         };
 
-        // Collect from all RPI systems
-        for (const rpiSystem of this.config.rpi_systems) {
+        // Collect from enabled RPI systems only
+        const enabledRpiSystems = this.config.rpi_systems.filter(system => system.enabled !== false);
+        logger.info('Processing RPI systems', {
+            total: this.config.rpi_systems.length,
+            enabled: enabledRpiSystems.length,
+            disabled: this.config.rpi_systems.length - enabledRpiSystems.length
+        });
+
+        for (const rpiSystem of enabledRpiSystems) {
             try {
+                logger.info('Collecting logs from enabled RPI system', {
+                    name: rpiSystem.name,
+                    host: rpiSystem.host,
+                    status: rpiSystem.status
+                });
                 const logs = await this.collectRPiLogs(rpiSystem);
                 results.rpi_logs.push(logs);
             } catch (error) {
-                logger.error('Failed to collect RPI logs', { 
-                    system: rpiSystem.name, 
-                    error: error.message 
+                logger.error('Failed to collect RPI logs', {
+                    system: rpiSystem.name,
+                    error: error.message
                 });
                 results.errors.push({
                     system: rpiSystem.name,
@@ -75,15 +87,27 @@ class RPiLogCollector {
             }
         }
 
-        // Collect from all Ubuntu systems
-        for (const ubuntuSystem of this.config.ubuntu_systems) {
+        // Collect from enabled Ubuntu systems only
+        const enabledUbuntuSystems = this.config.ubuntu_systems.filter(system => system.enabled !== false);
+        logger.info('Processing Ubuntu systems', {
+            total: this.config.ubuntu_systems.length,
+            enabled: enabledUbuntuSystems.length,
+            disabled: this.config.ubuntu_systems.length - enabledUbuntuSystems.length
+        });
+
+        for (const ubuntuSystem of enabledUbuntuSystems) {
             try {
+                logger.info('Collecting logs from enabled Ubuntu system', {
+                    name: ubuntuSystem.name,
+                    host: ubuntuSystem.host,
+                    status: ubuntuSystem.status
+                });
                 const logs = await this.collectUbuntuLogs(ubuntuSystem);
                 results.ubuntu_logs.push(logs);
             } catch (error) {
-                logger.error('Failed to collect Ubuntu logs', { 
-                    system: ubuntuSystem.name, 
-                    error: error.message 
+                logger.error('Failed to collect Ubuntu logs', {
+                    system: ubuntuSystem.name,
+                    error: error.message
                 });
                 results.errors.push({
                     system: ubuntuSystem.name,

@@ -18,6 +18,7 @@ const fs = require('fs').promises;
 const path = require('path');
 const logger = require('./logger');
 const sshCredentials = require('./ssh-credentials');
+const ConfigAdapter = require('./config-adapter');
 
 // Load environment variables
 require('dotenv').config();
@@ -25,6 +26,7 @@ require('dotenv').config();
 class AnimatronicSSHTester {
     constructor() {
         this.credentialsValidation = sshCredentials.validateCredentials();
+        this.configAdapter = new ConfigAdapter();
         this.results = {
             timestamp: new Date().toISOString(),
             credentials: {
@@ -61,13 +63,29 @@ class AnimatronicSSHTester {
         console.log('');
 
         try {
-            // Load animatronic configuration
-            const configPath = path.join(process.cwd(), 'config', 'animatronics.json');
-            const configData = await fs.readFile(configPath, 'utf8');
-            const config = JSON.parse(configData);
+            // Load animatronic configuration from unified character config
+            const config = await this.configAdapter.getEnabledAnimatronics();
 
-            // Test each animatronic
-            for (const [id, animatronic] of Object.entries(config.animatronics)) {
+            // Filter and test only enabled animatronics
+            const enabledAnimatronics = Object.entries(config.animatronics)
+                .filter(([id, animatronic]) => animatronic.enabled !== false);
+
+            const disabledCount = Object.keys(config.animatronics).length - enabledAnimatronics.length;
+
+            console.log(`📊 Animatronic Status:`);
+            console.log(`   Total: ${Object.keys(config.animatronics).length}`);
+            console.log(`   Enabled: ${enabledAnimatronics.length}`);
+            console.log(`   Disabled: ${disabledCount}`);
+            console.log('');
+
+            if (enabledAnimatronics.length === 0) {
+                console.log('⚠️  No enabled animatronics found for testing');
+                return;
+            }
+
+            // Test each enabled animatronic
+            for (const [id, animatronic] of enabledAnimatronics) {
+                console.log(`🔍 Testing enabled animatronic: ${animatronic.name} (${animatronic.status})`);
                 await this.testAnimatronic(id, animatronic);
             }
 
@@ -204,7 +222,7 @@ class AnimatronicSSHTester {
         console.log(`🔑 SSH Working: ${this.results.summary.sshWorking}/${this.results.summary.total}`);
         console.log(`📋 Log Collection Working: ${this.results.summary.logsWorking}/${this.results.summary.total}`);
 
-        const successRate = this.results.summary.total > 0 
+        const successRate = this.results.summary.total > 0
             ? Math.round((this.results.summary.logsWorking / this.results.summary.total) * 100)
             : 0;
         

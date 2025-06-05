@@ -5,7 +5,44 @@
     "char_description": "A mysterious nobleman and vampire who lives alone in his ruined castle, who wants to acquire a new property in Germany. He was once a Solomonar who was cursed by the Devil to become a vampire.",
     "parts": [],
     "sounds": [],
-    "image": "ab623d74c6acf98fb72071d0e176479a"
+    "image": "ab623d74c6acf98fb72071d0e176479a",
+    "animatronic": {
+      "enabled": true,
+      "status": "running",
+      "character_type": "Count Orlok",
+      "description": "Vampire animatronic with moving arms and glowing eyes",
+      "rpi_config": {
+        "host": "192.168.8.120",
+        "user": "remote",
+        "password_env": "ORLOK_SSH_PASSWORD",
+        "ssh_key_path": "~/.ssh/id_rsa",
+        "collection_interval": 300,
+        "max_lines": 1000
+      },
+      "services": [
+        "monsterbox",
+        "nginx",
+        "ssh",
+        "systemd-resolved",
+        "bluetooth",
+        "gpio-control",
+        "servo-control"
+      ],
+      "log_types": [
+        "system",
+        "auth",
+        "kernel",
+        "daemon",
+        "user"
+      ],
+      "hardware_monitoring": true,
+      "animatronic_parts": [
+        "Right Arm of Satan",
+        "Left Arm of Manipulation",
+        "Hand of Azura",
+        "Eye of Orlok"
+      ]
+    }
   },
   {
     "id": 2,
@@ -13,7 +50,40 @@
     "char_description": "Our spanish lady has been trapped in the coffin for a thousand years, and now she's breaking out!",
     "parts": [],
     "sounds": [],
-    "image": "4bb0547f2f26bef028a80b9071365227"
+    "image": "4bb0547f2f26bef028a80b9071365227",
+    "animatronic": {
+      "enabled": true,
+      "status": "running",
+      "character_type": "Coffin Dweller",
+      "description": "Coffin with opening lid and emerging figure",
+      "rpi_config": {
+        "host": "192.168.8.140",
+        "user": "remote",
+        "password_env": "COFFIN_SSH_PASSWORD",
+        "ssh_key_path": "~/.ssh/id_rsa",
+        "collection_interval": 300,
+        "max_lines": 1000
+      },
+      "services": [
+        "monsterbox",
+        "nginx",
+        "ssh",
+        "systemd-resolved",
+        "bluetooth",
+        "gpio-control",
+        "linear-actuator",
+        "sound"
+      ],
+      "log_types": [
+        "system",
+        "auth",
+        "kernel",
+        "daemon",
+        "user"
+      ],
+      "hardware_monitoring": true,
+      "animatronic_parts": []
+    }
   },
   {
     "id": 3,
@@ -21,7 +91,39 @@
     "char_description": "The pumpkin patch has been full of the little guys, but who minds them? Pumpkinhead!",
     "parts": [],
     "sounds": [],
-    "image": "c61727bf720f20508d93c2c0af5aa498"
+    "image": "c61727bf720f20508d93c2c0af5aa498",
+    "animatronic": {
+      "enabled": false,
+      "status": "offline",
+      "character_type": "Pumpkinhead Demon",
+      "description": "Pumpkin-headed demon with articulated limbs",
+      "rpi_config": {
+        "host": "192.168.1.101",
+        "user": "remote",
+        "password_env": "PUMPKINHEAD_SSH_PASSWORD",
+        "ssh_key_path": "~/.ssh/id_rsa",
+        "collection_interval": 300,
+        "max_lines": 1000
+      },
+      "services": [
+        "monsterbox",
+        "nginx",
+        "ssh",
+        "systemd-resolved",
+        "bluetooth",
+        "gpio-control",
+        "led-control"
+      ],
+      "log_types": [
+        "system",
+        "auth",
+        "kernel",
+        "daemon",
+        "user"
+      ],
+      "hardware_monitoring": true,
+      "animatronic_parts": []
+    }
   },
   {
     "id": 4,
@@ -29,6 +131,24 @@
     "char_description": "Just a skull with a camera, speakers, and an attitude",
     "parts": [],
     "sounds": [],
-    "image": "94e0dca132f0e88d51d2eecff4e9348e"
+    "image": "94e0dca132f0e88d51d2eecff4e9348e",
+    "animatronic": {
+      "enabled": false,
+      "status": "virtual",
+      "character_type": "Virtual Character",
+      "description": "Software-only character with camera and audio capabilities",
+      "rpi_config": null,
+      "services": [
+        "monsterbox",
+        "camera",
+        "audio"
+      ],
+      "log_types": [
+        "system",
+        "application"
+      ],
+      "hardware_monitoring": false,
+      "animatronic_parts": []
+    }
   }
 ]
