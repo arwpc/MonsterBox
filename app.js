@@ -27,7 +27,7 @@ try {
     // Ensure JSON and URL-encoded body parsing is enabled before routes
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
-    port = 3000;
+    port = process.env.PORT || 3000;
     audioStream = require('./scripts/audio');
     videoStream = require('./scripts/video'); // <-- Require video.js
     soundController = require('./controllers/soundController');
@@ -86,7 +86,7 @@ app.use('/scenes', sceneRoutes);
 
 // Session middleware
 app.use(session({
-    secret: 'your-secret-key',
+    secret: process.env.SESSION_SECRET || 'fallback-secret-key-change-in-production',
     resave: false,
     saveUninitialized: true,
     cookie: { secure: false } // set to true if using https

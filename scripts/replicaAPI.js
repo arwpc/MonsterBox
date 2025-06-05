@@ -8,7 +8,7 @@ const path = require('path');
 
 class ReplicaAPI {
     constructor() {
-        this.apiKey = process.env.REPLICA_API_KEY || 'f64f3f2e-f575-494d-a1b2-bbfb60e3f558';
+        this.apiKey = process.env.REPLICA_API_KEY;
         this.baseURL = 'https://api.replicastudios.com/v2';
         this.requestCount = 0;
         this.lastRequestTime = Date.now();
