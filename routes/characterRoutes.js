@@ -175,7 +175,8 @@ router.post('/', upload.single('character_image'), async (req, res) => {
                 newCharacter.animatronic.rpi_config = {
                     host: req.body.rpi_host,
                     user: req.body.rpi_user || 'remote',
-                    password_env: req.body.password_env || '',
+                    password: req.body.rpi_password || '',
+                    password: req.body.rpi_password || '',
                     ssh_key_path: "~/.ssh/id_rsa",
                     collection_interval: parseInt(req.body.collection_interval) || 300,
                     max_lines: parseInt(req.body.max_lines) || 1000
@@ -208,6 +209,101 @@ router.post('/', upload.single('character_image'), async (req, res) => {
     } catch (error) {
         logger.error('Error creating character:', error);
         res.status(500).send('An error occurred while creating the character');
+    }
+});
+
+// SSH Test endpoint - MUST be before the /:id route to avoid conflicts
+router.post('/test-ssh', async (req, res) => {
+    try {
+        const { host, user, password } = req.body;
+
+        if (!host || !user) {
+            return res.status(400).json({
+                success: false,
+                error: 'Host and user are required'
+            });
+        }
+
+        if (!password) {
+            return res.status(400).json({
+                success: false,
+                error: 'Password is required for SSH testing'
+            });
+        }
+
+        // First test basic connectivity (ping)
+        try {
+            await execAsync(`ping -n 1 -w 1000 ${host}`);
+        } catch (error) {
+            return res.json({
+                success: false,
+                error: `Host ${host} is not reachable`
+            });
+        }
+
+        // Test SSH connection using sshpass (Linux) or expect script
+        let sshCommand;
+
+        logger.info('Testing SSH connection', { host, user });
+
+        // Check if sshpass is available (most Linux systems)
+        try {
+            await execAsync('which sshpass');
+            sshCommand = `sshpass -p '${password}' ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 ${user}@${host} "echo 'SSH test successful'"`;
+            logger.info('Using sshpass for SSH test');
+        } catch (error) {
+            // Fallback to expect script if sshpass not available
+            logger.info('sshpass not found, using expect script');
+            const expectScript = `#!/usr/bin/expect -f
+spawn ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 ${user}@${host} "echo 'SSH test successful'"
+expect "password:"
+send "${password}\\r"
+expect eof
+`;
+            try {
+                await fs.writeFile('/tmp/ssh_test.exp', expectScript);
+                await execAsync('chmod +x /tmp/ssh_test.exp');
+                sshCommand = '/tmp/ssh_test.exp';
+            } catch (writeError) {
+                logger.error('Failed to create expect script', { error: writeError.message });
+                return res.json({
+                    success: false,
+                    error: 'Failed to setup SSH test script'
+                });
+            }
+        }
+
+        try {
+            logger.info('Executing SSH command', { command: sshCommand });
+            const { stdout, stderr } = await execAsync(sshCommand);
+
+            logger.info('SSH command result', { stdout, stderr });
+
+            if (stdout.includes('SSH test successful')) {
+                res.json({
+                    success: true,
+                    message: 'SSH connection successful'
+                });
+            } else {
+                res.json({
+                    success: false,
+                    error: `SSH test command failed. Output: ${stdout}, Error: ${stderr}`
+                });
+            }
+        } catch (sshError) {
+            logger.error('SSH test failed', { error: sshError.message, command: sshCommand });
+            res.json({
+                success: false,
+                error: `SSH connection failed: ${sshError.message}`
+            });
+        }
+
+    } catch (error) {
+        logger.error('Error testing SSH connection:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Internal server error during SSH test'
+        });
     }
 });
 
@@ -252,7 +348,7 @@ router.post('/:id', upload.single('character_image'), async (req, res) => {
                 updatedCharacter.animatronic.rpi_config = {
                     host: req.body.rpi_host,
                     user: req.body.rpi_user || 'remote',
-                    password_env: req.body.password_env || '',
+                    password: req.body.rpi_password || '',
                     ssh_key_path: "~/.ssh/id_rsa",
                     collection_interval: parseInt(req.body.collection_interval) || 300,
                     max_lines: parseInt(req.body.max_lines) || 1000
@@ -326,67 +422,6 @@ router.get('/:id/parts', async (req, res) => {
     } catch (error) {
         logger.error('Error in GET /characters/:id/parts route:', error);
         res.status(500).json({ error: 'An error occurred while fetching character parts' });
-    }
-});
-
-// SSH Test endpoint
-router.post('/test-ssh', async (req, res) => {
-    try {
-        const { host, user, passwordEnv } = req.body;
-
-        if (!host || !user) {
-            return res.status(400).json({
-                success: false,
-                error: 'Host and user are required'
-            });
-        }
-
-        // First test basic connectivity (ping)
-        try {
-            await execAsync(`ping -n 1 -w 1000 ${host}`);
-        } catch (error) {
-            return res.json({
-                success: false,
-                error: `Host ${host} is not reachable`
-            });
-        }
-
-        // Test SSH connection
-        const sshCredentials = require('../scripts/ssh-credentials');
-        const sshCommand = sshCredentials.buildSSHCommand(
-            host.split('.').pop(), // Use last octet as ID
-            host,
-            "echo 'SSH test successful'",
-            { batchMode: true }
-        );
-
-        try {
-            const { stdout } = await execAsync(sshCommand);
-
-            if (stdout.includes('SSH test successful')) {
-                res.json({
-                    success: true,
-                    message: 'SSH connection successful'
-                });
-            } else {
-                res.json({
-                    success: false,
-                    error: 'SSH test command failed'
-                });
-            }
-        } catch (sshError) {
-            res.json({
-                success: false,
-                error: `SSH connection failed: ${sshError.message}`
-            });
-        }
-
-    } catch (error) {
-        logger.error('Error testing SSH connection:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Internal server error during SSH test'
-        });
     }
 });
 

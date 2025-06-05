@@ -123,10 +123,11 @@
                             </div>
 
                             <div class="form-group">
-                                <label for="password_env">Password Environment Variable:</label>
-                                <input type="text" id="password_env" name="password_env"
-                                       value="<%= (character && character.animatronic && character.animatronic.rpi_config) ? character.animatronic.rpi_config.password_env || '' : '' %>"
-                                       placeholder="CHARACTER_SSH_PASSWORD">
+                                <label for="rpi_password">SSH Password:</label>
+                                <input type="password" id="rpi_password" name="rpi_password"
+                                       value="<%= (character && character.animatronic && character.animatronic.rpi_config) ? character.animatronic.rpi_config.password || '' : '' %>"
+                                       placeholder="Enter SSH password">
+                                <small style="color: #888;">Password will be stored securely and used for automated SSH connections</small>
                             </div>
 
                             <div class="form-group">
@@ -292,10 +293,10 @@
             testSSHButton.addEventListener('click', async function() {
                 const host = document.getElementById('rpi_host').value;
                 const user = document.getElementById('rpi_user').value;
-                const passwordEnv = document.getElementById('password_env').value;
+                const password = document.getElementById('rpi_password').value;
 
-                if (!host || !user) {
-                    sshTestResult.innerHTML = '<span style="color: #ff0000;">❌ Please fill in IP address and SSH user</span>';
+                if (!host || !user || !password) {
+                    sshTestResult.innerHTML = '<span style="color: #ff0000;">❌ Please fill in IP address, SSH user, and password</span>';
                     return;
                 }
 
@@ -311,7 +312,7 @@
                         body: JSON.stringify({
                             host: host,
                             user: user,
-                            passwordEnv: passwordEnv
+                            password: password
                         })
                     });
 

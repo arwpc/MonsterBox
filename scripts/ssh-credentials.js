@@ -85,8 +85,8 @@ class SSHCredentialsManager {
         // Map known hosts to animatronic IDs
         const hostMap = {
             '192.168.8.120': 'orlok',
-            '192.168.1.101': 'pumpkinhead', 
-            '192.168.8.149': 'coffin'
+            '192.168.1.101': 'pumpkinhead',
+            '192.168.8.140': 'coffin'
         };
 
         const animatronicId = hostMap[host];
