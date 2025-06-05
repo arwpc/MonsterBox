@@ -241,57 +241,79 @@ router.post('/test-ssh', async (req, res) => {
             });
         }
 
-        // Test SSH connection using sshpass (Linux) or expect script
-        let sshCommand;
-
         logger.info('Testing SSH connection', { host, user });
 
-        // Check if sshpass is available (most Linux systems)
-        try {
-            await execAsync('which sshpass');
-            sshCommand = `sshpass -p '${password}' ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 ${user}@${host} "echo 'SSH test successful'"`;
-            logger.info('Using sshpass for SSH test');
-        } catch (error) {
-            // Fallback to expect script if sshpass not available
-            logger.info('sshpass not found, using expect script');
-            const expectScript = `#!/usr/bin/expect -f
-spawn ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 ${user}@${host} "echo 'SSH test successful'"
-expect "password:"
-send "${password}\\r"
-expect eof
-`;
-            try {
-                await fs.writeFile('/tmp/ssh_test.exp', expectScript);
-                await execAsync('chmod +x /tmp/ssh_test.exp');
-                sshCommand = '/tmp/ssh_test.exp';
-            } catch (writeError) {
-                logger.error('Failed to create expect script', { error: writeError.message });
-                return res.json({
-                    success: false,
-                    error: 'Failed to setup SSH test script'
-                });
-            }
-        }
+        // Execute SSH test ON the target RPI (not from Windows)
+        // This runs the SSH test command on the RPI itself testing localhost
+        const remoteTestCommand = `sshpass -p '${password}' ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 ${user}@localhost "echo 'SSH test successful'"`;
 
         try {
-            logger.info('Executing SSH command', { command: sshCommand });
-            const { stdout, stderr } = await execAsync(sshCommand);
+            logger.info('Executing SSH test on RPI', { host, command: remoteTestCommand });
 
-            logger.info('SSH command result', { stdout, stderr });
+            // Use spawn to handle password input for the SSH connection to RPI
+            const { spawn } = require('child_process');
 
-            if (stdout.includes('SSH test successful')) {
-                res.json({
-                    success: true,
-                    message: 'SSH connection successful'
+            return new Promise((resolve) => {
+                const sshProcess = spawn('ssh', [
+                    '-o', 'StrictHostKeyChecking=no',
+                    '-o', 'ConnectTimeout=10',
+                    `${user}@${host}`,
+                    remoteTestCommand
+                ]);
+
+                let output = '';
+                let errorOutput = '';
+
+                sshProcess.stdout.on('data', (data) => {
+                    output += data.toString();
                 });
-            } else {
-                res.json({
-                    success: false,
-                    error: `SSH test command failed. Output: ${stdout}, Error: ${stderr}`
+
+                sshProcess.stderr.on('data', (data) => {
+                    const dataStr = data.toString();
+                    errorOutput += dataStr;
+
+                    // Handle password prompt
+                    if (dataStr.includes('password:')) {
+                        sshProcess.stdin.write(password + '\n');
+                    }
                 });
-            }
+
+                sshProcess.on('close', (code) => {
+                    logger.info('SSH test completed', { code, output, errorOutput });
+
+                    if (output.includes('SSH test successful')) {
+                        resolve(res.json({
+                            success: true,
+                            message: 'SSH connection successful'
+                        }));
+                    } else {
+                        resolve(res.json({
+                            success: false,
+                            error: `SSH test failed. Output: ${output}, Error: ${errorOutput}, Exit code: ${code}`
+                        }));
+                    }
+                });
+
+                sshProcess.on('error', (error) => {
+                    logger.error('SSH process error', { error: error.message });
+                    resolve(res.json({
+                        success: false,
+                        error: `SSH process failed: ${error.message}`
+                    }));
+                });
+
+                // Timeout after 30 seconds
+                setTimeout(() => {
+                    sshProcess.kill();
+                    resolve(res.json({
+                        success: false,
+                        error: 'SSH test timed out after 30 seconds'
+                    }));
+                }, 30000);
+            });
+
         } catch (sshError) {
-            logger.error('SSH test failed', { error: sshError.message, command: sshCommand });
+            logger.error('SSH test failed', { error: sshError.message });
             res.json({
                 success: false,
                 error: `SSH connection failed: ${sshError.message}`
