@@ -9,7 +9,11 @@
     "test": "cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js tests/**/*.test.js",
     "test:watch": "cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js --watch tests/**/*.test.js",
     "test:sound": "mocha tests/sound-playback.test.js",
-    "test:rpi": "mocha --require ./tests/setupTests.js tests/rpi-dependencies.test.js"
+    "test:rpi": "mocha --require ./tests/setupTests.js tests/rpi-dependencies.test.js",
+    "test:api-keys": "cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js tests/api-keys.test.js",
+    "test:api-keys-verbose": "cross-env NODE_ENV=test mocha tests/api-keys.test.js",
+    "check-api-keys": "node scripts/test-api-keys.js",
+    "check-config": "node scripts/test-api-keys.js --config-only"
   },
   "dependencies": {
     "dotenv": "^16.4.5",

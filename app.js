@@ -13,7 +13,7 @@ process.env.NODE_NO_WARNINGS = '1';
 
 let express, path, http, logger, app, server, port, audioStream, soundController, fs, os, session;
 let videoStream; // <-- Add videoStream variable
-let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, voiceRoutes;
+let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, voiceRoutes, cleanupRoutes, healthRoutes;
 let characterService;
 
 try {
@@ -51,6 +51,7 @@ try {
     cameraRoutes = require('./routes/cameraRoutes');
     voiceRoutes = require('./routes/voiceRoutes');
     cleanupRoutes = require('./routes/cleanup');
+    healthRoutes = require('./routes/healthRoutes');
 
     // Import services
     characterService = require('./services/characterService');
@@ -116,6 +117,7 @@ app.use('/logs', logRoutes);
 app.use('/camera', cameraRoutes);
 app.use('/api/voice', voiceRoutes);
 app.use('/cleanup', cleanupRoutes);
+app.use('/health', healthRoutes);
 
 // Root route
 app.get('/', async (req, res) => {
