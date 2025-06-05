@@ -108,6 +108,7 @@ npm run test:animatronic-ssh
 
 ## Related Documentation
 
-- [Animatronic SSH Setup Guide](ANIMATRONIC-SSH-SETUP.md)
-- [Environment Variables Guide](.env.example)
-- [MCP Server Documentation](mcp-servers/README.md)
+- [Animatronic SSH Setup Guide](../setup/ANIMATRONIC-SSH-SETUP.md)
+- [Environment Variables Guide](../../.env.example)
+- [MCP Server Documentation](../../mcp-servers/README.md)
+- [Main Documentation Index](../README.md)

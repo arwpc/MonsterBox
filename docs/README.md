@@ -1,6 +1,38 @@
-# MonsterBox
+# 📚 MonsterBox Documentation
 
-MonsterBox is a next-generation platform for building, programming, and running interactive animatronic characters and scenes. With MonsterBox, you can:
+MonsterBox is a next-generation platform for building, programming, and running interactive animatronic characters and scenes. This comprehensive documentation covers all aspects of setup, configuration, and usage.
+
+## 📁 Documentation Structure
+
+### 🔧 Setup & Installation
+- **[Animatronic SSH Setup](setup/ANIMATRONIC-SSH-SETUP.md)** - Configure secure SSH access for individual animatronic RPIs
+- **[Animatronic Setup Guide](setup/ANIMATRONIC-SETUP-GUIDE.md)** - Complete setup guide for new animatronics
+- **[MCP Log Collection Setup](setup/MCP-LOG-COLLECTION-SETUP.md)** - Configure Model Context Protocol log collection
+
+### 🛡️ Security
+- **[MCP Setup Notes](security/MCP-SETUP-NOTES.md)** - Security guidelines for MCP configuration and API key management
+
+### 🔌 API Documentation
+- **[API Testing Summary](api/API-TESTING-SUMMARY.md)** - Comprehensive API testing results and validation
+
+### 📖 Core Documentation
+- **[Installation Guide](install.md)** - Basic installation instructions
+- **[Usage Guide](usage.md)** - How to use the MonsterBox system
+- **[Configuration Guide](config.md)** - System configuration options
+- **[FAQ](faq.md)** - Frequently asked questions
+- **[Project Structure](structure.md)** - Codebase organization and architecture
+
+### 🤖 Animatronic Characters
+- **[Character Sheet Template](character_sheet.md)** - Template for creating new character documentation
+- **[Orlok Character](character_orlok.md)** - Vampire animatronic documentation
+- **[Pumpkinhead Character](character_pumpkinhead.md)** - Pumpkin-headed demon documentation
+- **[Coffin Breaker Character](character_coffin_breaker.md)** - Coffin emerging figure documentation
+
+---
+
+## 🎃 What is MonsterBox?
+
+With MonsterBox, you can:
 
 - **Create Animatronics:** Easily define new animatronic characters, each with their own set of hardware parts and personality.
 - **Configure Parts:** Assign and configure a wide range of animatronic part types, including:
@@ -17,6 +49,32 @@ MonsterBox is a next-generation platform for building, programming, and running 
 - **Web-based Control:** Manage everything through a modern, user-friendly web interface. Configure hardware, build scenes, monitor logs, and trigger actions from any device on your network.
 
 MonsterBox is designed for extensibility—add new part types, sensors, or behaviors as your project grows. Whether you're building a single talking skull or a whole cast of interactive monsters, MonsterBox gives you the creative control and technical power to bring your animatronics to life.
+
+---
+
+## 🚀 Quick Start Guide
+
+1. **New to MonsterBox?** Start with the [Installation Guide](install.md)
+2. **Setting up animatronics?** Follow the [Animatronic Setup Guide](setup/ANIMATRONIC-SETUP-GUIDE.md)
+3. **Need SSH access?** Configure with [Animatronic SSH Setup](setup/ANIMATRONIC-SSH-SETUP.md)
+4. **API development?** Check the [API Testing Summary](api/API-TESTING-SUMMARY.md)
+5. **Security setup?** Review [MCP Setup Notes](security/MCP-SETUP-NOTES.md)
+
+## 🔍 Finding Documentation
+
+### By Topic
+- **Setup & Configuration**: `docs/setup/`
+- **Security & Credentials**: `docs/security/`
+- **API & Development**: `docs/api/`
+- **User Guides**: `docs/` (root level)
+- **Character Specific**: `docs/character_*.md`
+
+### By Use Case
+- **First-time setup**: Start with `docs/install.md`
+- **Adding new animatronic**: Use `docs/setup/ANIMATRONIC-SETUP-GUIDE.md`
+- **SSH troubleshooting**: Reference `docs/setup/ANIMATRONIC-SSH-SETUP.md`
+- **API integration**: Check `docs/api/API-TESTING-SUMMARY.md`
+- **Security concerns**: Review `docs/security/MCP-SETUP-NOTES.md`
 
 ---
 
