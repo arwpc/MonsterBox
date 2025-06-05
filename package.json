@@ -13,7 +13,17 @@
     "test:api-keys": "cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js tests/api-keys.test.js",
     "test:api-keys-verbose": "cross-env NODE_ENV=test mocha tests/api-keys.test.js",
     "check-api-keys": "node scripts/test-api-keys.js",
-    "check-config": "node scripts/test-api-keys.js --config-only"
+    "check-config": "node scripts/test-api-keys.js --config-only",
+    "test:mcp": "node scripts/test-mcp-setup.js",
+    "test:animatronic-ssh": "node scripts/test-animatronic-ssh.js",
+    "collect:github-logs": "node scripts/github-log-collector.js",
+    "collect:rpi-logs": "node scripts/rpi-log-collector.js",
+    "setup:rpi": "node scripts/setup-rpi-logging.js",
+    "setup:rpi-ssh": "echo 'Run: ssh-copy-id pi@YOUR_RPI_IP to setup SSH keys'",
+    "animatronic:manage": "node scripts/animatronic-manager.js",
+    "animatronic:add": "node scripts/animatronic-manager.js add",
+    "animatronic:view": "node scripts/animatronic-manager.js view",
+    "animatronic:test-all": "node scripts/animatronic-manager.js test-all"
   },
   "dependencies": {
     "dotenv": "^16.4.5",

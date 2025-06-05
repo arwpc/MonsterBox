@@ -1,0 +1,58 @@
+{
+  "rpi_systems": [
+    {
+      "name": "MonsterBox-RPI4b",
+      "host": "192.168.1.100",
+      "user": "pi",
+      "description": "Main MonsterBox RPI4b controller",
+      "services": [
+        "monsterbox",
+        "nginx",
+        "ssh",
+        "systemd-resolved",
+        "bluetooth",
+        "gpio-control"
+      ],
+      "log_types": [
+        "system",
+        "auth", 
+        "kernel",
+        "daemon",
+        "user"
+      ],
+      "collection_interval": 300,
+      "max_lines": 1000
+    }
+  ],
+  "ubuntu_systems": [
+    {
+      "name": "MonsterBox-Ubuntu",
+      "host": "192.168.1.101",
+      "user": "ubuntu",
+      "description": "Ubuntu system for additional processing",
+      "services": [
+        "apache2",
+        "mysql",
+        "docker",
+        "ssh"
+      ],
+      "log_types": [
+        "syslog",
+        "auth",
+        "kern",
+        "daemon",
+        "mail"
+      ],
+      "collection_interval": 600,
+      "max_lines": 500
+    }
+  ],
+  "collection_settings": {
+    "default_lines": 100,
+    "default_since": "1 hour ago",
+    "retry_attempts": 3,
+    "timeout_seconds": 30,
+    "compress_logs": true,
+    "store_raw_logs": true
+  }
+}

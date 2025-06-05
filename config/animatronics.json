@@ -1,0 +1,76 @@
+{
+  "animatronics": {
+    "orlok": {
+      "name": "Orlok",
+      "character": "Count Orlok",
+      "host": "192.168.8.120",
+      "user": "remote",
+      "description": "Vampire animatronic with moving arms and glowing eyes",
+      "services": [
+        "monsterbox",
+        "ssh",
+        "gpio-control",
+        "servo-control"
+      ],
+      "log_types": [
+        "system",
+        "auth",
+        "kernel",
+        "daemon"
+      ],
+      "parts": [
+        "Right Arm of Satan",
+        "Left Arm of Manipulation",
+        "Hand of Azura",
+        "Eye of Orlok"
+      ],
+      "status": "not_configured"
+    },
+    "pumpkinhead": {
+      "name": "Pumpkinhead",
+      "character": "Pumpkinhead Demon",
+      "host": "192.168.1.101",
+      "user": "remote",
+      "description": "Pumpkin-headed demon with articulated limbs",
+      "services": [
+        "monsterbox",
+        "ssh",
+        "gpio-control",
+        "led-control"
+      ],
+      "log_types": [
+        "system",
+        "auth",
+        "kernel"
+      ],
+      "parts": [],
+      "status": "not_configured"
+    },
+    "coffin": {
+      "name": "Coffin",
+      "character": "Coffin Dweller",
+      "host": "192.168.8.149",
+      "user": "remote",
+      "description": "Coffin with opening lid and emerging figure",
+      "services": [
+        "monsterbox",
+        "ssh",
+        "linear-actuator",
+        "sound"
+      ],
+      "log_types": [
+        "system",
+        "auth",
+        "daemon"
+      ],
+      "parts": [],
+      "status": "not_configured"
+    }
+  },
+  "settings": {
+    "default_user": "remote",
+    "ssh_key_path": "~/.ssh/id_rsa",
+    "collection_interval": 300,
+    "log_retention_days": 30
+  }
+}
