@@ -130,7 +130,8 @@ app.use('/parts', partRoutes.router);
 app.use('/characters', characterRoutes);
 app.use('/sounds', soundRoutes);
 app.use('/active-mode', activeModeRoutes);
-app.use('/system-config', systemConfigRoutes);
+// System config moved to character-specific management
+// app.use('/system-config', systemConfigRoutes);
 app.use('/logs', logRoutes);
 app.use('/camera', cameraRoutes);
 app.use('/api/voice', voiceRoutes);

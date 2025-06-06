@@ -19,11 +19,11 @@ This script will:
 - ✅ Test connections
 - ✅ Create animatronic configuration file
 
-### Option 2: Interactive Manager
-```bash
-# Use the interactive animatronic manager
-npm run animatronic:manage
-```
+### Option 2: Web Interface Management
+Access animatronic management through the MonsterBox web interface:
+1. Navigate to **Characters** in the main menu
+2. Select a character with animatronic features enabled
+3. Click **Edit** to access animatronic management options
 
 ## 🔧 Manual Setup (Step by Step)
 
@@ -73,10 +73,11 @@ sudo journalctl -n 5 --no-pager
 
 ### Step 4: Add Animatronics to MonsterBox
 
-```bash
-# Add each animatronic interactively
-npm run animatronic:manage
-```
+Add animatronics through the web interface:
+1. Navigate to **Characters** > **Add New Character**
+2. Enable **Animatronic Features** in the character form
+3. Configure RPI4b settings (IP address, SSH credentials, etc.)
+4. Save the character configuration
 
 ## 📋 Default Animatronic Configuration
 
@@ -99,11 +100,10 @@ npm run animatronic:manage
 ## 🧪 Testing Your Setup
 
 ### Test Individual Animatronic
-```bash
-# Test specific animatronic connection
-npm run animatronic:manage
-# Choose "Test Animatronic Connection"
-```
+Test specific animatronic connection via web interface:
+1. Navigate to **Characters** > **[Character Name]** > **Edit**
+2. Click **🧪 Test Connection** button
+3. Review the connection test results in the modal dialog
 
 ### Test All Animatronics
 ```bash
@@ -123,21 +123,18 @@ npm run collect:rpi-logs
 ## 📊 Management Commands
 
 ### View All Animatronics
-```bash
-npm run animatronic:view
-```
+Navigate to **Characters** in the web interface to view all configured animatronics with their status indicators.
 
 ### Add New Animatronic
-```bash
-npm run animatronic:manage
-# Choose "Add New Animatronic"
-```
+1. Navigate to **Characters** > **Add New Character**
+2. Enable **Animatronic Features** checkbox
+3. Configure RPI4b settings and SSH credentials
+4. Save the character
 
 ### Configure Existing Animatronic
-```bash
-npm run animatronic:manage
-# Choose "Configure Existing Animatronic"
-```
+1. Navigate to **Characters** > **[Character Name]** > **Edit**
+2. Modify animatronic settings in the **Animatronic Configuration** section
+3. Use management buttons for testing, log collection, and system operations
 
 ## 🔧 Troubleshooting
 
@@ -164,11 +161,11 @@ echo 'pi ALL=(ALL) NOPASSWD: /bin/journalctl' | sudo tee -a /etc/sudoers.d/monst
 ```
 
 ### IP Address Changed
-```bash
-# Update animatronic IP address
-npm run animatronic:manage
-# Choose "Configure Existing Animatronic"
-```
+Update animatronic IP address via web interface:
+1. Navigate to **Characters** > **[Character Name]** > **Edit**
+2. Update the **IP Address** field in the **RPI4b Configuration** section
+3. Click **🔍 Test SSH Connection** to verify the new IP address
+4. Save the character configuration
 
 ## 📁 Configuration Files
 
@@ -187,16 +184,15 @@ When you add a new animatronic:
 1. **Set up the RPI** with Raspberry Pi OS
 2. **Configure network** and note the IP address
 3. **Enable SSH** on the RPI
-4. **Run the setup**:
-   ```bash
-   npm run animatronic:manage
-   # Choose "Add New Animatronic"
-   ```
+4. **Add via web interface**:
+   - Navigate to **Characters** > **Add New Character**
+   - Enable **Animatronic Features**
+   - Configure RPI4b settings with the new IP address
+   - Save the character configuration
 5. **Test the connection**:
-   ```bash
-   npm run animatronic:manage
-   # Choose "Test Animatronic Connection"
-   ```
+   - Navigate to **Characters** > **[Character Name]** > **Edit**
+   - Click **🧪 Test Connection** button
+   - Verify all tests pass (ping, SSH, log collection)
 
 ## 🌐 Web Interface
 

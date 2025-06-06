@@ -29,8 +29,8 @@ npm run test:animatronic-ssh
 # Test MCP log collection
 npm run test:mcp
 
-# Interactive animatronic management
-npm run animatronic:manage
+# Animatronic management is now integrated into the web interface
+# Access via Characters > [Character Name] > Edit
 ```
 
 ## 📁 Key Directories

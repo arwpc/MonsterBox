@@ -157,7 +157,33 @@
                                 <button type="button" id="test_ssh" class="button secondary-btn">🔍 Test SSH Connection</button>
                                 <div id="ssh_test_result" style="margin-top: 10px;"></div>
                             </div>
+
+                            <!-- Animatronic Management Buttons -->
+                            <% if (character && character.id && character.id !== 'new' && character.animatronic && character.animatronic.enabled) { %>
+                                <div class="form-group">
+                                    <h4>🤖 Animatronic Management</h4>
+                                    <div class="button-group">
+                                        <button type="button" onclick="testConnection(<%= character.id %>)" class="button secondary-btn">🧪 Test Connection</button>
+                                        <button type="button" onclick="collectLogs(<%= character.id %>)" class="button secondary-btn">📋 Collect Logs</button>
+                                        <button type="button" onclick="showSystemInfo(<%= character.id %>)" class="button secondary-btn">📊 System Info</button>
+                                        <button type="button" onclick="rebootSystem(<%= character.id %>)" class="button secondary-btn">🔄 Reboot System</button>
+                                    </div>
+                                </div>
+                            <% } %>
                         </div>
+
+                        <!-- Character-Specific System Configuration -->
+                        <% if (character && character.id && character.id !== 'new' && character.animatronic && character.animatronic.enabled) { %>
+                            <div class="form-section">
+                                <h3>⚙️ System Configuration</h3>
+                                <p style="color: #888; font-size: 12px;">Configure hardware and system settings specific to this character's RPI4b system.</p>
+
+                                <div class="form-group">
+                                    <button type="button" onclick="manageServos(<%= character.id %>)" class="button secondary-btn">🔧 Manage Servos</button>
+                                    <button type="button" onclick="viewSystemConfig(<%= character.id %>)" class="button secondary-btn">📋 View System Config</button>
+                                </div>
+                            </div>
+                        <% } %>
                     </div>
 
                     <div class="form-group">
@@ -352,6 +378,326 @@
 
                 return true;
             };
+        }
+
+        // Animatronic management functions (reuse from characters.ejs)
+        function showModal(title, content) {
+            // Create modal if it doesn't exist
+            let modal = document.getElementById('resultModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'resultModal';
+                modal.className = 'modal';
+                modal.style.display = 'none';
+                modal.innerHTML = `
+                    <div class="modal-content">
+                        <span class="close" onclick="closeModal()">&times;</span>
+                        <h2 id="modalTitle">Result</h2>
+                        <div id="modalBody"></div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+
+                // Add modal styles if they don't exist
+                if (!document.getElementById('modalStyles')) {
+                    const style = document.createElement('style');
+                    style.id = 'modalStyles';
+                    style.textContent = `
+                        .modal {
+                            position: fixed;
+                            z-index: 1000;
+                            left: 0;
+                            top: 0;
+                            width: 100%;
+                            height: 100%;
+                            background-color: rgba(0,0,0,0.8);
+                        }
+                        .modal-content {
+                            background-color: #000;
+                            border: 2px solid #00ff00;
+                            margin: 5% auto;
+                            padding: 20px;
+                            width: 80%;
+                            max-width: 800px;
+                            border-radius: 5px;
+                            color: #00ff00;
+                            max-height: 80vh;
+                            overflow-y: auto;
+                        }
+                        .close {
+                            color: #ff0000;
+                            float: right;
+                            font-size: 28px;
+                            font-weight: bold;
+                            cursor: pointer;
+                        }
+                        .close:hover {
+                            color: #ff6666;
+                        }
+                        .test-result {
+                            margin: 10px 0;
+                            padding: 10px;
+                            border: 1px solid #333;
+                            border-radius: 3px;
+                        }
+                        .test-passed {
+                            border-color: #00ff00;
+                            background-color: rgba(0, 255, 0, 0.1);
+                        }
+                        .test-failed {
+                            border-color: #ff0000;
+                            background-color: rgba(255, 0, 0, 0.1);
+                        }
+                        .log-section {
+                            margin: 10px 0;
+                            padding: 10px;
+                            border: 1px solid #333;
+                            border-radius: 3px;
+                            background-color: rgba(0, 0, 0, 0.3);
+                        }
+                        .log-content {
+                            font-family: monospace;
+                            font-size: 11px;
+                            white-space: pre-wrap;
+                            max-height: 200px;
+                            overflow-y: auto;
+                            background-color: #111;
+                            padding: 5px;
+                            border: 1px solid #333;
+                        }
+                    `;
+                    document.head.appendChild(style);
+                }
+            }
+
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalBody').innerHTML = content;
+            modal.style.display = 'block';
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('resultModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // Include the same animatronic management functions from characters.ejs
+        function testConnection(characterId) {
+            showModal('Testing Connection...', '<p>Testing animatronic connection, please wait...</p>');
+
+            fetch('/characters/' + characterId + '/test-connection', { method: 'POST' })
+                .then(response => response.json())
+                .then(response => {
+                    if (response.success) {
+                        const result = response.result;
+                        let html = '<h3>Connection Test Results for ' + result.character + '</h3>';
+                        html += '<p><strong>Host:</strong> ' + result.host + '</p>';
+                        html += '<p><strong>Timestamp:</strong> ' + new Date(result.timestamp).toLocaleString() + '</p>';
+
+                        // Ping test
+                        const pingClass = result.tests.ping.passed ? 'test-passed' : 'test-failed';
+                        html += '<div class="test-result ' + pingClass + '">';
+                        html += '<h4>🌐 Network Connectivity (Ping)</h4>';
+                        html += '<p><strong>Status:</strong> ' + (result.tests.ping.passed ? '✅ PASSED' : '❌ FAILED') + '</p>';
+                        html += '<p><strong>Message:</strong> ' + result.tests.ping.message + '</p>';
+                        html += '<p><strong>Duration:</strong> ' + result.tests.ping.duration + 'ms</p>';
+                        html += '</div>';
+
+                        // SSH test
+                        const sshClass = result.tests.ssh.passed ? 'test-passed' : 'test-failed';
+                        html += '<div class="test-result ' + sshClass + '">';
+                        html += '<h4>🔐 SSH Connection</h4>';
+                        html += '<p><strong>Status:</strong> ' + (result.tests.ssh.passed ? '✅ PASSED' : '❌ FAILED') + '</p>';
+                        html += '<p><strong>Message:</strong> ' + result.tests.ssh.message + '</p>';
+                        html += '<p><strong>Duration:</strong> ' + result.tests.ssh.duration + 'ms</p>';
+                        html += '</div>';
+
+                        // Log test
+                        const logClass = result.tests.logs.passed ? 'test-passed' : 'test-failed';
+                        html += '<div class="test-result ' + logClass + '">';
+                        html += '<h4>📋 Log Collection</h4>';
+                        html += '<p><strong>Status:</strong> ' + (result.tests.logs.passed ? '✅ PASSED' : '❌ FAILED') + '</p>';
+                        html += '<p><strong>Message:</strong> ' + result.tests.logs.message + '</p>';
+                        html += '<p><strong>Duration:</strong> ' + result.tests.logs.duration + 'ms</p>';
+                        if (result.tests.logs.sampleLogs) {
+                            html += '<p><strong>Sample Logs:</strong></p>';
+                            html += '<div class="log-content">' + result.tests.logs.sampleLogs + '</div>';
+                        }
+                        html += '</div>';
+
+                        showModal('Connection Test Results', html);
+                    } else {
+                        showModal('Connection Test Failed', '<p style="color: #ff0000;">❌ ' + response.error + '</p>');
+                    }
+                })
+                .catch(error => {
+                    showModal('Connection Test Error', '<p style="color: #ff0000;">❌ Error: ' + error.message + '</p>');
+                });
+        }
+
+        function collectLogs(characterId) {
+            showModal('Collecting Logs...', '<p>Collecting logs from animatronic, please wait...</p>');
+
+            fetch('/characters/' + characterId + '/collect-logs', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    lines: 50,
+                    logTypes: ['system', 'auth', 'kernel']
+                })
+            })
+                .then(response => response.json())
+                .then(response => {
+                    if (response.success) {
+                        const result = response.result;
+                        let html = '<h3>Log Collection Results for ' + result.character + '</h3>';
+                        html += '<p><strong>Host:</strong> ' + result.host + '</p>';
+                        html += '<p><strong>Timestamp:</strong> ' + new Date(result.timestamp).toLocaleString() + '</p>';
+
+                        Object.keys(result.logs).forEach(logType => {
+                            const log = result.logs[logType];
+                            const logClass = log.success ? 'test-passed' : 'test-failed';
+                            html += '<div class="log-section ' + logClass + '">';
+                            html += '<h4>📋 ' + logType.toUpperCase() + ' Logs</h4>';
+                            if (log.success) {
+                                html += '<p><strong>Status:</strong> ✅ SUCCESS</p>';
+                                html += '<div class="log-content">' + log.data + '</div>';
+                            } else {
+                                html += '<p><strong>Status:</strong> ❌ FAILED</p>';
+                                html += '<p><strong>Error:</strong> ' + log.error + '</p>';
+                            }
+                            html += '</div>';
+                        });
+
+                        showModal('Log Collection Results', html);
+                    } else {
+                        showModal('Log Collection Failed', '<p style="color: #ff0000;">❌ ' + response.error + '</p>');
+                    }
+                })
+                .catch(error => {
+                    showModal('Log Collection Error', '<p style="color: #ff0000;">❌ Error: ' + error.message + '</p>');
+                });
+        }
+
+        function showSystemInfo(characterId) {
+            showModal('Getting System Info...', '<p>Retrieving system information, please wait...</p>');
+
+            fetch('/characters/' + characterId + '/system-info')
+                .then(response => response.json())
+                .then(response => {
+                    if (response.success) {
+                        const result = response.result;
+                        const info = result.systemInfo;
+                        let html = '<h3>System Information for ' + result.character + '</h3>';
+                        html += '<p><strong>Host:</strong> ' + result.host + '</p>';
+                        html += '<p><strong>Timestamp:</strong> ' + new Date(result.timestamp).toLocaleString() + '</p>';
+
+                        html += '<div class="test-result test-passed">';
+                        html += '<h4>🖥️ System Details</h4>';
+                        html += '<p><strong>Platform:</strong> ' + info.platform + '</p>';
+                        html += '<p><strong>Architecture:</strong> ' + info.arch + '</p>';
+                        html += '<p><strong>Hostname:</strong> ' + info.hostname + '</p>';
+                        html += '<p><strong>Uptime:</strong> ' + info.uptime + '</p>';
+                        html += '</div>';
+
+                        html += '<div class="test-result test-passed">';
+                        html += '<h4>💾 Memory & Storage</h4>';
+                        html += '<p><strong>Total Memory:</strong> ' + info.totalMem + '</p>';
+                        html += '<p><strong>Used Memory:</strong> ' + info.usedMem + '</p>';
+                        html += '<p><strong>Free Memory:</strong> ' + info.freeMem + '</p>';
+                        html += '<p><strong>Disk Usage:</strong> ' + info.diskUsage + '</p>';
+                        html += '<p><strong>Disk Free:</strong> ' + info.diskFree + '</p>';
+                        html += '</div>';
+
+                        html += '<div class="test-result test-passed">';
+                        html += '<h4>⚡ Hardware Status</h4>';
+                        html += '<p><strong>Temperature:</strong> ' + info.temperature + '</p>';
+                        html += '<p><strong>Voltage:</strong> ' + info.voltage + '</p>';
+                        html += '<p><strong>WiFi Signal:</strong> ' + info.wifiSignal + '</p>';
+                        html += '</div>';
+
+                        showModal('System Information', html);
+                    } else {
+                        showModal('System Info Failed', '<p style="color: #ff0000;">❌ ' + response.error + '</p>');
+                    }
+                })
+                .catch(error => {
+                    showModal('System Info Error', '<p style="color: #ff0000;">❌ Error: ' + error.message + '</p>');
+                });
+        }
+
+        function rebootSystem(characterId) {
+            if (confirm('Are you sure you want to reboot this animatronic system? This will disconnect all users and stop all running processes.')) {
+                showModal('Rebooting System...', '<p>Sending reboot command to animatronic, please wait...</p>');
+
+                fetch('/characters/' + characterId + '/reboot', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(response => {
+                        if (response.success) {
+                            const result = response.result;
+                            let html = '<h3>Reboot Command Sent</h3>';
+                            html += '<p style="color: #00ff00;">✅ ' + result.message + '</p>';
+                            html += '<p><strong>Timestamp:</strong> ' + new Date(result.timestamp).toLocaleString() + '</p>';
+                            html += '<p><em>The system should be back online in 1-2 minutes.</em></p>';
+
+                            showModal('System Reboot', html);
+                        } else {
+                            showModal('Reboot Failed', '<p style="color: #ff0000;">❌ ' + response.error + '</p>');
+                        }
+                    })
+                    .catch(error => {
+                        showModal('Reboot Error', '<p style="color: #ff0000;">❌ Error: ' + error.message + '</p>');
+                    });
+            }
+        }
+
+        function manageServos(characterId) {
+            showModal('Loading Servo Configuration...', '<p>Loading servo configurations for this character...</p>');
+
+            fetch('/characters/' + characterId + '/servos')
+                .then(response => response.json())
+                .then(response => {
+                    if (response.success) {
+                        const result = response.result;
+                        let html = '<h3>Servo Configuration for ' + result.character + '</h3>';
+
+                        if (result.servos.length > 0) {
+                            html += '<h4>Configured Servos:</h4>';
+                            result.servos.forEach(servo => {
+                                html += '<div class="test-result test-passed">';
+                                html += '<h5>' + servo.name + '</h5>';
+                                html += '<p><strong>Model:</strong> ' + servo.model + '</p>';
+                                html += '<p><strong>Manufacturer:</strong> ' + servo.manufacturer + '</p>';
+                                html += '<p><strong>Max Torque:</strong> ' + servo.max_torque_kg_cm + ' kg/cm</p>';
+                                html += '<p><strong>Pulse Width:</strong> ' + servo.min_pulse_width_us + '-' + servo.max_pulse_width_us + 'μs</p>';
+                                html += '</div>';
+                            });
+                        } else {
+                            html += '<p>No servos configured for this character yet.</p>';
+                        }
+
+                        html += '<p><em>Servo configuration management will be available in a future update.</em></p>';
+                        showModal('Servo Configuration', html);
+                    } else {
+                        showModal('Servo Config Failed', '<p style="color: #ff0000;">❌ ' + response.error + '</p>');
+                    }
+                })
+                .catch(error => {
+                    showModal('Servo Config Error', '<p style="color: #ff0000;">❌ Error: ' + error.message + '</p>');
+                });
+        }
+
+        function viewSystemConfig(characterId) {
+            showModal('System Configuration', '<p>Character-specific system configuration management will be available in a future update. This will include hardware settings, GPIO configurations, and system-level parameters specific to this character\'s RPI4b system.</p>');
+        }
+
+        // Close modal when clicking outside of it
+        window.onclick = function(event) {
+            const modal = document.getElementById('resultModal');
+            if (event.target == modal) {
+                closeModal();
+            }
         }
     </script>
 </body>

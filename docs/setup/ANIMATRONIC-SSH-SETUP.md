@@ -133,20 +133,19 @@ npm run test:animatronic-ssh
 
 ### Individual Animatronic Management
 
-Use the interactive animatronic manager:
+Animatronic management is now integrated into the MonsterBox web interface:
 
-```bash
-npm run animatronic:manage
-```
+1. **Access via Web Interface:**
+   - Navigate to **Characters** in the main menu
+   - Select a character with animatronic features enabled
+   - Click **Edit** to access animatronic management options
 
-Available options:
-- ➕ Add New Animatronic
-- 🔧 Configure Existing Animatronic
-- 📊 View All Animatronics
-- 🧪 Test Animatronic Connection
-- 📋 Collect Logs from All
-- 🔑 Setup SSH Keys for All
-- ❌ Remove Animatronic
+2. **Available Management Features:**
+   - 🧪 **Test Connection** - Test network and SSH connectivity
+   - 📋 **Collect Logs** - Gather system logs from the RPI
+   - 📊 **System Info** - View hardware status and system information
+   - 🔄 **Reboot System** - Remotely reboot the animatronic RPI
+   - ⚙️ **System Configuration** - Manage character-specific settings
 
 ## 📊 Log Collection
 
@@ -159,9 +158,8 @@ Collect logs from a specific animatronic:
 curl "http://localhost:3000/logs/rpi/192.168.8.120?lines=50"  # Orlok
 curl "http://localhost:3000/logs/rpi/192.168.8.149?lines=50"  # Coffin
 
-# Via animatronic manager
-npm run animatronic:manage
-# Choose "Collect Logs from All"
+# Via web interface
+# Navigate to Characters > [Character Name] > Edit > Collect Logs button
 ```
 
 ### Automated Log Collection
@@ -248,12 +246,15 @@ MonsterBox/
 ├── .env                           # SSH credentials (secure)
 ├── .env.example                   # Template with placeholders
 ├── data/
-│   └── animatronics.json         # Animatronic configurations
+│   └── animatronics.json         # Animatronic configurations (legacy)
+│   └── characters.json           # Character configurations (includes animatronics)
 ├── scripts/
 │   ├── test-animatronic-ssh.js   # SSH connectivity tests
 │   ├── test-mcp-setup.js         # Comprehensive MCP tests
-│   ├── animatronic-manager.js    # Interactive management
 │   └── setup-ssh-keys.ps1        # PowerShell setup script
+├── services/
+│   ├── animatronicService.js     # Animatronic management service
+│   └── systemConfigService.js    # Character-specific system config
 └── mcp-servers/
     └── log-collector-server.js   # MCP log collection server
 ```
@@ -286,7 +287,7 @@ If you encounter issues:
 
 1. Check the test output: `npm run test:animatronic-ssh`
 2. Review the logs in `log/` directory
-3. Use the interactive manager: `npm run animatronic:manage`
+3. Use the web interface: Navigate to **Characters** > **[Character Name]** > **Edit** > **Test Connection**
 4. Verify environment variables are loaded correctly
 
 The SSH setup provides a secure, scalable foundation for managing all current and future animatronic RPIs in the MonsterBox system.

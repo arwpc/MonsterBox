@@ -3,6 +3,8 @@ const router = express.Router();
 const characterService = require('../services/characterService');
 const partService = require('../services/partService');
 const soundService = require('../services/soundService');
+const animatronicService = require('../services/animatronicService');
+const systemConfigService = require('../services/systemConfigService');
 const fs = require('fs').promises;
 const path = require('path');
 const multer = require('multer');
@@ -440,6 +442,204 @@ router.get('/:id/parts', async (req, res) => {
     } catch (error) {
         logger.error('Error in GET /characters/:id/parts route:', error);
         res.status(500).json({ error: 'An error occurred while fetching character parts' });
+    }
+});
+
+// Animatronic Management Routes
+
+// Test animatronic connection
+router.post('/:id/test-connection', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.id);
+        logger.info(`Testing connection for character ${characterId}`);
+
+        const result = await animatronicService.testCharacterConnection(characterId);
+
+        res.json({
+            success: true,
+            result: result
+        });
+    } catch (error) {
+        logger.error('Error testing animatronic connection:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Collect logs from animatronic
+router.post('/:id/collect-logs', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.id);
+        const { lines = 100, since = null, logTypes = ['system', 'auth', 'kernel'] } = req.body;
+
+        logger.info(`Collecting logs for character ${characterId}`);
+
+        const result = await animatronicService.collectCharacterLogs(characterId, {
+            lines: parseInt(lines),
+            since: since,
+            logTypes: Array.isArray(logTypes) ? logTypes : [logTypes]
+        });
+
+        res.json({
+            success: true,
+            result: result
+        });
+    } catch (error) {
+        logger.error('Error collecting animatronic logs:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Setup SSH for animatronic
+router.post('/:id/setup-ssh', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.id);
+        logger.info(`Setting up SSH for character ${characterId}`);
+
+        const result = await animatronicService.setupCharacterSSH(characterId);
+
+        res.json({
+            success: true,
+            result: result
+        });
+    } catch (error) {
+        logger.error('Error setting up SSH:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Get animatronic system information
+router.get('/:id/system-info', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.id);
+        logger.info(`Getting system info for character ${characterId}`);
+
+        const result = await systemConfigService.getCharacterSystemInfo(characterId);
+
+        res.json({
+            success: true,
+            result: result
+        });
+    } catch (error) {
+        logger.error('Error getting system info:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Reboot animatronic system
+router.post('/:id/reboot', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.id);
+        logger.info(`Rebooting system for character ${characterId}`);
+
+        const result = await systemConfigService.rebootCharacterSystem(characterId);
+
+        res.json({
+            success: true,
+            result: result
+        });
+    } catch (error) {
+        logger.error('Error rebooting system:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Character-specific servo configuration routes
+
+// Get character servos
+router.get('/:id/servos', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.id);
+        const result = await systemConfigService.getCharacterServos(characterId);
+
+        res.json({
+            success: true,
+            result: result
+        });
+    } catch (error) {
+        logger.error('Error getting character servos:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Add servo to character
+router.post('/:id/servos', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.id);
+        const servoConfig = req.body;
+
+        const result = await systemConfigService.addCharacterServo(characterId, servoConfig);
+
+        res.json({
+            success: true,
+            result: result
+        });
+    } catch (error) {
+        logger.error('Error adding character servo:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Update character servo
+router.put('/:id/servos/:servoId', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.id);
+        const servoId = parseInt(req.params.servoId);
+        const updates = req.body;
+
+        const result = await systemConfigService.updateCharacterServo(characterId, servoId, updates);
+
+        res.json({
+            success: true,
+            result: result
+        });
+    } catch (error) {
+        logger.error('Error updating character servo:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Remove servo from character
+router.delete('/:id/servos/:servoId', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.id);
+        const servoId = parseInt(req.params.servoId);
+
+        const result = await systemConfigService.removeCharacterServo(characterId, servoId);
+
+        res.json({
+            success: true,
+            result: result
+        });
+    } catch (error) {
+        logger.error('Error removing character servo:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
     }
 });
 

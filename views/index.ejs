@@ -35,7 +35,7 @@
         <a href="/Camera" class="nav-button">Video</a>
         <a href="/scenes" class="nav-button">Scenes</a>
         <a href="/active-mode" class="nav-button">Active Mode</a>
-        <a href="/system-config" class="nav-button">System Config</a>
+        <!-- System Config moved to character-specific management -->
     </nav>
     
     <footer>
@@ -71,7 +71,7 @@
             const links = nav.getElementsByTagName('a');
             for (let link of links) {
                 const url = new URL(link.href);
-                if (characterId && link.href !== '/system-config') {
+                if (characterId) {
                     url.searchParams.set('characterId', characterId);
                 } else {
                     url.searchParams.delete('characterId');
