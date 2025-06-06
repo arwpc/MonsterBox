@@ -239,6 +239,8 @@ class AuthService {
      */
     generateAccessToken(user) {
         const payload = generatePayload(user, user.animatronicAccess, user.permissions);
+        // Remove exp from payload since we'll use expiresIn option
+        delete payload.exp;
         return jwt.sign(payload, jwtConfig.secret, {
             algorithm: jwtConfig.algorithm,
             expiresIn: jwtConfig.expiresIn

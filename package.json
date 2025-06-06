@@ -8,6 +8,10 @@
     "dev": "nodemon --trace-deprecation --trace-warnings app.js",
     "test": "cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js tests/**/*.test.js",
     "test:watch": "cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js --watch tests/**/*.test.js",
+    "test:auth": "cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js tests/secure-remote-access.test.js",
+    "test:ssh": "cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js tests/ssh-integration.test.js",
+    "test:rbac": "cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js tests/rbac-system.test.js",
+    "test:security": "cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js tests/secure-remote-access.test.js tests/ssh-integration.test.js tests/rbac-system.test.js",
     "test:sound": "mocha tests/sound-playback.test.js",
     "test:rpi": "mocha --require ./tests/setupTests.js tests/rpi-dependencies.test.js",
     "test:api-keys": "cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js tests/api-keys.test.js",
@@ -27,7 +31,9 @@
     "animatronic:test-all": "node scripts/animatronic-manager.js test-all",
     "setup:fluent-bit": "node scripts/setup-fluent-bit.js",
     "test:fluent-bit": "node scripts/test-fluent-bit.js",
-    "mcp:log-collector": "node mcp-servers/log-collector-server.js"
+    "mcp:log-collector": "node mcp-servers/log-collector-server.js",
+    "validate:security": "node scripts/validate-security-system.js",
+    "ci:security": "node tests/ci-security-tests.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -58,7 +64,8 @@
     "cross-env": "^7.0.3",
     "inquirer": "^8.2.6",
     "mocha": "^10.7.3",
-    "nodemon": "^3.1.7"
+    "nodemon": "^3.1.7",
+    "sinon": "^17.0.1"
   },
   "engines": {
     "node": ">=18.0.0"

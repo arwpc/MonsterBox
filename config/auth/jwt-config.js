@@ -77,15 +77,15 @@ const jwtConfig = {
  */
 function generatePayload(user, animatronicAccess = [], permissions = []) {
     const now = Math.floor(Date.now() / 1000);
-    
+
     return {
         // Standard JWT claims
         iss: jwtConfig.issuer,
         aud: jwtConfig.audience,
         sub: user.id || user.username,
         iat: now,
-        exp: now + (8 * 60 * 60), // 8 hours
-        
+        // Note: exp will be set by jwt.sign() using expiresIn option
+
         // MonsterBox specific claims
         user: {
             id: user.id,
@@ -93,17 +93,17 @@ function generatePayload(user, animatronicAccess = [], permissions = []) {
             role: user.role || 'operator',
             email: user.email
         },
-        
+
         // Animatronic access permissions
         animatronics: animatronicAccess.map(id => ({
             id: id,
             host: jwtConfig.animatronics[id]?.host,
             permissions: permissions
         })),
-        
+
         // Session information
         sessionId: user.sessionId,
-        
+
         // Security metadata
         ipAddress: user.ipAddress,
         userAgent: user.userAgent

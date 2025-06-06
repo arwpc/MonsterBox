@@ -1,0 +1,27 @@
+{
+  "users": [
+    {
+      "id": "admin-001",
+      "username": "admin",
+      "email": "admin@monsterbox.local",
+      "passwordHash": "$2b$12$OGwvAywX64Y1KjQt0DEeuOtGTorkLwTllf3Rud6A9nFdb96WPyZRG",
+      "role": "admin",
+      "animatronicAccess": [
+        "orlok",
+        "coffin",
+        "pumpkinhead"
+      ],
+      "permissions": [
+        "view",
+        "control",
+        "configure",
+        "ssh",
+        "admin"
+      ],
+      "createdAt": "2025-06-06T20:09:27.714Z",
+      "lastLogin": "2025-06-06T20:25:08.650Z",
+      "mfaEnabled": false,
+      "mfaSecret": null
+    }
+  ]
+}
