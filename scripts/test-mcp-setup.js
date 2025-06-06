@@ -21,8 +21,8 @@ const execAsync = util.promisify(exec);
 const sshCredentials = require('./ssh-credentials');
 const ConfigAdapter = require('./config-adapter');
 
-// Load environment variables
-require('dotenv').config();
+// Load environment variables with override to ensure fresh values
+require('dotenv').config({ override: true });
 
 class MCPSetupTester {
     constructor() {

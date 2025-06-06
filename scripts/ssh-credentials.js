@@ -112,25 +112,63 @@ class SSHCredentialsManager {
      */
     buildSSHCommand(animatronicId, host, command, options = {}) {
         const credentials = this.getCredentials(animatronicId);
-        const sshOptions = {
-            connectTimeout: options.connectTimeout || 10,
-            batchMode: options.batchMode !== false, // Default to true
-            ...options
-        };
 
-        let sshCmd = 'ssh';
-        
-        if (sshOptions.connectTimeout) {
-            sshCmd += ` -o ConnectTimeout=${sshOptions.connectTimeout}`;
-        }
-        
-        if (sshOptions.batchMode) {
-            sshCmd += ' -o BatchMode=yes';
-        }
+        // For Windows, we'll create a temporary PowerShell script that automates SSH password entry
+        const fs = require('fs');
+        const path = require('path');
+        const os = require('os');
 
-        sshCmd += ` ${credentials.user}@${host} "${command}"`;
-        
-        return sshCmd;
+        // Create a unique temporary script file
+        const tempDir = os.tmpdir();
+        const scriptName = `ssh_${animatronicId}_${Date.now()}.ps1`;
+        const scriptPath = path.join(tempDir, scriptName);
+
+        // Escape special characters for PowerShell
+        const escapedPassword = credentials.password.replace(/'/g, "''");
+        const escapedCommand = command.replace(/'/g, "''");
+
+        // PowerShell script content that uses expect-like functionality
+        const powershellScript = `
+# SSH automation script for ${animatronicId}
+$password = '${escapedPassword}'
+$securePassword = ConvertTo-SecureString $password -AsPlainText -Force
+
+# Use Start-Process with input redirection
+$psi = New-Object System.Diagnostics.ProcessStartInfo
+$psi.FileName = "ssh"
+$psi.Arguments = "-o ConnectTimeout=10 -o StrictHostKeyChecking=no -o PasswordAuthentication=yes -o PubkeyAuthentication=no ${credentials.user}@${host} '${escapedCommand}'"
+$psi.UseShellExecute = $false
+$psi.RedirectStandardInput = $true
+$psi.RedirectStandardOutput = $true
+$psi.RedirectStandardError = $true
+
+$process = [System.Diagnostics.Process]::Start($psi)
+
+# Send password when prompted
+Start-Sleep -Milliseconds 500
+$process.StandardInput.WriteLine($password)
+$process.StandardInput.Close()
+
+# Wait for completion and get output
+$output = $process.StandardOutput.ReadToEnd()
+$error = $process.StandardError.ReadToEnd()
+$process.WaitForExit()
+
+if ($process.ExitCode -eq 0) {
+    Write-Output $output
+} else {
+    Write-Error $error
+    exit $process.ExitCode
+}
+
+# Clean up
+Remove-Item -Path $PSCommandPath -Force -ErrorAction SilentlyContinue
+`;
+
+        // Write the script to temp file
+        fs.writeFileSync(scriptPath, powershellScript);
+
+        return `powershell -ExecutionPolicy Bypass -File "${scriptPath}"`;
     }
 
     /**
@@ -141,26 +179,15 @@ class SSHCredentialsManager {
      * @returns {string} Complete SSH command
      */
     buildSSHCommandByHost(host, command, options = {}) {
-        const credentials = this.getCredentialsByHost(host);
-        const sshOptions = {
-            connectTimeout: options.connectTimeout || 10,
-            batchMode: options.batchMode !== false,
-            ...options
+        // Map host to animatronic ID for consistent script naming
+        const hostMap = {
+            '192.168.8.120': 'orlok',
+            '192.168.1.101': 'pumpkinhead',
+            '192.168.8.140': 'coffin'
         };
 
-        let sshCmd = 'ssh';
-        
-        if (sshOptions.connectTimeout) {
-            sshCmd += ` -o ConnectTimeout=${sshOptions.connectTimeout}`;
-        }
-        
-        if (sshOptions.batchMode) {
-            sshCmd += ' -o BatchMode=yes';
-        }
-
-        sshCmd += ` ${credentials.user}@${host} "${command}"`;
-        
-        return sshCmd;
+        const animatronicId = hostMap[host] || 'unknown';
+        return this.buildSSHCommand(animatronicId, host, command, options);
     }
 
     /**

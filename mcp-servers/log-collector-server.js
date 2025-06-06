@@ -173,6 +173,64 @@ class LogCollectorServer {
                                 }
                             }
                         }
+                    },
+                    {
+                        name: 'execute_remote_command',
+                        description: 'Execute shell commands on animatronic RPI4b systems (Orlok/Coffin only)',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                host: {
+                                    type: 'string',
+                                    description: 'RPI hostname or IP address (192.168.8.120 for Orlok, 192.168.8.140 for Coffin)',
+                                    enum: ['192.168.8.120', '192.168.8.140', 'orlok', 'coffin']
+                                },
+                                command: {
+                                    type: 'string',
+                                    description: 'Shell command to execute on the remote RPI'
+                                },
+                                timeout: {
+                                    type: 'number',
+                                    description: 'Command timeout in seconds (default: 30)',
+                                    default: 30
+                                }
+                            },
+                            required: ['host', 'command']
+                        }
+                    },
+                    {
+                        name: 'collect_comprehensive_rpi_logs',
+                        description: 'Collect comprehensive logs from animatronic RPI4b systems including MonsterBox app logs and system logs',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                host: {
+                                    type: 'string',
+                                    description: 'RPI hostname or IP address (192.168.8.120 for Orlok, 192.168.8.140 for Coffin)',
+                                    enum: ['192.168.8.120', '192.168.8.140', 'orlok', 'coffin']
+                                },
+                                logTypes: {
+                                    type: 'array',
+                                    items: {
+                                        type: 'string',
+                                        enum: ['application', 'system', 'error', 'service', 'all']
+                                    },
+                                    description: 'Types of logs to collect',
+                                    default: ['application', 'system', 'error']
+                                },
+                                lines: {
+                                    type: 'number',
+                                    description: 'Number of log lines to collect per type (default: 100)',
+                                    default: 100
+                                },
+                                since: {
+                                    type: 'string',
+                                    description: 'Time period to collect logs from (e.g., "1 hour ago", "today")',
+                                    default: '1 hour ago'
+                                }
+                            },
+                            required: ['host']
+                        }
                     }
                 ]
             };
@@ -198,6 +256,10 @@ class LogCollectorServer {
                         return await this.analyzeLogs(args);
                     case 'setup_log_monitoring':
                         return await this.setupLogMonitoring(args);
+                    case 'execute_remote_command':
+                        return await this.executeRemoteCommand(args);
+                    case 'collect_comprehensive_rpi_logs':
+                        return await this.collectComprehensiveRPiLogs(args);
                     default:
                         throw new Error(`Unknown tool: ${name}`);
                 }
@@ -462,7 +524,7 @@ class LogCollectorServer {
 
     async setupLogMonitoring(args) {
         const { sources = [], alertThreshold = 'high' } = args;
-        
+
         const config = {
             monitoring: {
                 enabled: true,
@@ -480,6 +542,253 @@ class LogCollectorServer {
                 }
             ]
         };
+    }
+
+    async executeRemoteCommand(args) {
+        const { host, command, timeout = 30 } = args;
+
+        // Validate host - only allow Orlok and Coffin
+        const allowedHosts = {
+            '192.168.8.120': 'orlok',
+            '192.168.8.140': 'coffin',
+            'orlok': '192.168.8.120',
+            'coffin': '192.168.8.140'
+        };
+
+        const targetHost = allowedHosts[host] || host;
+        const animatronicName = allowedHosts[targetHost] || 'unknown';
+
+        if (!allowedHosts[host] && !allowedHosts[targetHost]) {
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `Error: Host '${host}' is not allowed. Only Orlok (192.168.8.120) and Coffin (192.168.8.140) are supported for remote command execution.`
+                    }
+                ],
+                isError: true
+            };
+        }
+
+        // Validate command for safety
+        const dangerousCommands = ['rm -rf', 'dd if=', 'mkfs', 'fdisk', 'shutdown', 'reboot', 'halt', 'poweroff'];
+        const isDangerous = dangerousCommands.some(dangerous => command.toLowerCase().includes(dangerous));
+
+        if (isDangerous) {
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `Error: Command '${command}' contains potentially dangerous operations and is not allowed for safety reasons.`
+                    }
+                ],
+                isError: true
+            };
+        }
+
+        try {
+            // Build SSH command using existing credentials system
+            const sshCommand = sshCredentials.buildSSHCommandByHost(targetHost, command, { batchMode: false });
+
+            // Execute with timeout
+            const { stdout, stderr } = await execAsync(sshCommand, { timeout: timeout * 1000 });
+
+            const result = {
+                host: targetHost,
+                animatronic: animatronicName,
+                command: command,
+                timestamp: new Date().toISOString(),
+                stdout: stdout.trim(),
+                stderr: stderr.trim(),
+                success: true
+            };
+
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `Remote command executed successfully on ${animatronicName} (${targetHost}):\n\nCommand: ${command}\n\nOutput:\n${stdout}\n${stderr ? `\nErrors:\n${stderr}` : ''}`
+                    }
+                ]
+            };
+        } catch (error) {
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `Failed to execute command '${command}' on ${animatronicName} (${targetHost}): ${error.message}`
+                    }
+                ],
+                isError: true
+            };
+        }
+    }
+
+    async collectComprehensiveRPiLogs(args) {
+        const { host, logTypes = ['application', 'system', 'error'], lines = 100, since = '1 hour ago' } = args;
+
+        // Validate host - only allow Orlok and Coffin
+        const allowedHosts = {
+            '192.168.8.120': 'orlok',
+            '192.168.8.140': 'coffin',
+            'orlok': '192.168.8.120',
+            'coffin': '192.168.8.140'
+        };
+
+        const targetHost = allowedHosts[host] || host;
+        const animatronicName = allowedHosts[targetHost] || 'unknown';
+
+        if (!allowedHosts[host] && !allowedHosts[targetHost]) {
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `Error: Host '${host}' is not allowed. Only Orlok (192.168.8.120) and Coffin (192.168.8.140) are supported.`
+                    }
+                ],
+                isError: true
+            };
+        }
+
+        const logs = {
+            host: targetHost,
+            animatronic: animatronicName,
+            timestamp: new Date().toISOString(),
+            logTypes: logTypes,
+            since: since,
+            lines: lines,
+            data: {}
+        };
+
+        try {
+            // Collect different types of logs based on request
+            for (const logType of logTypes) {
+                try {
+                    switch (logType) {
+                        case 'application':
+                            logs.data.application = await this.collectRPiApplicationLogs(targetHost, lines, since);
+                            break;
+                        case 'system':
+                            logs.data.system = await this.collectRPiSystemLogs(targetHost, lines, since);
+                            break;
+                        case 'error':
+                            logs.data.error = await this.collectRPiErrorLogs(targetHost, lines, since);
+                            break;
+                        case 'service':
+                            logs.data.service = await this.collectRPiServiceLogs(targetHost, lines, since);
+                            break;
+                        case 'all':
+                            logs.data.application = await this.collectRPiApplicationLogs(targetHost, lines, since);
+                            logs.data.system = await this.collectRPiSystemLogs(targetHost, lines, since);
+                            logs.data.error = await this.collectRPiErrorLogs(targetHost, lines, since);
+                            logs.data.service = await this.collectRPiServiceLogs(targetHost, lines, since);
+                            break;
+                        default:
+                            logs.data[logType] = { error: `Unknown log type: ${logType}` };
+                    }
+                } catch (error) {
+                    logs.data[logType] = { error: error.message };
+                }
+            }
+
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `Comprehensive logs collected from ${animatronicName} (${targetHost}):\n\n${JSON.stringify(logs, null, 2)}`
+                    }
+                ]
+            };
+        } catch (error) {
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `Failed to collect comprehensive logs from ${animatronicName} (${targetHost}): ${error.message}`
+                    }
+                ],
+                isError: true
+            };
+        }
+    }
+
+    async collectRPiApplicationLogs(host, lines, since) {
+        const commands = [
+            `find /home/*/MonsterBox/log -name "*.log" -type f -exec tail -n ${lines} {} \\; 2>/dev/null || echo "No MonsterBox logs found"`,
+            `sudo journalctl -u monsterbox* --since '${since}' -n ${lines} --no-pager 2>/dev/null || echo "No MonsterBox service logs"`
+        ];
+
+        const logs = {};
+        for (let i = 0; i < commands.length; i++) {
+            try {
+                const command = sshCredentials.buildSSHCommandByHost(host, commands[i], { batchMode: false });
+                const { stdout } = await execAsync(command);
+                logs[`app_logs_${i + 1}`] = stdout.split('\n').filter(line => line.trim());
+            } catch (error) {
+                logs[`app_logs_${i + 1}`] = [`Error: ${error.message}`];
+            }
+        }
+        return logs;
+    }
+
+    async collectRPiSystemLogs(host, lines, since) {
+        const commands = [
+            `sudo journalctl --since '${since}' -n ${lines} --no-pager`,
+            `sudo journalctl -k --since '${since}' -n ${lines} --no-pager`, // kernel logs
+            `sudo journalctl -u ssh --since '${since}' -n ${lines} --no-pager` // SSH logs
+        ];
+
+        const logs = {};
+        const logNames = ['system', 'kernel', 'ssh'];
+
+        for (let i = 0; i < commands.length; i++) {
+            try {
+                const command = sshCredentials.buildSSHCommandByHost(host, commands[i], { batchMode: false });
+                const { stdout } = await execAsync(command);
+                logs[logNames[i]] = stdout.split('\n').filter(line => line.trim());
+            } catch (error) {
+                logs[logNames[i]] = [`Error: ${error.message}`];
+            }
+        }
+        return logs;
+    }
+
+    async collectRPiErrorLogs(host, lines, since) {
+        const commands = [
+            `sudo journalctl -p err --since '${since}' -n ${lines} --no-pager`,
+            `sudo journalctl -p crit --since '${since}' -n ${lines} --no-pager`,
+            `dmesg | tail -n ${lines} | grep -i error || echo "No recent dmesg errors"`
+        ];
+
+        const logs = {};
+        const logNames = ['errors', 'critical', 'dmesg_errors'];
+
+        for (let i = 0; i < commands.length; i++) {
+            try {
+                const command = sshCredentials.buildSSHCommandByHost(host, commands[i], { batchMode: false });
+                const { stdout } = await execAsync(command);
+                logs[logNames[i]] = stdout.split('\n').filter(line => line.trim());
+            } catch (error) {
+                logs[logNames[i]] = [`Error: ${error.message}`];
+            }
+        }
+        return logs;
+    }
+
+    async collectRPiServiceLogs(host, lines, since) {
+        const services = ['ssh', 'systemd', 'networking', 'cron'];
+        const logs = {};
+
+        for (const service of services) {
+            try {
+                const command = sshCredentials.buildSSHCommandByHost(host, `sudo journalctl -u ${service} --since '${since}' -n ${lines} --no-pager`, { batchMode: false });
+                const { stdout } = await execAsync(command);
+                logs[service] = stdout.split('\n').filter(line => line.trim());
+            } catch (error) {
+                logs[service] = [`Error: ${error.message}`];
+            }
+        }
+        return logs;
     }
 
     async run() {
