@@ -424,7 +424,18 @@ describe('SSH Integration Tests', function() {
                     .set('Authorization', `Bearer ${adminToken}`)
                     .end((err, res) => {
                         expect(err).to.be.null;
-                        expect(res).to.have.status(200);
+
+                        // Pumpkinhead is in maintenance mode, so it should return 503
+                        if (animatronic.id === 'pumpkinhead') {
+                            expect(res).to.have.status(503);
+                            expect(res.body.success).to.be.false;
+                            expect(res.body.code).to.equal('ANIMATRONIC_NOT_OPERATIONAL');
+                        } else {
+                            // Orlok and Coffin should work normally
+                            expect(res).to.have.status(200);
+                            expect(res.body.success).to.be.true;
+                        }
+
                         expect(res.body.animatronic).to.equal(animatronic.id);
                         done();
                     });
