@@ -174,3 +174,12 @@ tasks:
   - id: rpi-npm-check-api-keys
     agent: rpi-agent
     command: cd /home/remote/MonsterBox && npm run check-api-keys
+
+  # Git Operations
+  - id: rpi-git-pull
+    agent: rpi-agent
+    command: cd /home/remote/MonsterBox && git pull origin main
+
+  - id: rpi-git-status
+    agent: rpi-agent
+    command: cd /home/remote/MonsterBox && git status
