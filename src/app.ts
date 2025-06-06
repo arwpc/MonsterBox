@@ -12,6 +12,7 @@ import { env, isDevelopment, ensureDirectories } from '../config/environment';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { requestLogger, skipHealthCheck } from './middleware/requestLogger';
 import healthRoutes from './routes/healthRoutes';
+import animatronicRoutes from './routes/animatronicRoutes';
 
 // Ensure required directories exist
 ensureDirectories();
@@ -68,6 +69,7 @@ app.use(express.static(path.join(__dirname, '../public')));
 // API Routes
 app.use('/health', healthRoutes);
 app.use('/api/health', healthRoutes);
+app.use('/api/animatronics', animatronicRoutes);
 
 // Root route
 app.get('/', (req, res) => {
@@ -92,7 +94,7 @@ app.get('/api', (req, res) => {
     timestamp: new Date().toISOString(),
     endpoints: {
       health: '/api/health',
-      animatronics: '/api/animatronics (coming soon)',
+      animatronics: '/api/animatronics',
       scenes: '/api/scenes (coming soon)',
       characters: '/api/characters (coming soon)'
     }

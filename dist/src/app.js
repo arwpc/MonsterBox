@@ -16,6 +16,7 @@ const environment_1 = require("../config/environment");
 const errorHandler_1 = require("./middleware/errorHandler");
 const requestLogger_1 = require("./middleware/requestLogger");
 const healthRoutes_1 = __importDefault(require("./routes/healthRoutes"));
+const animatronicRoutes_1 = __importDefault(require("./routes/animatronicRoutes"));
 // Ensure required directories exist
 (0, environment_1.ensureDirectories)();
 // Create Express application
@@ -62,6 +63,7 @@ app.use(express_1.default.static(path_1.default.join(__dirname, '../public')));
 // API Routes
 app.use('/health', healthRoutes_1.default);
 app.use('/api/health', healthRoutes_1.default);
+app.use('/api/animatronics', animatronicRoutes_1.default);
 // Root route
 app.get('/', (req, res) => {
     res.json({
@@ -84,7 +86,7 @@ app.get('/api', (req, res) => {
         timestamp: new Date().toISOString(),
         endpoints: {
             health: '/api/health',
-            animatronics: '/api/animatronics (coming soon)',
+            animatronics: '/api/animatronics',
             scenes: '/api/scenes (coming soon)',
             characters: '/api/characters (coming soon)'
         }
