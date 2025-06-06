@@ -1,0 +1,44 @@
+{
+  "mcpServers": {
+    "task-master-ai": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "--package=task-master-ai",
+        "task-master-ai"
+      ],
+      "env": {
+        "ANTHROPIC_API_KEY": "${ANTHROPIC_API_KEY}",
+        "PERPLEXITY_API_KEY": "${PERPLEXITY_API_KEY}",
+        "OPENAI_API_KEY": "${OPENAI_API_KEY}",
+        "GOOGLE_API_KEY": "${GOOGLE_API_KEY}",
+        "XAI_API_KEY": "${XAI_API_KEY}",
+        "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY}",
+        "MISTRAL_API_KEY": "${MISTRAL_API_KEY}",
+        "AZURE_OPENAI_API_KEY": "${AZURE_OPENAI_API_KEY}",
+        "OLLAMA_API_KEY": "${OLLAMA_API_KEY}"
+      }
+    },
+    "monsterbox-log-collector": {
+      "command": "npm",
+      "args": [
+        "run",
+        "mcp:log-collector"
+      ],
+      "cwd": "C:\\Users\\arwpe\\CodeBase\\MonsterBox-1",
+      "env": {
+        "NODE_ENV": "production",
+        "LOG_LEVEL": "info",
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}",
+        "ORLOK_SSH_USER": "${ORLOK_SSH_USER}",
+        "ORLOK_SSH_PASSWORD": "${ORLOK_SSH_PASSWORD}",
+        "COFFIN_SSH_USER": "${COFFIN_SSH_USER}",
+        "COFFIN_SSH_PASSWORD": "${COFFIN_SSH_PASSWORD}",
+        "PUMPKINHEAD_SSH_USER": "${PUMPKINHEAD_SSH_USER}",
+        "PUMPKINHEAD_SSH_PASSWORD": "${PUMPKINHEAD_SSH_PASSWORD}",
+        "RPI_SSH_USER": "${RPI_SSH_USER}",
+        "RPI_SSH_PASSWORD": "${RPI_SSH_PASSWORD}"
+      }
+    }
+  }
+}
