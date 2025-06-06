@@ -38,8 +38,8 @@ else
     echo "   ⚠️  Could not set Master volume (may not be available)"
 fi
 
-# Set PCM volume to 95%
-amixer set PCM 95% > /dev/null 2>&1
+# Set PCM volume to 95% (using card 0 specifically)
+amixer -c 0 set PCM 95% > /dev/null 2>&1
 if [ $? -eq 0 ]; then
     echo "   ✅ Set PCM volume to 95%"
 else
