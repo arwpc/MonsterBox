@@ -1,17 +1,117 @@
 # Remote Agent Assignments - MonsterBox Project
 
 ## Overview
-Three remote agents have been assigned to work on critical MonsterBox platform tasks in parallel. Each agent has specialized focus areas and specific subtasks to complete.
+Two new remote agents have been assigned to work on foundational MonsterBox platform tasks in parallel. These agents will work simultaneously on Tasks #1 and #2 with automatic code merging.
 
-## Remote Agent 1: Security & Authentication Specialist
+## Remote Agent Alpha: Backend Foundation Specialist
 
-**Primary Responsibility**: Implement Secure Remote Access System (Task 11)
+**Primary Responsibility**: Initialize Node.js/Express Backend (Task 1)
 
-### Assigned Subtasks (In Progress):
-- **11.1**: Design JWT Authentication Architecture
-- **11.2**: Implement Role-Based Access Control (RBAC) Framework  
-- **11.3**: Integrate JWT Authentication with Existing SSH Infrastructure
-- **11.5**: Implement Multi-Factor Authentication (MFA)
+### Current Assignment (In Progress):
+- **Task ID**: 1
+- **Status**: In Progress
+- **Branch**: feature/task-1-backend-init
+- **Priority**: High
+- **Dependencies**: None (foundation task)
+
+### Scope & Deliverables:
+- Initialize Node.js 20.x LTS project structure
+- Setup Express.js 4.18.x with TypeScript support
+- Configure EJS templating engine
+- Implement basic folder structure (/src, /config, /data, /views, /public)
+- Setup environment configuration with dotenv
+- Create health check endpoint
+- Implement basic error handling middleware
+- Unit tests with Jest for server setup
+
+## Remote Agent Beta: SSH Infrastructure Specialist
+
+**Primary Responsibility**: Implement SSH Connection Manager (Task 2)
+
+### Current Assignment (In Progress):
+- **Task ID**: 2
+- **Status**: In Progress
+- **Branch**: feature/task-2-ssh-manager
+- **Priority**: High
+- **Dependencies**: Task #1 (will integrate after Alpha completes)
+
+### Scope & Deliverables:
+- Implement SSH connection management using node-ssh 13.1.x
+- Create ConnectionManager class with connection pooling
+- Implement credential management using .env variables
+- Setup retry mechanism with exponential backoff
+- Add connection health monitoring
+- Configure static IP mappings (Orlok: 192.168.8.120, Coffin: 192.168.8.140)
+- Implement connection timeout handling
+- Integration tests with mock SSH connections
+
+## Automated Parallel Development Workflow
+
+### Phase 1: Parallel Development (0-3 hours)
+1. **Agent Alpha** starts immediately on Task #1 (Backend Foundation)
+2. **Agent Beta** starts immediately on Task #2 (SSH Manager)
+3. Both agents work in parallel on separate branches
+4. No dependencies between agents during development phase
+
+### Phase 2: Integration & Merge (3-4 hours)
+1. **Agent Alpha** completes Task #1 and creates PR
+2. **Agent Alpha** PR gets automatically merged to main
+3. **Agent Beta** rebases feature/task-2-ssh-manager on updated main
+4. **Agent Beta** integrates SSH manager with Alpha's backend structure
+5. **Agent Beta** completes Task #2 and creates PR
+6. **Agent Beta** PR gets automatically merged after tests pass
+
+### Phase 3: Validation (4-5 hours)
+1. Automated integration tests run on merged code
+2. Both tasks marked as completed in Task Master
+3. Foundation ready for Task #3 (Character Configuration System)
+
+## Merge Strategy & Conflict Resolution
+
+### Automatic Merge Process:
+- **No Manual Intervention Required**
+- Agents work on separate modules with minimal overlap
+- Agent Beta adapts to Agent Alpha's architecture
+- Automated testing ensures compatibility
+- PRs auto-merge after CI passes
+
+### Success Criteria:
+- ✅ Both tasks completed successfully
+- ✅ All tests passing
+- ✅ Code merged to main branch
+- ✅ No manual intervention required
+- ✅ MonsterBox backend foundation ready
+
+## Agent Communication Protocol
+
+### Status Updates:
+- Agents report progress every 30 minutes via commit messages
+- PR descriptions include detailed task completion status
+- Conventional commit format for automated processing
+
+### Coordination Points:
+- Agent Beta monitors Agent Alpha's progress
+- Agent Beta adapts SSH manager to Alpha's architecture
+- Both agents ensure TypeScript compatibility
+- Automated dependency management
+
+## Expected Timeline
+
+**Hour 0-1**: Both agents start parallel development
+**Hour 1-2**: Agent Alpha completes basic Express setup
+**Hour 2-3**: Agent Alpha finalizes backend, Agent Beta continues SSH work
+**Hour 3-4**: Agent Alpha PR merged, Agent Beta integrates and completes
+**Hour 4-5**: Agent Beta PR merged, integration testing complete
+
+## Success Metrics
+
+After successful completion:
+- ✅ MonsterBox backend infrastructure operational
+- ✅ SSH connectivity to animatronic systems functional
+- ✅ TypeScript development environment ready
+- ✅ Testing framework in place
+- ✅ Ready for Task #3 (Character Configuration System)
+- ✅ Zero manual intervention required
 
 ### Current Focus:
 Starting with JWT Authentication Architecture design. Must review existing MonsterBox authentication in app.js and routes, focusing on integration with existing express-session middleware. Design should support the three animatronic systems (Orlok 192.168.8.120, Coffin 192.168.8.140, Pumpkinhead 192.168.1.101) and consider existing SSH credentials stored in character JSON files.
