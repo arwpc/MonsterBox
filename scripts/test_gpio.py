@@ -104,17 +104,17 @@ def test_pwm_output(pin):
     try:
         h = lgpio.gpiochip_open(0)
         lgpio.gpio_claim_output(h, pin)
-        
-        # Test different duty cycles (0-255 range)
-        for duty in [0, 128, 255, 0]:
-            lgpio.tx_pwm(h, pin, 800, duty)  # 800Hz frequency
-            time.sleep(0.5)
-        
+
+        # Test different duty cycles (0-100 range for lgpio)
+        for duty in [0, 25, 50, 75, 100, 0]:
+            lgpio.tx_pwm(h, pin, 800, duty)  # 800Hz frequency, 0-100% duty cycle
+            time.sleep(0.3)
+
         # Clean up
         lgpio.tx_pwm(h, pin, 800, 0)
         lgpio.gpio_free(h, pin)
         lgpio.gpiochip_close(h)
-        
+
         print(json.dumps({"status": "success", "test": "pwm_output", "pin": pin}), flush=True)
         return True
     except Exception as e:
