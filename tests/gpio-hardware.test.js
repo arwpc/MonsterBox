@@ -4,13 +4,14 @@ const { promisify } = require('util');
 const path = require('path');
 const execAsync = promisify(exec);
 
-// Define test pins to avoid conflicts
+// Define test pins to avoid conflicts with assigned animatronic parts
+// Updated to use available pins that are not assigned in data/parts.json
 const TEST_PINS = {
-    digitalOut: 18,  // Digital output test pin
-    digitalIn: 17,   // Digital input test pin
-    pwm: 13,        // PWM output test pin
-    servo: 12,      // Servo control pin
-    motion: 20      // Motion sensor pin
+    digitalOut: 20,  // Digital output test pin (was 18 - now available)
+    digitalIn: 21,   // Digital input test pin (was 17 - now available)
+    pwm: 19,        // PWM output test pin (was 13 - now available)
+    servo: 22,      // Servo control pin (was 12 - now available)
+    motion: 25      // Motion sensor pin (available)
 };
 
 if (process.env.SKIP_CI_INTEGRATION) {
