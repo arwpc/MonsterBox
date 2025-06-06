@@ -60,7 +60,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/your-repo/monsterbox.git"
+    "url": "git+https://github.com/arwpc/MonsterBox.git"
   },
   "keywords": [
     "scene",
@@ -69,12 +69,12 @@
     "ejs",
     "nodejs"
   ],
-  "author": "Your Name",
+  "author": "MonsterMaker",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/your-repo/monsterbox/issues"
+    "url": "https://github.com/arwpc/MonsterBox/issues"
   },
-  "homepage": "https://github.com/your-repo/monsterbox#readme",
+  "homepage": "https://github.com/arwpc/MonsterBox#readme",
   "directories": {
     "test": "tests"
   }
