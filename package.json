@@ -35,7 +35,10 @@
     "validate:security": "node scripts/validate-security-system.js",
     "ci:security": "node tests/ci-security-tests.js",
     "test:comprehensive": "bash scripts/comprehensive-rpi-test.sh",
-    "debug:mcp-collect": "node scripts/mcp-debug-collector.js"
+    "debug:mcp-collect": "node scripts/mcp-debug-collector.js",
+    "augment": "node scripts/augment.js",
+    "augment:list": "node scripts/augment.js list",
+    "augment:run": "node scripts/augment.js run"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

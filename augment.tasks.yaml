@@ -1,0 +1,8 @@
+tasks:
+  - id: rpi-uptime
+    agent: rpi-agent
+    command: uptime
+  
+  - id: rpi-list-home
+    agent: rpi-agent
+    command: ls -la /home/remote

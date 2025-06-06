@@ -1,0 +1,12 @@
+agents:
+  - name: rpi-agent
+    type: shell
+    runner:
+      ssh:
+        host: 192.168.8.120
+        user: remote
+        # Note: Using password authentication instead of key-based
+        # since MonsterBox uses password auth for RPI access
+        password: klrklr89!
+        # Alternative: if you want to use key-based auth, uncomment below
+        # identityFile: ~/.ssh/id_ed25519
