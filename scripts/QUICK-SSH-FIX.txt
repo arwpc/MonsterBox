@@ -1,0 +1,29 @@
+🚨 QUICK SSH CONFIG FIX FOR VS CODE REMOTE SSH 🚨
+
+PROBLEM: UTF-8 BOM in SSH config file preventing VS Code Remote SSH connections
+
+IMMEDIATE SOLUTION:
+Copy and paste this command into Command Prompt (cmd.exe) and press Enter:
+
+del "%USERPROFILE%\.ssh\config" 2>nul && (echo # MonsterBox SSH Configuration && echo # This file configures SSH access to animatronic RPI systems && echo. && echo # Orlok Animatronic (Primary Development System) && echo Host orlok && echo     HostName 192.168.8.120 && echo     User remote && echo     Port 22 && echo     StrictHostKeyChecking no && echo     UserKnownHostsFile /dev/null && echo     ConnectTimeout 10 && echo     ServerAliveInterval 60 && echo     ServerAliveCountMax 3 && echo     PasswordAuthentication yes && echo     PubkeyAuthentication yes && echo     PreferredAuthentications publickey,password && echo. && echo # Coffin Animatronic (Secondary System) && echo Host coffin && echo     HostName 192.168.8.140 && echo     User remote && echo     Port 22 && echo     StrictHostKeyChecking no && echo     UserKnownHostsFile /dev/null && echo     ConnectTimeout 10 && echo     ServerAliveInterval 60 && echo     ServerAliveCountMax 3 && echo     PasswordAuthentication yes && echo     PubkeyAuthentication yes && echo     PreferredAuthentications publickey,password && echo. && echo # Generic RPI host for development (VS Code Remote SSH) && echo Host 190fb5aa-f1b9-50b1-9bd2-1d3da626e3b6 && echo     HostName 192.168.8.120 && echo     User remote && echo     Port 22 && echo     StrictHostKeyChecking no && echo     UserKnownHostsFile /dev/null && echo     ConnectTimeout 10 && echo     ServerAliveInterval 60 && echo     ServerAliveCountMax 3 && echo     PasswordAuthentication yes && echo     PubkeyAuthentication yes && echo     PreferredAuthentications publickey,password && echo. && echo # Default settings for all hosts && echo Host * && echo     AddKeysToAgent yes && echo     UseKeychain yes && echo     IdentityFile ~/.ssh/id_rsa) > "%USERPROFILE%\.ssh\config"
+
+ALTERNATIVE METHODS:
+
+1. Run the batch file:
+   .\scripts\fix-ssh-config.bat
+
+2. Run the PowerShell script:
+   .\scripts\fix-ssh-config.ps1
+
+3. Manual fix:
+   - Delete C:\Users\arwpe\.ssh\config
+   - Create new file with proper encoding (ASCII/UTF-8 without BOM)
+
+WHAT THIS FIXES:
+- Removes UTF-8 BOM characters (\357\273\277) from SSH config
+- Creates clean SSH config for MonsterBox animatronic systems
+- Enables VS Code Remote SSH connections to work properly
+
+AFTER RUNNING:
+- Try VS Code Remote SSH connection again
+- Should connect to 192.168.8.120 (Orlok) successfully
