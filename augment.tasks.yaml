@@ -1,8 +1,113 @@
 tasks:
+  # Basic System Tests
   - id: rpi-uptime
     agent: rpi-agent
     command: uptime
-  
+
   - id: rpi-list-home
     agent: rpi-agent
     command: ls -la /home/remote
+
+  # System Information Tests
+  - id: rpi-system-info
+    agent: rpi-agent
+    command: uname -a
+
+  - id: rpi-disk-usage
+    agent: rpi-agent
+    command: df -h
+
+  - id: rpi-memory-info
+    agent: rpi-agent
+    command: free -h
+
+  - id: rpi-process-list
+    agent: rpi-agent
+    command: ps aux | head -10
+
+  # MonsterBox Project Tests
+  - id: rpi-monsterbox-status
+    agent: rpi-agent
+    command: ls -la /home/remote/MonsterBox
+
+  - id: rpi-monsterbox-logs
+    agent: rpi-agent
+    command: find /home/remote/MonsterBox -name "*.log" -type f | head -5
+
+  # Fluent Bit Log Collection Tests
+  - id: rpi-log-export-status
+    agent: rpi-agent
+    command: ls -la /home/remote/log_export
+
+  - id: rpi-fluent-bit-status
+    agent: rpi-agent
+    command: systemctl status fluent-bit --no-pager
+
+  # Network and Connectivity Tests
+  - id: rpi-network-interfaces
+    agent: rpi-agent
+    command: ip addr show
+
+  - id: rpi-ping-test
+    agent: rpi-agent
+    command: ping -c 3 8.8.8.8
+
+  # Hardware Tests
+  - id: rpi-gpio-status
+    agent: rpi-agent
+    command: ls -la /sys/class/gpio
+
+  - id: rpi-i2c-devices
+    agent: rpi-agent
+    command: i2cdetect -y 1 || echo "i2c-tools not installed"
+
+  # Service Status Tests
+  - id: rpi-ssh-status
+    agent: rpi-agent
+    command: systemctl status ssh --no-pager
+
+  - id: rpi-running-services
+    agent: rpi-agent
+    command: systemctl list-units --type=service --state=running | head -10
+
+  # Application Testing Commands
+  - id: rpi-npm-test
+    agent: rpi-agent
+    command: cd /home/remote/MonsterBox && npm test
+
+  - id: rpi-npm-test-verbose
+    agent: rpi-agent
+    command: cd /home/remote/MonsterBox && npm test -- --reporter spec
+
+  - id: rpi-npm-test-api-keys
+    agent: rpi-agent
+    command: cd /home/remote/MonsterBox && npm run test:api-keys
+
+  - id: rpi-npm-test-security
+    agent: rpi-agent
+    command: cd /home/remote/MonsterBox && npm run test:security
+
+  - id: rpi-npm-test-rpi
+    agent: rpi-agent
+    command: cd /home/remote/MonsterBox && npm run test:rpi
+
+  # Log Collection Commands
+  - id: rpi-collect-app-logs
+    agent: rpi-agent
+    command: cd /home/remote/MonsterBox && find log/ -name "*.log" -exec tail -n 50 {} \; -print
+
+  - id: rpi-collect-test-logs
+    agent: rpi-agent
+    command: cd /home/remote/MonsterBox && find . -name "*test*.log" -exec cat {} \; -print
+
+  - id: rpi-collect-error-logs
+    agent: rpi-agent
+    command: cd /home/remote/MonsterBox && find . -name "*error*.log" -exec tail -n 100 {} \; -print
+
+  - id: rpi-npm-install-status
+    agent: rpi-agent
+    command: cd /home/remote/MonsterBox && npm list --depth=0
+
+  - id: rpi-node-version
+    agent: rpi-agent
+    command: cd /home/remote/MonsterBox && node --version && npm --version
