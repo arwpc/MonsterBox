@@ -19,6 +19,17 @@
         "OLLAMA_API_KEY": "${OLLAMA_API_KEY}"
       }
     },
+    "monsterbox-sematext": {
+      "command": "node",
+      "args": [
+        "mcp-servers/sematext-server.js"
+      ],
+      "cwd": "C:\\Users\\arwpe\\CodeBase\\MonsterBox-1",
+      "env": {
+        "NODE_ENV": "production",
+        "LOG_LEVEL": "info"
+      }
+    },
     "monsterbox-log-collector": {
       "command": "npm",
       "args": [
