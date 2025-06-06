@@ -2,12 +2,12 @@
 
 /**
  * MonsterBox Log Collector MCP Server
- * 
- * Collects logs from multiple sources:
+ *
+ * Collects logs from multiple sources using Fluent Bit → File → VS Code/Augment:
  * - Browser console logs
  * - GitHub API logs
- * - RPI4b console logs
- * - Ubuntu system logs
+ * - RPI4b Fluent Bit aggregated logs
+ * - Local file-based log collection
  * - MonsterBox application logs
  */
 
@@ -199,6 +199,89 @@ class LogCollectorServer {
                         }
                     },
                     {
+                        name: 'collect_fluent_bit_logs',
+                        description: 'Collect aggregated logs from Fluent Bit file outputs on RPI4b systems',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                host: {
+                                    type: 'string',
+                                    description: 'RPI hostname or IP address (192.168.8.120 for Orlok, 192.168.8.140 for Coffin)',
+                                    enum: ['192.168.8.120', '192.168.8.140', 'orlok', 'coffin']
+                                },
+                                logTypes: {
+                                    type: 'array',
+                                    items: {
+                                        type: 'string',
+                                        enum: ['app', 'system', 'logs', 'all']
+                                    },
+                                    description: 'Types of Fluent Bit log files to collect',
+                                    default: ['app', 'system', 'logs']
+                                },
+                                lines: {
+                                    type: 'number',
+                                    description: 'Number of recent log lines to collect (default: 100)',
+                                    default: 100
+                                },
+                                download: {
+                                    type: 'boolean',
+                                    description: 'Download log files to local aggregated directory',
+                                    default: true
+                                }
+                            },
+                            required: ['host']
+                        }
+                    },
+                    {
+                        name: 'read_local_aggregated_logs',
+                        description: 'Read locally aggregated log files from Fluent Bit collection',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                animatronic: {
+                                    type: 'string',
+                                    description: 'Animatronic ID (orlok, coffin, pumpkinhead)',
+                                    enum: ['orlok', 'coffin', 'pumpkinhead']
+                                },
+                                logType: {
+                                    type: 'string',
+                                    description: 'Type of log file to read',
+                                    enum: ['app', 'system', 'logs', 'all'],
+                                    default: 'all'
+                                },
+                                lines: {
+                                    type: 'number',
+                                    description: 'Number of recent lines to read (default: 50)',
+                                    default: 50
+                                },
+                                pattern: {
+                                    type: 'string',
+                                    description: 'Search pattern to filter logs (optional)'
+                                }
+                            },
+                            required: ['animatronic']
+                        }
+                    },
+                    {
+                        name: 'sync_fluent_bit_logs',
+                        description: 'Synchronize all Fluent Bit logs from enabled RPI systems to local aggregated directory',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                force: {
+                                    type: 'boolean',
+                                    description: 'Force sync even if files are recent',
+                                    default: false
+                                },
+                                cleanup: {
+                                    type: 'boolean',
+                                    description: 'Clean up old log files after sync',
+                                    default: false
+                                }
+                            }
+                        }
+                    },
+                    {
                         name: 'collect_comprehensive_rpi_logs',
                         description: 'Collect comprehensive logs from animatronic RPI4b systems including MonsterBox app logs and system logs',
                         inputSchema: {
@@ -258,6 +341,12 @@ class LogCollectorServer {
                         return await this.setupLogMonitoring(args);
                     case 'execute_remote_command':
                         return await this.executeRemoteCommand(args);
+                    case 'collect_fluent_bit_logs':
+                        return await this.collectFluentBitLogs(args);
+                    case 'read_local_aggregated_logs':
+                        return await this.readLocalAggregatedLogs(args);
+                    case 'sync_fluent_bit_logs':
+                        return await this.syncFluentBitLogs(args);
                     case 'collect_comprehensive_rpi_logs':
                         return await this.collectComprehensiveRPiLogs(args);
                     default:
@@ -275,6 +364,352 @@ class LogCollectorServer {
                 };
             }
         });
+    }
+
+    async collectFluentBitLogs(args) {
+        const { host, logTypes = ['app', 'system', 'logs'], lines = 100, download = true } = args;
+
+        // Validate host - only allow Orlok and Coffin
+        const allowedHosts = {
+            '192.168.8.120': 'orlok',
+            '192.168.8.140': 'coffin',
+            'orlok': '192.168.8.120',
+            'coffin': '192.168.8.140'
+        };
+
+        const targetHost = allowedHosts[host] || host;
+        const animatronicName = allowedHosts[targetHost] || 'unknown';
+
+        if (!allowedHosts[host] && !allowedHosts[targetHost]) {
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `Error: Host '${host}' is not allowed. Only Orlok (192.168.8.120) and Coffin (192.168.8.140) are supported.`
+                    }
+                ],
+                isError: true
+            };
+        }
+
+        try {
+            const logs = {
+                host: targetHost,
+                animatronic: animatronicName,
+                timestamp: new Date().toISOString(),
+                logTypes: logTypes,
+                data: {}
+            };
+
+            // Collect Fluent Bit log files
+            for (const logType of logTypes) {
+                try {
+                    const logFile = `${animatronicName}-${logType}.jsonl`;
+                    const remotePath = `/var/log/monsterbox/aggregated/${logFile}`;
+
+                    // Read recent lines from the log file
+                    const command = sshCredentials.buildSSHCommandByHost(
+                        targetHost,
+                        `tail -n ${lines} ${remotePath} 2>/dev/null || echo "Log file not found: ${remotePath}"`,
+                        { batchMode: false }
+                    );
+
+                    const { stdout } = await execAsync(command);
+
+                    if (stdout.includes('Log file not found')) {
+                        logs.data[logType] = { error: `Log file not found: ${logFile}` };
+                    } else {
+                        // Parse JSON lines
+                        const logLines = stdout.split('\n').filter(line => line.trim());
+                        const parsedLogs = logLines.map(line => {
+                            try {
+                                return JSON.parse(line);
+                            } catch (e) {
+                                return { raw: line, parse_error: true };
+                            }
+                        });
+
+                        logs.data[logType] = {
+                            file: logFile,
+                            lines_collected: parsedLogs.length,
+                            logs: parsedLogs
+                        };
+                    }
+
+                    // Download file if requested
+                    if (download && !stdout.includes('Log file not found')) {
+                        await this.downloadLogFile(targetHost, animatronicName, logFile);
+                    }
+
+                } catch (error) {
+                    logs.data[logType] = { error: error.message };
+                }
+            }
+
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `Fluent Bit logs collected from ${animatronicName} (${targetHost}):\n\n${JSON.stringify(logs, null, 2)}`
+                    }
+                ]
+            };
+
+        } catch (error) {
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `Failed to collect Fluent Bit logs from ${animatronicName} (${targetHost}): ${error.message}`
+                    }
+                ],
+                isError: true
+            };
+        }
+    }
+
+    async readLocalAggregatedLogs(args) {
+        const { animatronic, logType = 'all', lines = 50, pattern } = args;
+
+        try {
+            const logDir = path.join(process.cwd(), 'log', 'aggregated', animatronic);
+
+            // Check if directory exists
+            try {
+                await fs.access(logDir);
+            } catch (error) {
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: `No local logs found for ${animatronic}. Run sync_fluent_bit_logs first.`
+                        }
+                    ],
+                    isError: true
+                };
+            }
+
+            const logs = {
+                animatronic: animatronic,
+                logType: logType,
+                timestamp: new Date().toISOString(),
+                data: {}
+            };
+
+            const logTypes = logType === 'all' ? ['app', 'system', 'logs'] : [logType];
+
+            for (const type of logTypes) {
+                try {
+                    const logFile = path.join(logDir, `${animatronic}-${type}.jsonl`);
+
+                    try {
+                        const content = await fs.readFile(logFile, 'utf8');
+                        let logLines = content.split('\n').filter(line => line.trim());
+
+                        // Apply pattern filter if provided
+                        if (pattern) {
+                            logLines = logLines.filter(line => line.includes(pattern));
+                        }
+
+                        // Get recent lines
+                        const recentLines = logLines.slice(-lines);
+
+                        // Parse JSON lines
+                        const parsedLogs = recentLines.map(line => {
+                            try {
+                                return JSON.parse(line);
+                            } catch (e) {
+                                return { raw: line, parse_error: true };
+                            }
+                        });
+
+                        logs.data[type] = {
+                            file: `${animatronic}-${type}.jsonl`,
+                            total_lines: logLines.length,
+                            returned_lines: parsedLogs.length,
+                            logs: parsedLogs
+                        };
+
+                    } catch (error) {
+                        logs.data[type] = { error: `File not found: ${animatronic}-${type}.jsonl` };
+                    }
+
+                } catch (error) {
+                    logs.data[type] = { error: error.message };
+                }
+            }
+
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `Local aggregated logs for ${animatronic}:\n\n${JSON.stringify(logs, null, 2)}`
+                    }
+                ]
+            };
+
+        } catch (error) {
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `Failed to read local aggregated logs: ${error.message}`
+                    }
+                ],
+                isError: true
+            };
+        }
+    }
+
+    async syncFluentBitLogs(args) {
+        const { force = false, cleanup = false } = args;
+
+        try {
+            // Load Fluent Bit configuration
+            const configPath = path.join(process.cwd(), 'data', 'fluent-bit-config.json');
+            const configData = await fs.readFile(configPath, 'utf8');
+            const config = JSON.parse(configData);
+
+            const results = {
+                timestamp: new Date().toISOString(),
+                systems_synced: [],
+                files_synced: 0,
+                errors: []
+            };
+
+            // Sync logs from each enabled system
+            for (const system of config.systems.filter(s => s.enabled)) {
+                try {
+                    console.log(`Syncing logs from ${system.name}...`);
+
+                    const localDir = path.join(process.cwd(), 'log', 'aggregated', system.id);
+                    await fs.mkdir(localDir, { recursive: true });
+
+                    // Sync each log type
+                    for (const logSource of config.fluent_bit.log_sources) {
+                        if (logSource.id === system.id) {
+                            for (const logFile of logSource.log_files) {
+                                try {
+                                    const remotePath = `/var/log/monsterbox/aggregated/${logFile}`;
+                                    const localPath = path.join(localDir, logFile);
+
+                                    // Check if we should sync (force or file is old/missing)
+                                    let shouldSync = force;
+                                    if (!shouldSync) {
+                                        try {
+                                            const stats = await fs.stat(localPath);
+                                            const ageMinutes = (Date.now() - stats.mtime.getTime()) / (1000 * 60);
+                                            shouldSync = ageMinutes > 5; // Sync if older than 5 minutes
+                                        } catch (error) {
+                                            shouldSync = true; // File doesn't exist
+                                        }
+                                    }
+
+                                    if (shouldSync) {
+                                        const scpCommand = sshCredentials.buildSCPCommand(
+                                            system.id,
+                                            system.host,
+                                            remotePath,
+                                            localPath
+                                        );
+
+                                        await execAsync(scpCommand);
+                                        results.files_synced++;
+                                    }
+
+                                } catch (error) {
+                                    results.errors.push(`${system.name}/${logFile}: ${error.message}`);
+                                }
+                            }
+                        }
+                    }
+
+                    results.systems_synced.push(system.name);
+
+                } catch (error) {
+                    results.errors.push(`${system.name}: ${error.message}`);
+                }
+            }
+
+            // Cleanup old files if requested
+            if (cleanup) {
+                await this.cleanupOldLogFiles();
+            }
+
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `Fluent Bit log sync completed:\n\n${JSON.stringify(results, null, 2)}`
+                    }
+                ]
+            };
+
+        } catch (error) {
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `Failed to sync Fluent Bit logs: ${error.message}`
+                    }
+                ],
+                isError: true
+            };
+        }
+    }
+
+    async downloadLogFile(host, animatronic, logFile) {
+        try {
+            const localDir = path.join(process.cwd(), 'log', 'aggregated', animatronic);
+            await fs.mkdir(localDir, { recursive: true });
+
+            const remotePath = `/var/log/monsterbox/aggregated/${logFile}`;
+            const localPath = path.join(localDir, logFile);
+
+            const scpCommand = sshCredentials.buildSCPCommand(
+                animatronic,
+                host,
+                remotePath,
+                localPath
+            );
+
+            await execAsync(scpCommand);
+            return true;
+        } catch (error) {
+            console.error(`Failed to download ${logFile}: ${error.message}`);
+            return false;
+        }
+    }
+
+    async cleanupOldLogFiles() {
+        try {
+            const aggregatedDir = path.join(process.cwd(), 'log', 'aggregated');
+            const retentionDays = 30;
+            const cutoffTime = Date.now() - (retentionDays * 24 * 60 * 60 * 1000);
+
+            const animatronics = await fs.readdir(aggregatedDir);
+
+            for (const animatronic of animatronics) {
+                const animatronicDir = path.join(aggregatedDir, animatronic);
+                const stats = await fs.stat(animatronicDir);
+
+                if (stats.isDirectory()) {
+                    const files = await fs.readdir(animatronicDir);
+
+                    for (const file of files) {
+                        const filePath = path.join(animatronicDir, file);
+                        const fileStats = await fs.stat(filePath);
+
+                        if (fileStats.mtime.getTime() < cutoffTime) {
+                            await fs.unlink(filePath);
+                            console.log(`Cleaned up old log file: ${file}`);
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error(`Cleanup failed: ${error.message}`);
+        }
     }
 
     async collectBrowserLogs(args) {

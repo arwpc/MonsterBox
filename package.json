@@ -25,10 +25,8 @@
     "animatronic:add": "node scripts/animatronic-manager.js add",
     "animatronic:view": "node scripts/animatronic-manager.js view",
     "animatronic:test-all": "node scripts/animatronic-manager.js test-all",
-    "install:sematext-deps": "node scripts/install-sematext-deps.js",
-    "setup:sematext": "node scripts/setup-sematext-agent.js",
-    "test:sematext": "node scripts/test-sematext.js",
-    "start:sematext-mcp": "node mcp-servers/sematext-server.js",
+    "setup:fluent-bit": "node scripts/setup-fluent-bit.js",
+    "test:fluent-bit": "node scripts/test-fluent-bit.js",
     "mcp:log-collector": "node mcp-servers/log-collector-server.js"
   },
   "dependencies": {
