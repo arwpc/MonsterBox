@@ -33,7 +33,9 @@
     "test:fluent-bit": "node scripts/test-fluent-bit.js",
     "mcp:log-collector": "node mcp-servers/log-collector-server.js",
     "validate:security": "node scripts/validate-security-system.js",
-    "ci:security": "node tests/ci-security-tests.js"
+    "ci:security": "node tests/ci-security-tests.js",
+    "test:comprehensive": "bash scripts/comprehensive-rpi-test.sh",
+    "debug:mcp-collect": "node scripts/mcp-debug-collector.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

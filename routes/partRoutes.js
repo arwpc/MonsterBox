@@ -218,9 +218,10 @@ router.post('/:id/delete', async (req, res) => {
         logger.info(`Request query: ${JSON.stringify(req.query)}`);
         logger.info(`Request body: ${JSON.stringify(req.body)}`);
         
-        // Log all parts before deletion
+        // Log summary before deletion (reduced verbosity)
         const allParts = await partService.getAllParts();
-        logger.info(`All parts before deletion: ${JSON.stringify(allParts)}`);
+        logger.info(`Parts before deletion: ${allParts.length} total`);
+        logger.debug(`All parts before deletion: ${JSON.stringify(allParts)}`);
         
         // Check if the part exists before attempting to delete
         const partToDelete = allParts.find(part => part.id === id);
@@ -234,11 +235,12 @@ router.post('/:id/delete', async (req, res) => {
         try {
             await partService.deletePart(id);
             logger.info(`Part with ID ${id} deleted successfully`);
-            
-            // Log all parts after deletion
+
+            // Log summary after deletion (reduced verbosity)
             const allPartsAfter = await partService.getAllParts();
-            logger.info(`All parts after deletion: ${JSON.stringify(allPartsAfter)}`);
-            
+            logger.info(`Parts remaining after deletion: ${allPartsAfter.length} total`);
+            logger.debug(`All parts after deletion: ${JSON.stringify(allPartsAfter)}`);
+
             res.status(200).json({ message: 'Part deleted successfully' });
         } catch (deleteError) {
             logger.error(`Error in partService.deletePart: ${deleteError}`);
