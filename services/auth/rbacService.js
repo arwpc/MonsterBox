@@ -278,7 +278,7 @@ class RBACService {
      */
     async isAnimatronicOperational(animatronicId) {
         const animatronic = await this.getAnimatronic(animatronicId);
-        return animatronic && animatronic.status === 'operational';
+        return !!(animatronic && animatronic.status === 'operational');
     }
     
     /**
