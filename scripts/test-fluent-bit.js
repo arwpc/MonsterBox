@@ -167,7 +167,7 @@ class FluentBitTester {
                 const testLogCommand = sshCredentials.buildSSHCommand(
                     system.id,
                     system.host,
-                    'echo "$(date): MonsterBox Fluent Bit test log entry" | sudo tee -a /var/log/monsterbox/test.log'
+                    'echo "{\\"timestamp\\":\\"$(date -Iseconds)\\",\\"level\\":\\"info\\",\\"message\\":\\"MonsterBox Fluent Bit test log entry\\",\\"component\\":\\"test\\"}" >> /home/remote/MonsterBox/log/test.log'
                 );
 
                 await execAsync(testLogCommand);
@@ -180,7 +180,7 @@ class FluentBitTester {
                 const checkLogsCommand = sshCredentials.buildSSHCommand(
                     system.id,
                     system.host,
-                    'ls -la /var/log/monsterbox/aggregated/'
+                    'ls -la /home/remote/log_export/'
                 );
 
                 try {
@@ -212,9 +212,9 @@ class FluentBitTester {
 
             try {
                 // Copy log files from RPI to local system
-                const remoteLogPath = '/var/log/monsterbox/aggregated/';
+                const remoteLogPath = '/home/remote/log_export/';
                 const localSystemLogDir = path.join(this.logDir, system.id);
-                
+
                 // Ensure local directory exists
                 await fs.mkdir(localSystemLogDir, { recursive: true });
 
@@ -222,7 +222,7 @@ class FluentBitTester {
                 const scpCommand = sshCredentials.buildSCPCommand(
                     system.id,
                     system.host,
-                    `${remoteLogPath}${system.id}-*.jsonl`,
+                    `${remoteLogPath}${system.id}-*.log`,
                     localSystemLogDir,
                     { recursive: false }
                 );
@@ -232,7 +232,7 @@ class FluentBitTester {
                     
                     // Check if files were copied
                     const files = await fs.readdir(localSystemLogDir);
-                    const logFiles = files.filter(f => f.endsWith('.jsonl'));
+                    const logFiles = files.filter(f => f.endsWith('.log'));
                     
                     if (logFiles.length > 0) {
                         this.recordTest(`log_collection_${system.id}`, true, `Collected ${logFiles.length} log files from ${system.name}`);

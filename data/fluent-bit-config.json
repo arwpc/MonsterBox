@@ -1,0 +1,102 @@
+{
+  "systems": [
+    {
+      "id": "orlok",
+      "name": "Orlok RPI4b",
+      "host": "192.168.8.120",
+      "user": "remote",
+      "password_env": "ORLOK_SSH_PASSWORD",
+      "description": "Orlok animatronic RPI4b with Fluent Bit log collection",
+      "status": "running",
+      "enabled": true,
+      "fluent_bit": {
+        "http_port": 2020,
+        "log_export_path": "/home/remote/log_export/",
+        "config_file": "/etc/fluent-bit/fluent-bit.conf"
+      },
+      "log_sources": [
+        "monsterbox_app",
+        "monsterbox_errors", 
+        "system_logs",
+        "metrics"
+      ],
+      "services": [
+        "monsterbox",
+        "nginx",
+        "ssh",
+        "fluent-bit"
+      ]
+    },
+    {
+      "id": "coffin",
+      "name": "Coffin RPI4b", 
+      "host": "192.168.8.140",
+      "user": "remote",
+      "password_env": "COFFIN_SSH_PASSWORD",
+      "description": "Coffin animatronic RPI4b with Fluent Bit log collection",
+      "status": "running",
+      "enabled": true,
+      "fluent_bit": {
+        "http_port": 2020,
+        "log_export_path": "/home/remote/log_export/",
+        "config_file": "/etc/fluent-bit/fluent-bit.conf"
+      },
+      "log_sources": [
+        "monsterbox_app",
+        "monsterbox_errors",
+        "system_logs", 
+        "metrics"
+      ],
+      "services": [
+        "monsterbox",
+        "nginx",
+        "ssh",
+        "fluent-bit"
+      ]
+    },
+    {
+      "id": "pumpkinhead",
+      "name": "Pumpkinhead RPI4b",
+      "host": "192.168.1.101", 
+      "user": "remote",
+      "password_env": "PUMPKINHEAD_SSH_PASSWORD",
+      "description": "Pumpkinhead animatronic RPI4b (currently offline)",
+      "status": "offline",
+      "enabled": false,
+      "fluent_bit": {
+        "http_port": 2020,
+        "log_export_path": "/home/remote/log_export/",
+        "config_file": "/etc/fluent-bit/fluent-bit.conf"
+      },
+      "log_sources": [
+        "monsterbox_app",
+        "monsterbox_errors",
+        "system_logs",
+        "metrics"
+      ],
+      "services": [
+        "monsterbox",
+        "nginx", 
+        "ssh",
+        "fluent-bit"
+      ]
+    }
+  ],
+  "collection_settings": {
+    "default_lines": 100,
+    "default_since": "1 hour ago",
+    "retry_attempts": 3,
+    "timeout_seconds": 30,
+    "compress_logs": true,
+    "store_raw_logs": true,
+    "local_log_directory": "log/aggregated",
+    "test_log_retention_days": 7
+  },
+  "fluent_bit_global": {
+    "version": "2.2.2",
+    "default_format": "default",
+    "http_monitoring": true,
+    "storage_path": "/tmp/flb-storage/",
+    "flush_interval": 5
+  }
+}
