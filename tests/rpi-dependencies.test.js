@@ -1,3 +1,4 @@
+const { expect } = require('chai');
 const { exec } = require('child_process');
 const { promisify } = require('util');
 const execAsync = promisify(exec);
@@ -187,3 +188,4 @@ if (process.env.SKIP_CI_INTEGRATION) {
         expect(parseInt(functionalTest.output.trim())).to.be.at.least(0);
     });
 });
+}

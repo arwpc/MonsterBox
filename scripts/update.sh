@@ -31,9 +31,9 @@ if [ -f package.json ]; then
 fi
 
 print_status "Updating Python dependencies..."
-if [ -f requirements.txt ]; then
+if [ -f scripts/requirements.txt ]; then
     python3 -m pip install --upgrade pip
-    python3 -m pip install -r requirements.txt
+    python3 -m pip install -r scripts/requirements.txt
 fi
 
 # Configure audio settings for USB Audio Device
