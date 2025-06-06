@@ -830,7 +830,7 @@ if (require.main === module) {
 }
 
 module.exports = SematextMCPServer;
-\`;
+`;
     }
 
     async updatePackageScripts() {
