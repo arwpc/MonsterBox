@@ -185,7 +185,7 @@ class SystemConfigService {
             disk: 'df -h / | tail -1',
             temperature: 'vcgencmd measure_temp 2>/dev/null || echo "temp=N/A°C"',
             voltage: 'vcgencmd measure_volts 2>/dev/null || echo "volt=N/A"',
-            wifi: 'iwconfig wlan0 2>/dev/null | grep "Signal level" || (cat /proc/net/wireless 2>/dev/null | tail -1 | awk \'{print "Signal level=" $4 "dBm"}\') || echo "Signal level=N/A"'
+            wifi: 'iwconfig wlan0 2>/dev/null | grep "Signal level" || cat /proc/net/wireless 2>/dev/null | tail -1 || echo "Signal level=N/A"'
         };
 
         const systemInfo = {};
@@ -292,8 +292,8 @@ class SystemConfigService {
                     wifiMatch = rawInfo.wifi.match(/Signal level=(-?\d+)/);
                 }
                 if (!wifiMatch) {
-                    // Try parsing from /proc/net/wireless format
-                    wifiMatch = rawInfo.wifi.match(/(-?\d+)\s*dBm/);
+                    // Try parsing from /proc/net/wireless format - look for pattern like "69. -41. -256"
+                    wifiMatch = rawInfo.wifi.match(/\s+\d+\.\s+(-?\d+)\./);
                 }
                 formatted.wifiSignal = wifiMatch ? `${wifiMatch[1]} dBm` : 'N/A';
             }
