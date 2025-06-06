@@ -39,6 +39,12 @@ nav:
   - API Documentation:
       - API Testing Summary: api/API-TESTING-SUMMARY.md
 
+  - Development:
+      - Task Management: development/task-management.md
+      - Task Workflows: development/task-workflows.md
+      - Development Process: development/development-process.md
+      - Task Master Guide: development/taskmaster-guide.md
+
   - Security:
       - MCP Setup Notes: security/MCP-SETUP-NOTES.md
 

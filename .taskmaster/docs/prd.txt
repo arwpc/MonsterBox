@@ -1,0 +1,91 @@
+<context>
+# Overview  
+MonsterBox is a next-generation platform for building, programming, and running interactive animatronic characters and scenes. It solves the complex problem of coordinating multiple hardware components (servos, sensors, LEDs, audio, cameras) across distributed Raspberry Pi systems to create immersive, responsive animatronic experiences. The platform is designed for creators, haunted attraction operators, and animatronic enthusiasts who need a unified system to manage complex multi-character setups with real-time control and monitoring capabilities.
+
+# Core Features  
+- **Multi-Character Management**: Unified configuration system for multiple animatronic characters (Orlok, Coffin, Pumpkinhead) with individual RPI4b systems
+- **Scene Builder**: Web-based interface for creating complex multi-step scenes with hardware coordination, timing, and sensor triggers
+- **Hardware Integration**: Support for I2C, GPIO, servos, sensors, audio playback, cameras, and linear actuators across distributed systems
+- **Real-time Control**: Live triggering of scenes, monitoring of device status, and responsive sensor-based interactions
+- **Active Mode**: Automated cycling through selected scenes with configurable delays for unattended operation
+- **AI Integration**: Text-to-speech capabilities using ElevenLabs and other TTS providers for dynamic character voices
+- **Remote Monitoring**: MCP (Model Context Protocol) system for comprehensive log collection and remote command execution on RPI systems
+- **SSH Management**: Secure remote access and automated command execution across animatronic systems
+
+# User Experience  
+- **Primary Users**: Animatronic creators, haunted attraction operators, technical artists
+- **Key User Flows**: Character selection → Scene building → Hardware configuration → Live performance control → System monitoring
+- **Web Interface**: Modern, responsive design accessible from any device on the network at http://localhost:3000
+- **Real-time Feedback**: Live log streaming, health monitoring, and device status updates
+</context>
+<PRD>
+# Technical Architecture  
+- **Backend**: Node.js/Express application with EJS templating
+- **Hardware Layer**: Raspberry Pi 4B systems running Ubuntu with GPIO/I2C control
+- **Networking**: Private MonsterNet WiFi (5g/2.4g) with static IP assignments (192.168.8.x range)
+- **Data Storage**: JSON-based configuration files in /data directory for characters, scenes, sounds, and system settings
+- **Communication**: SSH-based remote command execution with automated credential management
+- **Logging**: Winston logging with MCP integration for distributed log collection
+- **APIs**: RESTful endpoints for all system components with comprehensive testing suite
+- **Security**: Environment-based credential management with .env configuration
+
+# Development Roadmap  
+**Phase 1 - Core Platform Stability**
+- Consolidate and stabilize existing character management system
+- Ensure reliable SSH connectivity across all active animatronics (Orlok, Coffin)
+- Complete MCP log collection implementation
+- Comprehensive API testing framework
+
+**Phase 2 - Enhanced Scene Management**
+- Advanced scene builder with visual timeline editor
+- Improved sensor integration and trigger logic
+- Enhanced audio synchronization and TTS integration
+- Real-time scene preview and testing capabilities
+
+**Phase 3 - Performance & Monitoring**
+- Advanced health monitoring and alerting system
+- Performance optimization for multi-character coordination
+- Enhanced logging and debugging capabilities
+- Automated backup and recovery systems
+
+**Phase 4 - Advanced Features**
+- Machine learning integration for adaptive behaviors
+- Advanced camera integration with computer vision
+- Mobile app for remote control and monitoring
+- Cloud integration for scene sharing and backup
+
+# Logical Dependency Chain
+1. **Foundation**: Stable character configuration system and SSH connectivity
+2. **Core Functionality**: Scene management and hardware control systems
+3. **Integration**: MCP logging and monitoring capabilities
+4. **User Interface**: Web-based control panel and real-time feedback
+5. **Advanced Features**: AI integration and automated operations
+6. **Scalability**: Multi-character coordination and performance optimization
+
+# Risks and Mitigations  
+- **Network Reliability**: Implement robust error handling and automatic reconnection for SSH operations
+- **Hardware Dependencies**: Graceful degradation when RPI systems are offline or hardware components fail
+- **Complexity Management**: Modular architecture with clear separation of concerns between characters and shared systems
+- **Security**: Secure credential management and network isolation for production deployments
+- **Scalability**: Efficient resource management for multiple simultaneous animatronic operations
+
+# Appendix
+- **Current Active Systems**: Orlok (192.168.8.120), Coffin (192.168.8.140)
+- **Offline Systems**: Pumpkinhead (192.168.1.101) - excluded from current operations
+- **Network Credentials**: MonsterNet5g/MonsterNet2.4g with VampiresSuck2025! password
+- **SSH Access**: remote user with klrklr89! password across all systems
+- **GitHub Repository**: https://github.com/arwpc/MonsterBox
+
+# Documentation Coordination with MkDocs
+- **Existing Documentation**: Comprehensive MkDocs setup with Material theme and automated GitHub Pages deployment
+- **Documentation Structure**: Organized in /docs with setup guides, API docs, character sheets, security, and animatronics workshop
+- **Task Master Integration**: Task management documentation should complement, not duplicate, existing MkDocs content
+- **Automated Updates**: MkDocs automatically deploys on commits to main branch via GitHub Actions
+- **Content Areas**:
+  - Setup & Installation guides (existing)
+  - API documentation (existing)
+  - Character documentation (existing)
+  - Security documentation (existing)
+  - Task management workflows (new - Task Master scope)
+  - Development processes (new - Task Master scope)
+</PRD>

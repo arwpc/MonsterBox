@@ -1,0 +1,1913 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../task-management/">
+      
+      
+        <link rel="next" href="../development-process/">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.13">
+    
+    
+      
+        <title>Task Workflows - MonsterBox Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.342714a4.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#task-workflows" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="MonsterBox Documentation" class="md-header__button md-logo" aria-label="MonsterBox Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            MonsterBox Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Task Workflows
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="MonsterBox Documentation" class="md-nav__button md-logo" aria-label="MonsterBox Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    MonsterBox Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Character Sheets
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Character Sheets
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../character_orlok/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Orlok
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../character_coffin_breaker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Coffin Breaker
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../character_pumpkinhead/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    PumpkinHead
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Installation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Usage Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Configuration
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../structure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Directory Structure
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    FAQ / Troubleshooting
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../license/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    License
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Networking
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Setup Guides
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            Setup Guides
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/ANIMATRONIC-SETUP-GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Animatronic Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/ANIMATRONIC-SSH-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    SSH Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/MCP-LOG-COLLECTION-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    MCP Log Collection
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Integration
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            Integration
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integration/elevenlabs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    ElevenLabs TTS
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Hardware
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            Hardware
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/gpio_assignments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    GPIO Assignments
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/hardware_schedule/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Hardware Schedule
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_13" id="__nav_13_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    API Documentation
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_13">
+            <span class="md-nav__icon md-icon"></span>
+            API Documentation
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/API-TESTING-SUMMARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    API Testing Summary
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_14" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_14" id="__nav_14_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Development
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_14_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_14">
+            <span class="md-nav__icon md-icon"></span>
+            Development
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../task-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Task Management
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Task Workflows
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Task Workflows
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overview
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-lifecycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      Task Lifecycle
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Task Lifecycle">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-task-creation" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Task Creation
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. Task Creation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#from-prd-recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      From PRD (Recommended)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#manual-task-creation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Manual Task Creation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-task-planning" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Task Planning
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Task Planning">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dependency-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      Dependency Check
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#complexity-assessment" class="md-nav__link">
+    <span class="md-ellipsis">
+      Complexity Assessment
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resource-allocation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Resource Allocation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-task-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Task Execution
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Task Execution">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#starting-a-task" class="md-nav__link">
+    <span class="md-ellipsis">
+      Starting a Task
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#during-development" class="md-nav__link">
+    <span class="md-ellipsis">
+      During Development
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#completing-a-task" class="md-nav__link">
+    <span class="md-ellipsis">
+      Completing a Task
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-workflow-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      Common Workflow Patterns
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Workflow Patterns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#feature-development-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      Feature Development Workflow
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bug-fix-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      Bug Fix Workflow
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#researchinvestigation-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      Research/Investigation Workflow
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-prioritization-guidelines" class="md-nav__link">
+    <span class="md-ellipsis">
+      Task Prioritization Guidelines
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Task Prioritization Guidelines">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#high-priority" class="md-nav__link">
+    <span class="md-ellipsis">
+      High Priority
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#medium-priority" class="md-nav__link">
+    <span class="md-ellipsis">
+      Medium Priority
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#low-priority" class="md-nav__link">
+    <span class="md-ellipsis">
+      Low Priority
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#status-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      Status Management
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Status Management">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#status-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Status Definitions
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#status-transitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Status Transitions
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dependency-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      Dependency Management
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Dependency Management">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#types-of-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      Types of Dependencies
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#managing-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      Managing Dependencies
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#team-coordination" class="md-nav__link">
+    <span class="md-ellipsis">
+      Team Coordination
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Team Coordination">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#daily-standups" class="md-nav__link">
+    <span class="md-ellipsis">
+      Daily Standups
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#weekly-planning" class="md-nav__link">
+    <span class="md-ellipsis">
+      Weekly Planning
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sprintmilestone-reviews" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sprint/Milestone Reviews
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#best-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      Best Practices
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Best Practices">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-creation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Task Creation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      Task Execution
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#team-collaboration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Team Collaboration
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Development Process
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../taskmaster-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Task Master Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_15" >
+        
+          
+          <label class="md-nav__link" for="__nav_15" id="__nav_15_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Security
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_15_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_15">
+            <span class="md-nav__icon md-icon"></span>
+            Security
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/MCP-SETUP-NOTES/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    MCP Setup Notes
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16" >
+        
+          
+          <label class="md-nav__link" for="__nav_16" id="__nav_16_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Animatronics Workshop
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_16_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_16">
+            <span class="md-nav__icon md-icon"></span>
+            Animatronics Workshop
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../animatronics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../animatronics/familiarization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Familiarization
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../animatronics/simple_steps/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Simple Steps
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../animatronics/hands_on/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Hands-On Activities
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../animatronics/presentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Final Presentation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="task-workflows">Task Workflows</h1>
+<h2 id="overview">Overview</h2>
+<p>This guide describes the standard workflows for managing tasks in the MonsterBox project using Task Master. These workflows ensure consistent development practices and proper coordination across all team members.</p>
+<h2 id="task-lifecycle">Task Lifecycle</h2>
+<h3 id="1-task-creation">1. Task Creation</h3>
+<p>Tasks can be created in several ways:</p>
+<h4 id="from-prd-recommended">From PRD (Recommended)</h4>
+<pre><code>1. Update the PRD document (.taskmaster/docs/prd.txt)
+2. Run PRD parsing to generate tasks automatically
+3. Review and adjust generated tasks as needed
+</code></pre>
+<h4 id="manual-task-creation">Manual Task Creation</h4>
+<pre><code>1. Identify new work that needs to be done
+2. Create task with clear title and description
+3. Set appropriate priority and dependencies
+4. Add detailed implementation steps
+5. Define test strategy
+</code></pre>
+<h3 id="2-task-planning">2. Task Planning</h3>
+<p>Before starting work on any task:</p>
+<h4 id="dependency-check">Dependency Check</h4>
+<ul>
+<li>Verify all dependency tasks are completed</li>
+<li>Identify any blocking issues</li>
+<li>Coordinate with team members on shared dependencies</li>
+</ul>
+<h4 id="complexity-assessment">Complexity Assessment</h4>
+<ul>
+<li>Review AI-generated complexity score</li>
+<li>Break down high-complexity tasks (8+) into subtasks</li>
+<li>Estimate effort and timeline</li>
+</ul>
+<h4 id="resource-allocation">Resource Allocation</h4>
+<ul>
+<li>Assign task to appropriate team member</li>
+<li>Ensure required skills and knowledge are available</li>
+<li>Plan for any needed training or research</li>
+</ul>
+<h3 id="3-task-execution">3. Task Execution</h3>
+<h4 id="starting-a-task">Starting a Task</h4>
+<ol>
+<li><strong>Update Status</strong>: Change from "pending" to "in-progress"</li>
+<li><strong>Review Requirements</strong>: Read all task details and test strategy</li>
+<li><strong>Plan Implementation</strong>: Break down work into daily/weekly milestones</li>
+<li><strong>Set Up Environment</strong>: Ensure all tools and dependencies are ready</li>
+</ol>
+<h4 id="during-development">During Development</h4>
+<ol>
+<li><strong>Regular Updates</strong>: Update task progress and any blockers</li>
+<li><strong>Subtask Management</strong>: Complete subtasks and update their status</li>
+<li><strong>Documentation</strong>: Document findings, decisions, and changes</li>
+<li><strong>Testing</strong>: Implement tests as defined in test strategy</li>
+</ol>
+<h4 id="completing-a-task">Completing a Task</h4>
+<ol>
+<li><strong>Final Testing</strong>: Ensure all test criteria are met</li>
+<li><strong>Code Review</strong>: Get peer review for all changes</li>
+<li><strong>Documentation Update</strong>: Update relevant documentation</li>
+<li><strong>Status Update</strong>: Change status to "done"</li>
+<li><strong>Handoff</strong>: Notify dependent tasks that they can proceed</li>
+</ol>
+<h2 id="common-workflow-patterns">Common Workflow Patterns</h2>
+<h3 id="feature-development-workflow">Feature Development Workflow</h3>
+<pre><code>1. Create feature task from requirements
+2. Break down into subtasks:
+   - Design/Architecture
+   - Implementation
+   - Testing
+   - Documentation
+3. Execute subtasks in sequence
+4. Integration testing
+5. Feature completion and handoff
+</code></pre>
+<h3 id="bug-fix-workflow">Bug Fix Workflow</h3>
+<pre><code>1. Create bug task with reproduction steps
+2. Investigate and identify root cause
+3. Implement fix with tests
+4. Verify fix resolves issue
+5. Update documentation if needed
+6. Close task and notify stakeholders
+</code></pre>
+<h3 id="researchinvestigation-workflow">Research/Investigation Workflow</h3>
+<pre><code>1. Create research task with clear objectives
+2. Define success criteria and deliverables
+3. Conduct research and document findings
+4. Present recommendations
+5. Create follow-up implementation tasks if needed
+</code></pre>
+<h2 id="task-prioritization-guidelines">Task Prioritization Guidelines</h2>
+<h3 id="high-priority">High Priority</h3>
+<ul>
+<li><strong>Critical bugs</strong> affecting production systems</li>
+<li><strong>Security vulnerabilities</strong> requiring immediate attention</li>
+<li><strong>Blocking dependencies</strong> for other high-priority work</li>
+<li><strong>Foundation tasks</strong> that enable other development</li>
+</ul>
+<h3 id="medium-priority">Medium Priority</h3>
+<ul>
+<li><strong>Feature enhancements</strong> that improve user experience</li>
+<li><strong>Performance optimizations</strong> with measurable impact</li>
+<li><strong>Technical debt</strong> that affects maintainability</li>
+<li><strong>Documentation updates</strong> for new features</li>
+</ul>
+<h3 id="low-priority">Low Priority</h3>
+<ul>
+<li><strong>Nice-to-have features</strong> with limited impact</li>
+<li><strong>Experimental work</strong> for future consideration</li>
+<li><strong>Cleanup tasks</strong> that don't affect functionality</li>
+<li><strong>Long-term optimizations</strong> without immediate need</li>
+</ul>
+<h2 id="status-management">Status Management</h2>
+<h3 id="status-definitions">Status Definitions</h3>
+<ul>
+<li><strong>Pending</strong>: Task is ready to start but not yet begun</li>
+<li><strong>In-Progress</strong>: Task is actively being worked on</li>
+<li><strong>Done</strong>: Task is completed and verified</li>
+<li><strong>Deferred</strong>: Task is postponed to a later time</li>
+<li><strong>Cancelled</strong>: Task is no longer needed or relevant</li>
+<li><strong>Blocked</strong>: Task cannot proceed due to dependencies</li>
+</ul>
+<h3 id="status-transitions">Status Transitions</h3>
+<pre><code>Pending → In-Progress → Done
+Pending → Deferred → In-Progress → Done
+Pending → Cancelled
+In-Progress → Blocked → In-Progress → Done
+</code></pre>
+<h2 id="dependency-management">Dependency Management</h2>
+<h3 id="types-of-dependencies">Types of Dependencies</h3>
+<ol>
+<li><strong>Technical Dependencies</strong>: Code/system requirements</li>
+<li><strong>Resource Dependencies</strong>: People or tools needed</li>
+<li><strong>Knowledge Dependencies</strong>: Information or training required</li>
+<li><strong>External Dependencies</strong>: Third-party services or approvals</li>
+</ol>
+<h3 id="managing-dependencies">Managing Dependencies</h3>
+<ul>
+<li><strong>Identify Early</strong>: Map dependencies during task planning</li>
+<li><strong>Communicate</strong>: Keep dependent tasks informed of progress</li>
+<li><strong>Parallel Work</strong>: Find ways to work on independent parts</li>
+<li><strong>Risk Mitigation</strong>: Have backup plans for critical dependencies</li>
+</ul>
+<h2 id="team-coordination">Team Coordination</h2>
+<h3 id="daily-standups">Daily Standups</h3>
+<ul>
+<li>Review active tasks and progress</li>
+<li>Identify blockers and dependencies</li>
+<li>Coordinate shared work and resources</li>
+<li>Plan daily priorities</li>
+</ul>
+<h3 id="weekly-planning">Weekly Planning</h3>
+<ul>
+<li>Review completed tasks and lessons learned</li>
+<li>Plan upcoming work and priorities</li>
+<li>Adjust timelines based on progress</li>
+<li>Identify resource needs and training</li>
+</ul>
+<h3 id="sprintmilestone-reviews">Sprint/Milestone Reviews</h3>
+<ul>
+<li>Assess overall project progress</li>
+<li>Update task priorities based on changing requirements</li>
+<li>Plan next sprint/milestone objectives</li>
+<li>Celebrate completed work and achievements</li>
+</ul>
+<h2 id="best-practices">Best Practices</h2>
+<h3 id="task-creation">Task Creation</h3>
+<ul>
+<li>Use clear, descriptive titles</li>
+<li>Include detailed acceptance criteria</li>
+<li>Define comprehensive test strategies</li>
+<li>Set realistic complexity estimates</li>
+</ul>
+<h3 id="task-execution">Task Execution</h3>
+<ul>
+<li>Update status regularly (at least daily)</li>
+<li>Document decisions and changes</li>
+<li>Ask for help when blocked</li>
+<li>Test thoroughly before marking complete</li>
+</ul>
+<h3 id="team-collaboration">Team Collaboration</h3>
+<ul>
+<li>Communicate early and often</li>
+<li>Share knowledge and learnings</li>
+<li>Help unblock teammates</li>
+<li>Maintain shared understanding of goals</li>
+</ul>
+<hr />
+<p><em>For detailed Task Master commands and usage, see the <a href="../taskmaster-guide/">Task Master Guide</a>.</em></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "navigation.sections", "toc.integrate", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+    
+  </body>
+</html>

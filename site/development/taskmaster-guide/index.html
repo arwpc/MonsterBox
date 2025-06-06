@@ -1,0 +1,2225 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../development-process/">
+      
+      
+        <link rel="next" href="../../security/MCP-SETUP-NOTES/">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.13">
+    
+    
+      
+        <title>Task Master Guide - MonsterBox Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.342714a4.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#task-master-guide" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="MonsterBox Documentation" class="md-header__button md-logo" aria-label="MonsterBox Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            MonsterBox Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Task Master Guide
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="MonsterBox Documentation" class="md-nav__button md-logo" aria-label="MonsterBox Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    MonsterBox Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Character Sheets
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Character Sheets
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../character_orlok/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Orlok
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../character_coffin_breaker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Coffin Breaker
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../character_pumpkinhead/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    PumpkinHead
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Installation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Usage Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Configuration
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../structure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Directory Structure
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    FAQ / Troubleshooting
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../license/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    License
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Networking
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Setup Guides
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            Setup Guides
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/ANIMATRONIC-SETUP-GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Animatronic Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/ANIMATRONIC-SSH-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    SSH Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/MCP-LOG-COLLECTION-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    MCP Log Collection
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Integration
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            Integration
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integration/elevenlabs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    ElevenLabs TTS
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Hardware
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            Hardware
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/gpio_assignments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    GPIO Assignments
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/hardware_schedule/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Hardware Schedule
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_13" id="__nav_13_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    API Documentation
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_13">
+            <span class="md-nav__icon md-icon"></span>
+            API Documentation
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/API-TESTING-SUMMARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    API Testing Summary
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_14" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_14" id="__nav_14_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Development
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_14_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_14">
+            <span class="md-nav__icon md-icon"></span>
+            Development
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../task-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Task Management
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../task-workflows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Task Workflows
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Development Process
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Task Master Guide
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Task Master Guide
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overview
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-started" class="md-nav__link">
+    <span class="md-ellipsis">
+      Getting Started
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Getting Started">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#system-requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      System Requirements
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#initial-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      Initial Setup
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#core-concepts" class="md-nav__link">
+    <span class="md-ellipsis">
+      Core Concepts
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Core Concepts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tasks
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#subtasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Subtasks
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      Dependencies
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-management-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      Task Management Commands
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Task Management Commands">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#viewing-tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Viewing Tasks
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Viewing Tasks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#get-all-tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Get All Tasks
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-specific-task" class="md-nav__link">
+    <span class="md-ellipsis">
+      Get Specific Task
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-next-task" class="md-nav__link">
+    <span class="md-ellipsis">
+      Get Next Task
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#filter-by-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      Filter by Status
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#managing-task-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      Managing Task Status
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Managing Task Status">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#update-task-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      Update Task Status
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bulk-status-updates" class="md-nav__link">
+    <span class="md-ellipsis">
+      Bulk Status Updates
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-creation-and-modification" class="md-nav__link">
+    <span class="md-ellipsis">
+      Task Creation and Modification
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Task Creation and Modification">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#add-new-task" class="md-nav__link">
+    <span class="md-ellipsis">
+      Add New Task
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#update-existing-task" class="md-nav__link">
+    <span class="md-ellipsis">
+      Update Existing Task
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#remove-tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Remove Tasks
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#subtask-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      Subtask Management
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Subtask Management">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#add-subtasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Add Subtasks
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#update-subtasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Update Subtasks
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#remove-subtasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Remove Subtasks
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dependency-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      Dependency Management
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Dependency Management">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#add-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      Add Dependencies
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#remove-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      Remove Dependencies
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validate-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      Validate Dependencies
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#advanced-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      Advanced Features
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Advanced Features">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#complexity-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      Complexity Analysis
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Complexity Analysis">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#automatic-scoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      Automatic Scoring
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#complexity-reports" class="md-nav__link">
+    <span class="md-ellipsis">
+      Complexity Reports
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-expansion" class="md-nav__link">
+    <span class="md-ellipsis">
+      Task Expansion
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Task Expansion">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#expand-single-task" class="md-nav__link">
+    <span class="md-ellipsis">
+      Expand Single Task
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#expand-all-tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Expand All Tasks
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#project-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      Project Analysis
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Project Analysis">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#progress-tracking" class="md-nav__link">
+    <span class="md-ellipsis">
+      Progress Tracking
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reporting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Reporting
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#integration-with-monsterbox" class="md-nav__link">
+    <span class="md-ellipsis">
+      Integration with MonsterBox
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Integration with MonsterBox">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mkdocs-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      MkDocs Integration
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="MkDocs Integration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#automatic-updates" class="md-nav__link">
+    <span class="md-ellipsis">
+      Automatic Updates
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#content-coordination" class="md-nav__link">
+    <span class="md-ellipsis">
+      Content Coordination
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#development-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      Development Workflow
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Development Workflow">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#planning-phase" class="md-nav__link">
+    <span class="md-ellipsis">
+      Planning Phase
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#execution-phase" class="md-nav__link">
+    <span class="md-ellipsis">
+      Execution Phase
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#review-phase" class="md-nav__link">
+    <span class="md-ellipsis">
+      Review Phase
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#best-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      Best Practices
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Best Practices">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-creation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Task Creation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      Task Management
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quality-assurance" class="md-nav__link">
+    <span class="md-ellipsis">
+      Quality Assurance
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Troubleshooting
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#common-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      Common Issues
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dependency-conflicts" class="md-nav__link">
+    <span class="md-ellipsis">
+      Dependency Conflicts
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-organization" class="md-nav__link">
+    <span class="md-ellipsis">
+      Task Organization
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#integration-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      Integration Issues
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getting-help" class="md-nav__link">
+    <span class="md-ellipsis">
+      Getting Help
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_15" >
+        
+          
+          <label class="md-nav__link" for="__nav_15" id="__nav_15_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Security
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_15_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_15">
+            <span class="md-nav__icon md-icon"></span>
+            Security
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/MCP-SETUP-NOTES/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    MCP Setup Notes
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16" >
+        
+          
+          <label class="md-nav__link" for="__nav_16" id="__nav_16_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Animatronics Workshop
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_16_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_16">
+            <span class="md-nav__icon md-icon"></span>
+            Animatronics Workshop
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../animatronics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../animatronics/familiarization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Familiarization
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../animatronics/simple_steps/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Simple Steps
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../animatronics/hands_on/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Hands-On Activities
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../animatronics/presentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Final Presentation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="task-master-guide">Task Master Guide</h1>
+<h2 id="overview">Overview</h2>
+<p>Task Master is an AI-powered task management system integrated into the MonsterBox development workflow. This guide provides comprehensive instructions for using Task Master effectively.</p>
+<h2 id="getting-started">Getting Started</h2>
+<h3 id="system-requirements">System Requirements</h3>
+<ul>
+<li>MonsterBox project initialized</li>
+<li>Task Master installed and configured</li>
+<li>Access to AI assistant with MCP integration</li>
+<li>MkDocs documentation system</li>
+</ul>
+<h3 id="initial-setup">Initial Setup</h3>
+<p>Task Master is already initialized in your MonsterBox project with:
+- Configuration files in <code>.taskmaster/</code>
+- PRD document for task generation
+- 15 active tasks across all development areas
+- Integration with existing MkDocs documentation</p>
+<h2 id="core-concepts">Core Concepts</h2>
+<h3 id="tasks">Tasks</h3>
+<p><strong>Tasks</strong> are the fundamental units of work in Task Master:
+- <strong>Unique ID</strong>: Each task has a numeric identifier
+- <strong>Title</strong>: Clear, descriptive task name
+- <strong>Description</strong>: Detailed explanation of what needs to be done
+- <strong>Status</strong>: Current state (pending, in-progress, done, deferred, cancelled)
+- <strong>Priority</strong>: Importance level (high, medium, low)
+- <strong>Dependencies</strong>: Other tasks that must complete first
+- <strong>Complexity</strong>: AI-generated complexity score (1-10)</p>
+<h3 id="subtasks">Subtasks</h3>
+<p><strong>Subtasks</strong> break down complex tasks into manageable pieces:
+- <strong>Hierarchical Structure</strong>: Subtasks belong to parent tasks
+- <strong>Independent Tracking</strong>: Each subtask has its own status
+- <strong>Granular Progress</strong>: Track progress at detailed level
+- <strong>Flexible Organization</strong>: Add/remove subtasks as needed</p>
+<h3 id="dependencies">Dependencies</h3>
+<p><strong>Dependencies</strong> ensure proper work sequencing:
+- <strong>Blocking Relationships</strong>: Tasks that must complete before others can start
+- <strong>Automatic Detection</strong>: System identifies when tasks are blocked
+- <strong>Dependency Chains</strong>: Complex multi-level dependencies supported
+- <strong>Validation</strong>: System prevents circular dependencies</p>
+<h2 id="task-management-commands">Task Management Commands</h2>
+<h3 id="viewing-tasks">Viewing Tasks</h3>
+<h4 id="get-all-tasks">Get All Tasks</h4>
+<pre><code>View all tasks with current status and priorities
+</code></pre>
+<h4 id="get-specific-task">Get Specific Task</h4>
+<pre><code>View detailed information for a specific task by ID
+</code></pre>
+<h4 id="get-next-task">Get Next Task</h4>
+<pre><code>Find the next task to work on based on dependencies and priorities
+</code></pre>
+<h4 id="filter-by-status">Filter by Status</h4>
+<pre><code>View tasks filtered by status (pending, in-progress, done, etc.)
+</code></pre>
+<h3 id="managing-task-status">Managing Task Status</h3>
+<h4 id="update-task-status">Update Task Status</h4>
+<pre><code>Change task status (pending → in-progress → done)
+Examples:
+- Set task to in-progress when starting work
+- Mark task as done when completed
+- Defer tasks that are postponed
+</code></pre>
+<h4 id="bulk-status-updates">Bulk Status Updates</h4>
+<pre><code>Update multiple tasks at once
+Example: Set multiple tasks to deferred status
+</code></pre>
+<h3 id="task-creation-and-modification">Task Creation and Modification</h3>
+<h4 id="add-new-task">Add New Task</h4>
+<pre><code>Create new tasks with AI assistance
+- Provide description of work needed
+- System generates detailed task with test strategy
+- Automatically sets appropriate complexity and priority
+</code></pre>
+<h4 id="update-existing-task">Update Existing Task</h4>
+<pre><code>Modify task details based on new information
+- Update implementation details
+- Adjust test strategies
+- Incorporate new requirements
+</code></pre>
+<h4 id="remove-tasks">Remove Tasks</h4>
+<pre><code>Delete tasks that are no longer needed
+- Removes task and updates dependencies
+- Cleans up related files
+</code></pre>
+<h3 id="subtask-management">Subtask Management</h3>
+<h4 id="add-subtasks">Add Subtasks</h4>
+<pre><code>Break down complex tasks into smaller pieces
+- Create new subtasks for detailed work
+- Convert existing tasks to subtasks
+- Organize work hierarchically
+</code></pre>
+<h4 id="update-subtasks">Update Subtasks</h4>
+<pre><code>Track progress on individual subtasks
+- Update subtask status independently
+- Add notes and progress updates
+- Maintain detailed work history
+</code></pre>
+<h4 id="remove-subtasks">Remove Subtasks</h4>
+<pre><code>Remove completed or unnecessary subtasks
+- Option to convert back to standalone tasks
+- Maintain clean task organization
+</code></pre>
+<h3 id="dependency-management">Dependency Management</h3>
+<h4 id="add-dependencies">Add Dependencies</h4>
+<pre><code>Create dependency relationships between tasks
+- Ensure proper work sequencing
+- Prevent starting tasks before prerequisites
+</code></pre>
+<h4 id="remove-dependencies">Remove Dependencies</h4>
+<pre><code>Remove dependency relationships when no longer needed
+- Unblock tasks when dependencies change
+- Maintain accurate dependency graph
+</code></pre>
+<h4 id="validate-dependencies">Validate Dependencies</h4>
+<pre><code>Check for dependency issues
+- Identify circular dependencies
+- Find broken dependency links
+- Ensure dependency graph integrity
+</code></pre>
+<h2 id="advanced-features">Advanced Features</h2>
+<h3 id="complexity-analysis">Complexity Analysis</h3>
+<p>Task Master provides AI-powered complexity analysis:</p>
+<h4 id="automatic-scoring">Automatic Scoring</h4>
+<ul>
+<li><strong>Complexity Score</strong>: 1-10 scale based on task requirements</li>
+<li><strong>Subtask Recommendations</strong>: Suggested number of subtasks</li>
+<li><strong>Expansion Prompts</strong>: AI-generated suggestions for task breakdown</li>
+</ul>
+<h4 id="complexity-reports">Complexity Reports</h4>
+<pre><code>Generate comprehensive complexity analysis
+- Identify high-complexity tasks needing breakdown
+- Recommend task expansion strategies
+- Provide effort estimation guidance
+</code></pre>
+<h3 id="task-expansion">Task Expansion</h3>
+<p>For complex tasks (complexity 8+), use task expansion:</p>
+<h4 id="expand-single-task">Expand Single Task</h4>
+<pre><code>Break down a specific task into detailed subtasks
+- AI-generated subtask breakdown
+- Maintains task relationships
+- Preserves original task context
+</code></pre>
+<h4 id="expand-all-tasks">Expand All Tasks</h4>
+<pre><code>Automatically expand all high-complexity tasks
+- Batch processing for efficiency
+- Consistent subtask generation
+- Maintains project coherence
+</code></pre>
+<h3 id="project-analysis">Project Analysis</h3>
+<h4 id="progress-tracking">Progress Tracking</h4>
+<ul>
+<li><strong>Completion Percentages</strong>: Overall and by category</li>
+<li><strong>Status Distribution</strong>: Tasks by current status</li>
+<li><strong>Dependency Analysis</strong>: Blocking and blocked tasks</li>
+<li><strong>Timeline Estimation</strong>: Projected completion based on complexity</li>
+</ul>
+<h4 id="reporting">Reporting</h4>
+<ul>
+<li><strong>Complexity Reports</strong>: Detailed analysis of task complexity</li>
+<li><strong>Progress Reports</strong>: Current project status and trends</li>
+<li><strong>Dependency Reports</strong>: Dependency graph analysis</li>
+<li><strong>Performance Metrics</strong>: Task completion rates and patterns</li>
+</ul>
+<h2 id="integration-with-monsterbox">Integration with MonsterBox</h2>
+<h3 id="mkdocs-integration">MkDocs Integration</h3>
+<p>Task Master integrates seamlessly with MonsterBox documentation:</p>
+<h4 id="automatic-updates">Automatic Updates</h4>
+<ul>
+<li><strong>Documentation Generation</strong>: Task information included in docs</li>
+<li><strong>Cross-References</strong>: Links between tasks and documentation</li>
+<li><strong>Search Integration</strong>: Task content searchable in docs</li>
+<li><strong>Version Control</strong>: Documentation updates with task changes</li>
+</ul>
+<h4 id="content-coordination">Content Coordination</h4>
+<ul>
+<li><strong>No Duplication</strong>: Task docs complement existing documentation</li>
+<li><strong>Consistent Terminology</strong>: Standardized language across all docs</li>
+<li><strong>Proper Navigation</strong>: Task docs integrated into MkDocs navigation</li>
+<li><strong>Theme Consistency</strong>: Maintains Material theme styling</li>
+</ul>
+<h3 id="development-workflow">Development Workflow</h3>
+<p>Task Master supports the complete development workflow:</p>
+<h4 id="planning-phase">Planning Phase</h4>
+<ul>
+<li><strong>PRD Processing</strong>: Generate tasks from requirements documents</li>
+<li><strong>Dependency Mapping</strong>: Identify task relationships</li>
+<li><strong>Priority Setting</strong>: Establish work priorities</li>
+<li><strong>Resource Planning</strong>: Estimate effort and timeline</li>
+</ul>
+<h4 id="execution-phase">Execution Phase</h4>
+<ul>
+<li><strong>Work Coordination</strong>: Track active work across team</li>
+<li><strong>Progress Monitoring</strong>: Real-time status updates</li>
+<li><strong>Blocker Resolution</strong>: Identify and resolve blocking issues</li>
+<li><strong>Quality Assurance</strong>: Ensure completion criteria are met</li>
+</ul>
+<h4 id="review-phase">Review Phase</h4>
+<ul>
+<li><strong>Completion Verification</strong>: Validate all task requirements met</li>
+<li><strong>Documentation Updates</strong>: Ensure docs reflect completed work</li>
+<li><strong>Lessons Learned</strong>: Capture insights for future work</li>
+<li><strong>Process Improvement</strong>: Refine workflows based on experience</li>
+</ul>
+<h2 id="best-practices">Best Practices</h2>
+<h3 id="task-creation">Task Creation</h3>
+<ul>
+<li><strong>Clear Titles</strong>: Use descriptive, action-oriented titles</li>
+<li><strong>Detailed Descriptions</strong>: Include context and requirements</li>
+<li><strong>Specific Acceptance Criteria</strong>: Define what "done" means</li>
+<li><strong>Comprehensive Test Strategy</strong>: Plan testing approach upfront</li>
+</ul>
+<h3 id="task-management">Task Management</h3>
+<ul>
+<li><strong>Regular Updates</strong>: Update status frequently (daily minimum)</li>
+<li><strong>Dependency Awareness</strong>: Consider impact on other tasks</li>
+<li><strong>Documentation</strong>: Keep task details current and accurate</li>
+<li><strong>Communication</strong>: Coordinate with team on shared work</li>
+</ul>
+<h3 id="quality-assurance">Quality Assurance</h3>
+<ul>
+<li><strong>Test Strategy Compliance</strong>: Follow defined testing approach</li>
+<li><strong>Code Review</strong>: Get peer review for all implementations</li>
+<li><strong>Documentation Updates</strong>: Update docs with all changes</li>
+<li><strong>Completion Verification</strong>: Ensure all criteria met before marking done</li>
+</ul>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<h3 id="common-issues">Common Issues</h3>
+<h4 id="dependency-conflicts">Dependency Conflicts</h4>
+<ul>
+<li><strong>Circular Dependencies</strong>: Use dependency validation to identify</li>
+<li><strong>Broken Links</strong>: Remove dependencies to deleted tasks</li>
+<li><strong>Blocking Chains</strong>: Identify and resolve long dependency chains</li>
+</ul>
+<h4 id="task-organization">Task Organization</h4>
+<ul>
+<li><strong>Overwhelming Complexity</strong>: Break down high-complexity tasks</li>
+<li><strong>Unclear Requirements</strong>: Update task details with more specificity</li>
+<li><strong>Priority Conflicts</strong>: Reassess and adjust task priorities</li>
+</ul>
+<h4 id="integration-issues">Integration Issues</h4>
+<ul>
+<li><strong>Documentation Sync</strong>: Ensure docs reflect current task state</li>
+<li><strong>Search Problems</strong>: Verify task content included in search index</li>
+<li><strong>Navigation Issues</strong>: Check MkDocs navigation configuration</li>
+</ul>
+<h3 id="getting-help">Getting Help</h3>
+<ul>
+<li><strong>Documentation</strong>: Refer to this guide and related documentation</li>
+<li><strong>Team Coordination</strong>: Discuss issues in team meetings</li>
+<li><strong>Process Improvement</strong>: Suggest improvements to task management process</li>
+<li><strong>Tool Updates</strong>: Keep Task Master and related tools current</li>
+</ul>
+<hr />
+<p><em>For workflow-specific guidance, see <a href="../task-workflows/">Task Workflows</a> and <a href="../development-process/">Development Process</a>.</em></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "navigation.sections", "toc.integrate", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,1559 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.13">
+    
+    
+      
+        <title>MonsterBox Sematext Integration Setup - MonsterBox Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.342714a4.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#monsterbox-sematext-integration-setup" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="MonsterBox Documentation" class="md-header__button md-logo" aria-label="MonsterBox Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            MonsterBox Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              MonsterBox Sematext Integration Setup
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="MonsterBox Documentation" class="md-nav__button md-logo" aria-label="MonsterBox Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    MonsterBox Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Character Sheets
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Character Sheets
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../character_orlok/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Orlok
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../character_coffin_breaker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Coffin Breaker
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../character_pumpkinhead/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    PumpkinHead
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Installation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Usage Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Configuration
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../structure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Directory Structure
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    FAQ / Troubleshooting
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../license/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    License
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Networking
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Setup Guides
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            Setup Guides
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ANIMATRONIC-SETUP-GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Animatronic Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ANIMATRONIC-SSH-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    SSH Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MCP-LOG-COLLECTION-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    MCP Log Collection
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Integration
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            Integration
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integration/elevenlabs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    ElevenLabs TTS
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Hardware
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            Hardware
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/gpio_assignments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    GPIO Assignments
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/hardware_schedule/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Hardware Schedule
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_13" id="__nav_13_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    API Documentation
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_13">
+            <span class="md-nav__icon md-icon"></span>
+            API Documentation
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/API-TESTING-SUMMARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    API Testing Summary
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_14" >
+        
+          
+          <label class="md-nav__link" for="__nav_14" id="__nav_14_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Development
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_14_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_14">
+            <span class="md-nav__icon md-icon"></span>
+            Development
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/task-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Task Management
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/task-workflows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Task Workflows
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/development-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Development Process
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/taskmaster-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Task Master Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_15" >
+        
+          
+          <label class="md-nav__link" for="__nav_15" id="__nav_15_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Security
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_15_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_15">
+            <span class="md-nav__icon md-icon"></span>
+            Security
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/MCP-SETUP-NOTES/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    MCP Setup Notes
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16" >
+        
+          
+          <label class="md-nav__link" for="__nav_16" id="__nav_16_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Animatronics Workshop
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_16_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_16">
+            <span class="md-nav__icon md-icon"></span>
+            Animatronics Workshop
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../animatronics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../animatronics/familiarization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Familiarization
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../animatronics/simple_steps/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Simple Steps
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../animatronics/hands_on/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Hands-On Activities
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../animatronics/presentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Final Presentation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="monsterbox-sematext-integration-setup">MonsterBox Sematext Integration Setup</h1>
+<p>This guide explains how to set up Sematext monitoring for your MonsterBox RPI4b systems, replacing SSH-based MCP log collection with a proper monitoring infrastructure.</p>
+<h2 id="overview">🎯 Overview</h2>
+<p>Sematext provides:
+- <strong>Centralized log collection</strong> from all RPI4b systems
+- <strong>Real-time system metrics</strong> (CPU, memory, disk, network)
+- <strong>Application monitoring</strong> for MonsterBox services
+- <strong>Alerting</strong> for critical issues
+- <strong>MCP integration</strong> for AI-powered log analysis</p>
+<h2 id="prerequisites">📋 Prerequisites</h2>
+<ol>
+<li><strong>Sematext Account</strong>: Sign up at <a href="https://sematext.com/">sematext.com</a></li>
+<li><strong>RPI4b Systems</strong>: Orlok (192.168.8.120) and Coffin (192.168.8.140) running</li>
+<li><strong>SSH Access</strong>: Configured SSH credentials for RPI systems</li>
+<li><strong>Node.js Dependencies</strong>: <code>inquirer</code> and <code>axios</code> installed</li>
+</ol>
+<h2 id="quick-start">🚀 Quick Start</h2>
+<h3 id="1-install-dependencies">1. Install Dependencies</h3>
+<pre><code class="language-bash">npm install
+</code></pre>
+<h3 id="2-set-up-sematext-account">2. Set Up Sematext Account</h3>
+<ol>
+<li>Create account at <a href="https://sematext.com/">sematext.com</a></li>
+<li>Create a new <strong>Logs App</strong> for MonsterBox</li>
+<li>Note your <strong>API Key</strong> and <strong>Logs Token</strong></li>
+</ol>
+<h3 id="3-run-sematext-setup">3. Run Sematext Setup</h3>
+<pre><code class="language-bash">npm run setup:sematext
+</code></pre>
+<p>The setup wizard will:
+- Prompt for your Sematext credentials
+- Install agents on enabled RPI4b systems
+- Configure log collection for MonsterBox services
+- Set up system metrics monitoring
+- Create MCP server integration</p>
+<h3 id="4-test-the-setup">4. Test the Setup</h3>
+<pre><code class="language-bash">npm run test:sematext
+</code></pre>
+<p>This will verify:
+- ✅ Sematext API connectivity
+- ✅ Agent installation on RPI systems
+- ✅ Log collection functionality
+- ✅ Metrics collection (if enabled)</p>
+<h3 id="5-start-mcp-server">5. Start MCP Server</h3>
+<pre><code class="language-bash">npm run start:sematext-mcp
+</code></pre>
+<h2 id="configuration">🔧 Configuration</h2>
+<h3 id="sematext-configuration">Sematext Configuration</h3>
+<p>The setup creates <code>data/sematext-config.json</code>:</p>
+<pre><code class="language-json">{
+  &quot;sematext&quot;: {
+    &quot;api_key&quot;: &quot;your-api-key&quot;,
+    &quot;logs_token&quot;: &quot;your-logs-token&quot;,
+    &quot;app_name&quot;: &quot;MonsterBox-Animatronics&quot;,
+    &quot;log_sources&quot;: [&quot;system&quot;, &quot;monsterbox&quot;, &quot;nginx&quot;, &quot;ssh&quot;, &quot;gpio&quot;],
+    &quot;metrics_enabled&quot;: true,
+    &quot;alerts_enabled&quot;: true
+  },
+  &quot;systems&quot;: [
+    {
+      &quot;name&quot;: &quot;orlok&quot;,
+      &quot;host&quot;: &quot;192.168.8.120&quot;,
+      &quot;enabled&quot;: true,
+      &quot;agent_status&quot;: &quot;installed&quot;
+    },
+    {
+      &quot;name&quot;: &quot;coffin&quot;, 
+      &quot;host&quot;: &quot;192.168.8.140&quot;,
+      &quot;enabled&quot;: true,
+      &quot;agent_status&quot;: &quot;installed&quot;
+    }
+  ]
+}
+</code></pre>
+<h3 id="log-sources-monitored">Log Sources Monitored</h3>
+<ul>
+<li><strong>System Logs</strong>: <code>journalctl</code> output for system events</li>
+<li><strong>MonsterBox App</strong>: Application logs from <code>/var/log/monsterbox/</code></li>
+<li><strong>Nginx</strong>: Web server access and error logs</li>
+<li><strong>SSH</strong>: Authentication and connection logs</li>
+<li><strong>GPIO</strong>: Hardware control and sensor logs</li>
+<li><strong>Custom</strong>: Any additional application logs</li>
+</ul>
+<h3 id="mcp-integration">MCP Integration</h3>
+<p>The Sematext MCP server provides these tools:</p>
+<h4 id="query_sematext_logs"><code>query_sematext_logs</code></h4>
+<p>Query logs from RPI systems:</p>
+<pre><code class="language-javascript">query_sematext_logs({
+    system: &quot;orlok&quot;,           // orlok, coffin, pumpkinhead, all
+    log_type: &quot;monsterbox&quot;,    // system, monsterbox, nginx, ssh, gpio, all
+    time_range: &quot;1h&quot;,          // 1h, 6h, 24h, 7d
+    query: &quot;error&quot;,            // Optional search term
+    limit: 100                 // Max results
+})
+</code></pre>
+<h4 id="get_sematext_metrics"><code>get_sematext_metrics</code></h4>
+<p>Get system metrics:</p>
+<pre><code class="language-javascript">get_sematext_metrics({
+    system: &quot;coffin&quot;,          // orlok, coffin, pumpkinhead, all
+    metric_type: &quot;cpu&quot;,        // cpu, memory, disk, network, all
+    time_range: &quot;6h&quot;           // 1h, 6h, 24h, 7d
+})
+</code></pre>
+<h4 id="check_sematext_alerts"><code>check_sematext_alerts</code></h4>
+<p>Check active alerts:</p>
+<pre><code class="language-javascript">check_sematext_alerts({
+    system: &quot;all&quot;,             // orlok, coffin, pumpkinhead, all
+    severity: &quot;critical&quot;       // critical, warning, info, all
+})
+</code></pre>
+<h4 id="get_system_status"><code>get_system_status</code></h4>
+<p>Get overall system status:</p>
+<pre><code class="language-javascript">get_system_status({
+    include_metrics: true      // Include basic metrics
+})
+</code></pre>
+<h2 id="accessing-your-data">📊 Accessing Your Data</h2>
+<h3 id="sematext-ui">Sematext UI</h3>
+<ul>
+<li><strong>Logs</strong>: https://apps.sematext.com/ui/logs</li>
+<li><strong>Metrics</strong>: https://apps.sematext.com/ui/monitoring</li>
+<li><strong>Alerts</strong>: https://apps.sematext.com/ui/alerts</li>
+</ul>
+<h3 id="mcp-integration_1">MCP Integration</h3>
+<p>Add to your <code>augment-mcp-config.json</code>:</p>
+<pre><code class="language-json">{
+  &quot;mcpServers&quot;: {
+    &quot;monsterbox-sematext&quot;: {
+      &quot;command&quot;: &quot;node&quot;,
+      &quot;args&quot;: [&quot;mcp-servers/sematext-server.js&quot;],
+      &quot;cwd&quot;: &quot;C:\\Users\\arwpe\\CodeBase\\MonsterBox-1&quot;
+    }
+  }
+}
+</code></pre>
+<h2 id="troubleshooting">🔍 Troubleshooting</h2>
+<h3 id="agent-installation-issues">Agent Installation Issues</h3>
+<ol>
+<li>
+<p><strong>Check SSH connectivity</strong>:
+   <code>bash
+   ssh remote@192.168.8.120 "echo 'Connection OK'"</code></p>
+</li>
+<li>
+<p><strong>Verify agent status</strong>:
+   <code>bash
+   ssh remote@192.168.8.120 "sudo systemctl status spm-monitor logagent"</code></p>
+</li>
+<li>
+<p><strong>Check agent logs</strong>:
+   <code>bash
+   ssh remote@192.168.8.120 "sudo journalctl -u logagent -f"</code></p>
+</li>
+</ol>
+<h3 id="log-collection-issues">Log Collection Issues</h3>
+<ol>
+<li>
+<p><strong>Test log generation</strong>:
+   <code>bash
+   ssh remote@192.168.8.120 "echo 'Test log' | logger -t monsterbox-test"</code></p>
+</li>
+<li>
+<p><strong>Check Sematext connectivity</strong>:
+   <code>bash
+   npm run test:sematext</code></p>
+</li>
+<li>
+<p><strong>Verify configuration</strong>:
+   <code>bash
+   ssh remote@192.168.8.120 "sudo cat /etc/sematext/logagent.conf"</code></p>
+</li>
+</ol>
+<h3 id="mcp-server-issues">MCP Server Issues</h3>
+<ol>
+<li>
+<p><strong>Test MCP server directly</strong>:
+   <code>bash
+   node mcp-servers/sematext-server.js</code></p>
+</li>
+<li>
+<p><strong>Check configuration file</strong>:
+   <code>bash
+   cat data/sematext-config.json</code></p>
+</li>
+<li>
+<p><strong>Verify API credentials</strong>:</p>
+</li>
+<li>Check your Sematext dashboard</li>
+<li>Ensure API key and logs token are correct</li>
+</ol>
+<h2 id="advanced-configuration">🎛️ Advanced Configuration</h2>
+<h3 id="custom-log-patterns">Custom Log Patterns</h3>
+<p>Edit the logagent configuration on each RPI:</p>
+<pre><code class="language-bash">sudo nano /etc/sematext/logagent.conf
+</code></pre>
+<p>Add custom log sources:</p>
+<pre><code class="language-yaml">input:
+  - module: files
+    patterns:
+      - '/path/to/custom/logs/*.log'
+    sourceName: custom-app
+    tags:
+      system: orlok
+      type: custom
+</code></pre>
+<h3 id="alert-configuration">Alert Configuration</h3>
+<p>Set up alerts in the Sematext UI:
+1. Go to https://apps.sematext.com/ui/alerts
+2. Create new alert rule
+3. Configure conditions (e.g., error rate &gt; 10/min)
+4. Set notification channels</p>
+<h3 id="dashboard-creation">Dashboard Creation</h3>
+<p>Create custom dashboards:
+1. Go to https://apps.sematext.com/ui/dashboards
+2. Add widgets for key metrics
+3. Save and share with team</p>
+<h2 id="migration-from-ssh-based-mcp">🔄 Migration from SSH-based MCP</h2>
+<p>The Sematext setup replaces the SSH-based log collection:</p>
+<h3 id="before-ssh-based">Before (SSH-based)</h3>
+<ul>
+<li>Manual SSH connections to RPI systems</li>
+<li>Limited log retention</li>
+<li>No centralized monitoring</li>
+<li>Performance impact on RPI systems</li>
+</ul>
+<h3 id="after-sematext-based">After (Sematext-based)</h3>
+<ul>
+<li>Automated log shipping</li>
+<li>Centralized storage and search</li>
+<li>Real-time monitoring and alerting</li>
+<li>Minimal RPI performance impact</li>
+<li>Professional monitoring infrastructure</li>
+</ul>
+<h3 id="transition-steps">Transition Steps</h3>
+<ol>
+<li><strong>Run Sematext setup</strong>: <code>npm run setup:sematext</code></li>
+<li><strong>Test new system</strong>: <code>npm run test:sematext</code></li>
+<li><strong>Update MCP config</strong>: Use <code>monsterbox-sematext</code> server</li>
+<li><strong>Verify functionality</strong>: Check logs in Sematext UI</li>
+<li><strong>Disable SSH MCP</strong>: Comment out <code>monsterbox-log-collector</code> in MCP config</li>
+</ol>
+<h2 id="benefits">📈 Benefits</h2>
+<ul>
+<li><strong>Scalability</strong>: Easy to add new RPI systems</li>
+<li><strong>Reliability</strong>: Professional monitoring infrastructure</li>
+<li><strong>Performance</strong>: Minimal impact on RPI resources</li>
+<li><strong>Features</strong>: Advanced search, alerting, and analytics</li>
+<li><strong>Integration</strong>: Seamless MCP integration for AI analysis</li>
+<li><strong>Maintenance</strong>: Reduced SSH configuration complexity</li>
+</ul>
+<h2 id="support">🆘 Support</h2>
+<ul>
+<li><strong>Sematext Documentation</strong>: https://sematext.com/docs/</li>
+<li><strong>MonsterBox Issues</strong>: Create GitHub issue</li>
+<li><strong>MCP Integration</strong>: Check <code>mcp-servers/sematext-server.js</code></li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "navigation.sections", "toc.integrate", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+    
+  </body>
+</html>
