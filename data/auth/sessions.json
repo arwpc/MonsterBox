@@ -87,6 +87,76 @@
       "ipAddress": "127.0.0.1",
       "userAgent": "ssh-test",
       "active": true
+    },
+    {
+      "sessionId": "session_1749247211413_3fhfq48f8",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T22:00:11.417Z",
+      "lastActivity": "2025-06-06T22:00:11.417Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "test-agent",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749247211850_en6xp6laz",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T22:00:11.852Z",
+      "lastActivity": "2025-06-06T22:00:11.852Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749247225156_92oud46tj",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T22:00:25.159Z",
+      "lastActivity": "2025-06-06T22:00:25.159Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749247225568_u3mf408wf",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T22:00:25.570Z",
+      "lastActivity": "2025-06-06T22:00:25.570Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749247225779_dzkioaejf",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T22:00:25.781Z",
+      "lastActivity": "2025-06-06T22:00:25.781Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749247234684_ftibtks6v",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T22:00:34.685Z",
+      "lastActivity": "2025-06-06T22:00:34.685Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749247234894_58fohf8s3",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T22:00:34.896Z",
+      "lastActivity": "2025-06-06T22:00:34.896Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "ssh-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749247235101_s1rzqg90u",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T22:00:35.103Z",
+      "lastActivity": "2025-06-06T22:00:35.103Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "ssh-test",
+      "active": true
     }
   ]
 }

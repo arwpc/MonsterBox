@@ -352,6 +352,279 @@
         "timestamp": "2025-06-06T20:25:08.808Z",
         "source": "ssh-auth-service"
       }
+    },
+    {
+      "timestamp": "2025-06-06T22:00:11.420Z",
+      "event": "AUTH_SUCCESS",
+      "data": {
+        "username": "admin",
+        "sessionId": "session_1749247211413_3fhfq48f8",
+        "ipAddress": "127.0.0.1",
+        "userAgent": "test-agent"
+      }
+    },
+    {
+      "timestamp": "2025-06-06T22:00:11.620Z",
+      "event": "AUTH_FAILED",
+      "data": {
+        "username": "admin",
+        "reason": "Invalid password",
+        "ipAddress": "127.0.0.1",
+        "userAgent": "test-agent"
+      }
+    },
+    {
+      "timestamp": "2025-06-06T22:00:11.855Z",
+      "event": "AUTH_SUCCESS",
+      "data": {
+        "username": "admin",
+        "sessionId": "session_1749247211850_en6xp6laz",
+        "ipAddress": "::ffff:127.0.0.1",
+        "timestamp": "2025-06-06T22:00:11.652Z"
+      }
+    },
+    {
+      "timestamp": "2025-06-06T22:00:25.161Z",
+      "event": "AUTH_SUCCESS",
+      "data": {
+        "username": "admin",
+        "sessionId": "session_1749247225156_92oud46tj",
+        "ipAddress": "127.0.0.1",
+        "userAgent": "mocha-test"
+      }
+    },
+    {
+      "timestamp": "2025-06-06T22:00:25.364Z",
+      "event": "AUTH_FAILED",
+      "data": {
+        "username": "admin",
+        "reason": "Invalid password",
+        "ipAddress": "127.0.0.1",
+        "userAgent": "mocha-test"
+      }
+    },
+    {
+      "timestamp": "2025-06-06T22:00:25.572Z",
+      "event": "AUTH_SUCCESS",
+      "data": {
+        "username": "admin",
+        "sessionId": "session_1749247225568_u3mf408wf",
+        "ipAddress": "127.0.0.1",
+        "userAgent": "mocha-test"
+      }
+    },
+    {
+      "timestamp": "2025-06-06T22:00:25.782Z",
+      "event": "AUTH_SUCCESS",
+      "data": {
+        "username": "admin",
+        "sessionId": "session_1749247225779_dzkioaejf",
+        "ipAddress": "::ffff:127.0.0.1",
+        "timestamp": "2025-06-06T22:00:25.580Z"
+      }
+    },
+    {
+      "timestamp": "2025-06-06T22:00:34.286Z",
+      "event": "AUTH_FAILED",
+      "data": {
+        "username": "admin",
+        "reason": "Invalid password",
+        "ipAddress": "::ffff:127.0.0.1",
+        "timestamp": "2025-06-06T22:00:34.083Z"
+      }
+    },
+    {
+      "timestamp": "2025-06-06T22:00:34.289Z",
+      "event": "AUTH_FAILED",
+      "data": {
+        "username": "admin",
+        "reason": "Invalid password",
+        "ipAddress": "::ffff:127.0.0.1",
+        "timestamp": "2025-06-06T22:00:34.084Z"
+      }
+    },
+    {
+      "timestamp": "2025-06-06T22:00:34.295Z",
+      "event": "AUTH_FAILED",
+      "data": {
+        "username": "admin",
+        "reason": "Invalid password",
+        "ipAddress": "::ffff:127.0.0.1",
+        "timestamp": "2025-06-06T22:00:34.083Z"
+      }
+    },
+    {
+      "timestamp": "2025-06-06T22:00:34.482Z",
+      "event": "AUTH_FAILED",
+      "data": {
+        "username": "admin",
+        "reason": "Invalid password",
+        "ipAddress": "::ffff:127.0.0.1",
+        "timestamp": "2025-06-06T22:00:34.084Z"
+      }
+    },
+    {
+      "timestamp": "2025-06-06T22:00:34.688Z",
+      "event": "AUTH_SUCCESS",
+      "data": {
+        "username": "admin",
+        "sessionId": "session_1749247234684_ftibtks6v",
+        "ipAddress": "127.0.0.1",
+        "userAgent": "mocha-test"
+      }
+    },
+    {
+      "timestamp": "2025-06-06T22:00:34.898Z",
+      "event": "AUTH_SUCCESS",
+      "data": {
+        "username": "admin",
+        "sessionId": "session_1749247234894_58fohf8s3",
+        "ipAddress": "127.0.0.1",
+        "userAgent": "ssh-test"
+      }
+    },
+    {
+      "timestamp": "2025-06-06T22:00:34.902Z",
+      "event": "SSH_SSH_COMMAND_EXECUTED",
+      "data": {
+        "userId": "admin-001",
+        "username": "admin",
+        "animatronicId": "orlok",
+        "host": "192.168.8.120",
+        "command": "uptime",
+        "exitCode": 0,
+        "duration": 150,
+        "timestamp": "2025-06-06T22:00:34.902Z",
+        "source": "ssh-auth-service"
+      }
+    },
+    {
+      "timestamp": "2025-06-06T22:00:35.106Z",
+      "event": "AUTH_SUCCESS",
+      "data": {
+        "username": "admin",
+        "sessionId": "session_1749247235101_s1rzqg90u",
+        "ipAddress": "127.0.0.1",
+        "userAgent": "ssh-test"
+      }
+    },
+    {
+      "timestamp": "2025-06-06T22:00:35.109Z",
+      "event": "SSH_SSH_PERMISSION_DENIED",
+      "data": {
+        "userId": "admin-001",
+        "username": "admin",
+        "animatronicId": "orlok",
+        "command": "uptime",
+        "reason": "No SSH permission",
+        "timestamp": "2025-06-06T22:00:35.108Z",
+        "source": "ssh-auth-service"
+      }
+    },
+    {
+      "timestamp": "2025-06-06T22:00:35.116Z",
+      "event": "SSH_SSH_COMMAND_EXECUTED",
+      "data": {
+        "userId": "admin-001",
+        "username": "admin",
+        "animatronicId": "orlok",
+        "host": "192.168.8.120",
+        "command": "uptime",
+        "exitCode": 0,
+        "duration": 150,
+        "timestamp": "2025-06-06T22:00:35.115Z",
+        "source": "ssh-auth-service"
+      }
+    },
+    {
+      "timestamp": "2025-06-06T22:00:35.127Z",
+      "event": "SSH_SSH_COMMAND_EXECUTED",
+      "data": {
+        "userId": "admin-001",
+        "username": "admin",
+        "animatronicId": "orlok",
+        "host": "192.168.8.120",
+        "command": "uptime",
+        "exitCode": 0,
+        "duration": 150,
+        "timestamp": "2025-06-06T22:00:35.126Z",
+        "source": "ssh-auth-service"
+      }
+    },
+    {
+      "timestamp": "2025-06-06T22:00:35.128Z",
+      "event": "SSH_SSH_COMMAND_EXECUTED",
+      "data": {
+        "userId": "admin-001",
+        "username": "admin",
+        "animatronicId": "orlok",
+        "host": "192.168.8.120",
+        "command": "whoami",
+        "exitCode": 0,
+        "duration": 150,
+        "timestamp": "2025-06-06T22:00:35.128Z",
+        "source": "ssh-auth-service"
+      }
+    },
+    {
+      "timestamp": "2025-06-06T22:00:35.130Z",
+      "event": "SSH_SSH_COMMAND_EXECUTED",
+      "data": {
+        "userId": "admin-001",
+        "username": "admin",
+        "animatronicId": "orlok",
+        "host": "192.168.8.120",
+        "command": "date",
+        "exitCode": 0,
+        "duration": 150,
+        "timestamp": "2025-06-06T22:00:35.130Z",
+        "source": "ssh-auth-service"
+      }
+    },
+    {
+      "timestamp": "2025-06-06T22:00:35.258Z",
+      "event": "SSH_SSH_COMMAND_EXECUTED",
+      "data": {
+        "userId": "admin-001",
+        "username": "admin",
+        "animatronicId": "orlok",
+        "host": "192.168.8.120",
+        "command": "sleep 60",
+        "exitCode": 124,
+        "duration": 100,
+        "timestamp": "2025-06-06T22:00:35.256Z",
+        "source": "ssh-auth-service"
+      }
+    },
+    {
+      "timestamp": "2025-06-06T22:00:35.272Z",
+      "event": "SSH_SSH_COMMAND_EXECUTED",
+      "data": {
+        "userId": "admin-001",
+        "username": "admin",
+        "animatronicId": "orlok",
+        "host": "192.168.8.120",
+        "command": "uptime",
+        "exitCode": 255,
+        "duration": 50,
+        "timestamp": "2025-06-06T22:00:35.270Z",
+        "source": "ssh-auth-service"
+      }
+    },
+    {
+      "timestamp": "2025-06-06T22:00:35.284Z",
+      "event": "SSH_SSH_COMMAND_EXECUTED",
+      "data": {
+        "userId": "admin-001",
+        "username": "admin",
+        "animatronicId": "orlok",
+        "host": "192.168.8.120",
+        "command": "uptime",
+        "exitCode": 255,
+        "duration": 50,
+        "timestamp": "2025-06-06T22:00:35.283Z",
+        "source": "ssh-auth-service"
+      }
     }
   ]
 }
