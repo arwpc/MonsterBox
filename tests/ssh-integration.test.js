@@ -48,7 +48,20 @@ describe('SSH Integration Tests', function() {
         // Stub SSH execution for testing (to avoid actual SSH calls)
         sshStub = sinon.stub(sshAuthService, 'executeSSHCommand');
         sshStub.callsFake(async (host, animatronicId, command, options) => {
-            // Simulate successful SSH execution
+            // Handle SSH connectivity test command specifically
+            if (command === 'echo "SSH_TEST_SUCCESS"') {
+                return {
+                    success: true,
+                    stdout: 'SSH_TEST_SUCCESS',
+                    stderr: '',
+                    exitCode: 0,
+                    duration: 150,
+                    host: host,
+                    command: command
+                };
+            }
+
+            // Simulate successful SSH execution for other commands
             return {
                 success: true,
                 stdout: `Mock output for command: ${command}`,

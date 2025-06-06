@@ -305,8 +305,13 @@ class SSHAuthService {
                 reason: 'sudo commands require admin privileges'
             };
         }
-        
-        if (command.includes('..') || command.includes('/etc/passwd') || command.includes('/etc/shadow')) {
+
+        // Path traversal and dangerous path checks
+        if (command.includes('..') ||
+            command.includes('/etc/passwd') ||
+            command.includes('/etc/shadow') ||
+            command.includes('find /') ||
+            command.match(/find\s+\/\w*/)) {
             return {
                 valid: false,
                 reason: 'Command contains potentially dangerous path traversal'
