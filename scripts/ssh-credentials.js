@@ -112,8 +112,24 @@ class SSHCredentialsManager {
      */
     buildSSHCommand(animatronicId, host, command, options = {}) {
         const credentials = this.getCredentials(animatronicId);
+        const fs = require('fs');
+        const path = require('path');
+        const os = require('os');
 
-        // For Windows, we'll create a temporary PowerShell script that automates SSH password entry
+        // Detect platform and use appropriate SSH method
+        if (os.platform() === 'win32') {
+            // Windows: Use PowerShell script for SSH automation
+            return this.buildWindowsSSHCommand(animatronicId, host, command, credentials, options);
+        } else {
+            // Linux/Unix: Use sshpass for SSH automation
+            return this.buildLinuxSSHCommand(animatronicId, host, command, credentials, options);
+        }
+    }
+
+    /**
+     * Build SSH command for Windows using PowerShell
+     */
+    buildWindowsSSHCommand(animatronicId, host, command, credentials, options = {}) {
         const fs = require('fs');
         const path = require('path');
         const os = require('os');
@@ -169,6 +185,21 @@ Remove-Item -Path $PSCommandPath -Force -ErrorAction SilentlyContinue
         fs.writeFileSync(scriptPath, powershellScript);
 
         return `powershell -ExecutionPolicy Bypass -File "${scriptPath}"`;
+    }
+
+    /**
+     * Build SSH command for Linux/Unix using sshpass
+     */
+    buildLinuxSSHCommand(animatronicId, host, command, credentials, options = {}) {
+        // Escape special characters for bash
+        const escapedPassword = credentials.password.replace(/'/g, "'\"'\"'");
+        const escapedCommand = command.replace(/'/g, "'\"'\"'");
+
+        // Use sshpass if available, otherwise fall back to expect
+        const sshCommand = `ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o PasswordAuthentication=yes -o PubkeyAuthentication=no ${credentials.user}@${host} '${escapedCommand}'`;
+
+        // Try sshpass first (most reliable)
+        return `sshpass -p '${escapedPassword}' ${sshCommand}`;
     }
 
     /**
@@ -244,8 +275,22 @@ Remove-Item -Path $PSCommandPath -Force -ErrorAction SilentlyContinue
      */
     buildSCPCommand(animatronicId, host, sourcePath, destPath, options = {}) {
         const credentials = this.getCredentials(animatronicId);
+        const os = require('os');
 
-        // For Windows, we'll create a temporary PowerShell script that automates SCP password entry
+        // Detect platform and use appropriate SCP method
+        if (os.platform() === 'win32') {
+            // Windows: Use PowerShell script for SCP automation
+            return this.buildWindowsSCPCommand(animatronicId, host, sourcePath, destPath, credentials, options);
+        } else {
+            // Linux/Unix: Use sshpass for SCP automation
+            return this.buildLinuxSCPCommand(animatronicId, host, sourcePath, destPath, credentials, options);
+        }
+    }
+
+    /**
+     * Build SCP command for Windows using PowerShell
+     */
+    buildWindowsSCPCommand(animatronicId, host, sourcePath, destPath, credentials, options = {}) {
         const fs = require('fs');
         const path = require('path');
         const os = require('os');
@@ -300,6 +345,20 @@ Remove-Item -Path $PSCommandPath -Force -ErrorAction SilentlyContinue
         fs.writeFileSync(scriptPath, powershellScript);
 
         return `powershell -ExecutionPolicy Bypass -File "${scriptPath}"`;
+    }
+
+    /**
+     * Build SCP command for Linux/Unix using sshpass
+     */
+    buildLinuxSCPCommand(animatronicId, host, sourcePath, destPath, credentials, options = {}) {
+        // Escape special characters for bash
+        const escapedPassword = credentials.password.replace(/'/g, "'\"'\"'");
+        const recursiveFlag = options.recursive ? '-r' : '';
+
+        // Use sshpass for SCP
+        const scpCommand = `scp -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o PasswordAuthentication=yes -o PubkeyAuthentication=no ${recursiveFlag} ${credentials.user}@${host}:${sourcePath} '${destPath}'`;
+
+        return `sshpass -p '${escapedPassword}' ${scpCommand}`;
     }
 
     /**
