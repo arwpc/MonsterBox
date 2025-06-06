@@ -111,3 +111,66 @@ tasks:
   - id: rpi-node-version
     agent: rpi-agent
     command: cd /home/remote/MonsterBox && node --version && npm --version
+
+  # Additional Test Suites
+  - id: rpi-npm-test-auth
+    agent: rpi-agent
+    command: cd /home/remote/MonsterBox && npm run test:auth
+
+  - id: rpi-npm-test-ssh
+    agent: rpi-agent
+    command: cd /home/remote/MonsterBox && npm run test:ssh
+
+  - id: rpi-npm-test-rbac
+    agent: rpi-agent
+    command: cd /home/remote/MonsterBox && npm run test:rbac
+
+  - id: rpi-npm-test-sound
+    agent: rpi-agent
+    command: cd /home/remote/MonsterBox && npm run test:sound
+
+  - id: rpi-npm-test-mcp
+    agent: rpi-agent
+    command: cd /home/remote/MonsterBox && npm run test:mcp
+
+  - id: rpi-npm-test-animatronic-ssh
+    agent: rpi-agent
+    command: cd /home/remote/MonsterBox && npm run test:animatronic-ssh
+
+  - id: rpi-npm-animatronic-test-all
+    agent: rpi-agent
+    command: cd /home/remote/MonsterBox && npm run animatronic:test-all
+
+  - id: rpi-npm-test-fluent-bit
+    agent: rpi-agent
+    command: cd /home/remote/MonsterBox && npm run test:fluent-bit
+
+  - id: rpi-npm-validate-security
+    agent: rpi-agent
+    command: cd /home/remote/MonsterBox && npm run validate:security
+
+  - id: rpi-npm-ci-security
+    agent: rpi-agent
+    command: cd /home/remote/MonsterBox && npm run ci:security
+
+  - id: rpi-npm-test-comprehensive
+    agent: rpi-agent
+    command: cd /home/remote/MonsterBox && npm run test:comprehensive
+
+  # Log Collection Tests
+  - id: rpi-npm-collect-github-logs
+    agent: rpi-agent
+    command: cd /home/remote/MonsterBox && npm run collect:github-logs
+
+  - id: rpi-npm-collect-rpi-logs
+    agent: rpi-agent
+    command: cd /home/remote/MonsterBox && npm run collect:rpi-logs
+
+  # Configuration Checks
+  - id: rpi-npm-check-config
+    agent: rpi-agent
+    command: cd /home/remote/MonsterBox && npm run check-config
+
+  - id: rpi-npm-check-api-keys
+    agent: rpi-agent
+    command: cd /home/remote/MonsterBox && npm run check-api-keys
