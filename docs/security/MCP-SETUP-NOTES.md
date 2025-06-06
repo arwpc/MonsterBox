@@ -109,6 +109,6 @@ npm run test:animatronic-ssh
 ## Related Documentation
 
 - [Animatronic SSH Setup Guide](../setup/ANIMATRONIC-SSH-SETUP.md)
-- [Environment Variables Guide](../../.env.example)
-- [MCP Server Documentation](../../mcp-servers/README.md)
-- [Main Documentation Index](../README.md)
+- [Environment Variables Template](https://github.com/arwpc/MonsterBox/blob/main/.env.example)
+- [MCP Log Collector Server](https://github.com/arwpc/MonsterBox/blob/main/mcp-servers/log-collector-server.js)
+- [Main Project Documentation](https://github.com/arwpc/MonsterBox/blob/main/README.md)

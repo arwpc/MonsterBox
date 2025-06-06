@@ -18,12 +18,16 @@ nav:
       - PumpkinHead: character_pumpkinhead.md
   - Installation: install.md
   - Usage Guide: usage.md
-  - Routine Updates: usage.md#system-maintenance
   - Configuration: config.md
   - Directory Structure: structure.md
   - FAQ / Troubleshooting: faq.md
   - License: license.md
   - Networking: networking.md
+
+  - Setup Guides:
+      - Animatronic Setup: setup/ANIMATRONIC-SETUP-GUIDE.md
+      - SSH Setup: setup/ANIMATRONIC-SSH-SETUP.md
+      - MCP Log Collection: setup/MCP-LOG-COLLECTION-SETUP.md
 
   - Integration:
       - ElevenLabs TTS: integration/elevenlabs.md
@@ -31,6 +35,12 @@ nav:
   - Hardware:
       - GPIO Assignments: hardware/gpio_assignments.md
       - Hardware Schedule: hardware/hardware_schedule.md
+
+  - API Documentation:
+      - API Testing Summary: api/API-TESTING-SUMMARY.md
+
+  - Security:
+      - MCP Setup Notes: security/MCP-SETUP-NOTES.md
 
   - Animatronics Workshop:
       - Overview: animatronics/index.md
