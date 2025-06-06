@@ -450,8 +450,27 @@ router.post('/:id/reboot', async (req, res) => {
 
 // Character-specific servo configuration routes
 
-// Get character servos
+// Get character servos page
 router.get('/:id/servos', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.id);
+        const character = await characterService.getCharacterById(characterId);
+        const result = await systemConfigService.getCharacterServos(characterId);
+
+        res.render('character-servos', {
+            title: `Servo Configuration - ${character.char_name}`,
+            character: character,
+            servos: result.servos,
+            availableServos: result.availableServos
+        });
+    } catch (error) {
+        logger.error('Error getting character servos page:', error);
+        res.status(500).send('An error occurred while loading servo configuration: ' + error.message);
+    }
+});
+
+// Get character servos API
+router.get('/:id/servos/api', async (req, res) => {
     try {
         const characterId = parseInt(req.params.id);
         const result = await systemConfigService.getCharacterServos(characterId);
@@ -505,6 +524,49 @@ router.put('/:id/servos/:servoId', async (req, res) => {
         });
     } catch (error) {
         logger.error('Error updating character servo:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Delete character servo
+router.delete('/:id/servos/:servoId', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.id);
+        const servoId = parseInt(req.params.servoId);
+
+        const result = await systemConfigService.deleteCharacterServo(characterId, servoId);
+
+        res.json({
+            success: true,
+            result: result
+        });
+    } catch (error) {
+        logger.error('Error deleting character servo:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Test character servo
+router.post('/:id/servos/:servoId/test', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.id);
+        const servoId = parseInt(req.params.servoId);
+        const { angle, duration } = req.body;
+
+        const result = await systemConfigService.testCharacterServo(characterId, servoId, angle, duration);
+
+        res.json({
+            success: true,
+            result: result
+        });
+    } catch (error) {
+        logger.error('Error testing character servo:', error);
         res.status(500).json({
             success: false,
             error: error.message

@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/servo-config.css">
+</head>
+<body>
+    <header>
+        <h1><%= title %></h1>
+        <nav>
+            <a href="/characters/<%= character.id %>/edit">← Back to Character</a>
+            <a href="/characters">Characters</a>
+            <a href="/">Home</a>
+        </nav>
+    </header>
+
+    <main>
+        <div class="character-info">
+            <h2>Character: <%= character.char_name %></h2>
+            <p>Configure servos for this character's animatronic system.</p>
+        </div>
+
+        <!-- Add New Servo Section -->
+        <div class="servo-section">
+            <h3>Add New Servo</h3>
+            <form id="addServoForm" class="servo-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="servoName">Servo Name:</label>
+                        <input type="text" id="servoName" name="name" required placeholder="e.g., Head Turn Servo">
+                    </div>
+                    <div class="form-group">
+                        <label for="servoType">Servo Type:</label>
+                        <select id="servoType" name="servoType" required onchange="updateServoSpecs()">
+                            <option value="">Select a Servo Type</option>
+                            <% availableServos.forEach(function(servo) { %>
+                                <option value="<%= servo.name %>" 
+                                        data-model="<%= servo.model %>"
+                                        data-manufacturer="<%= servo.manufacturer %>"
+                                        data-min-pulse="<%= servo.min_pulse_width_us %>"
+                                        data-max-pulse="<%= servo.max_pulse_width_us %>"
+                                        data-default-angle="<%= servo.default_angle_deg %>"
+                                        data-torque="<%= servo.max_torque_kg_cm %>"
+                                        data-rotation="<%= servo.rotation_range_deg %>"
+                                        data-modes="<%= servo.mode.join(',') %>">
+                                    <%= servo.name %>
+                                </option>
+                            <% }); %>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="pin">GPIO Pin:</label>
+                        <input type="number" id="pin" name="pin" min="1" max="40" value="3">
+                    </div>
+                    <div class="form-group">
+                        <label for="usePCA9685">Use PCA9685:</label>
+                        <input type="checkbox" id="usePCA9685" name="usePCA9685" onchange="togglePCA9685()">
+                    </div>
+                    <div class="form-group" id="channelGroup" style="display: none;">
+                        <label for="channel">PCA9685 Channel:</label>
+                        <input type="number" id="channel" name="channel" min="0" max="15" value="0">
+                    </div>
+                </div>
+
+                <div id="servoSpecs" class="servo-specs" style="display: none;">
+                    <h4>Servo Specifications</h4>
+                    <div class="specs-grid">
+                        <div class="spec-item">
+                            <label>Model:</label>
+                            <span id="specModel">-</span>
+                        </div>
+                        <div class="spec-item">
+                            <label>Manufacturer:</label>
+                            <span id="specManufacturer">-</span>
+                        </div>
+                        <div class="spec-item">
+                            <label>Max Torque:</label>
+                            <span id="specTorque">-</span>
+                        </div>
+                        <div class="spec-item">
+                            <label>Rotation Range:</label>
+                            <span id="specRotation">-</span>
+                        </div>
+                        <div class="spec-item">
+                            <label>Pulse Width:</label>
+                            <span id="specPulse">-</span>
+                        </div>
+                        <div class="spec-item">
+                            <label>Modes:</label>
+                            <span id="specModes">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button type="submit" class="button primary-btn">Add Servo</button>
+                    <button type="button" class="button secondary-btn" onclick="resetForm()">Reset</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Configured Servos Section -->
+        <div class="servo-section">
+            <h3>Configured Servos</h3>
+            <% if (servos && servos.length > 0) { %>
+                <div class="servo-list">
+                    <% servos.forEach(function(servo, index) { %>
+                        <div class="servo-item" data-servo-id="<%= servo.id %>">
+                            <div class="servo-header">
+                                <h4><%= servo.name %></h4>
+                                <div class="servo-actions">
+                                    <button class="button small-btn" onclick="testServo(<%= servo.id %>)">Test</button>
+                                    <button class="button small-btn secondary-btn" onclick="editServo(<%= servo.id %>)">Edit</button>
+                                    <button class="button small-btn danger-btn" onclick="deleteServo(<%= servo.id %>)">Delete</button>
+                                </div>
+                            </div>
+                            <div class="servo-details">
+                                <div class="detail-row">
+                                    <span class="label">Type:</span>
+                                    <span class="value"><%= servo.servoType || 'Custom' %></span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="label">Connection:</span>
+                                    <span class="value">
+                                        <% if (servo.usePCA9685) { %>
+                                            PCA9685 Channel <%= servo.channel %>
+                                        <% } else { %>
+                                            GPIO Pin <%= servo.pin %>
+                                        <% } %>
+                                    </span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="label">Pulse Range:</span>
+                                    <span class="value"><%= servo.minPulse %>-<%= servo.maxPulse %>μs</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="label">Default Angle:</span>
+                                    <span class="value"><%= servo.defaultAngle %>°</span>
+                                </div>
+                            </div>
+                        </div>
+                    <% }); %>
+                </div>
+            <% } else { %>
+                <div class="no-servos">
+                    <p>No servos configured for this character yet.</p>
+                    <p>Use the form above to add your first servo.</p>
+                </div>
+            <% } %>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="servo-section">
+            <h3>Quick Actions</h3>
+            <div class="quick-actions">
+                <button class="button secondary-btn" onclick="testAllServos()">Test All Servos</button>
+                <button class="button secondary-btn" onclick="exportConfig()">Export Configuration</button>
+                <a href="/parts/servo/new?characterId=<%= character.id %>" class="button secondary-btn">Advanced Servo Setup</a>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let currentCharacterId = <%= character.id %>;
+
+        function togglePCA9685() {
+            const usePCA9685 = document.getElementById('usePCA9685').checked;
+            const channelGroup = document.getElementById('channelGroup');
+            channelGroup.style.display = usePCA9685 ? 'block' : 'none';
+        }
+
+        function updateServoSpecs() {
+            const select = document.getElementById('servoType');
+            const option = select.options[select.selectedIndex];
+            const specsDiv = document.getElementById('servoSpecs');
+
+            if (option.value) {
+                document.getElementById('specModel').textContent = option.dataset.model || '-';
+                document.getElementById('specManufacturer').textContent = option.dataset.manufacturer || '-';
+                document.getElementById('specTorque').textContent = (option.dataset.torque || '-') + ' kg/cm';
+                document.getElementById('specRotation').textContent = (option.dataset.rotation || '-') + '°';
+                document.getElementById('specPulse').textContent = 
+                    (option.dataset.minPulse || '-') + '-' + (option.dataset.maxPulse || '-') + 'μs';
+                document.getElementById('specModes').textContent = option.dataset.modes || '-';
+                specsDiv.style.display = 'block';
+            } else {
+                specsDiv.style.display = 'none';
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('addServoForm').reset();
+            document.getElementById('servoSpecs').style.display = 'none';
+            togglePCA9685();
+        }
+
+        // Form submission
+        document.getElementById('addServoForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData.entries());
+            data.usePCA9685 = document.getElementById('usePCA9685').checked;
+            
+            try {
+                const response = await fetch(`/characters/${currentCharacterId}/servos`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Servo added successfully!');
+                    location.reload();
+                } else {
+                    alert('Error adding servo: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error adding servo: ' + error.message);
+            }
+        });
+
+        async function testServo(servoId) {
+            try {
+                const response = await fetch(`/characters/${currentCharacterId}/servos/${servoId}/test`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ angle: 90, duration: 1.0 })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Servo test completed successfully!');
+                } else {
+                    alert('Servo test failed: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error testing servo: ' + error.message);
+            }
+        }
+
+        async function deleteServo(servoId) {
+            if (confirm('Are you sure you want to delete this servo?')) {
+                try {
+                    const response = await fetch(`/characters/${currentCharacterId}/servos/${servoId}`, {
+                        method: 'DELETE'
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        alert('Servo deleted successfully!');
+                        location.reload();
+                    } else {
+                        alert('Error deleting servo: ' + result.error);
+                    }
+                } catch (error) {
+                    alert('Error deleting servo: ' + error.message);
+                }
+            }
+        }
+
+        function editServo(servoId) {
+            // Redirect to advanced servo edit page
+            window.location.href = `/parts/servo/${servoId}/edit`;
+        }
+
+        async function testAllServos() {
+            alert('Testing all servos... This may take a few moments.');
+            // Implementation for testing all servos
+        }
+
+        function exportConfig() {
+            // Implementation for exporting servo configuration
+            alert('Export functionality coming soon!');
+        }
+    </script>
+</body>
+</html>

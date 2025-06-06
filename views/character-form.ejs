@@ -598,39 +598,8 @@
         }
 
         function manageServos(characterId) {
-            showModal('Loading Servo Configuration...', '<p>Loading servo configurations for this character...</p>');
-
-            fetch('/characters/' + characterId + '/servos')
-                .then(response => response.json())
-                .then(response => {
-                    if (response.success) {
-                        const result = response.result;
-                        let html = '<h3>Servo Configuration for ' + result.character + '</h3>';
-
-                        if (result.servos.length > 0) {
-                            html += '<h4>Configured Servos:</h4>';
-                            result.servos.forEach(servo => {
-                                html += '<div class="test-result test-passed">';
-                                html += '<h5>' + servo.name + '</h5>';
-                                html += '<p><strong>Model:</strong> ' + servo.model + '</p>';
-                                html += '<p><strong>Manufacturer:</strong> ' + servo.manufacturer + '</p>';
-                                html += '<p><strong>Max Torque:</strong> ' + servo.max_torque_kg_cm + ' kg/cm</p>';
-                                html += '<p><strong>Pulse Width:</strong> ' + servo.min_pulse_width_us + '-' + servo.max_pulse_width_us + 'μs</p>';
-                                html += '</div>';
-                            });
-                        } else {
-                            html += '<p>No servos configured for this character yet.</p>';
-                        }
-
-                        html += '<p><em>Servo configuration management will be available in a future update.</em></p>';
-                        showModal('Servo Configuration', html);
-                    } else {
-                        showModal('Servo Config Failed', '<p style="color: #ff0000;">❌ ' + response.error + '</p>');
-                    }
-                })
-                .catch(error => {
-                    showModal('Servo Config Error', '<p style="color: #ff0000;">❌ Error: ' + error.message + '</p>');
-                });
+            // Navigate to the character servo management page
+            window.location.href = '/characters/' + characterId + '/servos';
         }
 
         function viewSystemConfig(characterId) {

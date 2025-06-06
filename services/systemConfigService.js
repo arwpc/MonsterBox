@@ -11,12 +11,41 @@ const logger = require('../scripts/logger');
 const sshCredentials = require('../scripts/ssh-credentials');
 const { exec } = require('child_process');
 const util = require('util');
+const partService = require('./partService');
 const execAsync = util.promisify(exec);
 
 class SystemConfigService {
     constructor() {
         this.charactersPath = path.join(process.cwd(), 'data', 'characters.json');
         this.servosPath = path.join(process.cwd(), 'data', 'servos.json');
+    }
+
+    /**
+     * Get servo configurations (types)
+     */
+    getServoConfigs() {
+        try {
+            if (require('fs').existsSync(this.servosPath)) {
+                const data = require('fs').readFileSync(this.servosPath, 'utf8');
+                return JSON.parse(data).servos;
+            }
+            return [];
+        } catch (error) {
+            logger.error('Error reading servo configurations:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Load parts data
+     */
+    async loadParts() {
+        try {
+            return await partService.getAllParts();
+        } catch (error) {
+            logger.error('Error loading parts:', error);
+            return [];
+        }
     }
 
     /**
@@ -77,21 +106,22 @@ class SystemConfigService {
     async getCharacterServos(characterId) {
         const characters = await this.loadCharacters();
         const character = characters.find(c => c.id === parseInt(characterId));
-        
+
         if (!character) {
             throw new Error('Character not found');
         }
 
-        // Return servos assigned to this character
-        const servos = await this.loadServos();
-        const characterServos = servos.servos.filter(servo => 
-            servo.characterId === parseInt(characterId)
+        // Get servo configurations (types) and character-specific servos
+        const servoConfigs = this.getServoConfigs();
+        const parts = await this.loadParts();
+        const characterServos = parts.filter(part =>
+            part.type === 'servo' && part.characterId === parseInt(characterId)
         );
 
         return {
             character: character.char_name,
             servos: characterServos,
-            availableServos: servos.servos.filter(servo => !servo.characterId)
+            availableServos: servoConfigs
         };
     }
 
@@ -99,44 +129,146 @@ class SystemConfigService {
      * Add servo configuration to a character
      */
     async addCharacterServo(characterId, servoConfig) {
-        const servos = await this.loadServos();
-        
+        // Get servo type configuration
+        const servoConfigs = this.getServoConfigs();
+        const selectedServo = servoConfigs.find(s => s.name === servoConfig.servoType);
+
         const newServo = {
-            ...servoConfig,
+            name: servoConfig.name,
+            type: 'servo',
             characterId: parseInt(characterId),
-            id: Date.now(), // Simple ID generation
+            pin: parseInt(servoConfig.pin) || 3,
+            usePCA9685: servoConfig.usePCA9685 || false,
+            channel: parseInt(servoConfig.channel) || null,
+            servoType: servoConfig.servoType,
+            minPulse: selectedServo ? selectedServo.min_pulse_width_us : 500,
+            maxPulse: selectedServo ? selectedServo.max_pulse_width_us : 2500,
+            defaultAngle: selectedServo ? selectedServo.default_angle_deg : 90,
+            mode: selectedServo ? selectedServo.mode : ['Standard'],
             createdAt: new Date().toISOString()
         };
 
-        servos.servos.push(newServo);
-        await this.saveServos(servos);
-
-        logger.info(`Added servo configuration for character ${characterId}:`, newServo.name);
-        return newServo;
+        const createdPart = await partService.createPart(newServo);
+        logger.info(`Added servo configuration for character ${characterId}:`, createdPart.name);
+        return createdPart;
     }
 
     /**
      * Update servo configuration for a character
      */
     async updateCharacterServo(characterId, servoId, updates) {
-        const servos = await this.loadServos();
-        const servoIndex = servos.servos.findIndex(s => 
-            s.id === parseInt(servoId) && s.characterId === parseInt(characterId)
+        const parts = await this.loadParts();
+        const servo = parts.find(p =>
+            p.id === parseInt(servoId) &&
+            p.characterId === parseInt(characterId) &&
+            p.type === 'servo'
         );
 
-        if (servoIndex === -1) {
+        if (!servo) {
             throw new Error('Servo not found for this character');
         }
 
-        servos.servos[servoIndex] = {
-            ...servos.servos[servoIndex],
+        const updatedServo = {
+            ...servo,
             ...updates,
             updatedAt: new Date().toISOString()
         };
 
-        await this.saveServos(servos);
-        logger.info(`Updated servo configuration for character ${characterId}:`, servos.servos[servoIndex].name);
-        return servos.servos[servoIndex];
+        const result = await partService.updatePart(servoId, updatedServo);
+        logger.info(`Updated servo configuration for character ${characterId}:`, result.name);
+        return result;
+    }
+
+    /**
+     * Delete servo configuration for a character
+     */
+    async deleteCharacterServo(characterId, servoId) {
+        const parts = await this.loadParts();
+        const servo = parts.find(p =>
+            p.id === parseInt(servoId) &&
+            p.characterId === parseInt(characterId) &&
+            p.type === 'servo'
+        );
+
+        if (!servo) {
+            throw new Error('Servo not found for this character');
+        }
+
+        const deleted = await partService.deletePart(servoId);
+        if (deleted) {
+            logger.info(`Deleted servo configuration for character ${characterId}:`, servo.name);
+            return { deleted: true, servo: servo };
+        } else {
+            throw new Error('Failed to delete servo');
+        }
+    }
+
+    /**
+     * Test servo for a character
+     */
+    async testCharacterServo(characterId, servoId, angle = 90, duration = 1.0) {
+        const parts = await this.loadParts();
+        const servo = parts.find(p =>
+            p.id === parseInt(servoId) &&
+            p.characterId === parseInt(characterId) &&
+            p.type === 'servo'
+        );
+
+        if (!servo) {
+            throw new Error('Servo not found for this character');
+        }
+
+        // Use the existing servo test functionality from servoRoutes
+        const path = require('path');
+        const { spawn } = require('child_process');
+
+        const scriptPath = path.join(__dirname, '..', 'scripts', 'servo_control.py');
+        const controlType = servo.usePCA9685 ? 'pca9685' : 'gpio';
+        const pinOrChannel = servo.usePCA9685 ? (servo.channel || '0') : (servo.pin || '3');
+
+        const args = [
+            'test',
+            controlType,
+            pinOrChannel,
+            String(angle),
+            String(duration),
+            String(servo.servoType || 'Standard')
+        ];
+
+        return new Promise((resolve, reject) => {
+            const pythonProcess = spawn('python3', [scriptPath, ...args]);
+            let output = '';
+            let errorOutput = '';
+
+            pythonProcess.stdout.on('data', (data) => {
+                output += data.toString();
+            });
+
+            pythonProcess.stderr.on('data', (data) => {
+                errorOutput += data.toString();
+            });
+
+            pythonProcess.on('close', (code) => {
+                if (code === 0) {
+                    logger.info(`Servo test completed for character ${characterId}, servo ${servoId}`);
+                    resolve({
+                        success: true,
+                        output: output.trim(),
+                        servo: servo.name,
+                        angle: angle,
+                        duration: duration
+                    });
+                } else {
+                    logger.error(`Servo test failed for character ${characterId}, servo ${servoId}:`, errorOutput);
+                    reject(new Error(`Servo test failed: ${errorOutput || 'Unknown error'}`));
+                }
+            });
+
+            pythonProcess.on('error', (error) => {
+                logger.error(`Failed to start servo test for character ${characterId}, servo ${servoId}:`, error);
+                reject(new Error(`Failed to start servo test: ${error.message}`));
+            });
+        });
     }
 
     /**
