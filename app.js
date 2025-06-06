@@ -13,8 +13,9 @@ process.env.NODE_NO_WARNINGS = '1';
 
 let express, path, http, logger, app, server, port, audioStream, soundController, fs, os, session;
 let videoStream; // <-- Add videoStream variable
-let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, voiceRoutes, cleanupRoutes, healthRoutes;
+let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, voiceRoutes, cleanupRoutes, healthRoutes, authRoutes, sshRoutes;
 let characterService;
+let authMiddleware, rbacMiddleware;
 
 try {
     express = require('express');
@@ -52,6 +53,14 @@ try {
     voiceRoutes = require('./routes/voiceRoutes');
     cleanupRoutes = require('./routes/cleanup');
     healthRoutes = require('./routes/healthRoutes');
+
+    // Import authentication routes
+    authRoutes = require('./routes/auth/authRoutes');
+    sshRoutes = require('./routes/auth/sshRoutes');
+
+    // Import authentication middleware
+    authMiddleware = require('./middleware/auth');
+    rbacMiddleware = require('./middleware/rbac');
 
     // Import services
     characterService = require('./services/characterService');
@@ -93,6 +102,9 @@ app.use(session({
     cookie: { secure: false } // set to true if using https
 }));
 
+// JWT session integration middleware
+app.use(authMiddleware.integrateWithSession);
+
 // Global character middleware
 app.use((req, res, next) => {
     if (!req.session) {
@@ -101,6 +113,12 @@ app.use((req, res, next) => {
     req.session.characterId = req.session.characterId || null;
     next();
 });
+
+// Set up authentication routes (no auth required)
+app.use('/auth', authRoutes);
+
+// Set up SSH routes (JWT auth required)
+app.use('/ssh', sshRoutes);
 
 // Set up routes
 app.use('/parts/led', ledRoutes);
