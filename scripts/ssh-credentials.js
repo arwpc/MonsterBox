@@ -130,8 +130,8 @@ class SSHCredentialsManager {
         // PowerShell script content that uses expect-like functionality
         const powershellScript = `
 # SSH automation script for ${animatronicId}
-$password = '${escapedPassword}'
-$securePassword = ConvertTo-SecureString $password -AsPlainText -Force
+$sshPassword = '${escapedPassword}'
+$securePassword = ConvertTo-SecureString $sshPassword -AsPlainText -Force
 
 # Use Start-Process with input redirection
 $psi = New-Object System.Diagnostics.ProcessStartInfo
@@ -146,18 +146,18 @@ $process = [System.Diagnostics.Process]::Start($psi)
 
 # Send password when prompted
 Start-Sleep -Milliseconds 500
-$process.StandardInput.WriteLine($password)
+$process.StandardInput.WriteLine($sshPassword)
 $process.StandardInput.Close()
 
 # Wait for completion and get output
 $output = $process.StandardOutput.ReadToEnd()
-$error = $process.StandardError.ReadToEnd()
+$errorOutput = $process.StandardError.ReadToEnd()
 $process.WaitForExit()
 
 if ($process.ExitCode -eq 0) {
     Write-Output $output
 } else {
-    Write-Error $error
+    Write-Host $errorOutput -ForegroundColor Red
     exit $process.ExitCode
 }
 
