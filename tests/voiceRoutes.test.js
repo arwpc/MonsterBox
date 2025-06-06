@@ -232,3 +232,4 @@ if (process.env.SKIP_CI_INTEGRATION) {
         }
     });
 });
+}

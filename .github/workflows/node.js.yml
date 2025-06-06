@@ -14,6 +14,18 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SKIP_CI_INTEGRATION: true
+      NODE_ENV: test
+      PORT: 3000
+      SESSION_SECRET: test-session-secret-for-ci
+      ANTHROPIC_API_KEY: your_anthropic_api_key_here
+      OPENAI_API_KEY: your_openai_api_key_here
+      GOOGLE_API_KEY: your_google_api_key_here
+      REPLICA_API_KEY: your_replica_api_key_here
+      PERPLEXITY_API_KEY: your_perplexity_api_key_here
+      MISTRAL_API_KEY: your_mistral_key_here
+      XAI_API_KEY: YOUR_XAI_KEY_HERE
+      AZURE_OPENAI_API_KEY: your_azure_key_here
+      OLLAMA_API_KEY: your_ollama_api_key_here
 
     strategy:
       matrix:

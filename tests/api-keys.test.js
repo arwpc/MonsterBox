@@ -194,6 +194,12 @@ describe('API Keys Integration Tests', function() {
         });
 
         it('should test Replica API integration through MonsterBox service', async function() {
+            const apiKey = process.env.REPLICA_API_KEY;
+
+            if (!apiKey || apiKey === 'your_replica_api_key_here') {
+                this.skip('Replica API key not configured');
+            }
+
             const ReplicaAPI = require('../scripts/replicaAPI');
 
             try {
@@ -238,12 +244,14 @@ describe('API Keys Integration Tests', function() {
 
         it('should have PORT configured', function() {
             const port = process.env.PORT;
-            
+
             expect(port).to.exist;
-            expect(parseInt(port)).to.be.a('number');
-            expect(parseInt(port)).to.be.above(0);
-            expect(parseInt(port)).to.be.below(65536);
-            
+            const portNumber = parseInt(port, 10);
+            expect(portNumber).to.be.a('number');
+            expect(portNumber).to.not.be.NaN;
+            expect(portNumber).to.be.above(0);
+            expect(portNumber).to.be.below(65536);
+
             logger.info('✅ PORT is properly configured', { port });
             console.log(`   ✅ PORT - Configured (${port})`);
         });
