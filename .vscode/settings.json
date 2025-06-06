@@ -7,5 +7,28 @@
         "*_test.py"
     ],
     "python.testing.pytestEnabled": false,
-    "python.testing.unittestEnabled": true
+    "python.testing.unittestEnabled": true,
+
+    // Remote SSH Configuration for MonsterBox RPI Systems
+    "remote.SSH.configFile": "C:\\Users\\arwpe\\.ssh\\config",
+    "remote.SSH.showLoginTerminal": true,
+    "remote.SSH.remotePlatform": {
+        "orlok": "linux",
+        "coffin": "linux",
+        "pumpkinhead": "linux",
+        "192.168.8.120": "linux",
+        "192.168.8.140": "linux",
+        "192.168.1.101": "linux"
+    },
+    "remote.SSH.enableDynamicForwarding": false,
+    "remote.SSH.connectTimeout": 15,
+
+    // Terminal configuration for remote connections
+    "terminal.integrated.defaultProfile.linux": "bash",
+    "terminal.integrated.profiles.linux": {
+        "bash": {
+            "path": "/bin/bash",
+            "args": ["-l"]
+        }
+    }
 }
