@@ -183,9 +183,9 @@ class SystemConfigService {
             uptime: 'uptime -p',
             memory: 'free -h | grep Mem',
             disk: 'df -h / | tail -1',
-            temperature: 'vcgencmd measure_temp 2>/dev/null || echo "temp=N/A"',
+            temperature: 'vcgencmd measure_temp 2>/dev/null || echo "temp=N/A°C"',
             voltage: 'vcgencmd measure_volts 2>/dev/null || echo "volt=N/A"',
-            wifi: 'iwconfig wlan0 2>/dev/null | grep "Signal level" || echo "Signal level=N/A"'
+            wifi: 'iwconfig wlan0 2>/dev/null | grep "Signal level" || cat /proc/net/wireless 2>/dev/null | tail -1 | awk "{print \\"Signal level=\\" \$4 \\"dBm\\"}" || echo "Signal level=N/A"'
         };
 
         const systemInfo = {};
@@ -259,24 +259,44 @@ class SystemConfigService {
 
         // Temperature parsing
         if (rawInfo.temperature && !rawInfo.temperature.startsWith('Error:')) {
-            const tempMatch = rawInfo.temperature.match(/temp=(\d+\.\d+)/);
-            formatted.temperature = tempMatch ? `${tempMatch[1]}°C` : 'N/A';
+            if (rawInfo.temperature.includes('temp=N/A°C')) {
+                formatted.temperature = 'N/A';
+            } else {
+                const tempMatch = rawInfo.temperature.match(/temp=(\d+\.\d+)/);
+                formatted.temperature = tempMatch ? `${tempMatch[1]}°C` : 'N/A';
+            }
         } else {
             formatted.temperature = 'N/A';
         }
 
         // Voltage parsing
         if (rawInfo.voltage && !rawInfo.voltage.startsWith('Error:')) {
-            const voltMatch = rawInfo.voltage.match(/volt=(\d+\.\d+)/);
-            formatted.voltage = voltMatch ? `${voltMatch[1]}V` : 'N/A';
+            if (rawInfo.voltage.includes('volt=N/A')) {
+                formatted.voltage = 'N/A';
+            } else {
+                const voltMatch = rawInfo.voltage.match(/volt=(\d+\.\d+)/);
+                formatted.voltage = voltMatch ? `${voltMatch[1]}V` : 'N/A';
+            }
         } else {
             formatted.voltage = 'N/A';
         }
 
         // WiFi signal parsing
         if (rawInfo.wifi && !rawInfo.wifi.startsWith('Error:')) {
-            const wifiMatch = rawInfo.wifi.match(/Signal level=(-?\d+)/);
-            formatted.wifiSignal = wifiMatch ? `${wifiMatch[1]} dBm` : 'N/A';
+            if (rawInfo.wifi.includes('Signal level=N/A')) {
+                formatted.wifiSignal = 'N/A';
+            } else {
+                // Try multiple patterns for WiFi signal
+                let wifiMatch = rawInfo.wifi.match(/Signal level=(-?\d+)\s*dBm/);
+                if (!wifiMatch) {
+                    wifiMatch = rawInfo.wifi.match(/Signal level=(-?\d+)/);
+                }
+                if (!wifiMatch) {
+                    // Try parsing from /proc/net/wireless format
+                    wifiMatch = rawInfo.wifi.match(/(-?\d+)\s*dBm/);
+                }
+                formatted.wifiSignal = wifiMatch ? `${wifiMatch[1]} dBm` : 'N/A';
+            }
         } else {
             formatted.wifiSignal = 'N/A';
         }

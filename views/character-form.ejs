@@ -152,11 +152,7 @@
                                 </label>
                             </div>
 
-                            <!-- SSH Test Button -->
-                            <div class="form-group">
-                                <button type="button" id="test_ssh" class="button secondary-btn">🔍 Test SSH Connection</button>
-                                <div id="ssh_test_result" style="margin-top: 10px;"></div>
-                            </div>
+
 
                             <!-- Animatronic Management Buttons -->
                             <% if (character && character.id && character.id !== 'new' && character.animatronic && character.animatronic.enabled) { %>
@@ -311,51 +307,7 @@
             });
         }
 
-        // SSH Test functionality
-        const testSSHButton = document.getElementById('test_ssh');
-        const sshTestResult = document.getElementById('ssh_test_result');
 
-        if (testSSHButton) {
-            testSSHButton.addEventListener('click', async function() {
-                const host = document.getElementById('rpi_host').value;
-                const user = document.getElementById('rpi_user').value;
-                const password = document.getElementById('rpi_password').value;
-
-                if (!host || !user || !password) {
-                    sshTestResult.innerHTML = '<span style="color: #ff0000;">❌ Please fill in IP address, SSH user, and password</span>';
-                    return;
-                }
-
-                sshTestResult.innerHTML = '<span style="color: #ffff00;">🔍 Testing SSH connection...</span>';
-                testSSHButton.disabled = true;
-
-                try {
-                    const response = await fetch('/characters/test-ssh', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            host: host,
-                            user: user,
-                            password: password
-                        })
-                    });
-
-                    const result = await response.json();
-
-                    if (result.success) {
-                        sshTestResult.innerHTML = '<span style="color: #00ff00;">✅ SSH connection successful!</span>';
-                    } else {
-                        sshTestResult.innerHTML = `<span style="color: #ff0000;">❌ SSH connection failed: ${result.error}</span>`;
-                    }
-                } catch (error) {
-                    sshTestResult.innerHTML = `<span style="color: #ff0000;">❌ Test failed: ${error.message}</span>`;
-                } finally {
-                    testSSHButton.disabled = false;
-                }
-            });
-        }
 
         // Form submission handling
         const form = document.querySelector('form');
@@ -504,14 +456,7 @@
                         html += '<p><strong>Duration:</strong> ' + result.tests.ping.duration + 'ms</p>';
                         html += '</div>';
 
-                        // SSH test
-                        const sshClass = result.tests.ssh.passed ? 'test-passed' : 'test-failed';
-                        html += '<div class="test-result ' + sshClass + '">';
-                        html += '<h4>🔐 SSH Connection</h4>';
-                        html += '<p><strong>Status:</strong> ' + (result.tests.ssh.passed ? '✅ PASSED' : '❌ FAILED') + '</p>';
-                        html += '<p><strong>Message:</strong> ' + result.tests.ssh.message + '</p>';
-                        html += '<p><strong>Duration:</strong> ' + result.tests.ssh.duration + 'ms</p>';
-                        html += '</div>';
+
 
                         // Log test
                         const logClass = result.tests.logs.passed ? 'test-passed' : 'test-failed';
@@ -689,7 +634,51 @@
         }
 
         function viewSystemConfig(characterId) {
-            showModal('System Configuration', '<p>Character-specific system configuration management will be available in a future update. This will include hardware settings, GPIO configurations, and system-level parameters specific to this character\'s RPI4b system.</p>');
+            showModal('Loading System Configuration...', '<p>Loading system configuration for this character...</p>');
+
+            fetch('/characters/' + characterId + '/system-info')
+                .then(response => response.json())
+                .then(response => {
+                    if (response.success) {
+                        const result = response.result;
+                        const info = result.systemInfo;
+                        let html = '<h3>System Configuration for ' + result.character + '</h3>';
+                        html += '<p><strong>Host:</strong> ' + result.host + '</p>';
+                        html += '<p><strong>Timestamp:</strong> ' + new Date(result.timestamp).toLocaleString() + '</p>';
+
+                        html += '<div class="test-result test-passed">';
+                        html += '<h4>🖥️ System Information</h4>';
+                        html += '<p><strong>Platform:</strong> ' + info.platform + '</p>';
+                        html += '<p><strong>Architecture:</strong> ' + info.arch + '</p>';
+                        html += '<p><strong>Hostname:</strong> ' + info.hostname + '</p>';
+                        html += '<p><strong>Uptime:</strong> ' + info.uptime + '</p>';
+                        html += '</div>';
+
+                        html += '<div class="test-result test-passed">';
+                        html += '<h4>💾 Memory & Storage</h4>';
+                        html += '<p><strong>Total Memory:</strong> ' + info.totalMem + '</p>';
+                        html += '<p><strong>Used Memory:</strong> ' + info.usedMem + '</p>';
+                        html += '<p><strong>Free Memory:</strong> ' + info.freeMem + '</p>';
+                        html += '<p><strong>Disk Total:</strong> ' + info.diskTotal + '</p>';
+                        html += '<p><strong>Disk Used:</strong> ' + info.diskUsed + '</p>';
+                        html += '<p><strong>Disk Free:</strong> ' + info.diskFree + '</p>';
+                        html += '</div>';
+
+                        html += '<div class="test-result test-passed">';
+                        html += '<h4>⚡ Hardware Status</h4>';
+                        html += '<p><strong>Temperature:</strong> ' + info.temperature + '</p>';
+                        html += '<p><strong>Voltage:</strong> ' + info.voltage + '</p>';
+                        html += '<p><strong>WiFi Signal:</strong> ' + info.wifiSignal + '</p>';
+                        html += '</div>';
+
+                        showModal('System Configuration', html);
+                    } else {
+                        showModal('System Config Failed', '<p style="color: #ff0000;">❌ ' + response.error + '</p>');
+                    }
+                })
+                .catch(error => {
+                    showModal('System Config Error', '<p style="color: #ff0000;">❌ Error: ' + error.message + '</p>');
+                });
         }
 
         // Close modal when clicking outside of it

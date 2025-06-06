@@ -89,9 +89,13 @@ class AnimatronicService {
         // Test 1: Ping connectivity
         logger.info(`Testing ping connectivity to ${character.char_name} (${rpiConfig.host})`);
         const pingStart = Date.now();
-        
+
         try {
-            await execAsync(`ping -n 1 -w 5000 ${rpiConfig.host}`);
+            // Use cross-platform ping command with shorter timeout
+            const pingCommand = process.platform === 'win32'
+                ? `ping -n 1 -w 3000 ${rpiConfig.host}`
+                : `ping -c 1 -W 3 ${rpiConfig.host}`;
+            await execAsync(pingCommand);
             result.tests.ping.passed = true;
             result.tests.ping.message = 'Host is reachable';
             result.tests.ping.duration = Date.now() - pingStart;
