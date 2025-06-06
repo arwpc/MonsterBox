@@ -185,7 +185,7 @@ class SystemConfigService {
             disk: 'df -h / | tail -1',
             temperature: 'vcgencmd measure_temp 2>/dev/null || echo "temp=N/A°C"',
             voltage: 'vcgencmd measure_volts 2>/dev/null || echo "volt=N/A"',
-            wifi: 'iwconfig wlan0 2>/dev/null | grep "Signal level" || cat /proc/net/wireless 2>/dev/null | tail -1 | awk "{print \\"Signal level=\\" \$4 \\"dBm\\"}" || echo "Signal level=N/A"'
+            wifi: 'iwconfig wlan0 2>/dev/null | grep "Signal level" || (cat /proc/net/wireless 2>/dev/null | tail -1 | awk \'{print "Signal level=" $4 "dBm"}\') || echo "Signal level=N/A"'
         };
 
         const systemInfo = {};
