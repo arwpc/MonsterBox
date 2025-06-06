@@ -37,8 +37,7 @@ npm run animatronic:manage
 
 - **`docs/`** - All documentation (setup, guides, API, security)
 - **`scripts/`** - Management and testing scripts
-- **`config/`** - System and animatronic configurations
-- **`data/`** - Character, scene, and sound data
+- **`data/`** - All JSON configuration, character, scene, and sound data
 - **`routes/`** - Web API endpoints
 - **`views/`** - Web interface templates
 

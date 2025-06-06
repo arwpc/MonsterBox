@@ -6,7 +6,7 @@ from gpiozero.pins.mock import MockFactory
 
 def get_used_pins():
     try:
-        with open('config/parts.json', 'r') as f:
+        with open('data/parts.json', 'r') as f:
             parts = json.load(f)
             used_pins = set()
             for part in parts:

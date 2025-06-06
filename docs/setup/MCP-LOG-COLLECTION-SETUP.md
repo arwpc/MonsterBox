@@ -47,8 +47,8 @@ The MCP system now intelligently handles animatronic status:
 - **Pumpkinhead** (192.168.1.101) - `status: "offline"`, `enabled: false`
 
 ### **Configuration Files**
-- `config/animatronics.json` - Individual animatronic settings
-- `config/rpi-config.json` - RPI system configuration
+- `data/animatronics.json` - Individual animatronic settings
+- `data/rpi-config.json` - RPI system configuration
 
 ## 📋 MCP Servers Configured
 

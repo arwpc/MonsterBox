@@ -247,7 +247,7 @@ ssh remote@192.168.8.149 "sudo journalctl -n 5 --no-pager"  # Coffin
 MonsterBox/
 ├── .env                           # SSH credentials (secure)
 ├── .env.example                   # Template with placeholders
-├── config/
+├── data/
 │   └── animatronics.json         # Animatronic configurations
 ├── scripts/
 │   ├── test-animatronic-ssh.js   # SSH connectivity tests

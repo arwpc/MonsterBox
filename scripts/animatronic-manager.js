@@ -24,7 +24,7 @@ require('dotenv').config();
 
 class AnimatronicManager {
     constructor() {
-        this.configPath = path.join(process.cwd(), 'config', 'animatronics.json');
+        this.configPath = path.join(process.cwd(), 'data', 'animatronics.json');
         this.animatronics = {};
     }
 

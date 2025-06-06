@@ -173,7 +173,7 @@ npm run animatronic:manage
 ## 📁 Configuration Files
 
 ### Animatronic Configuration
-- **Location**: `config/animatronics.json`
+- **Location**: `data/animatronics.json`
 - **Contains**: All animatronic definitions, IPs, services, parts
 
 ### Log Storage

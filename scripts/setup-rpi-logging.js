@@ -16,7 +16,7 @@ const logger = require('./logger');
 
 class RPiSetup {
     constructor() {
-        this.configPath = path.join(process.cwd(), 'config', 'rpi-config.json');
+        this.configPath = path.join(process.cwd(), 'data', 'rpi-config.json');
     }
 
     async run() {
@@ -170,7 +170,7 @@ class RPiSetup {
                 config.rpi_systems.push(rpiConfig);
             }
 
-            // Ensure config directory exists
+            // Ensure data directory exists
             await fs.mkdir(path.dirname(this.configPath), { recursive: true });
             
             // Save config
