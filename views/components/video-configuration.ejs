@@ -48,13 +48,25 @@
         <!-- Video Preview Window -->
         <div class="video-preview-container">
             <div class="video-preview" id="videoPreview">
-                <% if (webcam && webcam.status === 'active') { %>
-                    <img id="videoStream" src="/api/streaming/stream/<%= character.id %>" 
-                         alt="Live video stream" style="width: 100%; height: 100%; object-fit: cover;">
+                <% if (webcam) { %>
+                    <img id="videoStream"
+                         src="/api/streaming/stream/<%= character.id %>?t=<%= Date.now() %>"
+                         alt="Live video stream"
+                         style="width: 100%; height: 100%; object-fit: contain; background: #000;"
+                         onerror="this.style.display='none'; document.getElementById('videoPlaceholder').style.display='flex';"
+                         onload="this.style.display='block'; document.getElementById('videoPlaceholder').style.display='none';">
+                    <div id="videoPlaceholder" class="no-video-placeholder" style="display: none;">
+                        <span class="placeholder-icon">📹</span>
+                        <span class="placeholder-text">Starting video stream...</span>
+                        <div class="loading-spinner">⟳</div>
+                    </div>
                 <% } else { %>
                     <div class="no-video-placeholder">
                         <span class="placeholder-icon">📹</span>
-                        <span class="placeholder-text">No video available</span>
+                        <span class="placeholder-text">No webcam assigned</span>
+                        <button type="button" class="btn btn-primary" onclick="assignWebcam()">
+                            ➕ Add Webcam
+                        </button>
                     </div>
                 <% } %>
             </div>
@@ -211,11 +223,13 @@
 
 .video-preview-container {
     margin: 15px 0;
+    max-width: 100%;
 }
 
 .video-preview {
     width: 100%;
-    height: 240px;
+    max-width: 640px;
+    height: 320px;
     border: 2px solid #00ff00;
     border-radius: 6px;
     overflow: hidden;
@@ -223,6 +237,22 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
+    margin: 0 auto;
+}
+
+/* Responsive video sizing */
+@media (max-width: 768px) {
+    .video-preview {
+        height: 240px;
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .video-preview {
+        height: 180px;
+    }
 }
 
 .no-video-placeholder {
@@ -230,6 +260,11 @@
     flex-direction: column;
     align-items: center;
     color: #00aa00;
+    padding: 20px;
+    text-align: center;
+    width: 100%;
+    height: 100%;
+    justify-content: center;
 }
 
 .placeholder-icon {
@@ -239,6 +274,19 @@
 
 .placeholder-text {
     font-size: 1.1em;
+    margin-bottom: 15px;
+}
+
+.loading-spinner {
+    font-size: 2em;
+    color: #00ff00;
+    animation: spin 1s linear infinite;
+    margin-top: 10px;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 .video-controls {
@@ -422,12 +470,137 @@
     // Initialize component
     function initVideoConfiguration() {
         setupEventListeners();
-        updateStreamStatus();
-        
-        // Start periodic status updates if webcam exists
-        const webcamStatusCard = document.getElementById('webcamStatusCard');
-        if (webcamStatusCard && characterId) {
-            streamStatusInterval = setInterval(updateStreamStatus, 10000); // Every 10 seconds
+
+        // Register with shared streaming service if available
+        if (window.sharedStreamingService && characterId) {
+            window.sharedStreamingService.registerStream(parseInt(characterId), {
+                autoRestart: true,
+                quality: 'high'
+            });
+
+            // Listen for shared stream events
+            document.addEventListener('monsterbox-stream-event', handleSharedStreamEvent);
+        }
+
+        // Auto-start stream if webcam exists
+        const videoStream = document.getElementById('videoStream');
+        if (videoStream && characterId) {
+            // Setup video error handling
+            setupVideoErrorHandling();
+
+            // Initial stream check
+            setTimeout(() => {
+                ensureStreamActive();
+            }, 1000);
+
+            // Start periodic status updates
+            streamStatusInterval = setInterval(() => {
+                updateStreamStatus();
+            }, 15000); // Every 15 seconds (shared service handles health checks)
+        }
+    }
+
+    // Handle shared stream events
+    function handleSharedStreamEvent(event) {
+        const { characterId: eventCharId, eventType } = event.detail;
+
+        if (eventCharId == characterId) {
+            switch (eventType) {
+                case 'started':
+                case 'refresh':
+                    refreshVideo();
+                    updateStreamStatus();
+                    break;
+                case 'failed':
+                    showStreamError('Stream failed after multiple retries');
+                    break;
+            }
+        }
+    }
+
+    // Show stream error
+    function showStreamError(message) {
+        const placeholder = document.getElementById('videoPlaceholder');
+        if (placeholder) {
+            placeholder.style.display = 'flex';
+            placeholder.querySelector('.placeholder-text').textContent = message;
+        }
+    }
+
+    // Ensure stream is active (auto-start if needed)
+    async function ensureStreamActive() {
+        if (!characterId) return;
+
+        // Use shared streaming service if available
+        if (window.sharedStreamingService) {
+            const isActive = await window.sharedStreamingService.ensureStreamActive(parseInt(characterId));
+            if (isActive) {
+                refreshVideo();
+                updateStreamControls(true);
+            }
+            return isActive;
+        }
+
+        // Fallback to direct API calls
+        try {
+            const response = await fetch(`/api/streaming/health/${characterId}`);
+            const data = await response.json();
+
+            if (!data.success || !data.health.streamActive) {
+                console.log('Stream not active, starting automatically...');
+                await startStreamSilently();
+            }
+        } catch (error) {
+            console.log('Error checking stream health, attempting to start:', error);
+            await startStreamSilently();
+        }
+    }
+
+    // Start stream without user notification (for auto-start)
+    async function startStreamSilently() {
+        if (!characterId) return;
+
+        try {
+            const response = await fetch(`/api/streaming/start/${characterId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                updateStreamControls(true);
+                refreshVideo();
+            }
+        } catch (error) {
+            console.error('Error auto-starting stream:', error);
+        }
+    }
+
+    // Setup video error handling and recovery
+    function setupVideoErrorHandling() {
+        const videoStream = document.getElementById('videoStream');
+        const placeholder = document.getElementById('videoPlaceholder');
+
+        if (videoStream) {
+            videoStream.addEventListener('error', function() {
+                console.log('Video stream error, attempting recovery...');
+                if (placeholder) {
+                    placeholder.style.display = 'flex';
+                    placeholder.querySelector('.placeholder-text').textContent = 'Reconnecting...';
+                }
+
+                // Attempt to restart stream after a delay
+                setTimeout(() => {
+                    ensureStreamActive();
+                }, 3000);
+            });
+
+            videoStream.addEventListener('load', function() {
+                console.log('Video stream loaded successfully');
+                if (placeholder) {
+                    placeholder.style.display = 'none';
+                }
+            });
         }
     }
 
@@ -487,9 +660,36 @@
     // Refresh video stream
     function refreshVideo() {
         const videoStream = document.getElementById('videoStream');
+        const placeholder = document.getElementById('videoPlaceholder');
+
         if (videoStream && characterId) {
-            const timestamp = Date.now();
-            videoStream.src = `/api/streaming/stream/${characterId}?t=${timestamp}`;
+            // Show loading state
+            if (placeholder) {
+                placeholder.style.display = 'flex';
+                placeholder.querySelector('.placeholder-text').textContent = 'Refreshing stream...';
+            }
+
+            // Use shared streaming service for URL if available
+            let streamUrl;
+            if (window.sharedStreamingService) {
+                streamUrl = window.sharedStreamingService.getStreamUrl(parseInt(characterId));
+            } else {
+                streamUrl = `/api/streaming/stream/${characterId}?t=${Date.now()}`;
+            }
+
+            videoStream.src = streamUrl;
+
+            // Log refresh for debugging
+            console.log(`Refreshing video stream for character ${characterId} at ${new Date().toLocaleTimeString()}`);
+
+            // Send to MCP extension if available
+            if (window.monsterBoxLogCollector) {
+                window.monsterBoxLogCollector.logEvent('video_refresh', {
+                    characterId: characterId,
+                    timestamp: Date.now(),
+                    url: streamUrl
+                });
+            }
         }
     }
 
