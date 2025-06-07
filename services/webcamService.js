@@ -166,6 +166,26 @@ class WebcamService {
             const host = rpiConfig.host;
             const user = rpiConfig.user || 'remote';
 
+            // Check if we're running on the same host (localhost detection)
+            const os = require('os');
+            const networkInterfaces = os.networkInterfaces();
+            const localIPs = [];
+
+            for (const interfaceName in networkInterfaces) {
+                const interfaces = networkInterfaces[interfaceName];
+                for (const iface of interfaces) {
+                    if (iface.family === 'IPv4' && !iface.internal) {
+                        localIPs.push(iface.address);
+                    }
+                }
+            }
+
+            // If the target host is localhost or our local IP, run locally
+            if (host === 'localhost' || host === '127.0.0.1' || localIPs.includes(host)) {
+                logger.info(`Running local camera detection for ${host} (detected as localhost)`);
+                return await this.detectCameras(characterId, false); // Run local detection
+            }
+
             // Use SSH to run camera detection on remote system
             const remoteScript = 'python3 /home/remote/MonsterBox/scripts/webcam_detect.py';
 
