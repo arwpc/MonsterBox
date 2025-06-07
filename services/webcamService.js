@@ -167,13 +167,15 @@ class WebcamService {
             const user = rpiConfig.user || 'remote';
 
             // Use SSH to run camera detection on remote system
-            const sshCommand = `ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no ${user}@${host}`;
             const remoteScript = 'python3 /home/remote/MonsterBox/scripts/webcam_detect.py';
-            const fullCommand = `${sshCommand} "${remoteScript}"`;
 
             return new Promise((resolve) => {
-                const shellCmd = this.getShellCommand(fullCommand);
-                const process = spawn(shellCmd.cmd, shellCmd.args, shellCmd.options);
+                const process = spawn('ssh', [
+                    '-o', 'ConnectTimeout=10',
+                    '-o', 'StrictHostKeyChecking=no',
+                    `${user}@${host}`,
+                    remoteScript
+                ]);
 
                 let output = '';
                 let error = '';
@@ -440,13 +442,15 @@ class WebcamService {
 
             // Check if device exists and is accessible
             const devicePath = `/dev/video${deviceId}`;
-            const sshCommand = `ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no ${user}@${host}`;
             const testCommand = `test -c ${devicePath} && echo "exists" || echo "missing"`;
 
             return new Promise((resolve) => {
-                const fullCommand = `${sshCommand} "${testCommand}"`;
-                const shellCmd = this.getShellCommand(fullCommand);
-                const process = spawn(shellCmd.cmd, shellCmd.args, shellCmd.options);
+                const process = spawn('ssh', [
+                    '-o', 'ConnectTimeout=10',
+                    '-o', 'StrictHostKeyChecking=no',
+                    `${user}@${host}`,
+                    testCommand
+                ]);
 
                 let output = '';
                 let error = '';
@@ -535,13 +539,15 @@ class WebcamService {
             const rpiConfig = character.animatronic.rpi_config;
             const host = rpiConfig.host;
             const user = rpiConfig.user || 'remote';
-            const sshCommand = `ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no ${user}@${host}`;
             const testScript = `python3 -c "import cv2; cap = cv2.VideoCapture(${webcam.deviceId}, cv2.CAP_V4L2); ret, frame = cap.read(); cap.release(); print('OK' if ret and frame is not None else 'FAIL')"`;
 
             return new Promise((resolve) => {
-                const fullCommand = `${sshCommand} "${testScript}"`;
-                const shellCmd = this.getShellCommand(fullCommand);
-                const process = spawn(shellCmd.cmd, shellCmd.args, shellCmd.options);
+                const process = spawn('ssh', [
+                    '-o', 'ConnectTimeout=10',
+                    '-o', 'StrictHostKeyChecking=no',
+                    `${user}@${host}`,
+                    testScript
+                ]);
 
                 let output = '';
                 let error = '';
