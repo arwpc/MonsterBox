@@ -153,8 +153,13 @@ router.post('/browser', async (req, res) => {
             clientTimestamp: log.timestamp
         }));
 
-        // Log to Winston
+        // Log to Winston with filtering
         processedLogs.forEach(log => {
+            // Skip verbose browser update messages and SSH prompts
+            if (shouldSkipBrowserLog(log.message, log.level)) {
+                return;
+            }
+
             const logLevel = log.level === 'error' || log.type.includes('error') ? 'error' :
                            log.level === 'warn' ? 'warn' : 'info';
 
@@ -510,6 +515,29 @@ function cleanupLogStream(streamId) {
         activeStreams.delete(streamId);
         logger.info('Log stream closed', { streamId, source: stream.source });
     }
+}
+
+// Helper function to filter out verbose browser logs
+function shouldSkipBrowserLog(message, level) {
+    if (!message) return false;
+
+    // Skip browser update info messages
+    if (level === 'info' && (
+        message.includes('Browser log collected') ||
+        message.includes('Sent') && message.includes('logs to MonsterBox') ||
+        message.includes('password:') ||
+        message.includes('Max retries reached') ||
+        message.includes('Failed to send logs to MonsterBox: {}')
+    )) {
+        return true;
+    }
+
+    // Skip verbose streaming status updates unless they're errors
+    if (level === 'info' && message.includes('stream') && !message.includes('error') && !message.includes('failed')) {
+        return true;
+    }
+
+    return false;
 }
 
 module.exports = router;

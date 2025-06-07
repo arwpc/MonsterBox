@@ -34,25 +34,52 @@ class MonsterBoxLogCollector {
 
     setupConsoleInterception() {
         const originalConsole = { ...console };
-        
+
         ['log', 'info', 'warn', 'error', 'debug'].forEach(level => {
             console[level] = (...args) => {
                 // Call original console method
                 originalConsole[level](...args);
-                
+
+                // Filter out verbose browser update messages
+                const message = args.map(arg =>
+                    typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+                ).join(' ');
+
+                // Skip logging browser update info and SSH password prompts
+                if (this.shouldSkipLog(message, level)) {
+                    return;
+                }
+
                 // Collect the log
                 this.addLog({
                     type: 'console',
                     level: level,
-                    message: args.map(arg => 
-                        typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
-                    ).join(' '),
+                    message: message,
                     timestamp: new Date().toISOString(),
                     url: window.location.href,
                     userAgent: navigator.userAgent
                 });
             };
         });
+    }
+
+    shouldSkipLog(message, level) {
+        // Skip browser update info messages
+        if (level === 'info' && (
+            message.includes('Browser log collected') ||
+            message.includes('Sent') && message.includes('logs to MonsterBox') ||
+            message.includes('password:') ||
+            message.includes('Max retries reached')
+        )) {
+            return true;
+        }
+
+        // Skip verbose streaming status updates unless they're errors
+        if (level === 'info' && message.includes('stream') && !message.includes('error')) {
+            return true;
+        }
+
+        return false;
     }
 
     setupErrorHandling() {

@@ -61,13 +61,72 @@ function getWebcamForCharacter(characterId) {
     return webcam;
 }
 
+// Stop conflicting camera processes
+async function stopConflictingCameraProcesses(devicePath) {
+    const deviceId = devicePath.replace('/dev/video', '');
+    log(`Checking for conflicting processes using camera ${deviceId}`);
+
+    try {
+        const { spawn } = require('child_process');
+
+        // Find processes using the camera device
+        const psProcess = spawn('ps', ['aux']);
+        const grepProcess = spawn('grep', ['-E', `(webcam|camera|video${deviceId})`]);
+        const grep2Process = spawn('grep', ['-v', 'grep']);
+
+        psProcess.stdout.pipe(grepProcess.stdin);
+        grepProcess.stdout.pipe(grep2Process.stdin);
+
+        let output = '';
+        grep2Process.stdout.on('data', (data) => {
+            output += data.toString();
+        });
+
+        return new Promise((resolve) => {
+            grep2Process.on('close', () => {
+                const lines = output.split('\n').filter(line => line.trim());
+                const pidsToKill = [];
+
+                lines.forEach(line => {
+                    const parts = line.trim().split(/\s+/);
+                    if (parts.length > 1) {
+                        const pid = parts[1];
+                        if (pid && !isNaN(pid)) {
+                            pidsToKill.push(pid);
+                        }
+                    }
+                });
+
+                if (pidsToKill.length > 0) {
+                    log(`Found ${pidsToKill.length} conflicting processes, stopping them`);
+                    pidsToKill.forEach(pid => {
+                        try {
+                            process.kill(pid, 'SIGTERM');
+                            log(`Stopped process ${pid}`);
+                        } catch (error) {
+                            log(`Failed to stop process ${pid}: ${error.message}`, 'error');
+                        }
+                    });
+
+                    // Wait a moment for processes to stop
+                    setTimeout(resolve, 1000);
+                } else {
+                    resolve();
+                }
+            });
+        });
+    } catch (error) {
+        log(`Error checking for conflicting processes: ${error.message}`, 'error');
+    }
+}
+
 // Start webcam stream process
 function startWebcamStream(characterId, webcam) {
     log(`Starting webcam stream for character ${characterId}`);
-    
+
     try {
         const scriptPath = path.join(__dirname, 'scripts', 'webcam_persistent_stream.py');
-        
+
         const streamProcess = spawn('python3', [
             scriptPath,
             '--device-id', webcam.devicePath.replace('/dev/video', ''),
@@ -77,29 +136,29 @@ function startWebcamStream(characterId, webcam) {
             '--quality', '85',
             '--persistent'
         ]);
-        
+
         log(`Stream process started for character ${characterId}`);
-        
+
         // Store stream info
         activeStreams.set(characterId, {
             process: streamProcess,
             startTime: new Date(),
             webcam: webcam
         });
-        
+
         // Handle process events
         streamProcess.on('error', (error) => {
             log(`Stream process error for character ${characterId}: ${error.message}`, 'error');
             activeStreams.delete(characterId);
         });
-        
+
         streamProcess.on('close', (code) => {
             log(`Stream process closed for character ${characterId} with code ${code}`);
             activeStreams.delete(characterId);
         });
-        
+
         return streamProcess;
-        
+
     } catch (error) {
         log(`Error starting stream for character ${characterId}: ${error.message}`, 'error');
         return null;
@@ -193,17 +252,17 @@ app.get('/api/streaming/status/:characterId', (req, res) => {
 });
 
 // Start stream
-app.post('/api/streaming/start/:characterId', (req, res) => {
+app.post('/api/streaming/start/:characterId', async (req, res) => {
     const characterId = req.params.characterId;
     const webcam = getWebcamForCharacter(characterId);
-    
+
     if (!webcam) {
         return res.json({
             success: false,
             error: 'No webcam configured for this character'
         });
     }
-    
+
     // Check if already streaming
     const existingStream = activeStreams.get(characterId);
     if (existingStream && existingStream.process && !existingStream.process.killed) {
@@ -213,10 +272,13 @@ app.post('/api/streaming/start/:characterId', (req, res) => {
             characterId: parseInt(characterId)
         });
     }
-    
+
+    // Stop any conflicting camera processes before starting
+    await stopConflictingCameraProcesses(webcam.devicePath);
+
     // Start new stream
     const streamProcess = startWebcamStream(characterId, webcam);
-    
+
     if (streamProcess) {
         res.json({
             success: true,

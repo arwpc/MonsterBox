@@ -113,6 +113,18 @@ router.get('/test-stream', async (req, res) => {
             });
         }
 
+        // Check if camera is available before starting test
+        const cameraCheck = await checkCameraAvailability(parsedDeviceId);
+        if (!cameraCheck.available) {
+            logger.warn(`Camera ${parsedDeviceId} is not available: ${cameraCheck.reason}`);
+            return res.status(409).json({
+                success: false,
+                message: 'Camera not available',
+                error: cameraCheck.reason,
+                suggestion: 'Stop existing streams or try a different camera'
+            });
+        }
+
         // Set response headers for MJPEG stream
         res.setHeader('Content-Type', 'multipart/x-mixed-replace; boundary=frame');
         res.setHeader('Cache-Control', 'no-cache');
@@ -297,5 +309,49 @@ router.post('/validate', async (req, res) => {
         });
     }
 });
+
+// Helper function to check camera availability
+async function checkCameraAvailability(deviceId) {
+    try {
+        const { spawn } = require('child_process');
+        const checkScript = path.join(__dirname, '..', '..', 'scripts', 'webcam_detect.py');
+
+        return new Promise((resolve) => {
+            const process = spawn('python3', [checkScript]);
+            let output = '';
+
+            process.stdout.on('data', (data) => {
+                output += data.toString();
+            });
+
+            process.on('close', (code) => {
+                try {
+                    const result = JSON.parse(output);
+                    const camera = result.cameras?.find(cam => cam.id === deviceId);
+
+                    if (!camera) {
+                        resolve({ available: false, reason: 'Camera not found' });
+                    } else if (camera.in_use) {
+                        resolve({ available: false, reason: 'Camera currently in use by another process' });
+                    } else if (!camera.accessible) {
+                        resolve({ available: false, reason: 'Camera not accessible' });
+                    } else {
+                        resolve({ available: true, reason: 'Camera available' });
+                    }
+                } catch (error) {
+                    resolve({ available: false, reason: 'Failed to check camera status' });
+                }
+            });
+
+            // Timeout after 5 seconds
+            setTimeout(() => {
+                process.kill();
+                resolve({ available: false, reason: 'Camera check timeout' });
+            }, 5000);
+        });
+    } catch (error) {
+        return { available: false, reason: 'Camera check failed' };
+    }
+}
 
 module.exports = router;
