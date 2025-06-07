@@ -112,18 +112,22 @@ class SSHCredentialsManager {
      */
     buildSSHCommand(animatronicId, host, command, options = {}) {
         const credentials = this.getCredentials(animatronicId);
-        const fs = require('fs');
-        const path = require('path');
-        const os = require('os');
 
-        // Detect platform and use appropriate SSH method
-        if (os.platform() === 'win32') {
-            // Windows: Use PowerShell script for SSH automation
-            return this.buildWindowsSSHCommand(animatronicId, host, command, credentials, options);
-        } else {
-            // Linux/Unix: Use sshpass for SSH automation
-            return this.buildLinuxSSHCommand(animatronicId, host, command, credentials, options);
-        }
+        // Always use SSH key authentication (no password prompts)
+        // SSH keys are properly configured and working
+        const sshOptions = [
+            '-o ConnectTimeout=10',
+            '-o StrictHostKeyChecking=no',
+            '-o PasswordAuthentication=no',
+            '-o PubkeyAuthentication=yes',
+            '-o UserKnownHostsFile=/dev/null',
+            '-o LogLevel=ERROR'
+        ].join(' ');
+
+        // Escape command for shell execution
+        const escapedCommand = command.replace(/'/g, "'\"'\"'");
+
+        return `ssh ${sshOptions} ${credentials.user}@${host} '${escapedCommand}'`;
     }
 
     /**

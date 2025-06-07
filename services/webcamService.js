@@ -469,6 +469,10 @@ class WebcamService {
                 const process = spawn('ssh', [
                     '-o', 'ConnectTimeout=10',
                     '-o', 'StrictHostKeyChecking=no',
+                    '-o', 'PasswordAuthentication=no',
+                    '-o', 'PubkeyAuthentication=yes',
+                    '-o', 'UserKnownHostsFile=/dev/null',
+                    '-o', 'LogLevel=ERROR',
                     `${user}@${host}`,
                     testCommand
                 ]);
@@ -566,6 +570,10 @@ class WebcamService {
                 const process = spawn('ssh', [
                     '-o', 'ConnectTimeout=10',
                     '-o', 'StrictHostKeyChecking=no',
+                    '-o', 'PasswordAuthentication=no',
+                    '-o', 'PubkeyAuthentication=yes',
+                    '-o', 'UserKnownHostsFile=/dev/null',
+                    '-o', 'LogLevel=ERROR',
                     `${user}@${host}`,
                     testScript
                 ]);
