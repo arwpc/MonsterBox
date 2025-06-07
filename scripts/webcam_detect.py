@@ -67,9 +67,18 @@ def get_v4l2_devices() -> List[Dict[str, Any]]:
 def get_opencv_devices() -> List[Dict[str, Any]]:
     """Get video devices using OpenCV detection."""
     devices = []
-    
+
     # Test device IDs 0-9 (most systems won't have more than 10 cameras)
     for device_id in range(10):
+        device_path = f'/dev/video{device_id}'
+
+        # Check if device file exists
+        if not os.path.exists(device_path):
+            continue
+
+        # Check if device is in use
+        device_in_use = is_device_in_use(device_path)
+
         try:
             cap = cv2.VideoCapture(device_id, cv2.CAP_V4L2)
             if cap.isOpened():
@@ -80,28 +89,69 @@ def get_opencv_devices() -> List[Dict[str, Any]]:
                     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
                     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
                     fps = int(cap.get(cv2.CAP_PROP_FPS))
-                    
+
                     device_info = {
                         'id': device_id,
                         'name': f'Camera {device_id}',
-                        'path': f'/dev/video{device_id}',
+                        'path': device_path,
                         'available': True,
+                        'in_use': device_in_use,
                         'width': width,
                         'height': height,
                         'fps': fps
                     }
                     devices.append(device_info)
                     logger.info(f"Detected camera {device_id}: {width}x{height} @ {fps}fps")
-                
+
                 cap.release()
+            elif device_in_use:
+                # Device exists but is in use - still report it
+                device_info = {
+                    'id': device_id,
+                    'name': f'Camera {device_id} (In Use)',
+                    'path': device_path,
+                    'available': False,
+                    'in_use': True,
+                    'width': 640,  # Default values
+                    'height': 480,
+                    'fps': 30,
+                    'note': 'Device currently in use by another process'
+                }
+                devices.append(device_info)
+                logger.info(f"Found camera {device_id} (currently in use)")
             else:
                 logger.debug(f"Device {device_id} not available")
-                
+
         except Exception as e:
-            logger.debug(f"Error testing device {device_id}: {e}")
+            if device_in_use:
+                # Device exists but is in use - still report it
+                device_info = {
+                    'id': device_id,
+                    'name': f'Camera {device_id} (In Use)',
+                    'path': device_path,
+                    'available': False,
+                    'in_use': True,
+                    'width': 640,  # Default values
+                    'height': 480,
+                    'fps': 30,
+                    'note': 'Device currently in use by another process'
+                }
+                devices.append(device_info)
+                logger.info(f"Found camera {device_id} (currently in use)")
+            else:
+                logger.debug(f"Error testing device {device_id}: {e}")
             continue
-    
+
     return devices
+
+def is_device_in_use(device_path: str) -> bool:
+    """Check if a device is currently in use by another process."""
+    try:
+        result = subprocess.run(['lsof', device_path],
+                              capture_output=True, text=True, timeout=5)
+        return result.returncode == 0 and len(result.stdout.strip()) > 0
+    except Exception:
+        return False
 
 def verify_device_access(device_path: str) -> bool:
     """Verify that we can access the device file."""
@@ -182,16 +232,19 @@ def detect_cameras() -> Dict[str, Any]:
     
     # Convert to sorted list
     cameras = [detected_cameras[device_id] for device_id in sorted(detected_cameras.keys())]
-    
-    # Filter to only accessible cameras
+
+    # Include all cameras (accessible and in-use)
+    all_cameras = cameras
     accessible_cameras = [cam for cam in cameras if cam.get('accessible', False)]
-    
+    in_use_cameras = [cam for cam in cameras if cam.get('in_use', False)]
+
     result = {
         'success': True,
-        'cameras': accessible_cameras,
+        'cameras': all_cameras,  # Return all cameras, not just accessible ones
         'total_detected': len(cameras),
         'accessible_count': len(accessible_cameras),
-        'message': f'Found {len(accessible_cameras)} accessible camera(s) out of {len(cameras)} detected'
+        'in_use_count': len(in_use_cameras),
+        'message': f'Found {len(cameras)} camera(s): {len(accessible_cameras)} accessible, {len(in_use_cameras)} in use'
     }
     
     logger.info(f"Camera detection complete: {result['message']}")
