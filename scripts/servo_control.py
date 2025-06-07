@@ -47,7 +47,7 @@ PCA9685_DEFAULT_ADDRESS = 0x40
 def pca9685_init(i2c_address=PCA9685_DEFAULT_ADDRESS):
     """Initialize PCA9685 device"""
     try:
-        bus = smbus.SMBus(1)  # Use bus 1 for Raspberry Pi
+        bus = smbus.SMBus(20)  # Use bus 20 for this Raspberry Pi
         
         # Reset
         bus.write_byte_data(i2c_address, PCA9685_MODE1, 0x00)
@@ -121,13 +121,13 @@ def pca9685_set_angle(channel, angle, i2c_address=PCA9685_DEFAULT_ADDRESS):
         # Initialize PCA9685
         bus = pca9685_init(i2c_address)
         
-        # Convert angle to pulse width (typically 500-2500 microseconds)
-        # For most servos: 0° = 500µs, 180° = 2500µs
+        # Convert angle to pulse width for MG90S servo
+        # MG90S: 0° = 500µs, 180° = 2400µs (from parts.json config)
         # PCA9685 PWM frequency is set to 50Hz (20ms period)
         # 4096 steps per period
         # Convert pulse width to steps: steps = (pulse_width / 20000) * 4096
-        
-        pulse_width = int((angle / 180.0) * (2500 - 500) + 500)
+
+        pulse_width = int((angle / 180.0) * (2400 - 500) + 500)
         off_value = int((pulse_width / 20000.0) * 4096)
         
         # Set PWM
@@ -164,30 +164,27 @@ def set_servo_angle_gpio(pin_or_channel, angle):
         # Validate pin
         pin = validate_pin(pin_or_channel)
         
-        # Convert angle to pulse width (typically 500-2500 microseconds)
-        # For most servos: 0° = 500µs, 180° = 2500µs
-        pulse_width = int((angle / 180.0) * (2500 - 500) + 500)
-        
+        # Convert angle to pulse width for MG90S servo
+        # MG90S: 0° = 500µs, 180° = 2400µs (from parts.json config)
+        pulse_width = int((angle / 180.0) * (2400 - 500) + 500)
+
         try:
             # Initialize GPIO
             h = lgpio.gpiochip_open(0)
-            
-            # Set up servo pin for PWM
-            # 50Hz frequency (20ms period) is standard for servos
-            frequency = 50
-            
-            # Calculate duty cycle (0-1000000)
-            # pulse_width is in microseconds, period is 20000 microseconds
-            duty_cycle = int((pulse_width / 20000.0) * 1000000)
-            
-            # Configure PWM
-            lgpio.tx_pwm(h, pin, frequency, duty_cycle)
-            
+
+            # Claim GPIO as output
+            lgpio.gpio_claim_output(h, pin)
+
+            # Use lgpio's dedicated servo function
+            # tx_servo(handle, gpio, pulse_width, servo_frequency=50, pulse_offset=0, pulse_cycles=0)
+            # pulse_width in microseconds, servo_frequency in Hz
+            lgpio.tx_servo(h, pin, pulse_width, 50, 0, 1)
+
             # Allow time for servo to move
             time.sleep(0.5)
-            
-            # Stop PWM
-            lgpio.tx_pwm(h, pin, frequency, 0)
+
+            # Stop servo (pulse_width = 0 stops the servo)
+            lgpio.tx_servo(h, pin, 0)
             
             log_message({
                 "status": "success",
@@ -196,6 +193,7 @@ def set_servo_angle_gpio(pin_or_channel, angle):
             
         finally:
             # Clean up
+            lgpio.gpio_free(h, pin)
             lgpio.gpiochip_close(h)
             
     except Exception as e:
