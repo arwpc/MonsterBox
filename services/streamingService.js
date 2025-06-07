@@ -330,21 +330,40 @@ class StreamingService extends EventEmitter {
 
                 // Check if the RPI host matches any of our local IP addresses
                 let isLocalHost = false;
-                for (const interfaceName in networkInterfaces) {
-                    const addresses = networkInterfaces[interfaceName];
-                    for (const addr of addresses) {
-                        if (addr.family === 'IPv4' && addr.address === rpiHost) {
-                            isLocalHost = true;
-                            break;
+
+                // Also check for localhost/loopback addresses
+                if (rpiHost === 'localhost' || rpiHost === '127.0.0.1' || rpiHost === '::1') {
+                    isLocalHost = true;
+                } else {
+                    // Check all network interfaces
+                    for (const interfaceName in networkInterfaces) {
+                        const addresses = networkInterfaces[interfaceName];
+                        for (const addr of addresses) {
+                            if (addr.family === 'IPv4' && !addr.internal && addr.address === rpiHost) {
+                                isLocalHost = true;
+                                break;
+                            }
                         }
+                        if (isLocalHost) break;
                     }
-                    if (isLocalHost) break;
                 }
 
                 // If the RPI host doesn't match our local IPs, it's remote
                 isRemote = !isLocalHost;
 
                 logger.info(`Character ${characterId} stream mode: ${isRemote ? 'remote' : 'local'} (RPI host: ${rpiHost})`);
+
+                // Debug: Log all local IP addresses for troubleshooting
+                const localIPs = [];
+                for (const interfaceName in networkInterfaces) {
+                    const addresses = networkInterfaces[interfaceName];
+                    for (const addr of addresses) {
+                        if (addr.family === 'IPv4' && !addr.internal) {
+                            localIPs.push(addr.address);
+                        }
+                    }
+                }
+                logger.debug(`Local IP addresses: ${localIPs.join(', ')}`);
             }
             
             // Parse resolution
@@ -417,7 +436,26 @@ class StreamingService extends EventEmitter {
     async createStreamProcess(config) {
         try {
             if (config.isRemote) {
-                return await this.createRemoteStreamProcess(config);
+                logger.info(`Attempting remote stream for character ${config.characterId}`);
+                const remoteResult = await this.createRemoteStreamProcess(config);
+
+                // If remote fails, try local as fallback
+                if (!remoteResult.success) {
+                    logger.warn(`Remote stream failed for character ${config.characterId}, trying local fallback: ${remoteResult.error}`);
+
+                    // Check if the error suggests we should try local mode
+                    if (remoteResult.error.includes('timeout') ||
+                        remoteResult.error.includes('Connection refused') ||
+                        remoteResult.error.includes('password') ||
+                        remoteResult.error.includes('authentication')) {
+
+                        logger.info(`Falling back to local stream for character ${config.characterId}`);
+                        config.isRemote = false; // Switch to local mode
+                        return await this.createLocalStreamProcess(config);
+                    }
+                }
+
+                return remoteResult;
             } else {
                 return await this.createLocalStreamProcess(config);
             }
