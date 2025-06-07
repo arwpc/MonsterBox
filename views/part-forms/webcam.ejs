@@ -105,10 +105,12 @@
             <div class="form-section">
                 <h3>📹 Camera Detection</h3>
                 <div class="form-group">
-                    <button type="button" id="detectCamerasBtn" class="button secondary-btn">🔍 Detect Available Cameras</button>
+                    <button type="button" id="refreshCamerasBtn" class="button secondary-btn">🔄 Refresh Camera List</button>
                     <button type="button" id="stopStreamForConfigBtn" class="button warning-btn" style="display: none;">⏸️ Stop Stream for Config</button>
                     <button type="button" id="restartStreamBtn" class="button success-btn" style="display: none;">▶️ Restart Stream</button>
-                    <div id="detectionStatus" class="detection-status" style="display: none;"></div>
+                    <div id="detectionStatus" class="detection-status">
+                        <span>🔍 Auto-detecting cameras...</span>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -190,14 +192,17 @@
         let testStream = null;
 
         // Camera detection functionality
-        document.getElementById('detectCamerasBtn').addEventListener('click', async function() {
-            const btn = this;
+        async function detectCameras(isRefresh = false) {
+            const btn = document.getElementById('refreshCamerasBtn');
             const status = document.getElementById('detectionStatus');
             const deviceSelect = document.getElementById('deviceId');
             const devicePath = document.getElementById('devicePath');
 
-            btn.disabled = true;
-            btn.textContent = '🔍 Detecting...';
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = isRefresh ? '🔄 Refreshing...' : '🔍 Detecting...';
+            }
+
             status.style.display = 'block';
             status.className = 'detection-status';
             status.textContent = 'Scanning for camera devices...';
@@ -265,9 +270,16 @@
                 status.className = 'detection-status detection-error';
                 status.textContent = 'Error detecting cameras: ' + error.message;
             } finally {
-                btn.disabled = false;
-                btn.textContent = '🔍 Detect Available Cameras';
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = '🔄 Refresh Camera List';
+                }
             }
+        }
+
+        // Add event listener for refresh button
+        document.getElementById('refreshCamerasBtn').addEventListener('click', function() {
+            detectCameras(true);
         });
 
         // Validate remote device function
@@ -334,8 +346,8 @@
             const resolution = document.getElementById('resolution').value;
             const fps = document.getElementById('fps').value;
             const characterId = document.getElementById('characterId').value;
-            
-            if (!deviceId) {
+
+            if (!deviceId && deviceId !== '0') {
                 alert('Please select a camera device first');
                 return;
             }
@@ -347,29 +359,40 @@
             try {
                 testBtn.style.display = 'none';
                 stopBtn.style.display = 'inline-block';
-                preview.innerHTML = '<span>Starting camera test...</span>';
+                preview.innerHTML = '<span>🔄 Starting camera test...</span>';
+
+                // First validate the camera is available
+                const validateResponse = await fetch(`/api/webcam/validate-device?characterId=${characterId}&deviceId=${deviceId}`);
+                const validateData = await validateResponse.json();
+
+                if (!validateData.success) {
+                    throw new Error(`Camera validation failed: ${validateData.message}`);
+                }
 
                 const [width, height] = resolution.split('x');
                 const testUrl = `/api/webcam/test-stream?characterId=${characterId}&deviceId=${deviceId}&width=${width}&height=${height}&fps=${fps}&t=${Date.now()}`;
-                
+
                 const img = document.createElement('img');
                 img.style.width = '100%';
                 img.style.height = '100%';
                 img.style.objectFit = 'cover';
                 img.src = testUrl;
-                
+
                 img.onload = () => {
                     preview.innerHTML = '';
                     preview.appendChild(img);
+                    console.log('✅ Camera test stream started successfully');
                 };
-                
+
                 img.onerror = () => {
-                    preview.innerHTML = '<span style="color: #ff0000;">Camera test failed</span>';
+                    preview.innerHTML = '<span style="color: #ff0000;">❌ Camera test failed - Check device availability</span>';
+                    testBtn.style.display = 'inline-block';
+                    stopBtn.style.display = 'none';
                 };
 
                 testStream = img;
             } catch (error) {
-                preview.innerHTML = '<span style="color: #ff0000;">Error: ' + error.message + '</span>';
+                preview.innerHTML = '<span style="color: #ff0000;">❌ Error: ' + error.message + '</span>';
                 testBtn.style.display = 'inline-block';
                 stopBtn.style.display = 'none';
             }
@@ -581,7 +604,7 @@
             }
         });
 
-        // Check if stream is active on page load and show appropriate buttons
+        // Initialize page on load
         document.addEventListener('DOMContentLoaded', async function() {
             const characterId = document.getElementById('characterId').value;
             const stopBtn = document.getElementById('stopStreamForConfigBtn');
@@ -604,10 +627,10 @@
                 }
             }
 
-            // Auto-detect cameras on page load if editing existing webcam
-            <% if (part && part.id) { %>
-            document.getElementById('detectCamerasBtn').click();
-            <% } %>
+            // Auto-detect cameras on page load for all cases
+            setTimeout(() => {
+                detectCameras(false);
+            }, 500); // Small delay to ensure page is fully loaded
         });
     </script>
 </body>

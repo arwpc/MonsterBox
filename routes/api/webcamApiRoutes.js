@@ -113,16 +113,34 @@ router.get('/test-stream', async (req, res) => {
             });
         }
 
-        // Check if camera is available before starting test
-        const cameraCheck = await checkCameraAvailability(parsedDeviceId);
-        if (!cameraCheck.available) {
-            logger.warn(`Camera ${parsedDeviceId} is not available: ${cameraCheck.reason}`);
-            return res.status(409).json({
-                success: false,
-                message: 'Camera not available',
-                error: cameraCheck.reason,
-                suggestion: 'Stop existing streams or try a different camera'
-            });
+        // Check if this is a remote character and handle accordingly
+        const character = await characterService.getCharacterById(parseInt(characterId));
+        const isRemoteCharacter = character && character.animatronic && character.animatronic.rpi_config;
+
+        if (isRemoteCharacter) {
+            // For remote characters, validate device on the RPI system
+            const deviceValidation = await webcamService.validateRemoteDevice(parseInt(characterId), parsedDeviceId);
+            if (!deviceValidation.valid) {
+                logger.warn(`Remote camera ${parsedDeviceId} validation failed: ${deviceValidation.message}`);
+                return res.status(409).json({
+                    success: false,
+                    message: 'Remote camera not available',
+                    error: deviceValidation.message,
+                    suggestion: 'Check camera connection on RPI system'
+                });
+            }
+        } else {
+            // For local characters, check camera availability locally
+            const cameraCheck = await checkCameraAvailability(parsedDeviceId);
+            if (!cameraCheck.available) {
+                logger.warn(`Local camera ${parsedDeviceId} is not available: ${cameraCheck.reason}`);
+                return res.status(409).json({
+                    success: false,
+                    message: 'Camera not available',
+                    error: cameraCheck.reason,
+                    suggestion: 'Stop existing streams or try a different camera'
+                });
+            }
         }
 
         // Set response headers for MJPEG stream
@@ -130,16 +148,35 @@ router.get('/test-stream', async (req, res) => {
         res.setHeader('Cache-Control', 'no-cache');
         res.setHeader('Connection', 'keep-alive');
 
-        // Start camera test stream
-        const streamScript = path.join(__dirname, '..', '..', 'scripts', 'webcam_test_stream.py');
-        const process = spawn('python3', [
-            streamScript,
-            '--device-id', parsedDeviceId.toString(),
-            '--width', parsedWidth.toString(),
-            '--height', parsedHeight.toString(),
-            '--fps', parsedFps.toString(),
-            '--duration', '30' // 30 second test
-        ]);
+        let process;
+
+        if (isRemoteCharacter) {
+            // For remote characters, run the test stream on the RPI system via SSH
+            const rpiConfig = character.animatronic.rpi_config;
+            const host = rpiConfig.host;
+            const user = rpiConfig.user || 'remote';
+            const remoteScript = `/home/remote/MonsterBox/scripts/webcam_test_stream.py`;
+
+            logger.info(`Starting remote test stream on ${host} for device ${parsedDeviceId}`);
+
+            process = spawn('ssh', [
+                '-o', 'ConnectTimeout=10',
+                '-o', 'StrictHostKeyChecking=no',
+                `${user}@${host}`,
+                `python3 ${remoteScript} --device-id ${parsedDeviceId} --width ${parsedWidth} --height ${parsedHeight} --fps ${parsedFps} --duration 30`
+            ]);
+        } else {
+            // For local characters, run the test stream locally
+            const streamScript = path.join(__dirname, '..', '..', 'scripts', 'webcam_test_stream.py');
+            process = spawn('python3', [
+                streamScript,
+                '--device-id', parsedDeviceId.toString(),
+                '--width', parsedWidth.toString(),
+                '--height', parsedHeight.toString(),
+                '--fps', parsedFps.toString(),
+                '--duration', '30' // 30 second test
+            ]);
+        }
 
         // Handle stream data
         process.stdout.on('data', (data) => {
@@ -278,6 +315,37 @@ router.get('/all', async (req, res) => {
     }
 });
 
+// Validate webcam device on remote system
+router.get('/validate-device', async (req, res) => {
+    try {
+        const characterId = parseInt(req.query.characterId);
+        const deviceId = parseInt(req.query.deviceId);
+
+        if (isNaN(characterId) || isNaN(deviceId)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid character ID or device ID'
+            });
+        }
+
+        const validation = await webcamService.validateRemoteDevice(characterId, deviceId);
+
+        res.json({
+            success: validation.valid,
+            message: validation.message,
+            devicePath: validation.devicePath,
+            host: validation.host
+        });
+    } catch (error) {
+        logger.error('Error validating remote device:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error validating device',
+            error: error.message
+        });
+    }
+});
+
 // Validate webcam configuration
 router.post('/validate', async (req, res) => {
     try {
@@ -286,10 +354,10 @@ router.post('/validate', async (req, res) => {
 
         if (config.characterId) {
             const canAssign = await webcamService.canAssignWebcam(
-                parseInt(config.characterId), 
+                parseInt(config.characterId),
                 config.id ? parseInt(config.id) : null
             );
-            
+
             if (!canAssign.canAssign) {
                 validation.valid = false;
                 validation.errors.push(canAssign.reason);
