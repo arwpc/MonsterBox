@@ -187,5 +187,46 @@
     "resolution": "640x480",
     "fps": 30,
     "status": "active"
+  },
+  {
+    "id": 18,
+    "name": "Motion Skulltalker",
+    "type": "sensor",
+    "characterId": 4,
+    "gpioPin": "17",
+    "active": "on",
+    "sensorType": "motion"
+  },
+  {
+    "id": 19,
+    "name": "Jaw Servo",
+    "type": "servo",
+    "characterId": 4,
+    "pin": 18,
+    "usePCA9685": false,
+    "channel": null,
+    "servoType": "Miuzei MG90S",
+    "minPulse": 500,
+    "maxPulse": 2400,
+    "defaultAngle": 90,
+    "mode": [
+      "Standard"
+    ],
+    "feedback": false,
+    "controlType": [
+      "PWM"
+    ],
+    "createdAt": "2025-06-07T23:00:00.000Z"
+  },
+  {
+    "id": 20,
+    "name": "SkulltalkerCam",
+    "type": "webcam",
+    "characterId": 4,
+    "deviceId": 0,
+    "devicePath": "/dev/video0",
+    "resolution": "1280x720",
+    "fps": 15,
+    "status": "active"
   }
 ]
