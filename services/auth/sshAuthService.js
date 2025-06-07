@@ -204,15 +204,32 @@ class SSHAuthService {
             // Escape command for SSH execution
             const escapedCommand = command.replace(/'/g, "'\"'\"'");
             
-            // Use sshpass for password authentication (if available)
+            // Use platform-appropriate SSH command
             let sshCommand;
-            try {
-                // Check if sshpass is available
-                await execAsync('which sshpass');
-                sshCommand = `sshpass -p '${credentials.password}' ssh ${sshOptions} ${credentials.user}@${host} '${escapedCommand}'`;
-            } catch {
-                // Fallback to expect script or manual password entry
-                sshCommand = `ssh ${sshOptions} ${credentials.user}@${host} '${escapedCommand}'`;
+            const isWindows = require('os').platform() === 'win32';
+
+            if (isWindows) {
+                // Windows: Use SSH key authentication (no password prompts)
+                const keyBasedOptions = [
+                    '-o ConnectTimeout=10',
+                    '-o StrictHostKeyChecking=no',
+                    '-o PasswordAuthentication=no',
+                    '-o PubkeyAuthentication=yes',
+                    '-o UserKnownHostsFile=/dev/null',
+                    '-o LogLevel=ERROR'
+                ].join(' ');
+                sshCommand = `ssh ${keyBasedOptions} ${credentials.user}@${host} "${escapedCommand}"`;
+            } else {
+                // Linux/Unix: Try sshpass first, then fallback to key-based auth
+                try {
+                    // Check if sshpass is available
+                    await execAsync('which sshpass');
+                    sshCommand = `sshpass -p '${credentials.password}' ssh ${sshOptions} ${credentials.user}@${host} '${escapedCommand}'`;
+                } catch {
+                    // Fallback to key-based authentication
+                    const keyBasedOptions = sshOptions.replace('-o PasswordAuthentication=yes', '-o PasswordAuthentication=no').replace('-o PubkeyAuthentication=no', '-o PubkeyAuthentication=yes');
+                    sshCommand = `ssh ${keyBasedOptions} ${credentials.user}@${host} '${escapedCommand}'`;
+                }
             }
             
             // Execute command with timeout

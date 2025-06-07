@@ -1,0 +1,3 @@
+@echo off
+echo Testing SSH connection to skulltalker...
+echo klrklr89!| ssh -o StrictHostKeyChecking=no -o PreferredAuthentications=password remote@192.168.8.130 "hostname && whoami && pwd && echo SSH_TEST_SUCCESS"
