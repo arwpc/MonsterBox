@@ -31,36 +31,7 @@ router.get('/detect', async (req, res) => {
     }
 });
 
-// Validate device on RPI system
-router.get('/validate-device', async (req, res) => {
-    try {
-        const { characterId, deviceId } = req.query;
 
-        if (!characterId || !deviceId) {
-            return res.status(400).json({
-                success: false,
-                message: 'Character ID and device ID are required'
-            });
-        }
-
-        const result = await webcamService.validateRemoteDevice(
-            parseInt(characterId),
-            parseInt(deviceId)
-        );
-
-        res.json({
-            success: result.valid,
-            ...result
-        });
-    } catch (error) {
-        logger.error('Error in device validation API:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Internal server error during device validation',
-            error: error.message
-        });
-    }
-});
 
 // Monitor device health
 router.get('/health/:characterId', async (req, res) => {
