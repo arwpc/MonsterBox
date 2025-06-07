@@ -474,7 +474,8 @@
         // Register with shared streaming service if available
         if (window.sharedStreamingService && characterId) {
             window.sharedStreamingService.registerStream(parseInt(characterId), {
-                autoRestart: true,
+                autoRestart: false, // Disable auto-restart to prevent SSH password prompts
+                autoStart: false,   // Disable auto-start on registration
                 quality: 'high'
             });
 
@@ -482,18 +483,16 @@
             document.addEventListener('monsterbox-stream-event', handleSharedStreamEvent);
         }
 
-        // Auto-start stream if webcam exists
+        // Setup video error handling but don't auto-start stream
         const videoStream = document.getElementById('videoStream');
         if (videoStream && characterId) {
             // Setup video error handling
             setupVideoErrorHandling();
 
-            // Initial stream check
-            setTimeout(() => {
-                ensureStreamActive();
-            }, 1000);
+            // Don't automatically start streams to prevent SSH password prompts
+            // Users must manually start streams using the Start Stream button
 
-            // Start periodic status updates
+            // Start periodic status updates (but don't auto-start streams)
             streamStatusInterval = setInterval(() => {
                 updateStreamStatus();
             }, 15000); // Every 15 seconds (shared service handles health checks)
@@ -527,18 +526,19 @@
         }
     }
 
-    // Ensure stream is active (auto-start if needed)
-    async function ensureStreamActive() {
-        if (!characterId) return;
+    // Check stream status (but don't auto-start to prevent SSH password prompts)
+    async function checkStreamStatus() {
+        if (!characterId) return false;
 
         // Use shared streaming service if available
         if (window.sharedStreamingService) {
-            const isActive = await window.sharedStreamingService.ensureStreamActive(parseInt(characterId));
-            if (isActive) {
+            const status = window.sharedStreamingService.getStreamStatus(parseInt(characterId));
+            if (status.active) {
                 refreshVideo();
                 updateStreamControls(true);
+                return true;
             }
-            return isActive;
+            return false;
         }
 
         // Fallback to direct API calls
@@ -546,13 +546,15 @@
             const response = await fetch(`/api/streaming/health/${characterId}`);
             const data = await response.json();
 
-            if (!data.success || !data.health.streamActive) {
-                console.log('Stream not active, starting automatically...');
-                await startStreamSilently();
+            if (data.success && data.health.streamActive) {
+                refreshVideo();
+                updateStreamControls(true);
+                return true;
             }
+            return false;
         } catch (error) {
-            console.log('Error checking stream health, attempting to start:', error);
-            await startStreamSilently();
+            console.log('Error checking stream health:', error);
+            return false;
         }
     }
 
@@ -589,9 +591,9 @@
                     placeholder.querySelector('.placeholder-text').textContent = 'Reconnecting...';
                 }
 
-                // Attempt to restart stream after a delay
+                // Check stream status after a delay (but don't auto-restart)
                 setTimeout(() => {
-                    ensureStreamActive();
+                    checkStreamStatus();
                 }, 3000);
             });
 

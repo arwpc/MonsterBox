@@ -17,18 +17,20 @@ class SharedStreamingService {
 
     init() {
         console.log('🎥 SharedStreamingService initialized');
-        
-        // Start health monitoring
-        this.startHealthMonitoring();
-        
+
+        // Disable automatic health monitoring to prevent SSH password prompts
+        // Health monitoring can be enabled manually if needed
+        // this.startHealthMonitoring();
+
         // Listen for page visibility changes
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) {
-                // Page became visible, check stream health
-                this.checkAllStreamsHealth();
+                // Page became visible, check stream health (but don't auto-start)
+                // this.checkAllStreamsHealth();
+                console.log('🎥 Page became visible - manual stream management required');
             }
         });
-        
+
         // Cleanup on page unload
         window.addEventListener('beforeunload', () => {
             this.cleanup();
@@ -54,18 +56,21 @@ class SharedStreamingService {
             retryCount: 0,
             lastHealthCheck: null,
             options: {
-                autoRestart: true,
+                autoRestart: false, // Disable auto-restart to prevent SSH password prompts
+                autoStart: false,   // Disable auto-start on registration
                 quality: 'high',
                 ...options
             }
         };
 
         this.activeStreams.set(characterId, streamInfo);
-        
-        // Ensure stream is started
-        await this.ensureStreamActive(characterId);
-        
-        console.log(`📹 Registered stream for character ${characterId}`);
+
+        // Only start stream if explicitly requested
+        if (options.autoStart === true) {
+            await this.ensureStreamActive(characterId);
+        }
+
+        console.log(`📹 Registered stream for character ${characterId} (auto-start: ${options.autoStart || false})`);
         return streamInfo;
     }
 
@@ -163,7 +168,7 @@ class SharedStreamingService {
             try {
                 const health = await this.checkStreamHealth(characterId);
                 
-                if (!health.streamActive && streamInfo.options.autoRestart) {
+                if (!health.streamActive && streamInfo.options.autoRestart === true) {
                     if (streamInfo.retryCount < this.maxRetries) {
                         console.log(`🔄 Auto-restarting stream for character ${characterId} (attempt ${streamInfo.retryCount + 1})`);
                         await this.ensureStreamActive(characterId);

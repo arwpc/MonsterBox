@@ -5,6 +5,7 @@ const EventEmitter = require('events');
 const logger = require('../scripts/logger');
 const webcamService = require('./webcamService');
 const characterService = require('./characterService');
+const sshCredentials = require('../scripts/ssh-credentials');
 
 class StreamingService extends EventEmitter {
     constructor() {
@@ -530,8 +531,8 @@ class StreamingService extends EventEmitter {
                 const host = rpiConfig.host;
                 const user = rpiConfig.user || 'remote';
 
-                // SSH command to start remote stream
-                const sshCommand = `ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no ${user}@${host}`;
+                // Build SSH command with proper authentication using ssh-credentials
+                const characterKey = config.character.char_name.toLowerCase().replace(/\s+/g, '');
                 const remoteScript = `/home/remote/MonsterBox/scripts/webcam_persistent_stream.py`;
                 const remoteArgs = [
                     '--device-id', config.deviceId.toString(),
@@ -542,7 +543,8 @@ class StreamingService extends EventEmitter {
                     '--persistent'
                 ].join(' ');
 
-                const fullCommand = `${sshCommand} "python3 ${remoteScript} ${remoteArgs}"`;
+                const remoteCommand = `python3 ${remoteScript} ${remoteArgs}`;
+                const fullCommand = sshCredentials.buildSSHCommand(characterKey, host, remoteCommand);
                 const shellCmd = this.getShellCommand(fullCommand);
                 const process = spawn(shellCmd.cmd, shellCmd.args, shellCmd.options);
 
