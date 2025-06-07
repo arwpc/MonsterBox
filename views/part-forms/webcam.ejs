@@ -38,11 +38,33 @@
             color: #ff0000;
             border: 1px solid #ff0000;
         }
+
+        .detection-warning {
+            background-color: #444400;
+            color: #ffff00;
+            border: 1px solid #ffff00;
+        }
         .settings-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 15px;
             margin: 15px 0;
+        }
+        .warning-btn {
+            background-color: #444400 !important;
+            color: #ffff00 !important;
+            border: 1px solid #ffff00 !important;
+        }
+        .warning-btn:hover {
+            background-color: #666600 !important;
+        }
+        .success-btn {
+            background-color: #004400 !important;
+            color: #00ff00 !important;
+            border: 1px solid #00ff00 !important;
+        }
+        .success-btn:hover {
+            background-color: #006600 !important;
         }
     </style>
 </head>
@@ -84,6 +106,8 @@
                 <h3>📹 Camera Detection</h3>
                 <div class="form-group">
                     <button type="button" id="detectCamerasBtn" class="button secondary-btn">🔍 Detect Available Cameras</button>
+                    <button type="button" id="stopStreamForConfigBtn" class="button warning-btn" style="display: none;">⏸️ Stop Stream for Config</button>
+                    <button type="button" id="restartStreamBtn" class="button success-btn" style="display: none;">▶️ Restart Stream</button>
                     <div id="detectionStatus" class="detection-status" style="display: none;"></div>
                 </div>
 
@@ -204,9 +228,26 @@
                     data.cameras.forEach(camera => {
                         const option = document.createElement('option');
                         option.value = camera.id;
-                        const cameraInfo = camera.width && camera.height ?
-                            ` (${camera.width}x${camera.height})` : '';
-                        option.textContent = `Camera ${camera.id} - ${camera.name || 'Unknown'}${cameraInfo}`;
+
+                        let cameraInfo = '';
+                        if (camera.width && camera.height) {
+                            cameraInfo += ` (${camera.width}x${camera.height})`;
+                        }
+
+                        let statusInfo = '';
+                        if (camera.in_use) {
+                            statusInfo = ' - Currently in use';
+                        } else if (!camera.available) {
+                            statusInfo = ' - Unavailable';
+                        }
+
+                        option.textContent = `Camera ${camera.id}${cameraInfo}${statusInfo}`;
+
+                        // Add data attributes for additional info
+                        option.dataset.inUse = camera.in_use || false;
+                        option.dataset.available = camera.available || false;
+                        option.dataset.note = camera.note || '';
+
                         deviceSelect.appendChild(option);
                     });
 
@@ -253,10 +294,37 @@
         // Update device path when device is selected
         document.getElementById('deviceId').addEventListener('change', function() {
             const devicePath = document.getElementById('devicePath');
+            const status = document.getElementById('detectionStatus');
+
             if (this.value) {
                 devicePath.value = `/dev/video${this.value}`;
+
+                // Check if selected device is in use
+                const selectedOption = this.options[this.selectedIndex];
+                if (selectedOption && selectedOption.dataset.inUse === 'true') {
+                    status.style.display = 'block';
+                    status.className = 'detection-status detection-warning';
+                    status.innerHTML = `
+                        ⚠️ Camera ${this.value} is currently in use by another process.<br>
+                        <small>You can still configure it, but testing may not work until the device is free.</small>
+                    `;
+                } else if (selectedOption && selectedOption.dataset.available === 'false') {
+                    status.style.display = 'block';
+                    status.className = 'detection-status detection-error';
+                    status.innerHTML = `
+                        ❌ Camera ${this.value} is not available.<br>
+                        <small>${selectedOption.dataset.note || 'Device may be disconnected or have permission issues.'}</small>
+                    `;
+                } else {
+                    status.style.display = 'block';
+                    status.className = 'detection-status detection-success';
+                    status.textContent = `✅ Camera ${this.value} is available for configuration.`;
+                }
             } else {
                 devicePath.value = '';
+                if (status) {
+                    status.style.display = 'none';
+                }
             }
         });
 
@@ -435,12 +503,112 @@
             }
         }
 
-        // Auto-detect cameras on page load if editing existing webcam
-        <% if (part && part.id) { %>
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('detectCamerasBtn').click();
+        // Stream control for configuration
+        document.getElementById('stopStreamForConfigBtn').addEventListener('click', async function() {
+            const characterId = document.getElementById('characterId').value;
+            const stopBtn = this;
+            const restartBtn = document.getElementById('restartStreamBtn');
+            const detectBtn = document.getElementById('detectCamerasBtn');
+
+            try {
+                stopBtn.disabled = true;
+                stopBtn.textContent = '⏸️ Stopping...';
+
+                const response = await fetch(`/api/streaming/stop/${characterId}`, {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    stopBtn.style.display = 'none';
+                    restartBtn.style.display = 'inline-block';
+
+                    // Show success message
+                    const status = document.getElementById('detectionStatus');
+                    status.style.display = 'block';
+                    status.className = 'detection-status detection-success';
+                    status.textContent = '✅ Stream stopped. Camera is now available for configuration.';
+
+                    // Auto-detect cameras now that stream is stopped
+                    setTimeout(() => {
+                        detectBtn.click();
+                    }, 1000);
+                } else {
+                    alert('Failed to stop stream: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error stopping stream: ' + error.message);
+            } finally {
+                stopBtn.disabled = false;
+                stopBtn.textContent = '⏸️ Stop Stream for Config';
+            }
         });
-        <% } %>
+
+        document.getElementById('restartStreamBtn').addEventListener('click', async function() {
+            const characterId = document.getElementById('characterId').value;
+            const restartBtn = this;
+            const stopBtn = document.getElementById('stopStreamForConfigBtn');
+
+            try {
+                restartBtn.disabled = true;
+                restartBtn.textContent = '▶️ Starting...';
+
+                const response = await fetch(`/api/streaming/start/${characterId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    restartBtn.style.display = 'none';
+                    stopBtn.style.display = 'inline-block';
+
+                    // Show success message
+                    const status = document.getElementById('detectionStatus');
+                    status.style.display = 'block';
+                    status.className = 'detection-status detection-success';
+                    status.textContent = '✅ Stream restarted successfully.';
+                } else {
+                    alert('Failed to restart stream: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error restarting stream: ' + error.message);
+            } finally {
+                restartBtn.disabled = false;
+                restartBtn.textContent = '▶️ Restart Stream';
+            }
+        });
+
+        // Check if stream is active on page load and show appropriate buttons
+        document.addEventListener('DOMContentLoaded', async function() {
+            const characterId = document.getElementById('characterId').value;
+            const stopBtn = document.getElementById('stopStreamForConfigBtn');
+            const restartBtn = document.getElementById('restartStreamBtn');
+
+            if (characterId) {
+                try {
+                    const response = await fetch(`/api/streaming/status/${characterId}`);
+                    const data = await response.json();
+
+                    if (data.success && data.hasStream) {
+                        stopBtn.style.display = 'inline-block';
+                        restartBtn.style.display = 'none';
+                    } else {
+                        stopBtn.style.display = 'none';
+                        restartBtn.style.display = 'none';
+                    }
+                } catch (error) {
+                    console.error('Error checking stream status:', error);
+                }
+            }
+
+            // Auto-detect cameras on page load if editing existing webcam
+            <% if (part && part.id) { %>
+            document.getElementById('detectCamerasBtn').click();
+            <% } %>
+        });
     </script>
 </body>
 </html>
