@@ -4,7 +4,8 @@
  */
 
 // Import webrtc-adapter for cross-browser compatibility
-import adapter from 'webrtc-adapter';
+// Note: Using script tag instead of ES6 import for webrtc-adapter
+// The adapter will be available globally as 'adapter'
 
 class StreamClient extends EventEmitter {
     constructor(options = {}) {
