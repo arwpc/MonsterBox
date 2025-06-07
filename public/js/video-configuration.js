@@ -137,83 +137,17 @@ class VideoConfigurationComponent {
     }
 
     /**
-     * Open webcam configuration modal
+     * Open webcam configuration - now navigates directly to the form page
      */
-    async openWebcamConfig() {
-        const modal = this.container.querySelector('#webcamConfigModal');
-        const content = this.container.querySelector('#webcamConfigContent');
-        
-        if (modal && content && this.characterId) {
-            // Show modal with loading state
-            content.innerHTML = '<div class="loading">Loading configuration...</div>';
-            modal.style.display = 'flex';
-            
-            try {
-                // Load the webcam form content
-                const response = await fetch(`/parts/webcam/new?characterId=${this.characterId}`);
-                const html = await response.text();
-                
-                // Extract just the form content
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                const form = doc.querySelector('form');
-                
-                if (form) {
-                    content.innerHTML = form.outerHTML;
-                    
-                    // Setup form submission handling
-                    const newForm = content.querySelector('form');
-                    if (newForm) {
-                        newForm.addEventListener('submit', (e) => {
-                            e.preventDefault();
-                            this.handleWebcamConfigSubmit(newForm);
-                        });
-                    }
-                } else {
-                    content.innerHTML = '<div class="error">Failed to load configuration form</div>';
-                }
-            } catch (error) {
-                content.innerHTML = `<div class="error">Error loading configuration: ${error.message}</div>`;
-            }
+    openWebcamConfig() {
+        if (this.characterId) {
+            window.location.href = `/parts/webcam/new?characterId=${this.characterId}`;
         }
     }
 
     /**
-     * Handle webcam configuration form submission
+     * Modal functions removed - using direct navigation to webcam configuration page
      */
-    async handleWebcamConfigSubmit(form) {
-        try {
-            const formData = new FormData(form);
-            const response = await fetch(form.action, {
-                method: 'POST',
-                body: formData
-            });
-
-            if (response.ok) {
-                // Close modal and refresh component
-                this.closeWebcamConfig();
-                window.location.reload(); // Reload to show updated webcam
-            } else {
-                const errorText = await response.text();
-                throw new Error(`Server error: ${response.status} - ${errorText}`);
-            }
-        } catch (error) {
-            const content = this.container.querySelector('#webcamConfigContent');
-            if (content) {
-                content.innerHTML = `<div class="error">Error saving configuration: ${error.message}</div>`;
-            }
-        }
-    }
-
-    /**
-     * Close webcam configuration modal
-     */
-    closeWebcamConfig() {
-        const modal = this.container.querySelector('#webcamConfigModal');
-        if (modal) {
-            modal.style.display = 'none';
-        }
-    }
 
     /**
      * Start video stream
