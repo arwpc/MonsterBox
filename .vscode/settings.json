@@ -15,13 +15,16 @@
     "remote.SSH.remotePlatform": {
         "orlok": "linux",
         "coffin": "linux",
+        "skulltalker": "linux",
         "pumpkinhead": "linux",
         "192.168.8.120": "linux",
+        "192.168.8.130": "linux",
         "192.168.8.140": "linux",
         "192.168.1.101": "linux"
     },
     "remote.SSH.enableDynamicForwarding": false,
     "remote.SSH.connectTimeout": 15,
+    "remote.SSH.useLocalServer": false,
 
     // Terminal configuration for remote connections
     "terminal.integrated.defaultProfile.linux": "bash",
