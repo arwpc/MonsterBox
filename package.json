@@ -28,6 +28,7 @@
     "setup:fluent-bit": "node scripts/setup-fluent-bit.js",
     "test:fluent-bit": "node scripts/test-fluent-bit.js",
     "mcp:log-collector": "node mcp-servers/log-collector-server.js",
+    "mcp:browser-debug": "node mcp-servers/browser-debug-server.js",
     "validate:security": "node scripts/validate-security-system.js",
     "ci:security": "node tests/ci-security-tests.js",
     "test:comprehensive": "bash scripts/comprehensive-rpi-test.sh",

@@ -39,6 +39,17 @@
                 "RPI_SSH_USER": "${RPI_SSH_USER}",
                 "RPI_SSH_PASSWORD": "${RPI_SSH_PASSWORD}"
             }
+        },
+        "monsterbox-browser-debug": {
+            "command": "node",
+            "args": [
+                "mcp-servers/browser-debug-server.js"
+            ],
+            "cwd": "C:\\Users\\arwpe\\CodeBase\\MonsterBox-1",
+            "env": {
+                "NODE_ENV": "production",
+                "LOG_LEVEL": "debug"
+            }
         }
     }
 }

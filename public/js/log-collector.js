@@ -325,23 +325,289 @@ class MonsterBoxLogCollector {
     clearLogs() {
         this.logs = [];
     }
+
+    // Enhanced streaming debugging methods for MCP integration
+    enableStreamingDebugMode() {
+        this.streamingDebugMode = true;
+        console.log('🎥 Streaming debug mode enabled for MCP collection');
+
+        // Monitor video elements
+        this.monitorVideoElements();
+
+        // Monitor WebRTC connections
+        this.monitorWebRTCConnections();
+
+        // Monitor streaming API calls
+        this.monitorStreamingAPIs();
+    }
+
+    monitorVideoElements() {
+        const videos = document.querySelectorAll('video, img[src*="streaming"]');
+        videos.forEach((element, index) => {
+            const elementId = `video_${index}`;
+
+            if (element.tagName === 'VIDEO') {
+                element.addEventListener('loadstart', () => {
+                    this.addLog({
+                        type: 'video_event',
+                        event: 'loadstart',
+                        elementId: elementId,
+                        src: element.src,
+                        timestamp: new Date().toISOString()
+                    });
+                });
+
+                element.addEventListener('error', (e) => {
+                    this.addLog({
+                        type: 'video_error',
+                        event: 'error',
+                        elementId: elementId,
+                        error: e.message || 'Video load error',
+                        src: element.src,
+                        timestamp: new Date().toISOString()
+                    });
+                });
+
+                element.addEventListener('canplay', () => {
+                    this.addLog({
+                        type: 'video_event',
+                        event: 'canplay',
+                        elementId: elementId,
+                        videoWidth: element.videoWidth,
+                        videoHeight: element.videoHeight,
+                        timestamp: new Date().toISOString()
+                    });
+                });
+            }
+
+            if (element.tagName === 'IMG' && element.src.includes('streaming')) {
+                element.addEventListener('load', () => {
+                    this.addLog({
+                        type: 'stream_image_event',
+                        event: 'load',
+                        elementId: elementId,
+                        src: element.src,
+                        naturalWidth: element.naturalWidth,
+                        naturalHeight: element.naturalHeight,
+                        timestamp: new Date().toISOString()
+                    });
+                });
+
+                element.addEventListener('error', () => {
+                    this.addLog({
+                        type: 'stream_image_error',
+                        event: 'error',
+                        elementId: elementId,
+                        src: element.src,
+                        timestamp: new Date().toISOString()
+                    });
+                });
+            }
+        });
+    }
+
+    monitorWebRTCConnections() {
+        // Monitor RTCPeerConnection if available
+        if (window.RTCPeerConnection) {
+            const originalRTCPeerConnection = window.RTCPeerConnection;
+            window.RTCPeerConnection = function(...args) {
+                const pc = new originalRTCPeerConnection(...args);
+                const connectionId = 'rtc_' + Date.now();
+
+                pc.addEventListener('connectionstatechange', () => {
+                    window.monsterBoxLogCollector.addLog({
+                        type: 'webrtc_connection',
+                        event: 'connectionstatechange',
+                        connectionId: connectionId,
+                        state: pc.connectionState,
+                        timestamp: new Date().toISOString()
+                    });
+                });
+
+                pc.addEventListener('iceconnectionstatechange', () => {
+                    window.monsterBoxLogCollector.addLog({
+                        type: 'webrtc_ice',
+                        event: 'iceconnectionstatechange',
+                        connectionId: connectionId,
+                        state: pc.iceConnectionState,
+                        timestamp: new Date().toISOString()
+                    });
+                });
+
+                return pc;
+            };
+        }
+    }
+
+    monitorStreamingAPIs() {
+        // Monitor streaming-specific API calls
+        const streamingEndpoints = [
+            '/api/streaming/start',
+            '/api/streaming/stop',
+            '/api/streaming/stream',
+            '/api/streaming/status',
+            '/api/streaming/health'
+        ];
+
+        // Enhanced fetch monitoring for streaming
+        const originalFetch = window.fetch;
+        window.fetch = async (...args) => {
+            const url = args[0];
+            const isStreamingAPI = streamingEndpoints.some(endpoint =>
+                url.toString().includes(endpoint)
+            );
+
+            if (isStreamingAPI && this.streamingDebugMode) {
+                const startTime = performance.now();
+
+                try {
+                    const response = await originalFetch(...args);
+                    const endTime = performance.now();
+
+                    // Log detailed streaming API response
+                    this.addLog({
+                        type: 'streaming_api_call',
+                        method: args[1]?.method || 'GET',
+                        url: url,
+                        status: response.status,
+                        statusText: response.statusText,
+                        duration: endTime - startTime,
+                        headers: Object.fromEntries(response.headers.entries()),
+                        timestamp: new Date().toISOString(),
+                        success: response.ok
+                    });
+
+                    return response;
+                } catch (error) {
+                    const endTime = performance.now();
+
+                    this.addLog({
+                        type: 'streaming_api_error',
+                        method: args[1]?.method || 'GET',
+                        url: url,
+                        error: error.message,
+                        duration: endTime - startTime,
+                        timestamp: new Date().toISOString(),
+                        success: false
+                    });
+
+                    throw error;
+                }
+            }
+
+            return originalFetch(...args);
+        };
+    }
+
+    // MCP Chrome Extension integration
+    connectToMCPExtension() {
+        try {
+            // Check if Chrome extension APIs are available
+            if (typeof chrome !== 'undefined' && chrome.runtime) {
+                this.addLog({
+                    type: 'mcp_extension',
+                    event: 'attempting_connection',
+                    extensionId: this.mcpExtensionId,
+                    timestamp: new Date().toISOString()
+                });
+
+                // Send message to MCP extension
+                chrome.runtime.sendMessage(this.mcpExtensionId, {
+                    type: 'MONSTERBOX_DEBUG_INIT',
+                    data: {
+                        sessionId: this.getOrCreateSessionId(),
+                        url: window.location.href,
+                        debugMode: this.streamingDebugMode
+                    }
+                }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        this.addLog({
+                            type: 'mcp_extension_error',
+                            error: chrome.runtime.lastError.message,
+                            timestamp: new Date().toISOString()
+                        });
+                    } else {
+                        this.mcpConnected = true;
+                        this.addLog({
+                            type: 'mcp_extension',
+                            event: 'connected',
+                            response: response,
+                            timestamp: new Date().toISOString()
+                        });
+                    }
+                });
+            }
+        } catch (error) {
+            this.addLog({
+                type: 'mcp_extension_error',
+                error: error.message,
+                timestamp: new Date().toISOString()
+            });
+        }
+    }
+
+    // Send debug data to MCP extension
+    sendToMCPExtension(data) {
+        if (this.mcpConnected && typeof chrome !== 'undefined' && chrome.runtime) {
+            try {
+                chrome.runtime.sendMessage(this.mcpExtensionId, {
+                    type: 'MONSTERBOX_DEBUG_DATA',
+                    data: data,
+                    timestamp: new Date().toISOString()
+                });
+            } catch (error) {
+                console.debug('MCP Extension communication error:', error);
+            }
+        }
+    }
 }
 
 // Auto-initialize when script loads
 document.addEventListener('DOMContentLoaded', () => {
     window.monsterBoxLogCollector = new MonsterBoxLogCollector();
-    
+
+    // Enable streaming debug mode for streaming-related pages
+    const streamingPages = ['/webrtc-test.html', '/stream-test.html', '/streaming'];
+    if (streamingPages.some(page => window.location.pathname.includes(page))) {
+        window.monsterBoxLogCollector.enableStreamingDebugMode();
+        console.log('🎥 Streaming debug mode auto-enabled for', window.location.pathname);
+    }
+
+    // Connect to MCP Chrome Extension
+    setTimeout(() => {
+        window.monsterBoxLogCollector.connectToMCPExtension();
+    }, 1000);
+
     // Add some MonsterBox-specific event tracking
     document.addEventListener('click', (event) => {
-        if (event.target.matches('.scene-button, .character-button, .part-control')) {
+        if (event.target.matches('.scene-button, .character-button, .part-control, .btn, button')) {
             window.monsterBoxLogCollector.logUserAction('click', event.target);
+
+            // Send to MCP extension for streaming-related buttons
+            if (event.target.textContent.toLowerCase().includes('stream') ||
+                event.target.id.toLowerCase().includes('stream')) {
+                window.monsterBoxLogCollector.sendToMCPExtension({
+                    type: 'streaming_button_click',
+                    button: event.target.textContent,
+                    id: event.target.id,
+                    className: event.target.className
+                });
+            }
         }
     });
-    
+
     // Track scene changes
     if (window.location.pathname.includes('/scene')) {
         window.monsterBoxLogCollector.logEvent('scene_view', {
             sceneId: new URLSearchParams(window.location.search).get('id')
+        });
+    }
+
+    // Track streaming page visits
+    if (window.location.pathname.includes('stream') || window.location.pathname.includes('webrtc')) {
+        window.monsterBoxLogCollector.logEvent('streaming_page_visit', {
+            page: window.location.pathname,
+            search: window.location.search
         });
     }
 });
