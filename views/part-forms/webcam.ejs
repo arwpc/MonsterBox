@@ -198,30 +198,62 @@
             const deviceSelect = document.getElementById('deviceId');
             const devicePath = document.getElementById('devicePath');
 
+            console.log('🔍 Starting camera detection...', { isRefresh });
+
             if (btn) {
                 btn.disabled = true;
                 btn.textContent = isRefresh ? '🔄 Refreshing...' : '🔍 Detecting...';
             }
 
+            // Show progress indicator
             status.style.display = 'block';
             status.className = 'detection-status';
-            status.textContent = 'Scanning for camera devices...';
+            status.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <div style="width: 16px; height: 16px; border: 2px solid #00ff00; border-top: 2px solid transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                    <span>Scanning for camera devices...</span>
+                </div>
+                <style>
+                    @keyframes spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }
+                </style>
+            `;
 
             try {
                 const characterId = document.getElementById('characterId').value;
+                console.log('📡 Character ID:', characterId);
 
                 // Try remote detection first for RPI characters
+                status.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="width: 16px; height: 16px; border: 2px solid #00ff00; border-top: 2px solid transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                        <span>Connecting to RPI system...</span>
+                    </div>
+                `;
+
+                console.log('🌐 Attempting remote detection...');
                 let response = await fetch(`/api/webcam/detect?characterId=${characterId}&remote=true`);
                 let data = await response.json();
+                console.log('📡 Remote detection response:', data);
 
                 // If remote detection fails, try local detection
                 if (!data.success && data.source === 'remote') {
-                    status.textContent = 'Remote detection failed, trying local detection...';
+                    console.log('⚠️ Remote detection failed, trying local...');
+                    status.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="width: 16px; height: 16px; border: 2px solid #ffaa00; border-top: 2px solid transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                            <span>Remote detection failed, trying local detection...</span>
+                        </div>
+                    `;
                     response = await fetch(`/api/webcam/detect?characterId=${characterId}&remote=false`);
                     data = await response.json();
+                    console.log('🏠 Local detection response:', data);
                 }
 
-                if (data.success && data.cameras.length > 0) {
+                if (data.success && data.cameras && data.cameras.length > 0) {
+                    console.log('✅ Cameras found:', data.cameras);
                     status.className = 'detection-status detection-success';
                     const sourceText = data.source === 'remote' ? ` on ${data.host || 'RPI system'}` : ' locally';
                     status.textContent = `Found ${data.cameras.length} camera(s)${sourceText}`;
@@ -231,6 +263,7 @@
 
                     // Add detected cameras
                     data.cameras.forEach(camera => {
+                        console.log('📹 Adding camera option:', camera);
                         const option = document.createElement('option');
                         option.value = camera.id;
 
@@ -263,10 +296,12 @@
                         }
                     });
                 } else {
+                    console.log('❌ No cameras found or detection failed:', data);
                     status.className = 'detection-status detection-error';
                     status.textContent = data.message || 'No cameras detected';
                 }
             } catch (error) {
+                console.error('💥 Camera detection error:', error);
                 status.className = 'detection-status detection-error';
                 status.textContent = 'Error detecting cameras: ' + error.message;
             } finally {
@@ -274,6 +309,7 @@
                     btn.disabled = false;
                     btn.textContent = '🔄 Refresh Camera List';
                 }
+                console.log('🏁 Camera detection completed');
             }
         }
 
@@ -606,31 +642,41 @@
 
         // Initialize page on load
         document.addEventListener('DOMContentLoaded', async function() {
+            console.log('🚀 Page loaded, initializing webcam configuration...');
+
             const characterId = document.getElementById('characterId').value;
             const stopBtn = document.getElementById('stopStreamForConfigBtn');
             const restartBtn = document.getElementById('restartStreamBtn');
 
+            console.log('📋 Character ID:', characterId);
+
             if (characterId) {
                 try {
+                    console.log('🔍 Checking stream status...');
                     const response = await fetch(`/api/streaming/status/${characterId}`);
                     const data = await response.json();
+                    console.log('📊 Stream status:', data);
 
                     if (data.success && data.hasStream) {
                         stopBtn.style.display = 'inline-block';
                         restartBtn.style.display = 'none';
+                        console.log('🔴 Stream is active, showing stop button');
                     } else {
                         stopBtn.style.display = 'none';
                         restartBtn.style.display = 'none';
+                        console.log('⚪ No active stream');
                     }
                 } catch (error) {
-                    console.error('Error checking stream status:', error);
+                    console.error('❌ Error checking stream status:', error);
                 }
             }
 
             // Auto-detect cameras on page load for all cases
+            console.log('⏰ Starting auto-detection in 1 second...');
             setTimeout(() => {
+                console.log('🎬 Auto-detecting cameras now...');
                 detectCameras(false);
-            }, 500); // Small delay to ensure page is fully loaded
+            }, 1000); // Increased delay to ensure page is fully loaded
         });
     </script>
 </body>
