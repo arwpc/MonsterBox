@@ -461,22 +461,40 @@ class StreamingService extends EventEmitter {
                     }
                 }, 10000);
 
-                process.stdout.once('data', () => {
-                    initialized = true;
-                    clearTimeout(initTimeout);
-                    resolve({
-                        success: true,
-                        process: process
-                    });
-                });
+                let logBuffer = '';
 
                 process.stderr.on('data', (data) => {
-                    const error = data.toString();
-                    if (!initialized) {
+                    const logData = data.toString();
+                    logBuffer += logData;
+
+                    // Check for successful initialization message
+                    if (logData.includes('Camera initialization successful') && !initialized) {
+                        initialized = true;
+                        clearTimeout(initTimeout);
+                        resolve({
+                            success: true,
+                            process: process
+                        });
+                    }
+
+                    // Check for actual errors
+                    if (logData.includes('Failed to initialize camera') && !initialized) {
                         clearTimeout(initTimeout);
                         resolve({
                             success: false,
-                            error: error
+                            error: logBuffer
+                        });
+                    }
+                });
+
+                process.stdout.on('data', (data) => {
+                    // Stream data is flowing, ensure we're marked as initialized
+                    if (!initialized) {
+                        initialized = true;
+                        clearTimeout(initTimeout);
+                        resolve({
+                            success: true,
+                            process: process
                         });
                     }
                 });
@@ -539,22 +557,40 @@ class StreamingService extends EventEmitter {
                     }
                 }, 15000);
 
-                process.stdout.once('data', () => {
-                    initialized = true;
-                    clearTimeout(initTimeout);
-                    resolve({
-                        success: true,
-                        process: process
-                    });
-                });
+                let logBuffer = '';
 
                 process.stderr.on('data', (data) => {
-                    const error = data.toString();
-                    if (!initialized) {
+                    const logData = data.toString();
+                    logBuffer += logData;
+
+                    // Check for successful initialization message
+                    if (logData.includes('Camera initialization successful') && !initialized) {
+                        initialized = true;
+                        clearTimeout(initTimeout);
+                        resolve({
+                            success: true,
+                            process: process
+                        });
+                    }
+
+                    // Check for actual errors
+                    if (logData.includes('Failed to initialize camera') && !initialized) {
                         clearTimeout(initTimeout);
                         resolve({
                             success: false,
-                            error: error
+                            error: logBuffer
+                        });
+                    }
+                });
+
+                process.stdout.on('data', (data) => {
+                    // Stream data is flowing, ensure we're marked as initialized
+                    if (!initialized) {
+                        initialized = true;
+                        clearTimeout(initTimeout);
+                        resolve({
+                            success: true,
+                            process: process
                         });
                     }
                 });
