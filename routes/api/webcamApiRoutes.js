@@ -193,6 +193,20 @@ router.get('/test-stream', async (req, res) => {
     }
 });
 
+// Utility function to safely serialize objects with circular references
+function safeStringify(obj, space) {
+    const seen = new WeakSet();
+    return JSON.stringify(obj, (key, val) => {
+        if (val != null && typeof val === "object") {
+            if (seen.has(val)) {
+                return "[Circular]";
+            }
+            seen.add(val);
+        }
+        return val;
+    }, space);
+}
+
 // Get webcam status for character
 router.get('/status/:characterId', async (req, res) => {
     try {
@@ -205,10 +219,34 @@ router.get('/status/:characterId', async (req, res) => {
         }
 
         const status = await webcamService.getWebcamStatus(characterId);
-        res.json({
+
+        // Clean the status object to remove circular references
+        const cleanStatus = {
             success: true,
-            ...status
-        });
+            hasWebcam: status.hasWebcam,
+            status: status.status,
+            isStreaming: status.isStreaming,
+            streamClients: status.streamClients,
+            lastActivity: status.lastActivity,
+            message: status.message,
+            webcam: status.webcam ? {
+                id: status.webcam.id,
+                name: status.webcam.name,
+                deviceId: status.webcam.deviceId,
+                devicePath: status.webcam.devicePath,
+                resolution: status.webcam.resolution,
+                fps: status.webcam.fps,
+                status: status.webcam.status,
+                characterId: status.webcam.characterId
+            } : null,
+            deviceHealth: status.deviceHealth ? {
+                healthy: status.deviceHealth.healthy,
+                message: status.deviceHealth.message,
+                lastChecked: status.deviceHealth.lastChecked
+            } : null
+        };
+
+        res.json(cleanStatus);
     } catch (error) {
         logger.error('Error getting webcam status:', error);
         res.status(500).json({

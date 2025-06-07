@@ -79,9 +79,15 @@
                 <button type="button" id="fullscreenBtn" class="btn btn-secondary">
                     ⛶ Fullscreen
                 </button>
-                <button type="button" id="configureWebcamBtn" class="btn btn-primary">
-                    ⚙️ Configure Camera
-                </button>
+                <% if (webcam && webcam.id) { %>
+                    <a href="/parts/webcam/<%= webcam.id %>/edit?characterId=<%= character.id %>" class="btn btn-primary">
+                        ⚙️ Configure Camera
+                    </a>
+                <% } else { %>
+                    <a href="/parts/webcam/new?characterId=<%= character.id %>" class="btn btn-primary">
+                        ⚙️ Configure Camera
+                    </a>
+                <% } %>
             </div>
         </div>
 
@@ -116,28 +122,15 @@
                     🧪 Test Camera
                 </button>
             <% } else { %>
-                <button type="button" id="assignWebcamBtn" class="btn btn-primary">
+                <a href="/parts/webcam/new?characterId=<%= character.id %>" class="btn btn-primary">
                     ➕ Assign Webcam
-                </button>
+                </a>
             <% } %>
         </div>
     </div>
 </div>
 
-<!-- Webcam Configuration Modal -->
-<div id="webcamConfigModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>📹 Webcam Configuration</h3>
-            <button type="button" class="modal-close" id="closeConfigModal">&times;</button>
-        </div>
-        <div class="modal-body">
-            <div id="webcamConfigContent">
-                <!-- Content will be loaded dynamically -->
-            </div>
-        </div>
-    </div>
-</div>
+<!-- Modal removed - using direct navigation to webcam configuration page -->
 
 <style>
 .video-configuration-component {
@@ -615,11 +608,7 @@
             fullscreenBtn.addEventListener('click', toggleFullscreen);
         }
 
-        // Configure webcam
-        const configureBtn = document.getElementById('configureWebcamBtn');
-        if (configureBtn) {
-            configureBtn.addEventListener('click', openWebcamConfig);
-        }
+        // Configure webcam - now handled by direct links, no JavaScript needed
 
         // Stream controls
         const startStreamBtn = document.getElementById('startStreamBtn');
@@ -639,16 +628,7 @@
             testCameraBtn.addEventListener('click', testCamera);
         }
 
-        const assignWebcamBtn = document.getElementById('assignWebcamBtn');
-        if (assignWebcamBtn) {
-            assignWebcamBtn.addEventListener('click', assignWebcam);
-        }
-
-        // Modal controls
-        const closeModalBtn = document.getElementById('closeConfigModal');
-        if (closeModalBtn) {
-            closeModalBtn.addEventListener('click', closeWebcamConfig);
-        }
+        // Assign webcam - now handled by direct links, no JavaScript needed
     }
 
     // Refresh video stream
@@ -699,50 +679,7 @@
         }
     }
 
-    // Open webcam configuration
-    function openWebcamConfig() {
-        const modal = document.getElementById('webcamConfigModal');
-        const content = document.getElementById('webcamConfigContent');
-        
-        if (modal && content && characterId) {
-            // Load webcam configuration form
-            content.innerHTML = '<div class="loading">Loading configuration...</div>';
-            modal.style.display = 'flex';
-            
-            // Load the webcam configuration content
-            fetch(`/parts/webcam/edit/${characterId}`)
-                .then(response => {
-                    if (!response.ok) {
-                        // If edit doesn't exist, try new
-                        return fetch(`/parts/webcam/new?characterId=${characterId}`);
-                    }
-                    return response;
-                })
-                .then(response => response.text())
-                .then(html => {
-                    // Extract just the form content
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(html, 'text/html');
-                    const form = doc.querySelector('form');
-                    if (form) {
-                        content.innerHTML = form.outerHTML;
-                    } else {
-                        content.innerHTML = '<div class="error">Failed to load configuration form</div>';
-                    }
-                })
-                .catch(error => {
-                    content.innerHTML = '<div class="error">Error loading configuration: ' + error.message + '</div>';
-                });
-        }
-    }
-
-    // Close webcam configuration
-    function closeWebcamConfig() {
-        const modal = document.getElementById('webcamConfigModal');
-        if (modal) {
-            modal.style.display = 'none';
-        }
-    }
+    // Modal functions removed - using direct navigation to webcam configuration page
 
     // Start stream
     async function startStream() {
@@ -796,12 +733,7 @@
         }
     }
 
-    // Assign webcam
-    function assignWebcam() {
-        if (characterId) {
-            window.location.href = `/parts/webcam/new?characterId=${characterId}`;
-        }
-    }
+    // Assign webcam function removed - using direct links
 
     // Update stream controls
     function updateStreamControls(isStreaming) {
