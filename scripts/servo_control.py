@@ -176,9 +176,9 @@ def set_servo_angle_gpio(pin_or_channel, angle):
             lgpio.gpio_claim_output(h, pin)
 
             # Use lgpio's dedicated servo function
-            # tx_servo(handle, gpio, pulse_width, servo_frequency=50, pulse_offset=0, pulse_cycles=0)
-            # pulse_width in microseconds, servo_frequency in Hz
-            lgpio.tx_servo(h, pin, pulse_width, 50, 0, 1)
+            # tx_servo(handle, gpio, pulse_width) - use default parameters
+            # pulse_width in microseconds
+            lgpio.tx_servo(h, pin, pulse_width)
 
             # Allow time for servo to move
             time.sleep(0.5)
