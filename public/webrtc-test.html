@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MonsterBox WebRTC Stream Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.8;
+            font-size: 1.1em;
+        }
+        
+        .test-section {
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .character-selector {
+            margin-bottom: 20px;
+        }
+        
+        .character-selector label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        
+        .character-selector select {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.9);
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .video-player-container {
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .video-player-container h3 {
+            margin: 0 0 15px 0;
+            text-align: center;
+            color: #fff;
+        }
+        
+        .video-player {
+            width: 100%;
+            min-height: 300px;
+            background: #000;
+            border-radius: 6px;
+        }
+        
+        .controls-panel {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+        
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #2196F3;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #1976D2;
+            transform: translateY(-2px);
+        }
+        
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #d32f2f;
+            transform: translateY(-2px);
+        }
+        
+        .status-panel {
+            background: rgba(0,0,0,0.5);
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        
+        .status-panel h3 {
+            margin: 0 0 10px 0;
+            color: #4CAF50;
+        }
+        
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .status-item {
+            background: rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 4px;
+        }
+        
+        .status-item strong {
+            display: block;
+            color: #4CAF50;
+            margin-bottom: 5px;
+        }
+        
+        .log-panel {
+            background: rgba(0,0,0,0.7);
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .log-panel h3 {
+            margin: 0 0 10px 0;
+            color: #FFC107;
+        }
+        
+        .log-entry {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin-bottom: 5px;
+            padding: 5px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 3px;
+            border-left: 3px solid #4CAF50;
+        }
+        
+        .log-entry.error {
+            border-left-color: #f44336;
+            color: #ffcdd2;
+        }
+        
+        .log-entry.warning {
+            border-left-color: #FFC107;
+            color: #fff3c4;
+        }
+        
+        @media (max-width: 768px) {
+            .video-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls-panel {
+                justify-content: center;
+            }
+            
+            .status-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎭 MonsterBox WebRTC Stream Test</h1>
+            <p>Advanced streaming client testing for Orlok and other animatronics</p>
+        </div>
+        
+        <div class="test-section">
+            <div class="character-selector">
+                <label for="characterSelect">Select Character:</label>
+                <select id="characterSelect">
+                    <option value="">-- Select Character --</option>
+                    <option value="1">Orlok (ID: 1)</option>
+                    <option value="2">Coffin (ID: 2)</option>
+                    <option value="3">Pumpkinhead (ID: 3)</option>
+                </select>
+            </div>
+            
+            <div class="video-grid">
+                <div class="video-player-container">
+                    <h3>Primary Stream</h3>
+                    <div id="videoPlayer1" class="video-player"></div>
+                    <div class="controls-panel">
+                        <button class="btn btn-primary" onclick="startStream(1)">Start Stream</button>
+                        <button class="btn btn-danger" onclick="stopStream(1)">Stop Stream</button>
+                        <button class="btn btn-secondary" onclick="toggleStats(1)">Toggle Stats</button>
+                    </div>
+                </div>
+                
+                <div class="video-player-container">
+                    <h3>Secondary Stream (Multi-client Test)</h3>
+                    <div id="videoPlayer2" class="video-player"></div>
+                    <div class="controls-panel">
+                        <button class="btn btn-primary" onclick="startStream(2)">Start Stream</button>
+                        <button class="btn btn-danger" onclick="stopStream(2)">Stop Stream</button>
+                        <button class="btn btn-secondary" onclick="toggleStats(2)">Toggle Stats</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="controls-panel">
+                <button class="btn btn-primary" onclick="startAllStreams()">Start All Streams</button>
+                <button class="btn btn-danger" onclick="stopAllStreams()">Stop All Streams</button>
+                <button class="btn btn-secondary" onclick="testReconnection()">Test Reconnection</button>
+                <button class="btn btn-secondary" onclick="loadStreamStats()">Load Stream Stats</button>
+                <button class="btn btn-secondary" onclick="clearLogs()">Clear Logs</button>
+            </div>
+        </div>
+        
+        <div class="status-panel">
+            <h3>📊 Stream Status</h3>
+            <div class="status-grid" id="statusGrid">
+                <div class="status-item">
+                    <strong>Primary Stream</strong>
+                    <span id="status1">Disconnected</span>
+                </div>
+                <div class="status-item">
+                    <strong>Secondary Stream</strong>
+                    <span id="status2">Disconnected</span>
+                </div>
+                <div class="status-item">
+                    <strong>Total Clients</strong>
+                    <span id="totalClients">0</span>
+                </div>
+                <div class="status-item">
+                    <strong>Active Streams</strong>
+                    <span id="activeStreams">0</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="log-panel">
+            <h3>📝 Event Log</h3>
+            <div id="logContainer"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import VideoPlayerComponent from './js/VideoPlayerComponent.js';
+        
+        // Global variables
+        window.videoPlayers = {};
+        window.currentCharacterId = null;
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeTestPage();
+        });
+        
+        function initializeTestPage() {
+            log('WebRTC Test Page initialized');
+            
+            // Setup character selector
+            const characterSelect = document.getElementById('characterSelect');
+            characterSelect.addEventListener('change', function() {
+                window.currentCharacterId = this.value;
+                log(`Character selected: ${this.value}`);
+            });
+            
+            // Load initial stream status
+            loadStreamStats();
+            
+            // Start periodic status updates
+            setInterval(loadStreamStats, 10000); // Every 10 seconds
+        }
+        
+        window.startStream = function(playerId) {
+            const characterId = window.currentCharacterId;
+            if (!characterId) {
+                log('Please select a character first', 'error');
+                return;
+            }
+            
+            log(`Starting stream ${playerId} for character ${characterId}`);
+            
+            const container = document.getElementById(`videoPlayer${playerId}`);
+            
+            // Destroy existing player if any
+            if (window.videoPlayers[playerId]) {
+                window.videoPlayers[playerId].destroy();
+            }
+            
+            // Create new video player
+            window.videoPlayers[playerId] = new VideoPlayerComponent(container, {
+                characterId: parseInt(characterId),
+                autoStart: true,
+                showControls: true,
+                showStats: false
+            });
+            
+            // Setup event listeners
+            const player = window.videoPlayers[playerId];
+            
+            player.streamClient.on('connected', (data) => {
+                log(`Stream ${playerId} connected: ${JSON.stringify(data)}`);
+                updateStatus(playerId, 'Connected');
+            });
+            
+            player.streamClient.on('disconnected', (data) => {
+                log(`Stream ${playerId} disconnected: ${JSON.stringify(data)}`);
+                updateStatus(playerId, 'Disconnected');
+            });
+            
+            player.streamClient.on('reconnecting', (data) => {
+                log(`Stream ${playerId} reconnecting: attempt ${data.attempt}/${data.maxAttempts}`, 'warning');
+                updateStatus(playerId, `Reconnecting (${data.attempt}/${data.maxAttempts})`);
+            });
+            
+            player.streamClient.on('connectionFailed', (data) => {
+                log(`Stream ${playerId} connection failed: ${data.error}`, 'error');
+                updateStatus(playerId, 'Failed');
+            });
+        };
+        
+        window.stopStream = function(playerId) {
+            log(`Stopping stream ${playerId}`);
+            
+            if (window.videoPlayers[playerId]) {
+                window.videoPlayers[playerId].destroy();
+                delete window.videoPlayers[playerId];
+            }
+            
+            updateStatus(playerId, 'Disconnected');
+        };
+        
+        window.toggleStats = function(playerId) {
+            if (window.videoPlayers[playerId]) {
+                window.videoPlayers[playerId].toggleStats();
+                log(`Toggled stats for stream ${playerId}`);
+            }
+        };
+        
+        window.startAllStreams = function() {
+            log('Starting all streams');
+            startStream(1);
+            setTimeout(() => startStream(2), 1000); // Stagger start
+        };
+        
+        window.stopAllStreams = function() {
+            log('Stopping all streams');
+            stopStream(1);
+            stopStream(2);
+        };
+        
+        window.testReconnection = function() {
+            log('Testing reconnection by stopping and restarting streams');
+            stopAllStreams();
+            setTimeout(() => {
+                startAllStreams();
+            }, 2000);
+        };
+        
+        window.loadStreamStats = async function() {
+            try {
+                const response = await fetch('/api/streaming/status/all');
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateGlobalStats(data.streams);
+                    log(`Loaded stream stats: ${data.streams.totalStreams} total, ${data.streams.activeStreams} active`);
+                } else {
+                    log('Failed to load stream stats', 'error');
+                }
+            } catch (error) {
+                log(`Error loading stream stats: ${error.message}`, 'error');
+            }
+        };
+        
+        window.clearLogs = function() {
+            document.getElementById('logContainer').innerHTML = '';
+            log('Logs cleared');
+        };
+        
+        function updateStatus(playerId, status) {
+            const statusElement = document.getElementById(`status${playerId}`);
+            if (statusElement) {
+                statusElement.textContent = status;
+                statusElement.style.color = status.includes('Connected') ? '#4CAF50' : 
+                                           status.includes('Failed') ? '#f44336' : 
+                                           status.includes('Reconnecting') ? '#FFC107' : '#fff';
+            }
+        }
+        
+        function updateGlobalStats(streams) {
+            document.getElementById('totalClients').textContent = streams.totalClients || 0;
+            document.getElementById('activeStreams').textContent = streams.activeStreams || 0;
+        }
+        
+        function log(message, level = 'info') {
+            const logContainer = document.getElementById('logContainer');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${level}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            
+            // Keep only last 100 log entries
+            while (logContainer.children.length > 100) {
+                logContainer.removeChild(logContainer.firstChild);
+            }
+            
+            // Also log to console
+            console.log(`[${level.toUpperCase()}] ${message}`);
+        }
+        
+        // Make log function globally available
+        window.log = log;
+    </script>
+</body>
+</html>

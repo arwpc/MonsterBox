@@ -55,6 +55,7 @@
     "qrcode": "^1.5.4",
     "speakeasy": "^2.0.0",
     "task-master-ai": "^0.16.1",
+    "webrtc-adapter": "^8.2.3",
     "winston": "^3.11.0",
     "ws": "^8.14.2"
   },

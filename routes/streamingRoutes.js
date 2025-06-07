@@ -198,18 +198,18 @@ router.get('/health/:characterId', async (req, res) => {
             });
         }
 
-        const streamInfo = streamingService.getStreamInfo(characterId);
+        const streamHealth = streamingService.getStreamHealth(characterId);
         const webcamHealth = await webcamService.monitorDeviceHealth(characterId);
 
         const health = {
             characterId: characterId,
-            streamActive: !!streamInfo && streamInfo.status === 'active',
-            streamInfo: streamInfo,
+            streamActive: streamHealth.isActive,
+            streamHealth: streamHealth,
             webcamHealth: webcamHealth,
             timestamp: new Date().toISOString()
         };
 
-        const isHealthy = health.streamActive && webcamHealth.healthy;
+        const isHealthy = streamHealth.healthy && webcamHealth.healthy;
 
         res.status(isHealthy ? 200 : 503).json({
             success: isHealthy,
@@ -221,6 +221,102 @@ router.get('/health/:characterId', async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Internal server error',
+            error: error.message
+        });
+    }
+});
+
+// Enhanced stream statistics endpoint
+router.get('/stats/:characterId', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.characterId);
+        if (isNaN(characterId)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid character ID'
+            });
+        }
+
+        const stats = streamingService.getStreamStatistics(characterId);
+
+        res.json({
+            success: true,
+            statistics: stats
+        });
+    } catch (error) {
+        logger.error('Error getting stream statistics:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error getting stream statistics',
+            error: error.message
+        });
+    }
+});
+
+// Get all streams status
+router.get('/status/all', async (req, res) => {
+    try {
+        const allStreams = streamingService.getAllStreamsStatus();
+
+        res.json({
+            success: true,
+            streams: allStreams
+        });
+    } catch (error) {
+        logger.error('Error getting all streams status:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error getting streams status',
+            error: error.message
+        });
+    }
+});
+
+// Disconnect specific client
+router.post('/disconnect/:clientId', async (req, res) => {
+    try {
+        const clientId = req.params.clientId;
+
+        const success = streamingService.disconnectClient(clientId);
+
+        res.json({
+            success: success,
+            message: success ? 'Client disconnected' : 'Client not found'
+        });
+    } catch (error) {
+        logger.error('Error disconnecting client:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error disconnecting client',
+            error: error.message
+        });
+    }
+});
+
+// Set stream auto-stop behavior
+router.post('/auto-stop/:characterId', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.characterId);
+        const { autoStop } = req.body;
+
+        if (isNaN(characterId)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid character ID'
+            });
+        }
+
+        streamingService.setAutoStop(characterId, autoStop);
+
+        res.json({
+            success: true,
+            message: `Auto-stop ${autoStop ? 'enabled' : 'disabled'} for character ${characterId}`
+        });
+    } catch (error) {
+        logger.error('Error setting auto-stop:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error setting auto-stop',
             error: error.message
         });
     }
