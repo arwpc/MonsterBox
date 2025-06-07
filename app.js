@@ -139,6 +139,7 @@ app.use('/camera', cameraRoutes);
 app.use('/api/webcam', require('./routes/api/webcamApiRoutes'));
 app.use('/api/streaming', require('./routes/streamingRoutes'));
 app.use('/api/character-webcam', require('./routes/api/characterWebcamApiRoutes'));
+app.use('/api/motion-tracking', require('./routes/api/motionTrackingApiRoutes'));
 app.use('/api/voice', voiceRoutes);
 
 // Test route for video configuration component

@@ -154,6 +154,17 @@
                                 </label>
                             </div>
 
+                            <div class="form-group">
+                                <label for="motion_tracking_enabled" title="Enable OpenCV-based motion tracking for head movement control">
+                                    <input type="checkbox" id="motion_tracking_enabled" name="motion_tracking_enabled"
+                                           <%= (character && character.animatronic && character.animatronic.motion_tracking && character.animatronic.motion_tracking.enabled) ? 'checked' : '' %>>
+                                    🎯 Enable Motion Tracking
+                                </label>
+                                <small style="color: #888; display: block; margin-top: 5px;">
+                                    Uses OpenCV to track motion for future servo-based head tracking
+                                </small>
+                            </div>
+
 
 
                             <!-- Animatronic Management Buttons -->
@@ -314,7 +325,50 @@
             });
         }
 
+        // Motion tracking toggle functionality
+        const motionTrackingEnabled = document.getElementById('motion_tracking_enabled');
+        if (motionTrackingEnabled) {
+            motionTrackingEnabled.addEventListener('change', function() {
+                const characterId = '<%= character && character.id ? character.id : "" %>';
+                if (characterId) {
+                    updateMotionTrackingStatus(characterId, this.checked);
+                }
+            });
+        }
 
+        function updateMotionTrackingStatus(characterId, enabled) {
+            fetch('/api/motion-tracking/settings/' + characterId, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    enabled: enabled
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Motion tracking ' + (enabled ? 'enabled' : 'disabled') + ' for character ' + characterId);
+
+                    // Show visual feedback
+                    const label = document.querySelector('label[for="motion_tracking_enabled"]');
+                    if (label) {
+                        const icon = enabled ? '🎯' : '⭕';
+                        label.innerHTML = label.innerHTML.replace(/^[🎯⭕]\s*/, icon + ' ');
+                    }
+                } else {
+                    console.error('Failed to update motion tracking:', data.message);
+                    // Revert checkbox state on error
+                    motionTrackingEnabled.checked = !enabled;
+                }
+            })
+            .catch(error => {
+                console.error('Error updating motion tracking:', error);
+                // Revert checkbox state on error
+                motionTrackingEnabled.checked = !enabled;
+            });
+        }
 
         // Form submission handling
         const form = document.querySelector('form');

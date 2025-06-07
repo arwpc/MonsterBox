@@ -160,6 +160,13 @@ router.post('/', upload.single('character_image'), async (req, res) => {
                 character_type: req.body.character_type || '',
                 description: req.body.animatronic_description || '',
                 hardware_monitoring: req.body.hardware_monitoring === 'on',
+                motion_tracking: {
+                    enabled: req.body.motion_tracking_enabled === 'on',
+                    sensitivity: 50,
+                    min_area: 500,
+                    last_motion: null,
+                    motion_center: null
+                },
                 services: [
                     "monsterbox",
                     "nginx",
@@ -241,6 +248,13 @@ router.post('/:id', upload.single('character_image'), async (req, res) => {
                 character_type: req.body.character_type || '',
                 description: req.body.animatronic_description || '',
                 hardware_monitoring: req.body.hardware_monitoring === 'on',
+                motion_tracking: {
+                    enabled: req.body.motion_tracking_enabled === 'on',
+                    sensitivity: 50,
+                    min_area: 500,
+                    last_motion: null,
+                    motion_center: null
+                },
                 services: [
                     "monsterbox",
                     "nginx",

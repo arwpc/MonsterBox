@@ -36,6 +36,13 @@
         "user"
       ],
       "hardware_monitoring": true,
+      "motion_tracking": {
+        "enabled": false,
+        "sensitivity": 50,
+        "min_area": 500,
+        "last_motion": null,
+        "motion_center": null
+      },
       "animatronic_parts": [
         "Right Arm of Satan",
         "Left Arm of Manipulation",
@@ -82,6 +89,13 @@
         "user"
       ],
       "hardware_monitoring": true,
+      "motion_tracking": {
+        "enabled": false,
+        "sensitivity": 50,
+        "min_area": 500,
+        "last_motion": null,
+        "motion_center": null
+      },
       "animatronic_parts": []
     }
   },
