@@ -75,7 +75,31 @@ class StreamingService extends EventEmitter {
             }
 
             // Determine if this is a remote stream
-            const isRemote = character.animatronic && character.animatronic.rpi_config;
+            // Check if we're running on the same host as the character's RPI
+            let isRemote = false;
+            if (character.animatronic && character.animatronic.rpi_config) {
+                const rpiHost = character.animatronic.rpi_config.host;
+                const os = require('os');
+                const networkInterfaces = os.networkInterfaces();
+
+                // Check if the RPI host matches any of our local IP addresses
+                let isLocalHost = false;
+                for (const interfaceName in networkInterfaces) {
+                    const addresses = networkInterfaces[interfaceName];
+                    for (const addr of addresses) {
+                        if (addr.family === 'IPv4' && addr.address === rpiHost) {
+                            isLocalHost = true;
+                            break;
+                        }
+                    }
+                    if (isLocalHost) break;
+                }
+
+                // If the RPI host doesn't match our local IPs, it's remote
+                isRemote = !isLocalHost;
+
+                logger.info(`Character ${characterId} stream mode: ${isRemote ? 'remote' : 'local'} (RPI host: ${rpiHost})`);
+            }
             
             // Parse resolution
             const [width, height] = webcam.resolution.split('x').map(Number);
