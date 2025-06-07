@@ -12,9 +12,9 @@ const path = require('path');
 class Task16WebcamTester {
     constructor() {
         this.testResults = [];
-        this.orlokHost = '192.168.8.120';
+        this.orlokHost = '192.168.8.140'; // Using Coffin RPI for testing
         this.orlokUser = 'remote';
-        this.orlokCharacterId = 2; // Assuming Orlok is character ID 2
+        this.orlokCharacterId = 1; // Using character ID 1 for testing
     }
 
     log(message) {
@@ -64,7 +64,7 @@ class Task16WebcamTester {
 
     async makeAPIRequest(endpoint, options = {}) {
         const fetch = (await import('node-fetch')).default;
-        const baseUrl = 'http://localhost:3000';
+        const baseUrl = `http://${this.orlokHost}:3000`;
         
         try {
             const response = await fetch(`${baseUrl}${endpoint}`, {
