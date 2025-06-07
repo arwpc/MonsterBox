@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - MonsterBox</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #ff6b35;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section {
+            background-color: #2d2d2d;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #444;
+        }
+        .section h3 {
+            color: #ff6b35;
+            margin-top: 0;
+        }
+        .control-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #cccccc;
+        }
+        select, input, button {
+            padding: 8px 12px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background-color: #3d3d3d;
+            color: #ffffff;
+            font-size: 14px;
+        }
+        button {
+            background-color: #ff6b35;
+            border: none;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #e55a2b;
+        }
+        button:disabled {
+            background-color: #666;
+            cursor: not-allowed;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        .status.success {
+            background-color: #2d5a2d;
+            border: 1px solid #4a8f4a;
+        }
+        .status.error {
+            background-color: #5a2d2d;
+            border: 1px solid #8f4a4a;
+        }
+        .status.info {
+            background-color: #2d3d5a;
+            border: 1px solid #4a6a8f;
+        }
+        .monitor {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .meter {
+            background-color: #1a1a1a;
+            border: 1px solid #555;
+            border-radius: 4px;
+            padding: 10px;
+            text-align: center;
+        }
+        .meter-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ff6b35;
+        }
+        .meter-label {
+            font-size: 12px;
+            color: #cccccc;
+            margin-top: 5px;
+        }
+        .angle-slider {
+            width: 100%;
+            margin: 10px 0;
+        }
+        #status {
+            min-height: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Jaw Animation Test</h1>
+        
+        <div id="status"></div>
+
+        <div class="section">
+            <h3>Character Selection</h3>
+            <div class="control-group">
+                <label for="characterSelect">Select Character:</label>
+                <select id="characterSelect">
+                    <option value="1">Orlok</option>
+                    <option value="2">Coffin Breaker</option>
+                    <option value="3">PumpkinHead</option>
+                    <option value="4" <%= characterId == '4' ? 'selected' : '' %>>Skulltalker Ded</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="servoSelect">Select Jaw Servo:</label>
+                <select id="servoSelect">
+                    <option value="">Loading...</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Control Panel</h3>
+            <div class="control-group">
+                <label for="angleSlider">Servo Angle (0-180°):</label>
+                <input type="range" id="angleSlider" class="angle-slider" min="0" max="180" value="90">
+                <span id="angleValue">90°</span>
+            </div>
+            <button onclick="startAnimation()">Start Animation</button>
+            <button onclick="stopAnimation()">Stop Animation</button>
+            <button onclick="testServo()">Test Servo</button>
+        </div>
+
+        <div class="section">
+            <h3>Real-time Monitoring</h3>
+            <div class="monitor">
+                <div class="meter">
+                    <div class="meter-label">Audio Volume:</div>
+                    <div class="meter-value" id="audioVolume">0.00</div>
+                    <div class="meter-label">Raw: <span id="audioRaw">0.00</span> | Smoothed: <span id="audioSmoothed">0.00</span></div>
+                </div>
+                <div class="meter">
+                    <div class="meter-label">Servo Position:</div>
+                    <div class="meter-value" id="servoPosition">90°</div>
+                </div>
+            </div>
+            <div class="monitor" style="margin-top: 15px;">
+                <div class="meter">
+                    <div class="meter-label">Performance:</div>
+                    <div style="font-size: 14px;">
+                        Updates/sec: <span id="updateRate">0</span><br>
+                        Latency: <span id="latency">0ms</span><br>
+                        Memory: <span id="memory">0MB</span><br>
+                        Clients: <span id="clients">0</span>
+                    </div>
+                </div>
+                <div class="meter">
+                    <div class="meter-label">System Log</div>
+                    <div id="systemLog" style="font-size: 12px; text-align: left; max-height: 100px; overflow-y: auto;">
+                        System ready...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Configuration</h3>
+            <div class="control-group">
+                <h4>Presets:</h4>
+                <button onclick="loadPreset('skeleton')">Skeleton</button>
+                <button onclick="loadPreset('bear')">Bear</button>
+                <button onclick="loadPreset('fish')">Fish</button>
+                <button onclick="loadPreset('demon')">Demon</button>
+            </div>
+            <div class="control-group">
+                <h4>Audio Analysis:</h4>
+                <label for="volumeThreshold">Volume Threshold:</label>
+                <input type="number" id="volumeThreshold" value="0.01" step="0.01" min="0" max="1">
+                
+                <label for="smoothing">Smoothing:</label>
+                <input type="number" id="smoothing" value="0.8" step="0.1" min="0" max="1">
+            </div>
+            <div class="control-group">
+                <h4>Servo Mapping:</h4>
+                <label for="minPosition">Min Position:</label>
+                <input type="number" id="minPosition" value="0" min="0" max="180">
+                
+                <label for="maxPosition">Max Position:</label>
+                <input type="number" id="maxPosition" value="180" min="0" max="180">
+                
+                <label for="sensitivity">Sensitivity:</label>
+                <input type="number" id="sensitivity" value="1.0" step="0.1" min="0.1" max="5.0">
+                
+                <label for="responseCurve">Response Curve:</label>
+                <select id="responseCurve">
+                    <option value="linear">Linear</option>
+                    <option value="exponential">Exponential</option>
+                    <option value="logarithmic">Logarithmic</option>
+                    <option value="custom">Custom</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentCharacterId = <%= characterId %>;
+        let animationActive = false;
+        let servoConfig = null;
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadServoConfig();
+            
+            // Update angle display when slider changes
+            document.getElementById('angleSlider').addEventListener('input', function() {
+                document.getElementById('angleValue').textContent = this.value + '°';
+            });
+            
+            // Character selection change
+            document.getElementById('characterSelect').addEventListener('change', function() {
+                currentCharacterId = this.value;
+                loadServoConfig();
+            });
+        });
+
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        async function loadServoConfig() {
+            try {
+                showStatus('Loading servo configuration...', 'info');
+                const response = await fetch(`/jaw-animation/api/servo/${currentCharacterId}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    showStatus(data.error, 'error');
+                    return;
+                }
+                
+                servoConfig = data.servo;
+                updateServoSelect();
+                showStatus('Servo configuration loaded successfully', 'success');
+                
+            } catch (error) {
+                showStatus('Error loading servo configuration: ' + error.message, 'error');
+            }
+        }
+
+        function updateServoSelect() {
+            const select = document.getElementById('servoSelect');
+            if (servoConfig) {
+                select.innerHTML = `<option value="${servoConfig.id}">${servoConfig.name} (Pin: ${servoConfig.pin}, Channel: ${servoConfig.channel})</option>`;
+            } else {
+                select.innerHTML = '<option value="">No servo found</option>';
+            }
+        }
+
+        async function testServo() {
+            const angle = document.getElementById('angleSlider').value;
+            
+            try {
+                showStatus(`Testing servo at ${angle}°...`, 'info');
+                const response = await fetch(`/jaw-animation/api/servo/${currentCharacterId}/test`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ angle: parseInt(angle) })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    showStatus(data.error, 'error');
+                } else {
+                    showStatus(data.message, 'success');
+                    document.getElementById('servoPosition').textContent = angle + '°';
+                    addLogEntry(`Servo moved to ${angle}°`);
+                }
+                
+            } catch (error) {
+                showStatus('Error testing servo: ' + error.message, 'error');
+            }
+        }
+
+        async function startAnimation() {
+            try {
+                showStatus('Starting jaw animation...', 'info');
+                const response = await fetch(`/jaw-animation/api/animation/${currentCharacterId}/start`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    showStatus(data.error, 'error');
+                } else {
+                    animationActive = true;
+                    showStatus('Jaw animation started', 'success');
+                    addLogEntry('Animation started');
+                }
+                
+            } catch (error) {
+                showStatus('Error starting animation: ' + error.message, 'error');
+            }
+        }
+
+        async function stopAnimation() {
+            try {
+                showStatus('Stopping jaw animation...', 'info');
+                const response = await fetch(`/jaw-animation/api/animation/${currentCharacterId}/stop`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    showStatus(data.error, 'error');
+                } else {
+                    animationActive = false;
+                    showStatus('Jaw animation stopped', 'success');
+                    addLogEntry('Animation stopped');
+                }
+                
+            } catch (error) {
+                showStatus('Error stopping animation: ' + error.message, 'error');
+            }
+        }
+
+        function loadPreset(type) {
+            const presets = {
+                skeleton: { minPosition: 0, maxPosition: 180, sensitivity: 1.5, volumeThreshold: 0.02 },
+                bear: { minPosition: 10, maxPosition: 170, sensitivity: 1.2, volumeThreshold: 0.015 },
+                fish: { minPosition: 20, maxPosition: 160, sensitivity: 2.0, volumeThreshold: 0.01 },
+                demon: { minPosition: 0, maxPosition: 180, sensitivity: 1.8, volumeThreshold: 0.025 }
+            };
+            
+            const preset = presets[type];
+            if (preset) {
+                document.getElementById('minPosition').value = preset.minPosition;
+                document.getElementById('maxPosition').value = preset.maxPosition;
+                document.getElementById('sensitivity').value = preset.sensitivity;
+                document.getElementById('volumeThreshold').value = preset.volumeThreshold;
+                showStatus(`Loaded ${type} preset`, 'success');
+                addLogEntry(`Loaded ${type} preset`);
+            }
+        }
+
+        function addLogEntry(message) {
+            const log = document.getElementById('systemLog');
+            const timestamp = new Date().toLocaleTimeString();
+            log.innerHTML += `<br>${timestamp}: ${message}`;
+            log.scrollTop = log.scrollHeight;
+        }
+
+        // Simulate real-time updates (in a real implementation, this would come from WebSocket)
+        setInterval(() => {
+            if (animationActive) {
+                // Simulate audio input
+                const audioLevel = Math.random() * 0.5;
+                document.getElementById('audioRaw').textContent = audioLevel.toFixed(2);
+                document.getElementById('audioSmoothed').textContent = (audioLevel * 0.8).toFixed(2);
+                
+                // Simulate servo movement based on audio
+                const servoAngle = Math.floor(audioLevel * 180);
+                document.getElementById('servoPosition').textContent = servoAngle + '°';
+            }
+        }, 100);
+    </script>
+</body>
+</html>
