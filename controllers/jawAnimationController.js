@@ -1,6 +1,8 @@
 const fs = require('fs').promises;
 const path = require('path');
 const { spawn } = require('child_process');
+const logger = require('../scripts/logger');
+const partService = require('../services/partService');
 
 class JawAnimationController {
     constructor() {
@@ -26,26 +28,48 @@ class JawAnimationController {
     async getServoConfig(req, res) {
         try {
             const characterId = parseInt(req.params.characterId);
+            logger.info(`Getting servo config for character ID: ${characterId}`);
+
             const parts = await this.loadParts();
-            
-            const jawServo = parts.find(part => 
-                part.characterId === characterId && 
-                part.type === 'servo' && 
-                part.name.toLowerCase().includes('jaw')
+            logger.info(`Loaded ${parts.length} parts from parts.json`);
+
+            // Log all servos for debugging
+            const allServos = parts.filter(part => part.type === 'servo');
+            logger.info(`Found ${allServos.length} servos total:`, allServos.map(s => `ID:${s.id} Name:${s.name} CharID:${s.characterId}`));
+
+            // Try multiple search strategies
+            let jawServo = parts.find(part =>
+                part.characterId === characterId &&
+                part.type === 'servo' &&
+                part.name && part.name.toLowerCase().includes('jaw')
             );
 
+            // If not found, try broader search
             if (!jawServo) {
+                logger.warn(`No jaw servo found with standard search, trying broader search`);
+                jawServo = parts.find(part =>
+                    part.characterId === characterId &&
+                    part.type === 'servo'
+                );
+                if (jawServo) {
+                    logger.info(`Found servo for character ${characterId}:`, jawServo);
+                }
+            }
+
+            if (!jawServo) {
+                logger.warn(`No jaw servo found for character ${characterId}`);
                 return res.status(404).json({
                     error: 'No jaw servo found for this character'
                 });
             }
 
+            logger.info(`Found jaw servo:`, jawServo);
             res.json({
                 servo: jawServo,
                 status: 'success'
             });
         } catch (error) {
-            console.error('Error getting servo config:', error);
+            logger.error('Error getting servo config:', error);
             res.status(500).json({ error: 'Failed to get servo configuration' });
         }
     }
@@ -187,11 +211,30 @@ class JawAnimationController {
     // Helper methods
     async loadParts() {
         try {
+            logger.info(`Loading parts from: ${this.partsPath}`);
             const data = await fs.readFile(this.partsPath, 'utf8');
-            return JSON.parse(data);
+            const parts = JSON.parse(data);
+            logger.info(`Successfully loaded ${parts.length} parts`);
+            return parts;
         } catch (error) {
-            console.error('Error loading parts:', error);
-            return [];
+            logger.error('Error loading parts from file, trying partService:', {
+                path: this.partsPath,
+                error: error.message,
+                code: error.code
+            });
+
+            // Fallback to partService
+            try {
+                const parts = await partService.getAllParts();
+                logger.info(`Fallback: Successfully loaded ${parts.length} parts from partService`);
+                return parts;
+            } catch (serviceError) {
+                logger.error('Error loading parts from partService:', {
+                    error: serviceError.message,
+                    stack: serviceError.stack
+                });
+                return [];
+            }
         }
     }
 

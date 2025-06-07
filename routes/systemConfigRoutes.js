@@ -205,17 +205,47 @@ router.delete('/servos/:index', (req, res) => {
     }
 });
 
+// Route to handle MonsterBox service restart
+router.post('/restart-service', async (req, res) => {
+    try {
+        logger.info('MonsterBox service restart requested');
+
+        // Send response before executing restart command
+        res.status(200).json({
+            success: true,
+            message: 'MonsterBox service restart initiated. Server will restart in a few seconds.'
+        });
+
+        // Execute restart command after response is sent
+        setTimeout(async () => {
+            try {
+                logger.info('Executing MonsterBox service restart');
+                process.exit(0); // This will cause the process to exit and be restarted by PM2 or systemd
+            } catch (error) {
+                logger.error('Failed to execute restart command:', error);
+            }
+        }, 1000);
+    } catch (error) {
+        logger.error('Error processing restart request:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to initiate service restart',
+            details: error.message
+        });
+    }
+});
+
 // Route to handle system reboot
 router.post('/reboot', async (req, res) => {
     try {
         logger.info('System reboot requested');
-        
+
         // Send response before executing reboot command
-        res.status(200).json({ 
-            success: true, 
-            message: 'Reboot command initiated. System will restart in a few seconds.' 
+        res.status(200).json({
+            success: true,
+            message: 'Reboot command initiated. System will restart in a few seconds.'
         });
-        
+
         // Execute reboot command after response is sent
         setTimeout(async () => {
             try {
@@ -227,10 +257,10 @@ router.post('/reboot', async (req, res) => {
         }, 1000);
     } catch (error) {
         logger.error('Error processing reboot request:', error);
-        res.status(500).json({ 
-            success: false, 
+        res.status(500).json({
+            success: false,
             error: 'Failed to initiate system reboot',
-            details: error.message 
+            details: error.message
         });
     }
 });

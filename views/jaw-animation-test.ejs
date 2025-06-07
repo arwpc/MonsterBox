@@ -247,20 +247,58 @@
         async function loadServoConfig() {
             try {
                 showStatus('Loading servo configuration...', 'info');
-                const response = await fetch(`/jaw-animation/api/servo/${currentCharacterId}`);
-                const data = await response.json();
-                
-                if (data.error) {
-                    showStatus(data.error, 'error');
-                    return;
+
+                // Try the jaw animation API first
+                try {
+                    const response = await fetch(`/jaw-animation/api/servo/${currentCharacterId}`);
+                    const data = await response.json();
+
+                    if (!data.error) {
+                        servoConfig = data.servo;
+                        updateServoSelect();
+                        showStatus('Servo configuration loaded successfully', 'success');
+                        return;
+                    }
+                } catch (apiError) {
+                    console.log('Jaw animation API failed, trying fallback:', apiError);
                 }
-                
-                servoConfig = data.servo;
+
+                // Fallback: Use parts API directly
+                showStatus('Trying alternative method...', 'info');
+                const partsResponse = await fetch(`/characters/${currentCharacterId}/parts`);
+
+                if (!partsResponse.ok) {
+                    throw new Error(`Parts API failed: ${partsResponse.status}`);
+                }
+
+                const partsData = await partsResponse.json();
+
+                // Find jaw servo in parts data
+                const jawServo = partsData.find(part =>
+                    part.type === 'servo' &&
+                    part.name &&
+                    part.name.toLowerCase().includes('jaw')
+                );
+
+                if (!jawServo) {
+                    // Try to find any servo for this character
+                    const anyServo = partsData.find(part => part.type === 'servo');
+                    if (anyServo) {
+                        servoConfig = anyServo;
+                        updateServoSelect();
+                        showStatus(`Found servo: ${anyServo.name} (not specifically jaw servo)`, 'warning');
+                        return;
+                    }
+                    throw new Error('No servo found for this character');
+                }
+
+                servoConfig = jawServo;
                 updateServoSelect();
-                showStatus('Servo configuration loaded successfully', 'success');
-                
+                showStatus('Servo configuration loaded via fallback method', 'success');
+
             } catch (error) {
                 showStatus('Error loading servo configuration: ' + error.message, 'error');
+                console.error('Servo config error:', error);
             }
         }
 
