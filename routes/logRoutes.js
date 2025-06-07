@@ -135,56 +135,15 @@ router.post('/clear', async (req, res) => {
 
 // ===== MCP LOG COLLECTION ENDPOINTS =====
 
-// Browser log collection endpoint
+// Browser log collection endpoint - DISABLED to prevent spam
 router.post('/browser', async (req, res) => {
-    try {
-        const { logs, session, timestamp } = req.body;
-
-        if (!logs || !Array.isArray(logs)) {
-            return res.status(400).json({ error: 'Invalid logs format' });
-        }
-
-        // Process and store browser logs
-        const processedLogs = logs.map(log => ({
-            ...log,
-            source: 'browser',
-            sessionId: session?.sessionId,
-            receivedAt: new Date().toISOString(),
-            clientTimestamp: log.timestamp
-        }));
-
-        // Log to Winston with filtering
-        processedLogs.forEach(log => {
-            // Skip verbose browser update messages and SSH prompts
-            if (shouldSkipBrowserLog(log.message, log.level)) {
-                return;
-            }
-
-            const logLevel = log.level === 'error' || log.type.includes('error') ? 'error' :
-                           log.level === 'warn' ? 'warn' : 'info';
-
-            logger[logLevel]('Browser log collected', {
-                type: log.type,
-                message: log.message,
-                url: log.url,
-                sessionId: log.sessionId,
-                timestamp: log.timestamp
-            });
-        });
-
-        // Store in dedicated browser log file
-        await storeBrowserLogs(processedLogs);
-
-        res.json({
-            success: true,
-            received: logs.length,
-            timestamp: new Date().toISOString()
-        });
-
-    } catch (error) {
-        logger.error('Failed to process browser logs', { error: error.message });
-        res.status(500).json({ error: 'Failed to process logs' });
-    }
+    // Silently accept and discard browser logs to prevent spam
+    res.json({
+        success: true,
+        received: 0,
+        timestamp: new Date().toISOString(),
+        message: 'Browser log collection disabled'
+    });
 });
 
 // System log collection endpoint

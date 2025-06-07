@@ -175,14 +175,9 @@ app.post('/set-character', (req, res) => {
     res.json({ success: true, message: 'Character updated successfully' });
 });
 
-// Updated route for client-side logging
+// Updated route for client-side logging - DISABLED to prevent spam
 app.post('/client-log', (req, res) => {
-    const { level, message } = req.body;
-    if (logger[level]) {
-        logger[level](`Client log: ${message}`);
-    } else {
-        logger.info(`Client log (unknown level ${level}): ${message}`);
-    }
+    // Silently accept and discard client logs to prevent spam
     res.sendStatus(200);
 });
 
