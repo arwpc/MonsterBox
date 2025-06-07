@@ -112,9 +112,6 @@
                 <button type="button" id="stopStreamBtn" class="btn btn-danger" style="display: none;">
                     ⏹️ Stop Stream
                 </button>
-                <button type="button" id="restartStreamBtn" class="btn btn-warning">
-                    🔄 Restart Stream
-                </button>
                 <button type="button" id="testCameraBtn" class="btn btn-info">
                     🧪 Test Camera
                 </button>
@@ -635,10 +632,7 @@
             stopStreamBtn.addEventListener('click', stopStream);
         }
 
-        const restartStreamBtn = document.getElementById('restartStreamBtn');
-        if (restartStreamBtn) {
-            restartStreamBtn.addEventListener('click', restartStream);
-        }
+
 
         const testCameraBtn = document.getElementById('testCameraBtn');
         if (testCameraBtn) {
@@ -715,8 +709,15 @@
             content.innerHTML = '<div class="loading">Loading configuration...</div>';
             modal.style.display = 'flex';
             
-            // Load the webcam form content
-            fetch(`/parts/webcam/new?characterId=${characterId}`)
+            // Load the webcam configuration content
+            fetch(`/parts/webcam/edit/${characterId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        // If edit doesn't exist, try new
+                        return fetch(`/parts/webcam/new?characterId=${characterId}`);
+                    }
+                    return response;
+                })
                 .then(response => response.text())
                 .then(html => {
                     // Extract just the form content
@@ -786,26 +787,7 @@
         }
     }
 
-    // Restart stream
-    async function restartStream() {
-        if (!characterId) return;
-        
-        try {
-            const response = await fetch(`/api/streaming/restart/${characterId}`, {
-                method: 'POST'
-            });
-            
-            const data = await response.json();
-            if (data.success) {
-                updateStreamStatus();
-                refreshVideo();
-            } else {
-                alert('Failed to restart stream: ' + data.error);
-            }
-        } catch (error) {
-            alert('Error restarting stream: ' + error.message);
-        }
-    }
+
 
     // Test camera
     function testCamera() {
