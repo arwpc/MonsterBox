@@ -1,0 +1,689 @@
+<!-- Video Configuration Component -->
+<!-- Usage: <%- include('components/video-configuration', { character: character, webcam: webcam }) %> -->
+
+<div class="video-configuration-component" data-character-id="<%= character ? character.id : '' %>">
+    <div class="form-section">
+        <h3>📹 Video Configuration</h3>
+        
+        <!-- Webcam Status Display -->
+        <div class="webcam-status-card" id="webcamStatusCard">
+            <div class="status-header">
+                <span class="status-icon" id="webcamStatusIcon">📹</span>
+                <span class="status-text" id="webcamStatusText">
+                    <% if (webcam) { %>
+                        Webcam: <%= webcam.name %>
+                    <% } else { %>
+                        No webcam assigned
+                    <% } %>
+                </span>
+                <span class="status-badge" id="webcamStatusBadge">
+                    <% if (webcam && webcam.status === 'active') { %>
+                        <span class="badge active">Active</span>
+                    <% } else if (webcam) { %>
+                        <span class="badge inactive">Inactive</span>
+                    <% } else { %>
+                        <span class="badge none">None</span>
+                    <% } %>
+                </span>
+            </div>
+            
+            <% if (webcam) { %>
+                <div class="webcam-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Device:</span>
+                        <span class="detail-value"><%= webcam.devicePath || '/dev/video' + webcam.deviceId %></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Resolution:</span>
+                        <span class="detail-value"><%= webcam.resolution || '640x480' %></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">FPS:</span>
+                        <span class="detail-value"><%= webcam.fps || 30 %></span>
+                    </div>
+                </div>
+            <% } %>
+        </div>
+
+        <!-- Video Preview Window -->
+        <div class="video-preview-container">
+            <div class="video-preview" id="videoPreview">
+                <% if (webcam && webcam.status === 'active') { %>
+                    <img id="videoStream" src="/api/streaming/stream/<%= character.id %>" 
+                         alt="Live video stream" style="width: 100%; height: 100%; object-fit: cover;">
+                <% } else { %>
+                    <div class="no-video-placeholder">
+                        <span class="placeholder-icon">📹</span>
+                        <span class="placeholder-text">No video available</span>
+                    </div>
+                <% } %>
+            </div>
+            
+            <!-- Video Controls -->
+            <div class="video-controls">
+                <button type="button" id="refreshVideoBtn" class="btn btn-secondary">
+                    🔄 Refresh
+                </button>
+                <button type="button" id="fullscreenBtn" class="btn btn-secondary">
+                    ⛶ Fullscreen
+                </button>
+                <button type="button" id="configureWebcamBtn" class="btn btn-primary">
+                    ⚙️ Configure Camera
+                </button>
+            </div>
+        </div>
+
+        <!-- Stream Status -->
+        <div class="stream-status" id="streamStatus" style="display: none;">
+            <div class="status-row">
+                <span class="status-label">Stream Status:</span>
+                <span class="status-value" id="streamStatusValue">Unknown</span>
+            </div>
+            <div class="status-row">
+                <span class="status-label">Connected Clients:</span>
+                <span class="status-value" id="streamClientsValue">0</span>
+            </div>
+            <div class="status-row">
+                <span class="status-label">Stream URL:</span>
+                <span class="status-value">
+                    <a href="#" id="streamUrlLink" target="_blank">View Stream</a>
+                </span>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <% if (webcam) { %>
+                <button type="button" id="startStreamBtn" class="btn btn-success">
+                    ▶️ Start Stream
+                </button>
+                <button type="button" id="stopStreamBtn" class="btn btn-danger" style="display: none;">
+                    ⏹️ Stop Stream
+                </button>
+                <button type="button" id="restartStreamBtn" class="btn btn-warning">
+                    🔄 Restart Stream
+                </button>
+                <button type="button" id="testCameraBtn" class="btn btn-info">
+                    🧪 Test Camera
+                </button>
+            <% } else { %>
+                <button type="button" id="assignWebcamBtn" class="btn btn-primary">
+                    ➕ Assign Webcam
+                </button>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<!-- Webcam Configuration Modal -->
+<div id="webcamConfigModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>📹 Webcam Configuration</h3>
+            <button type="button" class="modal-close" id="closeConfigModal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="webcamConfigContent">
+                <!-- Content will be loaded dynamically -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.video-configuration-component {
+    border: 1px solid #00ff00;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+    background-color: #001100;
+}
+
+.webcam-status-card {
+    background-color: #002200;
+    border: 1px solid #00aa00;
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.status-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.status-icon {
+    font-size: 1.2em;
+    margin-right: 10px;
+}
+
+.status-text {
+    flex-grow: 1;
+    color: #00ff00;
+    font-weight: bold;
+}
+
+.status-badge .badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+.badge.active {
+    background-color: #004400;
+    color: #00ff00;
+    border: 1px solid #00ff00;
+}
+
+.badge.inactive {
+    background-color: #444400;
+    color: #ffff00;
+    border: 1px solid #ffff00;
+}
+
+.badge.none {
+    background-color: #440000;
+    color: #ff0000;
+    border: 1px solid #ff0000;
+}
+
+.webcam-details {
+    margin-top: 10px;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.detail-label {
+    color: #00aa00;
+    font-weight: bold;
+}
+
+.detail-value {
+    color: #00ff00;
+}
+
+.video-preview-container {
+    margin: 15px 0;
+}
+
+.video-preview {
+    width: 100%;
+    height: 240px;
+    border: 2px solid #00ff00;
+    border-radius: 6px;
+    overflow: hidden;
+    background-color: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.no-video-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #00aa00;
+}
+
+.placeholder-icon {
+    font-size: 3em;
+    margin-bottom: 10px;
+}
+
+.placeholder-text {
+    font-size: 1.1em;
+}
+
+.video-controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    justify-content: center;
+}
+
+.stream-status {
+    background-color: #002200;
+    border: 1px solid #00aa00;
+    border-radius: 6px;
+    padding: 10px;
+    margin: 15px 0;
+}
+
+.status-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.status-label {
+    color: #00aa00;
+    font-weight: bold;
+}
+
+.status-value {
+    color: #00ff00;
+}
+
+.status-value a {
+    color: #00ff00;
+    text-decoration: underline;
+}
+
+.quick-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 8px 16px;
+    border: 1px solid;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background-color: #004400;
+    color: #00ff00;
+    border-color: #00ff00;
+}
+
+.btn-primary:hover {
+    background-color: #006600;
+}
+
+.btn-secondary {
+    background-color: #333333;
+    color: #ffffff;
+    border-color: #666666;
+}
+
+.btn-secondary:hover {
+    background-color: #555555;
+}
+
+.btn-success {
+    background-color: #004400;
+    color: #00ff00;
+    border-color: #00ff00;
+}
+
+.btn-success:hover {
+    background-color: #006600;
+}
+
+.btn-danger {
+    background-color: #440000;
+    color: #ff0000;
+    border-color: #ff0000;
+}
+
+.btn-danger:hover {
+    background-color: #660000;
+}
+
+.btn-warning {
+    background-color: #444400;
+    color: #ffff00;
+    border-color: #ffff00;
+}
+
+.btn-warning:hover {
+    background-color: #666600;
+}
+
+.btn-info {
+    background-color: #004444;
+    color: #00ffff;
+    border-color: #00ffff;
+}
+
+.btn-info:hover {
+    background-color: #006666;
+}
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background-color: #001100;
+    border: 2px solid #00ff00;
+    border-radius: 8px;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    width: 90%;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #00aa00;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #00ff00;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: #ff0000;
+    font-size: 1.5em;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-close:hover {
+    background-color: #440000;
+    border-radius: 4px;
+}
+
+.modal-body {
+    padding: 20px;
+}
+</style>
+
+<script>
+(function() {
+    const characterId = document.querySelector('.video-configuration-component').dataset.characterId;
+    let streamStatusInterval = null;
+
+    // Initialize component
+    function initVideoConfiguration() {
+        setupEventListeners();
+        updateStreamStatus();
+        
+        // Start periodic status updates if webcam exists
+        const webcamStatusCard = document.getElementById('webcamStatusCard');
+        if (webcamStatusCard && characterId) {
+            streamStatusInterval = setInterval(updateStreamStatus, 10000); // Every 10 seconds
+        }
+    }
+
+    // Setup event listeners
+    function setupEventListeners() {
+        // Refresh video
+        const refreshBtn = document.getElementById('refreshVideoBtn');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', refreshVideo);
+        }
+
+        // Fullscreen
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        if (fullscreenBtn) {
+            fullscreenBtn.addEventListener('click', toggleFullscreen);
+        }
+
+        // Configure webcam
+        const configureBtn = document.getElementById('configureWebcamBtn');
+        if (configureBtn) {
+            configureBtn.addEventListener('click', openWebcamConfig);
+        }
+
+        // Stream controls
+        const startStreamBtn = document.getElementById('startStreamBtn');
+        if (startStreamBtn) {
+            startStreamBtn.addEventListener('click', startStream);
+        }
+
+        const stopStreamBtn = document.getElementById('stopStreamBtn');
+        if (stopStreamBtn) {
+            stopStreamBtn.addEventListener('click', stopStream);
+        }
+
+        const restartStreamBtn = document.getElementById('restartStreamBtn');
+        if (restartStreamBtn) {
+            restartStreamBtn.addEventListener('click', restartStream);
+        }
+
+        const testCameraBtn = document.getElementById('testCameraBtn');
+        if (testCameraBtn) {
+            testCameraBtn.addEventListener('click', testCamera);
+        }
+
+        const assignWebcamBtn = document.getElementById('assignWebcamBtn');
+        if (assignWebcamBtn) {
+            assignWebcamBtn.addEventListener('click', assignWebcam);
+        }
+
+        // Modal controls
+        const closeModalBtn = document.getElementById('closeConfigModal');
+        if (closeModalBtn) {
+            closeModalBtn.addEventListener('click', closeWebcamConfig);
+        }
+    }
+
+    // Refresh video stream
+    function refreshVideo() {
+        const videoStream = document.getElementById('videoStream');
+        if (videoStream && characterId) {
+            const timestamp = Date.now();
+            videoStream.src = `/api/streaming/stream/${characterId}?t=${timestamp}`;
+        }
+    }
+
+    // Toggle fullscreen
+    function toggleFullscreen() {
+        const videoPreview = document.getElementById('videoPreview');
+        if (videoPreview) {
+            if (document.fullscreenElement) {
+                document.exitFullscreen();
+            } else {
+                videoPreview.requestFullscreen();
+            }
+        }
+    }
+
+    // Open webcam configuration
+    function openWebcamConfig() {
+        const modal = document.getElementById('webcamConfigModal');
+        const content = document.getElementById('webcamConfigContent');
+        
+        if (modal && content && characterId) {
+            // Load webcam configuration form
+            content.innerHTML = '<div class="loading">Loading configuration...</div>';
+            modal.style.display = 'flex';
+            
+            // Load the webcam form content
+            fetch(`/parts/webcam/new?characterId=${characterId}`)
+                .then(response => response.text())
+                .then(html => {
+                    // Extract just the form content
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const form = doc.querySelector('form');
+                    if (form) {
+                        content.innerHTML = form.outerHTML;
+                    } else {
+                        content.innerHTML = '<div class="error">Failed to load configuration form</div>';
+                    }
+                })
+                .catch(error => {
+                    content.innerHTML = '<div class="error">Error loading configuration: ' + error.message + '</div>';
+                });
+        }
+    }
+
+    // Close webcam configuration
+    function closeWebcamConfig() {
+        const modal = document.getElementById('webcamConfigModal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    // Start stream
+    async function startStream() {
+        if (!characterId) return;
+        
+        try {
+            const response = await fetch(`/api/streaming/start/${characterId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                updateStreamControls(true);
+                updateStreamStatus();
+            } else {
+                alert('Failed to start stream: ' + data.error);
+            }
+        } catch (error) {
+            alert('Error starting stream: ' + error.message);
+        }
+    }
+
+    // Stop stream
+    async function stopStream() {
+        if (!characterId) return;
+        
+        try {
+            const response = await fetch(`/api/streaming/stop/${characterId}`, {
+                method: 'POST'
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                updateStreamControls(false);
+                updateStreamStatus();
+            } else {
+                alert('Failed to stop stream: ' + data.error);
+            }
+        } catch (error) {
+            alert('Error stopping stream: ' + error.message);
+        }
+    }
+
+    // Restart stream
+    async function restartStream() {
+        if (!characterId) return;
+        
+        try {
+            const response = await fetch(`/api/streaming/restart/${characterId}`, {
+                method: 'POST'
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                updateStreamStatus();
+                refreshVideo();
+            } else {
+                alert('Failed to restart stream: ' + data.error);
+            }
+        } catch (error) {
+            alert('Error restarting stream: ' + error.message);
+        }
+    }
+
+    // Test camera
+    function testCamera() {
+        if (characterId) {
+            window.open(`/api/webcam/test-stream?characterId=${characterId}&deviceId=0&width=640&height=480&fps=30`, '_blank');
+        }
+    }
+
+    // Assign webcam
+    function assignWebcam() {
+        if (characterId) {
+            window.location.href = `/parts/webcam/new?characterId=${characterId}`;
+        }
+    }
+
+    // Update stream controls
+    function updateStreamControls(isStreaming) {
+        const startBtn = document.getElementById('startStreamBtn');
+        const stopBtn = document.getElementById('stopStreamBtn');
+        
+        if (startBtn && stopBtn) {
+            if (isStreaming) {
+                startBtn.style.display = 'none';
+                stopBtn.style.display = 'inline-block';
+            } else {
+                startBtn.style.display = 'inline-block';
+                stopBtn.style.display = 'none';
+            }
+        }
+    }
+
+    // Update stream status
+    async function updateStreamStatus() {
+        if (!characterId) return;
+        
+        try {
+            const response = await fetch(`/api/streaming/status/${characterId}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                const statusElement = document.getElementById('streamStatus');
+                const statusValueElement = document.getElementById('streamStatusValue');
+                const clientsValueElement = document.getElementById('streamClientsValue');
+                const urlLinkElement = document.getElementById('streamUrlLink');
+                
+                if (statusElement && statusValueElement && clientsValueElement && urlLinkElement) {
+                    statusElement.style.display = 'block';
+                    statusValueElement.textContent = data.hasStream ? 'Active' : 'Inactive';
+                    clientsValueElement.textContent = data.clientCount || 0;
+                    
+                    if (data.hasStream) {
+                        urlLinkElement.href = `/api/streaming/stream/${characterId}`;
+                        urlLinkElement.textContent = 'View Stream';
+                    } else {
+                        urlLinkElement.href = '#';
+                        urlLinkElement.textContent = 'No stream';
+                    }
+                }
+                
+                updateStreamControls(data.hasStream);
+            }
+        } catch (error) {
+            console.error('Error updating stream status:', error);
+        }
+    }
+
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initVideoConfiguration);
+    } else {
+        initVideoConfiguration();
+    }
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', function() {
+        if (streamStatusInterval) {
+            clearInterval(streamStatusInterval);
+        }
+    });
+})();
+</script>

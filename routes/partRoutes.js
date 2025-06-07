@@ -181,6 +181,8 @@ router.post('/:type', checkCharacterSelected, async (req, res) => {
             logger.info(`Created linear actuator: ${JSON.stringify(newPart)}`);
         } else if (type === 'sensor') {
             logger.info(`Created sensor: ${JSON.stringify(newPart)}`);
+        } else if (type === 'webcam') {
+            logger.info(`Created webcam: ${JSON.stringify(newPart)}`);
         }
         const redirectUrl = `/parts?characterId=${req.characterId}`;
         logger.info(`Redirecting to: ${redirectUrl}`);

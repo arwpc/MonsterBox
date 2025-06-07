@@ -6,6 +6,7 @@
     <title><%= title %></title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/video-configuration.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
         .custom-file-upload {
@@ -179,6 +180,11 @@
                                     <button type="button" onclick="viewSystemConfig(<%= character.id %>)" class="button secondary-btn">📋 View System Config</button>
                                 </div>
                             </div>
+                        <% } %>
+
+                        <!-- Video Configuration Section -->
+                        <% if (character && character.id && character.id !== 'new') { %>
+                            <%- include('components/video-configuration', { character: character, webcam: webcam }) %>
                         <% } %>
                     </div>
 
@@ -658,5 +664,6 @@
             }
         }
     </script>
+    <script src="/js/video-configuration.js"></script>
 </body>
 </html>

@@ -13,7 +13,7 @@ process.env.NODE_NO_WARNINGS = '1';
 
 let express, path, http, logger, app, server, port, audioStream, soundController, fs, os, session;
 let videoStream; // <-- Add videoStream variable
-let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, voiceRoutes, cleanupRoutes, healthRoutes, authRoutes, sshRoutes;
+let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, webcamRoutes, voiceRoutes, cleanupRoutes, healthRoutes, authRoutes, sshRoutes;
 let characterService;
 let authMiddleware, rbacMiddleware;
 
@@ -50,6 +50,7 @@ try {
     systemConfigRoutes = require('./routes/systemConfigRoutes');
     logRoutes = require('./routes/logRoutes');
     cameraRoutes = require('./routes/cameraRoutes');
+    webcamRoutes = require('./routes/webcamRoutes');
     voiceRoutes = require('./routes/voiceRoutes');
     cleanupRoutes = require('./routes/cleanup');
     healthRoutes = require('./routes/healthRoutes');
@@ -126,6 +127,7 @@ app.use('/parts/light', lightRoutes);
 app.use('/parts/servo', servoRoutes);
 app.use('/parts/sensor', sensorRoutes);
 app.use('/parts/linear-actuator', linearActuatorRoutes);
+app.use('/parts/webcam', webcamRoutes);
 app.use('/parts', partRoutes.router);
 app.use('/characters', characterRoutes);
 app.use('/sounds', soundRoutes);
@@ -134,7 +136,17 @@ app.use('/active-mode', activeModeRoutes);
 app.use('/system-config', systemConfigRoutes);
 app.use('/logs', logRoutes);
 app.use('/camera', cameraRoutes);
+app.use('/api/webcam', require('./routes/api/webcamApiRoutes'));
+app.use('/api/streaming', require('./routes/streamingRoutes'));
+app.use('/api/character-webcam', require('./routes/api/characterWebcamApiRoutes'));
 app.use('/api/voice', voiceRoutes);
+
+// Test route for video configuration component
+app.get('/test/video-configuration', (req, res) => {
+    res.render('test-video-configuration', {
+        title: 'Video Configuration Component Test'
+    });
+});
 app.use('/cleanup', cleanupRoutes);
 app.use('/health', healthRoutes);
 

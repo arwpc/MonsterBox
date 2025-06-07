@@ -50,12 +50,13 @@ router.get('/new', async (req, res) => {
             image: null
         };
         
-        res.render('character-form', { 
-            title: 'Add New Character', 
-            action: '/characters', 
-            character: tempCharacter, 
-            parts, 
+        res.render('character-form', {
+            title: 'Add New Character',
+            action: '/characters',
+            character: tempCharacter,
+            parts,
             sounds,
+            webcam: null, // New characters don't have webcams yet
             isNewCharacter: true  // Flag to help template distinguish new vs edit
         });
     } catch (error) {
@@ -84,12 +85,17 @@ router.get('/:id/edit', async (req, res) => {
         // Show all available sounds in the database for character edit form
         const sounds = allSounds;
 
-        res.render('character-form', { 
-            title: 'Edit Character', 
-            action: `/characters/${character.id}`, 
-            character, 
-            parts, 
-            sounds 
+        // Get webcam information for this character
+        const characterWebcamService = require('../services/characterWebcamService');
+        const webcam = await characterWebcamService.getWebcamByCharacter(character.id);
+
+        res.render('character-form', {
+            title: 'Edit Character',
+            action: `/characters/${character.id}`,
+            character,
+            parts,
+            sounds,
+            webcam
         });
     } catch (error) {
         logger.error('Error fetching character:', error);

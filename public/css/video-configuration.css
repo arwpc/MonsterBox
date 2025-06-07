@@ -1,0 +1,447 @@
+/* Video Configuration Component Styles */
+
+.video-configuration-component {
+    border: 1px solid #00ff00;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+    background-color: #001100;
+    font-family: 'Courier New', monospace;
+}
+
+.video-configuration-component h3 {
+    color: #00ff00;
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.2em;
+}
+
+/* Webcam Status Card */
+.webcam-status-card {
+    background-color: #002200;
+    border: 1px solid #00aa00;
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.status-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.status-icon {
+    font-size: 1.2em;
+    margin-right: 10px;
+}
+
+.status-text {
+    flex-grow: 1;
+    color: #00ff00;
+    font-weight: bold;
+    min-width: 200px;
+}
+
+.status-badge .badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.badge.active {
+    background-color: #004400;
+    color: #00ff00;
+    border: 1px solid #00ff00;
+}
+
+.badge.inactive {
+    background-color: #444400;
+    color: #ffff00;
+    border: 1px solid #ffff00;
+}
+
+.badge.none {
+    background-color: #440000;
+    color: #ff0000;
+    border: 1px solid #ff0000;
+}
+
+/* Webcam Details */
+.webcam-details {
+    margin-top: 10px;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.detail-label {
+    color: #00aa00;
+    font-weight: bold;
+    min-width: 80px;
+}
+
+.detail-value {
+    color: #00ff00;
+    text-align: right;
+}
+
+/* Video Preview */
+.video-preview-container {
+    margin: 15px 0;
+}
+
+.video-preview {
+    width: 100%;
+    height: 240px;
+    border: 2px solid #00ff00;
+    border-radius: 6px;
+    overflow: hidden;
+    background-color: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.video-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.no-video-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #00aa00;
+    text-align: center;
+}
+
+.placeholder-icon {
+    font-size: 3em;
+    margin-bottom: 10px;
+}
+
+.placeholder-text {
+    font-size: 1.1em;
+}
+
+/* Video Controls */
+.video-controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* Stream Status */
+.stream-status {
+    background-color: #002200;
+    border: 1px solid #00aa00;
+    border-radius: 6px;
+    padding: 10px;
+    margin: 15px 0;
+}
+
+.status-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.status-label {
+    color: #00aa00;
+    font-weight: bold;
+    min-width: 120px;
+}
+
+.status-value {
+    color: #00ff00;
+    text-align: right;
+}
+
+.status-value a {
+    color: #00ff00;
+    text-decoration: underline;
+}
+
+.status-value a:hover {
+    color: #00ffff;
+}
+
+/* Quick Actions */
+.quick-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+/* Button Styles */
+.btn {
+    padding: 8px 16px;
+    border: 1px solid;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.3s ease;
+    font-family: inherit;
+    font-size: 0.9em;
+    white-space: nowrap;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background-color: #004400;
+    color: #00ff00;
+    border-color: #00ff00;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background-color: #006600;
+    box-shadow: 0 0 5px #00ff00;
+}
+
+.btn-secondary {
+    background-color: #333333;
+    color: #ffffff;
+    border-color: #666666;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background-color: #555555;
+    box-shadow: 0 0 5px #666666;
+}
+
+.btn-success {
+    background-color: #004400;
+    color: #00ff00;
+    border-color: #00ff00;
+}
+
+.btn-success:hover:not(:disabled) {
+    background-color: #006600;
+    box-shadow: 0 0 5px #00ff00;
+}
+
+.btn-danger {
+    background-color: #440000;
+    color: #ff0000;
+    border-color: #ff0000;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background-color: #660000;
+    box-shadow: 0 0 5px #ff0000;
+}
+
+.btn-warning {
+    background-color: #444400;
+    color: #ffff00;
+    border-color: #ffff00;
+}
+
+.btn-warning:hover:not(:disabled) {
+    background-color: #666600;
+    box-shadow: 0 0 5px #ffff00;
+}
+
+.btn-info {
+    background-color: #004444;
+    color: #00ffff;
+    border-color: #00ffff;
+}
+
+.btn-info:hover:not(:disabled) {
+    background-color: #006666;
+    box-shadow: 0 0 5px #00ffff;
+}
+
+/* Modal Styles */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.modal-content {
+    background-color: #001100;
+    border: 2px solid #00ff00;
+    border-radius: 8px;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #00aa00;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #00ff00;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: #ff0000;
+    font-size: 1.5em;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+}
+
+.modal-close:hover {
+    background-color: #440000;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+/* Loading and Error States */
+.loading {
+    text-align: center;
+    color: #00aa00;
+    padding: 20px;
+}
+
+.error {
+    text-align: center;
+    color: #ff0000;
+    padding: 20px;
+    background-color: #440000;
+    border: 1px solid #ff0000;
+    border-radius: 4px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .video-configuration-component {
+        padding: 15px;
+        margin: 10px 0;
+    }
+    
+    .status-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .detail-row {
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .detail-value {
+        text-align: left;
+    }
+    
+    .video-preview {
+        height: 180px;
+    }
+    
+    .video-controls {
+        justify-content: stretch;
+    }
+    
+    .video-controls .btn {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .quick-actions {
+        justify-content: stretch;
+    }
+    
+    .quick-actions .btn {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .status-row {
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .status-value {
+        text-align: left;
+    }
+    
+    .modal {
+        padding: 10px;
+    }
+    
+    .modal-header {
+        padding: 15px;
+    }
+    
+    .modal-body {
+        padding: 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    .video-configuration-component {
+        padding: 10px;
+    }
+    
+    .video-preview {
+        height: 150px;
+    }
+    
+    .btn {
+        padding: 6px 12px;
+        font-size: 0.8em;
+    }
+    
+    .placeholder-icon {
+        font-size: 2em;
+    }
+    
+    .placeholder-text {
+        font-size: 1em;
+    }
+}

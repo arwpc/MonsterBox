@@ -165,5 +165,27 @@
     "characterId": 3,
     "directionPin": "6",
     "pwmPin": "13"
+  },
+  {
+    "id": 16,
+    "name": "Test Webcam",
+    "type": "webcam",
+    "characterId": 1,
+    "deviceId": 0,
+    "devicePath": "/dev/video0",
+    "resolution": "640x480",
+    "fps": 30,
+    "status": "active"
+  },
+  {
+    "id": 17,
+    "name": "Test Webcam",
+    "type": "webcam",
+    "characterId": 2,
+    "deviceId": 0,
+    "devicePath": "/dev/video0",
+    "resolution": "640x480",
+    "fps": 30,
+    "status": "active"
   }
 ]

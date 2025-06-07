@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .webcam-preview {
+            width: 320px;
+            height: 240px;
+            border: 2px solid #00ff00;
+            background-color: #001100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 10px 0;
+            color: #00ff00;
+        }
+        .webcam-controls {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .detection-status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .detection-success {
+            background-color: #004400;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+        }
+        .detection-error {
+            background-color: #440000;
+            color: #ff0000;
+            border: 1px solid #ff0000;
+        }
+        .settings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1><%= title %></h1>
+        <nav>
+            <a href="/parts?characterId=<%= character ? character.id : '' %>">← Back to Parts</a>
+            <a href="/characters/<%= character ? character.id : '' %>/edit">Character</a>
+            <a href="/">Home</a>
+        </nav>
+    </header>
+
+    <main>
+        <form action="<%= action %>" method="POST" id="webcamForm">
+            <input type="hidden" name="type" value="webcam">
+            <% if (part && part.id) { %>
+                <input type="hidden" name="id" value="<%= part.id %>">
+            <% } %>
+            
+            <div class="form-group">
+                <label for="name">Webcam Name:</label>
+                <input type="text" id="name" name="name" value="<%= part && part.name || '' %>" required 
+                       placeholder="e.g., Orlok Head Camera">
+            </div>
+
+            <div class="form-group">
+                <label for="characterId">Character:</label>
+                <select id="characterId" name="characterId" required>
+                    <% characters.forEach(function(char) { %>
+                        <option value="<%= char.id %>" <%= (part && part.characterId === char.id) || (character && character.id === char.id) ? 'selected' : '' %>>
+                            <%= char.char_name %>
+                        </option>
+                    <% }); %>
+                </select>
+            </div>
+
+            <div class="form-section">
+                <h3>📹 Camera Detection</h3>
+                <div class="form-group">
+                    <button type="button" id="detectCamerasBtn" class="button secondary-btn">🔍 Detect Available Cameras</button>
+                    <div id="detectionStatus" class="detection-status" style="display: none;"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="deviceId">Camera Device:</label>
+                    <select id="deviceId" name="deviceId" required>
+                        <option value="">Select a camera device...</option>
+                        <% if (part && part.deviceId !== undefined) { %>
+                            <option value="<%= part.deviceId %>" selected>Camera <%= part.deviceId %></option>
+                        <% } %>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="devicePath">Device Path:</label>
+                    <input type="text" id="devicePath" name="devicePath" 
+                           value="<%= part && part.devicePath || '' %>" 
+                           placeholder="/dev/video0" readonly>
+                    <small>Automatically set based on selected device</small>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>⚙️ Camera Settings</h3>
+                <div class="settings-grid">
+                    <div class="form-group">
+                        <label for="resolution">Resolution:</label>
+                        <select id="resolution" name="resolution">
+                            <option value="640x480" <%= (part && part.resolution === '640x480') ? 'selected' : '' %>>640x480</option>
+                            <option value="1280x720" <%= (part && part.resolution === '1280x720') || (!part) ? 'selected' : '' %>>1280x720 (HD)</option>
+                            <option value="1920x1080" <%= (part && part.resolution === '1920x1080') ? 'selected' : '' %>>1920x1080 (Full HD)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="fps">Frame Rate (FPS):</label>
+                        <select id="fps" name="fps">
+                            <option value="15" <%= (part && part.fps === 15) ? 'selected' : '' %>>15 FPS</option>
+                            <option value="30" <%= (part && part.fps === 30) || (!part) ? 'selected' : '' %>>30 FPS</option>
+                            <option value="60" <%= (part && part.fps === 60) ? 'selected' : '' %>>60 FPS</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="status">Status:</label>
+                    <select id="status" name="status">
+                        <option value="active" <%= (part && part.status === 'active') || (!part) ? 'selected' : '' %>>Active</option>
+                        <option value="inactive" <%= (part && part.status === 'inactive') ? 'selected' : '' %>>Inactive</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>📺 Preview & Streaming</h3>
+                <div class="webcam-preview" id="webcamPreview">
+                    <span>No preview available</span>
+                </div>
+                <div class="webcam-controls">
+                    <button type="button" id="testCameraBtn" class="button secondary-btn">🎥 Test Camera</button>
+                    <button type="button" id="stopTestBtn" class="button secondary-btn" style="display: none;">⏹️ Stop Test</button>
+                    <button type="button" id="startStreamBtn" class="button secondary-btn">🔴 Start Stream</button>
+                    <button type="button" id="stopStreamBtn" class="button secondary-btn" style="display: none;">⏹️ Stop Stream</button>
+                </div>
+                <div id="streamStatus" style="margin-top: 10px; padding: 10px; border-radius: 5px; display: none;">
+                    <strong>Stream Status:</strong> <span id="streamStatusText">Unknown</span><br>
+                    <strong>Clients:</strong> <span id="streamClients">0</span><br>
+                    <strong>Stream URL:</strong> <span id="streamUrl">-</span>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="button primary-btn">💾 Save Webcam</button>
+                <a href="/parts?characterId=<%= character ? character.id : '' %>" class="button secondary-btn">❌ Cancel</a>
+            </div>
+        </form>
+    </main>
+
+    <script>
+        let testStream = null;
+
+        // Camera detection functionality
+        document.getElementById('detectCamerasBtn').addEventListener('click', async function() {
+            const btn = this;
+            const status = document.getElementById('detectionStatus');
+            const deviceSelect = document.getElementById('deviceId');
+            const devicePath = document.getElementById('devicePath');
+
+            btn.disabled = true;
+            btn.textContent = '🔍 Detecting...';
+            status.style.display = 'block';
+            status.className = 'detection-status';
+            status.textContent = 'Scanning for camera devices...';
+
+            try {
+                const characterId = document.getElementById('characterId').value;
+
+                // Try remote detection first for RPI characters
+                let response = await fetch(`/api/webcam/detect?characterId=${characterId}&remote=true`);
+                let data = await response.json();
+
+                // If remote detection fails, try local detection
+                if (!data.success && data.source === 'remote') {
+                    status.textContent = 'Remote detection failed, trying local detection...';
+                    response = await fetch(`/api/webcam/detect?characterId=${characterId}&remote=false`);
+                    data = await response.json();
+                }
+
+                if (data.success && data.cameras.length > 0) {
+                    status.className = 'detection-status detection-success';
+                    const sourceText = data.source === 'remote' ? ` on ${data.host || 'RPI system'}` : ' locally';
+                    status.textContent = `Found ${data.cameras.length} camera(s)${sourceText}`;
+
+                    // Clear existing options except the first one
+                    deviceSelect.innerHTML = '<option value="">Select a camera device...</option>';
+
+                    // Add detected cameras
+                    data.cameras.forEach(camera => {
+                        const option = document.createElement('option');
+                        option.value = camera.id;
+                        const cameraInfo = camera.width && camera.height ?
+                            ` (${camera.width}x${camera.height})` : '';
+                        option.textContent = `Camera ${camera.id} - ${camera.name || 'Unknown'}${cameraInfo}`;
+                        deviceSelect.appendChild(option);
+                    });
+
+                    // Add validation for selected device
+                    deviceSelect.addEventListener('change', async function() {
+                        if (this.value && data.source === 'remote') {
+                            await validateRemoteDevice(characterId, this.value);
+                        }
+                    });
+                } else {
+                    status.className = 'detection-status detection-error';
+                    status.textContent = data.message || 'No cameras detected';
+                }
+            } catch (error) {
+                status.className = 'detection-status detection-error';
+                status.textContent = 'Error detecting cameras: ' + error.message;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔍 Detect Available Cameras';
+            }
+        });
+
+        // Validate remote device function
+        async function validateRemoteDevice(characterId, deviceId) {
+            try {
+                const response = await fetch(`/api/webcam/validate-device?characterId=${characterId}&deviceId=${deviceId}`);
+                const data = await response.json();
+
+                const status = document.getElementById('detectionStatus');
+                if (data.success) {
+                    status.className = 'detection-status detection-success';
+                    status.textContent = `✓ Device validated: ${data.message}`;
+                } else {
+                    status.className = 'detection-status detection-error';
+                    status.textContent = `✗ Device validation failed: ${data.message}`;
+                }
+            } catch (error) {
+                const status = document.getElementById('detectionStatus');
+                status.className = 'detection-status detection-error';
+                status.textContent = 'Error validating device: ' + error.message;
+            }
+        }
+
+        // Update device path when device is selected
+        document.getElementById('deviceId').addEventListener('change', function() {
+            const devicePath = document.getElementById('devicePath');
+            if (this.value) {
+                devicePath.value = `/dev/video${this.value}`;
+            } else {
+                devicePath.value = '';
+            }
+        });
+
+        // Camera test functionality
+        document.getElementById('testCameraBtn').addEventListener('click', async function() {
+            const deviceId = document.getElementById('deviceId').value;
+            const resolution = document.getElementById('resolution').value;
+            const fps = document.getElementById('fps').value;
+            const characterId = document.getElementById('characterId').value;
+            
+            if (!deviceId) {
+                alert('Please select a camera device first');
+                return;
+            }
+
+            const preview = document.getElementById('webcamPreview');
+            const testBtn = document.getElementById('testCameraBtn');
+            const stopBtn = document.getElementById('stopTestBtn');
+
+            try {
+                testBtn.style.display = 'none';
+                stopBtn.style.display = 'inline-block';
+                preview.innerHTML = '<span>Starting camera test...</span>';
+
+                const [width, height] = resolution.split('x');
+                const testUrl = `/api/webcam/test-stream?characterId=${characterId}&deviceId=${deviceId}&width=${width}&height=${height}&fps=${fps}&t=${Date.now()}`;
+                
+                const img = document.createElement('img');
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.objectFit = 'cover';
+                img.src = testUrl;
+                
+                img.onload = () => {
+                    preview.innerHTML = '';
+                    preview.appendChild(img);
+                };
+                
+                img.onerror = () => {
+                    preview.innerHTML = '<span style="color: #ff0000;">Camera test failed</span>';
+                };
+
+                testStream = img;
+            } catch (error) {
+                preview.innerHTML = '<span style="color: #ff0000;">Error: ' + error.message + '</span>';
+                testBtn.style.display = 'inline-block';
+                stopBtn.style.display = 'none';
+            }
+        });
+
+        document.getElementById('stopTestBtn').addEventListener('click', function() {
+            const preview = document.getElementById('webcamPreview');
+            const testBtn = document.getElementById('testCameraBtn');
+            const stopBtn = document.getElementById('stopTestBtn');
+
+            if (testStream) {
+                testStream.src = '';
+                testStream = null;
+            }
+
+            preview.innerHTML = '<span>No preview available</span>';
+            testBtn.style.display = 'inline-block';
+            stopBtn.style.display = 'none';
+        });
+
+        // Streaming functionality
+        document.getElementById('startStreamBtn').addEventListener('click', async function() {
+            const characterId = document.getElementById('characterId').value;
+            const deviceId = document.getElementById('deviceId').value;
+
+            if (!characterId || !deviceId) {
+                alert('Please select a character and camera device first');
+                return;
+            }
+
+            const startBtn = document.getElementById('startStreamBtn');
+            const stopBtn = document.getElementById('stopStreamBtn');
+            const status = document.getElementById('streamStatus');
+
+            try {
+                startBtn.disabled = true;
+                startBtn.textContent = '🔄 Starting...';
+
+                const response = await fetch(`/api/streaming/start/${characterId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        width: document.getElementById('resolution').value.split('x')[0],
+                        height: document.getElementById('resolution').value.split('x')[1],
+                        fps: parseInt(document.getElementById('fps').value),
+                        quality: 85
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    startBtn.style.display = 'none';
+                    stopBtn.style.display = 'inline-block';
+                    status.style.display = 'block';
+
+                    updateStreamStatus(characterId);
+
+                    // Start periodic status updates
+                    streamStatusInterval = setInterval(() => {
+                        updateStreamStatus(characterId);
+                    }, 5000);
+                } else {
+                    alert('Failed to start stream: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error starting stream: ' + error.message);
+            } finally {
+                startBtn.disabled = false;
+                startBtn.textContent = '🔴 Start Stream';
+            }
+        });
+
+        document.getElementById('stopStreamBtn').addEventListener('click', async function() {
+            const characterId = document.getElementById('characterId').value;
+            const startBtn = document.getElementById('startStreamBtn');
+            const stopBtn = document.getElementById('stopStreamBtn');
+            const status = document.getElementById('streamStatus');
+
+            try {
+                stopBtn.disabled = true;
+                stopBtn.textContent = '🔄 Stopping...';
+
+                const response = await fetch(`/api/streaming/stop/${characterId}`, {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    startBtn.style.display = 'inline-block';
+                    stopBtn.style.display = 'none';
+                    status.style.display = 'none';
+
+                    // Clear status interval
+                    if (streamStatusInterval) {
+                        clearInterval(streamStatusInterval);
+                        streamStatusInterval = null;
+                    }
+                } else {
+                    alert('Failed to stop stream: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error stopping stream: ' + error.message);
+            } finally {
+                stopBtn.disabled = false;
+                stopBtn.textContent = '⏹️ Stop Stream';
+            }
+        });
+
+        // Stream status update function
+        let streamStatusInterval = null;
+
+        async function updateStreamStatus(characterId) {
+            try {
+                const response = await fetch(`/api/streaming/status/${characterId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('streamStatusText').textContent =
+                        data.hasStream ? 'Active' : 'Inactive';
+                    document.getElementById('streamClients').textContent =
+                        data.clientCount || 0;
+                    document.getElementById('streamUrl').textContent =
+                        data.hasStream ? `/api/streaming/stream/${characterId}` : '-';
+                }
+            } catch (error) {
+                console.error('Error updating stream status:', error);
+            }
+        }
+
+        // Auto-detect cameras on page load if editing existing webcam
+        <% if (part && part.id) { %>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('detectCamerasBtn').click();
+        });
+        <% } %>
+    </script>
+</body>
+</html>

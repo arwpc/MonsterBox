@@ -48,7 +48,65 @@ const deleteCharacter = async (id) => {
     if (filteredCharacters.length === characters.length) {
         throw new Error('Character not found');
     }
+
+    // Remove webcam association before deleting character
+    try {
+        const characterWebcamService = require('./characterWebcamService');
+        await characterWebcamService.removeWebcam(parseInt(id));
+    } catch (webcamError) {
+        console.warn('Error removing webcam association during character deletion:', webcamError);
+    }
+
     await fs.writeFile(dataPath, JSON.stringify(filteredCharacters, null, 2));
+};
+
+/**
+ * Get character with webcam information
+ * @param {number} id - Character ID
+ * @returns {Object|null} Character with webcam details
+ */
+const getCharacterWithWebcam = async (id) => {
+    try {
+        const character = await getCharacterById(id);
+        if (!character) {
+            return null;
+        }
+
+        const characterWebcamService = require('./characterWebcamService');
+        const webcam = await characterWebcamService.getWebcamByCharacter(parseInt(id));
+
+        return {
+            ...character,
+            webcam: webcam,
+            hasWebcam: !!webcam
+        };
+    } catch (error) {
+        console.error('Error getting character with webcam:', error);
+        return null;
+    }
+};
+
+/**
+ * Get all characters with webcam information
+ * @returns {Array} Array of characters with webcam details
+ */
+const getAllCharactersWithWebcams = async () => {
+    try {
+        const characters = await getAllCharacters();
+        const charactersWithWebcams = [];
+
+        for (const character of characters) {
+            const characterWithWebcam = await getCharacterWithWebcam(character.id);
+            if (characterWithWebcam) {
+                charactersWithWebcams.push(characterWithWebcam);
+            }
+        }
+
+        return charactersWithWebcams;
+    } catch (error) {
+        console.error('Error getting all characters with webcams:', error);
+        return [];
+    }
 };
 
 module.exports = {
@@ -56,5 +114,7 @@ module.exports = {
     getCharacterById,
     createCharacter,
     updateCharacter,
-    deleteCharacter
+    deleteCharacter,
+    getCharacterWithWebcam,
+    getAllCharactersWithWebcams
 };

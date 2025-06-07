@@ -21,6 +21,7 @@
             <a href="/parts/new/led?characterId=<%= character.id %>" class="button">Add LED</a>
             <a href="/parts/servo/new?characterId=<%= character.id %>" class="button">Add Servo</a>
             <a href="/parts/new/sensor?characterId=<%= character.id %>" class="button">Add Sensor</a>
+            <a href="/parts/webcam/new?characterId=<%= character.id %>" class="button">📹 Add Webcam</a>
         </div>
 
         <div id="partsContainer">
@@ -51,6 +52,8 @@
                                                 <a href="/parts/servo/<%= part.id %>/edit?characterId=<%= character.id %>" class="button">Edit</a>
                                             <% } else if (part.type === 'light') { %>
                                                 <a href="/parts/light/<%= part.id %>/edit?characterId=<%= character.id %>" class="button">Edit</a>
+                                            <% } else if (part.type === 'webcam') { %>
+                                                <a href="/parts/webcam/<%= part.id %>/edit?characterId=<%= character.id %>" class="button">📹 Edit</a>
                                             <% } else { %>
                                                 <a href="/parts/<%= part.id %>/edit?characterId=<%= character.id %>" class="button">Edit</a>
                                             <% } %>
