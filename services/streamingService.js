@@ -1,5 +1,6 @@
 const { spawn } = require('child_process');
 const path = require('path');
+const os = require('os');
 const EventEmitter = require('events');
 const logger = require('../scripts/logger');
 const webcamService = require('./webcamService');
@@ -14,6 +15,29 @@ class StreamingService extends EventEmitter {
         this.reconnectAttempts = new Map(); // Map of characterId -> attempt count
         this.maxReconnectAttempts = 5;
         this.reconnectDelay = 3000; // 3 seconds
+    }
+
+    /**
+     * Get platform-appropriate shell command for executing SSH
+     * @param {string} command - The command to execute
+     * @returns {Object} Shell command configuration
+     */
+    getShellCommand(command) {
+        const isWindows = os.platform() === 'win32';
+
+        if (isWindows) {
+            return {
+                cmd: 'cmd',
+                args: ['/c', command],
+                options: { shell: true }
+            };
+        } else {
+            return {
+                cmd: 'sh',
+                args: ['-c', command],
+                options: { shell: true }
+            };
+        }
     }
 
     /**
@@ -232,7 +256,8 @@ class StreamingService extends EventEmitter {
                 ].join(' ');
 
                 const fullCommand = `${sshCommand} "python3 ${remoteScript} ${remoteArgs}"`;
-                const process = spawn('cmd', ['/c', fullCommand], { shell: true });
+                const shellCmd = this.getShellCommand(fullCommand);
+                const process = spawn(shellCmd.cmd, shellCmd.args, shellCmd.options);
 
                 let initialized = false;
                 let initTimeout = setTimeout(() => {

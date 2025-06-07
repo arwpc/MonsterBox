@@ -444,9 +444,9 @@ class WebcamService {
             const testCommand = `test -c ${devicePath} && echo "exists" || echo "missing"`;
 
             return new Promise((resolve) => {
-                const process = spawn('cmd', ['/c', `${sshCommand} "${testCommand}"`], {
-                    shell: true
-                });
+                const fullCommand = `${sshCommand} "${testCommand}"`;
+                const shellCmd = this.getShellCommand(fullCommand);
+                const process = spawn(shellCmd.cmd, shellCmd.args, shellCmd.options);
 
                 let output = '';
                 let error = '';
@@ -539,9 +539,9 @@ class WebcamService {
             const testScript = `python3 -c "import cv2; cap = cv2.VideoCapture(${webcam.deviceId}, cv2.CAP_V4L2); ret, frame = cap.read(); cap.release(); print('OK' if ret and frame is not None else 'FAIL')"`;
 
             return new Promise((resolve) => {
-                const process = spawn('cmd', ['/c', `${sshCommand} "${testScript}"`], {
-                    shell: true
-                });
+                const fullCommand = `${sshCommand} "${testScript}"`;
+                const shellCmd = this.getShellCommand(fullCommand);
+                const process = spawn(shellCmd.cmd, shellCmd.args, shellCmd.options);
 
                 let output = '';
                 let error = '';
