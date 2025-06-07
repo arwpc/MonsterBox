@@ -1,11 +1,34 @@
 const fs = require('fs').promises;
 const path = require('path');
 const { spawn } = require('child_process');
+const os = require('os');
 const logger = require('../scripts/logger');
 const partService = require('./partService');
 const characterService = require('./characterService');
 
 class WebcamService {
+    /**
+     * Get platform-appropriate shell command for executing SSH
+     * @param {string} command - The command to execute
+     * @returns {Object} Shell command configuration
+     */
+    getShellCommand(command) {
+        const isWindows = os.platform() === 'win32';
+
+        if (isWindows) {
+            return {
+                cmd: 'cmd',
+                args: ['/c', command],
+                options: { shell: true }
+            };
+        } else {
+            return {
+                cmd: 'sh',
+                args: ['-c', command],
+                options: { shell: true }
+            };
+        }
+    }
     constructor() {
         this.activeStreams = new Map(); // Map of characterId -> stream info
         this.streamClients = new Map(); // Map of streamId -> Set of client connections
@@ -146,11 +169,11 @@ class WebcamService {
             // Use SSH to run camera detection on remote system
             const sshCommand = `ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no ${user}@${host}`;
             const remoteScript = 'python3 /home/remote/MonsterBox/scripts/webcam_detect.py';
+            const fullCommand = `${sshCommand} "${remoteScript}"`;
 
             return new Promise((resolve) => {
-                const process = spawn('cmd', ['/c', `${sshCommand} "${remoteScript}"`], {
-                    shell: true
-                });
+                const shellCmd = this.getShellCommand(fullCommand);
+                const process = spawn(shellCmd.cmd, shellCmd.args, shellCmd.options);
 
                 let output = '';
                 let error = '';
