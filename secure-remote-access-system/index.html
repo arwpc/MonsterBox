@@ -1,0 +1,1677 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.14">
+    
+    
+      
+        <title>MonsterBox Secure Remote Access System - MonsterBox Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.342714a4.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#monsterbox-secure-remote-access-system" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="MonsterBox Documentation" class="md-header__button md-logo" aria-label="MonsterBox Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            MonsterBox Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              MonsterBox Secure Remote Access System
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="MonsterBox Documentation" class="md-nav__button md-logo" aria-label="MonsterBox Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    MonsterBox Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Character Sheets
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Character Sheets
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../character_orlok/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Orlok
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../character_coffin_breaker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Coffin Breaker
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../character_pumpkinhead/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    PumpkinHead
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Installation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Usage Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Configuration
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../structure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Directory Structure
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    FAQ / Troubleshooting
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../license/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    License
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Networking
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Setup Guides
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            Setup Guides
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../setup/ANIMATRONIC-SETUP-GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Animatronic Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../setup/ANIMATRONIC-SSH-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    SSH Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../setup/MCP-LOG-COLLECTION-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    MCP Log Collection
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Integration
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            Integration
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integration/elevenlabs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    ElevenLabs TTS
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Hardware
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            Hardware
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hardware/gpio_assignments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    GPIO Assignments
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hardware/hardware_schedule/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Hardware Schedule
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_13" id="__nav_13_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    API Documentation
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_13">
+            <span class="md-nav__icon md-icon"></span>
+            API Documentation
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/API-TESTING-SUMMARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    API Testing Summary
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_14" >
+        
+          
+          <label class="md-nav__link" for="__nav_14" id="__nav_14_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Development
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_14_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_14">
+            <span class="md-nav__icon md-icon"></span>
+            Development
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/task-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Task Management
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/task-workflows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Task Workflows
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/development-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Development Process
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/taskmaster-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Task Master Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_15" >
+        
+          
+          <label class="md-nav__link" for="__nav_15" id="__nav_15_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Security
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_15_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_15">
+            <span class="md-nav__icon md-icon"></span>
+            Security
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/MCP-SETUP-NOTES/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    MCP Setup Notes
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16" >
+        
+          
+          <label class="md-nav__link" for="__nav_16" id="__nav_16_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Animatronics Workshop
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_16_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_16">
+            <span class="md-nav__icon md-icon"></span>
+            Animatronics Workshop
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../animatronics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../animatronics/familiarization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Familiarization
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../animatronics/simple_steps/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Simple Steps
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../animatronics/hands_on/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Hands-On Activities
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../animatronics/presentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Final Presentation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="monsterbox-secure-remote-access-system">MonsterBox Secure Remote Access System</h1>
+<h2 id="overview">Overview</h2>
+<p>The MonsterBox Secure Remote Access System provides JWT-based authentication and role-based access control for secure remote command execution across animatronic systems. This system enables authorized users to safely interact with the Orlok, Coffin, and Pumpkinhead animatronic systems through a secure API gateway.</p>
+<h2 id="architecture">Architecture</h2>
+<h3 id="core-components">Core Components</h3>
+<ol>
+<li><strong>JWT Authentication Service</strong> - Handles user authentication and token management</li>
+<li><strong>RBAC (Role-Based Access Control)</strong> - Manages user roles and permissions</li>
+<li><strong>SSH Authentication Service</strong> - Secure command execution with validation</li>
+<li><strong>API Gateway</strong> - Centralized request routing and security enforcement</li>
+<li><strong>Audit Logging</strong> - Comprehensive activity tracking and security monitoring</li>
+</ol>
+<h3 id="security-features">Security Features</h3>
+<ul>
+<li>JWT-based authentication with refresh tokens</li>
+<li>Role-based access control with granular permissions</li>
+<li>SSH command validation and filtering</li>
+<li>Rate limiting and abuse prevention</li>
+<li>Comprehensive audit logging</li>
+<li>Session management integration</li>
+</ul>
+<h2 id="user-roles-and-permissions">User Roles and Permissions</h2>
+<h3 id="role-hierarchy">Role Hierarchy</h3>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Priority</th>
+<th>Description</th>
+<th>Permissions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Admin</strong></td>
+<td>100</td>
+<td>Full system access</td>
+<td>All permissions including user management</td>
+</tr>
+<tr>
+<td><strong>Maintenance</strong></td>
+<td>60</td>
+<td>Technical access with SSH</td>
+<td>view, control, configure, ssh, diagnostics, maintenance</td>
+</tr>
+<tr>
+<td><strong>Operator</strong></td>
+<td>50</td>
+<td>Standard operational access</td>
+<td>view, control, configure</td>
+</tr>
+<tr>
+<td><strong>Viewer</strong></td>
+<td>10</td>
+<td>Read-only access</td>
+<td>view</td>
+</tr>
+</tbody>
+</table>
+<h3 id="specialized-roles">Specialized Roles</h3>
+<ul>
+<li><strong>orlok_operator</strong> - Limited to Orlok animatronic operations</li>
+<li><strong>coffin_operator</strong> - Limited to Coffin animatronic operations  </li>
+<li><strong>pumpkinhead_operator</strong> - Limited to Pumpkinhead animatronic operations</li>
+</ul>
+<h3 id="permission-types">Permission Types</h3>
+<table>
+<thead>
+<tr>
+<th>Permission</th>
+<th>Category</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>view</td>
+<td>basic</td>
+<td>Read-only access to system status</td>
+</tr>
+<tr>
+<td>control</td>
+<td>operational</td>
+<td>Control animatronic movements</td>
+</tr>
+<tr>
+<td>configure</td>
+<td>operational</td>
+<td>Modify system configurations</td>
+</tr>
+<tr>
+<td>ssh</td>
+<td>technical</td>
+<td>Remote shell access</td>
+</tr>
+<tr>
+<td>admin</td>
+<td>administrative</td>
+<td>Full administrative privileges</td>
+</tr>
+<tr>
+<td>user_management</td>
+<td>administrative</td>
+<td>Manage user accounts</td>
+</tr>
+<tr>
+<td>system_management</td>
+<td>administrative</td>
+<td>System-wide settings</td>
+</tr>
+<tr>
+<td>audit_access</td>
+<td>security</td>
+<td>Access to audit logs</td>
+</tr>
+<tr>
+<td>security_management</td>
+<td>security</td>
+<td>Security settings management</td>
+</tr>
+<tr>
+<td>diagnostics</td>
+<td>technical</td>
+<td>System diagnostics</td>
+</tr>
+<tr>
+<td>maintenance</td>
+<td>technical</td>
+<td>Maintenance functions</td>
+</tr>
+</tbody>
+</table>
+<h2 id="api-endpoints">API Endpoints</h2>
+<h3 id="authentication-endpoints">Authentication Endpoints</h3>
+<h4 id="post-authlogin">POST /auth/login</h4>
+<p>Authenticate user and receive JWT tokens.</p>
+<p><strong>Request:</strong></p>
+<pre><code class="language-json">{
+  &quot;username&quot;: &quot;admin&quot;,
+  &quot;password&quot;: &quot;MonsterBox2024!&quot;
+}
+</code></pre>
+<p><strong>Response:</strong></p>
+<pre><code class="language-json">{
+  &quot;success&quot;: true,
+  &quot;user&quot;: {
+    &quot;id&quot;: &quot;admin-001&quot;,
+    &quot;username&quot;: &quot;admin&quot;,
+    &quot;role&quot;: &quot;admin&quot;,
+    &quot;animatronicAccess&quot;: [&quot;orlok&quot;, &quot;coffin&quot;, &quot;pumpkinhead&quot;],
+    &quot;permissions&quot;: [&quot;view&quot;, &quot;control&quot;, &quot;configure&quot;, &quot;ssh&quot;, &quot;admin&quot;]
+  },
+  &quot;accessToken&quot;: &quot;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...&quot;,
+  &quot;expiresIn&quot;: &quot;8h&quot;
+}
+</code></pre>
+<h4 id="post-authlogout">POST /auth/logout</h4>
+<p>Logout user and invalidate session.</p>
+<p><strong>Headers:</strong> <code>Authorization: Bearer &lt;token&gt;</code></p>
+<h4 id="post-authrefresh">POST /auth/refresh</h4>
+<p>Refresh access token using refresh token.</p>
+<h4 id="get-authme">GET /auth/me</h4>
+<p>Get current user information.</p>
+<p><strong>Headers:</strong> <code>Authorization: Bearer &lt;token&gt;</code></p>
+<h4 id="get-authverify">GET /auth/verify</h4>
+<p>Verify JWT token validity.</p>
+<p><strong>Headers:</strong> <code>Authorization: Bearer &lt;token&gt;</code></p>
+<h3 id="ssh-command-execution">SSH Command Execution</h3>
+<h4 id="post-sshexecuteanimatronicid">POST /ssh/execute/:animatronicId</h4>
+<p>Execute SSH command on specific animatronic.</p>
+<p><strong>Headers:</strong> <code>Authorization: Bearer &lt;token&gt;</code></p>
+<p><strong>Request:</strong></p>
+<pre><code class="language-json">{
+  &quot;command&quot;: &quot;uptime&quot;,
+  &quot;timeout&quot;: 30,
+  &quot;validateCommand&quot;: true
+}
+</code></pre>
+<p><strong>Response:</strong></p>
+<pre><code class="language-json">{
+  &quot;success&quot;: true,
+  &quot;command&quot;: &quot;uptime&quot;,
+  &quot;stdout&quot;: &quot;up 5 days, 12:34, load average: 0.15, 0.10, 0.05&quot;,
+  &quot;stderr&quot;: &quot;&quot;,
+  &quot;exitCode&quot;: 0,
+  &quot;duration&quot;: 245,
+  &quot;host&quot;: &quot;192.168.8.120&quot;
+}
+</code></pre>
+<h4 id="post-sshtestanimatronicid">POST /ssh/test/:animatronicId</h4>
+<p>Test SSH connectivity to animatronic.</p>
+<h4 id="get-sshhistory">GET /ssh/history</h4>
+<p>Get SSH command history for current user.</p>
+<h4 id="post-sshbatchanimatronicid">POST /ssh/batch/:animatronicId</h4>
+<p>Execute multiple SSH commands in sequence.</p>
+<h4 id="get-sshstatus">GET /ssh/status</h4>
+<p>Get SSH service status and connectivity information.</p>
+<h4 id="get-sshcommands">GET /ssh/commands</h4>
+<p>Get list of allowed SSH commands for current user role.</p>
+<h4 id="post-sshvalidate">POST /ssh/validate</h4>
+<p>Validate SSH command without executing it.</p>
+<h2 id="configuration">Configuration</h2>
+<h3 id="environment-variables">Environment Variables</h3>
+<pre><code class="language-env"># JWT Configuration
+JWT_SECRET=MonsterBox-JWT-2024-SecureKey-f8e9d7c6b5a4-RemoteAccess-Auth
+JWT_EXPIRES_IN=8h
+JWT_REFRESH_SECRET=MonsterBox-Refresh-2024-SecureKey-a4b5c6d7e8f9-RemoteAccess-Refresh
+JWT_REFRESH_EXPIRES_IN=7d
+BCRYPT_ROUNDS=12
+
+# SSH Credentials
+ORLOK_SSH_USER=remote
+ORLOK_SSH_PASSWORD=klrklr89!
+COFFIN_SSH_USER=remote
+COFFIN_SSH_PASSWORD=klrklr89!
+PUMPKINHEAD_SSH_USER=remote
+PUMPKINHEAD_SSH_PASSWORD=klrklr89!
+</code></pre>
+<h3 id="default-admin-account">Default Admin Account</h3>
+<ul>
+<li><strong>Username:</strong> admin</li>
+<li><strong>Password:</strong> MonsterBox2024!</li>
+<li><strong>Role:</strong> admin</li>
+<li><strong>Access:</strong> All animatronics and permissions</li>
+</ul>
+<h2 id="security-considerations">Security Considerations</h2>
+<h3 id="authentication-security">Authentication Security</h3>
+<ol>
+<li><strong>JWT Tokens</strong> - 8-hour expiration with secure refresh mechanism</li>
+<li><strong>Password Hashing</strong> - bcrypt with 12 rounds</li>
+<li><strong>Session Integration</strong> - Compatible with existing Express sessions</li>
+<li><strong>Rate Limiting</strong> - 5 login attempts per 15 minutes</li>
+</ol>
+<h3 id="ssh-command-security">SSH Command Security</h3>
+<ol>
+<li><strong>Command Validation</strong> - Whitelist for non-admin users</li>
+<li><strong>Dangerous Command Blocking</strong> - System-destructive commands blocked</li>
+<li><strong>Path Traversal Protection</strong> - Prevents unauthorized file access</li>
+<li><strong>Timeout Controls</strong> - 30-second default timeout</li>
+<li><strong>Rate Limiting</strong> - 10 commands/minute (30 for admin)</li>
+</ol>
+<h3 id="audit-and-monitoring">Audit and Monitoring</h3>
+<ol>
+<li><strong>Comprehensive Logging</strong> - All authentication and SSH events</li>
+<li><strong>User Attribution</strong> - Full user tracking with IP addresses</li>
+<li><strong>Tamper-Proof Logs</strong> - Immutable audit trail</li>
+<li><strong>Admin Access</strong> - Audit logs accessible via /auth/audit</li>
+</ol>
+<h2 id="usage-examples">Usage Examples</h2>
+<h3 id="basic-authentication-flow">Basic Authentication Flow</h3>
+<pre><code class="language-javascript">// 1. Login
+const loginResponse = await fetch('/auth/login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    username: 'admin',
+    password: 'MonsterBox2024!'
+  })
+});
+
+const { accessToken } = await loginResponse.json();
+
+// 2. Execute SSH command
+const sshResponse = await fetch('/ssh/execute/orlok', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${accessToken}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    command: 'uptime'
+  })
+});
+
+const result = await sshResponse.json();
+console.log(result.stdout);
+</code></pre>
+<h3 id="role-based-access-example">Role-Based Access Example</h3>
+<pre><code class="language-javascript">// Admin user - can execute any safe command
+await fetch('/ssh/execute/orlok', {
+  method: 'POST',
+  headers: { 'Authorization': `Bearer ${adminToken}` },
+  body: JSON.stringify({ command: 'systemctl status monsterbox' })
+});
+
+// Operator user - limited to allowed commands
+await fetch('/ssh/execute/orlok', {
+  method: 'POST',
+  headers: { 'Authorization': `Bearer ${operatorToken}` },
+  body: JSON.stringify({ command: 'uptime' })
+});
+</code></pre>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<h3 id="common-issues">Common Issues</h3>
+<ol>
+<li><strong>Authentication Failures</strong></li>
+<li>Check username/password combination</li>
+<li>Verify user account exists in /data/auth/users.json</li>
+<li>
+<p>Check rate limiting status</p>
+</li>
+<li>
+<p><strong>SSH Command Failures</strong></p>
+</li>
+<li>Verify SSH permissions for user role</li>
+<li>Check animatronic connectivity</li>
+<li>
+<p>Validate command against allowed list</p>
+</li>
+<li>
+<p><strong>Token Expiration</strong></p>
+</li>
+<li>Use refresh token to get new access token</li>
+<li>Re-authenticate if refresh token expired</li>
+</ol>
+<h3 id="error-codes">Error Codes</h3>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AUTH_REQUIRED</td>
+<td>Authentication token required</td>
+</tr>
+<tr>
+<td>INVALID_TOKEN</td>
+<td>JWT token invalid or expired</td>
+</tr>
+<tr>
+<td>INSUFFICIENT_PERMISSIONS</td>
+<td>User lacks required permissions</td>
+</tr>
+<tr>
+<td>SSH_PERMISSION_DENIED</td>
+<td>SSH access denied for user role</td>
+</tr>
+<tr>
+<td>ANIMATRONIC_ACCESS_DENIED</td>
+<td>No access to specified animatronic</td>
+</tr>
+<tr>
+<td>COMMAND_BLOCKED</td>
+<td>SSH command blocked by security policy</td>
+</tr>
+<tr>
+<td>RATE_LIMIT_EXCEEDED</td>
+<td>Too many requests</td>
+</tr>
+</tbody>
+</table>
+<h2 id="maintenance">Maintenance</h2>
+<h3 id="log-management">Log Management</h3>
+<ul>
+<li>Audit logs stored in <code>/data/auth/audit.json</code></li>
+<li>Automatic rotation (last 1000 events)</li>
+<li>Admin access via <code>/auth/audit</code> endpoint</li>
+</ul>
+<h3 id="user-management">User Management</h3>
+<ul>
+<li>User accounts in <code>/data/auth/users.json</code></li>
+<li>Role definitions in <code>/data/auth/roles.json</code></li>
+<li>Session tracking in <code>/data/auth/sessions.json</code></li>
+</ul>
+<h3 id="security-updates">Security Updates</h3>
+<ol>
+<li>Regularly rotate JWT secrets</li>
+<li>Update SSH credentials as needed</li>
+<li>Review audit logs for suspicious activity</li>
+<li>Monitor rate limiting effectiveness</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.instant", "navigation.sections", "toc.integrate", "content.code.annotate"], "search": "../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+    
+  </body>
+</html>

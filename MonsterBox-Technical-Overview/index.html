@@ -1,0 +1,1784 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.14">
+    
+    
+      
+        <title>🎃 MonsterBox Technical Overview & Setup Guide - MonsterBox Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.342714a4.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#monsterbox-technical-overview-setup-guide" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="MonsterBox Documentation" class="md-header__button md-logo" aria-label="MonsterBox Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            MonsterBox Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              🎃 MonsterBox Technical Overview &amp; Setup Guide
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="MonsterBox Documentation" class="md-nav__button md-logo" aria-label="MonsterBox Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    MonsterBox Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Character Sheets
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Character Sheets
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../character_orlok/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Orlok
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../character_coffin_breaker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Coffin Breaker
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../character_pumpkinhead/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    PumpkinHead
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Installation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Usage Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Configuration
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../structure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Directory Structure
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    FAQ / Troubleshooting
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../license/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    License
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Networking
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Setup Guides
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            Setup Guides
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../setup/ANIMATRONIC-SETUP-GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Animatronic Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../setup/ANIMATRONIC-SSH-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    SSH Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../setup/MCP-LOG-COLLECTION-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    MCP Log Collection
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Integration
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            Integration
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integration/elevenlabs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    ElevenLabs TTS
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Hardware
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            Hardware
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hardware/gpio_assignments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    GPIO Assignments
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hardware/hardware_schedule/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Hardware Schedule
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_13" id="__nav_13_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    API Documentation
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_13">
+            <span class="md-nav__icon md-icon"></span>
+            API Documentation
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/API-TESTING-SUMMARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    API Testing Summary
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_14" >
+        
+          
+          <label class="md-nav__link" for="__nav_14" id="__nav_14_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Development
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_14_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_14">
+            <span class="md-nav__icon md-icon"></span>
+            Development
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/task-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Task Management
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/task-workflows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Task Workflows
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/development-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Development Process
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/taskmaster-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Task Master Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_15" >
+        
+          
+          <label class="md-nav__link" for="__nav_15" id="__nav_15_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Security
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_15_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_15">
+            <span class="md-nav__icon md-icon"></span>
+            Security
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/MCP-SETUP-NOTES/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    MCP Setup Notes
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16" >
+        
+          
+          <label class="md-nav__link" for="__nav_16" id="__nav_16_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Animatronics Workshop
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_16_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_16">
+            <span class="md-nav__icon md-icon"></span>
+            Animatronics Workshop
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../animatronics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../animatronics/familiarization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Familiarization
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../animatronics/simple_steps/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Simple Steps
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../animatronics/hands_on/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Hands-On Activities
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../animatronics/presentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Final Presentation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="monsterbox-technical-overview-setup-guide">🎃 MonsterBox Technical Overview &amp; Setup Guide</h1>
+<h2 id="executive-summary">Executive Summary</h2>
+<p>MonsterBox is a sophisticated animatronic control system built with Node.js/Express, designed for managing distributed Raspberry Pi-based animatronic systems in haunted attraction environments. The platform features enterprise-level architecture, comprehensive testing, and professional development practices.</p>
+<h2 id="1-codebase-statistics">1. Codebase Statistics</h2>
+<ul>
+<li><strong>Total Files</strong>: 19,127 files (including node_modules)</li>
+<li><strong>Source Code Files</strong>: ~350 files (excluding node_modules, .git, site)</li>
+<li><strong>Estimated Total Lines of Code</strong>: ~25,000-30,000 lines</li>
+<li><strong>Project Structure Depth</strong>: 4-5 levels deep</li>
+<li><strong>Main Directories</strong>: 15 primary directories</li>
+</ul>
+<h2 id="2-programming-languages-lines-of-code-distribution">2. Programming Languages &amp; Lines of Code Distribution</h2>
+<h3 id="primary-languages-22000-lines-85">Primary Languages (~22,000 lines, 85%):</h3>
+<table>
+<thead>
+<tr>
+<th>Language</th>
+<th>Lines of Code</th>
+<th>Percentage</th>
+<th>Files</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>JavaScript (Node.js)</strong></td>
+<td>~15,000</td>
+<td>60%</td>
+<td>~80</td>
+</tr>
+<tr>
+<td><strong>Python</strong></td>
+<td>~4,000</td>
+<td>15%</td>
+<td>~25</td>
+</tr>
+<tr>
+<td><strong>EJS Templates</strong></td>
+<td>~1,500</td>
+<td>5%</td>
+<td>~20</td>
+</tr>
+<tr>
+<td><strong>JSON</strong></td>
+<td>~1,500</td>
+<td>5%</td>
+<td>~15</td>
+</tr>
+</tbody>
+</table>
+<h3 id="secondary-languages-4000-lines-15">Secondary Languages (~4,000 lines, 15%):</h3>
+<table>
+<thead>
+<tr>
+<th>Language</th>
+<th>Lines of Code</th>
+<th>Percentage</th>
+<th>Files</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Markdown</strong></td>
+<td>~2,000</td>
+<td>7%</td>
+<td>~50</td>
+</tr>
+<tr>
+<td><strong>CSS</strong></td>
+<td>~800</td>
+<td>3%</td>
+<td>~5</td>
+</tr>
+<tr>
+<td><strong>Shell Scripts</strong></td>
+<td>~800</td>
+<td>3%</td>
+<td>~10</td>
+</tr>
+<tr>
+<td><strong>PowerShell</strong></td>
+<td>~400</td>
+<td>2%</td>
+<td>~5</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Total: ~25,000 lines across ~210 source files</strong></p>
+<h2 id="3-technology-stack">3. Technology Stack</h2>
+<h3 id="backend-framework">Backend Framework</h3>
+<ul>
+<li><strong>Node.js</strong>: v18.0.0+ (Runtime Environment)</li>
+<li><strong>Express.js</strong>: v4.21.1 (Web Application Framework)</li>
+<li><strong>EJS</strong>: v3.1.9 (Embedded JavaScript Templating)</li>
+</ul>
+<h3 id="frontend-technologies">Frontend Technologies</h3>
+<ul>
+<li><strong>EJS Templating</strong>: Server-side rendering with dynamic content</li>
+<li><strong>CSS3</strong>: Custom styling with Google Fonts (Creepster theme)</li>
+<li><strong>JavaScript (Client-side)</strong>: jQuery 3.6.0, Axios for AJAX</li>
+<li><strong>WebSocket</strong>: Real-time audio/video streaming (ws v8.14.2)</li>
+</ul>
+<h3 id="databasestorage-solutions">Database/Storage Solutions</h3>
+<ul>
+<li><strong>JSON File-based Storage</strong>: Character, scene, part, and sound configurations</li>
+<li><strong>Session Storage</strong>: Express-session v1.17.3 for user sessions</li>
+<li><strong>File System</strong>: Direct file operations for media and logs</li>
+</ul>
+<h3 id="hardware-integration-libraries">Hardware Integration Libraries</h3>
+<ul>
+<li><strong>GPIO Control</strong>: <code>onoff</code> v6.0.3 (Raspberry Pi GPIO)</li>
+<li><strong>I2C Communication</strong>: <code>i2c-bus</code> v5.2.3 (Sensor and device communication)</li>
+<li><strong>Audio Playback</strong>: <code>mpg123</code> v0.2.3 (Sound system integration)</li>
+<li><strong>System Information</strong>: <code>node-disk-info</code> v1.3.0 (Hardware monitoring)</li>
+</ul>
+<h2 id="4-key-dependencies">4. Key Dependencies</h2>
+<h3 id="core-framework-dependencies">Core Framework Dependencies</h3>
+<pre><code class="language-json">{
+  &quot;express&quot;: &quot;^4.21.1&quot;,           // Web framework
+  &quot;ejs&quot;: &quot;^3.1.9&quot;,                // Templating engine
+  &quot;express-session&quot;: &quot;^1.17.3&quot;,   // Session management
+  &quot;dotenv&quot;: &quot;^16.4.5&quot;,            // Environment configuration
+  &quot;winston&quot;: &quot;^3.11.0&quot;,           // Logging framework
+  &quot;ws&quot;: &quot;^8.14.2&quot;                 // WebSocket support
+}
+</code></pre>
+<h3 id="hardware-control-libraries">Hardware Control Libraries</h3>
+<pre><code class="language-json">{
+  &quot;i2c-bus&quot;: &quot;^5.2.3&quot;,            // I2C device communication
+  &quot;onoff&quot;: &quot;^6.0.3&quot;,              // GPIO control for RPi
+  &quot;mpg123&quot;: &quot;^0.2.3&quot;,             // Audio playback
+  &quot;node-disk-info&quot;: &quot;^1.3.0&quot;      // System monitoring
+}
+</code></pre>
+<h3 id="aiml-integrations">AI/ML Integrations</h3>
+<pre><code class="language-json">{
+  &quot;task-master-ai&quot;: &quot;^0.16.1&quot;,    // AI-powered task management
+  &quot;@ai-sdk/openai&quot;: &quot;1.3.22&quot;,     // OpenAI integration
+  &quot;@anthropic-ai/sdk&quot;: &quot;0.39.0&quot;,  // Claude AI integration
+  &quot;openai&quot;: &quot;^4.104.0&quot;            // OpenAI API client
+}
+</code></pre>
+<h3 id="testing-frameworks">Testing Frameworks</h3>
+<pre><code class="language-json">{
+  &quot;mocha&quot;: &quot;^10.7.3&quot;,             // Test runner
+  &quot;chai&quot;: &quot;^4.5.0&quot;,               // Assertion library
+  &quot;chai-http&quot;: &quot;^4.3.0&quot;,          // HTTP testing
+  &quot;cross-env&quot;: &quot;^7.0.3&quot;           // Environment management
+}
+</code></pre>
+<h2 id="5-architecture-overview">5. Architecture Overview</h2>
+<h3 id="mvc-structure">MVC Structure</h3>
+<pre><code>MonsterBox/
+├── app.js                 # Main application entry point (280 lines)
+├── controllers/           # Business logic layer (~2,500 lines)
+│   ├── sceneController.js
+│   ├── partController.js
+│   ├── soundController.js
+│   └── ...
+├── services/              # Service layer (~1,500 lines)
+│   ├── characterService.js
+│   ├── sceneService.js
+│   └── ...
+├── routes/                # API endpoints (~3,500 lines)
+│   ├── characterRoutes.js
+│   ├── sceneRoutes.js
+│   └── ...
+└── views/                 # EJS templates (~1,500 lines)
+    ├── index.ejs
+    ├── scenes.ejs
+    └── ...
+</code></pre>
+<h3 id="api-endpoints-structure">API Endpoints Structure</h3>
+<ul>
+<li><strong>Character Management</strong>: <code>/characters</code> - CRUD operations for animatronic characters</li>
+<li><strong>Scene Builder</strong>: <code>/scenes</code> - Scene creation, editing, and execution</li>
+<li><strong>Hardware Control</strong>: <code>/parts/*</code> - GPIO, servo, LED, sensor control</li>
+<li><strong>Audio System</strong>: <code>/sounds</code> - Sound management and playback</li>
+<li><strong>Real-time Control</strong>: <code>/active-mode</code> - Live performance automation</li>
+<li><strong>System Monitoring</strong>: <code>/health</code>, <code>/logs</code> - Health checks and log viewing</li>
+<li><strong>Configuration</strong>: <code>/system-config</code> - System-wide settings</li>
+</ul>
+<h3 id="hardware-integration-patterns">Hardware Integration Patterns</h3>
+<ol>
+<li><strong>Python Script Execution</strong>: Node.js spawns Python processes for hardware control</li>
+<li><strong>JSON Configuration</strong>: Hardware settings stored in character-specific JSON files</li>
+<li><strong>SSH Remote Control</strong>: Secure communication with distributed RPi systems</li>
+<li><strong>Real-time WebSocket</strong>: Live streaming for audio/video feeds</li>
+</ol>
+<h3 id="distributed-architecture">Distributed Architecture</h3>
+<ul>
+<li><strong>Development Workstation</strong>: Windows-based control center</li>
+<li><strong>Orlok RPi</strong> (192.168.8.120): Vampire animatronic with servo/GPIO control</li>
+<li><strong>Coffin RPi</strong> (192.168.8.140): Coffin mechanism with linear actuators</li>
+<li><strong>Pumpkinhead RPi</strong> (192.168.1.101): Currently offline/disabled</li>
+</ul>
+<h2 id="6-development-tools">6. Development Tools</h2>
+<h3 id="build-tools">Build Tools</h3>
+<ul>
+<li><strong>npm scripts</strong>: 20+ predefined scripts for development, testing, and deployment</li>
+<li><strong>nodemon</strong>: Hot-reload development server</li>
+<li><strong>cross-env</strong>: Cross-platform environment variable management</li>
+</ul>
+<h3 id="testing-setup">Testing Setup</h3>
+<ul>
+<li><strong>Mocha + Chai</strong>: Unit and integration testing (~2,000 lines)</li>
+<li><strong>Custom Test Reporter</strong>: Clean output formatting</li>
+<li><strong>Environment-specific Testing</strong>: Separate test configurations</li>
+<li><strong>Hardware Test Isolation</strong>: RPI-specific tests excluded on non-RPI environments</li>
+</ul>
+<h3 id="documentation-system-mkdocs">Documentation System (MkDocs)</h3>
+<ul>
+<li><strong>Material Theme</strong>: Modern, responsive documentation</li>
+<li><strong>57 documentation files</strong> (~2,000 lines) organized in structured navigation</li>
+<li><strong>Automated GitHub Pages Deployment</strong></li>
+<li><strong>Comprehensive Coverage</strong>: Setup guides, API docs, character sheets, security</li>
+</ul>
+<h3 id="project-management">Project Management</h3>
+<ul>
+<li><strong>Task Master AI</strong>: v0.16.1 integrated for project management</li>
+<li><strong>15 main tasks</strong> with 45+ subtasks currently tracked</li>
+<li><strong>Remote Agent Support</strong>: 3 specialized agents working in parallel</li>
+<li><strong>Automated Task Generation</strong>: PRD-based task creation and management</li>
+</ul>
+<h3 id="monitoring-logging">Monitoring &amp; Logging</h3>
+<ul>
+<li><strong>Winston Logging</strong>: Structured application logging (~800 lines)</li>
+<li><strong>MCP Log Collection</strong>: Distributed log aggregation from RPi systems (~1,200 lines)</li>
+<li><strong>Sematext Integration</strong>: External monitoring and alerting</li>
+<li><strong>Health Monitoring</strong>: Real-time system status endpoints</li>
+</ul>
+<hr />
+<h1 id="monsterbox-development-environment-setup-script">MonsterBox Development Environment Setup Script</h1>
+<p>The following script provides automated setup for the MonsterBox development environment on Ubuntu/Debian systems:</p>
+<pre><code class="language-bash">#!/bin/bash
+
+# MonsterBox Development Environment Setup Script
+# For Ubuntu/Debian systems including Raspberry Pi
+
+echo &quot;🎃 Setting up MonsterBox Development Environment...&quot;
+
+# Update system packages
+echo &quot;📦 Updating system packages...&quot;
+sudo apt-get update
+
+# Install Node.js and npm if not present
+echo &quot;📦 Installing Node.js and npm...&quot;
+sudo apt-get install -y curl
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# Install Python and pip
+echo &quot;🐍 Installing Python and pip...&quot;
+sudo apt-get install -y python3 python3-pip python3-dev python3-venv
+
+# Install system dependencies for MonsterBox
+echo &quot;🔧 Installing system dependencies...&quot;
+sudo apt-get install -y \
+    build-essential \
+    git \
+    ffmpeg \
+    mpg123 \
+    libmp3lame0 \
+    libmp3lame-dev \
+    alsa-utils \
+    libasound2 \
+    libasound2-dev \
+    v4l-utils \
+    i2c-tools
+
+# Install hardware-specific packages (for RPI compatibility)
+echo &quot;🔌 Installing hardware packages...&quot;
+sudo apt-get install -y \
+    python3-numpy \
+    python3-opencv \
+    python3-setuptools \
+    python3-wheel \
+    libopencv-dev \
+    libatlas-base-dev \
+    libhdf5-dev \
+    libgtk-3-0 \
+    libavcodec-dev \
+    libavformat-dev \
+    libswscale-dev \
+    libv4l-dev \
+    libxvidcore-dev \
+    libx264-dev
+
+# Navigate to project directory
+cd /mnt/persist/workspace
+
+# Install Node.js dependencies
+echo &quot;📦 Installing Node.js dependencies...&quot;
+npm install
+
+# Install Python dependencies
+echo &quot;🐍 Installing Python dependencies...&quot;
+if [ -f scripts/requirements.txt ]; then
+    python3 -m pip install --user -r scripts/requirements.txt
+fi
+
+# Create necessary directories
+echo &quot;📁 Creating necessary directories...&quot;
+mkdir -p log
+mkdir -p public/sounds
+mkdir -p data
+
+# Set up environment variables for testing
+echo &quot;🔧 Setting up test environment...&quot;
+export NODE_ENV=test
+export PORT=3000
+export SESSION_SECRET=test-session-secret-for-setup
+export ANTHROPIC_API_KEY=your_anthropic_api_key_here
+export OPENAI_API_KEY=your_openai_api_key_here
+export GOOGLE_API_KEY=your_google_api_key_here
+export REPLICA_API_KEY=your_replica_api_key_here
+export PERPLEXITY_API_KEY=your_perplexity_api_key_here
+export MISTRAL_API_KEY=your_mistral_key_here
+export XAI_API_KEY=YOUR_XAI_KEY_HERE
+export AZURE_OPENAI_API_KEY=your_azure_key_here
+export OLLAMA_API_KEY=your_ollama_api_key_here
+export SKIP_CI_INTEGRATION=true
+
+# Add environment variables to profile
+echo &quot;📝 Adding environment variables to profile...&quot;
+cat &gt;&gt; $HOME/.profile &lt;&lt; 'EOF'
+
+# MonsterBox environment variables
+export NODE_ENV=test
+export PORT=3000
+export SESSION_SECRET=test-session-secret-for-setup
+export ANTHROPIC_API_KEY=your_anthropic_api_key_here
+export OPENAI_API_KEY=your_openai_api_key_here
+export GOOGLE_API_KEY=your_google_api_key_here
+export REPLICA_API_KEY=your_replica_api_key_here
+export PERPLEXITY_API_KEY=your_perplexity_api_key_here
+export MISTRAL_API_KEY=your_mistral_key_here
+export XAI_API_KEY=YOUR_XAI_KEY_HERE
+export AZURE_OPENAI_API_KEY=your_azure_key_here
+export OLLAMA_API_KEY=your_ollama_api_key_here
+export SKIP_CI_INTEGRATION=true
+
+# Add npm global bin to PATH
+export PATH=&quot;$HOME/.local/bin:$PATH&quot;
+EOF
+
+# Source the profile to make variables available
+source $HOME/.profile
+
+echo &quot;✅ MonsterBox development environment setup complete!&quot;
+echo &quot;🧪 Ready to run tests...&quot;
+echo &quot;&quot;
+echo &quot;Next steps:&quot;
+echo &quot;1. Update API keys in .env file&quot;
+echo &quot;2. Run 'npm test' to verify installation&quot;
+echo &quot;3. Run 'npm start' to launch MonsterBox&quot;
+echo &quot;4. Access web interface at http://localhost:3000&quot;
+</code></pre>
+<h2 id="setup-script-features">Setup Script Features</h2>
+<h3 id="system-dependencies">System Dependencies</h3>
+<ul>
+<li><strong>Node.js 20.x</strong>: Latest LTS version for optimal performance</li>
+<li><strong>Python 3</strong>: Required for hardware control scripts</li>
+<li><strong>Build Tools</strong>: Essential compilation tools for native modules</li>
+<li><strong>Audio/Video</strong>: FFmpeg, MPG123 for multimedia processing</li>
+<li><strong>Hardware</strong>: I2C tools, V4L utilities for RPI integration</li>
+</ul>
+<h3 id="development-environment">Development Environment</h3>
+<ul>
+<li><strong>Automated Dependency Installation</strong>: Both Node.js and Python packages</li>
+<li><strong>Directory Structure</strong>: Creates necessary project directories</li>
+<li><strong>Environment Configuration</strong>: Sets up all required environment variables</li>
+<li><strong>Profile Integration</strong>: Persists settings across sessions</li>
+</ul>
+<h3 id="security-considerations">Security Considerations</h3>
+<ul>
+<li><strong>Placeholder API Keys</strong>: Requires manual configuration of actual keys</li>
+<li><strong>Test Environment</strong>: Configured for development/testing by default</li>
+<li><strong>CI Integration</strong>: Includes flags for continuous integration</li>
+</ul>
+<hr />
+<h2 id="7-remote-agent-task-management-system">7. Remote Agent Task Management System</h2>
+<h3 id="current-active-agents">Current Active Agents</h3>
+<p>The MonsterBox project utilizes Task Master AI v0.16.1 with three specialized remote agents working in parallel:</p>
+<h4 id="remote-agent-1-security-authentication-specialist">🔐 Remote Agent 1: Security &amp; Authentication Specialist</h4>
+<p><strong>Primary Task</strong>: Task 11 - Implement Secure Remote Access System
+<strong>Status</strong>: ACTIVE - 4 subtasks in progress
+- JWT Authentication Architecture Design
+- Role-Based Access Control (RBAC) Framework
+- SSH Infrastructure Integration
+- Multi-Factor Authentication (MFA)</p>
+<h4 id="remote-agent-2-monitoring-logging-specialist">📊 Remote Agent 2: Monitoring &amp; Logging Specialist</h4>
+<p><strong>Primary Task</strong>: Task 4 - Implement MCP Log Collection System
+<strong>Status</strong>: ACTIVE - 4 subtasks in progress
+- MCP Log Collection Protocol Design
+- Server Log Collection Components
+- Automated Log Analysis System
+- Real-time Monitoring Dashboard</p>
+<h4 id="remote-agent-3-testing-quality-assurance-specialist">🧪 Remote Agent 3: Testing &amp; Quality Assurance Specialist</h4>
+<p><strong>Primary Task</strong>: Task 15 - Implement Comprehensive Testing Suite
+<strong>Status</strong>: ACTIVE - 4 subtasks in progress
+- Current Test Coverage Analysis
+- Unit Test Framework Enhancement
+- Integration Test Suite Implementation
+- Continuous Integration Pipeline Configuration</p>
+<h3 id="project-progress-metrics">Project Progress Metrics</h3>
+<ul>
+<li><strong>Total Tasks</strong>: 15</li>
+<li><strong>Completed</strong>: 2 (13.3%)</li>
+<li><strong>In Progress</strong>: 4 (26.7%)</li>
+<li><strong>Subtask Completion</strong>: 42.2% (19/45 completed)</li>
+</ul>
+<h2 id="8-hardware-configuration">8. Hardware Configuration</h2>
+<h3 id="target-systems">Target Systems</h3>
+<ul>
+<li><strong>Orlok RPi</strong> (192.168.8.120): Operational - Vampire animatronic</li>
+<li><strong>Coffin RPi</strong> (192.168.8.140): Operational - Coffin mechanism</li>
+<li><strong>Pumpkinhead RPi</strong> (192.168.1.101): Offline - Excluded from testing</li>
+</ul>
+<h3 id="hardware-components">Hardware Components</h3>
+<ul>
+<li><strong>GPIO Control</strong>: Direct pin manipulation for basic I/O</li>
+<li><strong>I2C Communication</strong>: Sensor and advanced device integration</li>
+<li><strong>Servo Motors</strong>: Precise movement control with PCA9685 support</li>
+<li><strong>Linear Actuators</strong>: Heavy-duty movement mechanisms</li>
+<li><strong>Audio System</strong>: Multi-channel sound playback</li>
+<li><strong>LED Control</strong>: Lighting effects and indicators</li>
+</ul>
+<h2 id="9-security-features">9. Security Features</h2>
+<h3 id="authentication-authorization">Authentication &amp; Authorization</h3>
+<ul>
+<li><strong>JWT-based Authentication</strong>: Secure token-based access control</li>
+<li><strong>Role-Based Access Control</strong>: Granular permission management</li>
+<li><strong>Multi-Factor Authentication</strong>: Enhanced security for remote access</li>
+<li><strong>SSH Key Management</strong>: Secure inter-system communication</li>
+</ul>
+<h3 id="network-security">Network Security</h3>
+<ul>
+<li><strong>Private Network</strong>: MonsterNet WiFi (192.168.8.x range)</li>
+<li><strong>IP Whitelisting</strong>: Restricted access to authorized devices</li>
+<li><strong>Encrypted Communication</strong>: TLS/SSL for all web traffic</li>
+<li><strong>Audit Logging</strong>: Comprehensive activity tracking</li>
+</ul>
+<h2 id="10-monitoring-observability">10. Monitoring &amp; Observability</h2>
+<h3 id="logging-infrastructure">Logging Infrastructure</h3>
+<ul>
+<li><strong>Winston Logging</strong>: Structured application logs</li>
+<li><strong>MCP Log Collection</strong>: Distributed log aggregation</li>
+<li><strong>Sematext Integration</strong>: External monitoring service</li>
+<li><strong>Real-time Streaming</strong>: Live log monitoring capabilities</li>
+</ul>
+<h3 id="health-monitoring">Health Monitoring</h3>
+<ul>
+<li><strong>System Health Endpoints</strong>: <code>/health</code> API for status checks</li>
+<li><strong>Performance Metrics</strong>: CPU, memory, disk usage tracking</li>
+<li><strong>Service Monitoring</strong>: Individual component health checks</li>
+<li><strong>Alert System</strong>: Automated notification for critical issues</li>
+</ul>
+<h2 id="11-development-workflow">11. Development Workflow</h2>
+<h3 id="version-control">Version Control</h3>
+<ul>
+<li><strong>Git Repository</strong>: GitHub-hosted with automated workflows</li>
+<li><strong>Branch Strategy</strong>: Feature branches with pull request reviews</li>
+<li><strong>Automated Testing</strong>: CI/CD pipeline with comprehensive test suite</li>
+<li><strong>Documentation</strong>: Automated MkDocs deployment</li>
+</ul>
+<h3 id="code-quality">Code Quality</h3>
+<ul>
+<li><strong>ESLint</strong>: JavaScript code linting and formatting</li>
+<li><strong>Mocha/Chai Testing</strong>: Unit and integration test coverage</li>
+<li><strong>Custom Test Reporter</strong>: Clean, readable test output</li>
+<li><strong>Code Coverage</strong>: Tracking and enforcement of test coverage</li>
+</ul>
+<h3 id="deployment">Deployment</h3>
+<ul>
+<li><strong>Automated Scripts</strong>: Shell and PowerShell deployment automation</li>
+<li><strong>Environment Management</strong>: Separate dev/test/production configurations</li>
+<li><strong>Remote Deployment</strong>: SSH-based deployment to RPi systems</li>
+<li><strong>Health Checks</strong>: Post-deployment verification</li>
+</ul>
+<hr />
+<p><em>This document provides a comprehensive overview of the MonsterBox animatronic control system, including detailed technical specifications, automated setup procedures, and current development status with active remote agent task management.</em></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.instant", "navigation.sections", "toc.integrate", "content.code.annotate"], "search": "../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+    
+  </body>
+</html>

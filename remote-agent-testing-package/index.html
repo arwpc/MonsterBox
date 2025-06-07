@@ -1,0 +1,1535 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.14">
+    
+    
+      
+        <title>🧪 Augment Code Remote Agent Package - Testing Suite - MonsterBox Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.342714a4.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#augment-code-remote-agent-package-testing-suite" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="MonsterBox Documentation" class="md-header__button md-logo" aria-label="MonsterBox Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            MonsterBox Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              🧪 Augment Code Remote Agent Package - Testing Suite
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="MonsterBox Documentation" class="md-nav__button md-logo" aria-label="MonsterBox Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    MonsterBox Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Character Sheets
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Character Sheets
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../character_orlok/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Orlok
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../character_coffin_breaker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Coffin Breaker
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../character_pumpkinhead/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    PumpkinHead
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Installation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Usage Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Configuration
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../structure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Directory Structure
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    FAQ / Troubleshooting
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../license/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    License
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Networking
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Setup Guides
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            Setup Guides
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../setup/ANIMATRONIC-SETUP-GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Animatronic Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../setup/ANIMATRONIC-SSH-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    SSH Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../setup/MCP-LOG-COLLECTION-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    MCP Log Collection
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Integration
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            Integration
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integration/elevenlabs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    ElevenLabs TTS
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Hardware
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            Hardware
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hardware/gpio_assignments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    GPIO Assignments
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hardware/hardware_schedule/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Hardware Schedule
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_13" id="__nav_13_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    API Documentation
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_13">
+            <span class="md-nav__icon md-icon"></span>
+            API Documentation
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/API-TESTING-SUMMARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    API Testing Summary
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_14" >
+        
+          
+          <label class="md-nav__link" for="__nav_14" id="__nav_14_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Development
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_14_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_14">
+            <span class="md-nav__icon md-icon"></span>
+            Development
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/task-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Task Management
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/task-workflows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Task Workflows
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/development-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Development Process
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/taskmaster-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Task Master Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_15" >
+        
+          
+          <label class="md-nav__link" for="__nav_15" id="__nav_15_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Security
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_15_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_15">
+            <span class="md-nav__icon md-icon"></span>
+            Security
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/MCP-SETUP-NOTES/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    MCP Setup Notes
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16" >
+        
+          
+          <label class="md-nav__link" for="__nav_16" id="__nav_16_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Animatronics Workshop
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_16_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_16">
+            <span class="md-nav__icon md-icon"></span>
+            Animatronics Workshop
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../animatronics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../animatronics/familiarization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Familiarization
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../animatronics/simple_steps/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Simple Steps
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../animatronics/hands_on/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Hands-On Activities
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../animatronics/presentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Final Presentation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="augment-code-remote-agent-package-testing-suite">🧪 Augment Code Remote Agent Package - Testing Suite</h1>
+<h2 id="project-context">Project Context</h2>
+<p>MonsterBox animatronic control system requires comprehensive testing enhancement. Current test suite uses Mocha/Chai but needs expansion for better coverage and CI/CD integration.</p>
+<h2 id="task-assignment-implement-comprehensive-testing-suite-task-15">Task Assignment: Implement Comprehensive Testing Suite (Task 15)</h2>
+<h3 id="repository-information">Repository Information</h3>
+<ul>
+<li><strong>GitHub</strong>: https://github.com/arwpc/MonsterBox</li>
+<li><strong>Branch</strong>: Create <code>feature/comprehensive-testing-suite</code></li>
+<li><strong>Current Testing</strong>: /tests/ directory with Mocha/Chai setup</li>
+<li><strong>Test Runner</strong>: Mocha v10.7.3, Chai v4.5.0, Chai-HTTP v4.3.0</li>
+</ul>
+<h3 id="current-test-infrastructure-analysis">Current Test Infrastructure Analysis</h3>
+<ul>
+<li><strong>Test Directory</strong>: /tests/ with existing test files</li>
+<li><strong>Existing Tests</strong>: characterRoutes.test.js, partRoutes.test.js, sceneRoutes.test.js</li>
+<li><strong>Test Reporter</strong>: Custom clean output formatting in cleanReporter.js</li>
+<li><strong>Environment</strong>: cross-env v7.0.3 for environment management</li>
+<li><strong>Hardware Tests</strong>: gpio-hardware.test.js (expected to fail on non-RPI environments)</li>
+</ul>
+<h3 id="implementation-requirements">Implementation Requirements</h3>
+<h4 id="151-analyze-current-test-coverage-high-priority">15.1: Analyze Current Test Coverage ⚡ HIGH PRIORITY</h4>
+<p><strong>Status</strong>: Ready for implementation
+<strong>Dependencies</strong>: None</p>
+<p><strong>Requirements</strong>:
+- Comprehensive analysis of existing test coverage
+- Generate detailed coverage reports with metrics
+- Identify gaps in unit, integration, and end-to-end testing
+- Document recommendations for improvement</p>
+<p><strong>Deliverables</strong>:
+1. <code>/scripts/coverage-analysis.js</code> - Automated coverage analysis tool
+2. <code>/config/coverage-config.js</code> - Coverage configuration
+3. <code>/reports/test-coverage-analysis.md</code> - Comprehensive coverage report
+4. Coverage metrics dashboard integration
+5. Test gap identification and prioritization</p>
+<h4 id="152-enhance-unit-test-framework">15.2: Enhance Unit Test Framework</h4>
+<p><strong>Status</strong>: Ready for implementation
+<strong>Dependencies</strong>: 15.1</p>
+<p><strong>Requirements</strong>:
+- Improve existing Mocha/Chai setup
+- Add better mocking capabilities for hardware components
+- Enhance test utilities and helpers
+- Implement test data factories
+- Add snapshot testing capabilities</p>
+<p><strong>Deliverables</strong>:
+1. Enhanced <code>/tests/helpers/</code> - Test utility functions
+2. <code>/tests/mocks/</code> - Mock implementations for hardware/external services
+3. <code>/tests/factories/</code> - Test data factories
+4. Enhanced <code>/tests/setupTests.js</code> - Improved test setup and teardown
+5. Improved test configuration and reporting</p>
+<h4 id="153-implement-integration-test-suite">15.3: Implement Integration Test Suite</h4>
+<p><strong>Status</strong>: Ready for implementation
+<strong>Dependencies</strong>: 15.1, 15.2</p>
+<p><strong>Requirements</strong>:
+- Test component interactions and API endpoints
+- Database integration testing (JSON file operations)
+- Service layer integration testing
+- Middleware integration testing
+- Cross-component communication testing</p>
+<p><strong>Deliverables</strong>:
+1. <code>/tests/integration/</code> - Complete integration test suite
+2. <code>/tests/integration/api/</code> - API endpoint integration tests
+3. <code>/tests/integration/services/</code> - Service integration tests
+4. <code>/tests/integration/middleware/</code> - Middleware integration tests
+5. Integration test configuration and utilities</p>
+<h4 id="155-configure-continuous-integration-pipeline">15.5: Configure Continuous Integration Pipeline</h4>
+<p><strong>Status</strong>: Ready for implementation
+<strong>Dependencies</strong>: 15.2, 15.3, 15.4</p>
+<p><strong>Requirements</strong>:
+- GitHub Actions CI/CD pipeline configuration
+- Automated testing on pull requests and commits
+- Test result reporting and notifications
+- Coverage reporting integration
+- Multi-environment testing support</p>
+<p><strong>Deliverables</strong>:
+1. <code>/.github/workflows/ci.yml</code> - Main CI pipeline
+2. <code>/.github/workflows/test-coverage.yml</code> - Coverage reporting workflow
+3. <code>/.github/workflows/integration-tests.yml</code> - Integration test workflow
+4. CI configuration documentation
+5. Badge integration for README</p>
+<h3 id="technical-implementation-details">Technical Implementation Details</h3>
+<h4 id="technology-stack-enhancement">Technology Stack Enhancement</h4>
+<ul>
+<li><strong>Core Framework</strong>: Mocha v10.7.3, Chai v4.5.0 (keep existing)</li>
+<li><strong>Coverage</strong>: nyc (Istanbul) for code coverage</li>
+<li><strong>Mocking</strong>: Sinon.js for advanced mocking</li>
+<li><strong>API Testing</strong>: Supertest for HTTP endpoint testing</li>
+<li><strong>Performance Testing</strong>: Artillery for load testing</li>
+</ul>
+<h4 id="dependencies-to-add">Dependencies to Add</h4>
+<pre><code class="language-json">{
+  &quot;nyc&quot;: &quot;^15.1.0&quot;,
+  &quot;sinon&quot;: &quot;^15.2.0&quot;,
+  &quot;supertest&quot;: &quot;^6.3.3&quot;,
+  &quot;artillery&quot;: &quot;^2.0.0&quot;,
+  &quot;mock-fs&quot;: &quot;^5.2.0&quot;,
+  &quot;nock&quot;: &quot;^13.3.1&quot;
+}
+</code></pre>
+<h4 id="packagejson-scripts-to-addupdate">Package.json Scripts to Add/Update</h4>
+<pre><code class="language-json">{
+  &quot;scripts&quot;: {
+    &quot;test:unit&quot;: &quot;cross-env NODE_ENV=test mocha tests/unit/**/*.test.js&quot;,
+    &quot;test:integration&quot;: &quot;cross-env NODE_ENV=test mocha tests/integration/**/*.test.js&quot;,
+    &quot;test:e2e&quot;: &quot;cross-env NODE_ENV=test mocha tests/e2e/**/*.test.js&quot;,
+    &quot;test:coverage&quot;: &quot;nyc npm run test&quot;,
+    &quot;test:watch&quot;: &quot;npm run test -- --watch&quot;,
+    &quot;test:performance&quot;: &quot;artillery run tests/performance/load-test.yml&quot;,
+    &quot;coverage:report&quot;: &quot;nyc report --reporter=html --reporter=text&quot;,
+    &quot;coverage:check&quot;: &quot;nyc check-coverage --lines 80 --functions 80 --branches 80&quot;
+  }
+}
+</code></pre>
+<h4 id="file-structure-to-create">File Structure to Create</h4>
+<pre><code>/tests/
+  ├── unit/
+  │   ├── controllers/ (new)
+  │   ├── services/ (new)
+  │   ├── middleware/ (new)
+  │   └── utils/ (new)
+  ├── integration/
+  │   ├── api/ (new)
+  │   ├── services/ (new)
+  │   ├── middleware/ (new)
+  │   └── database/ (new)
+  ├── e2e/
+  │   ├── user-workflows/ (new)
+  │   ├── scene-management/ (new)
+  │   └── system-health/ (new)
+  ├── helpers/
+  │   ├── testUtils.js (enhance existing)
+  │   ├── mockData.js (new)
+  │   └── testServer.js (new)
+  ├── mocks/
+  │   ├── hardwareMocks.js (new)
+  │   ├── sshMocks.js (new)
+  │   ├── mcpMocks.js (new)
+  │   └── apiMocks.js (new)
+  ├── factories/
+  │   ├── characterFactory.js (new)
+  │   ├── sceneFactory.js (new)
+  │   └── partFactory.js (new)
+  └── performance/
+      └── load-test.yml (new)
+
+/.github/workflows/
+  ├── ci.yml (new)
+  ├── test-coverage.yml (new)
+  └── integration-tests.yml (new)
+
+/scripts/
+  ├── test-runner.js (new)
+  ├── coverage-analysis.js (new)
+  └── test-data-setup.js (new)
+
+/config/
+  ├── test-config.js (new)
+  ├── coverage-config.js (new)
+  └── ci-config.js (new)
+
+/reports/
+  ├── test-coverage-analysis.md (new)
+  └── performance-benchmarks.md (new)
+</code></pre>
+<h3 id="environment-variables-for-testing">Environment Variables for Testing</h3>
+<pre><code class="language-env">NODE_ENV=test
+TEST_PORT=3001
+TEST_SESSION_SECRET=test-session-secret
+SKIP_HARDWARE_TESTS=true
+SKIP_SSH_TESTS=true
+SKIP_CI_INTEGRATION=true
+TEST_TIMEOUT=10000
+COVERAGE_THRESHOLD=80
+</code></pre>
+<h3 id="special-considerations">Special Considerations</h3>
+<h4 id="hardware-test-handling">Hardware Test Handling</h4>
+<ul>
+<li>Mock GPIO and I2C operations for non-RPI environments</li>
+<li>Skip hardware-specific tests in CI using environment flags</li>
+<li>Preserve existing gpio-hardware.test.js behavior</li>
+<li>Provide clear documentation for running hardware tests on actual RPi systems</li>
+</ul>
+<h4 id="ssh-and-network-testing">SSH and Network Testing</h4>
+<ul>
+<li>Mock SSH connections for security and reliability</li>
+<li>Test SSH functionality without requiring actual remote connections</li>
+<li>Provide integration tests that can run against real RPi systems when available</li>
+</ul>
+<h4 id="performance-testing">Performance Testing</h4>
+<ul>
+<li>Establish baseline performance metrics</li>
+<li>Test critical paths like scene execution and real-time control</li>
+<li>Monitor for performance regressions in CI</li>
+</ul>
+<h3 id="cicd-pipeline-features">CI/CD Pipeline Features</h3>
+<ul>
+<li><strong>Automated Testing</strong>: Run on every push and pull request</li>
+<li><strong>Coverage Reporting</strong>: Generate and publish coverage reports</li>
+<li><strong>Performance Testing</strong>: Run load tests on staging environment</li>
+<li><strong>Multi-Environment</strong>: Test on Node.js 18, 20, and latest</li>
+<li><strong>Hardware Test Exclusion</strong>: Skip RPI-specific tests in CI</li>
+<li><strong>Parallel Execution</strong>: Run test suites in parallel for speed</li>
+</ul>
+<h3 id="success-criteria">Success Criteria</h3>
+<ol>
+<li>✅ <strong>Coverage</strong>: Achieve &gt;80% code coverage across all test types</li>
+<li>✅ <strong>CI/CD</strong>: Fully automated testing pipeline with GitHub Actions</li>
+<li>✅ <strong>Test Quality</strong>: Comprehensive unit, integration, and e2e tests</li>
+<li>✅ <strong>Performance</strong>: Load testing for critical endpoints</li>
+<li>✅ <strong>Documentation</strong>: Complete testing documentation and guides</li>
+<li>✅ <strong>Reliability</strong>: Stable test suite with minimal flaky tests</li>
+<li>✅ <strong>Speed</strong>: Test suite completes in under 5 minutes</li>
+<li>✅ <strong>Reporting</strong>: Clear, actionable test reports and coverage metrics</li>
+</ol>
+<h3 id="git-workflow">Git Workflow</h3>
+<ol>
+<li>Create feature branch: <code>feature/comprehensive-testing-suite</code></li>
+<li>Implement each subtask with focused commits</li>
+<li>Include test coverage improvements in each commit</li>
+<li>Reference Task Master IDs in commit messages</li>
+<li>Ensure all new code includes corresponding tests</li>
+<li>Update documentation with testing guidelines</li>
+</ol>
+<h3 id="notes-for-remote-agent">Notes for Remote Agent</h3>
+<ul>
+<li>Maintain compatibility with existing test structure</li>
+<li>Ensure tests can run reliably in both development and CI environments</li>
+<li>Design tests to be maintainable and easy to understand</li>
+<li>Consider the distributed nature of the MonsterBox system in test design</li>
+<li>Provide clear guidelines for writing new tests as the system evolves</li>
+<li>Use existing MonsterBox code style and conventions</li>
+<li>Integrate with existing Winston logging for test reporting</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.instant", "navigation.sections", "toc.integrate", "content.code.annotate"], "search": "../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+    
+  </body>
+</html>
