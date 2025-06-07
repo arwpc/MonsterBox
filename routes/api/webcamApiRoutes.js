@@ -393,4 +393,51 @@ async function checkCameraAvailability(deviceId) {
     }
 }
 
+// Set camera controls (brightness, contrast, etc.)
+router.post('/set-controls', async (req, res) => {
+    try {
+        const { characterId, deviceId, controls } = req.body;
+
+        if (!characterId || (deviceId !== 0 && !deviceId) || !controls) {
+            return res.status(400).json({
+                success: false,
+                message: 'Character ID, device ID, and controls are required'
+            });
+        }
+
+        const parsedCharacterId = parseInt(characterId);
+        const parsedDeviceId = parseInt(deviceId);
+
+        if (isNaN(parsedCharacterId) || isNaN(parsedDeviceId)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid character ID or device ID'
+            });
+        }
+
+        const result = await webcamService.setCameraControls(parsedCharacterId, parsedDeviceId, controls);
+
+        if (result.success) {
+            res.json({
+                success: true,
+                message: 'Camera controls applied successfully',
+                appliedControls: result.appliedControls,
+                failedControls: result.failedControls
+            });
+        } else {
+            res.status(500).json({
+                success: false,
+                message: result.message || 'Failed to apply camera controls'
+            });
+        }
+    } catch (error) {
+        logger.error('Error setting camera controls:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error setting camera controls',
+            error: error.message
+        });
+    }
+});
+
 module.exports = router;

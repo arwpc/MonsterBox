@@ -5,6 +5,7 @@ const os = require('os');
 const logger = require('../scripts/logger');
 const partService = require('./partService');
 const characterService = require('./characterService');
+const sshAuthService = require('./auth/sshAuthService');
 
 class WebcamService {
     /**
@@ -664,6 +665,149 @@ class WebcamService {
                 hasWebcam: false,
                 status: 'error',
                 message: 'Error getting webcam status: ' + error.message
+            };
+        }
+    }
+    /**
+     * Set camera controls (brightness, contrast, etc.) on a device
+     * @param {number} characterId - Character ID
+     * @param {number} deviceId - Camera device ID
+     * @param {Object} controls - Control values to set
+     * @returns {Object} Result of setting controls
+     */
+    async setCameraControls(characterId, deviceId, controls) {
+        try {
+            const character = await characterService.getCharacterById(characterId);
+            const isRemoteCharacter = character && character.animatronic && character.animatronic.rpi_config;
+
+            const appliedControls = [];
+            const failedControls = [];
+
+            if (isRemoteCharacter) {
+                // Set controls on remote RPI system
+                const rpiConfig = character.animatronic.rpi_config;
+                const host = rpiConfig.host;
+                const user = rpiConfig.user || 'remote';
+                const devicePath = `/dev/video${deviceId}`;
+
+                logger.info(`Setting camera controls on remote device ${devicePath} at ${host}`);
+
+                for (const [controlName, value] of Object.entries(controls)) {
+                    try {
+                        let command;
+
+                        if (typeof value === 'boolean') {
+                            // Boolean controls (checkboxes)
+                            command = `v4l2-ctl -d ${devicePath} --set-ctrl=${controlName}=${value ? 1 : 0}`;
+                        } else {
+                            // Numeric controls (ranges and selects)
+                            command = `v4l2-ctl -d ${devicePath} --set-ctrl=${controlName}=${value}`;
+                        }
+
+                        const result = await sshAuthService.executeSSHCommand(host, user, command);
+
+                        if (result.success) {
+                            appliedControls.push({ control: controlName, value: value });
+                            logger.info(`✅ Applied ${controlName}=${value} on remote camera`);
+                        } else {
+                            failedControls.push({
+                                control: controlName,
+                                value: value,
+                                error: result.stderr || result.error
+                            });
+                            logger.warn(`❌ Failed to apply ${controlName}=${value}: ${result.stderr || result.error}`);
+                        }
+                    } catch (error) {
+                        failedControls.push({
+                            control: controlName,
+                            value: value,
+                            error: error.message
+                        });
+                        logger.error(`Error setting control ${controlName}:`, error);
+                    }
+                }
+            } else {
+                // Set controls on local system
+                const devicePath = `/dev/video${deviceId}`;
+                logger.info(`Setting camera controls on local device ${devicePath}`);
+
+                for (const [controlName, value] of Object.entries(controls)) {
+                    try {
+                        let command;
+
+                        if (typeof value === 'boolean') {
+                            // Boolean controls (checkboxes)
+                            command = `v4l2-ctl -d ${devicePath} --set-ctrl=${controlName}=${value ? 1 : 0}`;
+                        } else {
+                            // Numeric controls (ranges and selects)
+                            command = `v4l2-ctl -d ${devicePath} --set-ctrl=${controlName}=${value}`;
+                        }
+
+                        const result = await new Promise((resolve) => {
+                            const { spawn } = require('child_process');
+                            const process = spawn('sh', ['-c', command]);
+
+                            let stdout = '';
+                            let stderr = '';
+
+                            process.stdout.on('data', (data) => {
+                                stdout += data.toString();
+                            });
+
+                            process.stderr.on('data', (data) => {
+                                stderr += data.toString();
+                            });
+
+                            process.on('close', (code) => {
+                                resolve({
+                                    success: code === 0,
+                                    stdout: stdout,
+                                    stderr: stderr
+                                });
+                            });
+                        });
+
+                        if (result.success) {
+                            appliedControls.push({ control: controlName, value: value });
+                            logger.info(`✅ Applied ${controlName}=${value} on local camera`);
+                        } else {
+                            failedControls.push({
+                                control: controlName,
+                                value: value,
+                                error: result.stderr
+                            });
+                            logger.warn(`❌ Failed to apply ${controlName}=${value}: ${result.stderr}`);
+                        }
+                    } catch (error) {
+                        failedControls.push({
+                            control: controlName,
+                            value: value,
+                            error: error.message
+                        });
+                        logger.error(`Error setting control ${controlName}:`, error);
+                    }
+                }
+            }
+
+            const success = appliedControls.length > 0;
+            const message = success
+                ? `Applied ${appliedControls.length} controls successfully${failedControls.length > 0 ? `, ${failedControls.length} failed` : ''}`
+                : 'No controls were applied successfully';
+
+            return {
+                success: success,
+                message: message,
+                appliedControls: appliedControls,
+                failedControls: failedControls
+            };
+
+        } catch (error) {
+            logger.error('Error in setCameraControls:', error);
+            return {
+                success: false,
+                message: 'Error setting camera controls: ' + error.message,
+                appliedControls: [],
+                failedControls: []
             };
         }
     }

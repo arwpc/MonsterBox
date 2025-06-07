@@ -1,0 +1,26 @@
+{
+  "version": "1.0.0",
+  "global": {
+    "enabled": true,
+    "audioAnalysis": {
+      "sampleRate": 44100,
+      "bufferSize": 1024,
+      "smoothingFactor": 0.8,
+      "volumeThreshold": 0.01,
+      "updateInterval": 20
+    },
+    "servoMapping": {
+      "responseCurve": "linear",
+      "sensitivity": 1,
+      "attackTime": 0.05,
+      "releaseTime": 0.15,
+      "smoothingFactor": 0.7
+    },
+    "performance": {
+      "maxCpuUsage": 10,
+      "maxMemoryUsage": 50,
+      "updateRate": 50
+    }
+  },
+  "characters": {}
+}

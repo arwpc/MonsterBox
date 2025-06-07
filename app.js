@@ -13,9 +13,10 @@ process.env.NODE_NO_WARNINGS = '1';
 
 let express, path, http, logger, app, server, port, audioStream, soundController, fs, os, session;
 let videoStream; // <-- Add videoStream variable
-let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, webcamRoutes, voiceRoutes, cleanupRoutes, healthRoutes, authRoutes, sshRoutes;
+let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, webcamRoutes, voiceRoutes, cleanupRoutes, healthRoutes, authRoutes, sshRoutes, jawAnimationRoutes;
 let characterService;
 let authMiddleware, rbacMiddleware;
+let jawAnimationSystem;
 
 try {
     express = require('express');
@@ -59,12 +60,20 @@ try {
     authRoutes = require('./routes/auth/authRoutes');
     sshRoutes = require('./routes/auth/sshRoutes');
 
+    // Import jaw animation routes
+    const jawAnimationRoutesModule = require('./routes/jawAnimationRoutes');
+    jawAnimationRoutes = jawAnimationRoutesModule.router;
+
     // Import authentication middleware
     authMiddleware = require('./middleware/auth');
     rbacMiddleware = require('./middleware/rbac');
 
     // Import services
     characterService = require('./services/characterService');
+
+    // Import jaw animation system
+    const JawAnimationSystem = require('./scripts/jaw-animation/jawAnimationSystem');
+    jawAnimationSystem = new JawAnimationSystem();
 } catch (err) {
     try {
         require('./scripts/logger').error('Fatal error during app initialization:', err);
@@ -142,12 +151,18 @@ app.use('/api/character-webcam', require('./routes/api/characterWebcamApiRoutes'
 app.use('/api/motion-tracking', require('./routes/api/motionTrackingApiRoutes'));
 app.use('/api/voice', voiceRoutes);
 
+// Jaw animation routes
+app.use('/jaw-animation', jawAnimationRoutes);
+
 // Test route for video configuration component
 app.get('/test/video-configuration', (req, res) => {
     res.render('test-video-configuration', {
         title: 'Video Configuration Component Test'
     });
 });
+
+// Test route for jaw animation - handled by jawAnimationRoutes
+
 app.use('/cleanup', cleanupRoutes);
 app.use('/health', healthRoutes);
 
@@ -217,6 +232,9 @@ function startServer() {
         // Start the video stream WebSocket server
         videoStream.startStream(server); // <-- Call startStream for video
 
+        // Initialize jaw animation system
+        initializeJawAnimationSystem(server);
+
         logger.info('Ready for Halloween, Sir.');
     });
 
@@ -238,6 +256,22 @@ function startServer() {
                 throw error;
         }
     });
+}
+
+// Initialize jaw animation system
+async function initializeJawAnimationSystem(server) {
+    try {
+        await jawAnimationSystem.initialize(server);
+
+        // Set the jaw animation system instance in the routes
+        const jawAnimationRoutesModule = require('./routes/jawAnimationRoutes');
+        jawAnimationRoutesModule.setJawAnimationSystem(jawAnimationSystem);
+
+        logger.info('Jaw animation system initialized successfully');
+    } catch (error) {
+        logger.error('Failed to initialize jaw animation system:', error);
+        // Don't exit - jaw animation is optional
+    }
 }
 
 // Initialize the application

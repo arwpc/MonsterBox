@@ -1,0 +1,62 @@
+{
+  "skeleton": {
+    "characterType": "skeleton",
+    "servoMapping": {
+      "minPosition": 10,
+      "maxPosition": 45,
+      "responseCurve": "exponential",
+      "sensitivity": 1.2,
+      "attackTime": 0.03,
+      "releaseTime": 0.1
+    },
+    "audioAnalysis": {
+      "volumeThreshold": 0.005,
+      "smoothingFactor": 0.7
+    }
+  },
+  "bear": {
+    "characterType": "bear",
+    "servoMapping": {
+      "minPosition": 0,
+      "maxPosition": 60,
+      "responseCurve": "linear",
+      "sensitivity": 0.8,
+      "attackTime": 0.05,
+      "releaseTime": 0.2
+    },
+    "audioAnalysis": {
+      "volumeThreshold": 0.02,
+      "smoothingFactor": 0.8
+    }
+  },
+  "fish": {
+    "characterType": "fish",
+    "servoMapping": {
+      "minPosition": 5,
+      "maxPosition": 35,
+      "responseCurve": "logarithmic",
+      "sensitivity": 1.5,
+      "attackTime": 0.02,
+      "releaseTime": 0.08
+    },
+    "audioAnalysis": {
+      "volumeThreshold": 0.001,
+      "smoothingFactor": 0.6
+    }
+  },
+  "demon": {
+    "characterType": "demon",
+    "servoMapping": {
+      "minPosition": 0,
+      "maxPosition": 70,
+      "responseCurve": "custom",
+      "sensitivity": 1,
+      "attackTime": 0.04,
+      "releaseTime": 0.15
+    },
+    "audioAnalysis": {
+      "volumeThreshold": 0.01,
+      "smoothingFactor": 0.75
+    }
+  }
+}
