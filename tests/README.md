@@ -1,8 +1,16 @@
-# MonsterBox Secure Remote Access System - Automated Testing
+# MonsterBox Automated Testing
 
-This directory contains comprehensive automated tests for the MonsterBox Secure Remote Access System, ensuring the JWT authentication, RBAC, and SSH integration components remain functional and secure.
+This directory contains comprehensive automated tests for the MonsterBox system, including security, integration, and component-specific tests.
 
-## 🧪 Test Suites
+## 📁 Test Organization
+
+### Test Directories
+
+| Directory | Purpose | Description |
+|-----------|---------|-------------|
+| **`integration/`** | Integration Tests | Server startup, streaming services, cross-component tests |
+| **`webcam/`** | Webcam Tests | Camera functionality, streaming, hardware compatibility |
+| **Root Directory** | Core Tests | Authentication, RBAC, SSH, routes, and system tests |
 
 ### Core Test Files
 
@@ -11,6 +19,8 @@ This directory contains comprehensive automated tests for the MonsterBox Secure 
 | **Authentication Tests** | `secure-remote-access.test.js` | JWT authentication, token management, API endpoints |
 | **RBAC Tests** | `rbac-system.test.js` | Role-based access control, permissions, authorization |
 | **SSH Integration Tests** | `ssh-integration.test.js` | SSH command execution, security validation, connectivity |
+| **Route Tests** | `*Routes.test.js` | API endpoint testing for characters, parts, scenes, sounds |
+| **Hardware Tests** | `gpio-hardware.test.js` | GPIO and hardware integration tests |
 
 ### Test Runners
 
@@ -25,13 +35,18 @@ This directory contains comprehensive automated tests for the MonsterBox Secure 
 ### Quick Test Commands
 
 ```bash
-# Run all security tests
-npm run test:security
+# Run all tests
+npm test
+
+# Run test categories
+npm run test:security     # Security tests (auth, RBAC, SSH)
+npm run test:integration  # Integration tests (server, streaming)
+npm run test:webcam      # Webcam functionality tests
 
 # Run individual test suites
-npm run test:auth      # Authentication tests only
-npm run test:ssh       # SSH integration tests only
-npm run test:rbac      # RBAC system tests only
+npm run test:auth        # Authentication tests only
+npm run test:ssh         # SSH integration tests only
+npm run test:rbac        # RBAC system tests only
 
 # Run comprehensive validation
 npm run validate:security
