@@ -21,7 +21,7 @@ const requiredFiles = [
     'scripts/jaw-animation/config/jawConfig.js',
     'scripts/jaw-animation/websocket/jawWebSocket.js',
     'routes/jawAnimationRoutes.js',
-    'views/test-jaw-animation.ejs',
+    'views/jaw-animation-test.ejs',
     'data/jaw-animation-config.json'
 ];
 

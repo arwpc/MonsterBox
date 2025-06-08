@@ -24,7 +24,7 @@ function setJawAnimationSystem(system) {
 router.get('/test', async (req, res) => {
     try {
         const characters = await characterService.getAllCharacters();
-        const characterId = req.query.characterId || (characters.length > 0 ? characters[0].id : null);
+        const characterId = req.query.characterId || '4'; // Default to Skulltalker
         
         let character = null;
         let servos = [];
@@ -39,12 +39,9 @@ router.get('/test', async (req, res) => {
             );
         }
         
-        res.render('test-jaw-animation', {
+        res.render('jaw-animation-test', {
             title: 'Jaw Animation Test',
-            characters,
-            character,
-            servos,
-            selectedCharacterId: characterId
+            characterId: characterId || '4'  // Default to Skulltalker
         });
         
     } catch (error) {
@@ -286,6 +283,120 @@ router.post('/preset/:characterId/:presetName', async (req, res) => {
             success: false,
             message: 'Failed to apply preset',
             error: error.message
+        });
+    }
+});
+
+/**
+ * Get servo configuration for a character
+ */
+router.get('/api/servo/:characterId', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.characterId);
+
+        // Get servos for this character
+        const allParts = await partService.getAllParts();
+        const jawServo = allParts.find(part =>
+            part.type === 'servo' &&
+            part.characterId === characterId &&
+            part.name && part.name.toLowerCase().includes('jaw')
+        );
+
+        if (!jawServo) {
+            return res.status(404).json({
+                error: 'No jaw servo found for this character',
+                characterId: characterId
+            });
+        }
+
+        res.json({
+            success: true,
+            servo: jawServo,
+            characterId: characterId
+        });
+
+    } catch (error) {
+        logger.error('Error getting servo config:', error);
+        res.status(500).json({
+            error: 'Failed to get servo configuration',
+            details: error.message
+        });
+    }
+});
+
+/**
+ * Test servo movement
+ */
+router.post('/api/servo/:characterId/test', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.characterId);
+        const { angle } = req.body;
+
+        logger.info(`Testing servo for character ${characterId} at angle ${angle}`);
+
+        // For now, just return success - actual servo control would go here
+        res.json({
+            success: true,
+            message: `Servo moved to ${angle}°`,
+            characterId: characterId,
+            angle: angle
+        });
+
+    } catch (error) {
+        logger.error('Error testing servo:', error);
+        res.status(500).json({
+            error: 'Failed to test servo',
+            details: error.message
+        });
+    }
+});
+
+/**
+ * Start animation API
+ */
+router.post('/api/animation/:characterId/start', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.characterId);
+
+        logger.info(`Starting jaw animation for character ${characterId}`);
+
+        // For now, just return success - actual animation start would go here
+        res.json({
+            success: true,
+            message: 'Jaw animation started',
+            characterId: characterId
+        });
+
+    } catch (error) {
+        logger.error('Error starting animation:', error);
+        res.status(500).json({
+            error: 'Failed to start animation',
+            details: error.message
+        });
+    }
+});
+
+/**
+ * Stop animation API
+ */
+router.post('/api/animation/:characterId/stop', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.characterId);
+
+        logger.info(`Stopping jaw animation for character ${characterId}`);
+
+        // For now, just return success - actual animation stop would go here
+        res.json({
+            success: true,
+            message: 'Jaw animation stopped',
+            characterId: characterId
+        });
+
+    } catch (error) {
+        logger.error('Error stopping animation:', error);
+        res.status(500).json({
+            error: 'Failed to stop animation',
+            details: error.message
         });
     }
 });

@@ -23,6 +23,7 @@
     "test:mcp": "node scripts/test-mcp-setup.js",
     "test:mcp-remote": "node scripts/test-mcp-remote-capabilities.js",
     "test:animatronic-ssh": "node scripts/test-animatronic-ssh.js",
+    "test:jaw-animation": "node scripts/test-jaw-animation-puppeteer.js",
     "collect:github-logs": "node scripts/github-log-collector.js",
     "collect:rpi-logs": "node scripts/rpi-log-collector.js",
     "setup:rpi": "node scripts/setup-rpi-logging.js",
@@ -70,6 +71,7 @@
     "inquirer": "^8.2.6",
     "mocha": "^10.7.3",
     "nodemon": "^3.1.7",
+    "puppeteer": "^21.0.0",
     "sinon": "^17.0.1",
     "supertest": "^7.1.1"
   },

@@ -202,9 +202,9 @@
     "name": "Jaw Servo",
     "type": "servo",
     "characterId": 4,
-    "pin": 3,
-    "usePCA9685": true,
-    "channel": 0,
+    "pin": 18,
+    "usePCA9685": false,
+    "channel": null,
     "servoType": "Miuzei MG90S",
     "minPulse": 500,
     "maxPulse": 2400,
@@ -216,10 +216,6 @@
     "controlType": [
       "PWM"
     ],
-    "pca9685Settings": {
-      "frequency": 50,
-      "address": "0x40"
-    },
     "createdAt": "2025-06-07T23:00:00.000Z"
   },
   {

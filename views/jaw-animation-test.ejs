@@ -133,6 +133,13 @@
                     <option value="">Loading...</option>
                 </select>
             </div>
+            <div class="control-group">
+                <label for="soundSelect">Select Test Audio:</label>
+                <select id="soundSelect">
+                    <option value="">Loading sounds...</option>
+                </select>
+                <button onclick="playSelectedSound()" style="margin-left: 10px;">Play Sound</button>
+            </div>
         </div>
 
         <div class="section">
@@ -226,12 +233,13 @@
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
             loadServoConfig();
-            
+            loadSounds();
+
             // Update angle display when slider changes
             document.getElementById('angleSlider').addEventListener('input', function() {
                 document.getElementById('angleValue').textContent = this.value + '°';
             });
-            
+
             // Character selection change
             document.getElementById('characterSelect').addEventListener('change', function() {
                 currentCharacterId = this.value;
@@ -308,6 +316,85 @@
                 select.innerHTML = `<option value="${servoConfig.id}">${servoConfig.name} (Pin: ${servoConfig.pin}, Channel: ${servoConfig.channel})</option>`;
             } else {
                 select.innerHTML = '<option value="">No servo found</option>';
+            }
+        }
+
+        async function loadSounds() {
+            try {
+                showStatus('Loading sounds...', 'info');
+                const response = await fetch('/sounds');
+
+                if (!response.ok) {
+                    throw new Error(`Sounds API failed: ${response.status}`);
+                }
+
+                const sounds = await response.json();
+                const select = document.getElementById('soundSelect');
+
+                // Clear loading option
+                select.innerHTML = '<option value="">Select a sound...</option>';
+
+                // Add sounds to dropdown, prioritize test audio
+                const testAudio = sounds.find(s => s.filename && s.filename.includes('coffin'));
+                if (testAudio) {
+                    select.innerHTML += `<option value="${testAudio.filename}" data-id="${testAudio.id}">${testAudio.name} (Test Audio)</option>`;
+                }
+
+                // Add other sounds (limit to first 20 for performance)
+                sounds.slice(0, 20).forEach(sound => {
+                    if (sound.filename && sound !== testAudio) {
+                        const option = `<option value="${sound.filename}" data-id="${sound.id}">${sound.name}</option>`;
+                        select.innerHTML += option;
+                    }
+                });
+
+                showStatus(`Loaded ${sounds.length} sounds`, 'success');
+                addLogEntry(`Loaded ${sounds.length} sounds`);
+
+            } catch (error) {
+                showStatus('Error loading sounds: ' + error.message, 'error');
+                console.error('Sounds loading error:', error);
+
+                // Fallback: Add test audio manually
+                const select = document.getElementById('soundSelect');
+                select.innerHTML = '<option value="1730419838788-I_m_stuck_in_this_coffin__plea.mp3">Test Audio (Fallback)</option>';
+            }
+        }
+
+        async function playSelectedSound() {
+            const select = document.getElementById('soundSelect');
+            const selectedSound = select.value;
+
+            if (!selectedSound) {
+                showStatus('Please select a sound first', 'warning');
+                return;
+            }
+
+            try {
+                showStatus(`Playing sound: ${selectedSound}...`, 'info');
+
+                // Create audio element and play
+                const audio = new Audio(`/sounds/${selectedSound}`);
+                audio.volume = 0.7;
+
+                audio.onloadstart = () => addLogEntry(`Loading audio: ${selectedSound}`);
+                audio.oncanplay = () => addLogEntry(`Audio ready to play`);
+                audio.onplay = () => addLogEntry(`Audio playback started`);
+                audio.onended = () => {
+                    addLogEntry(`Audio playback finished`);
+                    showStatus('Audio playback completed', 'success');
+                };
+                audio.onerror = (e) => {
+                    addLogEntry(`Audio error: ${e.message || 'Unknown error'}`);
+                    showStatus('Audio playback failed', 'error');
+                };
+
+                await audio.play();
+                showStatus('Audio playing...', 'info');
+
+            } catch (error) {
+                showStatus('Error playing sound: ' + error.message, 'error');
+                addLogEntry(`Audio play error: ${error.message}`);
             }
         }
 
