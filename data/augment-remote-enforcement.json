@@ -1,0 +1,44 @@
+{
+  "enabled": true,
+  "strictMode": true,
+  "allowedHosts": [
+    "orlok",
+    "coffin", 
+    "skulltalker",
+    "pumpkinhead",
+    "192.168.8.120",
+    "192.168.8.130",
+    "192.168.8.140",
+    "192.168.1.101"
+  ],
+  "blockedCommands": [
+    "powershell",
+    "cmd",
+    "pwsh",
+    "powershell.exe",
+    "cmd.exe",
+    "pwsh.exe"
+  ],
+  "monitoringInterval": 5000,
+  "logRetention": 1000,
+  "alertThreshold": 5,
+  "sshConnectionTimeout": 10000,
+  "emergencyShutdownEnabled": true,
+  "notificationSettings": {
+    "emailAlerts": false,
+    "logAlerts": true,
+    "consoleAlerts": true
+  },
+  "remoteValidation": {
+    "requireSSHConnection": true,
+    "requireLinuxPlatform": true,
+    "validateRemoteHost": true,
+    "allowedRemoteUsers": ["remote", "pi", "ubuntu"]
+  },
+  "processMonitoring": {
+    "enabled": true,
+    "blockUnauthorizedProcesses": true,
+    "monitorChildProcesses": true,
+    "logAllExecutions": true
+  }
+}
