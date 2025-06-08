@@ -106,8 +106,16 @@ Each agent should provide:
 
 ### Target Systems:
 - **Operational RPis**: Orlok (192.168.8.120), Coffin (192.168.8.140)
-- **Development**: Windows workstation (C:\Users\arwpe\CodeBase\MonsterBox-1)
+- **Development**: Local workstation (platform-specific paths)
+- **Remote Agents**: Should clone repository and use relative paths
 - **Excluded**: Pumpkinhead (192.168.1.101) - not operational
+
+### Remote Agent Environment Setup:
+Remote agents should:
+1. Clone the repository: `git clone https://github.com/arwpc/MonsterBox.git`
+2. Use the cloned directory as project root (not Windows-specific paths)
+3. Initialize Task Master with: `task-master init --project-root ./MonsterBox`
+4. Work with relative paths within the cloned repository
 
 ## Success Metrics
 

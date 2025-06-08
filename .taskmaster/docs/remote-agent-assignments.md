@@ -216,6 +216,28 @@ task-master update-subtask --id 11.1 --prompt "Completed architecture document"
 - Character configurations in /data/
 
 ### Environment:
-- Development workstation: Windows (C:\Users\arwpe\CodeBase\MonsterBox-1)
+- Development workstation: Local environment (platform-specific)
+- Remote agents: Clone repository and use relative paths
 - Target RPi systems: Orlok (192.168.8.120), Coffin (192.168.8.140)
 - Excluded system: Pumpkinhead (192.168.1.101) - not operational
+
+### Remote Agent Setup Instructions:
+For remote agents working on MonsterBox tasks:
+
+1. **Repository Setup**:
+   ```bash
+   git clone https://github.com/arwpc/MonsterBox.git
+   cd MonsterBox
+   ```
+
+2. **Task Master Initialization**:
+   ```bash
+   task-master init --project-root $(pwd) --yes
+   ```
+
+3. **Verification**:
+   ```bash
+   task-master get-tasks --project-root $(pwd)
+   ```
+
+**IMPORTANT**: Remote agents must use the cloned repository directory as project root, NOT Windows-specific paths like `C:\Users\arwpe\CodeBase\MonsterBox-1`.
