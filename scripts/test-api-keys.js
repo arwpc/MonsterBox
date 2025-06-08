@@ -76,6 +76,7 @@ function displayConfiguration() {
         { name: 'OPENAI_API_KEY', service: 'OpenAI GPT', required: false },
         { name: 'GOOGLE_API_KEY', service: 'Google Gemini', required: false },
         { name: 'REPLICA_API_KEY', service: 'Replica Studios TTS', required: true },
+        { name: 'TOPMEDIAI_API_KEY', service: 'TopMediai AI TTS', required: true },
         { name: 'PERPLEXITY_API_KEY', service: 'Perplexity AI', required: false },
         { name: 'MISTRAL_API_KEY', service: 'Mistral AI', required: false },
         { name: 'XAI_API_KEY', service: 'xAI', required: false },

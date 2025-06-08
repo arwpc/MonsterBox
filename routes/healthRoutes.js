@@ -27,6 +27,7 @@ router.get('/api-keys', (req, res) => {
             openai: !!process.env.OPENAI_API_KEY && !process.env.OPENAI_API_KEY.includes('your_'),
             google: !!process.env.GOOGLE_API_KEY && !process.env.GOOGLE_API_KEY.includes('your_'),
             replica: !!process.env.REPLICA_API_KEY && !process.env.REPLICA_API_KEY.includes('your_'),
+            topmediai: !!process.env.TOPMEDIAI_API_KEY && !process.env.TOPMEDIAI_API_KEY.includes('your_'),
             perplexity: !!process.env.PERPLEXITY_API_KEY && !process.env.PERPLEXITY_API_KEY.includes('your_'),
             mistral: !!process.env.MISTRAL_API_KEY && !process.env.MISTRAL_API_KEY.includes('your_'),
             xai: !!process.env.XAI_API_KEY && !process.env.XAI_API_KEY.includes('your_'),
