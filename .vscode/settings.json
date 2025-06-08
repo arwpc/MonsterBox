@@ -26,6 +26,22 @@
     "remote.SSH.connectTimeout": 15,
     "remote.SSH.useLocalServer": false,
 
+    // PowerShell Fallback Prevention - CRITICAL SECURITY SETTINGS
+    "remote.SSH.enableRemoteCommand": true,
+    "remote.SSH.enableX11Forwarding": false,
+    "remote.SSH.enableAgentForwarding": false,
+    "remote.SSH.lockfilesInTmp": true,
+    "remote.SSH.maxReconnectionAttempts": 3,
+    "remote.SSH.suppressWindowsSshWarning": true,
+    "remote.SSH.path": "ssh",
+    "remote.SSH.defaultExtensions": [],
+
+    // Force remote execution - prevent local fallback
+    "remote.SSH.remoteServerListenOnSocket": true,
+    "remote.SSH.serverPickPortsFromRange": {
+        "22000": 22999
+    },
+
     // Terminal configuration for remote connections
     "terminal.integrated.defaultProfile.linux": "bash",
     "terminal.integrated.profiles.linux": {
@@ -33,5 +49,32 @@
             "path": "/bin/bash",
             "args": ["-l"]
         }
-    }
+    },
+
+    // Windows PowerShell restrictions - PREVENT LOCAL EXECUTION
+    "terminal.integrated.defaultProfile.windows": null,
+    "terminal.integrated.profiles.windows": {},
+    "powershell.powerShellDefaultVersion": "PowerShell",
+    "powershell.enableReferencesCodeLens": false,
+    "powershell.integratedConsole.suppressStartupBanner": true,
+
+    // Augment MCP Configuration - Force Remote Execution
+    "augment.enforceRemoteExecution": true,
+    "augment.preventLocalPowerShell": true,
+    "augment.sshConnectionMonitoring": true,
+    "augment.remoteExecutionValidation": true,
+
+    // Development Environment Restrictions
+    "files.watcherExclude": {
+        "**/.git/objects/**": true,
+        "**/.git/subtree-cache/**": true,
+        "**/node_modules/*/**": true,
+        "**/.hg/store/**": true
+    },
+
+    // Security and Monitoring
+    "security.workspace.trust.enabled": true,
+    "security.workspace.trust.startupPrompt": "always",
+    "workbench.enableExperiments": false,
+    "telemetry.telemetryLevel": "off"
 }
