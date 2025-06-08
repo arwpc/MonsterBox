@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MonsterBox AI Integration Test</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .test-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .test-card h3 {
+            color: #4ecdc4;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        .form-group select,
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 14px;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .form-group input::placeholder,
+        .form-group textarea::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(78, 205, 196, 0.4);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+        }
+        
+        .result-area {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 15px;
+            min-height: 100px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+        
+        .status-bar {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #f44336;
+        }
+        
+        .status-indicator.connected {
+            background: #4caf50;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-indicator.connecting {
+            background: #ff9800;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .log-area {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        
+        .log-entry.info { color: #4ecdc4; }
+        .log-entry.error { color: #ff6b6b; }
+        .log-entry.success { color: #4caf50; }
+        .log-entry.warning { color: #ff9800; }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 MonsterBox AI Integration Test</h1>
+            <p>Comprehensive testing interface for AI conversation and jaw animation systems</p>
+        </div>
+        
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-indicator" id="aiServiceStatus"></div>
+                <span>AI Service</span>
+            </div>
+            <div class="status-item">
+                <div class="status-indicator" id="websocketStatus"></div>
+                <span>WebSocket</span>
+            </div>
+            <div class="status-item">
+                <div class="status-indicator" id="jawAnimationStatus"></div>
+                <span>Jaw Animation</span>
+            </div>
+            <div class="status-item">
+                <span id="systemUptime">Uptime: --</span>
+            </div>
+        </div>
+        
+        <div class="test-grid">
+            <!-- AI Chat Test -->
+            <div class="test-card">
+                <h3>🗣️ AI Chat Test</h3>
+                <div class="form-group">
+                    <label for="chatCharacter">Character:</label>
+                    <select id="chatCharacter">
+                        <option value="orlok">Count Orlok</option>
+                        <option value="coffin">Coffin Breaker</option>
+                        <option value="skeleton">Wise Skeleton</option>
+                        <option value="pumpkinhead">Pumpkinhead</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="chatMessage">Message:</label>
+                    <textarea id="chatMessage" placeholder="Enter your message to the character..."></textarea>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="enableTTS" checked>
+                    <label for="enableTTS">Enable TTS</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="enableJawSync" checked>
+                    <label for="enableJawSync">Enable Jaw Sync</label>
+                </div>
+                <button class="btn" onclick="testAIChat()">Send Message</button>
+                <button class="btn btn-secondary" onclick="clearChatResult()">Clear</button>
+                <div class="result-area" id="chatResult"></div>
+            </div>
+            
+            <!-- Character Management -->
+            <div class="test-card">
+                <h3>👤 Character Management</h3>
+                <div class="form-group">
+                    <label for="characterSelect">Character:</label>
+                    <select id="characterSelect">
+                        <option value="orlok">Count Orlok</option>
+                        <option value="coffin">Coffin Breaker</option>
+                        <option value="skeleton">Wise Skeleton</option>
+                        <option value="pumpkinhead">Pumpkinhead</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="getCharacterProfile()">Get Profile</button>
+                <button class="btn btn-secondary" onclick="getConversationHistory()">Get History</button>
+                <button class="btn btn-danger" onclick="clearConversationHistory()">Clear History</button>
+                <div class="result-area" id="characterResult"></div>
+            </div>
+            
+            <!-- Jaw Animation Test -->
+            <div class="test-card">
+                <h3>🦷 Jaw Animation Test</h3>
+                <div class="form-group">
+                    <label for="jawCharacter">Character:</label>
+                    <select id="jawCharacter">
+                        <option value="orlok">Count Orlok</option>
+                        <option value="coffin">Coffin Breaker</option>
+                        <option value="skeleton">Wise Skeleton</option>
+                        <option value="pumpkinhead">Pumpkinhead</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="jawText">Text for Animation:</label>
+                    <textarea id="jawText" placeholder="Enter text to animate jaw movement...">Hello, I am speaking with jaw animation!</textarea>
+                </div>
+                <button class="btn" onclick="testJawAnimation()">Trigger Animation</button>
+                <button class="btn btn-secondary" onclick="stopJawAnimation()">Stop Animation</button>
+                <div class="result-area" id="jawResult"></div>
+            </div>
+            
+            <!-- System Status -->
+            <div class="test-card">
+                <h3>📊 System Status</h3>
+                <button class="btn" onclick="getSystemStatus()">Get Status</button>
+                <button class="btn btn-secondary" onclick="getStatistics()">Get Statistics</button>
+                <button class="btn btn-secondary" onclick="testAllCharacters()">Test All Characters</button>
+                <div class="result-area" id="statusResult"></div>
+            </div>
+            
+            <!-- WebSocket Test -->
+            <div class="test-card">
+                <h3>🌐 WebSocket Test</h3>
+                <button class="btn" onclick="connectWebSocket()">Connect</button>
+                <button class="btn btn-secondary" onclick="disconnectWebSocket()">Disconnect</button>
+                <button class="btn btn-secondary" onclick="sendWebSocketPing()">Send Ping</button>
+                <div class="result-area" id="websocketResult"></div>
+            </div>
+            
+            <!-- TTS Test -->
+            <div class="test-card">
+                <h3>🎤 TTS Test</h3>
+                <div class="form-group">
+                    <label for="ttsCharacter">Character:</label>
+                    <select id="ttsCharacter">
+                        <option value="orlok">Count Orlok</option>
+                        <option value="coffin">Coffin Breaker</option>
+                        <option value="skeleton">Wise Skeleton</option>
+                        <option value="pumpkinhead">Pumpkinhead</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="ttsText">Text:</label>
+                    <textarea id="ttsText" placeholder="Enter text for TTS generation...">This is a test of the text-to-speech system.</textarea>
+                </div>
+                <button class="btn" onclick="testTTS()">Generate TTS</button>
+                <div class="result-area" id="ttsResult"></div>
+            </div>
+        </div>
+        
+        <div class="log-area">
+            <h3>📝 System Log</h3>
+            <div id="systemLog"></div>
+        </div>
+    </div>
+
+    <script>
+        class AIIntegrationTester {
+            constructor() {
+                this.websocket = null;
+                this.isConnected = false;
+                this.logEntries = [];
+                
+                this.initializeStatusChecks();
+                this.startStatusUpdates();
+            }
+            
+            initializeStatusChecks() {
+                this.checkAIServiceStatus();
+                this.checkJawAnimationStatus();
+            }
+            
+            startStatusUpdates() {
+                setInterval(() => {
+                    this.updateSystemUptime();
+                    this.checkAIServiceStatus();
+                }, 5000);
+            }
+            
+            async checkAIServiceStatus() {
+                try {
+                    const response = await fetch('/api/ai/health');
+                    const result = await response.json();
+                    
+                    const indicator = document.getElementById('aiServiceStatus');
+                    if (result.success && result.data.healthy) {
+                        indicator.className = 'status-indicator connected';
+                    } else {
+                        indicator.className = 'status-indicator';
+                    }
+                } catch (error) {
+                    document.getElementById('aiServiceStatus').className = 'status-indicator';
+                }
+            }
+            
+            async checkJawAnimationStatus() {
+                try {
+                    const response = await fetch('/jaw-animation/status');
+                    const result = await response.json();
+                    
+                    const indicator = document.getElementById('jawAnimationStatus');
+                    if (result.success) {
+                        indicator.className = 'status-indicator connected';
+                    } else {
+                        indicator.className = 'status-indicator';
+                    }
+                } catch (error) {
+                    document.getElementById('jawAnimationStatus').className = 'status-indicator';
+                }
+            }
+            
+            updateSystemUptime() {
+                const uptimeElement = document.getElementById('systemUptime');
+                const now = new Date();
+                const startTime = new Date(now.getTime() - (performance.now()));
+                const uptime = Math.floor((now - startTime) / 1000);
+                
+                const hours = Math.floor(uptime / 3600);
+                const minutes = Math.floor((uptime % 3600) / 60);
+                const seconds = uptime % 60;
+                
+                uptimeElement.textContent = `Uptime: ${hours}h ${minutes}m ${seconds}s`;
+            }
+            
+            log(message, type = 'info') {
+                const timestamp = new Date().toLocaleTimeString();
+                const logEntry = `[${timestamp}] ${message}`;
+                
+                this.logEntries.push({ message: logEntry, type });
+                
+                const logElement = document.getElementById('systemLog');
+                const entryDiv = document.createElement('div');
+                entryDiv.className = `log-entry ${type}`;
+                entryDiv.textContent = logEntry;
+                
+                logElement.appendChild(entryDiv);
+                logElement.scrollTop = logElement.scrollHeight;
+                
+                // Keep only last 100 entries
+                if (this.logEntries.length > 100) {
+                    this.logEntries.shift();
+                    logElement.removeChild(logElement.firstChild);
+                }
+            }
+            
+            displayResult(elementId, data, isError = false) {
+                const element = document.getElementById(elementId);
+                element.textContent = JSON.stringify(data, null, 2);
+                element.style.color = isError ? '#ff6b6b' : '#ffffff';
+            }
+        }
+        
+        const tester = new AIIntegrationTester();
+        
+        // AI Chat Test
+        async function testAIChat() {
+            const character = document.getElementById('chatCharacter').value;
+            const message = document.getElementById('chatMessage').value;
+            const enableTTS = document.getElementById('enableTTS').checked;
+            const enableJawSync = document.getElementById('enableJawSync').checked;
+            
+            if (!message.trim()) {
+                tester.log('Please enter a message', 'warning');
+                return;
+            }
+            
+            try {
+                tester.log(`Sending chat message to ${character}`, 'info');
+                
+                const response = await fetch(`/api/ai/chat/${character}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: message,
+                        generateTTS: enableTTS,
+                        enableJawSync: enableJawSync
+                    })
+                });
+                
+                const result = await response.json();
+                tester.displayResult('chatResult', result);
+                
+                if (result.success) {
+                    tester.log(`Chat response received from ${character}`, 'success');
+                } else {
+                    tester.log(`Chat failed: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                tester.log(`Chat error: ${error.message}`, 'error');
+                tester.displayResult('chatResult', { error: error.message }, true);
+            }
+        }
+        
+        function clearChatResult() {
+            document.getElementById('chatResult').textContent = '';
+            document.getElementById('chatMessage').value = '';
+        }
+        
+        // Character Management
+        async function getCharacterProfile() {
+            const character = document.getElementById('characterSelect').value;
+            
+            try {
+                const response = await fetch(`/api/ai/characters/${character}`);
+                const result = await response.json();
+                tester.displayResult('characterResult', result);
+                tester.log(`Retrieved profile for ${character}`, 'info');
+            } catch (error) {
+                tester.log(`Profile error: ${error.message}`, 'error');
+                tester.displayResult('characterResult', { error: error.message }, true);
+            }
+        }
+        
+        async function getConversationHistory() {
+            const character = document.getElementById('characterSelect').value;
+            
+            try {
+                const response = await fetch(`/api/ai/history/${character}?limit=10`);
+                const result = await response.json();
+                tester.displayResult('characterResult', result);
+                tester.log(`Retrieved history for ${character}`, 'info');
+            } catch (error) {
+                tester.log(`History error: ${error.message}`, 'error');
+                tester.displayResult('characterResult', { error: error.message }, true);
+            }
+        }
+        
+        async function clearConversationHistory() {
+            const character = document.getElementById('characterSelect').value;
+            
+            try {
+                const response = await fetch(`/api/ai/history/${character}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+                tester.displayResult('characterResult', result);
+                tester.log(`Cleared history for ${character}`, 'success');
+            } catch (error) {
+                tester.log(`Clear history error: ${error.message}`, 'error');
+                tester.displayResult('characterResult', { error: error.message }, true);
+            }
+        }
+        
+        // Jaw Animation Test
+        async function testJawAnimation() {
+            const character = document.getElementById('jawCharacter').value;
+            const text = document.getElementById('jawText').value;
+            
+            if (!text.trim()) {
+                tester.log('Please enter text for jaw animation', 'warning');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/ai/jaw-animation/${character}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text })
+                });
+                
+                const result = await response.json();
+                tester.displayResult('jawResult', result);
+                tester.log(`Jaw animation triggered for ${character}`, 'success');
+            } catch (error) {
+                tester.log(`Jaw animation error: ${error.message}`, 'error');
+                tester.displayResult('jawResult', { error: error.message }, true);
+            }
+        }
+        
+        async function stopJawAnimation() {
+            try {
+                const response = await fetch('/jaw-animation/stop', { method: 'POST' });
+                const result = await response.json();
+                tester.displayResult('jawResult', result);
+                tester.log('Jaw animation stopped', 'info');
+            } catch (error) {
+                tester.log(`Stop jaw animation error: ${error.message}`, 'error');
+            }
+        }
+        
+        // System Status
+        async function getSystemStatus() {
+            try {
+                const response = await fetch('/api/ai/status');
+                const result = await response.json();
+                tester.displayResult('statusResult', result);
+                tester.log('System status retrieved', 'info');
+            } catch (error) {
+                tester.log(`Status error: ${error.message}`, 'error');
+                tester.displayResult('statusResult', { error: error.message }, true);
+            }
+        }
+        
+        async function getStatistics() {
+            try {
+                const response = await fetch('/api/ai/statistics');
+                const result = await response.json();
+                tester.displayResult('statusResult', result);
+                tester.log('Statistics retrieved', 'info');
+            } catch (error) {
+                tester.log(`Statistics error: ${error.message}`, 'error');
+                tester.displayResult('statusResult', { error: error.message }, true);
+            }
+        }
+        
+        async function testAllCharacters() {
+            const characters = ['orlok', 'coffin', 'skeleton', 'pumpkinhead'];
+            const testMessage = 'Hello, this is a test message.';
+            
+            tester.log('Testing all characters...', 'info');
+            
+            for (const character of characters) {
+                try {
+                    const response = await fetch(`/api/ai/test/${character}`, {
+                        method: 'POST'
+                    });
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        tester.log(`✅ ${character} test passed`, 'success');
+                    } else {
+                        tester.log(`❌ ${character} test failed: ${result.error}`, 'error');
+                    }
+                } catch (error) {
+                    tester.log(`❌ ${character} test error: ${error.message}`, 'error');
+                }
+            }
+        }
+        
+        // WebSocket Test
+        function connectWebSocket() {
+            if (tester.websocket) {
+                tester.log('WebSocket already connected', 'warning');
+                return;
+            }
+            
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.hostname}:8766`;
+            
+            try {
+                tester.websocket = new WebSocket(wsUrl);
+                
+                tester.websocket.onopen = () => {
+                    tester.isConnected = true;
+                    document.getElementById('websocketStatus').className = 'status-indicator connected';
+                    tester.log('WebSocket connected', 'success');
+                    tester.displayResult('websocketResult', { status: 'connected', url: wsUrl });
+                };
+                
+                tester.websocket.onmessage = (event) => {
+                    const message = JSON.parse(event.data);
+                    tester.log(`WebSocket message: ${message.type}`, 'info');
+                    tester.displayResult('websocketResult', message);
+                };
+                
+                tester.websocket.onclose = () => {
+                    tester.isConnected = false;
+                    document.getElementById('websocketStatus').className = 'status-indicator';
+                    tester.log('WebSocket disconnected', 'warning');
+                    tester.websocket = null;
+                };
+                
+                tester.websocket.onerror = (error) => {
+                    tester.log(`WebSocket error: ${error}`, 'error');
+                };
+                
+            } catch (error) {
+                tester.log(`WebSocket connection error: ${error.message}`, 'error');
+            }
+        }
+        
+        function disconnectWebSocket() {
+            if (tester.websocket) {
+                tester.websocket.close();
+                tester.websocket = null;
+                tester.isConnected = false;
+                document.getElementById('websocketStatus').className = 'status-indicator';
+                tester.log('WebSocket disconnected', 'info');
+            }
+        }
+        
+        function sendWebSocketPing() {
+            if (!tester.websocket || !tester.isConnected) {
+                tester.log('WebSocket not connected', 'warning');
+                return;
+            }
+            
+            tester.websocket.send(JSON.stringify({
+                type: 'ping',
+                timestamp: new Date().toISOString()
+            }));
+            
+            tester.log('WebSocket ping sent', 'info');
+        }
+        
+        // TTS Test
+        async function testTTS() {
+            const character = document.getElementById('ttsCharacter').value;
+            const text = document.getElementById('ttsText').value;
+            
+            if (!text.trim()) {
+                tester.log('Please enter text for TTS', 'warning');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/ai/tts/${character}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text })
+                });
+                
+                const result = await response.json();
+                tester.displayResult('ttsResult', result);
+                
+                if (result.success) {
+                    tester.log(`TTS generated for ${character}`, 'success');
+                } else {
+                    tester.log(`TTS failed: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                tester.log(`TTS error: ${error.message}`, 'error');
+                tester.displayResult('ttsResult', { error: error.message }, true);
+            }
+        }
+        
+        // Initialize
+        tester.log('AI Integration Tester initialized', 'success');
+    </script>
+</body>
+</html>
