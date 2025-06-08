@@ -66,6 +66,44 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .checkbox-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .control-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .form-group input[type="range"] {
+            width: 100%;
+            margin: 5px 0;
+        }
+
+        .range-value {
+            display: inline-block;
+            min-width: 40px;
+            text-align: center;
+            font-weight: bold;
+            color: #00ff00;
+            background: rgba(0, 255, 0, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-left: 10px;
+        }
         .warning-btn {
             background-color: #664400 !important;
             color: #ffaa00 !important;
@@ -183,6 +221,111 @@
                         <option value="active" <%= (part && part.status === 'active') || (!part) ? 'selected' : '' %>>Active</option>
                         <option value="inactive" <%= (part && part.status === 'inactive') ? 'selected' : '' %>>Inactive</option>
                     </select>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>🎛️ Camera Controls</h3>
+                <div class="controls-grid">
+                    <div class="form-group">
+                        <label for="brightness">Brightness:</label>
+                        <input type="range" id="brightness" name="brightness" min="-64" max="64" value="0" step="1">
+                        <span class="range-value" id="brightnessValue">0</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="contrast">Contrast:</label>
+                        <input type="range" id="contrast" name="contrast" min="0" max="64" value="32" step="1">
+                        <span class="range-value" id="contrastValue">32</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="saturation">Saturation:</label>
+                        <input type="range" id="saturation" name="saturation" min="0" max="128" value="64" step="1">
+                        <span class="range-value" id="saturationValue">64</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="hue">Hue:</label>
+                        <input type="range" id="hue" name="hue" min="-40" max="40" value="0" step="1">
+                        <span class="range-value" id="hueValue">0</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="gamma">Gamma:</label>
+                        <input type="range" id="gamma" name="gamma" min="72" max="500" value="100" step="1">
+                        <span class="range-value" id="gammaValue">100</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="gain">Gain:</label>
+                        <input type="range" id="gain" name="gain" min="0" max="100" value="0" step="1">
+                        <span class="range-value" id="gainValue">0</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sharpness">Sharpness:</label>
+                        <input type="range" id="sharpness" name="sharpness" min="0" max="14" value="10" step="1">
+                        <span class="range-value" id="sharpnessValue">10</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="backlight_compensation">Backlight Compensation:</label>
+                        <input type="range" id="backlight_compensation" name="backlight_compensation" min="0" max="160" value="80" step="1">
+                        <span class="range-value" id="backlight_compensationValue">80</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="white_balance_temperature">White Balance Temperature:</label>
+                        <input type="range" id="white_balance_temperature" name="white_balance_temperature" min="2800" max="6500" value="4600" step="1">
+                        <span class="range-value" id="white_balance_temperatureValue">4600</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="exposure_time_absolute">Exposure Time:</label>
+                        <input type="range" id="exposure_time_absolute" name="exposure_time_absolute" min="1" max="5000" value="157" step="1">
+                        <span class="range-value" id="exposure_time_absoluteValue">157</span>
+                    </div>
+                </div>
+
+                <div class="checkbox-controls">
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="white_balance_automatic" name="white_balance_automatic" checked>
+                            Auto White Balance
+                        </label>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="exposure_dynamic_framerate" name="exposure_dynamic_framerate">
+                            Dynamic Frame Rate
+                        </label>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="auto_exposure">Auto Exposure:</label>
+                        <select id="auto_exposure" name="auto_exposure">
+                            <option value="0">Manual Mode</option>
+                            <option value="1">Auto Mode</option>
+                            <option value="2">Shutter Priority Mode</option>
+                            <option value="3" selected>Aperture Priority Mode</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="power_line_frequency">Power Line Frequency:</label>
+                        <select id="power_line_frequency" name="power_line_frequency">
+                            <option value="0">Disabled</option>
+                            <option value="1" selected>50 Hz</option>
+                            <option value="2">60 Hz</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="control-buttons">
+                    <button type="button" id="resetControlsBtn" class="button secondary-btn">🔄 Reset to Defaults</button>
+                    <button type="button" id="applyControlsBtn" class="button primary-btn">✅ Apply Controls</button>
                 </div>
             </div>
 
@@ -310,6 +453,11 @@
                         option.dataset.note = camera.note || '';
 
                         deviceSelect.appendChild(option);
+
+                        // Update resolution options with camera capabilities
+                        if (camera.capabilities && camera.capabilities.resolutions && camera.capabilities.resolutions.length > 0) {
+                            updateResolutionOptions(camera.capabilities.resolutions);
+                        }
                     });
 
                     // Add validation for selected device
@@ -340,6 +488,51 @@
         document.getElementById('refreshCamerasBtn').addEventListener('click', function() {
             detectCameras(true);
         });
+
+        // Update resolution options based on camera capabilities
+        function updateResolutionOptions(resolutions) {
+            const resolutionSelect = document.getElementById('resolution');
+            const currentValue = resolutionSelect.value;
+
+            // Clear existing options
+            resolutionSelect.innerHTML = '';
+
+            // Remove duplicates and sort resolutions by pixel count
+            const uniqueResolutions = [...new Set(resolutions)];
+            const sortedResolutions = uniqueResolutions.sort((a, b) => {
+                const [aWidth, aHeight] = a.split('x').map(Number);
+                const [bWidth, bHeight] = b.split('x').map(Number);
+                return (bWidth * bHeight) - (aWidth * aHeight); // Sort descending by pixel count
+            });
+
+            // Add resolution options
+            sortedResolutions.forEach(resolution => {
+                const option = document.createElement('option');
+                option.value = resolution;
+
+                // Add descriptive labels for common resolutions
+                let label = resolution;
+                switch(resolution) {
+                    case '1920x1080': label += ' (Full HD)'; break;
+                    case '1280x720': label += ' (HD)'; break;
+                    case '640x480': label += ' (VGA)'; break;
+                    case '320x240': label += ' (QVGA)'; break;
+                }
+
+                option.textContent = label;
+
+                // Select the current value if it exists, otherwise select 1280x720 or first option
+                if (resolution === currentValue ||
+                    (!currentValue && resolution === '1280x720') ||
+                    (!currentValue && !resolutionSelect.querySelector('option[value="1280x720"]') && sortedResolutions.indexOf(resolution) === 0)) {
+                    option.selected = true;
+                }
+
+                resolutionSelect.appendChild(option);
+            });
+
+            console.log(`📐 Updated resolution options: ${sortedResolutions.join(', ')}`);
+        }
 
         // Validate remote device function
         async function validateRemoteDevice(characterId, deviceId) {
@@ -590,7 +783,7 @@
             const characterId = document.getElementById('characterId').value;
             const stopBtn = this;
             const restartBtn = document.getElementById('restartStreamBtn');
-            const detectBtn = document.getElementById('detectCamerasBtn');
+            const detectBtn = document.getElementById('refreshCamerasBtn');
 
             try {
                 stopBtn.disabled = true;
@@ -663,6 +856,116 @@
             }
         });
 
+        // Camera controls functionality
+        function initializeCameraControls() {
+            // Update range value displays
+            const ranges = document.querySelectorAll('input[type="range"]');
+            ranges.forEach(range => {
+                const valueDisplay = document.getElementById(range.id + 'Value');
+                if (valueDisplay) {
+                    range.addEventListener('input', function() {
+                        valueDisplay.textContent = this.value;
+                    });
+                }
+            });
+
+            // Reset controls button
+            document.getElementById('resetControlsBtn').addEventListener('click', function() {
+                const defaults = {
+                    brightness: 0,
+                    contrast: 32,
+                    saturation: 64,
+                    hue: 0,
+                    gamma: 100,
+                    gain: 0,
+                    sharpness: 10,
+                    backlight_compensation: 80,
+                    white_balance_temperature: 4600,
+                    exposure_time_absolute: 157,
+                    white_balance_automatic: true,
+                    exposure_dynamic_framerate: false,
+                    auto_exposure: 3,
+                    power_line_frequency: 1
+                };
+
+                Object.keys(defaults).forEach(key => {
+                    const element = document.getElementById(key);
+                    if (element) {
+                        if (element.type === 'checkbox') {
+                            element.checked = defaults[key];
+                        } else {
+                            element.value = defaults[key];
+                            // Update value display
+                            const valueDisplay = document.getElementById(key + 'Value');
+                            if (valueDisplay) {
+                                valueDisplay.textContent = defaults[key];
+                            }
+                        }
+                    }
+                });
+
+                console.log('🔄 Camera controls reset to defaults');
+            });
+
+            // Apply controls button
+            document.getElementById('applyControlsBtn').addEventListener('click', async function() {
+                const deviceId = document.getElementById('deviceId').value;
+                const characterId = document.getElementById('characterId').value;
+
+                if (!deviceId && deviceId !== '0') {
+                    alert('Please select a camera device first');
+                    return;
+                }
+
+                const controls = {};
+                const ranges = document.querySelectorAll('input[type="range"]');
+                ranges.forEach(range => {
+                    controls[range.name] = parseInt(range.value);
+                });
+
+                const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+                checkboxes.forEach(checkbox => {
+                    controls[checkbox.name] = checkbox.checked;
+                });
+
+                const selects = document.querySelectorAll('select[name^="auto_"], select[name^="power_"]');
+                selects.forEach(select => {
+                    controls[select.name] = parseInt(select.value);
+                });
+
+                try {
+                    this.disabled = true;
+                    this.textContent = '⏳ Applying...';
+
+                    const response = await fetch('/api/webcam/set-controls', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            characterId: characterId,
+                            deviceId: deviceId,
+                            controls: controls
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        alert('✅ Camera controls applied successfully!');
+                        console.log('✅ Camera controls applied:', controls);
+                    } else {
+                        alert('❌ Failed to apply controls: ' + data.message);
+                    }
+                } catch (error) {
+                    alert('❌ Error applying controls: ' + error.message);
+                } finally {
+                    this.disabled = false;
+                    this.textContent = '✅ Apply Controls';
+                }
+            });
+        }
+
         // Initialize page on load
         document.addEventListener('DOMContentLoaded', async function() {
             console.log('🚀 Page loaded, initializing webcam configuration...');
@@ -693,6 +996,9 @@
                     console.error('❌ Error checking stream status:', error);
                 }
             }
+
+            // Initialize camera controls
+            initializeCameraControls();
 
             // Auto-detect cameras on page load for all cases
             console.log('⏰ Starting auto-detection in 1 second...');

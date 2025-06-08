@@ -1,12 +1,28 @@
 agents:
-  - name: rpi-agent
+  - name: orlok-agent
     type: shell
     runner:
       ssh:
         host: 192.168.8.120
         user: remote
-        # Note: Using password authentication instead of key-based
-        # since MonsterBox uses password auth for RPI access
+        identityFile: ~/.ssh/id_ed25519
+        # Fallback password if key auth fails
         password: klrklr89!
-        # Alternative: if you want to use key-based auth, uncomment below
-        # identityFile: ~/.ssh/id_ed25519
+
+  - name: skulltalker-agent
+    type: shell
+    runner:
+      ssh:
+        host: 192.168.8.130
+        user: remote
+        identityFile: ~/.ssh/id_ed25519
+        password: klrklr89!
+
+  - name: coffin-agent
+    type: shell
+    runner:
+      ssh:
+        host: 192.168.8.140
+        user: remote
+        identityFile: ~/.ssh/id_ed25519
+        password: klrklr89!

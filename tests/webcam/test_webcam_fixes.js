@@ -126,6 +126,10 @@ class WebcamFixTester {
             const process = spawn('ssh', [
                 '-o', 'ConnectTimeout=10',
                 '-o', 'StrictHostKeyChecking=no',
+                '-o', 'PasswordAuthentication=no',
+                '-o', 'PubkeyAuthentication=yes',
+                '-o', 'UserKnownHostsFile=/dev/null',
+                '-o', 'LogLevel=ERROR',
                 'remote@192.168.8.120',
                 'test -c /dev/video0 && echo "exists" || echo "missing"'
             ]);
@@ -170,6 +174,10 @@ class WebcamFixTester {
             const process = spawn('ssh', [
                 '-o', 'ConnectTimeout=10',
                 '-o', 'StrictHostKeyChecking=no',
+                '-o', 'PasswordAuthentication=no',
+                '-o', 'PubkeyAuthentication=yes',
+                '-o', 'UserKnownHostsFile=/dev/null',
+                '-o', 'LogLevel=ERROR',
                 'remote@192.168.8.120',
                 'test -f /home/remote/MonsterBox/scripts/webcam_test_stream.py && echo "exists" || echo "missing"'
             ]);
@@ -213,6 +221,10 @@ class WebcamFixTester {
             const process = spawn('ssh', [
                 '-o', 'ConnectTimeout=10',
                 '-o', 'StrictHostKeyChecking=no',
+                '-o', 'PasswordAuthentication=no',
+                '-o', 'PubkeyAuthentication=yes',
+                '-o', 'UserKnownHostsFile=/dev/null',
+                '-o', 'LogLevel=ERROR',
                 'remote@192.168.8.120',
                 'lsof /dev/video0 | wc -l'
             ]);

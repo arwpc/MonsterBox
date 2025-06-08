@@ -167,7 +167,6 @@ def set_servo_angle_gpio(pin_or_channel, angle):
         # Convert angle to pulse width for MG90S servo
         # MG90S: 0° = 500µs, 180° = 2400µs (from parts.json config)
         pulse_width = int((angle / 180.0) * (2400 - 500) + 500)
-
         try:
             # Initialize GPIO
             h = lgpio.gpiochip_open(0)
@@ -176,13 +175,12 @@ def set_servo_angle_gpio(pin_or_channel, angle):
             lgpio.gpio_claim_output(h, pin)
 
             # Use lgpio's dedicated servo function
-            # tx_servo(handle, gpio, pulse_width) - use default parameters
-            # pulse_width in microseconds
-            lgpio.tx_servo(h, pin, pulse_width)
+            # tx_servo(handle, gpio, pulse_width, servo_frequency=50, pulse_offset=0, pulse_cycles=0)
+            # pulse_width in microseconds, servo_frequency in Hz
+            lgpio.tx_servo(h, pin, pulse_width, 50, 0, 1)
 
             # Allow time for servo to move
             time.sleep(0.5)
-
             # Stop servo (pulse_width = 0 stops the servo)
             lgpio.tx_servo(h, pin, 0)
             
@@ -230,22 +228,16 @@ def sweep_servo_gpio(pin_or_channel, start_angle, end_angle, step_size=1, delay=
             step = step_size if end_angle > start_angle else -step_size
             angles = range(int(start_angle), int(end_angle) + (1 if step > 0 else -1), step)
             
-            # Standard servo frequency is 50Hz
-            frequency = 50
-            
             for angle in angles:
-                # Convert angle to pulse width
-                pulse_width = int((angle / 180.0) * (2500 - 500) + 500)
-                
-                # Calculate duty cycle
-                duty_cycle = int((pulse_width / 20000.0) * 1000000)
-                
-                # Set PWM
-                lgpio.tx_pwm(h, pin, frequency, duty_cycle)
+                # Convert angle to pulse width for MG90S servo
+                pulse_width = int((angle / 180.0) * (2400 - 500) + 500)
+
+                # Use lgpio servo function
+                lgpio.tx_servo(h, pin, pulse_width, 50, 0, 1)
                 time.sleep(delay)
-            
-            # Stop PWM
-            lgpio.tx_pwm(h, pin, frequency, 0)
+
+            # Stop servo
+            lgpio.tx_servo(h, pin, 0)
             
             log_message({
                 "status": "success",

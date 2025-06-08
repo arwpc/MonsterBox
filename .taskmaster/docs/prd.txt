@@ -1,69 +1,137 @@
-# MonsterBox Webcam System Implementation
+# Jaw Animation System - Product Requirements Document
 
-## Overview
-Implement a comprehensive webcam management system for MonsterBox that integrates webcams as character-specific parts, provides persistent streaming, and enables public web access.
+## Project Overview
 
-## Core Requirements
+Create a jaw animation system for the MonsterBox application by implementing ChatterPi-inspired audio-servo synchronization functionality. This system will analyze audio volume levels in real-time and control a servo motor to animate a jaw that opens and closes in sync with speech/audio playback for any animatronic character (bears, skeletons, fish, demons, etc.).
 
-### 1. Webcam as Part Type
-- Create "webcam" part type in existing parts system
-- Enable character-specific webcam assignment (0 or 1 webcam per character)
-- Implement webcam detection on RPI4b systems
-- Add configurable camera settings (resolution, FPS) with validation
+## Business Objectives
 
-### 2. Character Integration
-- Add "Video Configuration" section to character edit forms
-- Implement embedded video preview in character management
-- Create webcam configuration modal with settings
-- Remove legacy "Video" button from main navigation
-- Reorganize character edit form by functional sections
+- Enhance MonsterBox animatronic capabilities with realistic jaw animation for any character type
+- Provide real-time audio-servo synchronization without disrupting existing audio systems
+- Create a reusable framework for audio-driven servo animations across all animatronic types
+- Maintain compatibility with existing MonsterBox character and scene systems
 
-### 3. Persistent Streaming Architecture
-- Replace current start/stop video approach with continuous streaming
-- Implement shared stream access without locking conflicts
-- Enable multiple application components to access streams simultaneously
-- Add automatic reconnection and error handling
-- Support public web access via direct browser URLs
+## Technical Requirements
 
-### 4. Technical Implementation
-- Create webcamService.js for centralized webcam management
-- Implement webcam detection scripts for RPI4b systems
-- Add character-webcam relationship management
-- Create persistent streaming service with lifecycle management
-- Add multi-client support for simultaneous stream access
+### Core Functionality
+1. **Audio Integration**: Monitor audio streams from currently selected character without blocking concurrent audio playback
+2. **Servo Control**: Control servo motors using existing MonsterBox servo infrastructure (scripts/servo_control.py and routes/servoRoutes.js)
+3. **Real-time Synchronization**: Analyze audio volume levels and translate to servo positions for realistic jaw movement
+4. **Non-blocking Operation**: Work alongside existing MonsterBox functionality without interference
+### System Architecture
+1. **Audio Analysis Module**: Real-time volume detection and processing
+2. **Servo Mapping Engine**: Volume-to-servo-position algorithms with configurable sensitivity
+3. **Integration Layer**: Connect with existing MonsterBox audio and servo systems
+4. **Configuration System**: Per-character and per-servo-type settings
 
-### 5. UI/UX Enhancements
-- Embedded video preview windows in character edit forms
-- Responsive design for different screen sizes
-- Logical reorganization of character edit form sections
-- Webcam configuration modal with real-time settings validation
-- Cross-browser compatibility for public webcam access
+### Performance Requirements
+- Real-time audio processing with minimal latency (<50ms)
+- Smooth servo movement without jitter
+- CPU usage <10% additional overhead
+- Memory usage <50MB additional
 
-### 6. Testing and Validation
-- Comprehensive testing suite for webcam detection and assignment
-- Stream persistence and sharing tests
-- UI functionality tests across character edit forms
-- Cross-browser compatibility testing for public access
-- RPI4b hardware testing on Orlok (192.168.8.120) and Coffin (192.168.8.140)
-- MCP log integration for debugging and issue resolution
+### Compatibility Requirements
+- Work with existing soundController.js and sound_player.py
+- Use existing servo control infrastructure
+- Maintain character selection and scene playback functionality
+- Support all current servo types in servos.json
 
-### 7. Future Readiness
-- Architecture designed to support OpenCV integration for person tracking
-- Preparation for servo integration with head-tracking capabilities
-- Scalable design for additional webcam features
+## Implementation Phases
+
+### Phase 1: Research and Prototype
+- Research ChatterPi audio processing algorithms
+- Create isolated test environment
+- Develop basic audio volume detection
+- Implement basic servo control integration
+
+### Phase 2: Core Development
+- Build real-time audio analysis engine
+- Implement volume-to-servo mapping algorithms
+- Create test page at /test/jaw-animation
+- Develop configuration system
+
+### Phase 3: Integration
+- Integrate with MonsterBox character system
+- Add character-specific configuration options
+- Implement servo type-specific settings
+- Create user interface controls
+
+### Phase 4: Testing and Optimization
+- Performance testing and optimization
+- Cross-platform compatibility testing
+- User acceptance testing
+- Documentation and deployment
+
+## Technical Specifications
+
+### Audio Processing
+- Sample rate: 44.1kHz or 48kHz
+- Bit depth: 16-bit minimum
+- Analysis window: 10-50ms configurable
+- Volume detection: RMS and peak analysis
+- Frequency filtering: Optional bandpass for speech frequencies
+
+### Servo Control
+- Position range: 0-180 degrees configurable
+- Update frequency: 20-50Hz
+- Smoothing: Configurable interpolation
+- Calibration: Per-servo min/max positions
+
+### Configuration Options
+- Audio sensitivity levels
+- Servo response curves
+- Smoothing parameters
+- Frequency filters
+- Character-specific presets
+
+## User Stories
+
+### Primary Users: Animatronic Operators
+1. As an operator, I want to assign a jaw servo to any character so that it can have talking animation
+2. As an operator, I want to test jaw movement with different audio files for bears, skeletons, fish, etc.
+3. As an operator, I want to adjust sensitivity so jaw movement matches audio intensity for different character types
+4. As an operator, I want to use jaw animation during scene playback for any animatronic
+
+### Secondary Users: System Administrators
+1. As an admin, I want to configure servo types and their parameters for different animatronic designs
+2. As an admin, I want to monitor system performance during jaw animation across multiple characters
+3. As an admin, I want to troubleshoot audio-servo synchronization issues for any character type
 
 ## Success Criteria
-- Each character can have 0 or 1 webcam assigned as a part
-- Webcam streams persist across page navigation
-- Multiple users can access webcam feeds simultaneously
-- Public webcam URLs work in standard web browsers
-- Character edit forms include integrated video configuration
-- All functionality tested and validated on operational RPI4b systems
-- Legacy video route functionality migrated and removed
+
+### Functional Success
+- Jaw servo moves in real-time sync with audio playback for any character type
+- System works with all existing MonsterBox audio features
+- Configuration persists across sessions
+- Multiple characters can have jaw animation capability simultaneously
+
+### Performance Success
+- <50ms latency between audio and servo movement
+- Smooth servo movement without visible jitter
+- No interference with existing audio playback
+- Stable operation for extended periods
+
+### User Experience Success
+- Intuitive configuration interface for any animatronic type
+- Clear visual feedback during setup
+- Reliable operation during shows
+- Easy troubleshooting and calibration
 
 ## Technical Constraints
-- Test only on Orlok (192.168.8.120) and Coffin (192.168.8.140) RPIs
-- Exclude Pumpkinhead from testing (not operational)
-- Maintain compatibility with existing MonsterBox architecture
-- Use existing authentication and security patterns
-- Preserve all working functionality from current camera implementation
+
+### System Constraints
+- Must use existing MonsterBox audio infrastructure
+- Must use existing servo control system
+- Cannot block or interfere with sound playback
+- Must work with current character selection system
+
+### Hardware Constraints
+- Support existing servo types in servos.json
+- Work with Raspberry Pi hardware limitations
+- Compatible with existing GPIO and PCA9685 configurations
+
+### Software Constraints
+- Node.js/Express backend compatibility
+- Python script integration requirements
+- WebSocket real-time communication
+- Cross-platform operation (Windows development, Linux deployment)

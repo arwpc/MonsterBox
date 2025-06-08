@@ -558,12 +558,60 @@ class StreamingService extends EventEmitter {
     }
 
     /**
+     * Clean up remote camera processes on RPI system
+     * @param {string} host - RPI host IP
+     * @param {string} characterKey - Character key for SSH credentials
+     * @returns {Promise<boolean>} Cleanup success
+     */
+    async cleanupRemoteCameraProcesses(host, characterKey) {
+        try {
+            logger.info(`Cleaning up remote camera processes on ${host}`);
+
+            // Kill any existing camera processes
+            const killCommands = [
+                'pkill -f "camera_stream.py"',
+                'pkill -f "webcam_persistent_stream.py"',
+                'pkill -f "camera_control.py"',
+                'pkill -f "cv2.VideoCapture"',
+                'lsof /dev/video0 | awk \'NR>1 {print $2}\' | xargs -r kill -9'
+            ];
+
+            for (const command of killCommands) {
+                try {
+                    const fullCommand = sshCredentials.buildSSHCommand(characterKey, host, command);
+                    const shellCmd = this.getShellCommand(fullCommand);
+                    const process = spawn(shellCmd.cmd, shellCmd.args, shellCmd.options);
+
+                    await new Promise((resolve) => {
+                        process.on('close', () => resolve());
+                        setTimeout(() => {
+                            process.kill();
+                            resolve();
+                        }, 5000);
+                    });
+                } catch (error) {
+                    logger.debug(`Cleanup command failed (expected): ${command}`);
+                }
+            }
+
+            // Wait for processes to fully terminate
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            logger.info(`Remote camera cleanup completed for ${host}`);
+            return true;
+        } catch (error) {
+            logger.error(`Error cleaning up remote camera processes on ${host}:`, error);
+            return false;
+        }
+    }
+
+    /**
      * Create remote stream process
      * @param {Object} config - Stream configuration
      * @returns {Object} Process creation result
      */
     async createRemoteStreamProcess(config) {
-        return new Promise((resolve) => {
+        return new Promise(async (resolve) => {
             try {
                 const rpiConfig = config.character.animatronic.rpi_config;
                 const host = rpiConfig.host;
@@ -571,6 +619,10 @@ class StreamingService extends EventEmitter {
 
                 // Build SSH command with proper authentication using ssh-credentials
                 const characterKey = config.character.char_name.toLowerCase().replace(/\s+/g, '');
+
+                // Clean up any existing camera processes first
+                await this.cleanupRemoteCameraProcesses(host, characterKey);
+
                 const remoteScript = `/home/remote/MonsterBox/scripts/webcam_persistent_stream.py`;
                 const remoteArgs = [
                     '--device-id', config.deviceId.toString(),

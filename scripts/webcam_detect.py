@@ -64,23 +64,48 @@ def get_v4l2_devices() -> List[Dict[str, Any]]:
     
     return devices
 
+def is_rpi_virtual_device(device_path: str) -> bool:
+    """Check if a device is a Raspberry Pi virtual device (encoder/decoder/ISP)."""
+    try:
+        result = subprocess.run(['v4l2-ctl', '-d', device_path, '--info'],
+                              capture_output=True, text=True, timeout=5)
+        if result.returncode == 0:
+            info = result.stdout.lower()
+            # Check for RPI virtual device indicators
+            virtual_indicators = [
+                'bcm2835-codec', 'bcm2835-isp', 'rpi-hevc',
+                'encoder', 'decoder', 'isp'
+            ]
+            return any(indicator in info for indicator in virtual_indicators)
+    except Exception:
+        pass
+    return False
+
 def get_opencv_devices() -> List[Dict[str, Any]]:
     """Get video devices using OpenCV detection."""
     devices = []
 
-    # Test device IDs 0-9 (most systems won't have more than 10 cameras)
-    for device_id in range(10):
+    # Test device IDs 0-31 (RPI systems can have many virtual video devices)
+    for device_id in range(32):
         device_path = f'/dev/video{device_id}'
 
         # Check if device file exists
         if not os.path.exists(device_path):
             continue
 
+        # Skip RPI virtual devices (encoders/decoders/ISP)
+        if is_rpi_virtual_device(device_path):
+            logger.debug(f"Skipping RPI virtual device {device_path}")
+            continue
+
         # Check if device is in use
         device_in_use = is_device_in_use(device_path)
 
         try:
+            # Use a shorter timeout for OpenCV operations
             cap = cv2.VideoCapture(device_id, cv2.CAP_V4L2)
+            cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Reduce buffer size
+
             if cap.isOpened():
                 # Try to read a frame to verify the camera works
                 ret, frame = cap.read()
@@ -198,30 +223,63 @@ def get_device_capabilities(device_id: int) -> Dict[str, Any]:
     
     return capabilities
 
+def get_usb_cameras() -> List[Dict[str, Any]]:
+    """Detect USB cameras specifically."""
+    devices = []
+    try:
+        # Check for USB Video Class (UVC) devices
+        result = subprocess.run(['lsusb'], capture_output=True, text=True, timeout=10)
+        if result.returncode == 0:
+            lines = result.stdout.strip().split('\n')
+            for line in lines:
+                # Look for common camera vendor IDs or keywords
+                if any(keyword in line.lower() for keyword in ['camera', 'webcam', 'video', 'logitech', 'microsoft']):
+                    logger.info(f"Found potential USB camera: {line}")
+
+        # Also check dmesg for UVC devices
+        result = subprocess.run(['dmesg'], capture_output=True, text=True, timeout=10)
+        if result.returncode == 0 and 'uvcvideo' in result.stdout:
+            logger.info("UVC video driver detected in system logs")
+
+    except Exception as e:
+        logger.debug(f"Error checking USB cameras: {e}")
+
+    return devices
+
 def detect_cameras() -> Dict[str, Any]:
     """Main camera detection function."""
     logger.info("Starting camera detection...")
-    
+
+    # Check for USB cameras first
+    usb_cameras = get_usb_cameras()
+
     # Try v4l2 detection first (more detailed)
     v4l2_devices = get_v4l2_devices()
-    
+
     # Fall back to OpenCV detection
     opencv_devices = get_opencv_devices()
-    
+
     # Merge results, preferring v4l2 data when available
     detected_cameras = {}
-    
-    # Add v4l2 devices
+
+    # Add v4l2 devices (but filter out virtual devices)
     for device in v4l2_devices:
         device_id = device['id']
+        device_path = device['path']
+
+        # Skip RPI virtual devices
+        if is_rpi_virtual_device(device_path):
+            logger.debug(f"Skipping RPI virtual device {device_path}")
+            continue
+
         detected_cameras[device_id] = device
-        
+
         # Verify device access
         device['accessible'] = verify_device_access(device['path'])
-        
+
         # Get capabilities
         device['capabilities'] = get_device_capabilities(device_id)
-    
+
     # Add OpenCV devices not found by v4l2
     for device in opencv_devices:
         device_id = device['id']
@@ -229,7 +287,7 @@ def detect_cameras() -> Dict[str, Any]:
             detected_cameras[device_id] = device
             device['accessible'] = verify_device_access(device['path'])
             device['capabilities'] = get_device_capabilities(device_id)
-    
+
     # Convert to sorted list
     cameras = [detected_cameras[device_id] for device_id in sorted(detected_cameras.keys())]
 
@@ -246,7 +304,7 @@ def detect_cameras() -> Dict[str, Any]:
         'in_use_count': len(in_use_cameras),
         'message': f'Found {len(cameras)} camera(s): {len(accessible_cameras)} accessible, {len(in_use_cameras)} in use'
     }
-    
+
     logger.info(f"Camera detection complete: {result['message']}")
     return result
 

@@ -3,17 +3,35 @@
 
 param(
     [Parameter(Mandatory=$false)]
-    [string[]]$Hosts = @("192.168.8.120", "192.168.8.140"),  # Default to active RPIs
+    [string[]]$Hosts = @("192.168.8.120", "192.168.8.130", "192.168.8.140"),  # Active animatronics (Pumpkinhead offline)
     [Parameter(Mandatory=$false)]
     [string]$User = "remote",
     [Parameter(Mandatory=$false)]
-    [string]$Password = "klrklr89!"
+    [string]$Password = "klrklr89!",
+    [Parameter(Mandatory=$false)]
+    [switch]$TestOnly,
+    [Parameter(Mandatory=$false)]
+    [switch]$IncludePumpkinhead  # Add Pumpkinhead back when it's online
 )
 
-Write-Host "Setting up SSH keys for MonsterBox RPI systems" -ForegroundColor Green
+Write-Host "Setting up SSH keys for MonsterBox Animatronics" -ForegroundColor Green
+Write-Host "   Orlok (192.168.8.120), Skulltalker (192.168.8.130), Coffin (192.168.8.140)" -ForegroundColor Cyan
+Write-Host "   Pumpkinhead (192.168.1.101) - OFFLINE" -ForegroundColor DarkGray
 
-# Check if SSH key exists
-$sshKeyPath = "$env:USERPROFILE\.ssh\id_rsa.pub"
+if ($IncludePumpkinhead) {
+    $Hosts += "192.168.1.101"
+    Write-Host "   Including Pumpkinhead in setup" -ForegroundColor Yellow
+}
+
+if ($TestOnly) {
+    Write-Host "TEST MODE - No changes will be made" -ForegroundColor Yellow
+}
+
+# Check if SSH key exists (prefer ed25519, fallback to rsa)
+$sshKeyPath = "$env:USERPROFILE\.ssh\id_ed25519.pub"
+if (-not (Test-Path $sshKeyPath)) {
+    $sshKeyPath = "$env:USERPROFILE\.ssh\id_rsa.pub"
+}
 if (-not (Test-Path $sshKeyPath)) {
     Write-Host "❌ SSH public key not found at $sshKeyPath" -ForegroundColor Red
     Write-Host "   Run ssh-keygen first to generate SSH keys" -ForegroundColor Yellow
@@ -45,7 +63,7 @@ function Copy-SSHKey {
         )
 
         foreach ($cmd in $setupCommands) {
-            $result = & plink -ssh -l $Username -pw $Pass -batch $TargetHost $cmd 2>$null
+            & plink -ssh -l $Username -pw $Pass -batch $TargetHost $cmd 2>$null | Out-Null
             if ($LASTEXITCODE -ne 0) {
                 throw "Failed to execute: $cmd"
             }
@@ -53,7 +71,7 @@ function Copy-SSHKey {
 
         # Add public key to authorized_keys (avoid duplicates)
         $addKeyCmd = "grep -qxF `"$PubKey`" ~/.ssh/authorized_keys || echo `"$PubKey`" >> ~/.ssh/authorized_keys"
-        $result = & plink -ssh -l $Username -pw $Pass -batch $TargetHost $addKeyCmd 2>$null
+        & plink -ssh -l $Username -pw $Pass -batch $TargetHost $addKeyCmd 2>$null | Out-Null
         if ($LASTEXITCODE -ne 0) {
             throw "Failed to add SSH key to authorized_keys"
         }
@@ -78,7 +96,25 @@ function Copy-SSHKey {
 $successCount = 0
 $totalHosts = $Hosts.Count
 
+# Animatronic name mapping for better output
+$AnimatronicNames = @{
+    "192.168.8.120" = "Orlok"
+    "192.168.8.130" = "Skulltalker"
+    "192.168.8.140" = "Coffin"
+    "192.168.1.101" = "Pumpkinhead"
+}
+
 foreach ($targetHost in $Hosts) {
+    $animatronicName = $AnimatronicNames[$targetHost]
+    if ($animatronicName) {
+        Write-Host "Setting up $animatronicName ($targetHost)..." -ForegroundColor Magenta
+    }
+
+    if ($TestOnly) {
+        Write-Host "   Would install SSH key on $animatronicName" -ForegroundColor Yellow
+        continue
+    }
+
     $success = Copy-SSHKey -TargetHost $targetHost -Username $User -Pass $Password -PubKey $publicKey.Trim()
     if ($success) {
         $successCount++
