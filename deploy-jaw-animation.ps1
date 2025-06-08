@@ -71,7 +71,7 @@ try {
     
     # Step 4: Pull latest changes
     Write-Host "`n📥 Pulling latest changes..." -ForegroundColor Cyan
-    Invoke-SSHCommand -Command "cd $RemotePath && git pull origin main" -Description "Pulling git changes"
+    Invoke-SSHCommand -Command "cd $RemotePath && git fetch origin && git checkout Skulltalker && git pull origin Skulltalker" -Description "Pulling Skulltalker branch changes"
     
     $commit = Invoke-SSHCommand -Command "cd $RemotePath && git rev-parse --short HEAD" -Description "Getting current commit"
     Write-Host "📝 Current commit: $commit" -ForegroundColor Cyan

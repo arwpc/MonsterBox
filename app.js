@@ -53,7 +53,6 @@ try {
     cameraRoutes = require('./routes/cameraRoutes');
     webcamRoutes = require('./routes/webcamRoutes');
     voiceRoutes = require('./routes/voiceRoutes');
-    jawAnimationRoutes = require('./routes/jawAnimationRoutes');
     cleanupRoutes = require('./routes/cleanup');
     healthRoutes = require('./routes/healthRoutes');
 
@@ -151,9 +150,6 @@ app.use('/api/streaming', require('./routes/streamingRoutes'));
 app.use('/api/character-webcam', require('./routes/api/characterWebcamApiRoutes'));
 app.use('/api/motion-tracking', require('./routes/api/motionTrackingApiRoutes'));
 app.use('/api/voice', voiceRoutes);
-app.use('/jaw-animation', jawAnimationRoutes);
-
-// Jaw animation routes
 app.use('/jaw-animation', jawAnimationRoutes);
 
 // Test route for video configuration component

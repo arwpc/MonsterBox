@@ -141,28 +141,57 @@
   },
   {
     "id": 4,
-    "char_name": "Skulltalker Ded",
-    "char_description": "Just a skull with a camera, speakers, and an attitude",
+    "char_name": "Skulltalker",
+    "char_description": "A talking skull with jaw animation, camera, speakers, and an attitude",
     "parts": [],
     "sounds": [],
     "image": "94e0dca132f0e88d51d2eecff4e9348e",
     "animatronic": {
-      "enabled": false,
-      "status": "virtual",
-      "character_type": "Virtual Character",
-      "description": "Software-only character with camera and audio capabilities",
-      "rpi_config": null,
+      "enabled": true,
+      "status": "running",
+      "character_type": "Skeleton",
+      "description": "Talking skull animatronic with jaw movement, camera and audio capabilities",
+      "rpi_config": {
+        "host": "192.168.8.130",
+        "user": "remote",
+        "password_env": "SKULLTALKER_SSH_PASSWORD",
+        "ssh_key_path": "~/.ssh/id_rsa",
+        "collection_interval": 300,
+        "max_lines": 1000
+      },
       "services": [
         "monsterbox",
+        "nginx",
+        "ssh",
+        "systemd-resolved",
+        "bluetooth",
+        "gpio-control",
+        "servo-control",
         "camera",
-        "audio"
+        "audio",
+        "jaw-animation"
       ],
       "log_types": [
         "system",
+        "auth",
+        "kernel",
+        "daemon",
+        "user",
         "application"
       ],
-      "hardware_monitoring": false,
-      "animatronic_parts": []
+      "hardware_monitoring": true,
+      "motion_tracking": {
+        "enabled": true,
+        "sensitivity": 50,
+        "min_area": 500,
+        "last_motion": null,
+        "motion_center": null
+      },
+      "animatronic_parts": [
+        "Jaw Servo",
+        "Motion Skulltalker",
+        "SkulltalkerCam"
+      ]
     }
   }
 ]

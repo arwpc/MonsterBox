@@ -51,7 +51,6 @@ router.get('/test', async (req, res) => {
         logger.error('Error loading jaw animation test page:', error);
         res.status(500).render('error', {
             error: 'Failed to load test page',
->>>>>>> ChatterPi
             details: error.message
         });
     }

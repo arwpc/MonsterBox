@@ -22,5 +22,22 @@
       "updateRate": 50
     }
   },
-  "characters": {}
+  "characters": {
+    "4": {
+      "characterId": 4,
+      "characterType": "skeleton",
+      "servoMapping": {
+        "minPosition": 10,
+        "maxPosition": 45,
+        "responseCurve": "exponential",
+        "sensitivity": 1.2,
+        "attackTime": 0.03,
+        "releaseTime": 0.1
+      },
+      "audioAnalysis": {
+        "volumeThreshold": 0.005,
+        "smoothingFactor": 0.7
+      }
+    }
+  }
 }
