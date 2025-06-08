@@ -150,6 +150,7 @@ app.use('/api/streaming', require('./routes/streamingRoutes'));
 app.use('/api/character-webcam', require('./routes/api/characterWebcamApiRoutes'));
 app.use('/api/motion-tracking', require('./routes/api/motionTrackingApiRoutes'));
 app.use('/api/voice', voiceRoutes);
+app.use('/api/connection-monitor', require('./routes/api/connectionMonitorRoutes'));
 app.use('/jaw-animation', jawAnimationRoutes);
 
 // Test route for video configuration component
