@@ -1,0 +1,52 @@
+{
+  "enabled": true,
+  "maxNotifications": 100,
+  "notificationTimeout": 30000,
+  "enableToast": true,
+  "enableConsole": true,
+  "enableWebUI": true,
+  "enableEmail": false,
+  "notificationLevels": {
+    "info": true,
+    "warning": true,
+    "error": true,
+    "critical": true
+  },
+  "categories": {
+    "connection": true,
+    "prevention": true,
+    "security": true,
+    "system": true
+  },
+  "emailSettings": {
+    "smtpHost": "",
+    "smtpPort": 587,
+    "smtpSecure": false,
+    "smtpUser": "",
+    "smtpPassword": "",
+    "fromAddress": "monsterbox@localhost",
+    "recipients": []
+  },
+  "toastSettings": {
+    "position": "top-right",
+    "autoClose": 5000,
+    "hideProgressBar": false,
+    "closeOnClick": true,
+    "pauseOnHover": true,
+    "draggable": true
+  },
+  "webUISettings": {
+    "enableRealTime": true,
+    "maxDisplayed": 20,
+    "enableSound": false,
+    "soundFile": "/sounds/notification.mp3"
+  },
+  "filterSettings": {
+    "enableFiltering": true,
+    "defaultFilters": {
+      "level": ["warning", "error", "critical"],
+      "category": ["security", "prevention"]
+    },
+    "enableUserCustomization": true
+  }
+}

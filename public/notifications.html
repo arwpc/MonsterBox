@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MonsterBox Notifications</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .filter-group label {
+            font-weight: 500;
+        }
+        
+        .filter-group select {
+            padding: 8px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 14px;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            border: none;
+            border-radius: 5px;
+            padding: 8px 16px;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(78, 205, 196, 0.4);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+        }
+        
+        .notifications-container {
+            display: grid;
+            gap: 15px;
+        }
+        
+        .notification {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border-left: 4px solid;
+            transition: all 0.3s ease;
+        }
+        
+        .notification:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .notification.info { border-left-color: #4ecdc4; }
+        .notification.warning { border-left-color: #ffa726; }
+        .notification.error { border-left-color: #ef5350; }
+        .notification.critical { border-left-color: #e91e63; }
+        
+        .notification-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+        
+        .notification-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .notification-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+        
+        .notification-level {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+        
+        .level-info { background: rgba(78, 205, 196, 0.2); color: #4ecdc4; }
+        .level-warning { background: rgba(255, 167, 38, 0.2); color: #ffa726; }
+        .level-error { background: rgba(239, 83, 80, 0.2); color: #ef5350; }
+        .level-critical { background: rgba(233, 30, 99, 0.2); color: #e91e63; }
+        
+        .notification-message {
+            margin: 15px 0;
+            line-height: 1.5;
+        }
+        
+        .notification-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .action-btn {
+            padding: 6px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .dismiss-btn {
+            background: rgba(255, 107, 107, 0.2);
+            border-color: #ff6b6b;
+            color: #ff6b6b;
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            opacity: 0.6;
+        }
+        
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4caf50;
+            display: inline-block;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .filter-group {
+                justify-content: space-between;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔔 MonsterBox Notifications</h1>
+            <p>Real-time system notifications and alerts</p>
+        </div>
+        
+        <div class="status-bar">
+            <div>
+                <span class="status-indicator"></span>
+                <span>Notification System Active</span>
+            </div>
+            <div id="lastUpdate">Last updated: --</div>
+        </div>
+        
+        <div class="controls">
+            <div class="filter-group">
+                <label for="levelFilter">Level:</label>
+                <select id="levelFilter">
+                    <option value="">All Levels</option>
+                    <option value="info">Info</option>
+                    <option value="warning">Warning</option>
+                    <option value="error">Error</option>
+                    <option value="critical">Critical</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="categoryFilter">Category:</label>
+                <select id="categoryFilter">
+                    <option value="">All Categories</option>
+                    <option value="connection">Connection</option>
+                    <option value="prevention">Prevention</option>
+                    <option value="security">Security</option>
+                    <option value="system">System</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <button class="btn" onclick="refreshNotifications()">Refresh</button>
+                <button class="btn btn-danger" onclick="clearAllNotifications()">Clear All</button>
+            </div>
+        </div>
+        
+        <div class="notifications-container" id="notificationsContainer">
+            <div class="empty-state">
+                <h3>Loading notifications...</h3>
+                <p>Please wait while we fetch the latest notifications.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class NotificationViewer {
+            constructor() {
+                this.notifications = [];
+                this.filteredNotifications = [];
+                
+                this.setupEventListeners();
+                this.loadNotifications();
+                
+                // Auto-refresh every 5 seconds
+                setInterval(() => {
+                    this.loadNotifications();
+                }, 5000);
+            }
+            
+            setupEventListeners() {
+                document.getElementById('levelFilter').addEventListener('change', () => {
+                    this.applyFilters();
+                });
+                
+                document.getElementById('categoryFilter').addEventListener('change', () => {
+                    this.applyFilters();
+                });
+            }
+            
+            async loadNotifications() {
+                try {
+                    const response = await fetch('/notifications/web-notifications.json');
+                    if (response.ok) {
+                        this.notifications = await response.json();
+                        this.applyFilters();
+                        this.updateLastUpdateTime();
+                    } else {
+                        console.error('Failed to load notifications');
+                    }
+                } catch (error) {
+                    console.error('Error loading notifications:', error);
+                    this.showEmptyState('Error loading notifications');
+                }
+            }
+            
+            applyFilters() {
+                const levelFilter = document.getElementById('levelFilter').value;
+                const categoryFilter = document.getElementById('categoryFilter').value;
+                
+                this.filteredNotifications = this.notifications.filter(notification => {
+                    if (levelFilter && notification.level !== levelFilter) {
+                        return false;
+                    }
+                    
+                    if (categoryFilter && notification.category !== categoryFilter) {
+                        return false;
+                    }
+                    
+                    return true;
+                });
+                
+                this.renderNotifications();
+            }
+            
+            renderNotifications() {
+                const container = document.getElementById('notificationsContainer');
+                
+                if (this.filteredNotifications.length === 0) {
+                    this.showEmptyState('No notifications match the current filters');
+                    return;
+                }
+                
+                const notificationsHTML = this.filteredNotifications
+                    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                    .map(notification => this.renderNotification(notification))
+                    .join('');
+                
+                container.innerHTML = notificationsHTML;
+            }
+            
+            renderNotification(notification) {
+                const timestamp = new Date(notification.timestamp).toLocaleString();
+                const actionsHTML = notification.actions
+                    .map(action => `<button class="action-btn" onclick="handleAction('${action}', '${notification.id}')">${action}</button>`)
+                    .join('');
+                
+                return `
+                    <div class="notification ${notification.level}" data-id="${notification.id}">
+                        <div class="notification-header">
+                            <div>
+                                <div class="notification-title">${notification.title}</div>
+                                <div class="notification-meta">
+                                    <span class="notification-level level-${notification.level}">${notification.level}</span>
+                                    <span>${notification.category}</span>
+                                    <span>${timestamp}</span>
+                                </div>
+                            </div>
+                            <button class="dismiss-btn" onclick="dismissNotification('${notification.id}')">×</button>
+                        </div>
+                        <div class="notification-message">${notification.message}</div>
+                        ${actionsHTML ? `<div class="notification-actions">${actionsHTML}</div>` : ''}
+                    </div>
+                `;
+            }
+            
+            showEmptyState(message) {
+                const container = document.getElementById('notificationsContainer');
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>No Notifications</h3>
+                        <p>${message}</p>
+                    </div>
+                `;
+            }
+            
+            updateLastUpdateTime() {
+                const lastUpdateElement = document.getElementById('lastUpdate');
+                lastUpdateElement.textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+            }
+        }
+        
+        // Global functions for button actions
+        function refreshNotifications() {
+            viewer.loadNotifications();
+        }
+        
+        function clearAllNotifications() {
+            if (confirm('Are you sure you want to clear all notifications?')) {
+                // In a real implementation, this would call an API endpoint
+                viewer.notifications = [];
+                viewer.applyFilters();
+                console.log('All notifications cleared');
+            }
+        }
+        
+        function dismissNotification(notificationId) {
+            // In a real implementation, this would call an API endpoint
+            viewer.notifications = viewer.notifications.filter(n => n.id !== notificationId);
+            viewer.applyFilters();
+            console.log(`Notification ${notificationId} dismissed`);
+        }
+        
+        function handleAction(action, notificationId) {
+            console.log(`Action "${action}" triggered for notification ${notificationId}`);
+            
+            // Handle different actions
+            switch (action) {
+                case 'Reconnect':
+                    alert('Attempting to reconnect...');
+                    break;
+                case 'Check Network':
+                    alert('Opening network diagnostics...');
+                    break;
+                case 'View Logs':
+                    window.open('/logs', '_blank');
+                    break;
+                case 'View Details':
+                    alert('Showing detailed information...');
+                    break;
+                case 'Troubleshoot':
+                    alert('Opening troubleshooting guide...');
+                    break;
+                case 'Emergency Shutdown':
+                    if (confirm('Are you sure you want to initiate emergency shutdown?')) {
+                        alert('Emergency shutdown initiated...');
+                    }
+                    break;
+                default:
+                    alert(`Action: ${action}`);
+            }
+        }
+        
+        // Initialize the notification viewer
+        const viewer = new NotificationViewer();
+    </script>
+</body>
+</html>

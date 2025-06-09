@@ -1,0 +1,51 @@
+{
+  "enabled": true,
+  "strictMode": true,
+  "allowedCommands": [
+    "ssh",
+    "scp",
+    "git",
+    "node",
+    "npm",
+    "yarn",
+    "pnpm",
+    "python",
+    "pip",
+    "curl",
+    "wget",
+    "rsync"
+  ],
+  "blockedCommands": [
+    "powershell",
+    "pwsh",
+    "cmd",
+    "powershell.exe",
+    "pwsh.exe",
+    "cmd.exe",
+    "wsl",
+    "bash.exe"
+  ],
+  "allowedPaths": [
+    "C:\\Program Files\\Git\\usr\\bin",
+    "C:\\Program Files\\Git\\bin",
+    "C:\\Program Files\\nodejs",
+    "C:\\Windows\\System32\\OpenSSH",
+    "C:\\Program Files\\Python",
+    "C:\\Users\\arwpe\\AppData\\Roaming\\npm"
+  ],
+  "logRetention": 1000,
+  "alertThreshold": 3,
+  "monitoringInterval": 10000,
+  "processCleanupInterval": 30000,
+  "emergencyShutdownEnabled": true,
+  "notificationSettings": {
+    "emailAlerts": false,
+    "logAlerts": true,
+    "consoleAlerts": true
+  },
+  "remoteValidation": {
+    "requireSSHConnection": true,
+    "validateRemoteHost": true,
+    "allowedRemoteUsers": ["remote", "pi", "ubuntu"]
+  }
+}

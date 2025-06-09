@@ -1,0 +1,45 @@
+{
+  "enabled": true,
+  "autoShutdownEnabled": true,
+  "shutdownThreshold": 3,
+  "shutdownDelay": 1000,
+  "processTerminationTimeout": 5000,
+  "forceKillEnabled": true,
+  "notificationEnabled": true,
+  "logRetention": 100,
+  "emergencyActions": {
+    "killPowerShell": true,
+    "killCmd": true,
+    "killWSL": true,
+    "terminateVSCode": false,
+    "shutdownSystem": false
+  },
+  "targetProcesses": [
+    "powershell.exe",
+    "pwsh.exe",
+    "cmd.exe",
+    "wsl.exe",
+    "bash.exe"
+  ],
+  "protectedProcesses": [
+    "Code.exe",
+    "node.exe",
+    "ssh.exe",
+    "git.exe",
+    "npm.exe",
+    "yarn.exe"
+  ],
+  "alertSettings": {
+    "enableEmailAlerts": false,
+    "enableWebhookAlerts": false,
+    "enableLogAlerts": true,
+    "alertRecipients": [],
+    "webhookUrl": null
+  },
+  "recoverySettings": {
+    "autoResetCounter": true,
+    "resetCounterAfter": 3600000,
+    "enableRecoveryMode": true,
+    "recoveryDelay": 30000
+  }
+}

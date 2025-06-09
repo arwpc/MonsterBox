@@ -1,0 +1,42 @@
+{
+  "enabled": true,
+  "strictMode": true,
+  "validationInterval": 30000,
+  "cacheTimeout": 60000,
+  "requiredEnvironmentVars": [
+    "SSH_CONNECTION",
+    "SSH_CLIENT"
+  ],
+  "expectedPlatform": "linux",
+  "allowedRemoteHosts": [
+    "192.168.8.120",
+    "192.168.8.130",
+    "192.168.8.140",
+    "192.168.1.101"
+  ],
+  "allowedRemoteUsers": [
+    "remote",
+    "pi",
+    "ubuntu",
+    "root"
+  ],
+  "validationChecks": {
+    "sshConnection": true,
+    "platformCheck": true,
+    "userValidation": true,
+    "hostValidation": true,
+    "environmentValidation": true,
+    "processValidation": true
+  },
+  "alertSettings": {
+    "enableAlerts": true,
+    "alertOnValidationFailure": true,
+    "alertOnContextChange": true,
+    "alertThreshold": 3
+  },
+  "logging": {
+    "logValidationResults": true,
+    "logLevel": "info",
+    "retainValidationHistory": 100
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "enabled": true,
+  "logLevel": "info",
+  "logRetention": 10000,
+  "fileRotationSize": 10485760,
+  "maxLogFiles": 10,
+  "enableEncryption": false,
+  "enableIntegrityCheck": true,
+  "enableRealTimeAlerts": true,
+  "logDirectory": "log/audit",
+  "logCategories": {
+    "execution": true,
+    "prevention": true,
+    "validation": true,
+    "security": true,
+    "system": true,
+    "emergency": true
+  },
+  "alertThresholds": {
+    "preventionEvents": 5,
+    "securityEvents": 3,
+    "emergencyEvents": 1,
+    "executionEvents": 20,
+    "validationEvents": 10
+  },
+  "compressionSettings": {
+    "enableCompression": true,
+    "compressionLevel": 6,
+    "compressAfterDays": 7
+  },
+  "retentionPolicy": {
+    "enableAutoCleanup": true,
+    "retainDays": 90,
+    "archiveBeforeDelete": true,
+    "archiveLocation": "log/audit/archive"
+  },
+  "exportSettings": {
+    "enableScheduledExports": false,
+    "exportInterval": 86400000,
+    "exportFormats": ["json", "csv"],
+    "exportLocation": "log/audit/exports"
+  },
+  "securitySettings": {
+    "enableTamperDetection": true,
+    "enableAccessLogging": true,
+    "requireAuthentication": false,
+    "allowedUsers": ["admin", "audit"]
+  }
+}
