@@ -45,8 +45,8 @@ This directory contains the complete setup for three independent Augment Remote 
 
 | Agent | Focus Area | Remote Target | URL | Branch |
 |-------|------------|---------------|-----|--------|
-| **Agent 1** | AI Integration Testing | Skulltalker (192.168.8.130) | http://192.168.8.130:3000/ai-integration-test.html | `agent-1-ai-fixes` |
-| **Agent 2** | ChatterPi Interactive Chat | Orlok (192.168.8.120) | http://192.168.8.120:3000/chatterpi-chat.html | `agent-2-chatterpi-fixes` |
+| **Agent 1** | AI Integration Testing | Orlok (192.168.8.120) | http://192.168.8.120:3000/ai-integration-test.html | `agent-1-ai-fixes` |
+| **Agent 2** | ChatterPi Interactive Chat | Skulltalker (192.168.8.130) | http://192.168.8.130:3000/chatterpi-chat.html | `agent-2-chatterpi-fixes` |
 | **Agent 3** | Main Application Testing | Coffin (192.168.8.140) | http://192.168.8.140:3000 | `agent-3-main-app-fixes` |
 
 ## 🧪 **Remote Hardware Testing Approach**
