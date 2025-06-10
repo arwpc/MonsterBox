@@ -41,22 +41,24 @@ This directory contains the complete setup for three independent Augment Remote 
 - `agent-2-chatterpi-fixes` - ChatterPi Chat debugging branch
 - `agent-3-main-app-fixes` - Main Application debugging branch
 
-## 🎯 **Agent Assignments**
+## 🎯 **Agent Assignments - Remote RPI4b Testing**
 
-| Agent | Focus Area | URL | Branch |
-|-------|------------|-----|--------|
-| **Agent 1** | AI Integration Testing | http://localhost:3000/ai-integration-test.html | `agent-1-ai-fixes` |
-| **Agent 2** | ChatterPi Interactive Chat | http://localhost:3000/chatterpi-chat.html | `agent-2-chatterpi-fixes` |
-| **Agent 3** | Main Application Testing | http://localhost:3000 | `agent-3-main-app-fixes` |
+| Agent | Focus Area | Remote Target | URL | Branch |
+|-------|------------|---------------|-----|--------|
+| **Agent 1** | AI Integration Testing | Skulltalker (192.168.8.130) | http://192.168.8.130:3000/ai-integration-test.html | `agent-1-ai-fixes` |
+| **Agent 2** | ChatterPi Interactive Chat | Orlok (192.168.8.120) | http://192.168.8.120:3000/chatterpi-chat.html | `agent-2-chatterpi-fixes` |
+| **Agent 3** | Main Application Testing | Coffin (192.168.8.140) | http://192.168.8.140:3000 | `agent-3-main-app-fixes` |
 
-## 🧪 **Testing Approach**
+## 🧪 **Remote Hardware Testing Approach**
 
-Each agent uses:
+Each agent deploys and tests on actual RPI4b hardware:
+- **Remote Deployment** - Code deployed via SSH to target RPI4b
+- **Real Hardware Testing** - GPIO, I2C, SPI, audio, video, servos
 - **Mocha Test Framework** - Integrated with existing MonsterBox tests
-- **Console Monitoring** - Continuous JavaScript error detection
+- **Hardware Monitoring** - RPI4b system performance and resource usage
 - **MCP Logging** - Comprehensive error tracking and debugging
-- **Browser Testing** - Manual testing of all UI elements
-- **API Testing** - Verification of all endpoints and functionality
+- **Physical Device Testing** - Actual animatronic movement and responses
+- **Network Testing** - Remote control and connectivity verification
 
 ## 🔧 **Development Workflow**
 
