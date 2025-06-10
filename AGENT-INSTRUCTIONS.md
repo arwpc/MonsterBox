@@ -4,24 +4,27 @@
 
 ### **Agent 1: AI Integration Testing**
 - **Branch**: `agent-1-ai-fixes`
-- **URL**: http://localhost:3000/ai-integration-test.html
+- **Remote Target**: Orlok RPI4b (192.168.8.120)
+- **URL**: http://192.168.8.120:3000/ai-integration-test.html
 - **Focus**: AI Chat, Character Management, TTS, System Status, WebSocket
 - **Test Suite**: `tests/agent-1-ai-integration.test.js`
-- **Startup**: `./start-agent-1.sh`
+- **Startup**: `./start-agent-1.sh` or `.\start-agent-1.ps1`
 
 ### **Agent 2: ChatterPi Interactive Chat**
 - **Branch**: `agent-2-chatterpi-fixes`
-- **URL**: http://localhost:3000/chatterpi-chat.html
+- **Remote Target**: Skulltalker RPI4b (192.168.8.130)
+- **URL**: http://192.168.8.130:3000/chatterpi-chat.html
 - **Focus**: Real-time AI Conversation, Jaw Animation Sync, WebSocket Connection
 - **Test Suite**: `tests/agent-2-chatterpi-chat.test.js`
-- **Startup**: `./start-agent-2.sh`
+- **Startup**: `./start-agent-2.sh` or `.\start-agent-2.ps1`
 
 ### **Agent 3: Main Application Testing**
 - **Branch**: `agent-3-main-app-fixes`
-- **URL**: http://localhost:3000 (entire application)
+- **Remote Target**: Coffin Breaker RPI4b (192.168.8.140)
+- **URL**: http://192.168.8.140:3000 (entire application)
 - **Focus**: Complete application testing, all buttons, functions, console errors
 - **Test Suite**: `tests/agent-3-main-application.test.js`
-- **Startup**: `./start-agent-3.sh`
+- **Startup**: `./start-agent-3.sh` or `.\start-agent-3.ps1`
 
 ## 🚀 **How to Start Each Agent**
 
