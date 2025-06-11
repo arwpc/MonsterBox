@@ -1,0 +1,22 @@
+{
+  "id": 14,
+  "timestamp": "2025-06-11T01:07:00.000Z",
+  "mina": "I have noticed how fear and fascination often intertwine. What draws mortals to seek out that which terrifies them most?",
+  "orlok": "In mine vast experience, spanning centuries of mortal generations, I have learned that truth oft lies hidden beneath layers of deception.",
+  "metadata": {
+    "model": "enhanced-fallback",
+    "tokens": 0,
+    "responsePattern": "ancient_wisdom",
+    "exchangeCount": 5,
+    "timestamp": "2025-06-11T01:07:00.000Z"
+  },
+  "believabilityScore": {
+    "characterConsistency": 5,
+    "historicalAccuracy": 4,
+    "vocabularyRichness": 8,
+    "emotionalDepth": 5,
+    "responseVariation": 13,
+    "total": 35,
+    "grade": "Poor - Needs Improvement"
+  }
+}

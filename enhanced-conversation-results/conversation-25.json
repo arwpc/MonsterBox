@@ -1,0 +1,22 @@
+{
+  "id": 25,
+  "timestamp": "2025-06-11T01:07:23.171Z",
+  "mina": "The veil between worlds seems thinnest in your presence. What lies beyond the realm of mortal understanding?",
+  "orlok": "Wisdom, dear mortal, comes not from books or scholars, but from the endless observation of human nature across the ages.",
+  "metadata": {
+    "model": "enhanced-fallback",
+    "tokens": 0,
+    "responsePattern": "ancient_wisdom",
+    "exchangeCount": 6,
+    "timestamp": "2025-06-11T01:07:23.171Z"
+  },
+  "believabilityScore": {
+    "characterConsistency": 0,
+    "historicalAccuracy": 4,
+    "vocabularyRichness": 8,
+    "emotionalDepth": 8,
+    "responseVariation": 13,
+    "total": 33,
+    "grade": "Poor - Needs Improvement"
+  }
+}

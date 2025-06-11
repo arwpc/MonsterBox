@@ -1,0 +1,22 @@
+{
+  "id": 7,
+  "timestamp": "2025-06-11T01:06:45.268Z",
+  "mina": "The castle walls must hold countless memories. Which moments from your long existence bring you the greatest contemplation?",
+  "orlok": "Ah, how thy sentiment echoes through the corridors of memory! In mine castle, I have witnessed such scenes unfold across the centuries.",
+  "metadata": {
+    "model": "enhanced-fallback",
+    "tokens": 0,
+    "responsePattern": "nostalgic_remembrance",
+    "exchangeCount": 8,
+    "timestamp": "2025-06-11T01:06:45.268Z"
+  },
+  "believabilityScore": {
+    "characterConsistency": 4,
+    "historicalAccuracy": 4,
+    "vocabularyRichness": 8,
+    "emotionalDepth": 3,
+    "responseVariation": 13,
+    "total": 32,
+    "grade": "Poor - Needs Improvement"
+  }
+}

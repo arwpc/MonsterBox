@@ -1,0 +1,22 @@
+{
+  "id": 11,
+  "timestamp": "2025-06-11T01:06:53.672Z",
+  "mina": "The industrial age has brought such noise to our world. Do you long for the quieter times of your youth, when the world moved more slowly?",
+  "orlok": "Ah, but of course. One of mine ancient lineage recognizes the subtle complexities that escape common understanding.",
+  "metadata": {
+    "model": "enhanced-fallback",
+    "tokens": 0,
+    "responsePattern": "aristocratic_commentary",
+    "exchangeCount": 2,
+    "timestamp": "2025-06-11T01:06:53.671Z"
+  },
+  "believabilityScore": {
+    "characterConsistency": 2,
+    "historicalAccuracy": 0,
+    "vocabularyRichness": 4,
+    "emotionalDepth": 0,
+    "responseVariation": 15,
+    "total": 21,
+    "grade": "Poor - Needs Improvement"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "id": 2,
+  "timestamp": "2025-06-11T01:06:34.433Z",
+  "mina": "The shadows seem to whisper secrets tonight. Do you ever feel the weight of immortality, or has time become meaningless to one such as yourself?",
+  "orlok": "Indeed, from mine noble perspective, such matters require the refinement of centuries to truly comprehend. Mortals oft lack the proper... disposition.",
+  "metadata": {
+    "model": "enhanced-fallback",
+    "tokens": 0,
+    "responsePattern": "aristocratic_commentary",
+    "exchangeCount": 3,
+    "timestamp": "2025-06-11T01:06:34.433Z"
+  },
+  "believabilityScore": {
+    "characterConsistency": 2,
+    "historicalAccuracy": 4,
+    "vocabularyRichness": 11,
+    "emotionalDepth": 0,
+    "responseVariation": 11,
+    "total": 28,
+    "grade": "Poor - Needs Improvement"
+  }
+}
