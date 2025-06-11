@@ -27,8 +27,8 @@
       "characterId": 4,
       "characterType": "skeleton",
       "servoMapping": {
-        "minPosition": 10,
-        "maxPosition": 45,
+        "minPosition": 45,
+        "maxPosition": 10,
         "responseCurve": "exponential",
         "sensitivity": 1.2,
         "attackTime": 0.03,
