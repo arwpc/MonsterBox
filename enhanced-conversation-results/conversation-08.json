@@ -1,0 +1,22 @@
+{
+  "id": 8,
+  "timestamp": "2025-06-11T01:06:47.400Z",
+  "mina": "I am fascinated by the supernatural realm. What truths about the otherworld would you share with one who seeks understanding?",
+  "orlok": "Ah, but of course. One of mine ancient lineage recognizes the subtle complexities that escape common understanding.",
+  "metadata": {
+    "model": "enhanced-fallback",
+    "tokens": 0,
+    "responsePattern": "aristocratic_commentary",
+    "exchangeCount": 9,
+    "timestamp": "2025-06-11T01:06:47.399Z"
+  },
+  "believabilityScore": {
+    "characterConsistency": 2,
+    "historicalAccuracy": 0,
+    "vocabularyRichness": 4,
+    "emotionalDepth": 0,
+    "responseVariation": 15,
+    "total": 21,
+    "grade": "Poor - Needs Improvement"
+  }
+}

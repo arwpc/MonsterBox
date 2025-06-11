@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎭 Orlok & Mina Conversation Tester</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+            color: #e0e0e0;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #8B0000;
+            padding-bottom: 20px;
+        }
+        
+        .header h1 {
+            color: #DC143C;
+            font-size: 2.5em;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #8B0000, #DC143C);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(220, 20, 60, 0.4);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        
+        .status.running {
+            background: rgba(255, 165, 0, 0.2);
+            border: 1px solid #FFA500;
+            color: #FFA500;
+        }
+        
+        .status.completed {
+            background: rgba(0, 255, 0, 0.2);
+            border: 1px solid #00FF00;
+            color: #00FF00;
+        }
+        
+        .progress {
+            width: 100%;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #8B0000, #DC143C);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .conversations {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .conversation {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 20px;
+            border-left: 4px solid #8B0000;
+        }
+        
+        .conversation-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .conversation-id {
+            font-weight: bold;
+            color: #DC143C;
+        }
+        
+        .believability-score {
+            background: linear-gradient(45deg, #8B0000, #DC143C);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        
+        .message.mina {
+            background: rgba(138, 43, 226, 0.2);
+            border-left: 3px solid #8A2BE2;
+        }
+        
+        .message.orlok {
+            background: rgba(220, 20, 60, 0.2);
+            border-left: 3px solid #DC143C;
+        }
+        
+        .message-author {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .report {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+        
+        .report h3 {
+            color: #DC143C;
+            margin-top: 0;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #DC143C;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎭 Orlok & Mina Conversation Tester</h1>
+            <p>Automated Believability Testing for Character Interactions</p>
+        </div>
+        
+        <div class="controls">
+            <button id="startTests" class="btn">Start 25 Conversations</button>
+            <button id="clearResults" class="btn">Clear Results</button>
+            <button id="exportReport" class="btn">Export Report</button>
+        </div>
+        
+        <div id="status" class="status" style="display: none;"></div>
+        
+        <div class="progress">
+            <div id="progressBar" class="progress-bar"></div>
+        </div>
+        
+        <div id="conversations" class="conversations"></div>
+        
+        <div id="report" class="report" style="display: none;">
+            <h3>📊 Believability Report</h3>
+            <div id="stats" class="stats"></div>
+            <div id="recommendations"></div>
+        </div>
+    </div>
+
+    <script>
+        class ConversationTester {
+            constructor() {
+                this.conversations = [];
+                this.currentTest = 0;
+                this.totalTests = 25;
+                this.isRunning = false;
+                
+                this.conversationPrompts = [
+                    "Good evening, Count. The shadows seem particularly restless tonight.",
+                    "I've been reading about your homeland in Transylvania. Tell me of your castle.",
+                    "The darkness calls to me in ways I cannot explain. Do you understand this feeling?",
+                    "Your eyes hold centuries of secrets. What wisdom have you gained?",
+                    "I dreamt of ancient rituals and blood-red moons. Were you there?",
+                    "The boundary between life and death fascinates me. How do you perceive it?",
+                    "Your presence both terrifies and intrigues me. Is this your intention?",
+                    "I sense a profound loneliness in your immortal existence. Am I wrong?",
+                    "The night reveals truths that daylight conceals. What do you see?",
+                    "Your transformation from mortal to immortal - was it a choice or curse?",
+                    "I feel drawn to the supernatural world you inhabit. Should I resist?",
+                    "The old legends speak of your kind with fear. But I see something more.",
+                    "Your castle must hold countless memories. Which ones haunt you most?",
+                    "The blood that sustains you - is it merely survival or something deeper?",
+                    "I've studied the occult extensively. Your existence challenges everything.",
+                    "The Victorian world I know seems so fragile compared to your reality.",
+                    "Your immortality grants perspective I can barely comprehend. Share it with me.",
+                    "The darkness you embrace - does it ever feel like a prison?",
+                    "I wonder if our meeting was destined or mere chance. What do you think?",
+                    "Your ancient wisdom could guide me through mysteries I'm discovering.",
+                    "The supernatural forces around us grow stronger. Do you feel it too?",
+                    "Your transformation story intrigues me. Was there a moment of regret?",
+                    "The connection between us transcends the mortal realm. Do you sense it?",
+                    "Your existence bridges worlds I'm only beginning to understand.",
+                    "The eternal night you inhabit - does it ever grow wearisome?"
+                ];
+                
+                this.initializeEventListeners();
+            }
+            
+            initializeEventListeners() {
+                document.getElementById('startTests').addEventListener('click', () => this.startTests());
+                document.getElementById('clearResults').addEventListener('click', () => this.clearResults());
+                document.getElementById('exportReport').addEventListener('click', () => this.exportReport());
+            }
+            
+            async startTests() {
+                if (this.isRunning) return;
+                
+                this.isRunning = true;
+                this.currentTest = 0;
+                this.conversations = [];
+                
+                document.getElementById('startTests').disabled = true;
+                this.updateStatus('Running conversation tests...', 'running');
+                
+                for (let i = 0; i < this.totalTests; i++) {
+                    this.currentTest = i + 1;
+                    await this.runSingleConversation(i);
+                    this.updateProgress();
+                    await this.delay(2000); // Pause between conversations
+                }
+                
+                this.completeTests();
+            }
+            
+            async runSingleConversation(index) {
+                const prompt = this.conversationPrompts[index];
+                
+                try {
+                    // Simulate API call to chat endpoint
+                    const response = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            message: prompt,
+                            character: 'orlok'
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        const conversation = {
+                            id: index + 1,
+                            mina: prompt,
+                            orlok: result.aiResponse,
+                            timestamp: new Date().toISOString()
+                        };
+                        
+                        conversation.believabilityScore = this.calculateBelievabilityScore(conversation);
+                        this.conversations.push(conversation);
+                        this.displayConversation(conversation);
+                    }
+                } catch (error) {
+                    console.error('Conversation test failed:', error);
+                }
+            }
+            
+            calculateBelievabilityScore(conversation) {
+                const scores = {
+                    characterConsistency: 0,
+                    responseRelevance: 0,
+                    emotionalDepth: 0,
+                    languageStyle: 0,
+                    narrativeFlow: 0
+                };
+                
+                const orlokResponse = conversation.orlok.toLowerCase();
+                const minaPrompt = conversation.mina.toLowerCase();
+                
+                // Character Consistency (20 points)
+                if (orlokResponse.includes('thee') || orlokResponse.includes('thou') || orlokResponse.includes('verily')) {
+                    scores.characterConsistency += 10;
+                }
+                if (orlokResponse.includes('castle') || orlokResponse.includes('night') || orlokResponse.includes('ancient')) {
+                    scores.characterConsistency += 10;
+                }
+                
+                // Response Relevance (20 points)
+                const relevantKeywords = ['darkness', 'shadow', 'blood', 'immortal', 'vampire', 'supernatural', 'death', 'eternal'];
+                const relevantMatches = relevantKeywords.filter(keyword => 
+                    orlokResponse.includes(keyword) || minaPrompt.includes(keyword)
+                ).length;
+                scores.responseRelevance = Math.min(20, relevantMatches * 3);
+                
+                // Emotional Depth (20 points)
+                const emotionalWords = ['loneliness', 'sorrow', 'desire', 'fear', 'fascination', 'mystery', 'haunting', 'yearning'];
+                const emotionalMatches = emotionalWords.filter(word => orlokResponse.includes(word)).length;
+                scores.emotionalDepth = Math.min(20, emotionalMatches * 5);
+                
+                // Language Style (20 points)
+                if (orlokResponse.length > 50) scores.languageStyle += 10;
+                if (orlokResponse.includes('.') && orlokResponse.includes(',')) scores.languageStyle += 10;
+                
+                // Narrative Flow (20 points)
+                if (orlokResponse.includes('...') || orlokResponse.includes('—')) scores.narrativeFlow += 10;
+                if (!orlokResponse.includes('i am') && !orlokResponse.includes('my name is')) scores.narrativeFlow += 10;
+                
+                const total = Object.values(scores).reduce((sum, score) => sum + score, 0);
+                
+                return {
+                    ...scores,
+                    total,
+                    grade: this.getGrade(total)
+                };
+            }
+            
+            getGrade(score) {
+                if (score >= 90) return 'A+';
+                if (score >= 80) return 'A';
+                if (score >= 70) return 'B';
+                if (score >= 60) return 'C';
+                if (score >= 50) return 'D';
+                return 'F';
+            }
+            
+            displayConversation(conversation) {
+                const conversationsDiv = document.getElementById('conversations');
+                const conversationDiv = document.createElement('div');
+                conversationDiv.className = 'conversation';
+                
+                conversationDiv.innerHTML = `
+                    <div class="conversation-header">
+                        <span class="conversation-id">Conversation ${conversation.id}</span>
+                        <span class="believability-score">${conversation.believabilityScore.total}/100 (${conversation.believabilityScore.grade})</span>
+                    </div>
+                    <div class="message mina">
+                        <div class="message-author">🌹 Mina Harker:</div>
+                        <div>${conversation.mina}</div>
+                    </div>
+                    <div class="message orlok">
+                        <div class="message-author">🧛 Count Orlok:</div>
+                        <div>${conversation.orlok}</div>
+                    </div>
+                `;
+                
+                conversationsDiv.appendChild(conversationDiv);
+                conversationDiv.scrollIntoView({ behavior: 'smooth' });
+            }
+            
+            updateProgress() {
+                const progress = (this.currentTest / this.totalTests) * 100;
+                document.getElementById('progressBar').style.width = `${progress}%`;
+            }
+            
+            updateStatus(message, type) {
+                const statusDiv = document.getElementById('status');
+                statusDiv.textContent = message;
+                statusDiv.className = `status ${type}`;
+                statusDiv.style.display = 'block';
+            }
+            
+            completeTests() {
+                this.isRunning = false;
+                document.getElementById('startTests').disabled = false;
+                this.updateStatus(`Completed ${this.conversations.length} conversations`, 'completed');
+                this.generateReport();
+            }
+            
+            generateReport() {
+                const scores = this.conversations.map(c => c.believabilityScore.total);
+                const averageScore = scores.reduce((sum, score) => sum + score, 0) / scores.length;
+                const highestScore = Math.max(...scores);
+                const lowestScore = Math.min(...scores);
+                const highQualityCount = scores.filter(score => score >= 80).length;
+                
+                const statsDiv = document.getElementById('stats');
+                statsDiv.innerHTML = `
+                    <div class="stat">
+                        <div class="stat-value">${this.conversations.length}</div>
+                        <div class="stat-label">Total Conversations</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">${averageScore.toFixed(1)}</div>
+                        <div class="stat-label">Average Score</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">${highestScore}</div>
+                        <div class="stat-label">Highest Score</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">${lowestScore}</div>
+                        <div class="stat-label">Lowest Score</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">${highQualityCount}</div>
+                        <div class="stat-label">High Quality (80+)</div>
+                    </div>
+                `;
+                
+                document.getElementById('report').style.display = 'block';
+            }
+            
+            clearResults() {
+                this.conversations = [];
+                this.currentTest = 0;
+                document.getElementById('conversations').innerHTML = '';
+                document.getElementById('progressBar').style.width = '0%';
+                document.getElementById('status').style.display = 'none';
+                document.getElementById('report').style.display = 'none';
+            }
+            
+            exportReport() {
+                const report = {
+                    timestamp: new Date().toISOString(),
+                    totalConversations: this.conversations.length,
+                    conversations: this.conversations,
+                    summary: {
+                        averageScore: this.conversations.reduce((sum, c) => sum + c.believabilityScore.total, 0) / this.conversations.length,
+                        highestScore: Math.max(...this.conversations.map(c => c.believabilityScore.total)),
+                        lowestScore: Math.min(...this.conversations.map(c => c.believabilityScore.total))
+                    }
+                };
+                
+                const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `orlok-mina-conversations-${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+            
+            delay(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+        }
+        
+        // Initialize the tester when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new ConversationTester();
+        });
+    </script>
+</body>
+</html>

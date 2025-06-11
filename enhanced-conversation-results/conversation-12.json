@@ -1,0 +1,22 @@
+{
+  "id": 12,
+  "timestamp": "2025-06-11T01:06:55.800Z",
+  "mina": "I feel there are forces beyond our understanding at work. What supernatural encounters have shaped your worldview most significantly?",
+  "orlok": "Verily, thou dost speak of profound truths. From the shadows of eternity, I have observed the endless dance of mortal folly and wisdom.",
+  "metadata": {
+    "model": "enhanced-fallback",
+    "tokens": 0,
+    "responsePattern": "philosophical_reflection",
+    "exchangeCount": 3,
+    "timestamp": "2025-06-11T01:06:55.799Z"
+  },
+  "believabilityScore": {
+    "characterConsistency": 8,
+    "historicalAccuracy": 0,
+    "vocabularyRichness": 8,
+    "emotionalDepth": 8,
+    "responseVariation": 13,
+    "total": 37,
+    "grade": "Poor - Needs Improvement"
+  }
+}

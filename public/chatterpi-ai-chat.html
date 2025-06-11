@@ -440,7 +440,6 @@
                     console.error('🎤 Speech error:', event.error);
                     this.stopJawAnimation();
                 };
-
                 this.speechSynthesis.speak(utterance);
             }
             
@@ -657,6 +656,7 @@
             scrollToBottom() {
                 this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
             }
+<<<<<<< HEAD
 
             // Enhanced jaw animation methods
             startJawAnimationForSpeech(text, speechRate = 1.0) {
@@ -796,6 +796,8 @@
                     console.warn('⚠️ Jaw WebSocket not available for command:', command);
                 }
             }
+=======
+>>>>>>> origin/main
         }
 
         document.addEventListener('DOMContentLoaded', () => {

@@ -1,66 +1,193 @@
-# Jaw Animation System - Product Requirements Document
+# MonsterBox Animatronic Control System - Comprehensive Product Requirements Document
+
+## Executive Summary
+
+MonsterBox is a sophisticated animatronic control system built with Node.js/Express, designed for managing distributed Raspberry Pi-based animatronic systems in haunted attraction environments. This comprehensive PRD covers the complete system including infrastructure, jaw animation, SSH configuration, security, monitoring, testing, and deployment.
 
 ## Project Overview
 
-Create a jaw animation system for the MonsterBox application by implementing ChatterPi-inspired audio-servo synchronization functionality. This system will analyze audio volume levels in real-time and control a servo motor to animate a jaw that opens and closes in sync with speech/audio playback for any animatronic character (bears, skeletons, fish, demons, etc.).
+The MonsterBox system encompasses multiple integrated components:
+
+1. **Core Infrastructure**: Node.js/Express backend with comprehensive testing and monitoring
+2. **Jaw Animation System**: ChatterPi-inspired audio-servo synchronization for realistic talking animatronics
+3. **SSH-First Development**: Reliable remote development environment with PowerShell fallback prevention
+4. **Security & Authentication**: JWT-based secure access with role-based permissions
+5. **Monitoring & Logging**: Comprehensive log collection and real-time monitoring dashboard
+6. **Hardware Integration**: GPIO, I2C, servo control, and sensor management for Raspberry Pi systems
+7. **Scene Management**: Timeline-based scene orchestration and playback
+8. **Backup & Recovery**: Automated backup systems and disaster recovery procedures
 
 ## Business Objectives
 
-- Enhance MonsterBox animatronic capabilities with realistic jaw animation for any character type
-- Provide real-time audio-servo synchronization without disrupting existing audio systems
-- Create a reusable framework for audio-driven servo animations across all animatronic types
-- Maintain compatibility with existing MonsterBox character and scene systems
+### Primary Objectives
+- **Enterprise-Grade Infrastructure**: Establish robust, scalable backend infrastructure with comprehensive testing and monitoring
+- **Secure Remote Access**: Implement JWT-based authentication with role-based access control for multi-user environments
+- **Reliable Development Environment**: Create SSH-first development workflow preventing local PowerShell fallback issues
+- **Advanced Animatronic Features**: Enhance capabilities with realistic jaw animation and sophisticated scene management
+- **Operational Excellence**: Implement comprehensive logging, monitoring, backup, and recovery systems
+
+### Secondary Objectives
+- **Hardware Integration**: Seamless GPIO, I2C, and servo control across distributed Raspberry Pi systems
+- **Real-time Performance**: Audio-servo synchronization with <50ms latency for realistic character interactions
+- **Scalability**: Support multiple concurrent animatronic characters and scenes
+- **Maintainability**: Comprehensive documentation, testing, and deployment automation
+- **Security**: End-to-end security from development environment to production deployment
 
 ## Technical Requirements
 
-### Core Functionality
-1. **Audio Integration**: Monitor audio streams from currently selected character without blocking concurrent audio playback
-2. **Servo Control**: Control servo motors using existing MonsterBox servo infrastructure (scripts/servo_control.py and routes/servoRoutes.js)
-3. **Real-time Synchronization**: Analyze audio volume levels and translate to servo positions for realistic jaw movement
-4. **Non-blocking Operation**: Work alongside existing MonsterBox functionality without interference
-### System Architecture
-1. **Audio Analysis Module**: Real-time volume detection and processing
-2. **Servo Mapping Engine**: Volume-to-servo-position algorithms with configurable sensitivity
-3. **Integration Layer**: Connect with existing MonsterBox audio and servo systems
-4. **Configuration System**: Per-character and per-servo-type settings
+### Core Infrastructure Requirements
+
+#### 1. Node.js/Express Backend
+- **Framework**: Express.js v4.21.1+ with EJS templating
+- **Session Management**: Express-session with secure configuration
+- **Environment**: Node.js v18.0.0+ with TypeScript support
+- **Middleware**: Security, logging, error handling, and CORS configuration
+- **API Design**: RESTful endpoints with comprehensive error handling
+
+#### 2. Authentication & Security System
+- **JWT Authentication**: Secure token-based authentication with refresh tokens
+- **Role-Based Access Control (RBAC)**: Multi-level permissions (admin, operator, viewer)
+- **SSH Infrastructure Integration**: Secure key-based authentication for remote systems
+- **Multi-Factor Authentication (MFA)**: Optional 2FA for enhanced security
+- **Session Security**: Secure session management with proper timeout handling
+
+#### 3. MCP Log Collection System
+- **Protocol Design**: Efficient log collection from distributed Raspberry Pi systems
+- **Aggregation Service**: Centralized log processing and storage
+- **Storage Management**: Structured log storage with rotation and archival
+- **Streaming Implementation**: Real-time log streaming for monitoring
+- **Search Functionality**: Full-text search across collected logs
+- **RPi Integration**: Seamless integration with remote Raspberry Pi systems
+
+#### 4. Hardware Integration Layer
+- **GPIO Management**: Comprehensive GPIO control for Raspberry Pi systems
+- **I2C Communication**: Device communication for sensors and controllers
+- **Servo Control**: Precise servo motor control with position feedback
+- **Sensor Integration**: Temperature, motion, and environmental sensors
+- **Error Handling**: Robust hardware error detection and recovery
+- **Health Monitoring**: Continuous hardware status monitoring
+
+#### 5. Scene Management System
+- **Timeline System**: Precise timing control for scene sequences
+- **Action Sequencing**: Coordinated multi-device action execution
+- **Trigger Handling**: Event-based scene triggering and transitions
+- **Persistence Layer**: Scene configuration storage and retrieval
+- **Playback Engine**: Real-time scene execution with synchronization
+
+### Jaw Animation System Requirements
+
+#### 6. Audio Integration
+- **Stream Monitoring**: Monitor audio streams without blocking playback
+- **Real-time Processing**: <50ms latency audio analysis
+- **Multi-character Support**: Concurrent audio processing for multiple characters
+- **Format Support**: MP3, WAV, and streaming audio formats
+
+#### 7. Servo Control Integration
+- **Existing Infrastructure**: Use MonsterBox servo control (servo_control.py, servoRoutes.js)
+- **Position Mapping**: Volume-to-servo-position algorithms with configurable sensitivity
+- **Smooth Movement**: Interpolation and smoothing for natural jaw motion
+- **Calibration**: Per-servo calibration and limit configuration
+
+### SSH-First Development Environment Requirements
+
+#### 8. SSH Connection Reliability
+- **Robust Connection Management**: Automatic retry logic with exponential backoff
+- **Keepalive Configuration**: Prevent connection timeouts with proper keepalive settings
+- **Health Monitoring**: Real-time SSH connection status monitoring
+- **Connection Pooling**: Multiple concurrent SSH connections for efficiency
+- **Recovery Mechanisms**: Automatic reconnection and circuit breaker patterns
+
+#### 9. PowerShell Fallback Prevention
+- **VS Code Configuration**: Force Remote-SSH to never fall back to local PowerShell
+- **Execution Validation**: Pre-execution checks to ensure remote context
+- **Monitoring System**: Alert when SSH connections fail
+- **Hard Stops**: Prevent execution when remote connection unavailable
+- **Context Verification**: Validate remote execution environment
+
+#### 10. Monitoring & Testing Systems
+- **Comprehensive Testing Suite**: Unit, integration, and end-to-end testing
+- **Test Coverage Analysis**: Automated coverage reporting and enforcement
+- **Performance Testing**: Load testing and performance benchmarking
+- **CI/CD Pipeline**: Automated testing and deployment pipeline
+- **Quality Assurance**: Code quality metrics and automated reviews
+
+#### 11. Backup & Recovery System
+- **Automated Backups**: Scheduled backups of configurations and data
+- **Version Control**: Git-based configuration management
+- **Disaster Recovery**: Rapid system restoration procedures
+- **Data Integrity**: Backup verification and integrity checking
+- **Recovery Testing**: Regular disaster recovery testing
+
+#### 12. Documentation & Integration
+- **MkDocs Integration**: Comprehensive documentation system
+- **API Documentation**: Automated API documentation generation
+- **User Guides**: Step-by-step setup and operation guides
+- **Technical Specifications**: Detailed technical documentation
+- **Task Master Integration**: AI-powered task management and documentation
 
 ### Performance Requirements
-- Real-time audio processing with minimal latency (<50ms)
-- Smooth servo movement without jitter
-- CPU usage <10% additional overhead
-- Memory usage <50MB additional
+- **Real-time Processing**: <50ms latency for audio-servo synchronization
+- **System Performance**: <10% CPU overhead, <50MB memory usage for jaw animation
+- **Concurrent Operations**: Support multiple simultaneous animatronic characters
+- **Network Performance**: Efficient SSH connection management and log streaming
+- **Hardware Performance**: Optimal GPIO and I2C communication timing
 
 ### Compatibility Requirements
-- Work with existing soundController.js and sound_player.py
-- Use existing servo control infrastructure
-- Maintain character selection and scene playback functionality
-- Support all current servo types in servos.json
+- **Existing Infrastructure**: Work with soundController.js, sound_player.py, servo control
+- **Hardware Compatibility**: Support existing servo types, GPIO configurations, I2C devices
+- **Software Compatibility**: Node.js/Express, Python scripts, WebSocket communication
+- **Platform Compatibility**: Windows development, Linux deployment (Raspberry Pi)
+- **Version Compatibility**: Maintain backward compatibility with existing configurations
 
 ## Implementation Phases
 
-### Phase 1: Research and Prototype
-- Research ChatterPi audio processing algorithms
-- Create isolated test environment
-- Develop basic audio volume detection
-- Implement basic servo control integration
+### Phase 1: Foundation Infrastructure
+**Priority: Critical - Must be completed first**
+- **Node.js/Express Backend Review**: Establish robust backend foundation
+- **SSH Development Environment**: Configure reliable SSH-first development workflow
+- **Authentication System**: Implement JWT-based security with RBAC
+- **Basic Testing Framework**: Set up comprehensive testing infrastructure
+- **Documentation System**: Initialize MkDocs integration with Task Master
 
-### Phase 2: Core Development
-- Build real-time audio analysis engine
-- Implement volume-to-servo mapping algorithms
-- Create test page at /test/jaw-animation
-- Develop configuration system
+### Phase 2: Core Systems Development
+**Priority: High - Core functionality**
+- **MCP Log Collection System**: Implement distributed log collection and monitoring
+- **Hardware Integration Layer**: GPIO, I2C, and servo control systems
+- **Scene Management System**: Timeline-based scene orchestration
+- **Backup & Recovery System**: Automated backup and disaster recovery
+- **Performance Monitoring**: System performance tracking and optimization
 
-### Phase 3: Integration
-- Integrate with MonsterBox character system
-- Add character-specific configuration options
-- Implement servo type-specific settings
-- Create user interface controls
+### Phase 3: Advanced Features
+**Priority: Medium - Enhanced capabilities**
+- **Jaw Animation System**: ChatterPi-inspired audio-servo synchronization
+- **Character Configuration**: Advanced character-specific settings
+- **Audio Stream Integration**: Real-time audio processing and analysis
+- **WebSocket Communication**: Real-time client-server communication
+- **Advanced Security**: MFA and enhanced security features
 
-### Phase 4: Testing and Optimization
-- Performance testing and optimization
-- Cross-platform compatibility testing
-- User acceptance testing
-- Documentation and deployment
+### Phase 4: Integration & Enhancement
+**Priority: Medium - System integration**
+- **Character Selection Integration**: Seamless character management
+- **Scene Playback Integration**: Advanced scene management features
+- **Servo Type Management**: Support for diverse servo configurations
+- **Frequency Filtering**: Audio processing enhancements
+- **Configuration UI**: User-friendly configuration interfaces
+
+### Phase 5: Testing & Quality Assurance
+**Priority: High - System reliability**
+- **Comprehensive Testing Suite**: Complete test coverage implementation
+- **Performance Testing**: Load testing and benchmarking
+- **Cross-platform Testing**: Windows/Linux compatibility verification
+- **User Acceptance Testing**: End-user validation and feedback
+- **Security Review**: Comprehensive security audit and hardening
+
+### Phase 6: Deployment & Operations
+**Priority: Medium - Production readiness**
+- **Deployment System**: Automated deployment and CI/CD pipeline
+- **System Integration Testing**: End-to-end system validation
+- **Documentation Completion**: Comprehensive user and technical documentation
+- **Training Materials**: User training and operational guides
+- **Production Monitoring**: Live system monitoring and alerting
 
 ## Technical Specifications
 
@@ -87,35 +214,84 @@ Create a jaw animation system for the MonsterBox application by implementing Cha
 ## User Stories
 
 ### Primary Users: Animatronic Operators
-1. As an operator, I want to assign a jaw servo to any character so that it can have talking animation
-2. As an operator, I want to test jaw movement with different audio files for bears, skeletons, fish, etc.
-3. As an operator, I want to adjust sensitivity so jaw movement matches audio intensity for different character types
-4. As an operator, I want to use jaw animation during scene playback for any animatronic
+1. **Character Control**: As an operator, I want to control multiple animatronic characters simultaneously with real-time responsiveness
+2. **Scene Management**: As an operator, I want to create, edit, and execute complex scenes with precise timing and coordination
+3. **Jaw Animation**: As an operator, I want to assign jaw servos to any character for realistic talking animation
+4. **Audio Integration**: As an operator, I want to test jaw movement with different audio files across various character types
+5. **Real-time Monitoring**: As an operator, I want to monitor system status and performance during live operations
+6. **Quick Configuration**: As an operator, I want to quickly adjust character settings and scene parameters
 
-### Secondary Users: System Administrators
-1. As an admin, I want to configure servo types and their parameters for different animatronic designs
-2. As an admin, I want to monitor system performance during jaw animation across multiple characters
-3. As an admin, I want to troubleshoot audio-servo synchronization issues for any character type
+### System Administrators
+1. **Infrastructure Management**: As an admin, I want to monitor and manage distributed Raspberry Pi systems from a central dashboard
+2. **Security Administration**: As an admin, I want to manage user access, roles, and permissions across the system
+3. **System Monitoring**: As an admin, I want comprehensive logging and monitoring of all system components
+4. **Backup Management**: As an admin, I want automated backup and recovery capabilities for system configurations
+5. **Performance Optimization**: As an admin, I want to monitor system performance and optimize resource usage
+6. **Troubleshooting**: As an admin, I want detailed diagnostic information for troubleshooting system issues
+
+### Developers
+1. **Development Environment**: As a developer, I want a reliable SSH-first development environment that never falls back to local execution
+2. **Testing Framework**: As a developer, I want comprehensive testing tools with automated coverage reporting
+3. **Documentation**: As a developer, I want automatically updated documentation that stays synchronized with code changes
+4. **Deployment**: As a developer, I want automated deployment pipelines with rollback capabilities
+5. **Debugging**: As a developer, I want detailed logging and debugging tools for troubleshooting issues
+6. **API Access**: As a developer, I want well-documented APIs for extending system functionality
+
+### Maintenance Personnel
+1. **Hardware Monitoring**: As maintenance staff, I want real-time hardware status monitoring and alerting
+2. **Preventive Maintenance**: As maintenance staff, I want scheduled maintenance reminders and procedures
+3. **Fault Diagnosis**: As maintenance staff, I want detailed fault diagnosis and repair guidance
+4. **Component Management**: As maintenance staff, I want inventory tracking for servo motors, sensors, and other components
 
 ## Success Criteria
 
-### Functional Success
-- Jaw servo moves in real-time sync with audio playback for any character type
-- System works with all existing MonsterBox audio features
-- Configuration persists across sessions
-- Multiple characters can have jaw animation capability simultaneously
+### Infrastructure Success Criteria
+- **Backend Stability**: 99.9% uptime for Node.js/Express backend with comprehensive error handling
+- **Authentication Security**: JWT-based authentication with RBAC supporting multiple user roles
+- **SSH Reliability**: 100% SSH-first development with zero PowerShell fallback incidents
+- **Log Collection**: Real-time log collection from all Raspberry Pi systems with <1 second latency
+- **Testing Coverage**: >90% code coverage with automated testing pipeline
+- **Documentation**: Complete, up-to-date documentation automatically synchronized with code
 
-### Performance Success
-- <50ms latency between audio and servo movement
-- Smooth servo movement without visible jitter
-- No interference with existing audio playback
-- Stable operation for extended periods
+### Functional Success Criteria
+- **Multi-Character Control**: Simultaneous control of multiple animatronic characters
+- **Scene Management**: Complex scene creation, editing, and execution with precise timing
+- **Jaw Animation**: Real-time audio-servo synchronization for any character type
+- **Hardware Integration**: Seamless GPIO, I2C, and servo control across distributed systems
+- **Configuration Persistence**: All settings persist across system restarts and updates
+- **Real-time Monitoring**: Live system status monitoring with alerting capabilities
 
-### User Experience Success
-- Intuitive configuration interface for any animatronic type
-- Clear visual feedback during setup
-- Reliable operation during shows
-- Easy troubleshooting and calibration
+### Performance Success Criteria
+- **Audio Latency**: <50ms latency between audio and servo movement
+- **System Performance**: <10% CPU overhead, <50MB memory usage for jaw animation
+- **Network Performance**: Efficient SSH connections with automatic recovery
+- **Concurrent Operations**: Support for 10+ simultaneous animatronic characters
+- **Response Time**: <100ms response time for user interface interactions
+- **Scalability**: System scales to support additional Raspberry Pi nodes
+
+### Security Success Criteria
+- **Authentication**: Secure JWT-based authentication with session management
+- **Authorization**: Role-based access control with granular permissions
+- **SSH Security**: Key-based SSH authentication with proper key management
+- **Data Protection**: Encrypted communication between all system components
+- **Audit Trail**: Comprehensive logging of all user actions and system events
+- **Vulnerability Management**: Regular security audits and vulnerability assessments
+
+### User Experience Success Criteria
+- **Intuitive Interface**: User-friendly configuration interfaces for all user types
+- **Real-time Feedback**: Clear visual feedback during setup and operation
+- **Reliable Operation**: Stable operation during extended live performances
+- **Easy Troubleshooting**: Comprehensive diagnostic tools and error reporting
+- **Quick Recovery**: Rapid system recovery from failures with minimal downtime
+- **Training Efficiency**: New users can become proficient within 2 hours of training
+
+### Operational Success Criteria
+- **Backup & Recovery**: Automated daily backups with <15 minute recovery time
+- **Deployment**: Automated deployment pipeline with rollback capabilities
+- **Monitoring**: 24/7 system monitoring with proactive alerting
+- **Maintenance**: Scheduled maintenance windows with minimal service disruption
+- **Support**: Comprehensive support documentation and troubleshooting guides
+- **Compliance**: System meets all relevant security and operational standards
 
 ## Technical Constraints
 
@@ -135,3 +311,68 @@ Create a jaw animation system for the MonsterBox application by implementing Cha
 - Python script integration requirements
 - WebSocket real-time communication
 - Cross-platform operation (Windows development, Linux deployment)
+
+## SSH-First Development Environment Configuration
+
+### Project Overview
+Configure VS Code and Augment to ALWAYS use SSH for code deployment and execution, preventing any PowerShell fallback. The core problem is that Augment keeps failing SSH connections and silently reverting to local PowerShell execution on Windows instead of the intended remote Linux environment.
+
+### Problem Statement
+The current development workflow suffers from critical reliability issues:
+- Augment agents frequently lose SSH connections to remote Raspberry Pi hosts
+- When SSH fails, the system silently falls back to local Windows PowerShell execution
+- Code intended for Linux deployment runs on Windows instead, causing deployment failures
+- No monitoring or alerting when SSH connections fail
+- Inconsistent remote platform detection leads to OS misidentification
+- VS Code Remote-SSH occasionally reverts to local terminal execution
+
+### Target Hosts
+- skulltalker: 192.168.8.130 (user: remote, password: klrklr89!)
+- coffin: 192.168.8.140 (user: remote, password: klrklr89!)
+- orlok: 192.168.8.120 (user: remote, password: klrklr89!)
+
+### Critical SSH Requirements
+
+#### 1. SSH Connection Reliability
+- Implement robust SSH connection management with automatic retry logic
+- Configure SSH keepalive settings to prevent connection timeouts
+- Add connection health monitoring and automatic reconnection
+- Implement exponential backoff for failed connection attempts
+- Create SSH connection pooling for multiple concurrent operations
+
+#### 2. PowerShell Fallback Prevention
+- Force VS Code Remote-SSH to NEVER fall back to PowerShell
+- Implement safeguards to detect and prevent local PowerShell execution
+- Add validation checks before any code execution to ensure remote context
+- Create monitoring system to alert when SSH connection fails
+- Implement hard stops when remote connection is unavailable
+
+#### 3. Remote Platform Detection
+- Set explicit remote platform detection to prevent OS misidentification
+- Configure robust SSH settings with proper authentication and timeouts
+- Implement platform verification before code execution
+- Add OS detection validation in all deployment scripts
+- Create fallback detection mechanisms for edge cases
+
+#### 4. VS Code Integration
+- Configure VS Code terminal integration to always use remote bash
+- Ensure Augment Remote Agents maintain SSH connections throughout workflow
+- Implement session persistence for long-running development tasks
+- Configure automatic remote workspace selection
+- Add remote context validation for all operations
+
+#### 5. Monitoring and Verification
+- Create verification system to test that all code execution happens remotely
+- Implement real-time SSH connection status monitoring
+- Add logging for all SSH connection attempts and failures
+- Create dashboard for monitoring remote host connectivity
+- Implement automated testing of SSH connection reliability
+
+### SSH Success Criteria
+1. 100% of code execution happens on remote Linux hosts via SSH
+2. Zero silent fallbacks to local PowerShell execution
+3. SSH connection success rate > 99.5%
+4. Automatic recovery from temporary connection failures
+5. Real-time monitoring and alerting for SSH issues
+6. Comprehensive logging and troubleshooting capabilities
+7. Seamless integration with existing development workflow

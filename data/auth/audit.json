@@ -1729,17 +1729,17 @@
       }
     },
     {
-      "timestamp": "2025-06-10T00:59:50.558Z",
+      "timestamp": "2025-06-10T00:15:34.229Z",
       "event": "AUTH_SUCCESS",
       "data": {
         "username": "admin",
-        "sessionId": "session_1749517190525_wu5gplyzm",
+        "sessionId": "session_1749514534220_53y8w3xu4",
         "ipAddress": "127.0.0.1",
         "userAgent": "test-agent"
       }
     },
     {
-      "timestamp": "2025-06-10T00:59:50.972Z",
+      "timestamp": "2025-06-10T00:15:34.436Z",
       "event": "AUTH_FAILED",
       "data": {
         "username": "admin",
@@ -1749,27 +1749,27 @@
       }
     },
     {
-      "timestamp": "2025-06-10T00:59:51.613Z",
+      "timestamp": "2025-06-10T00:15:34.683Z",
       "event": "AUTH_SUCCESS",
       "data": {
         "username": "admin",
-        "sessionId": "session_1749517191595_2cxhgw6au",
+        "sessionId": "session_1749514534678_eon5j57w8",
         "ipAddress": "::ffff:127.0.0.1",
-        "timestamp": "2025-06-10T00:59:51.195Z"
+        "timestamp": "2025-06-10T00:15:34.473Z"
       }
     },
     {
-      "timestamp": "2025-06-10T01:00:20.554Z",
+      "timestamp": "2025-06-10T00:15:49.767Z",
       "event": "AUTH_SUCCESS",
       "data": {
         "username": "admin",
-        "sessionId": "session_1749517220538_mvwthh4fi",
+        "sessionId": "session_1749514549762_b24l4nwp8",
         "ipAddress": "127.0.0.1",
         "userAgent": "mocha-test"
       }
     },
     {
-      "timestamp": "2025-06-10T01:00:20.974Z",
+      "timestamp": "2025-06-10T00:15:49.972Z",
       "event": "AUTH_FAILED",
       "data": {
         "username": "admin",
@@ -1779,77 +1779,77 @@
       }
     },
     {
-      "timestamp": "2025-06-10T01:00:21.410Z",
+      "timestamp": "2025-06-10T00:15:50.187Z",
       "event": "AUTH_SUCCESS",
       "data": {
         "username": "admin",
-        "sessionId": "session_1749517221391_52asw464i",
+        "sessionId": "session_1749514550183_k2qovlqkv",
         "ipAddress": "127.0.0.1",
         "userAgent": "mocha-test"
       }
     },
     {
-      "timestamp": "2025-06-10T01:00:21.974Z",
+      "timestamp": "2025-06-10T00:15:50.406Z",
       "event": "AUTH_SUCCESS",
       "data": {
         "username": "admin",
-        "sessionId": "session_1749517221949_rxarxaf95",
+        "sessionId": "session_1749514550401_o83z9u46x",
         "ipAddress": "::ffff:127.0.0.1",
-        "timestamp": "2025-06-10T01:00:21.522Z"
+        "timestamp": "2025-06-10T00:15:50.196Z"
       }
     },
     {
-      "timestamp": "2025-06-10T01:00:34.011Z",
+      "timestamp": "2025-06-10T00:16:02.066Z",
       "event": "AUTH_FAILED",
       "data": {
         "username": "admin",
         "reason": "Invalid password",
         "ipAddress": "::ffff:127.0.0.1",
-        "timestamp": "2025-06-10T01:00:33.583Z"
+        "timestamp": "2025-06-10T00:16:01.858Z"
       }
     },
     {
-      "timestamp": "2025-06-10T01:00:34.029Z",
+      "timestamp": "2025-06-10T00:16:02.069Z",
       "event": "AUTH_FAILED",
       "data": {
         "username": "admin",
         "reason": "Invalid password",
         "ipAddress": "::ffff:127.0.0.1",
-        "timestamp": "2025-06-10T01:00:33.590Z"
+        "timestamp": "2025-06-10T00:16:01.859Z"
       }
     },
     {
-      "timestamp": "2025-06-10T01:00:34.422Z",
+      "timestamp": "2025-06-10T00:16:02.268Z",
       "event": "AUTH_FAILED",
       "data": {
         "username": "admin",
         "reason": "Invalid password",
         "ipAddress": "::ffff:127.0.0.1",
-        "timestamp": "2025-06-10T01:00:33.593Z"
+        "timestamp": "2025-06-10T00:16:01.859Z"
       }
     },
     {
-      "timestamp": "2025-06-10T01:00:34.859Z",
+      "timestamp": "2025-06-10T00:16:02.478Z",
       "event": "AUTH_SUCCESS",
       "data": {
         "username": "admin",
-        "sessionId": "session_1749517234836_uurhh9unn",
+        "sessionId": "session_1749514562474_8jfoesfjh",
         "ipAddress": "127.0.0.1",
         "userAgent": "mocha-test"
       }
     },
     {
-      "timestamp": "2025-06-10T01:00:35.366Z",
+      "timestamp": "2025-06-10T00:16:02.706Z",
       "event": "AUTH_SUCCESS",
       "data": {
         "username": "admin",
-        "sessionId": "session_1749517235347_ca2znw5xy",
+        "sessionId": "session_1749514562692_yc995ffm0",
         "ipAddress": "127.0.0.1",
         "userAgent": "ssh-test"
       }
     },
     {
-      "timestamp": "2025-06-10T01:00:35.427Z",
+      "timestamp": "2025-06-10T00:16:02.711Z",
       "event": "SSH_SSH_COMMAND_EXECUTED",
       "data": {
         "userId": "admin-001",
@@ -1859,22 +1859,22 @@
         "command": "uptime",
         "exitCode": 0,
         "duration": 150,
-        "timestamp": "2025-06-10T01:00:35.423Z",
+        "timestamp": "2025-06-10T00:16:02.710Z",
         "source": "ssh-auth-service"
       }
     },
     {
-      "timestamp": "2025-06-10T01:00:35.860Z",
+      "timestamp": "2025-06-10T00:16:02.922Z",
       "event": "AUTH_SUCCESS",
       "data": {
         "username": "admin",
-        "sessionId": "session_1749517235846_t83ujpogi",
+        "sessionId": "session_1749514562918_3whibg2uj",
         "ipAddress": "127.0.0.1",
         "userAgent": "ssh-test"
       }
     },
     {
-      "timestamp": "2025-06-10T01:00:35.892Z",
+      "timestamp": "2025-06-10T00:16:02.925Z",
       "event": "SSH_SSH_PERMISSION_DENIED",
       "data": {
         "userId": "admin-001",
@@ -1882,12 +1882,12 @@
         "animatronicId": "orlok",
         "command": "uptime",
         "reason": "No SSH permission",
-        "timestamp": "2025-06-10T01:00:35.890Z",
+        "timestamp": "2025-06-10T00:16:02.925Z",
         "source": "ssh-auth-service"
       }
     },
     {
-      "timestamp": "2025-06-10T01:00:35.960Z",
+      "timestamp": "2025-06-10T00:16:02.933Z",
       "event": "SSH_SSH_COMMAND_EXECUTED",
       "data": {
         "userId": "admin-001",
@@ -1897,12 +1897,12 @@
         "command": "uptime",
         "exitCode": 0,
         "duration": 150,
-        "timestamp": "2025-06-10T01:00:35.957Z",
+        "timestamp": "2025-06-10T00:16:02.933Z",
         "source": "ssh-auth-service"
       }
     },
     {
-      "timestamp": "2025-06-10T01:00:36.069Z",
+      "timestamp": "2025-06-10T00:16:02.944Z",
       "event": "SSH_SSH_COMMAND_EXECUTED",
       "data": {
         "userId": "admin-001",
@@ -1912,12 +1912,12 @@
         "command": "uptime",
         "exitCode": 0,
         "duration": 150,
-        "timestamp": "2025-06-10T01:00:36.065Z",
+        "timestamp": "2025-06-10T00:16:02.944Z",
         "source": "ssh-auth-service"
       }
     },
     {
-      "timestamp": "2025-06-10T01:00:36.081Z",
+      "timestamp": "2025-06-10T00:16:02.946Z",
       "event": "SSH_SSH_COMMAND_EXECUTED",
       "data": {
         "userId": "admin-001",
@@ -1927,12 +1927,12 @@
         "command": "whoami",
         "exitCode": 0,
         "duration": 150,
-        "timestamp": "2025-06-10T01:00:36.079Z",
+        "timestamp": "2025-06-10T00:16:02.946Z",
         "source": "ssh-auth-service"
       }
     },
     {
-      "timestamp": "2025-06-10T01:00:36.102Z",
+      "timestamp": "2025-06-10T00:16:02.949Z",
       "event": "SSH_SSH_COMMAND_EXECUTED",
       "data": {
         "userId": "admin-001",
@@ -1942,12 +1942,12 @@
         "command": "date",
         "exitCode": 0,
         "duration": 150,
-        "timestamp": "2025-06-10T01:00:36.094Z",
+        "timestamp": "2025-06-10T00:16:02.948Z",
         "source": "ssh-auth-service"
       }
     },
     {
-      "timestamp": "2025-06-10T01:00:36.307Z",
+      "timestamp": "2025-06-10T00:16:03.069Z",
       "event": "SSH_SSH_COMMAND_EXECUTED",
       "data": {
         "userId": "admin-001",
@@ -1957,12 +1957,12 @@
         "command": "sleep 60",
         "exitCode": 124,
         "duration": 100,
-        "timestamp": "2025-06-10T01:00:36.304Z",
+        "timestamp": "2025-06-10T00:16:03.068Z",
         "source": "ssh-auth-service"
       }
     },
     {
-      "timestamp": "2025-06-10T01:00:36.328Z",
+      "timestamp": "2025-06-10T00:16:03.072Z",
       "event": "SSH_SSH_COMMAND_EXECUTED",
       "data": {
         "userId": "admin-001",
@@ -1972,12 +1972,12 @@
         "command": "uptime",
         "exitCode": 255,
         "duration": 50,
-        "timestamp": "2025-06-10T01:00:36.324Z",
+        "timestamp": "2025-06-10T00:16:03.072Z",
         "source": "ssh-auth-service"
       }
     },
     {
-      "timestamp": "2025-06-10T01:00:36.348Z",
+      "timestamp": "2025-06-10T00:16:03.081Z",
       "event": "SSH_SSH_COMMAND_EXECUTED",
       "data": {
         "userId": "admin-001",
@@ -1987,7 +1987,7 @@
         "command": "uptime",
         "exitCode": 255,
         "duration": 50,
-        "timestamp": "2025-06-10T01:00:36.346Z",
+        "timestamp": "2025-06-10T00:16:03.081Z",
         "source": "ssh-auth-service"
       }
     }

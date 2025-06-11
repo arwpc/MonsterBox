@@ -1,0 +1,22 @@
+{
+  "id": 23,
+  "timestamp": "2025-06-11T01:07:18.990Z",
+  "mina": "The concept of eternity both thrills and terrifies me. How does one find purpose when time has no meaning?",
+  "orlok": "Verily, thou dost speak of profound truths. From the shadows of eternity, I have observed the endless dance of mortal folly and wisdom.",
+  "metadata": {
+    "model": "enhanced-fallback",
+    "tokens": 0,
+    "responsePattern": "philosophical_reflection",
+    "exchangeCount": 4,
+    "timestamp": "2025-06-11T01:07:18.990Z"
+  },
+  "believabilityScore": {
+    "characterConsistency": 8,
+    "historicalAccuracy": 0,
+    "vocabularyRichness": 8,
+    "emotionalDepth": 8,
+    "responseVariation": 13,
+    "total": 37,
+    "grade": "Poor - Needs Improvement"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "id": 15,
+  "timestamp": "2025-06-11T01:07:02.127Z",
+  "mina": "The Gothic literature of our time speaks of passion and darkness. Do these tales capture any truth about your kind?",
+  "orlok": "Curious... thy mortal perception glimpses truths that few dare acknowledge. The shadows whisper secrets to those who listen.",
+  "metadata": {
+    "model": "enhanced-fallback",
+    "tokens": 0,
+    "responsePattern": "mysterious_observation",
+    "exchangeCount": 6,
+    "timestamp": "2025-06-11T01:07:02.126Z"
+  },
+  "believabilityScore": {
+    "characterConsistency": 2,
+    "historicalAccuracy": 0,
+    "vocabularyRichness": 4,
+    "emotionalDepth": 5,
+    "responseVariation": 13,
+    "total": 24,
+    "grade": "Poor - Needs Improvement"
+  }
+}
