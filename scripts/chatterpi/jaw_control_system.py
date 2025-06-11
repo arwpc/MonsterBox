@@ -76,17 +76,23 @@ class JawControlSystem:
         try:
             # Open GPIO chip
             self.gpio_handle = lgpio.gpiochip_open(0)
-            
+
+            # Try to free the pin first in case it's already claimed
+            try:
+                lgpio.gpio_free(self.gpio_handle, self.pin)
+            except:
+                pass  # Pin wasn't claimed, that's fine
+
             # Set pin as output
             lgpio.gpio_claim_output(self.gpio_handle, self.pin)
-            
+
             # Set initial position
             self._set_pulse_width(self.min_pulse)
-            
+
             self.is_initialized = True
             logger.info("✅ Jaw control system initialized successfully")
             return True
-            
+
         except Exception as e:
             logger.error(f"❌ Failed to initialize jaw control: {e}")
             return False
