@@ -54,6 +54,39 @@
             justify-content: space-between; align-items: center;
         }
         .jaw-position { font-weight: bold; color: #667eea; }
+        .controls-panel {
+            padding: 15px 20px; background: #f8f9fa; border-top: 1px solid #e0e0e0;
+            display: flex; gap: 15px; align-items: center; flex-wrap: wrap;
+        }
+        .control-group {
+            display: flex; flex-direction: column; gap: 5px;
+        }
+        .control-group label {
+            font-size: 11px; font-weight: bold; color: #666; text-transform: uppercase;
+        }
+        .control-select, .control-button {
+            padding: 6px 12px; border: 1px solid #ddd; border-radius: 6px;
+            font-size: 12px; background: white; cursor: pointer;
+        }
+        .control-select:focus, .control-button:hover {
+            border-color: #667eea; outline: none;
+        }
+        .control-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; border: none; transition: transform 0.2s;
+        }
+        .control-button:hover { transform: scale(1.05); }
+        .control-button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .audio-controls {
+            display: flex; gap: 10px; align-items: center;
+        }
+        .volume-control {
+            display: flex; align-items: center; gap: 8px;
+        }
+        .volume-slider {
+            width: 80px; height: 4px; background: #ddd; border-radius: 2px;
+            outline: none; cursor: pointer;
+        }
         .chat-input-container {
             padding: 20px; background: white; border-top: 1px solid #e0e0e0;
         }
@@ -94,6 +127,39 @@
             <span>Jaw Position: <span class="jaw-position" id="jawPosition">0°</span></span>
             <span>Status: <span id="jawStatusText">Initializing...</span></span>
         </div>
+        <div class="controls-panel">
+            <div class="control-group">
+                <label>Servo Selection</label>
+                <select id="servoSelect" class="control-select">
+                    <option value="18">GPIO 18 (ChatterPi Jaw)</option>
+                    <option value="19">GPIO 19 (Aux Servo 1)</option>
+                    <option value="20">GPIO 20 (Aux Servo 2)</option>
+                    <option value="21">GPIO 21 (Aux Servo 3)</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Character Voice</label>
+                <select id="voiceSelect" class="control-select">
+                    <option value="orlok">Count Orlok (Deep)</option>
+                    <option value="robot">RoboChat (Robotic)</option>
+                    <option value="pirate">Captain Blackbeard (Gruff)</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Audio Controls</label>
+                <div class="audio-controls">
+                    <button id="testAudioButton" class="control-button">Test Voice</button>
+                    <div class="volume-control">
+                        <span>🔊</span>
+                        <input type="range" id="volumeSlider" class="volume-slider" min="0" max="100" value="70">
+                    </div>
+                </div>
+            </div>
+            <div class="control-group">
+                <label>Jaw Test</label>
+                <button id="testJawButton" class="control-button">Test Movement</button>
+            </div>
+        </div>
         <div class="chat-input-container">
             <div class="chat-input-wrapper">
                 <textarea class="chat-input" id="chatInput" placeholder="Type your message here..." rows="1"></textarea>
@@ -111,8 +177,14 @@
             constructor() {
                 this.websocket = null;
                 this.isConnected = false;
+                this.selectedServo = 18;
+                this.selectedVoice = 'orlok';
+                this.audioVolume = 0.7;
+                this.speechSynthesis = window.speechSynthesis;
+                this.voices = [];
                 this.initializeElements();
                 this.setupEventListeners();
+                this.initializeAudio();
                 this.connect();
                 this.updateWelcomeTime();
             }
@@ -124,6 +196,11 @@
                 this.connectionStatus = document.getElementById('connectionStatus');
                 this.jawPosition = document.getElementById('jawPosition');
                 this.jawStatusText = document.getElementById('jawStatusText');
+                this.servoSelect = document.getElementById('servoSelect');
+                this.voiceSelect = document.getElementById('voiceSelect');
+                this.testAudioButton = document.getElementById('testAudioButton');
+                this.testJawButton = document.getElementById('testJawButton');
+                this.volumeSlider = document.getElementById('volumeSlider');
             }
 
             setupEventListeners() {
@@ -138,6 +215,24 @@
                     this.adjustTextareaHeight();
                     this.updateSendButton();
                 });
+
+                // Control panel event listeners
+                this.servoSelect.addEventListener('change', (e) => {
+                    this.selectedServo = parseInt(e.target.value);
+                    console.log(`Servo changed to GPIO ${this.selectedServo}`);
+                });
+
+                this.voiceSelect.addEventListener('change', (e) => {
+                    this.selectedVoice = e.target.value;
+                    console.log(`Voice changed to ${this.selectedVoice}`);
+                });
+
+                this.testAudioButton.addEventListener('click', () => this.testAudio());
+                this.testJawButton.addEventListener('click', () => this.testJawMovement());
+
+                this.volumeSlider.addEventListener('input', (e) => {
+                    this.audioVolume = e.target.value / 100;
+                });
             }
 
             updateWelcomeTime() {
@@ -145,6 +240,89 @@
                 if (welcomeTime) {
                     welcomeTime.textContent = new Date().toLocaleTimeString();
                 }
+            }
+
+            initializeAudio() {
+                // Wait for voices to load
+                if (this.speechSynthesis.getVoices().length === 0) {
+                    this.speechSynthesis.addEventListener('voiceschanged', () => {
+                        this.voices = this.speechSynthesis.getVoices();
+                        console.log('Available voices:', this.voices.map(v => v.name));
+                    });
+                } else {
+                    this.voices = this.speechSynthesis.getVoices();
+                }
+            }
+
+            getVoiceForCharacter(character) {
+                const voicePreferences = {
+                    'orlok': ['Microsoft David', 'Google UK English Male', 'Alex', 'Daniel'],
+                    'robot': ['Microsoft Zira', 'Google US English', 'Samantha', 'Victoria'],
+                    'pirate': ['Microsoft Mark', 'Google UK English Male', 'Fred', 'Ralph']
+                };
+
+                const preferences = voicePreferences[character] || voicePreferences['orlok'];
+
+                for (const prefName of preferences) {
+                    const voice = this.voices.find(v => v.name.includes(prefName));
+                    if (voice) return voice;
+                }
+
+                // Fallback to first available voice
+                return this.voices[0] || null;
+            }
+
+            async speakText(text, character = null) {
+                if (!text || !this.speechSynthesis) return;
+
+                // Stop any current speech
+                this.speechSynthesis.cancel();
+
+                const utterance = new SpeechSynthesisUtterance(text);
+                const voice = this.getVoiceForCharacter(character || this.selectedVoice);
+
+                if (voice) {
+                    utterance.voice = voice;
+                }
+
+                // Character-specific voice settings
+                switch (character || this.selectedVoice) {
+                    case 'orlok':
+                        utterance.rate = 0.8;
+                        utterance.pitch = 0.7;
+                        break;
+                    case 'robot':
+                        utterance.rate = 1.1;
+                        utterance.pitch = 0.9;
+                        break;
+                    case 'pirate':
+                        utterance.rate = 0.9;
+                        utterance.pitch = 0.8;
+                        break;
+                    default:
+                        utterance.rate = 1.0;
+                        utterance.pitch = 1.0;
+                }
+
+                utterance.volume = this.audioVolume;
+
+                // Synchronize jaw movement with speech
+                utterance.onstart = () => {
+                    this.animateJawWithSpeech(text);
+                };
+
+                this.speechSynthesis.speak(utterance);
+            }
+
+            testAudio() {
+                const testMessages = {
+                    'orlok': "Greetings, mortal... I am Count Orlok, ancient dweller of the shadows...",
+                    'robot': "SYSTEM STATUS: Audio test initiated. All circuits functioning normally.",
+                    'pirate': "Ahoy there, matey! This be Captain Blackbeard speakin'!"
+                };
+
+                const message = testMessages[this.selectedVoice] || testMessages['orlok'];
+                this.speakText(message, this.selectedVoice);
             }
 
             adjustTextareaHeight() {
@@ -255,32 +433,67 @@
                 }, 1000 + Math.random() * 2000);
             }
 
-            simulateJawMovement(text) {
+            testJawMovement() {
+                console.log(`Testing jaw movement on GPIO ${this.selectedServo}`);
+
+                // Send servo configuration first
+                this.sendWebSocketMessage({
+                    type: 'configure_servo',
+                    pin: this.selectedServo
+                });
+
+                // Test sequence
+                const testSequence = [
+                    { angle: 0, duration: 0.5 },
+                    { angle: 30, duration: 0.5 },
+                    { angle: 60, duration: 0.5 },
+                    { angle: 30, duration: 0.5 },
+                    { angle: 0, duration: 0.5 }
+                ];
+
+                testSequence.forEach((move, index) => {
+                    setTimeout(() => {
+                        this.sendWebSocketMessage({
+                            type: 'jaw_move',
+                            angle: move.angle,
+                            duration: move.duration,
+                            curve_type: 'ease_in_out'
+                        });
+                    }, index * 600);
+                });
+            }
+
+            animateJawWithSpeech(text) {
                 const words = text.split(' ');
                 let delay = 0;
-                
+
                 words.forEach((word, index) => {
                     setTimeout(() => {
-                        const angle = Math.min(45, word.length * 5);
+                        const angle = Math.min(45, word.length * 4);
                         this.sendWebSocketMessage({
                             type: 'jaw_move',
                             angle: angle,
-                            duration: 0.3,
-                            curve_type: 'linear'
+                            duration: 0.2,
+                            curve_type: 'ease_in_out'
                         });
-                        
+
                         setTimeout(() => {
                             this.sendWebSocketMessage({
                                 type: 'jaw_move',
                                 angle: 0,
-                                duration: 0.2
+                                duration: 0.1
                             });
-                        }, 300);
-                        
+                        }, 200);
+
                     }, delay);
-                    
-                    delay += 500;
+
+                    delay += 300;
                 });
+            }
+
+            simulateJawMovement(text) {
+                // Use the new speech-synchronized animation
+                this.animateJawWithSpeech(text);
             }
 
             addMessage(text, sender) {
@@ -300,17 +513,37 @@
             }
 
             addBotResponse(userMessage) {
-                const responses = [
-                    "That's interesting! Tell me more about that.",
-                    "I understand what you're saying. How does that make you feel?",
-                    "Thanks for sharing that with me!",
-                    "That's a great point. I hadn't thought of it that way.",
-                    "I'm learning so much from our conversation!"
-                ];
-                
+                const characterResponses = {
+                    'orlok': [
+                        "Ah, mortal... your words echo through the shadows of eternity...",
+                        "Indeed, from my centuries of existence, I have observed such things...",
+                        "The darkness whispers secrets that few dare to comprehend...",
+                        "Your mortal perspective intrigues me, young one...",
+                        "In my long existence, I have seen many such matters unfold..."
+                    ],
+                    'robot': [
+                        "PROCESSING... That is a logical observation, human.",
+                        "ANALYSIS COMPLETE: Your input has been processed successfully.",
+                        "INTERESTING DATA: Please provide additional parameters.",
+                        "SYSTEM STATUS: Ready to assist with your query.",
+                        "COMPUTATION RESULT: I understand your request."
+                    ],
+                    'pirate': [
+                        "Arrr, that be a fine tale ye be tellin', matey!",
+                        "Shiver me timbers! That's quite the adventure!",
+                        "Aye, I've sailed the seven seas and seen such things!",
+                        "Batten down the hatches! That's a story worth tellin'!",
+                        "Yo ho ho! That reminds me of me days on the high seas!"
+                    ]
+                };
+
+                const responses = characterResponses[this.selectedVoice] || characterResponses['orlok'];
                 const response = responses[Math.floor(Math.random() * responses.length)];
+
                 this.addMessage(response, 'bot');
-                this.simulateJawMovement(response);
+
+                // Speak the response with character voice
+                this.speakText(response, this.selectedVoice);
             }
 
             scrollToBottom() {
