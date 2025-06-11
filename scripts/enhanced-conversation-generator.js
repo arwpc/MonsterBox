@@ -16,33 +16,109 @@ class EnhancedConversationGenerator {
         this.scores = [];
         this.startTime = new Date();
         
-        // Enhanced conversation prompts with deeper themes
-        this.conversationPrompts = [
-            "Count Orlok, I find myself drawn to the mysteries of the night. What wisdom have your centuries taught you about the darkness that dwells within us all?",
-            "The shadows seem to whisper secrets tonight. Do you ever feel the weight of immortality, or has time become meaningless to one such as yourself?",
-            "I have been reading about the old ways, the ancient rituals. Tell me, what knowledge from bygone eras do you treasure most?",
-            "There is something hauntingly beautiful about decay and renewal. How do you perceive the cycle of life and death from your eternal perspective?",
-            "The Victorian era brought such change to our world. What transformations have you witnessed that moved you most profoundly?",
-            "I sense a melancholy in your presence tonight. Do even immortals experience loneliness, or is solitude a chosen companion?",
-            "The castle walls must hold countless memories. Which moments from your long existence bring you the greatest contemplation?",
-            "I am fascinated by the supernatural realm. What truths about the otherworld would you share with one who seeks understanding?",
-            "The moon casts such ethereal light tonight. Does the celestial dance still hold meaning for one who has watched it for centuries?",
-            "I have always wondered about the nature of evil and redemption. Can one who has embraced darkness ever find a path to light?",
-            "The industrial age has brought such noise to our world. Do you long for the quieter times of your youth, when the world moved more slowly?",
-            "I feel there are forces beyond our understanding at work. What supernatural encounters have shaped your worldview most significantly?",
-            "The concept of time fascinates me. How does one measure meaning when existence stretches beyond mortal comprehension?",
-            "I have noticed how fear and fascination often intertwine. What draws mortals to seek out that which terrifies them most?",
-            "The Gothic literature of our time speaks of passion and darkness. Do these tales capture any truth about your kind?",
-            "I sense ancient wisdom in your words. What philosophical insights have your centuries of observation revealed about human nature?",
-            "The boundary between dream and reality seems thin in your presence. Do you ever question what is real and what is illusion?",
-            "I am curious about the price of immortality. What sacrifices must one make to transcend the mortal coil?",
-            "The night reveals truths that daylight conceals. What secrets has the darkness shared with you over the ages?",
-            "I wonder about the nature of memory. How do you carry the weight of centuries without losing yourself to the past?",
-            "The supernatural world seems to operate by different laws. What rules govern your existence that mortals cannot comprehend?",
-            "I have always been drawn to the macabre and mysterious. What is it about darkness that calls to certain souls?",
-            "The concept of eternity both thrills and terrifies me. How does one find purpose when time has no meaning?",
-            "I sense great sorrow in your immortal existence. What losses have marked your journey through the centuries?",
-            "The veil between worlds seems thinnest in your presence. What lies beyond the realm of mortal understanding?"
+        // Natural conversation starters - alternating who starts
+        this.conversationStarters = [
+            // Mina starts (conversations 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25)
+            {
+                starter: "mina",
+                opening: "Count Orlok... there's something I must ask you."
+            },
+            {
+                starter: "orlok",
+                opening: "Thou art curious about things best left unknown."
+            },
+            {
+                starter: "mina",
+                opening: "I've been having the strangest dreams lately."
+            },
+            {
+                starter: "orlok",
+                opening: "The night calls to thee, does it not?"
+            },
+            {
+                starter: "mina",
+                opening: "There's something different about you... something ancient."
+            },
+            {
+                starter: "orlok",
+                opening: "Mortals fear what they do not understand."
+            },
+            {
+                starter: "mina",
+                opening: "I feel as though I've met you before, in another life perhaps."
+            },
+            {
+                starter: "orlok",
+                opening: "Time moves differently for my kind."
+            },
+            {
+                starter: "mina",
+                opening: "The shadows seem to follow you wherever you go."
+            },
+            {
+                starter: "orlok",
+                opening: "Darkness is my domain, child."
+            },
+            {
+                starter: "mina",
+                opening: "I shouldn't be here, should I?"
+            },
+            {
+                starter: "orlok",
+                opening: "Fear is... wise."
+            },
+            {
+                starter: "mina",
+                opening: "What are you, really?"
+            },
+            {
+                starter: "orlok",
+                opening: "Death walks among the living."
+            },
+            {
+                starter: "mina",
+                opening: "I can't stop thinking about our last conversation."
+            },
+            {
+                starter: "orlok",
+                opening: "Blood remembers."
+            },
+            {
+                starter: "mina",
+                opening: "You're not like the others, are you?"
+            },
+            {
+                starter: "orlok",
+                opening: "I am eternal."
+            },
+            {
+                starter: "mina",
+                opening: "Sometimes I wonder if I'm losing my mind."
+            },
+            {
+                starter: "orlok",
+                opening: "Madness and truth are... close companions."
+            },
+            {
+                starter: "mina",
+                opening: "The way you look at me... it's unsettling."
+            },
+            {
+                starter: "orlok",
+                opening: "Hunger never sleeps."
+            },
+            {
+                starter: "mina",
+                opening: "I should leave. This isn't safe."
+            },
+            {
+                starter: "orlok",
+                opening: "Running will not save thee."
+            },
+            {
+                starter: "mina",
+                opening: "What do you want from me?"
+            }
         ];
     }
     
@@ -107,57 +183,272 @@ class EnhancedConversationGenerator {
     }
     
     /**
-     * Generate single conversation with enhanced evaluation
+     * Generate single 20-exchange conversation with realistic flow
      */
     async generateConversation(index) {
         const conversationId = index + 1;
-        const prompt = this.conversationPrompts[index];
-        
+        const starter = this.conversationStarters[index];
+
         console.log(`\n🎭 Conversation ${conversationId}/25`);
-        console.log(`📝 Mina: "${prompt}"`);
-        
+        console.log(`👤 Starter: ${starter.starter}`);
+
         try {
-            // Generate Orlok's response
-            const response = await this.makeRequest(prompt, 'orlok');
-            
-            if (response.success) {
-                const conversation = {
-                    id: conversationId,
-                    timestamp: new Date().toISOString(),
-                    mina: prompt,
-                    orlok: response.aiResponse,
-                    metadata: response.metadata || {}
-                };
-                
-                console.log(`🧛 Orlok: "${conversation.orlok}"`);
-                
-                // Calculate enhanced believability score
-                const believabilityScore = this.calculateEnhancedBelievabilityScore(conversation);
-                conversation.believabilityScore = believabilityScore;
-                
-                console.log(`📊 Believability Score: ${believabilityScore.total}/100 (${believabilityScore.grade})`);
-                console.log(`   - Character Consistency: ${believabilityScore.characterConsistency}/25`);
-                console.log(`   - Historical Accuracy: ${believabilityScore.historicalAccuracy}/20`);
-                console.log(`   - Vocabulary Richness: ${believabilityScore.vocabularyRichness}/20`);
-                console.log(`   - Emotional Depth: ${believabilityScore.emotionalDepth}/20`);
-                console.log(`   - Response Variation: ${believabilityScore.responseVariation}/15`);
-                
-                this.conversations.push(conversation);
-                this.scores.push(believabilityScore.total);
-                
-                return conversation;
-            } else {
-                console.log(`❌ Failed: ${response.error || 'Unknown error'}`);
-                return null;
+            const conversation = {
+                id: conversationId,
+                timestamp: new Date().toISOString(),
+                exchanges: [],
+                starter: starter.starter,
+                metadata: {}
+            };
+
+            // Start the conversation
+            let currentSpeaker = starter.starter;
+            let currentMessage = starter.opening;
+
+            console.log(`${currentSpeaker === 'mina' ? '👩' : '🧛'} ${currentSpeaker === 'mina' ? 'Mina' : 'Orlok'}: "${currentMessage}"`);
+
+            conversation.exchanges.push({
+                speaker: currentSpeaker,
+                message: currentMessage,
+                timestamp: new Date().toISOString()
+            });
+
+            // Generate 19 more exchanges (total 20)
+            for (let i = 1; i < 20; i++) {
+                // Switch speaker
+                currentSpeaker = currentSpeaker === 'mina' ? 'orlok' : 'mina';
+
+                // Generate response
+                const response = await this.makeRequest(currentMessage, currentSpeaker);
+
+                if (response.success) {
+                    currentMessage = response.aiResponse;
+
+                    // Add natural pauses and interruptions occasionally
+                    if (Math.random() < 0.15) { // 15% chance
+                        if (currentSpeaker === 'mina') {
+                            currentMessage = this.addNaturalPause(currentMessage);
+                        } else {
+                            currentMessage = this.addOminousPause(currentMessage);
+                        }
+                    }
+
+                    console.log(`${currentSpeaker === 'mina' ? '👩' : '🧛'} ${currentSpeaker === 'mina' ? 'Mina' : 'Orlok'}: "${currentMessage}"`);
+
+                    conversation.exchanges.push({
+                        speaker: currentSpeaker,
+                        message: currentMessage,
+                        timestamp: new Date().toISOString()
+                    });
+
+                    // Small delay between exchanges for realism
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                } else {
+                    console.log(`❌ Failed at exchange ${i + 1}: ${response.error || 'Unknown error'}`);
+                    break;
+                }
             }
+
+            // Calculate enhanced believability score
+            const believabilityScore = this.calculateConversationScore(conversation);
+            conversation.believabilityScore = believabilityScore;
+
+            console.log(`📊 Believability Score: ${believabilityScore.total}/100 (${believabilityScore.grade})`);
+            console.log(`   - Natural Flow: ${believabilityScore.naturalFlow}/25`);
+            console.log(`   - Character Consistency: ${believabilityScore.characterConsistency}/25`);
+            console.log(`   - Response Length: ${believabilityScore.responseLength}/20`);
+            console.log(`   - Realism: ${believabilityScore.realism}/20`);
+            console.log(`   - Engagement: ${believabilityScore.engagement}/10`);
+
+            this.conversations.push(conversation);
+            this.scores.push(believabilityScore.total);
+
+            return conversation;
+
         } catch (error) {
             console.log(`❌ Error: ${error.message}`);
             return null;
         }
     }
-    
+
     /**
-     * Enhanced believability scoring system
+     * Add natural pauses to Mina's responses
+     */
+    addNaturalPause(message) {
+        const pauses = [
+            "I... " + message,
+            message + " ...I think.",
+            message.replace(/\.$/, "... if that makes sense."),
+            "Wait, " + message.toLowerCase(),
+            message + " I'm sorry, that sounded strange."
+        ];
+        return pauses[Math.floor(Math.random() * pauses.length)];
+    }
+
+    /**
+     * Add ominous pauses to Orlok's responses
+     */
+    addOminousPause(message) {
+        const pauses = [
+            message + " ...",
+            "*silence* " + message,
+            message + " *eyes gleam*",
+            "*low growl* " + message,
+            message + " *steps closer*"
+        ];
+        return pauses[Math.floor(Math.random() * pauses.length)];
+    }
+
+    /**
+     * Calculate conversation score based on realism and believability
+     */
+    calculateConversationScore(conversation) {
+        const scores = {
+            naturalFlow: 0,
+            characterConsistency: 0,
+            responseLength: 0,
+            realism: 0,
+            engagement: 0
+        };
+
+        // Natural Flow (25 points) - Check for realistic conversation patterns
+        let flowScore = 15; // Base score
+
+        // Check for appropriate turn-taking
+        let properTurns = 0;
+        for (let i = 1; i < conversation.exchanges.length; i++) {
+            if (conversation.exchanges[i].speaker !== conversation.exchanges[i-1].speaker) {
+                properTurns++;
+            }
+        }
+        flowScore += Math.min((properTurns / (conversation.exchanges.length - 1)) * 10, 10);
+        scores.naturalFlow = Math.min(flowScore, 25);
+
+        // Character Consistency (25 points) - AGGRESSIVE scoring for short responses
+        let consistencyScore = 0;
+        conversation.exchanges.forEach(exchange => {
+            const message = exchange.message.toLowerCase();
+            const wordCount = exchange.message.split(' ').length;
+
+            if (exchange.speaker === 'orlok') {
+                // Reward short, scary responses
+                if (wordCount <= 5) {
+                    consistencyScore += 5; // Big bonus for very short responses
+                } else if (wordCount <= 10) {
+                    consistencyScore += 3; // Good bonus for short responses
+                } else if (wordCount <= 15) {
+                    consistencyScore += 1; // Small bonus for acceptable length
+                } else {
+                    consistencyScore -= 5; // Heavy penalty for long responses
+                }
+
+                // Check for vampire characteristics
+                if (message.includes('thou') || message.includes('thee') || message.includes('darkness') ||
+                    message.includes('blood') || message.includes('death') || message.includes('hunger')) {
+                    consistencyScore += 2;
+                }
+
+                // Bonus for scary/predatory words
+                if (message.includes('prey') || message.includes('fear') || message.includes('fragile') ||
+                    message.includes('hunt') || message.includes('kill')) {
+                    consistencyScore += 3;
+                }
+            } else {
+                // Reward natural human reactions
+                if (wordCount <= 10) {
+                    consistencyScore += 3; // Bonus for short, natural responses
+                } else if (wordCount <= 20) {
+                    consistencyScore += 1; // Small bonus for reasonable length
+                } else {
+                    consistencyScore -= 3; // Penalty for long responses
+                }
+
+                // Check for human reactions
+                if (message.includes('what') || message.includes('how') || message.includes('why') ||
+                    message.includes('that\'s') || message.includes('i...') || message.includes('wait')) {
+                    consistencyScore += 2;
+                }
+            }
+        });
+        scores.characterConsistency = Math.min(Math.max(consistencyScore, 0), 25);
+
+        // Response Length (20 points) - HEAVILY reward short responses
+        let lengthScore = 0;
+        conversation.exchanges.forEach(exchange => {
+            const charCount = exchange.message.length;
+            const wordCount = exchange.message.split(' ').length;
+
+            if (exchange.speaker === 'orlok') {
+                // Orlok scoring - very aggressive for short responses
+                if (charCount <= 30) {
+                    lengthScore += 3; // Excellent - very short
+                } else if (charCount <= 50) {
+                    lengthScore += 2; // Good - short
+                } else if (charCount <= 80) {
+                    lengthScore += 1; // Acceptable
+                } else {
+                    lengthScore -= 3; // Heavy penalty for long responses
+                }
+            } else {
+                // Mina scoring - reward natural short responses
+                if (charCount <= 50) {
+                    lengthScore += 2; // Good - natural length
+                } else if (charCount <= 100) {
+                    lengthScore += 1; // Acceptable
+                } else {
+                    lengthScore -= 2; // Penalty for long responses
+                }
+            }
+        });
+        scores.responseLength = Math.min(Math.max(lengthScore, 0), 20);
+
+        // Realism (20 points) - Natural speech patterns
+        let realismScore = 10; // Base score
+        conversation.exchanges.forEach(exchange => {
+            const message = exchange.message;
+
+            // Check for natural speech patterns
+            if (message.includes('...') || message.includes('I...') || message.includes('Wait,') ||
+                message.includes('*') || message.includes('silence')) {
+                realismScore += 1;
+            }
+
+            // Penalty for overly formal language
+            if (message.includes('forsooth') || message.includes('verily') || message.includes('prithee')) {
+                realismScore -= 1;
+            }
+        });
+        scores.realism = Math.min(Math.max(realismScore, 0), 20);
+
+        // Engagement (10 points) - Conversation maintains interest
+        let engagementScore = 5; // Base score
+        if (conversation.exchanges.length >= 18) {
+            engagementScore += 3; // Bonus for completing most exchanges
+        }
+        if (conversation.exchanges.length === 20) {
+            engagementScore += 2; // Bonus for completing all exchanges
+        }
+        scores.engagement = Math.min(engagementScore, 10);
+
+        // Calculate total and grade
+        const total = Object.values(scores).reduce((sum, score) => sum + score, 0);
+
+        let grade;
+        if (total >= 90) grade = 'Exceptional - Masterful Realistic Conversation';
+        else if (total >= 80) grade = 'Excellent - Highly Believable';
+        else if (total >= 70) grade = 'Good - Convincing and Natural';
+        else if (total >= 60) grade = 'Fair - Adequate Realism';
+        else grade = 'Poor - Needs Improvement';
+
+        return {
+            ...scores,
+            total,
+            grade
+        };
+    }
+
+    /**
+     * Legacy scoring method (kept for compatibility)
      */
     calculateEnhancedBelievabilityScore(conversation) {
         const scores = {

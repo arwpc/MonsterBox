@@ -139,20 +139,7 @@ if ($TestOnly) {
     # Test AI Character Library
     $testScript = @"
 cd ~/MonsterBox
-node -e "
-try {
-    const AICharacterLibrary = require('./services/aiCharacterLibrary.js');
-    const library = new AICharacterLibrary();
-    setTimeout(() => {
-        const characters = library.getAllCharacters();
-        console.log('✅ AI Character Library test passed - ' + characters.length + ' characters loaded');
-        process.exit(0);
-    }, 2000);
-} catch (error) {
-    console.log('❌ AI Character Library test failed: ' + error.message);
-    process.exit(1);
-}
-"
+node -e "try { const AICharacterLibrary = require('./services/aiCharacterLibrary.js'); const library = new AICharacterLibrary(); setTimeout(() => { const characters = library.getAllCharacters(); console.log('✅ AI Character Library test passed - ' + characters.length + ' characters loaded'); process.exit(0); }, 2000); } catch (error) { console.log('❌ AI Character Library test failed: ' + error.message); process.exit(1); }"
 "@
     
     $testResult = ssh $RpiUser@$RpiHost $testScript
@@ -161,17 +148,7 @@ try {
     # Test enhanced conversation generator
     $testScript2 = @"
 cd ~/MonsterBox
-node -e "
-try {
-    const EnhancedConversationGenerator = require('./scripts/enhanced-conversation-generator.js');
-    const generator = new EnhancedConversationGenerator({ host: 'localhost', port: 8766, outputDir: './test-output' });
-    console.log('✅ Enhanced Conversation Generator test passed');
-    process.exit(0);
-} catch (error) {
-    console.log('❌ Enhanced Conversation Generator test failed: ' + error.message);
-    process.exit(1);
-}
-"
+node -e "try { const EnhancedConversationGenerator = require('./scripts/enhanced-conversation-generator.js'); const generator = new EnhancedConversationGenerator({ host: 'localhost', port: 8766, outputDir: './test-output' }); console.log('✅ Enhanced Conversation Generator test passed'); process.exit(0); } catch (error) { console.log('❌ Enhanced Conversation Generator test failed: ' + error.message); process.exit(1); }"
 "@
     
     $testResult2 = ssh $RpiUser@$RpiHost $testScript2
@@ -213,19 +190,7 @@ done
 echo ""
 echo "🎭 Testing AI Character Library..."
 cd ~/MonsterBox
-node -e "
-try {
-    const AICharacterLibrary = require('./services/aiCharacterLibrary.js');
-    const library = new AICharacterLibrary();
-    setTimeout(() => {
-        const characters = library.getAllCharacters();
-        console.log('✅ AI Character Library operational - ' + characters.length + ' characters loaded');
-        characters.forEach(char => console.log('   - ' + char.name + ' (' + char.id + ')'));
-    }, 2000);
-} catch (error) {
-    console.log('❌ AI Character Library error: ' + error.message);
-}
-" 2>/dev/null
+node -e "try { const AICharacterLibrary = require('./services/aiCharacterLibrary.js'); const library = new AICharacterLibrary(); setTimeout(() => { const characters = library.getAllCharacters(); console.log('✅ AI Character Library operational - ' + characters.length + ' characters loaded'); characters.forEach(char => console.log('   - ' + char.name + ' (' + char.id + ')')); }, 2000); } catch (error) { console.log('❌ AI Character Library error: ' + error.message); }" 2>/dev/null
 
 echo ""
 echo "🚀 Starting AI endpoint for testing..."
@@ -234,18 +199,7 @@ AI_PID=\$!
 sleep 5
 
 echo "🧪 Testing AI endpoint..."
-curl -s -X POST http://localhost:8766/api/chat \
-    -H "Content-Type: application/json" \
-    -d '{"message":"Test message","character":"orlok"}' | \
-    node -e "
-const data = JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf8'));
-if (data.success) {
-    console.log('✅ AI endpoint test passed');
-    console.log('   Response: ' + data.aiResponse.substring(0, 50) + '...');
-} else {
-    console.log('❌ AI endpoint test failed: ' + (data.error || 'Unknown error'));
-}
-" 2>/dev/null
+curl -s -X POST http://localhost:8766/api/chat -H "Content-Type: application/json" -d "{\"message\":\"Test message\",\"character\":\"orlok\"}" | node -e "const data = JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf8')); if (data.success) { console.log('✅ AI endpoint test passed'); console.log('   Response: ' + data.aiResponse.substring(0, 50) + '...'); } else { console.log('❌ AI endpoint test failed: ' + (data.error || 'Unknown error')); }" 2>/dev/null
 
 # Stop AI endpoint
 kill \$AI_PID 2>/dev/null
