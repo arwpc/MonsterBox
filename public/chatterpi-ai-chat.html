@@ -295,20 +295,24 @@
             constructor() {
                 this.initializeElements();
                 this.setupEventListeners();
+                this.initializeAudio();
                 this.connectToServices();
                 this.updateWelcomeTime();
-                
+
                 // Connection states
                 this.isAIConnected = false;
                 this.isJawConnected = false;
                 this.isProcessing = false;
-                
+
                 // WebSocket connections
                 this.aiWebSocket = null;
                 this.jawWebSocket = null;
-                
-                // Current character
+
+                // Current character and audio
                 this.currentCharacter = 'orlok';
+                this.speechSynthesis = window.speechSynthesis;
+                this.voices = [];
+                this.audioVolume = 0.7;
             }
             
             initializeElements() {
@@ -352,6 +356,73 @@
             updateSendButton() {
                 const hasText = this.chatInput.value.trim().length > 0;
                 this.sendButton.disabled = !hasText || !this.isAIConnected || this.isProcessing;
+            }
+
+            initializeAudio() {
+                // Wait for voices to load
+                if (this.speechSynthesis.getVoices().length === 0) {
+                    this.speechSynthesis.addEventListener('voiceschanged', () => {
+                        this.voices = this.speechSynthesis.getVoices();
+                        console.log('Available voices:', this.voices.map(v => v.name));
+                    });
+                } else {
+                    this.voices = this.speechSynthesis.getVoices();
+                }
+            }
+
+            getVoiceForCharacter(character) {
+                const voicePreferences = {
+                    'orlok': ['Microsoft David', 'Google UK English Male', 'Alex', 'Daniel'],
+                    'robot': ['Microsoft Zira', 'Google US English', 'Samantha', 'Victoria'],
+                    'pirate': ['Microsoft Mark', 'Google UK English Male', 'Fred', 'Ralph']
+                };
+
+                const preferences = voicePreferences[character] || voicePreferences['orlok'];
+
+                for (const prefName of preferences) {
+                    const voice = this.voices.find(v => v.name.includes(prefName));
+                    if (voice) return voice;
+                }
+
+                // Fallback to first available voice
+                return this.voices[0] || null;
+            }
+
+            async speakText(text, character = null) {
+                if (!text || !this.speechSynthesis) return;
+
+                // Stop any current speech
+                this.speechSynthesis.cancel();
+
+                const utterance = new SpeechSynthesisUtterance(text);
+                const voice = this.getVoiceForCharacter(character || this.currentCharacter);
+
+                if (voice) {
+                    utterance.voice = voice;
+                }
+
+                // Character-specific voice settings
+                switch (character || this.currentCharacter) {
+                    case 'orlok':
+                        utterance.rate = 0.8;
+                        utterance.pitch = 0.7;
+                        break;
+                    case 'robot':
+                        utterance.rate = 1.1;
+                        utterance.pitch = 0.9;
+                        break;
+                    case 'pirate':
+                        utterance.rate = 0.9;
+                        utterance.pitch = 0.8;
+                        break;
+                    default:
+                        utterance.rate = 1.0;
+                        utterance.pitch = 1.0;
+                }
+
+                utterance.volume = this.audioVolume;
+
+                this.speechSynthesis.speak(utterance);
             }
             
             async connectToServices() {
@@ -449,6 +520,8 @@
                         this.setProcessing(false);
                         if (message.data && message.data.aiResponse) {
                             this.addMessage(message.data.aiResponse.text, 'bot');
+                            // Speak the AI response
+                            this.speakText(message.data.aiResponse.text, message.data.aiResponse.voice);
                         }
                         break;
 

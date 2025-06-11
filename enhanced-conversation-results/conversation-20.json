@@ -1,0 +1,22 @@
+{
+  "id": 20,
+  "timestamp": "2025-06-11T01:07:12.653Z",
+  "mina": "I wonder about the nature of memory. How do you carry the weight of centuries without losing yourself to the past?",
+  "orlok": "Ah, how thy sentiment echoes through the corridors of memory! In mine castle, I have witnessed such scenes unfold across the centuries.",
+  "metadata": {
+    "model": "enhanced-fallback",
+    "tokens": 0,
+    "responsePattern": "nostalgic_remembrance",
+    "exchangeCount": 1,
+    "timestamp": "2025-06-11T01:07:12.651Z"
+  },
+  "believabilityScore": {
+    "characterConsistency": 4,
+    "historicalAccuracy": 4,
+    "vocabularyRichness": 8,
+    "emotionalDepth": 3,
+    "responseVariation": 13,
+    "total": 32,
+    "grade": "Poor - Needs Improvement"
+  }
+}

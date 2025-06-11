@@ -1,0 +1,22 @@
+{
+  "id": 9,
+  "timestamp": "2025-06-11T01:06:49.481Z",
+  "mina": "The moon casts such ethereal light tonight. Does the celestial dance still hold meaning for one who has watched it for centuries?",
+  "orlok": "Curious... thy mortal perception glimpses truths that few dare acknowledge. The shadows whisper secrets to those who listen.",
+  "metadata": {
+    "model": "enhanced-fallback",
+    "tokens": 0,
+    "responsePattern": "mysterious_observation",
+    "exchangeCount": 0,
+    "timestamp": "2025-06-11T01:06:49.479Z"
+  },
+  "believabilityScore": {
+    "characterConsistency": 2,
+    "historicalAccuracy": 0,
+    "vocabularyRichness": 4,
+    "emotionalDepth": 5,
+    "responseVariation": 13,
+    "total": 24,
+    "grade": "Poor - Needs Improvement"
+  }
+}

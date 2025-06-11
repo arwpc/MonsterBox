@@ -1,0 +1,22 @@
+{
+  "id": 24,
+  "timestamp": "2025-06-11T01:07:21.078Z",
+  "mina": "I sense great sorrow in your immortal existence. What losses have marked your journey through the centuries?",
+  "orlok": "Curious... thy mortal perception glimpses truths that few dare acknowledge. The shadows whisper secrets to those who listen.",
+  "metadata": {
+    "model": "enhanced-fallback",
+    "tokens": 0,
+    "responsePattern": "mysterious_observation",
+    "exchangeCount": 5,
+    "timestamp": "2025-06-11T01:07:21.078Z"
+  },
+  "believabilityScore": {
+    "characterConsistency": 2,
+    "historicalAccuracy": 0,
+    "vocabularyRichness": 4,
+    "emotionalDepth": 5,
+    "responseVariation": 13,
+    "total": 24,
+    "grade": "Poor - Needs Improvement"
+  }
+}

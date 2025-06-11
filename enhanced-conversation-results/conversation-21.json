@@ -1,0 +1,22 @@
+{
+  "id": 21,
+  "timestamp": "2025-06-11T01:07:14.763Z",
+  "mina": "The supernatural world seems to operate by different laws. What rules govern your existence that mortals cannot comprehend?",
+  "orlok": "Most intriguing, dear mortal. There are forces at work beyond thy comprehension, ancient powers that stir in the darkness.",
+  "metadata": {
+    "model": "enhanced-fallback",
+    "tokens": 0,
+    "responsePattern": "mysterious_observation",
+    "exchangeCount": 2,
+    "timestamp": "2025-06-11T01:07:14.763Z"
+  },
+  "believabilityScore": {
+    "characterConsistency": 7,
+    "historicalAccuracy": 0,
+    "vocabularyRichness": 4,
+    "emotionalDepth": 0,
+    "responseVariation": 15,
+    "total": 26,
+    "grade": "Poor - Needs Improvement"
+  }
+}
