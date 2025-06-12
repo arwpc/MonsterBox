@@ -1,0 +1,604 @@
+{
+  "iteration": 3,
+  "timestamp": "2025-06-12T00:39:35.869Z",
+  "conversations": [
+    {
+      "id": "3-1",
+      "iteration": 3,
+      "startingAI": "mina",
+      "exchanges": [],
+      "performanceMetrics": {
+        "responseTimes": [],
+        "totalTime": 4,
+        "averageResponseTime": null
+      },
+      "believabilityScore": {
+        "characterConsistency": 0,
+        "responseRelevance": 0,
+        "emotionalDepth": 0,
+        "languageStyle": 0,
+        "narrativeFlow": 0,
+        "performanceBonus": 0,
+        "conversationLength": 0,
+        "total": 0,
+        "grade": "F"
+      },
+      "timestamp": "2025-06-12T00:39:10.687Z"
+    },
+    {
+      "id": "3-2",
+      "iteration": 3,
+      "startingAI": "orlok",
+      "exchanges": [],
+      "performanceMetrics": {
+        "responseTimes": [],
+        "totalTime": 5,
+        "averageResponseTime": null
+      },
+      "believabilityScore": {
+        "characterConsistency": 0,
+        "responseRelevance": 0,
+        "emotionalDepth": 0,
+        "languageStyle": 0,
+        "narrativeFlow": 0,
+        "performanceBonus": 0,
+        "conversationLength": 0,
+        "total": 0,
+        "grade": "F"
+      },
+      "timestamp": "2025-06-12T00:39:11.692Z"
+    },
+    {
+      "id": "3-3",
+      "iteration": 3,
+      "startingAI": "mina",
+      "exchanges": [],
+      "performanceMetrics": {
+        "responseTimes": [],
+        "totalTime": 4,
+        "averageResponseTime": null
+      },
+      "believabilityScore": {
+        "characterConsistency": 0,
+        "responseRelevance": 0,
+        "emotionalDepth": 0,
+        "languageStyle": 0,
+        "narrativeFlow": 0,
+        "performanceBonus": 0,
+        "conversationLength": 0,
+        "total": 0,
+        "grade": "F"
+      },
+      "timestamp": "2025-06-12T00:39:12.700Z"
+    },
+    {
+      "id": "3-4",
+      "iteration": 3,
+      "startingAI": "orlok",
+      "exchanges": [],
+      "performanceMetrics": {
+        "responseTimes": [],
+        "totalTime": 4,
+        "averageResponseTime": null
+      },
+      "believabilityScore": {
+        "characterConsistency": 0,
+        "responseRelevance": 0,
+        "emotionalDepth": 0,
+        "languageStyle": 0,
+        "narrativeFlow": 0,
+        "performanceBonus": 0,
+        "conversationLength": 0,
+        "total": 0,
+        "grade": "F"
+      },
+      "timestamp": "2025-06-12T00:39:13.705Z"
+    },
+    {
+      "id": "3-5",
+      "iteration": 3,
+      "startingAI": "mina",
+      "exchanges": [],
+      "performanceMetrics": {
+        "responseTimes": [],
+        "totalTime": 4,
+        "averageResponseTime": null
+      },
+      "believabilityScore": {
+        "characterConsistency": 0,
+        "responseRelevance": 0,
+        "emotionalDepth": 0,
+        "languageStyle": 0,
+        "narrativeFlow": 0,
+        "performanceBonus": 0,
+        "conversationLength": 0,
+        "total": 0,
+        "grade": "F"
+      },
+      "timestamp": "2025-06-12T00:39:14.712Z"
+    },
+    {
+      "id": "3-6",
+      "iteration": 3,
+      "startingAI": "orlok",
+      "exchanges": [],
+      "performanceMetrics": {
+        "responseTimes": [],
+        "totalTime": 8,
+        "averageResponseTime": null
+      },
+      "believabilityScore": {
+        "characterConsistency": 0,
+        "responseRelevance": 0,
+        "emotionalDepth": 0,
+        "languageStyle": 0,
+        "narrativeFlow": 0,
+        "performanceBonus": 0,
+        "conversationLength": 0,
+        "total": 0,
+        "grade": "F"
+      },
+      "timestamp": "2025-06-12T00:39:15.717Z"
+    },
+    {
+      "id": "3-7",
+      "iteration": 3,
+      "startingAI": "mina",
+      "exchanges": [],
+      "performanceMetrics": {
+        "responseTimes": [],
+        "totalTime": 8,
+        "averageResponseTime": null
+      },
+      "believabilityScore": {
+        "characterConsistency": 0,
+        "responseRelevance": 0,
+        "emotionalDepth": 0,
+        "languageStyle": 0,
+        "narrativeFlow": 0,
+        "performanceBonus": 0,
+        "conversationLength": 0,
+        "total": 0,
+        "grade": "F"
+      },
+      "timestamp": "2025-06-12T00:39:16.728Z"
+    },
+    {
+      "id": "3-8",
+      "iteration": 3,
+      "startingAI": "orlok",
+      "exchanges": [],
+      "performanceMetrics": {
+        "responseTimes": [],
+        "totalTime": 7,
+        "averageResponseTime": null
+      },
+      "believabilityScore": {
+        "characterConsistency": 0,
+        "responseRelevance": 0,
+        "emotionalDepth": 0,
+        "languageStyle": 0,
+        "narrativeFlow": 0,
+        "performanceBonus": 0,
+        "conversationLength": 0,
+        "total": 0,
+        "grade": "F"
+      },
+      "timestamp": "2025-06-12T00:39:17.739Z"
+    },
+    {
+      "id": "3-9",
+      "iteration": 3,
+      "startingAI": "mina",
+      "exchanges": [],
+      "performanceMetrics": {
+        "responseTimes": [],
+        "totalTime": 7,
+        "averageResponseTime": null
+      },
+      "believabilityScore": {
+        "characterConsistency": 0,
+        "responseRelevance": 0,
+        "emotionalDepth": 0,
+        "languageStyle": 0,
+        "narrativeFlow": 0,
+        "performanceBonus": 0,
+        "conversationLength": 0,
+        "total": 0,
+        "grade": "F"
+      },
+      "timestamp": "2025-06-12T00:39:18.749Z"
+    },
+    {
+      "id": "3-10",
+      "iteration": 3,
+      "startingAI": "orlok",
+      "exchanges": [],
+      "performanceMetrics": {
+        "responseTimes": [],
+        "totalTime": 12,
+        "averageResponseTime": null
+      },
+      "believabilityScore": {
+        "characterConsistency": 0,
+        "responseRelevance": 0,
+        "emotionalDepth": 0,
+        "languageStyle": 0,
+        "narrativeFlow": 0,
+        "performanceBonus": 0,
+        "conversationLength": 0,
+        "total": 0,
+        "grade": "F"
+      },
+      "timestamp": "2025-06-12T00:39:19.759Z"
+    },
+    {
+      "id": "3-11",
+      "iteration": 3,
+      "startingAI": "mina",
+      "exchanges": [],
+      "performanceMetrics": {
+        "responseTimes": [],
+        "totalTime": 4,
+        "averageResponseTime": null
+      },
+      "believabilityScore": {
+        "characterConsistency": 0,
+        "responseRelevance": 0,
+        "emotionalDepth": 0,
+        "languageStyle": 0,
+        "narrativeFlow": 0,
+        "performanceBonus": 0,
+        "conversationLength": 0,
+        "total": 0,
+        "grade": "F"
+      },
+      "timestamp": "2025-06-12T00:39:20.771Z"
+    },
+    {
+      "id": "3-12",
+      "iteration": 3,
+      "startingAI": "orlok",
+      "exchanges": [],
+      "performanceMetrics": {
+        "responseTimes": [],
+        "totalTime": 3,
+        "averageResponseTime": null
+      },
+      "believabilityScore": {
+        "characterConsistency": 0,
+        "responseRelevance": 0,
+        "emotionalDepth": 0,
+        "languageStyle": 0,
+        "narrativeFlow": 0,
+        "performanceBonus": 0,
+        "conversationLength": 0,
+        "total": 0,
+        "grade": "F"
+      },
+      "timestamp": "2025-06-12T00:39:21.777Z"
+    },
+    {
+      "id": "3-13",
+      "iteration": 3,
+      "startingAI": "mina",
+      "exchanges": [],
+      "performanceMetrics": {
+        "responseTimes": [],
+        "totalTime": 3,
+        "averageResponseTime": null
+      },
+      "believabilityScore": {
+        "characterConsistency": 0,
+        "responseRelevance": 0,
+        "emotionalDepth": 0,
+        "languageStyle": 0,
+        "narrativeFlow": 0,
+        "performanceBonus": 0,
+        "conversationLength": 0,
+        "total": 0,
+        "grade": "F"
+      },
+      "timestamp": "2025-06-12T00:39:22.782Z"
+    },
+    {
+      "id": "3-14",
+      "iteration": 3,
+      "startingAI": "orlok",
+      "exchanges": [],
+      "performanceMetrics": {
+        "responseTimes": [],
+        "totalTime": 4,
+        "averageResponseTime": null
+      },
+      "believabilityScore": {
+        "characterConsistency": 0,
+        "responseRelevance": 0,
+        "emotionalDepth": 0,
+        "languageStyle": 0,
+        "narrativeFlow": 0,
+        "performanceBonus": 0,
+        "conversationLength": 0,
+        "total": 0,
+        "grade": "F"
+      },
+      "timestamp": "2025-06-12T00:39:23.786Z"
+    },
+    {
+      "id": "3-15",
+      "iteration": 3,
+      "startingAI": "mina",
+      "exchanges": [],
+      "performanceMetrics": {
+        "responseTimes": [],
+        "totalTime": 4,
+        "averageResponseTime": null
+      },
+      "believabilityScore": {
+        "characterConsistency": 0,
+        "responseRelevance": 0,
+        "emotionalDepth": 0,
+        "languageStyle": 0,
+        "narrativeFlow": 0,
+        "performanceBonus": 0,
+        "conversationLength": 0,
+        "total": 0,
+        "grade": "F"
+      },
+      "timestamp": "2025-06-12T00:39:24.791Z"
+    },
+    {
+      "id": "3-16",
+      "iteration": 3,
+      "startingAI": "orlok",
+      "exchanges": [],
+      "performanceMetrics": {
+        "responseTimes": [],
+        "totalTime": 7,
+        "averageResponseTime": null
+      },
+      "believabilityScore": {
+        "characterConsistency": 0,
+        "responseRelevance": 0,
+        "emotionalDepth": 0,
+        "languageStyle": 0,
+        "narrativeFlow": 0,
+        "performanceBonus": 0,
+        "conversationLength": 0,
+        "total": 0,
+        "grade": "F"
+      },
+      "timestamp": "2025-06-12T00:39:25.796Z"
+    },
+    {
+      "id": "3-17",
+      "iteration": 3,
+      "startingAI": "mina",
+      "exchanges": [],
+      "performanceMetrics": {
+        "responseTimes": [],
+        "totalTime": 12,
+        "averageResponseTime": null
+      },
+      "believabilityScore": {
+        "characterConsistency": 0,
+        "responseRelevance": 0,
+        "emotionalDepth": 0,
+        "languageStyle": 0,
+        "narrativeFlow": 0,
+        "performanceBonus": 0,
+        "conversationLength": 0,
+        "total": 0,
+        "grade": "F"
+      },
+      "timestamp": "2025-06-12T00:39:26.806Z"
+    },
+    {
+      "id": "3-18",
+      "iteration": 3,
+      "startingAI": "orlok",
+      "exchanges": [],
+      "performanceMetrics": {
+        "responseTimes": [],
+        "totalTime": 4,
+        "averageResponseTime": null
+      },
+      "believabilityScore": {
+        "characterConsistency": 0,
+        "responseRelevance": 0,
+        "emotionalDepth": 0,
+        "languageStyle": 0,
+        "narrativeFlow": 0,
+        "performanceBonus": 0,
+        "conversationLength": 0,
+        "total": 0,
+        "grade": "F"
+      },
+      "timestamp": "2025-06-12T00:39:27.820Z"
+    },
+    {
+      "id": "3-19",
+      "iteration": 3,
+      "startingAI": "mina",
+      "exchanges": [],
+      "performanceMetrics": {
+        "responseTimes": [],
+        "totalTime": 4,
+        "averageResponseTime": null
+      },
+      "believabilityScore": {
+        "characterConsistency": 0,
+        "responseRelevance": 0,
+        "emotionalDepth": 0,
+        "languageStyle": 0,
+        "narrativeFlow": 0,
+        "performanceBonus": 0,
+        "conversationLength": 0,
+        "total": 0,
+        "grade": "F"
+      },
+      "timestamp": "2025-06-12T00:39:28.825Z"
+    },
+    {
+      "id": "3-20",
+      "iteration": 3,
+      "startingAI": "orlok",
+      "exchanges": [],
+      "performanceMetrics": {
+        "responseTimes": [],
+        "totalTime": 4,
+        "averageResponseTime": null
+      },
+      "believabilityScore": {
+        "characterConsistency": 0,
+        "responseRelevance": 0,
+        "emotionalDepth": 0,
+        "languageStyle": 0,
+        "narrativeFlow": 0,
+        "performanceBonus": 0,
+        "conversationLength": 0,
+        "total": 0,
+        "grade": "F"
+      },
+      "timestamp": "2025-06-12T00:39:29.830Z"
+    },
+    {
+      "id": "3-21",
+      "iteration": 3,
+      "startingAI": "mina",
+      "exchanges": [],
+      "performanceMetrics": {
+        "responseTimes": [],
+        "totalTime": 3,
+        "averageResponseTime": null
+      },
+      "believabilityScore": {
+        "characterConsistency": 0,
+        "responseRelevance": 0,
+        "emotionalDepth": 0,
+        "languageStyle": 0,
+        "narrativeFlow": 0,
+        "performanceBonus": 0,
+        "conversationLength": 0,
+        "total": 0,
+        "grade": "F"
+      },
+      "timestamp": "2025-06-12T00:39:30.835Z"
+    },
+    {
+      "id": "3-22",
+      "iteration": 3,
+      "startingAI": "orlok",
+      "exchanges": [],
+      "performanceMetrics": {
+        "responseTimes": [],
+        "totalTime": 4,
+        "averageResponseTime": null
+      },
+      "believabilityScore": {
+        "characterConsistency": 0,
+        "responseRelevance": 0,
+        "emotionalDepth": 0,
+        "languageStyle": 0,
+        "narrativeFlow": 0,
+        "performanceBonus": 0,
+        "conversationLength": 0,
+        "total": 0,
+        "grade": "F"
+      },
+      "timestamp": "2025-06-12T00:39:31.841Z"
+    },
+    {
+      "id": "3-23",
+      "iteration": 3,
+      "startingAI": "mina",
+      "exchanges": [],
+      "performanceMetrics": {
+        "responseTimes": [],
+        "totalTime": 8,
+        "averageResponseTime": null
+      },
+      "believabilityScore": {
+        "characterConsistency": 0,
+        "responseRelevance": 0,
+        "emotionalDepth": 0,
+        "languageStyle": 0,
+        "narrativeFlow": 0,
+        "performanceBonus": 0,
+        "conversationLength": 0,
+        "total": 0,
+        "grade": "F"
+      },
+      "timestamp": "2025-06-12T00:39:32.846Z"
+    },
+    {
+      "id": "3-24",
+      "iteration": 3,
+      "startingAI": "orlok",
+      "exchanges": [],
+      "performanceMetrics": {
+        "responseTimes": [],
+        "totalTime": 4,
+        "averageResponseTime": null
+      },
+      "believabilityScore": {
+        "characterConsistency": 0,
+        "responseRelevance": 0,
+        "emotionalDepth": 0,
+        "languageStyle": 0,
+        "narrativeFlow": 0,
+        "performanceBonus": 0,
+        "conversationLength": 0,
+        "total": 0,
+        "grade": "F"
+      },
+      "timestamp": "2025-06-12T00:39:33.856Z"
+    },
+    {
+      "id": "3-25",
+      "iteration": 3,
+      "startingAI": "mina",
+      "exchanges": [],
+      "performanceMetrics": {
+        "responseTimes": [],
+        "totalTime": 6,
+        "averageResponseTime": null
+      },
+      "believabilityScore": {
+        "characterConsistency": 0,
+        "responseRelevance": 0,
+        "emotionalDepth": 0,
+        "languageStyle": 0,
+        "narrativeFlow": 0,
+        "performanceBonus": 0,
+        "conversationLength": 0,
+        "total": 0,
+        "grade": "F"
+      },
+      "timestamp": "2025-06-12T00:39:34.863Z"
+    }
+  ],
+  "performanceMetrics": [],
+  "analysis": {
+    "iteration": 3,
+    "totalConversations": 25,
+    "averageBelievability": 0,
+    "highestBelievability": 0,
+    "lowestBelievability": 0,
+    "averageResponseTime": null,
+    "fastestResponse": null,
+    "slowestResponse": null,
+    "averageExchanges": 0,
+    "performanceMetrics": {
+      "responsesUnderTarget": 0,
+      "responsesUnderOptimal": 0,
+      "totalResponses": 0
+    },
+    "qualityMetrics": {
+      "highQuality": 0,
+      "mediumQuality": 0,
+      "lowQuality": 25
+    }
+  },
+  "improvements": []
+}

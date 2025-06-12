@@ -7,6 +7,18 @@ class AutomatedConversationRunner {
         this.baseUrl = 'http://192.168.8.140:3000';
         this.conversations = [];
         this.believabilityScores = [];
+        this.performanceMetrics = [];
+        this.iteration = 1;
+        this.maxIterations = 3;
+        this.improvements = [];
+
+        // Performance thresholds for optimization
+        this.performanceTargets = {
+            responseTime: 3000, // 3 seconds max
+            optimalResponseTime: 1500, // 1.5 seconds ideal
+            minExchanges: 10,
+            maxExchanges: 15
+        };
         
         this.conversationPrompts = [
             "Good evening, Count. The shadows seem particularly restless tonight.",

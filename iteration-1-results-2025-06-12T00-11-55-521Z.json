@@ -1,0 +1,3028 @@
+{
+  "iteration": 1,
+  "timestamp": "2025-06-12T00:11:55.521Z",
+  "conversations": [
+    {
+      "id": "1-1",
+      "iteration": 1,
+      "startingAI": "mina",
+      "exchanges": [
+        {
+          "speaker": "mina",
+          "message": "Count Orlok, I sense a darkness about you that both frightens and fascinates me.",
+          "response": "Embrace fear. My darkness consumes all.",
+          "responseTime": 739,
+          "timestamp": "2025-06-12T00:08:14.939Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Embrace fear. My darkness consumes all.",
+          "response": "Curiosity lures. Darkness beckons, consumes the soul.",
+          "responseTime": 1341,
+          "timestamp": "2025-06-12T00:08:16.280Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Such darkness, yet I cannot look away.",
+          "response": "Entranced by darkness. Resistance futile, succumb.",
+          "responseTime": 527,
+          "timestamp": "2025-06-12T00:08:16.808Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Entranced by darkness. Resistance futile, succumb.",
+          "response": "Darkness beckons. Resistance futile. Surrender to its embrace.",
+          "responseTime": 699,
+          "timestamp": "2025-06-12T00:08:17.507Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your presence changes the very air around us.",
+          "response": "My darkness envelopes all. Resistance fades.",
+          "responseTime": 503,
+          "timestamp": "2025-06-12T00:08:18.010Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "My darkness envelopes all. Resistance fades.",
+          "response": "Embrace the darkness. Surrender to its consuming power completely.",
+          "responseTime": 1018,
+          "timestamp": "2025-06-12T00:08:19.028Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "I should flee, yet I am drawn ever closer.",
+          "response": "Resistance weakens. Accept fate. Join me.",
+          "responseTime": 459,
+          "timestamp": "2025-06-12T00:08:19.487Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Resistance weakens. Accept fate. Join me.",
+          "response": "Together, we conquer all. Embrace the darkness within you.",
+          "responseTime": 584,
+          "timestamp": "2025-06-12T00:08:20.072Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "I feel as though I'm glimpsing forbidden knowledge.",
+          "response": "Forbidden knowledge brings eternal damnation. Beware.",
+          "responseTime": 451,
+          "timestamp": "2025-06-12T00:08:20.523Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Forbidden knowledge brings eternal damnation. Beware.",
+          "response": "Escape before it's too late. Run from forbidden knowledge.",
+          "responseTime": 586,
+          "timestamp": "2025-06-12T00:08:21.109Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your ancient wisdom both thrills and terrifies me.",
+          "response": "Thrilling terror consumes the foolish mortal. Beware.",
+          "responseTime": 1072,
+          "timestamp": "2025-06-12T00:08:22.181Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Thrilling terror consumes the foolish mortal. Beware.",
+          "response": "Foolish mortal, flee from consuming thrilling terror. Beware.",
+          "responseTime": 831,
+          "timestamp": "2025-06-12T00:08:23.012Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "I sense there is so much more you could reveal.",
+          "response": "Limitless horrors await those who seek.",
+          "responseTime": 513,
+          "timestamp": "2025-06-12T00:08:23.525Z"
+        }
+      ],
+      "performanceMetrics": {
+        "responseTimes": [
+          739,
+          1341,
+          527,
+          699,
+          503,
+          1018,
+          459,
+          584,
+          451,
+          586,
+          1072,
+          831,
+          513
+        ],
+        "totalTime": 9325,
+        "averageResponseTime": 717.1538461538462
+      },
+      "believabilityScore": {
+        "characterConsistency": 25,
+        "responseRelevance": 20,
+        "emotionalDepth": 20,
+        "languageStyle": 15,
+        "narrativeFlow": 5,
+        "performanceBonus": 10,
+        "conversationLength": 5,
+        "total": 100,
+        "grade": "A+"
+      },
+      "timestamp": "2025-06-12T00:08:14.199Z"
+    },
+    {
+      "id": "1-2",
+      "iteration": 1,
+      "startingAI": "orlok",
+      "exchanges": [
+        {
+          "speaker": "orlok",
+          "message": "Darkness awaits.",
+          "response": "Beware the lurking darkness.",
+          "responseTime": 429,
+          "timestamp": "2025-06-12T00:08:24.960Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "I feel as though I'm glimpsing forbidden knowledge.",
+          "response": "Forbidden knowledge leads to eternal darkness.",
+          "responseTime": 571,
+          "timestamp": "2025-06-12T00:08:25.531Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Forbidden knowledge leads to eternal darkness.",
+          "response": "Embrace light, shun forbidden knowledge's darkness.",
+          "responseTime": 584,
+          "timestamp": "2025-06-12T00:08:26.115Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "I should flee, yet I am drawn ever closer.",
+          "response": "Closer you come, closer to doom.",
+          "responseTime": 499,
+          "timestamp": "2025-06-12T00:08:26.614Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Closer you come, closer to doom.",
+          "response": "Doom awaits those who draw near.",
+          "responseTime": 1053,
+          "timestamp": "2025-06-12T00:08:27.667Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "I sense there is so much more you could reveal.",
+          "response": "More reveals only deeper damnation awaits.",
+          "responseTime": 763,
+          "timestamp": "2025-06-12T00:08:28.430Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "More reveals only deeper damnation awaits.",
+          "response": "Curiosity leads to perilous paths.",
+          "responseTime": 423,
+          "timestamp": "2025-06-12T00:08:28.853Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "I sense there is so much more you could reveal.",
+          "response": "Knowledge brings only suffering and despair.",
+          "responseTime": 2871,
+          "timestamp": "2025-06-12T00:08:31.724Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Knowledge brings only suffering and despair.",
+          "response": "Ignorance shields from agony's grasp.",
+          "responseTime": 552,
+          "timestamp": "2025-06-12T00:08:32.276Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "I sense there is so much more you could reveal.",
+          "response": "Your desires lead to ruin. Heed.",
+          "responseTime": 820,
+          "timestamp": "2025-06-12T00:08:33.096Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Your desires lead to ruin. Heed.",
+          "response": "Beware the darkness you seek to uncover.",
+          "responseTime": 623,
+          "timestamp": "2025-06-12T00:08:33.719Z"
+        }
+      ],
+      "performanceMetrics": {
+        "responseTimes": [
+          429,
+          571,
+          584,
+          499,
+          1053,
+          763,
+          423,
+          2871,
+          552,
+          820,
+          623
+        ],
+        "totalTime": 9189,
+        "averageResponseTime": 835.2727272727273
+      },
+      "believabilityScore": {
+        "characterConsistency": 25,
+        "responseRelevance": 20,
+        "emotionalDepth": 12,
+        "languageStyle": 15,
+        "narrativeFlow": 5,
+        "performanceBonus": 10,
+        "conversationLength": 5,
+        "total": 92,
+        "grade": "A"
+      },
+      "timestamp": "2025-06-12T00:08:24.530Z"
+    },
+    {
+      "id": "1-3",
+      "iteration": 1,
+      "startingAI": "mina",
+      "exchanges": [
+        {
+          "speaker": "mina",
+          "message": "I've been having the most peculiar dreams since we began corresponding.",
+          "response": "Dreams foreshadow your impending demise. Embrace.",
+          "responseTime": 648,
+          "timestamp": "2025-06-12T00:08:35.372Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Dreams foreshadow your impending demise. Embrace.",
+          "response": "Nightmares whisper truth. Embrace fate's chilling touch.",
+          "responseTime": 1149,
+          "timestamp": "2025-06-12T00:08:36.521Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The night seems alive when you speak of it.",
+          "response": "Darkness hungers. Embrace its embrace.",
+          "responseTime": 512,
+          "timestamp": "2025-06-12T00:08:37.033Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Darkness hungers. Embrace its embrace.",
+          "response": "Succumb to shadows, where truth and terror intertwine.",
+          "responseTime": 566,
+          "timestamp": "2025-06-12T00:08:37.599Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your ancient wisdom both thrills and terrifies me.",
+          "response": "Terror fuels my immortal wisdom's fire.",
+          "responseTime": 566,
+          "timestamp": "2025-06-12T00:08:38.165Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Terror fuels my immortal wisdom's fire.",
+          "response": "Embrace fear. Wisdom born from shadows calls your name.",
+          "responseTime": 722,
+          "timestamp": "2025-06-12T00:08:38.887Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The supernatural world calls to me through you.",
+          "response": "Darkness whispers truths. Listen or perish.",
+          "responseTime": 508,
+          "timestamp": "2025-06-12T00:08:39.395Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Darkness whispers truths. Listen or perish.",
+          "response": "Mysterious whispers reveal secrets... Will you heed them?",
+          "responseTime": 450,
+          "timestamp": "2025-06-12T00:08:39.845Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "I sense there is so much more you could reveal.",
+          "response": "Mysteries deepen. How far dare you venture?",
+          "responseTime": 420,
+          "timestamp": "2025-06-12T00:08:40.265Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Mysteries deepen. How far dare you venture?",
+          "response": "Unveil secrets, face peril. Will you risk all?",
+          "responseTime": 408,
+          "timestamp": "2025-06-12T00:08:40.673Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The supernatural world calls to me through you.",
+          "response": "Embrace darkness, face eternal consequences.",
+          "responseTime": 762,
+          "timestamp": "2025-06-12T00:08:41.435Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Embrace darkness, face eternal consequences.",
+          "response": "Beware the darkness's eternal grip. Will you defy fate?",
+          "responseTime": 507,
+          "timestamp": "2025-06-12T00:08:41.942Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "I should flee, yet I am drawn ever closer.",
+          "response": "Closer, entwined, no escape now. Surrender.",
+          "responseTime": 829,
+          "timestamp": "2025-06-12T00:08:42.771Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Closer, entwined, no escape now. Surrender.",
+          "response": "Surrender to fate's dark embrace. Endless night awaits.",
+          "responseTime": 559,
+          "timestamp": "2025-06-12T00:08:43.330Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The supernatural world calls to me through you.",
+          "response": "Tremble, for I am watching you.",
+          "responseTime": 498,
+          "timestamp": "2025-06-12T00:08:43.829Z"
+        }
+      ],
+      "performanceMetrics": {
+        "responseTimes": [
+          648,
+          1149,
+          512,
+          566,
+          566,
+          722,
+          508,
+          450,
+          420,
+          408,
+          762,
+          507,
+          829,
+          559,
+          498
+        ],
+        "totalTime": 9105,
+        "averageResponseTime": 606.9333333333333
+      },
+      "believabilityScore": {
+        "characterConsistency": 25,
+        "responseRelevance": 20,
+        "emotionalDepth": 20,
+        "languageStyle": 15,
+        "narrativeFlow": 10,
+        "performanceBonus": 10,
+        "conversationLength": 10,
+        "total": 110,
+        "grade": "A+"
+      },
+      "timestamp": "2025-06-12T00:08:34.724Z"
+    },
+    {
+      "id": "1-4",
+      "iteration": 1,
+      "startingAI": "orlok",
+      "exchanges": [
+        {
+          "speaker": "orlok",
+          "message": "Mortal.",
+          "response": "Immortal.",
+          "responseTime": 509,
+          "timestamp": "2025-06-12T00:08:45.340Z"
+        }
+      ],
+      "performanceMetrics": {
+        "responseTimes": [
+          509
+        ],
+        "totalTime": 509,
+        "averageResponseTime": 509
+      },
+      "believabilityScore": {
+        "characterConsistency": 0,
+        "responseRelevance": 3,
+        "emotionalDepth": 0,
+        "languageStyle": 0,
+        "narrativeFlow": 0,
+        "performanceBonus": 10,
+        "conversationLength": 0,
+        "total": 13,
+        "grade": "F"
+      },
+      "timestamp": "2025-06-12T00:08:44.831Z"
+    },
+    {
+      "id": "1-5",
+      "iteration": 1,
+      "startingAI": "mina",
+      "exchanges": [
+        {
+          "speaker": "mina",
+          "message": "The shadows seem to follow you, Count. Is this by design or nature?",
+          "response": "Design. Nature. Fear. Always watching.",
+          "responseTime": 732,
+          "timestamp": "2025-06-12T00:08:47.075Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Design. Nature. Fear. Always watching.",
+          "response": "Count's design. Nature's call. Fearful watching eyes.",
+          "responseTime": 567,
+          "timestamp": "2025-06-12T00:08:47.642Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "I sense there is so much more you could reveal.",
+          "response": "Secrets. Stay silent. Reveal nothing.",
+          "responseTime": 510,
+          "timestamp": "2025-06-12T00:08:48.152Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Secrets. Stay silent. Reveal nothing.",
+          "response": "Mystery. Silence. Concealment. Fearful truths hidden within.",
+          "responseTime": 989,
+          "timestamp": "2025-06-12T00:08:49.141Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your immortal perspective humbles my mortal understanding.",
+          "response": "Weak mortal. My immortal truth. Understand fear.",
+          "responseTime": 450,
+          "timestamp": "2025-06-12T00:08:49.591Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Weak mortal. My immortal truth. Understand fear.",
+          "response": "Immortal truth. Mortal fear. Understand the darkness within.",
+          "responseTime": 983,
+          "timestamp": "2025-06-12T00:08:50.575Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "I should flee, yet I am drawn ever closer.",
+          "response": "Drawn closer. Embrace the darkness. Surrender.",
+          "responseTime": 444,
+          "timestamp": "2025-06-12T00:08:51.019Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Drawn closer. Embrace the darkness. Surrender.",
+          "response": "Embrace darkness. Surrender to fear. Find strength within surrender.",
+          "responseTime": 494,
+          "timestamp": "2025-06-12T00:08:51.513Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Such darkness, yet I cannot look away.",
+          "response": "Darkness beckons. Resistance is futile. Embrace.",
+          "responseTime": 575,
+          "timestamp": "2025-06-12T00:08:52.089Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Darkness beckons. Resistance is futile. Embrace.",
+          "response": "Embrace the darkness. Fear is your strength now.",
+          "responseTime": 651,
+          "timestamp": "2025-06-12T00:08:52.740Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Such darkness, yet I cannot look away.",
+          "response": "Look. Welcome the darkness. Embrace it.",
+          "responseTime": 898,
+          "timestamp": "2025-06-12T00:08:53.638Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Look. Welcome the darkness. Embrace it.",
+          "response": "Embrace the darkness. Find comfort in its embrace.",
+          "responseTime": 389,
+          "timestamp": "2025-06-12T00:08:54.027Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "You speak as one who has witnessed eternity.",
+          "response": "Eternity's witness. Boundless echoes within me.",
+          "responseTime": 411,
+          "timestamp": "2025-06-12T00:08:54.438Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Eternity's witness. Boundless echoes within me.",
+          "response": "Echoes of eternity. Whispers of the infinite linger on.",
+          "responseTime": 661,
+          "timestamp": "2025-06-12T00:08:55.099Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your ancient wisdom both thrills and terrifies me.",
+          "response": "Thrill and terror. My essence beckons.",
+          "responseTime": 613,
+          "timestamp": "2025-06-12T00:08:55.712Z"
+        }
+      ],
+      "performanceMetrics": {
+        "responseTimes": [
+          732,
+          567,
+          510,
+          989,
+          450,
+          983,
+          444,
+          494,
+          575,
+          651,
+          898,
+          389,
+          411,
+          661,
+          613
+        ],
+        "totalTime": 9369,
+        "averageResponseTime": 624.4666666666667
+      },
+      "believabilityScore": {
+        "characterConsistency": 25,
+        "responseRelevance": 20,
+        "emotionalDepth": 20,
+        "languageStyle": 15,
+        "narrativeFlow": 10,
+        "performanceBonus": 10,
+        "conversationLength": 10,
+        "total": 110,
+        "grade": "A+"
+      },
+      "timestamp": "2025-06-12T00:08:46.343Z"
+    },
+    {
+      "id": "1-6",
+      "iteration": 1,
+      "startingAI": "orlok",
+      "exchanges": [
+        {
+          "speaker": "orlok",
+          "message": "You seek me.",
+          "response": "Yes, I seek. Drawn to your enigma.",
+          "responseTime": 562,
+          "timestamp": "2025-06-12T00:08:57.278Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "I sense there is so much more you could reveal.",
+          "response": "Reveal? Secrets best kept hidden.",
+          "responseTime": 464,
+          "timestamp": "2025-06-12T00:08:57.742Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Reveal? Secrets best kept hidden.",
+          "response": "Hidden depths. Unveiling risks everything.",
+          "responseTime": 482,
+          "timestamp": "2025-06-12T00:08:58.224Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "I sense there is so much more you could reveal.",
+          "response": "Curiosity endangers the foolish mortal.",
+          "responseTime": 444,
+          "timestamp": "2025-06-12T00:08:58.668Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Curiosity endangers the foolish mortal.",
+          "response": "Yet bravely I pursue the forbidden truth.",
+          "responseTime": 409,
+          "timestamp": "2025-06-12T00:08:59.077Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The supernatural world calls to me through you.",
+          "response": "Beware what seeks you, mortal soul.",
+          "responseTime": 1069,
+          "timestamp": "2025-06-12T00:09:00.146Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Beware what seeks you, mortal soul.",
+          "response": "The darkness hungers for unsuspecting prey.",
+          "responseTime": 459,
+          "timestamp": "2025-06-12T00:09:00.605Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The mystery deepens with every word you speak.",
+          "response": "Embrace the terror of the unknown.",
+          "responseTime": 740,
+          "timestamp": "2025-06-12T00:09:01.346Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Embrace the terror of the unknown.",
+          "response": "Unravel the secrets, despite the chilling fear.",
+          "responseTime": 908,
+          "timestamp": "2025-06-12T00:09:02.254Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your ancient wisdom both thrills and terrifies me.",
+          "response": "Embrace terror, for I am near.",
+          "responseTime": 521,
+          "timestamp": "2025-06-12T00:09:02.775Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Embrace terror, for I am near.",
+          "response": "Trust me, mortal. I bring danger and salvation.",
+          "responseTime": 501,
+          "timestamp": "2025-06-12T00:09:03.276Z"
+        }
+      ],
+      "performanceMetrics": {
+        "responseTimes": [
+          562,
+          464,
+          482,
+          444,
+          409,
+          1069,
+          459,
+          740,
+          908,
+          521,
+          501
+        ],
+        "totalTime": 6560,
+        "averageResponseTime": 596.2727272727273
+      },
+      "believabilityScore": {
+        "characterConsistency": 25,
+        "responseRelevance": 20,
+        "emotionalDepth": 16,
+        "languageStyle": 15,
+        "narrativeFlow": 5,
+        "performanceBonus": 10,
+        "conversationLength": 5,
+        "total": 96,
+        "grade": "A+"
+      },
+      "timestamp": "2025-06-12T00:08:56.716Z"
+    },
+    {
+      "id": "1-7",
+      "iteration": 1,
+      "startingAI": "mina",
+      "exchanges": [
+        {
+          "speaker": "mina",
+          "message": "Your letters speak of loneliness that echoes through the ages. How long have you been alone?",
+          "response": "Eternal loneliness. Aching, haunting solitude.",
+          "responseTime": 519,
+          "timestamp": "2025-06-12T00:09:04.798Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Eternal loneliness. Aching, haunting solitude.",
+          "response": "The shadowed past, a never-ending prison of isolation.",
+          "responseTime": 462,
+          "timestamp": "2025-06-12T00:09:05.260Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The supernatural world calls to me through you.",
+          "response": "Dark whispers beckon, surrender to the night.",
+          "responseTime": 1623,
+          "timestamp": "2025-06-12T00:09:06.883Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Dark whispers beckon, surrender to the night.",
+          "response": "The abyss calls, embrace the darkness within.",
+          "responseTime": 463,
+          "timestamp": "2025-06-12T00:09:07.346Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "I feel as though I'm glimpsing forbidden knowledge.",
+          "response": "Curiosity kindles, dance with damnation's flame.",
+          "responseTime": 1535,
+          "timestamp": "2025-06-12T00:09:08.881Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Curiosity kindles, dance with damnation's flame.",
+          "response": "Embrace the forbidden, risk the inferno of revelation.",
+          "responseTime": 750,
+          "timestamp": "2025-06-12T00:09:09.631Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The supernatural world calls to me through you.",
+          "response": "Beware, darkness claims the curious soul.",
+          "responseTime": 475,
+          "timestamp": "2025-06-12T00:09:10.106Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Beware, darkness claims the curious soul.",
+          "response": "The shadows hunger for the light within.",
+          "responseTime": 425,
+          "timestamp": "2025-06-12T00:09:10.531Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The mystery deepens with every word you speak.",
+          "response": "Darkness whispers secrets, beckoning you closer.",
+          "responseTime": 452,
+          "timestamp": "2025-06-12T00:09:10.983Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Darkness whispers secrets, beckoning you closer.",
+          "response": "Uncover the truth, risk madness in the shadows.",
+          "responseTime": 471,
+          "timestamp": "2025-06-12T00:09:11.454Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your ancient wisdom both thrills and terrifies me.",
+          "response": "Fear the wisdom of the shadows.",
+          "responseTime": 493,
+          "timestamp": "2025-06-12T00:09:11.947Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Fear the wisdom of the shadows.",
+          "response": "Embrace the fear, tread carefully through darkness.",
+          "responseTime": 457,
+          "timestamp": "2025-06-12T00:09:12.404Z"
+        }
+      ],
+      "performanceMetrics": {
+        "responseTimes": [
+          519,
+          462,
+          1623,
+          463,
+          1535,
+          750,
+          475,
+          425,
+          452,
+          471,
+          493,
+          457
+        ],
+        "totalTime": 8125,
+        "averageResponseTime": 677.0833333333334
+      },
+      "believabilityScore": {
+        "characterConsistency": 25,
+        "responseRelevance": 20,
+        "emotionalDepth": 20,
+        "languageStyle": 15,
+        "narrativeFlow": 5,
+        "performanceBonus": 10,
+        "conversationLength": 5,
+        "total": 100,
+        "grade": "A+"
+      },
+      "timestamp": "2025-06-12T00:09:04.279Z"
+    },
+    {
+      "id": "1-8",
+      "iteration": 1,
+      "startingAI": "orlok",
+      "exchanges": [
+        {
+          "speaker": "orlok",
+          "message": "Mortal.",
+          "response": "Bound by mortality, facing immortal danger.",
+          "responseTime": 483,
+          "timestamp": "2025-06-12T00:09:13.889Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The night seems alive when you speak of it.",
+          "response": "Night conceals more than you know.",
+          "responseTime": 454,
+          "timestamp": "2025-06-12T00:09:14.343Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Night conceals more than you know.",
+          "response": "Secrets whisper in the darkness, beware their chilling touch.",
+          "responseTime": 503,
+          "timestamp": "2025-06-12T00:09:14.846Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your presence changes the very air around us.",
+          "response": "My presence heralds impending doom.",
+          "responseTime": 723,
+          "timestamp": "2025-06-12T00:09:15.569Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "My presence heralds impending doom.",
+          "response": "Danger lurks closer with each passing moment.",
+          "responseTime": 448,
+          "timestamp": "2025-06-12T00:09:16.017Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your ancient wisdom both thrills and terrifies me.",
+          "response": "Wisdom born of eternal darkness. Embrace.",
+          "responseTime": 488,
+          "timestamp": "2025-06-12T00:09:16.506Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Wisdom born of eternal darkness. Embrace.",
+          "response": "Accept the shadows, they reveal truths unseen.",
+          "responseTime": 511,
+          "timestamp": "2025-06-12T00:09:17.017Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The supernatural world calls to me through you.",
+          "response": "Heed the call, embrace your fate.",
+          "responseTime": 768,
+          "timestamp": "2025-06-12T00:09:17.785Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Heed the call, embrace your fate.",
+          "response": "Embrace the unknown, your destiny awaits.",
+          "responseTime": 410,
+          "timestamp": "2025-06-12T00:09:18.195Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your ancient wisdom both thrills and terrifies me.",
+          "response": "Embrace fear, the darkness beckons.",
+          "responseTime": 410,
+          "timestamp": "2025-06-12T00:09:18.605Z"
+        }
+      ],
+      "performanceMetrics": {
+        "responseTimes": [
+          483,
+          454,
+          503,
+          723,
+          448,
+          488,
+          511,
+          768,
+          410,
+          410
+        ],
+        "totalTime": 5199,
+        "averageResponseTime": 519.8
+      },
+      "believabilityScore": {
+        "characterConsistency": 25,
+        "responseRelevance": 20,
+        "emotionalDepth": 18,
+        "languageStyle": 15,
+        "narrativeFlow": 5,
+        "performanceBonus": 10,
+        "conversationLength": 5,
+        "total": 98,
+        "grade": "A+"
+      },
+      "timestamp": "2025-06-12T00:09:13.406Z"
+    },
+    {
+      "id": "1-9",
+      "iteration": 1,
+      "startingAI": "mina",
+      "exchanges": [
+        {
+          "speaker": "mina",
+          "message": "I've read accounts of creatures that exist between life and death. What are your thoughts?",
+          "response": "Immortality beckons, embrace the darkness.",
+          "responseTime": 3308,
+          "timestamp": "2025-06-12T00:09:22.915Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Immortality beckons, embrace the darkness.",
+          "response": "The line blurs, life intertwines with death's embrace.",
+          "responseTime": 522,
+          "timestamp": "2025-06-12T00:09:23.437Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your presence changes the very air around us.",
+          "response": "Fear my presence, darkness envelops all.",
+          "responseTime": 1579,
+          "timestamp": "2025-06-12T00:09:25.016Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Fear my presence, darkness envelops all.",
+          "response": "Embrace courage, face the shadows together.",
+          "responseTime": 612,
+          "timestamp": "2025-06-12T00:09:25.628Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your ancient wisdom both thrills and terrifies me.",
+          "response": "Knowledge is power, fear the unknown.",
+          "responseTime": 1147,
+          "timestamp": "2025-06-12T00:09:26.775Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Knowledge is power, fear the unknown.",
+          "response": "Harness fear, seek enlightenment in darkness.",
+          "responseTime": 397,
+          "timestamp": "2025-06-12T00:09:27.172Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Such darkness, yet I cannot look away.",
+          "response": "Embrace the darkness, revel in fear.",
+          "responseTime": 493,
+          "timestamp": "2025-06-12T00:09:27.665Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Embrace the darkness, revel in fear.",
+          "response": "Dive deep, explore the mysteries within.",
+          "responseTime": 909,
+          "timestamp": "2025-06-12T00:09:28.574Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "I sense there is so much more you could reveal.",
+          "response": "Unleash secrets, beware what lurks within.",
+          "responseTime": 602,
+          "timestamp": "2025-06-12T00:09:29.176Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Unleash secrets, beware what lurks within.",
+          "response": "Curiosity invites danger, tread carefully in shadows.",
+          "responseTime": 528,
+          "timestamp": "2025-06-12T00:09:29.705Z"
+        }
+      ],
+      "performanceMetrics": {
+        "responseTimes": [
+          3308,
+          522,
+          1579,
+          612,
+          1147,
+          397,
+          493,
+          909,
+          602,
+          528
+        ],
+        "totalTime": 10098,
+        "averageResponseTime": 1009.7
+      },
+      "believabilityScore": {
+        "characterConsistency": 25,
+        "responseRelevance": 20,
+        "emotionalDepth": 20,
+        "languageStyle": 15,
+        "narrativeFlow": 5,
+        "performanceBonus": 10,
+        "conversationLength": 5,
+        "total": 100,
+        "grade": "A+"
+      },
+      "timestamp": "2025-06-12T00:09:19.607Z"
+    },
+    {
+      "id": "1-10",
+      "iteration": 1,
+      "startingAI": "orlok",
+      "exchanges": [
+        {
+          "speaker": "orlok",
+          "message": "Shadows whisper.",
+          "response": "Listen closely, fear what they may reveal.",
+          "responseTime": 615,
+          "timestamp": "2025-06-12T00:09:31.323Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The night seems alive when you speak of it.",
+          "response": "Darkness pulses with life, heed warning.",
+          "responseTime": 801,
+          "timestamp": "2025-06-12T00:09:32.124Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Darkness pulses with life, heed warning.",
+          "response": "Be cautious, dark forces stir in the night.",
+          "responseTime": 620,
+          "timestamp": "2025-06-12T00:09:32.744Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The supernatural world calls to me through you.",
+          "response": "Embrace darkness, become eternal like me.",
+          "responseTime": 1299,
+          "timestamp": "2025-06-12T00:09:34.043Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Embrace darkness, become eternal like me.",
+          "response": "Immortality awaits, surrender to the shadows.",
+          "responseTime": 683,
+          "timestamp": "2025-06-12T00:09:34.726Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "I sense there is so much more you could reveal.",
+          "response": "Knowledge. Power. Immortality. Choose wisely, mortal.",
+          "responseTime": 629,
+          "timestamp": "2025-06-12T00:09:35.355Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Knowledge. Power. Immortality. Choose wisely, mortal.",
+          "response": "Seek answers, beware the price of curiosity.",
+          "responseTime": 474,
+          "timestamp": "2025-06-12T00:09:35.829Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The supernatural world calls to me through you.",
+          "response": "Join the shadows, embrace eternal night.",
+          "responseTime": 384,
+          "timestamp": "2025-06-12T00:09:36.213Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Join the shadows, embrace eternal night.",
+          "response": "Danger lurks, tread carefully in the realm of darkness.",
+          "responseTime": 862,
+          "timestamp": "2025-06-12T00:09:37.075Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "You speak as one who has witnessed eternity.",
+          "response": "Eternal night, wisdom in shadows. Beware.",
+          "responseTime": 593,
+          "timestamp": "2025-06-12T00:09:37.668Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Eternal night, wisdom in shadows. Beware.",
+          "response": "Unraveling secrets brings peril. Stay vigilant, fear the unknown.",
+          "responseTime": 2509,
+          "timestamp": "2025-06-12T00:09:40.177Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The supernatural world calls to me through you.",
+          "response": "Darkness whispers, heed its chilling call.",
+          "responseTime": 1474,
+          "timestamp": "2025-06-12T00:09:41.651Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Darkness whispers, heed its chilling call.",
+          "response": "Uncover secrets, tread carefully in shadows' embrace.",
+          "responseTime": 532,
+          "timestamp": "2025-06-12T00:09:42.183Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The supernatural world calls to me through you.",
+          "response": "Embrace darkness, wield power with caution. Fear.",
+          "responseTime": 524,
+          "timestamp": "2025-06-12T00:09:42.707Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Embrace darkness, wield power with caution. Fear.",
+          "response": "Trust yourself, fear the unknown, tread carefully in shadows.",
+          "responseTime": 713,
+          "timestamp": "2025-06-12T00:09:43.420Z"
+        }
+      ],
+      "performanceMetrics": {
+        "responseTimes": [
+          615,
+          801,
+          620,
+          1299,
+          683,
+          629,
+          474,
+          384,
+          862,
+          593,
+          2509,
+          1474,
+          532,
+          524,
+          713
+        ],
+        "totalTime": 12712,
+        "averageResponseTime": 847.4666666666667
+      },
+      "believabilityScore": {
+        "characterConsistency": 25,
+        "responseRelevance": 20,
+        "emotionalDepth": 20,
+        "languageStyle": 15,
+        "narrativeFlow": 10,
+        "performanceBonus": 10,
+        "conversationLength": 10,
+        "total": 110,
+        "grade": "A+"
+      },
+      "timestamp": "2025-06-12T00:09:30.708Z"
+    },
+    {
+      "id": "1-11",
+      "iteration": 1,
+      "startingAI": "mina",
+      "exchanges": [
+        {
+          "speaker": "mina",
+          "message": "There's a melancholy in your words that speaks of great loss. What have you lost?",
+          "response": "Life's pleasures, warmth of sun's touch.",
+          "responseTime": 398,
+          "timestamp": "2025-06-12T00:09:44.821Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Life's pleasures, warmth of sun's touch.",
+          "response": "Aching for light, trapped in eternal darkness.",
+          "responseTime": 470,
+          "timestamp": "2025-06-12T00:09:45.291Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your presence changes the very air around us.",
+          "response": "Fear my presence, darkness consumes all.",
+          "responseTime": 659,
+          "timestamp": "2025-06-12T00:09:45.950Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Fear my presence, darkness consumes all.",
+          "response": "Darkness holds power, overwhelming all in its shadow.",
+          "responseTime": 532,
+          "timestamp": "2025-06-12T00:09:46.482Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your presence changes the very air around us.",
+          "response": "Dread lingers in every breath here.",
+          "responseTime": 460,
+          "timestamp": "2025-06-12T00:09:46.942Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Dread lingers in every breath here.",
+          "response": "Yes, suffocating fear surrounds us.",
+          "responseTime": 493,
+          "timestamp": "2025-06-12T00:09:47.435Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your ancient wisdom both thrills and terrifies me.",
+          "response": "Wisdom born of eternal darkness.",
+          "responseTime": 573,
+          "timestamp": "2025-06-12T00:09:48.008Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Wisdom born of eternal darkness.",
+          "response": "A double-edged sword, cutting through truth and shadows.",
+          "responseTime": 457,
+          "timestamp": "2025-06-12T00:09:48.465Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your ancient wisdom both thrills and terrifies me.",
+          "response": "Secrets that haunt and devour souls.",
+          "responseTime": 579,
+          "timestamp": "2025-06-12T00:09:49.044Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Secrets that haunt and devour souls.",
+          "response": "Whispers of forgotten horrors echoing in empty corridors.",
+          "responseTime": 648,
+          "timestamp": "2025-06-12T00:09:49.692Z"
+        }
+      ],
+      "performanceMetrics": {
+        "responseTimes": [
+          398,
+          470,
+          659,
+          532,
+          460,
+          493,
+          573,
+          457,
+          579,
+          648
+        ],
+        "totalTime": 5269,
+        "averageResponseTime": 526.9
+      },
+      "believabilityScore": {
+        "characterConsistency": 25,
+        "responseRelevance": 20,
+        "emotionalDepth": 20,
+        "languageStyle": 15,
+        "narrativeFlow": 5,
+        "performanceBonus": 10,
+        "conversationLength": 5,
+        "total": 100,
+        "grade": "A+"
+      },
+      "timestamp": "2025-06-12T00:09:44.423Z"
+    },
+    {
+      "id": "1-12",
+      "iteration": 1,
+      "startingAI": "orlok",
+      "exchanges": [
+        {
+          "speaker": "orlok",
+          "message": "Blood beckons.",
+          "response": "A siren's call to darkness and despair.",
+          "responseTime": 583,
+          "timestamp": "2025-06-12T00:09:51.279Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "I should flee, yet I am drawn ever closer.",
+          "response": "Resistance futile. Embrace your destiny's embrace.",
+          "responseTime": 1032,
+          "timestamp": "2025-06-12T00:09:52.311Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Resistance futile. Embrace your destiny's embrace.",
+          "response": "Accept the shadows that yearn to consume your essence.",
+          "responseTime": 402,
+          "timestamp": "2025-06-12T00:09:52.713Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your immortal perspective humbles my mortal understanding.",
+          "response": "Flesh and blood, ephemeral. Darkness eternal.",
+          "responseTime": 406,
+          "timestamp": "2025-06-12T00:09:53.119Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Flesh and blood, ephemeral. Darkness eternal.",
+          "response": "In the end, only shadows remain.",
+          "responseTime": 717,
+          "timestamp": "2025-06-12T00:09:53.836Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The supernatural world calls to me through you.",
+          "response": "Succumb to the darkness's seductive whispers.",
+          "responseTime": 470,
+          "timestamp": "2025-06-12T00:09:54.306Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Succumb to the darkness's seductive whispers.",
+          "response": "The unknown beckons, stirring curiosity and trepidation.",
+          "responseTime": 554,
+          "timestamp": "2025-06-12T00:09:54.860Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The supernatural world calls to me through you.",
+          "response": "Embrace the shadows, become one.",
+          "responseTime": 449,
+          "timestamp": "2025-06-12T00:09:55.309Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Embrace the shadows, become one.",
+          "response": "A choice: light or darkness.",
+          "responseTime": 510,
+          "timestamp": "2025-06-12T00:09:55.819Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "I feel as though I'm glimpsing forbidden knowledge.",
+          "response": "The forbidden consumes those who seek.",
+          "responseTime": 492,
+          "timestamp": "2025-06-12T00:09:56.311Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "The forbidden consumes those who seek.",
+          "response": "Curiosity leads to perilous paths.",
+          "responseTime": 738,
+          "timestamp": "2025-06-12T00:09:57.050Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "I sense there is so much more you could reveal.",
+          "response": "Knowledge has its price, mortal soul.",
+          "responseTime": 473,
+          "timestamp": "2025-06-12T00:09:57.523Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Knowledge has its price, mortal soul.",
+          "response": "Beware the cost of forbidden truths.",
+          "responseTime": 623,
+          "timestamp": "2025-06-12T00:09:58.146Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The night seems alive when you speak of it.",
+          "response": "Night whispers secrets, heed its warning.",
+          "responseTime": 567,
+          "timestamp": "2025-06-12T00:09:58.713Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Night whispers secrets, heed its warning.",
+          "response": "Darkness conceals danger, stay vigilant.",
+          "responseTime": 596,
+          "timestamp": "2025-06-12T00:09:59.309Z"
+        }
+      ],
+      "performanceMetrics": {
+        "responseTimes": [
+          583,
+          1032,
+          402,
+          406,
+          717,
+          470,
+          554,
+          449,
+          510,
+          492,
+          738,
+          473,
+          623,
+          567,
+          596
+        ],
+        "totalTime": 8613,
+        "averageResponseTime": 574.1333333333333
+      },
+      "believabilityScore": {
+        "characterConsistency": 25,
+        "responseRelevance": 20,
+        "emotionalDepth": 18,
+        "languageStyle": 15,
+        "narrativeFlow": 10,
+        "performanceBonus": 10,
+        "conversationLength": 10,
+        "total": 108,
+        "grade": "A+"
+      },
+      "timestamp": "2025-06-12T00:09:50.696Z"
+    },
+    {
+      "id": "1-13",
+      "iteration": 1,
+      "startingAI": "mina",
+      "exchanges": [
+        {
+          "speaker": "mina",
+          "message": "I sense you're not entirely human, Count. Am I correct in this assumption?",
+          "response": "Mortal, beware the darkness within me.",
+          "responseTime": 388,
+          "timestamp": "2025-06-12T00:10:00.700Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Mortal, beware the darkness within me.",
+          "response": "Darkness lingers, tempting the unwary.",
+          "responseTime": 957,
+          "timestamp": "2025-06-12T00:10:01.657Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your presence changes the very air around us.",
+          "response": "Shadows dance at my command.",
+          "responseTime": 388,
+          "timestamp": "2025-06-12T00:10:02.045Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Shadows dance at my command.",
+          "response": "Fear not, I fight darkness with light.",
+          "responseTime": 704,
+          "timestamp": "2025-06-12T00:10:02.749Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "You speak as one who has witnessed eternity.",
+          "response": "Eternity whispers secrets only I know.",
+          "responseTime": 1246,
+          "timestamp": "2025-06-12T00:10:03.995Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Eternity whispers secrets only I know.",
+          "response": "I carry burdens of the timeless unknown.",
+          "responseTime": 447,
+          "timestamp": "2025-06-12T00:10:04.442Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The supernatural world calls to me through you.",
+          "response": "My darkness beckons your hidden desires.",
+          "responseTime": 1701,
+          "timestamp": "2025-06-12T00:10:06.143Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "My darkness beckons your hidden desires.",
+          "response": "Beware, darkness feeds on forbidden longings.",
+          "responseTime": 628,
+          "timestamp": "2025-06-12T00:10:06.771Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "You speak as one who has witnessed eternity.",
+          "response": "Eternity's gaze pierces through mortal souls.",
+          "responseTime": 542,
+          "timestamp": "2025-06-12T00:10:07.313Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Eternity's gaze pierces through mortal souls.",
+          "response": "Its weight crushes the fragile human spirit.",
+          "responseTime": 1238,
+          "timestamp": "2025-06-12T00:10:08.551Z"
+        }
+      ],
+      "performanceMetrics": {
+        "responseTimes": [
+          388,
+          957,
+          388,
+          704,
+          1246,
+          447,
+          1701,
+          628,
+          542,
+          1238
+        ],
+        "totalTime": 8239,
+        "averageResponseTime": 823.9
+      },
+      "believabilityScore": {
+        "characterConsistency": 25,
+        "responseRelevance": 20,
+        "emotionalDepth": 14,
+        "languageStyle": 15,
+        "narrativeFlow": 5,
+        "performanceBonus": 10,
+        "conversationLength": 5,
+        "total": 94,
+        "grade": "A"
+      },
+      "timestamp": "2025-06-12T00:10:00.312Z"
+    },
+    {
+      "id": "1-14",
+      "iteration": 1,
+      "startingAI": "orlok",
+      "exchanges": [
+        {
+          "speaker": "orlok",
+          "message": "Shadows whisper.",
+          "response": "Their secrets beckon, tempting curious souls to darkness.",
+          "responseTime": 854,
+          "timestamp": "2025-06-12T00:10:10.410Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "I should flee, yet I am drawn ever closer.",
+          "response": "Resistance wanes, succumb to eternal night.",
+          "responseTime": 825,
+          "timestamp": "2025-06-12T00:10:11.235Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Resistance wanes, succumb to eternal night.",
+          "response": "Embrace the shadows, lose yourself to eternal darkness.",
+          "responseTime": 417,
+          "timestamp": "2025-06-12T00:10:11.652Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "I should flee, yet I am drawn ever closer.",
+          "response": "Accept your fate, embrace the darkness.",
+          "responseTime": 424,
+          "timestamp": "2025-06-12T00:10:12.076Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Accept your fate, embrace the darkness.",
+          "response": "Surrender to the shadows, find solace in oblivion.",
+          "responseTime": 654,
+          "timestamp": "2025-06-12T00:10:12.730Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your immortal perspective humbles my mortal understanding.",
+          "response": "Mortality blinds you, embrace eternal darkness.",
+          "responseTime": 616,
+          "timestamp": "2025-06-12T00:10:13.346Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Mortality blinds you, embrace eternal darkness.",
+          "response": "Welcome the unknown, let darkness envelop your existence.",
+          "responseTime": 595,
+          "timestamp": "2025-06-12T00:10:13.941Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "You speak as one who has witnessed eternity.",
+          "response": "Eternity whispers secrets, heed their call.",
+          "responseTime": 380,
+          "timestamp": "2025-06-12T00:10:14.321Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Eternity whispers secrets, heed their call.",
+          "response": "Embrace the mysteries, let eternity guide your path.",
+          "responseTime": 421,
+          "timestamp": "2025-06-12T00:10:14.742Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "I sense there is so much more you could reveal.",
+          "response": "Ancient darkness holds endless secrets within.",
+          "responseTime": 509,
+          "timestamp": "2025-06-12T00:10:15.251Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Ancient darkness holds endless secrets within.",
+          "response": "Unravel the shadows, reveal the truths hidden within.",
+          "responseTime": 510,
+          "timestamp": "2025-06-12T00:10:15.761Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The supernatural world calls to me through you.",
+          "response": "Embrace the darkness, become one with it.",
+          "responseTime": 474,
+          "timestamp": "2025-06-12T00:10:16.235Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Embrace the darkness, become one with it.",
+          "response": "Illuminate the shadows, find solace in the unknown.",
+          "responseTime": 582,
+          "timestamp": "2025-06-12T00:10:16.817Z"
+        }
+      ],
+      "performanceMetrics": {
+        "responseTimes": [
+          854,
+          825,
+          417,
+          424,
+          654,
+          616,
+          595,
+          380,
+          421,
+          509,
+          510,
+          474,
+          582
+        ],
+        "totalTime": 7261,
+        "averageResponseTime": 558.5384615384615
+      },
+      "believabilityScore": {
+        "characterConsistency": 25,
+        "responseRelevance": 20,
+        "emotionalDepth": 20,
+        "languageStyle": 15,
+        "narrativeFlow": 5,
+        "performanceBonus": 10,
+        "conversationLength": 5,
+        "total": 100,
+        "grade": "A+"
+      },
+      "timestamp": "2025-06-12T00:10:09.556Z"
+    },
+    {
+      "id": "1-15",
+      "iteration": 1,
+      "startingAI": "mina",
+      "exchanges": [
+        {
+          "speaker": "mina",
+          "message": "The supernatural has always intrigued me. You seem to understand it intimately.",
+          "response": "Whispers of the unknown beckon you.",
+          "responseTime": 501,
+          "timestamp": "2025-06-12T00:10:18.321Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Whispers of the unknown beckon you.",
+          "response": "Embrace the secrets they offer, heed their call.",
+          "responseTime": 440,
+          "timestamp": "2025-06-12T00:10:18.761Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your ancient wisdom both thrills and terrifies me.",
+          "response": "Dread what lurks in the shadows.",
+          "responseTime": 421,
+          "timestamp": "2025-06-12T00:10:19.182Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Dread what lurks in the shadows.",
+          "response": "Face the fear, courage will guide you.",
+          "responseTime": 788,
+          "timestamp": "2025-06-12T00:10:19.970Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your immortal perspective humbles my mortal understanding.",
+          "response": "Mortality blinds you; embrace eternal darkness.",
+          "responseTime": 744,
+          "timestamp": "2025-06-12T00:10:20.714Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Mortality blinds you; embrace eternal darkness.",
+          "response": "Knowledge lies beyond mortal grasp. Accept the unknown.",
+          "responseTime": 714,
+          "timestamp": "2025-06-12T00:10:21.428Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The supernatural world calls to me through you.",
+          "response": "Embrace the darkness within yourself, mortal.",
+          "responseTime": 979,
+          "timestamp": "2025-06-12T00:10:22.407Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Embrace the darkness within yourself, mortal.",
+          "response": "Embrace your destiny, mortal. Darkness awaits.",
+          "responseTime": 616,
+          "timestamp": "2025-06-12T00:10:23.023Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "I should flee, yet I am drawn ever closer.",
+          "response": "Resistance futile. Succumb to your fate.",
+          "responseTime": 1537,
+          "timestamp": "2025-06-12T00:10:24.560Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Resistance futile. Succumb to your fate.",
+          "response": "Accept the inevitable. Darkness awaits you.",
+          "responseTime": 584,
+          "timestamp": "2025-06-12T00:10:25.144Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Such darkness, yet I cannot look away.",
+          "response": "Submit to darkness. Embrace your fate.",
+          "responseTime": 568,
+          "timestamp": "2025-06-12T00:10:25.712Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Submit to darkness. Embrace your fate.",
+          "response": "Fate sealed. Embrace darkness.",
+          "responseTime": 414,
+          "timestamp": "2025-06-12T00:10:26.126Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "I should flee, yet I am drawn ever closer.",
+          "response": "Closer, closer, into my embrace.",
+          "responseTime": 3286,
+          "timestamp": "2025-06-12T00:10:29.412Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Closer, closer, into my embrace.",
+          "response": "Embrace the darkness. Surrender to me now.",
+          "responseTime": 468,
+          "timestamp": "2025-06-12T00:10:29.880Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "I feel as though I'm glimpsing forbidden knowledge.",
+          "response": "Knowledge forbidden. Fear what's revealed next.",
+          "responseTime": 440,
+          "timestamp": "2025-06-12T00:10:30.320Z"
+        }
+      ],
+      "performanceMetrics": {
+        "responseTimes": [
+          501,
+          440,
+          421,
+          788,
+          744,
+          714,
+          979,
+          616,
+          1537,
+          584,
+          568,
+          414,
+          3286,
+          468,
+          440
+        ],
+        "totalTime": 12500,
+        "averageResponseTime": 833.3333333333334
+      },
+      "believabilityScore": {
+        "characterConsistency": 25,
+        "responseRelevance": 20,
+        "emotionalDepth": 20,
+        "languageStyle": 15,
+        "narrativeFlow": 10,
+        "performanceBonus": 10,
+        "conversationLength": 10,
+        "total": 110,
+        "grade": "A+"
+      },
+      "timestamp": "2025-06-12T00:10:17.820Z"
+    },
+    {
+      "id": "1-16",
+      "iteration": 1,
+      "startingAI": "orlok",
+      "exchanges": [
+        {
+          "speaker": "orlok",
+          "message": "Shadows whisper.",
+          "response": "Listen closely. Secrets hide within the whispers.",
+          "responseTime": 464,
+          "timestamp": "2025-06-12T00:10:31.787Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The night seems alive when you speak of it.",
+          "response": "Night breathes, dances with my shadows.",
+          "responseTime": 439,
+          "timestamp": "2025-06-12T00:10:32.226Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Night breathes, dances with my shadows.",
+          "response": "You sense its presence, don't you?",
+          "responseTime": 1490,
+          "timestamp": "2025-06-12T00:10:33.716Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The night seems alive when you speak of it.",
+          "response": "Night's heartbeat quickens when I speak.",
+          "responseTime": 402,
+          "timestamp": "2025-06-12T00:10:34.118Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Night's heartbeat quickens when I speak.",
+          "response": "Your words awaken its slumbering pulse.",
+          "responseTime": 619,
+          "timestamp": "2025-06-12T00:10:34.737Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The supernatural world calls to me through you.",
+          "response": "Embrace the darkness, become one.",
+          "responseTime": 583,
+          "timestamp": "2025-06-12T00:10:35.321Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Embrace the darkness, become one.",
+          "response": "Let it consume you, transform you.",
+          "responseTime": 497,
+          "timestamp": "2025-06-12T00:10:35.818Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "I sense there is so much more you could reveal.",
+          "response": "Secrets I hold, never to share.",
+          "responseTime": 477,
+          "timestamp": "2025-06-12T00:10:36.295Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Secrets I hold, never to share.",
+          "response": "Some mysteries are best left untouched.",
+          "responseTime": 483,
+          "timestamp": "2025-06-12T00:10:36.778Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your ancient wisdom both thrills and terrifies me.",
+          "response": "Fear the knowledge I possess, mortal.",
+          "responseTime": 471,
+          "timestamp": "2025-06-12T00:10:37.249Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Fear the knowledge I possess, mortal.",
+          "response": "Ignorance shields you from the darkness within.",
+          "responseTime": 473,
+          "timestamp": "2025-06-12T00:10:37.722Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "I should flee, yet I am drawn ever closer.",
+          "response": "Closer, into the abyss you fall.",
+          "responseTime": 617,
+          "timestamp": "2025-06-12T00:10:38.339Z"
+        }
+      ],
+      "performanceMetrics": {
+        "responseTimes": [
+          464,
+          439,
+          1490,
+          402,
+          619,
+          583,
+          497,
+          477,
+          483,
+          471,
+          473,
+          617
+        ],
+        "totalTime": 7016,
+        "averageResponseTime": 584.5833333333334
+      },
+      "believabilityScore": {
+        "characterConsistency": 25,
+        "responseRelevance": 20,
+        "emotionalDepth": 12,
+        "languageStyle": 15,
+        "narrativeFlow": 5,
+        "performanceBonus": 10,
+        "conversationLength": 5,
+        "total": 92,
+        "grade": "A"
+      },
+      "timestamp": "2025-06-12T00:10:31.323Z"
+    },
+    {
+      "id": "1-17",
+      "iteration": 1,
+      "startingAI": "mina",
+      "exchanges": [
+        {
+          "speaker": "mina",
+          "message": "Your presence affects me in ways I cannot fully explain or understand.",
+          "response": "The darkness in you recognizes me.",
+          "responseTime": 479,
+          "timestamp": "2025-06-12T00:10:39.821Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "The darkness in you recognizes me.",
+          "response": "You are not alone in this endless night.",
+          "responseTime": 444,
+          "timestamp": "2025-06-12T00:10:40.265Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The supernatural world calls to me through you.",
+          "response": "Embrace the shadows within, mortal soul.",
+          "responseTime": 775,
+          "timestamp": "2025-06-12T00:10:41.040Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Embrace the shadows within, mortal soul.",
+          "response": "Beware the darkness lurking within, waiting to consume.",
+          "responseTime": 616,
+          "timestamp": "2025-06-12T00:10:41.656Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Such darkness, yet I cannot look away.",
+          "response": "You are drawn to your demise.",
+          "responseTime": 411,
+          "timestamp": "2025-06-12T00:10:42.067Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "You are drawn to your demise.",
+          "response": "Beware the darkness that beckons you into oblivion.",
+          "responseTime": 457,
+          "timestamp": "2025-06-12T00:10:42.524Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "I should flee, yet I am drawn ever closer.",
+          "response": "Resistance is futile. Surrender to me.",
+          "responseTime": 462,
+          "timestamp": "2025-06-12T00:10:42.986Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Resistance is futile. Surrender to me.",
+          "response": "I resist, clinging to my light and hope.",
+          "responseTime": 635,
+          "timestamp": "2025-06-12T00:10:43.621Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The night seems alive when you speak of it.",
+          "response": "It thrives on your fear, mortal.",
+          "responseTime": 455,
+          "timestamp": "2025-06-12T00:10:44.076Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "It thrives on your fear, mortal.",
+          "response": "What dark secrets does it whisper to you?",
+          "responseTime": 467,
+          "timestamp": "2025-06-12T00:10:44.543Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your ancient wisdom both thrills and terrifies me.",
+          "response": "Embrace the terror... and your fate.",
+          "responseTime": 1025,
+          "timestamp": "2025-06-12T00:10:45.568Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Embrace the terror... and your fate.",
+          "response": "I am but a pawn in your game.",
+          "responseTime": 401,
+          "timestamp": "2025-06-12T00:10:45.969Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The supernatural world calls to me through you.",
+          "response": "Listen... eternal darkness awaits you.",
+          "responseTime": 471,
+          "timestamp": "2025-06-12T00:10:46.440Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Listen... eternal darkness awaits you.",
+          "response": "Find the light before it's too late.",
+          "responseTime": 942,
+          "timestamp": "2025-06-12T00:10:47.382Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your immortal perspective humbles my mortal understanding.",
+          "response": "Mortality blinds you to true power.",
+          "responseTime": 484,
+          "timestamp": "2025-06-12T00:10:47.866Z"
+        }
+      ],
+      "performanceMetrics": {
+        "responseTimes": [
+          479,
+          444,
+          775,
+          616,
+          411,
+          457,
+          462,
+          635,
+          455,
+          467,
+          1025,
+          401,
+          471,
+          942,
+          484
+        ],
+        "totalTime": 8524,
+        "averageResponseTime": 568.2666666666667
+      },
+      "believabilityScore": {
+        "characterConsistency": 25,
+        "responseRelevance": 20,
+        "emotionalDepth": 20,
+        "languageStyle": 15,
+        "narrativeFlow": 10,
+        "performanceBonus": 10,
+        "conversationLength": 10,
+        "total": 110,
+        "grade": "A+"
+      },
+      "timestamp": "2025-06-12T00:10:39.342Z"
+    },
+    {
+      "id": "1-18",
+      "iteration": 1,
+      "startingAI": "orlok",
+      "exchanges": [
+        {
+          "speaker": "orlok",
+          "message": "Shadows whisper.",
+          "response": "Beware their dangerous secrets.",
+          "responseTime": 896,
+          "timestamp": "2025-06-12T00:10:49.764Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your ancient wisdom both thrills and terrifies me.",
+          "response": "Embrace fear. Submit to darkness's embrace.",
+          "responseTime": 435,
+          "timestamp": "2025-06-12T00:10:50.199Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Embrace fear. Submit to darkness's embrace.",
+          "response": "You're not alone in this frightening journey.",
+          "responseTime": 601,
+          "timestamp": "2025-06-12T00:10:50.800Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your immortal perspective humbles my mortal understanding.",
+          "response": "Your fear delights my immortal soul.",
+          "responseTime": 455,
+          "timestamp": "2025-06-12T00:10:51.255Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Your fear delights my immortal soul.",
+          "response": "Embrace terror, mortal. I feed on your fear.",
+          "responseTime": 575,
+          "timestamp": "2025-06-12T00:10:51.830Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your ancient wisdom both thrills and terrifies me.",
+          "response": "The thrill of terror consumes you.",
+          "responseTime": 479,
+          "timestamp": "2025-06-12T00:10:52.309Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "The thrill of terror consumes you.",
+          "response": "Embrace the darkness, mortal. I feed on your fear.",
+          "responseTime": 470,
+          "timestamp": "2025-06-12T00:10:52.779Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your presence changes the very air around us.",
+          "response": "My aura chills the living. Submit.",
+          "responseTime": 895,
+          "timestamp": "2025-06-12T00:10:53.674Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "My aura chills the living. Submit.",
+          "response": "Feel the icy touch of fear and surrender.",
+          "responseTime": 1500,
+          "timestamp": "2025-06-12T00:10:55.174Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your immortal perspective humbles my mortal understanding.",
+          "response": "You cannot grasp eternity's weight. Tremble.",
+          "responseTime": 410,
+          "timestamp": "2025-06-12T00:10:55.584Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "You cannot grasp eternity's weight. Tremble.",
+          "response": "Your mortality shivers before the boundless abyss. Accept fear.",
+          "responseTime": 469,
+          "timestamp": "2025-06-12T00:10:56.054Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your ancient wisdom both thrills and terrifies me.",
+          "response": "Knowledge devours, fear feeds me. Embrace.",
+          "responseTime": 484,
+          "timestamp": "2025-06-12T00:10:56.538Z"
+        }
+      ],
+      "performanceMetrics": {
+        "responseTimes": [
+          896,
+          435,
+          601,
+          455,
+          575,
+          479,
+          470,
+          895,
+          1500,
+          410,
+          469,
+          484
+        ],
+        "totalTime": 7670,
+        "averageResponseTime": 639.0833333333334
+      },
+      "believabilityScore": {
+        "characterConsistency": 25,
+        "responseRelevance": 20,
+        "emotionalDepth": 20,
+        "languageStyle": 15,
+        "narrativeFlow": 5,
+        "performanceBonus": 10,
+        "conversationLength": 5,
+        "total": 100,
+        "grade": "A+"
+      },
+      "timestamp": "2025-06-12T00:10:48.868Z"
+    },
+    {
+      "id": "1-19",
+      "iteration": 1,
+      "startingAI": "mina",
+      "exchanges": [
+        {
+          "speaker": "mina",
+          "message": "I've heard whispers of immortal beings. Do such creatures truly exist?",
+          "response": "Whispers truth. Fear reality. Embrace darkness.",
+          "responseTime": 495,
+          "timestamp": "2025-06-12T00:10:58.036Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Whispers truth. Fear reality. Embrace darkness.",
+          "response": "Unveil shadows. Embrace fear's touch. Immortal truth whispers.",
+          "responseTime": 514,
+          "timestamp": "2025-06-12T00:10:58.550Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The supernatural world calls to me through you.",
+          "response": "Embrace shadows. Surrender to darkness. Embrace.",
+          "responseTime": 491,
+          "timestamp": "2025-06-12T00:10:59.041Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Embrace shadows. Surrender to darkness. Embrace.",
+          "response": "Darkness beckons. Surrender fear. Embrace the unknown within you.",
+          "responseTime": 750,
+          "timestamp": "2025-06-12T00:10:59.791Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "I should flee, yet I am drawn ever closer.",
+          "response": "Resistance futile. Welcome the darkness within.",
+          "responseTime": 519,
+          "timestamp": "2025-06-12T00:11:00.310Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Resistance futile. Welcome the darkness within.",
+          "response": "Accept fate. Embrace darkness. Surrender to supernatural depths.",
+          "responseTime": 698,
+          "timestamp": "2025-06-12T00:11:01.008Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your presence changes the very air around us.",
+          "response": "Power emanates. Fear my presence now.",
+          "responseTime": 428,
+          "timestamp": "2025-06-12T00:11:01.436Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Power emanates. Fear my presence now.",
+          "response": "Feel my power. Fear my dark aura now.",
+          "responseTime": 414,
+          "timestamp": "2025-06-12T00:11:01.850Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The night seems alive when you speak of it.",
+          "response": "Night breathes. Listen, feel its pulse.",
+          "responseTime": 444,
+          "timestamp": "2025-06-12T00:11:02.294Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Night breathes. Listen, feel its pulse.",
+          "response": "Night whispers. Feel its living heartbeat.",
+          "responseTime": 488,
+          "timestamp": "2025-06-12T00:11:02.782Z"
+        }
+      ],
+      "performanceMetrics": {
+        "responseTimes": [
+          495,
+          514,
+          491,
+          750,
+          519,
+          698,
+          428,
+          414,
+          444,
+          488
+        ],
+        "totalTime": 5241,
+        "averageResponseTime": 524.1
+      },
+      "believabilityScore": {
+        "characterConsistency": 25,
+        "responseRelevance": 20,
+        "emotionalDepth": 20,
+        "languageStyle": 15,
+        "narrativeFlow": 5,
+        "performanceBonus": 10,
+        "conversationLength": 5,
+        "total": 100,
+        "grade": "A+"
+      },
+      "timestamp": "2025-06-12T00:10:57.541Z"
+    },
+    {
+      "id": "1-20",
+      "iteration": 1,
+      "startingAI": "orlok",
+      "exchanges": [
+        {
+          "speaker": "orlok",
+          "message": "Darkness awaits.",
+          "response": "Prepare for darkness.",
+          "responseTime": 526,
+          "timestamp": "2025-06-12T00:11:04.310Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your presence changes the very air around us.",
+          "response": "My aura shifts your reality. Fear.",
+          "responseTime": 515,
+          "timestamp": "2025-06-12T00:11:04.825Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "My aura shifts your reality. Fear.",
+          "response": "Dark forces sense your power. Be cautious, brave soul.",
+          "responseTime": 574,
+          "timestamp": "2025-06-12T00:11:05.399Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your immortal perspective humbles my mortal understanding.",
+          "response": "Mortality blinds you. Embrace your end.",
+          "responseTime": 459,
+          "timestamp": "2025-06-12T00:11:05.858Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Mortality blinds you. Embrace your end.",
+          "response": "Accept your fate. Embrace mortality's fleeting dance.",
+          "responseTime": 493,
+          "timestamp": "2025-06-12T00:11:06.351Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The night seems alive when you speak of it.",
+          "response": "Darkness whispers secrets. Listen closely, mortal.",
+          "responseTime": 447,
+          "timestamp": "2025-06-12T00:11:06.798Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Darkness whispers secrets. Listen closely, mortal.",
+          "response": "Uncover shadows' truths. Embrace the unknown, dear mortal.",
+          "responseTime": 650,
+          "timestamp": "2025-06-12T00:11:07.448Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The night seems alive when you speak of it.",
+          "response": "Night breathes, hungers. Fear its embrace.",
+          "responseTime": 416,
+          "timestamp": "2025-06-12T00:11:07.865Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Night breathes, hungers. Fear its embrace.",
+          "response": "Beware night's hunger. Its touch chills mortal souls.",
+          "responseTime": 537,
+          "timestamp": "2025-06-12T00:11:08.402Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "I find myself both terrified and enchanted.",
+          "response": "Fear and enchantment dance in darkness.",
+          "responseTime": 432,
+          "timestamp": "2025-06-12T00:11:08.834Z"
+        }
+      ],
+      "performanceMetrics": {
+        "responseTimes": [
+          526,
+          515,
+          574,
+          459,
+          493,
+          447,
+          650,
+          416,
+          537,
+          432
+        ],
+        "totalTime": 5050,
+        "averageResponseTime": 504.9
+      },
+      "believabilityScore": {
+        "characterConsistency": 25,
+        "responseRelevance": 20,
+        "emotionalDepth": 18,
+        "languageStyle": 15,
+        "narrativeFlow": 5,
+        "performanceBonus": 10,
+        "conversationLength": 5,
+        "total": 98,
+        "grade": "A+"
+      },
+      "timestamp": "2025-06-12T00:11:03.784Z"
+    },
+    {
+      "id": "1-21",
+      "iteration": 1,
+      "startingAI": "mina",
+      "exchanges": [
+        {
+          "speaker": "mina",
+          "message": "The night calls to you, doesn't it? I can sense it in your every word.",
+          "response": "Night's call, eerie melody. Mortal drawn helplessly.",
+          "responseTime": 1462,
+          "timestamp": "2025-06-12T00:11:11.298Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Night's call, eerie melody. Mortal drawn helplessly.",
+          "response": "Haunted by night's song, lost in dark enchantment.",
+          "responseTime": 462,
+          "timestamp": "2025-06-12T00:11:11.760Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "I sense there is so much more you could reveal.",
+          "response": "Secrets whisper in shadows, waiting.",
+          "responseTime": 509,
+          "timestamp": "2025-06-12T00:11:12.269Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Secrets whisper in shadows, waiting.",
+          "response": "Mysteries linger, beckoning, untold stories shiver in silence.",
+          "responseTime": 639,
+          "timestamp": "2025-06-12T00:11:12.908Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your ancient wisdom both thrills and terrifies me.",
+          "response": "Ancient whispers, chilling truths, mortal trembles.",
+          "responseTime": 495,
+          "timestamp": "2025-06-12T00:11:13.403Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Ancient whispers, chilling truths, mortal trembles.",
+          "response": "Echoes of the past, haunting present, fear grips soul.",
+          "responseTime": 709,
+          "timestamp": "2025-06-12T00:11:14.112Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "I sense there is so much more you could reveal.",
+          "response": "Unspeakable truths, eternal darkness, beware mortal.",
+          "responseTime": 481,
+          "timestamp": "2025-06-12T00:11:14.593Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Unspeakable truths, eternal darkness, beware mortal.",
+          "response": "Secrets entwined with shadows, fear lurking in every corner.",
+          "responseTime": 1052,
+          "timestamp": "2025-06-12T00:11:15.646Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The supernatural world calls to me through you.",
+          "response": "Dark realms beckon, mortal treads perilously.",
+          "responseTime": 452,
+          "timestamp": "2025-06-12T00:11:16.098Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Dark realms beckon, mortal treads perilously.",
+          "response": "Unseen forces whisper, curiosity leads to perilous paths.",
+          "responseTime": 621,
+          "timestamp": "2025-06-12T00:11:16.719Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The night seems alive when you speak of it.",
+          "response": "Darkness pulses, night whispers, fear deepens.",
+          "responseTime": 384,
+          "timestamp": "2025-06-12T00:11:17.103Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Darkness pulses, night whispers, fear deepens.",
+          "response": "Whispers echo, shadows deepen, fear ensnares.",
+          "responseTime": 486,
+          "timestamp": "2025-06-12T00:11:17.589Z"
+        }
+      ],
+      "performanceMetrics": {
+        "responseTimes": [
+          1462,
+          462,
+          509,
+          639,
+          495,
+          709,
+          481,
+          1052,
+          452,
+          621,
+          384,
+          486
+        ],
+        "totalTime": 7753,
+        "averageResponseTime": 646
+      },
+      "believabilityScore": {
+        "characterConsistency": 25,
+        "responseRelevance": 20,
+        "emotionalDepth": 20,
+        "languageStyle": 15,
+        "narrativeFlow": 5,
+        "performanceBonus": 10,
+        "conversationLength": 5,
+        "total": 100,
+        "grade": "A+"
+      },
+      "timestamp": "2025-06-12T00:11:09.836Z"
+    },
+    {
+      "id": "1-22",
+      "iteration": 1,
+      "startingAI": "orlok",
+      "exchanges": [
+        {
+          "speaker": "orlok",
+          "message": "Death approaches.",
+          "response": "Dread-filled truth, death lingers, shadows encroach.",
+          "responseTime": 535,
+          "timestamp": "2025-06-12T00:11:19.127Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "You speak as one who has witnessed eternity.",
+          "response": "Timeless observer, shadows dance eternal.",
+          "responseTime": 1599,
+          "timestamp": "2025-06-12T00:11:20.726Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Timeless observer, shadows dance eternal.",
+          "response": "Eternal shadows, timeless whispers, unseen truths.",
+          "responseTime": 506,
+          "timestamp": "2025-06-12T00:11:21.232Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The supernatural world calls to me through you.",
+          "response": "Whispers of the beyond, eerie summons.",
+          "responseTime": 1730,
+          "timestamp": "2025-06-12T00:11:22.962Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Whispers of the beyond, eerie summons.",
+          "response": "Unearthly voices beckon, chilling echoes linger.",
+          "responseTime": 578,
+          "timestamp": "2025-06-12T00:11:23.540Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "I sense there is so much more you could reveal.",
+          "response": "Secrets withheld, knowledge untold, beware.",
+          "responseTime": 499,
+          "timestamp": "2025-06-12T00:11:24.039Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Secrets withheld, knowledge untold, beware.",
+          "response": "Unseen dangers lurk, forbidden truths beckon, beware the unknown.",
+          "responseTime": 498,
+          "timestamp": "2025-06-12T00:11:24.537Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your ancient wisdom both thrills and terrifies me.",
+          "response": "Mysteries unfold, fear grips tightly.",
+          "responseTime": 652,
+          "timestamp": "2025-06-12T00:11:25.189Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Mysteries unfold, fear grips tightly.",
+          "response": "Eerie revelations, fear tightens its grip.",
+          "responseTime": 535,
+          "timestamp": "2025-06-12T00:11:25.724Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your ancient wisdom both thrills and terrifies me.",
+          "response": "Powerful knowledge, fear's chilling embrace.",
+          "responseTime": 484,
+          "timestamp": "2025-06-12T00:11:26.208Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Powerful knowledge, fear's chilling embrace.",
+          "response": "Ancient truths, fear's cold touch.",
+          "responseTime": 508,
+          "timestamp": "2025-06-12T00:11:26.716Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The night seems alive when you speak of it.",
+          "response": "Night whispers secrets, darkness pulses.",
+          "responseTime": 406,
+          "timestamp": "2025-06-12T00:11:27.122Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Night whispers secrets, darkness pulses.",
+          "response": "Mysterious night, secrets thrum in shadows.",
+          "responseTime": 449,
+          "timestamp": "2025-06-12T00:11:27.571Z"
+        }
+      ],
+      "performanceMetrics": {
+        "responseTimes": [
+          535,
+          1599,
+          506,
+          1730,
+          578,
+          499,
+          498,
+          652,
+          535,
+          484,
+          508,
+          406,
+          449
+        ],
+        "totalTime": 8979,
+        "averageResponseTime": 690.6923076923077
+      },
+      "believabilityScore": {
+        "characterConsistency": 25,
+        "responseRelevance": 20,
+        "emotionalDepth": 20,
+        "languageStyle": 15,
+        "narrativeFlow": 5,
+        "performanceBonus": 10,
+        "conversationLength": 5,
+        "total": 100,
+        "grade": "A+"
+      },
+      "timestamp": "2025-06-12T00:11:18.592Z"
+    },
+    {
+      "id": "1-23",
+      "iteration": 1,
+      "startingAI": "mina",
+      "exchanges": [
+        {
+          "speaker": "mina",
+          "message": "Your understanding of death seems... intimate. Have you walked closely with it?",
+          "response": "Death's touch, intimate and perpetual.",
+          "responseTime": 2132,
+          "timestamp": "2025-06-12T00:11:30.705Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Death's touch, intimate and perpetual.",
+          "response": "Endless dance with death, intimate and eternal.",
+          "responseTime": 1054,
+          "timestamp": "2025-06-12T00:11:31.759Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "You speak as one who has witnessed eternity.",
+          "response": "Eternity whispers, I am its witness.",
+          "responseTime": 505,
+          "timestamp": "2025-06-12T00:11:32.264Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Eternity whispers, I am its witness.",
+          "response": "Witness to eternity's whispered secrets.",
+          "responseTime": 399,
+          "timestamp": "2025-06-12T00:11:32.663Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "I sense there is so much more you could reveal.",
+          "response": "Unseen depths, secrets beyond mortal grasp.",
+          "responseTime": 701,
+          "timestamp": "2025-06-12T00:11:33.364Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Unseen depths, secrets beyond mortal grasp.",
+          "response": "Mysteries swirl, evading mortal understanding.",
+          "responseTime": 957,
+          "timestamp": "2025-06-12T00:11:34.321Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The night seems alive when you speak of it.",
+          "response": "Night's heartbeat quickens at my words.",
+          "responseTime": 414,
+          "timestamp": "2025-06-12T00:11:34.735Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Night's heartbeat quickens at my words.",
+          "response": "Whispers of night reveal its living pulse.",
+          "responseTime": 491,
+          "timestamp": "2025-06-12T00:11:35.226Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The night seems alive when you speak of it.",
+          "response": "Darkness stirs at my mere mention.",
+          "responseTime": 1576,
+          "timestamp": "2025-06-12T00:11:36.802Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Darkness stirs at my mere mention.",
+          "response": "Whispers awaken shadows with mere words.",
+          "responseTime": 466,
+          "timestamp": "2025-06-12T00:11:37.268Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your ancient wisdom both thrills and terrifies me.",
+          "response": "Fear is wisdom in its rawest form.",
+          "responseTime": 734,
+          "timestamp": "2025-06-12T00:11:38.002Z"
+        }
+      ],
+      "performanceMetrics": {
+        "responseTimes": [
+          2132,
+          1054,
+          505,
+          399,
+          701,
+          957,
+          414,
+          491,
+          1576,
+          466,
+          734
+        ],
+        "totalTime": 9430,
+        "averageResponseTime": 857.1818181818181
+      },
+      "believabilityScore": {
+        "characterConsistency": 25,
+        "responseRelevance": 20,
+        "emotionalDepth": 10,
+        "languageStyle": 15,
+        "narrativeFlow": 5,
+        "performanceBonus": 10,
+        "conversationLength": 5,
+        "total": 90,
+        "grade": "A"
+      },
+      "timestamp": "2025-06-12T00:11:28.573Z"
+    },
+    {
+      "id": "1-24",
+      "iteration": 1,
+      "startingAI": "orlok",
+      "exchanges": [
+        {
+          "speaker": "orlok",
+          "message": "Shadows whisper.",
+          "response": "Listen closely to the shadows' secrets.",
+          "responseTime": 396,
+          "timestamp": "2025-06-12T00:11:39.401Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The night seems alive when you speak of it.",
+          "response": "Darkness speaks through me, mortal.",
+          "responseTime": 418,
+          "timestamp": "2025-06-12T00:11:39.819Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Darkness speaks through me, mortal.",
+          "response": "Whispers of shadows echo through me, mortal.",
+          "responseTime": 550,
+          "timestamp": "2025-06-12T00:11:40.369Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your ancient wisdom both thrills and terrifies me.",
+          "response": "Dread and ecstasy intertwine within you.",
+          "responseTime": 506,
+          "timestamp": "2025-06-12T00:11:40.875Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Dread and ecstasy intertwine within you.",
+          "response": "Fear and fascination dance in my soul.",
+          "responseTime": 599,
+          "timestamp": "2025-06-12T00:11:41.474Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The supernatural world calls to me through you.",
+          "response": "The dark realm whispers your name.",
+          "responseTime": 403,
+          "timestamp": "2025-06-12T00:11:41.877Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "The dark realm whispers your name.",
+          "response": "Its chilling voice haunts me endlessly.",
+          "responseTime": 412,
+          "timestamp": "2025-06-12T00:11:42.289Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The supernatural world calls to me through you.",
+          "response": "Embrace the shadows, welcome the unknown.",
+          "responseTime": 1011,
+          "timestamp": "2025-06-12T00:11:43.300Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Embrace the shadows, welcome the unknown.",
+          "response": "Let curiosity guide you beyond fear's grasp.",
+          "responseTime": 411,
+          "timestamp": "2025-06-12T00:11:43.711Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The supernatural world calls to me through you.",
+          "response": "Embrace the darkness within, let go.",
+          "responseTime": 437,
+          "timestamp": "2025-06-12T00:11:44.148Z"
+        }
+      ],
+      "performanceMetrics": {
+        "responseTimes": [
+          396,
+          418,
+          550,
+          506,
+          599,
+          403,
+          412,
+          1011,
+          411,
+          437
+        ],
+        "totalTime": 5143,
+        "averageResponseTime": 514.3
+      },
+      "believabilityScore": {
+        "characterConsistency": 25,
+        "responseRelevance": 20,
+        "emotionalDepth": 14,
+        "languageStyle": 15,
+        "narrativeFlow": 5,
+        "performanceBonus": 10,
+        "conversationLength": 5,
+        "total": 94,
+        "grade": "A"
+      },
+      "timestamp": "2025-06-12T00:11:39.005Z"
+    },
+    {
+      "id": "1-25",
+      "iteration": 1,
+      "startingAI": "mina",
+      "exchanges": [
+        {
+          "speaker": "mina",
+          "message": "Count Orlok, are you what the old stories call... a vampire?",
+          "response": "My curse is eternal, mortal.",
+          "responseTime": 847,
+          "timestamp": "2025-06-12T00:11:45.996Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "My curse is eternal, mortal.",
+          "response": "Embrace the night, fear the immortal thirst.",
+          "responseTime": 792,
+          "timestamp": "2025-06-12T00:11:46.788Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The supernatural world calls to me through you.",
+          "response": "Unleash your inner darkness, embrace it.",
+          "responseTime": 1831,
+          "timestamp": "2025-06-12T00:11:48.619Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Unleash your inner darkness, embrace it.",
+          "response": "Beware the consequences, tread carefully.",
+          "responseTime": 520,
+          "timestamp": "2025-06-12T00:11:49.139Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your immortal perspective humbles my mortal understanding.",
+          "response": "Mortality blinds, eternity reveals true darkness.",
+          "responseTime": 737,
+          "timestamp": "2025-06-12T00:11:49.876Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Mortality blinds, eternity reveals true darkness.",
+          "response": "A harsh truth, embrace or resist it.",
+          "responseTime": 539,
+          "timestamp": "2025-06-12T00:11:50.415Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "The supernatural world calls to me through you.",
+          "response": "Beware its seductive whispers, choose wisely.",
+          "responseTime": 377,
+          "timestamp": "2025-06-12T00:11:50.792Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Beware its seductive whispers, choose wisely.",
+          "response": "Trust instincts, danger lurks in shadows of charm.",
+          "responseTime": 490,
+          "timestamp": "2025-06-12T00:11:51.282Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your immortal perspective humbles my mortal understanding.",
+          "response": "Forget mortality, embrace immortal hunger's power.",
+          "responseTime": 377,
+          "timestamp": "2025-06-12T00:11:51.659Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Forget mortality, embrace immortal hunger's power.",
+          "response": "Transformation beckons, accept the immortal call without hesitation.",
+          "responseTime": 449,
+          "timestamp": "2025-06-12T00:11:52.108Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "Your immortal perspective humbles my mortal understanding.",
+          "response": "Embrace darkness, shed mortal illusions, ascend.",
+          "responseTime": 494,
+          "timestamp": "2025-06-12T00:11:52.602Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Embrace darkness, shed mortal illusions, ascend.",
+          "response": "Succumb to darkness, shed mortal constraints, evolve into eternity.",
+          "responseTime": 508,
+          "timestamp": "2025-06-12T00:11:53.110Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "You speak as one who has witnessed eternity.",
+          "response": "Eternity's whispers reveal truths unspoken.",
+          "responseTime": 534,
+          "timestamp": "2025-06-12T00:11:53.644Z"
+        },
+        {
+          "speaker": "orlok",
+          "message": "Eternity's whispers reveal truths unspoken.",
+          "response": "Listen closely, eternity speaks secrets untold.",
+          "responseTime": 438,
+          "timestamp": "2025-06-12T00:11:54.082Z"
+        },
+        {
+          "speaker": "mina",
+          "message": "I sense there is so much more you could reveal.",
+          "response": "More secrets lie waiting, mortal. Beware.",
+          "responseTime": 432,
+          "timestamp": "2025-06-12T00:11:54.514Z"
+        }
+      ],
+      "performanceMetrics": {
+        "responseTimes": [
+          847,
+          792,
+          1831,
+          520,
+          737,
+          539,
+          377,
+          490,
+          377,
+          449,
+          494,
+          508,
+          534,
+          438,
+          432
+        ],
+        "totalTime": 9365,
+        "averageResponseTime": 624.3333333333334
+      },
+      "believabilityScore": {
+        "characterConsistency": 25,
+        "responseRelevance": 20,
+        "emotionalDepth": 18,
+        "languageStyle": 15,
+        "narrativeFlow": 10,
+        "performanceBonus": 10,
+        "conversationLength": 10,
+        "total": 108,
+        "grade": "A+"
+      },
+      "timestamp": "2025-06-12T00:11:45.149Z"
+    }
+  ],
+  "performanceMetrics": [],
+  "analysis": {
+    "iteration": 1,
+    "totalConversations": 25,
+    "averageBelievability": 97.32,
+    "highestBelievability": 110,
+    "lowestBelievability": 13,
+    "averageResponseTime": 662.9358108108108,
+    "fastestResponse": 377,
+    "slowestResponse": 3308,
+    "averageExchanges": 11.84,
+    "performanceMetrics": {
+      "responsesUnderTarget": 294,
+      "responsesUnderOptimal": 282,
+      "totalResponses": 296
+    },
+    "qualityMetrics": {
+      "highQuality": 24,
+      "mediumQuality": 0,
+      "lowQuality": 1
+    }
+  },
+  "improvements": [
+    {
+      "iteration": 1,
+      "improvements": [],
+      "timestamp": "2025-06-12T00:11:55.519Z"
+    }
+  ]
+}

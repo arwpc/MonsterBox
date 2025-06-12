@@ -1,0 +1,95 @@
+{
+  "timestamp": "2025-06-12T00:18:58.136Z",
+  "summary": {
+    "totalIterations": 3,
+    "totalConversations": 75,
+    "performanceTargets": {
+      "responseTime": 3000,
+      "optimalResponseTime": 1500,
+      "minExchanges": 10,
+      "maxExchanges": 15,
+      "believabilityThreshold": 75
+    }
+  },
+  "iterationResults": [
+    {
+      "iteration": 1,
+      "totalConversations": 25,
+      "averageBelievability": 97.32,
+      "highestBelievability": 110,
+      "lowestBelievability": 13,
+      "averageResponseTime": 662.9358108108108,
+      "fastestResponse": 377,
+      "slowestResponse": 3308,
+      "averageExchanges": 11.84,
+      "performanceMetrics": {
+        "responsesUnderTarget": 294,
+        "responsesUnderOptimal": 282,
+        "totalResponses": 296
+      },
+      "qualityMetrics": {
+        "highQuality": 24,
+        "mediumQuality": 0,
+        "lowQuality": 1
+      }
+    },
+    {
+      "iteration": 2,
+      "totalConversations": 25,
+      "averageBelievability": 97.12,
+      "highestBelievability": 110,
+      "lowestBelievability": 86,
+      "averageResponseTime": 645.0748299319728,
+      "fastestResponse": 328,
+      "slowestResponse": 2423,
+      "averageExchanges": 11.76,
+      "performanceMetrics": {
+        "responsesUnderTarget": 294,
+        "responsesUnderOptimal": 283,
+        "totalResponses": 294
+      },
+      "qualityMetrics": {
+        "highQuality": 25,
+        "mediumQuality": 0,
+        "lowQuality": 0
+      }
+    },
+    {
+      "iteration": 3,
+      "totalConversations": 25,
+      "averageBelievability": 98.8,
+      "highestBelievability": 110,
+      "lowestBelievability": 84,
+      "averageResponseTime": 595.2525252525253,
+      "fastestResponse": 352,
+      "slowestResponse": 2444,
+      "averageExchanges": 11.88,
+      "performanceMetrics": {
+        "responsesUnderTarget": 297,
+        "responsesUnderOptimal": 287,
+        "totalResponses": 297
+      },
+      "qualityMetrics": {
+        "highQuality": 25,
+        "mediumQuality": 0,
+        "lowQuality": 0
+      }
+    }
+  ],
+  "improvements": [
+    {
+      "iteration": 1,
+      "improvements": [],
+      "timestamp": "2025-06-12T00:11:55.519Z"
+    },
+    {
+      "iteration": 2,
+      "improvements": [],
+      "timestamp": "2025-06-12T00:15:32.257Z"
+    }
+  ],
+  "progressAnalysis": {
+    "believabilityImprovement": 1.480000000000004,
+    "performanceImprovement": 67.68328555828555
+  }
+}
