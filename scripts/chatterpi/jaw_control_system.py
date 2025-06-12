@@ -334,6 +334,64 @@ class JawControlSystem:
             }
         }
 
+    def calibrate_jaw_range(self, step_size: float = 5.0, step_delay: float = 1.0) -> Dict[str, Any]:
+        """
+        Interactive jaw calibration to find optimal range
+        Returns calibration data for user to review
+        """
+        if not self.is_initialized:
+            return {"error": "System not initialized"}
+
+        logger.info("🔧 Starting jaw calibration sequence...")
+        calibration_data = {
+            "start_time": time.time(),
+            "steps": [],
+            "recommended_closed": 0,
+            "recommended_open": 45,
+            "status": "in_progress"
+        }
+
+        try:
+            # Step through range slowly for user observation
+            current_angle = 0
+            while current_angle <= self.max_angle:
+                logger.info(f"📍 Calibrating position: {current_angle}°")
+
+                # Move to position
+                self.move_to_angle(current_angle, 0.5, "linear")
+
+                # Wait for movement and user observation
+                while self.is_moving:
+                    time.sleep(0.1)
+                time.sleep(step_delay)
+
+                # Record step
+                calibration_data["steps"].append({
+                    "angle": current_angle,
+                    "timestamp": time.time(),
+                    "pulse_width": self._angle_to_pulse(current_angle)
+                })
+
+                current_angle += step_size
+
+            # Return to closed position
+            self.move_to_angle(0, 1.0, "ease_in_out")
+            while self.is_moving:
+                time.sleep(0.1)
+
+            calibration_data["status"] = "completed"
+            calibration_data["end_time"] = time.time()
+            calibration_data["duration"] = calibration_data["end_time"] - calibration_data["start_time"]
+
+            logger.info("✅ Calibration sequence completed")
+            return calibration_data
+
+        except Exception as e:
+            logger.error(f"❌ Calibration failed: {e}")
+            calibration_data["status"] = "failed"
+            calibration_data["error"] = str(e)
+            return calibration_data
+
 def main():
     """Test the jaw control system"""
     jaw_control = JawControlSystem(pin=18)

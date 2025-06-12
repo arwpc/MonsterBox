@@ -78,8 +78,47 @@
         }
         .control-button:hover { transform: scale(1.05); }
         .control-button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-        .audio-controls {
+        .audio-controls, .jaw-controls {
             display: flex; gap: 10px; align-items: center;
+        }
+        .calibrate-button {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            font-size: 11px; padding: 5px 10px;
+        }
+
+        .calibration-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .angle-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .angle-control label {
+            min-width: 100px;
+            font-weight: bold;
+        }
+
+        .angle-slider {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .small-button {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        .calibrate-button:hover {
+            background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
         }
         .volume-control {
             display: flex; align-items: center; gap: 8px;
@@ -158,7 +197,27 @@
             </div>
             <div class="control-group">
                 <label>Jaw Test</label>
-                <button id="testJawButton" class="control-button">Test Movement</button>
+                <div class="jaw-controls">
+                    <button id="testJawButton" class="control-button">Test Movement</button>
+                    <button id="calibrateJawButton" class="control-button calibrate-button">🔧 Calibrate</button>
+                </div>
+            </div>
+            <div class="control-group">
+                <label>Jaw Calibration</label>
+                <div class="calibration-controls">
+                    <div class="angle-control">
+                        <label>Closed Position:</label>
+                        <input type="range" id="closedAngleSlider" min="0" max="180" value="70" class="angle-slider">
+                        <span id="closedAngleValue">70°</span>
+                        <button id="setClosedButton" class="control-button small-button">Set Closed</button>
+                    </div>
+                    <div class="angle-control">
+                        <label>Open Position:</label>
+                        <input type="range" id="openAngleSlider" min="0" max="180" value="30" class="angle-slider">
+                        <span id="openAngleValue">30°</span>
+                        <button id="setOpenButton" class="control-button small-button">Set Open</button>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="chat-input-container">
@@ -208,6 +267,7 @@
                 this.voiceSelect = document.getElementById('voiceSelect');
                 this.testAudioButton = document.getElementById('testAudioButton');
                 this.testJawButton = document.getElementById('testJawButton');
+                this.calibrateJawButton = document.getElementById('calibrateJawButton');
                 this.volumeSlider = document.getElementById('volumeSlider');
             }
 
@@ -237,9 +297,38 @@
 
                 this.testAudioButton.addEventListener('click', () => this.testAudio());
                 this.testJawButton.addEventListener('click', () => this.testJawMovement());
+                this.calibrateJawButton.addEventListener('click', () => this.calibrateJaw());
 
                 this.volumeSlider.addEventListener('input', (e) => {
                     this.audioVolume = e.target.value / 100;
+                });
+
+                // Calibration controls
+                this.closedAngleSlider = document.getElementById('closedAngleSlider');
+                this.openAngleSlider = document.getElementById('openAngleSlider');
+                this.closedAngleValue = document.getElementById('closedAngleValue');
+                this.openAngleValue = document.getElementById('openAngleValue');
+                this.setClosedButton = document.getElementById('setClosedButton');
+                this.setOpenButton = document.getElementById('setOpenButton');
+
+                this.closedAngleSlider.addEventListener('input', (e) => {
+                    this.closedAngleValue.textContent = e.target.value + '°';
+                });
+
+                this.openAngleSlider.addEventListener('input', (e) => {
+                    this.openAngleValue.textContent = e.target.value + '°';
+                });
+
+                this.setClosedButton.addEventListener('click', () => {
+                    const angle = parseInt(this.closedAngleSlider.value);
+                    this.sendJawCommand({ type: 'set_position', angle: angle });
+                    console.log(`Setting closed position to ${angle}°`);
+                });
+
+                this.setOpenButton.addEventListener('click', () => {
+                    const angle = parseInt(this.openAngleSlider.value);
+                    this.sendJawCommand({ type: 'set_position', angle: angle });
+                    console.log(`Setting open position to ${angle}°`);
                 });
             }
 
@@ -455,8 +544,29 @@
                     case 'jaw_stopped':
                         this.jawStatusText.textContent = 'Stopped';
                         break;
+                    case 'calibration_started':
+                        console.log('🔧 Calibration started');
+                        this.jawStatusText.textContent = 'Calibrating...';
+                        break;
+                    case 'calibration_completed':
+                        console.log('✅ Calibration completed:', message.data);
+                        this.jawStatusText.textContent = 'Calibration Complete';
+                        this.calibrateJawButton.disabled = false;
+                        this.calibrateJawButton.textContent = '🔧 Calibrate';
+
+                        // Show calibration results
+                        if (message.data && message.data.status === 'completed') {
+                            const duration = message.data.duration?.toFixed(1) || 'unknown';
+                            console.log(`Calibration took ${duration} seconds`);
+                        }
+                        break;
                     case 'error':
                         console.error('Jaw WebSocket error:', message.message);
+                        // Re-enable calibration button if it was a calibration error
+                        if (this.calibrateJawButton.disabled) {
+                            this.calibrateJawButton.disabled = false;
+                            this.calibrateJawButton.textContent = '🔧 Calibrate';
+                        }
                         break;
                 }
             }
@@ -508,10 +618,19 @@
             }
 
             updateJawStatus(jawStatus) {
-                if (jawStatus.current_position !== null) {
-                    this.jawPosition.textContent = `${jawStatus.current_position.toFixed(1)}°`;
+                // Handle both object and string status
+                if (typeof jawStatus === 'string') {
+                    this.jawStatusText.textContent = jawStatus;
+                    return;
                 }
-                this.jawStatusText.textContent = jawStatus.is_moving ? 'Moving' : 'Ready';
+
+                // Handle object status
+                if (jawStatus && typeof jawStatus === 'object') {
+                    if (jawStatus.current_position !== null && jawStatus.current_position !== undefined) {
+                        this.jawPosition.textContent = `${jawStatus.current_position.toFixed(1)}°`;
+                    }
+                    this.jawStatusText.textContent = jawStatus.is_moving ? 'Moving' : 'Ready';
+                }
             }
 
             sendMessage() {
@@ -563,6 +682,31 @@
                         }, index * 700);
                     });
                 }, 200);
+            }
+
+            calibrateJaw() {
+                console.log(`🔧 Starting jaw calibration on GPIO ${this.selectedServo}`);
+
+                // Disable calibration button during calibration
+                this.calibrateJawButton.disabled = true;
+                this.calibrateJawButton.textContent = '🔧 Calibrating...';
+
+                // Send calibration command to jaw server
+                this.sendJawMessage({
+                    type: 'calibrate',
+                    step_size: 5.0,
+                    step_delay: 1.5
+                });
+
+                // Show calibration status
+                this.updateJawStatus('Calibrating jaw range - observe movement carefully');
+
+                // Re-enable button after estimated calibration time (18 steps * 1.5s = ~27s)
+                setTimeout(() => {
+                    this.calibrateJawButton.disabled = false;
+                    this.calibrateJawButton.textContent = '🔧 Calibrate';
+                    this.updateJawStatus('Calibration completed');
+                }, 30000);
             }
 
             animateJawWithSpeech(text) {

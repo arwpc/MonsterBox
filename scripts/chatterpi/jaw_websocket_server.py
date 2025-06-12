@@ -11,6 +11,9 @@ import logging
 import time
 from typing import Dict, Any, Optional, Set
 from dataclasses import dataclass
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from jaw_control_system import JawControlSystem
 
 # Configure logging
@@ -150,12 +153,18 @@ class JawWebSocketServer:
             # Route message to appropriate handler
             if message_type == "jaw_move":
                 await self.handle_jaw_move(client_id, message)
+            elif message_type == "set_position":
+                await self.handle_set_position(client_id, message)
             elif message_type == "jaw_stop":
                 await self.handle_jaw_stop(client_id, message)
+            elif message_type == "stop_servo":
+                await self.handle_stop_servo(client_id, message)
             elif message_type == "get_position":
                 await self.handle_get_position(client_id, message)
             elif message_type == "get_status":
                 await self.handle_get_status(client_id, message)
+            elif message_type == "calibrate":
+                await self.handle_calibrate(client_id, message)
             elif message_type == "subscribe":
                 await self.handle_subscribe(client_id, message)
             elif message_type == "ping":
@@ -207,7 +216,36 @@ class JawWebSocketServer:
         except Exception as e:
             logger.error(f"Error in jaw_move: {e}")
             await self.send_error(client_id, f"Jaw movement error: {str(e)}")
-    
+
+    async def handle_set_position(self, client_id: str, message: Dict[str, Any]):
+        """Handle direct position setting for calibration"""
+        try:
+            angle = message.get("angle")
+
+            if angle is None:
+                await self.send_error(client_id, "Missing 'angle' parameter")
+                return
+
+            if not isinstance(angle, (int, float)) or not (0 <= angle <= 180):
+                await self.send_error(client_id, "Angle must be a number between 0 and 180")
+                return
+
+            # Set position immediately
+            success = self.jaw_control.move_to_angle(angle, 0.3, "linear")
+
+            if success:
+                await self.send_to_client(client_id, {
+                    "type": "position_set",
+                    "angle": angle,
+                    "timestamp": time.time()
+                })
+            else:
+                await self.send_error(client_id, "Failed to set jaw position")
+
+        except Exception as e:
+            logger.error(f"Error in set_position: {e}")
+            await self.send_error(client_id, f"Position setting error: {str(e)}")
+
     async def handle_jaw_stop(self, client_id: str, message: Dict[str, Any]):
         """Handle jaw stop command"""
         try:
@@ -219,7 +257,19 @@ class JawWebSocketServer:
         except Exception as e:
             logger.error(f"Error in jaw_stop: {e}")
             await self.send_error(client_id, f"Jaw stop error: {str(e)}")
-    
+
+    async def handle_stop_servo(self, client_id: str, message: Dict[str, Any]):
+        """Handle servo PWM stop command to reduce jitter"""
+        try:
+            self.jaw_control.stop_servo()
+            await self.send_to_client(client_id, {
+                "type": "servo_stopped",
+                "timestamp": time.time()
+            })
+        except Exception as e:
+            logger.error(f"Error stopping servo: {e}")
+            await self.send_error(client_id, f"Servo stop error: {str(e)}")
+
     async def handle_get_position(self, client_id: str, message: Dict[str, Any]):
         """Handle position request"""
         try:
@@ -247,7 +297,7 @@ class JawWebSocketServer:
                 "errors": self.stats["errors"],
                 "uptime": time.time() - self.stats["start_time"] if self.stats["start_time"] else 0
             }
-            
+
             await self.send_to_client(client_id, {
                 "type": "status_response",
                 "jaw_status": jaw_status,
@@ -257,6 +307,36 @@ class JawWebSocketServer:
         except Exception as e:
             logger.error(f"Error getting status: {e}")
             await self.send_error(client_id, f"Status error: {str(e)}")
+
+    async def handle_calibrate(self, client_id: str, message: Dict[str, Any]):
+        """Handle calibration request"""
+        try:
+            step_size = message.get("step_size", 5.0)
+            step_delay = message.get("step_delay", 1.0)
+
+            logger.info(f"Starting calibration for client {client_id}")
+
+            # Send calibration started message
+            await self.send_to_client(client_id, {
+                "type": "calibration_started",
+                "step_size": step_size,
+                "step_delay": step_delay,
+                "timestamp": time.time()
+            })
+
+            # Run calibration in background
+            calibration_data = self.jaw_control.calibrate_jaw_range(step_size, step_delay)
+
+            # Send calibration results
+            await self.send_to_client(client_id, {
+                "type": "calibration_completed",
+                "data": calibration_data,
+                "timestamp": time.time()
+            })
+
+        except Exception as e:
+            logger.error(f"Error in calibration: {e}")
+            await self.send_error(client_id, f"Calibration error: {str(e)}")
     
     async def handle_subscribe(self, client_id: str, message: Dict[str, Any]):
         """Handle event subscription"""

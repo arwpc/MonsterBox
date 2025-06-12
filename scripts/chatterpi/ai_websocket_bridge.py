@@ -266,6 +266,17 @@ class AIWebSocketBridge:
                 # Extract the AI response from the output
                 lines = output.split('\n')
 
+                # Look for AI response generated line (most reliable)
+                for line in lines:
+                    if '✅ AI response generated:' in line:
+                        # Extract the text between quotes
+                        start_quote = line.find('"')
+                        end_quote = line.rfind('"')
+                        if start_quote != -1 and end_quote != -1 and start_quote < end_quote:
+                            response = line[start_quote+1:end_quote]
+                            log_and_print(f"✅ Extracted AI response from generated line: {response}")
+                            return response
+
                 # Look for speech generation line which contains the actual AI response
                 for line in lines:
                     if '🎤 Generating speech for:' in line:
@@ -338,25 +349,33 @@ class AIWebSocketBridge:
         return random.choice(responses)
     
     def generate_jaw_animation(self, text):
-        """Generate jaw animation sequence for text"""
+        """Generate jaw animation sequence for text - INVERTED: Higher angle = closed, Lower angle = open"""
         words = text.split()
         animation_sequence = []
-        
+
+        # Jaw position configuration (INVERTED)
+        closed_angle = 70  # Mouth closed (higher angle)
+        open_angle = 30    # Mouth open (lower angle)
+
         for i, word in enumerate(words):
-            # Calculate jaw angle based on word characteristics
-            base_angle = min(45, len(word) * 3)
-            
+            # Calculate jaw opening based on word characteristics
+            # Longer words = more mouth opening (lower angle)
+            opening_factor = min(1.0, len(word) / 8.0)  # Normalize word length
+
+            # Calculate angle: closed_angle when silent, open_angle when speaking
+            angle = closed_angle - (opening_factor * (closed_angle - open_angle))
+
             # Add some variation for more natural movement
-            angle = base_angle + random.randint(-5, 5)
-            angle = max(0, min(60, angle))  # Clamp between 0-60 degrees
-            
+            angle += random.randint(-3, 3)
+            angle = max(open_angle, min(closed_angle, angle))  # Clamp between open-closed
+
             animation_sequence.append({
                 "word": word,
                 "angle": angle,
                 "duration": 0.2 + len(word) * 0.05,
                 "delay": i * 0.3
             })
-        
+
         return animation_sequence
     
     async def send_jaw_animation(self, text):
@@ -367,28 +386,39 @@ class AIWebSocketBridge:
                 # Skip welcome message
                 await jaw_ws.recv()
                 
+                # Jaw position configuration (INVERTED)
+                closed_angle = 70  # Mouth closed (higher angle)
+                open_angle = 30    # Mouth open (lower angle)
+
                 # Send animation sequence
                 words = text.split()
                 for i, word in enumerate(words):
-                    angle = min(45, len(word) * 3)
-                    
+                    # Calculate jaw opening based on word length
+                    opening_factor = min(1.0, len(word) / 8.0)
+                    angle = closed_angle - (opening_factor * (closed_angle - open_angle))
+
                     command = {
                         "type": "jaw_move",
                         "angle": angle,
-                        "duration": 0.2,
+                        "duration": 0.15,
                         "curve_type": "ease_in_out"
                     }
-                    
+
                     await jaw_ws.send(json.dumps(command))
-                    await asyncio.sleep(0.3)
-                    
-                    # Return to neutral
+                    await asyncio.sleep(0.15)
+
+                    # Return to closed position
                     await jaw_ws.send(json.dumps({
                         "type": "jaw_move",
-                        "angle": 0,
+                        "angle": closed_angle,
                         "duration": 0.1
                     }))
                     await asyncio.sleep(0.1)
+
+                # Stop servo PWM to reduce jitter when done speaking
+                await jaw_ws.send(json.dumps({
+                    "type": "stop_servo"
+                }))
                     
         except Exception as e:
             logger.warning(f"Could not send jaw animation: {e}")
