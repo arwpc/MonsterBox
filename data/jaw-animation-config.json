@@ -7,19 +7,26 @@
       "bufferSize": 1024,
       "smoothingFactor": 0.8,
       "volumeThreshold": 0.01,
-      "updateInterval": 20
+      "updateInterval": 16,
+      "speechFreqMin": 300,
+      "speechFreqMax": 3400,
+      "enableFrequencyFiltering": true,
+      "attackTime": 0.05,
+      "releaseTime": 0.15
     },
     "servoMapping": {
       "responseCurve": "linear",
       "sensitivity": 1,
       "attackTime": 0.05,
       "releaseTime": 0.15,
-      "smoothingFactor": 0.7
+      "smoothingFactor": 0.7,
+      "positionDeadband": 0.5,
+      "idleTimeout": 2000
     },
     "performance": {
       "maxCpuUsage": 10,
       "maxMemoryUsage": 50,
-      "updateRate": 50
+      "updateRate": 60
     }
   },
   "characters": {

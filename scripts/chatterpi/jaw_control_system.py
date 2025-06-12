@@ -112,25 +112,46 @@ class JawControlSystem:
                 logger.error(f"Error during cleanup: {e}")
     
     def _set_pulse_width(self, pulse_width: int):
-        """Set servo pulse width directly"""
+        """Set servo pulse width directly with jitter reduction"""
         if not self.is_initialized:
             return False
-        
+
         try:
             # Clamp pulse width to safe range
             pulse_width = max(self.min_pulse, min(self.max_pulse, pulse_width))
-            
+
+            # Implement deadband to reduce jitter
+            if hasattr(self, 'last_pulse_width') and abs(pulse_width - self.last_pulse_width) < 10:
+                return True  # Skip micro-movements (10µs threshold)
+
             # Set PWM (20ms period = 50Hz, pulse width in microseconds)
             lgpio.tx_pwm(self.gpio_handle, self.pin, 50, pulse_width / 20000.0 * 100)
-            
+
+            # Store last pulse width for deadband comparison
+            self.last_pulse_width = pulse_width
+
             # Update current position
             angle = self._pulse_to_angle(pulse_width)
             self.current_position = ServoPosition(angle, pulse_width, time.time())
-            
+
             return True
-            
+
         except Exception as e:
             logger.error(f"Error setting pulse width: {e}")
+            return False
+
+    def stop_servo(self):
+        """Stop PWM signal to reduce jitter when idle"""
+        if not self.is_initialized:
+            return False
+
+        try:
+            # Stop PWM signal completely
+            lgpio.tx_pwm(self.gpio_handle, self.pin, 0, 0)
+            logger.info("Servo PWM stopped to reduce jitter")
+            return True
+        except Exception as e:
+            logger.error(f"Error stopping servo PWM: {e}")
             return False
     
     def _angle_to_pulse(self, angle: float) -> int:

@@ -16,7 +16,14 @@ class AudioAnalyzer extends EventEmitter {
             bufferSize: options.bufferSize || 1024,
             smoothingFactor: options.smoothingFactor || 0.8,
             volumeThreshold: options.volumeThreshold || 0.01,
-            updateInterval: options.updateInterval || 20, // 50Hz update rate
+            updateInterval: options.updateInterval || 16, // ~60Hz update rate for better sync
+            // Speech frequency filtering (ChatterPi style)
+            speechFreqMin: options.speechFreqMin || 300,   // 300Hz minimum for speech
+            speechFreqMax: options.speechFreqMax || 3400,  // 3400Hz maximum for speech
+            enableFrequencyFiltering: options.enableFrequencyFiltering !== false,
+            // Attack/Release timing
+            attackTime: options.attackTime || 0.05,       // 50ms attack
+            releaseTime: options.releaseTime || 0.15,     // 150ms release
             ...options
         };
         
@@ -26,6 +33,12 @@ class AudioAnalyzer extends EventEmitter {
         this.peakVolume = 0;
         this.audioBuffer = [];
         this.analysisInterval = null;
+
+        // Enhanced audio processing
+        this.rmsVolume = 0;
+        this.speechVolume = 0;
+        this.lastVolumeTime = 0;
+        this.volumeHistory = [];
         
         logger.info('AudioAnalyzer initialized with options:', this.options);
     }
@@ -167,17 +180,27 @@ class AudioAnalyzer extends EventEmitter {
     }
     
     /**
-     * Analyze current audio data
+     * Analyze current audio data with enhanced processing
      */
     analyzeAudio() {
         if (this.analyser && this.dataArray) {
             // Web Audio API analysis
             this.analyser.getByteFrequencyData(this.dataArray);
-            this.currentVolume = this.calculateVolumeFromFrequencyData(this.dataArray);
+
+            if (this.options.enableFrequencyFiltering) {
+                // Calculate speech-frequency-focused volume
+                this.speechVolume = this.calculateSpeechVolume(this.dataArray);
+                this.currentVolume = this.speechVolume;
+            } else {
+                this.currentVolume = this.calculateVolumeFromFrequencyData(this.dataArray);
+            }
+
+            // Calculate RMS for better volume representation
+            this.rmsVolume = this.calculateRMSVolume(this.dataArray);
         }
         // For Node.js, volume is set by simulateAudioData or actual integration
-        
-        this.processVolumeData();
+
+        this.processVolumeDataEnhanced();
     }
     
     /**
@@ -191,6 +214,43 @@ class AudioAnalyzer extends EventEmitter {
             sum += frequencyData[i];
         }
         return (sum / frequencyData.length) / 255;
+    }
+
+    /**
+     * Calculate speech-frequency focused volume (ChatterPi style)
+     * @param {Uint8Array} dataArray - Frequency data
+     * @returns {number} Speech volume level (0-1)
+     */
+    calculateSpeechVolume(dataArray) {
+        const nyquist = this.options.sampleRate / 2;
+        const binSize = nyquist / dataArray.length;
+
+        const minBin = Math.floor(this.options.speechFreqMin / binSize);
+        const maxBin = Math.floor(this.options.speechFreqMax / binSize);
+
+        let sum = 0;
+        let count = 0;
+
+        for (let i = minBin; i <= maxBin && i < dataArray.length; i++) {
+            sum += dataArray[i];
+            count++;
+        }
+
+        return count > 0 ? sum / (count * 255) : 0;
+    }
+
+    /**
+     * Calculate RMS volume for better representation
+     * @param {Uint8Array} dataArray - Frequency data
+     * @returns {number} RMS volume level (0-1)
+     */
+    calculateRMSVolume(dataArray) {
+        let sumSquares = 0;
+        for (let i = 0; i < dataArray.length; i++) {
+            const normalized = dataArray[i] / 255;
+            sumSquares += normalized * normalized;
+        }
+        return Math.sqrt(sumSquares / dataArray.length);
     }
     
     /**
@@ -211,6 +271,59 @@ class AudioAnalyzer extends EventEmitter {
                 smoothed: this.smoothedVolume,
                 peak: this.peakVolume,
                 timestamp: Date.now()
+            });
+        }
+    }
+
+    /**
+     * Enhanced volume processing with attack/release timing
+     */
+    processVolumeDataEnhanced() {
+        const now = Date.now();
+        const deltaTime = this.lastVolumeTime > 0 ? (now - this.lastVolumeTime) / 1000 : 0;
+        this.lastVolumeTime = now;
+
+        // Apply attack/release timing
+        let targetVolume = this.currentVolume;
+        if (targetVolume > this.smoothedVolume) {
+            // Attack phase - volume increasing
+            const attackRate = 1 / this.options.attackTime;
+            this.smoothedVolume = Math.min(targetVolume,
+                this.smoothedVolume + (attackRate * deltaTime * (targetVolume - this.smoothedVolume)));
+        } else {
+            // Release phase - volume decreasing
+            const releaseRate = 1 / this.options.releaseTime;
+            this.smoothedVolume = Math.max(targetVolume,
+                this.smoothedVolume - (releaseRate * deltaTime * (this.smoothedVolume - targetVolume)));
+        }
+
+        // Update peak with faster decay
+        this.peakVolume = Math.max(this.peakVolume * 0.98, this.currentVolume);
+
+        // Store volume history for analysis
+        this.volumeHistory.push({
+            raw: this.currentVolume,
+            smoothed: this.smoothedVolume,
+            rms: this.rmsVolume,
+            speech: this.speechVolume,
+            timestamp: now
+        });
+
+        // Keep only recent history (last 1 second)
+        if (this.volumeHistory.length > 60) { // ~60 samples at 60Hz
+            this.volumeHistory.shift();
+        }
+
+        // Emit enhanced volume update with threshold check
+        if (this.smoothedVolume > this.options.volumeThreshold) {
+            this.emit('volumeUpdate', {
+                raw: this.currentVolume,
+                smoothed: this.smoothedVolume,
+                peak: this.peakVolume,
+                rms: this.rmsVolume,
+                speech: this.speechVolume,
+                timestamp: now,
+                deltaTime: deltaTime
             });
         }
     }

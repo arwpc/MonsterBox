@@ -265,20 +265,33 @@ class JawAnimationSystem extends EventEmitter {
         
         // Map volume to servo position
         const servoPosition = this.servoMapper.mapVolumeToPosition(volumeData.smoothed);
-        
-        // Move servo to new position
-        this.servoController.moveToPosition(servoPosition).catch(error => {
-            logger.error('Error moving servo:', error);
-        });
-        
+
+        // Check if servo should be idle to reduce jitter
+        const servoState = this.servoMapper.getState();
+
+        if (servoState.shouldStop) {
+            // Stop servo PWM to reduce jitter when idle
+            if (this.servoController.stopServo) {
+                this.servoController.stopServo().catch(error => {
+                    logger.error('Error stopping servo:', error);
+                });
+            }
+        } else {
+            // Move servo to new position
+            this.servoController.moveToPosition(servoPosition).catch(error => {
+                logger.error('Error moving servo:', error);
+            });
+        }
+
         // Update performance stats
         const latency = Date.now() - startTime;
         this.updatePerformanceStats(latency);
-        
-        // Emit volume update event
+
+        // Emit volume update event with servo state
         this.emit('volumeUpdate', {
             ...volumeData,
             servoPosition,
+            servoState,
             latency
         });
         

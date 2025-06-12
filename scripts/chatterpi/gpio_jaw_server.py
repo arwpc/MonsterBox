@@ -91,9 +91,13 @@ class GPIOJawControl:
         return int(pulse_width)
     
     def set_angle(self, angle):
-        """Set servo to specific angle"""
+        """Set servo to specific angle with jitter reduction"""
         if not self.initialized:
             return False
+
+        # Implement deadband to reduce jitter
+        if hasattr(self, 'last_angle') and abs(angle - self.last_angle) < 0.5:
+            return True  # Skip micro-movements
 
         self.current_angle = angle
 
@@ -102,13 +106,32 @@ class GPIOJawControl:
                 pulse_width = self.angle_to_pulse_width(angle)
                 # Set PWM (20ms period = 50Hz, pulse width in microseconds)
                 lgpio.tx_pwm(self.gpio_handle, self.pin, 50, pulse_width / 20000.0 * 100)
+
+                # Store last angle for deadband comparison
+                self.last_angle = angle
+
                 logger.info(f"🦴 Servo moved to {angle}° (pulse: {pulse_width}µs)")
                 return True
             except Exception as e:
                 logger.error(f"Error setting servo angle: {e}")
                 return False
         else:
+            self.last_angle = angle  # Track simulated movements too
             logger.info(f"🦴 Simulated servo move to {angle}°")
+            return True
+
+    def stop_servo(self):
+        """Stop PWM signal to reduce jitter when idle"""
+        if GPIO_AVAILABLE and self.gpio_handle:
+            try:
+                lgpio.tx_pwm(self.gpio_handle, self.pin, 0, 0)  # Stop PWM
+                logger.info("🦴 Servo PWM stopped to reduce jitter")
+                return True
+            except Exception as e:
+                logger.error(f"Error stopping servo PWM: {e}")
+                return False
+        else:
+            logger.info("🦴 Simulated servo PWM stop")
             return True
     
     async def move_to_angle(self, target_angle, duration=0.5):

@@ -138,16 +138,28 @@ class JawServoController:
             return False
     
     def _move_gpio(self, angle: float, duration: float) -> bool:
-        """Move servo using GPIO PWM"""
+        """Move servo using GPIO PWM with improved jitter control"""
         if not GPIO_AVAILABLE or not self.pwm:
             print(f"GPIO Simulation: Moving to {angle}°")
             time.sleep(duration)
             return True
-        
+
+        # Check if movement is significant enough (deadband)
+        if hasattr(self, 'last_angle') and abs(angle - self.last_angle) < 0.5:
+            return True  # Skip micro-movements to reduce jitter
+
         duty_cycle = self.angle_to_duty_cycle(angle)
         self.pwm.ChangeDutyCycle(duty_cycle)
         time.sleep(duration)
-        self.pwm.ChangeDutyCycle(0)  # Stop sending signal
+
+        # Store last angle for deadband comparison
+        self.last_angle = angle
+
+        # Only stop PWM if we're at rest position (near min angle)
+        if abs(angle - self.min_angle) < 1.0:
+            time.sleep(0.1)  # Brief hold time
+            self.pwm.ChangeDutyCycle(0)  # Stop sending signal to reduce jitter
+
         return True
     
     def _move_pca9685(self, angle: float, duration: float) -> bool:
