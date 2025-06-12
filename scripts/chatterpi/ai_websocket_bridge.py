@@ -33,7 +33,7 @@ def log_and_print(message):
 class AIWebSocketBridge:
     """AI WebSocket Bridge for ChatterPi conversations"""
     
-    def __init__(self, host="0.0.0.0", port=8766, jaw_host="localhost", jaw_port=8765):
+    def __init__(self, host="0.0.0.0", port=8766, jaw_host="localhost", jaw_port=3000):
         self.host = host
         self.port = port
         self.jaw_host = jaw_host
@@ -215,136 +215,72 @@ class AIWebSocketBridge:
             await self.send_error(websocket, f"Chat processing error: {str(e)}")
     
     async def generate_ai_response(self, client_id, user_text):
-        """Generate AI response using the real JavaScript AI system"""
+        """Generate AI response using OpenAI directly in Python"""
         client_info = self.clients[client_id]
         character_id = client_info["character"]
 
         try:
-            # Call the JavaScript AI system
-            import subprocess
-            import json as json_module
-
-            # Prepare the command to call the JavaScript AI
-            ai_script_path = os.path.join(os.path.dirname(__file__), 'ai_integration.js')
-
-            # Create a temporary input for the AI
-            ai_input = {
-                "message": user_text,
-                "character": character_id
-            }
-
-            # Call the JavaScript AI system with environment variables
-            env = os.environ.copy()
-            # Make sure we have the OpenAI API key
-            if 'OPENAI_API_KEY' not in env:
-                # Try to load from .env file
-                env_file_path = os.path.join(os.path.dirname(__file__), '..', '..', '.env')
-                log_and_print(f"🔍 Looking for .env file at: {env_file_path}")
-                if os.path.exists(env_file_path):
-                    log_and_print(f"✅ Found .env file, loading environment variables")
-                    with open(env_file_path, 'r') as f:
-                        for line in f:
-                            if line.strip() and not line.startswith('#') and '=' in line:
-                                key, value = line.strip().split('=', 1)
-                                env[key] = value.strip('"')
-                                if key == 'OPENAI_API_KEY':
-                                    log_and_print(f"✅ Loaded OpenAI API key: {value[:20]}...")
-                else:
-                    log_and_print(f"❌ .env file not found at {env_file_path}")
-            else:
-                log_and_print(f"✅ OpenAI API key already in environment")
-
-            # Run from the root directory where node_modules are located
-            root_dir = os.path.join(os.path.dirname(__file__), '..', '..')
-            process = await asyncio.create_subprocess_exec(
-                'node', ai_script_path, user_text, character_id,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-                cwd=root_dir,
-                env=env
-            )
-
-            stdout, stderr = await process.communicate()
-
-            if process.returncode == 0:
-                # Parse the AI response
-                output = stdout.decode().strip()
-                log_and_print(f"🔍 AI Script Output: {output}")
-
-                # Extract the AI response from the output
-                lines = output.split('\n')
-
-                # Look for AI response generated line (most reliable)
-                for line in lines:
-                    if '✅ AI response generated:' in line:
-                        log_and_print(f"🔍 Found AI response line: {line}")
-                        # Extract the text between quotes
-                        start_quote = line.find('"')
-                        end_quote = line.rfind('"')
-                        log_and_print(f"🔍 Quote positions: start={start_quote}, end={end_quote}")
-                        if start_quote != -1 and end_quote != -1 and start_quote < end_quote:
-                            response = line[start_quote+1:end_quote]
-                            log_and_print(f"✅ Extracted AI response from generated line: {response}")
-                            return response
-                        else:
-                            log_and_print(f"⚠️ Could not find proper quotes in line: {line}")
-                            # Try alternative parsing - look for text after the colon
-                            colon_pos = line.find('✅ AI response generated:')
-                            if colon_pos != -1:
-                                after_colon = line[colon_pos + len('✅ AI response generated:'):].strip()
-                                # Remove quotes if they exist
-                                if after_colon.startswith('"') and after_colon.endswith('"'):
-                                    response = after_colon[1:-1]
-                                else:
-                                    response = after_colon
-                                log_and_print(f"✅ Extracted AI response (alternative method): {response}")
-                                return response
-
-                # Look for speech generation line which contains the actual AI response
-                for line in lines:
-                    if '🎤 Generating speech for:' in line:
-                        # Extract the text between quotes
-                        start_quote = line.find('"')
-                        end_quote = line.rfind('"')
-                        if start_quote != -1 and end_quote != -1 and start_quote < end_quote:
-                            response = line[start_quote+1:end_quote]
-                            log_and_print(f"✅ Extracted AI response from speech line: {response}")
-                            return response
-
-                # Fallback: look for character response lines
-                for line in lines:
-                    if '🎭 Count Orlok:' in line:
-                        response = line.split('🎭 Count Orlok:', 1)[1].strip()
-                        log_and_print(f"✅ Extracted Orlok response: {response}")
-                        return response
-                    elif '🎭' in line and ':' in line and 'ChatterPi AI initialized' not in line:
-                        # Generic character response format, but skip initialization lines
-                        response = line.split(':', 1)[1].strip()
-                        log_and_print(f"✅ Extracted generic response: {response}")
-                        return response
-
-                # Final fallback: return the last non-empty line that looks like a response
-                for line in reversed(lines):
-                    if (line.strip() and
-                        not line.startswith('🧠') and
-                        not line.startswith('✅') and
-                        not line.startswith('🎤') and
-                        not line.startswith('❌') and
-                        not line.startswith('🎭 ChatterPi AI initialized') and
-                        not line.startswith('🎭 Processing conversation')):
-                        log_and_print(f"✅ Fallback response: {line.strip()}")
-                        return line.strip()
-
-                # If no response found, log the full output
-                log_and_print(f"⚠️ No response found in output, using fallback")
+            # Import OpenAI here to avoid issues if not installed
+            try:
+                import openai
+            except ImportError:
+                log_and_print("❌ OpenAI package not installed, using fallback")
                 return self.get_fallback_response(character_id)
 
-            # If JavaScript AI fails, use fallback
-            logger.warning(f"JavaScript AI failed: {stderr.decode()}")
-            return self.get_fallback_response(character_id)
+            # Load environment variables
+            env_file_path = os.path.join(os.path.dirname(__file__), '..', '..', '.env')
+            api_key = None
+
+            if os.path.exists(env_file_path):
+                log_and_print("✅ Found .env file, loading OpenAI API key")
+                with open(env_file_path, 'r') as f:
+                    for line in f:
+                        line = line.strip()
+                        if line.startswith('OPENAI_API_KEY='):
+                            api_key = line.split('=', 1)[1].strip().strip('"').strip("'")
+                            break
+
+            if not api_key:
+                api_key = os.environ.get('OPENAI_API_KEY')
+
+            if not api_key:
+                log_and_print("❌ OpenAI API key not found, using fallback")
+                return self.get_fallback_response(character_id)
+
+            log_and_print(f"✅ OpenAI API key loaded: {api_key[:20]}...")
+
+            # Character system prompts
+            character_prompts = {
+                "orlok": "You are Count Orlok, the ancient vampire from Nosferatu. You speak with an archaic, formal tone with hints of Romanian accent. You are mysterious, aristocratic, and slightly menacing but not overtly hostile. Keep responses brief (1-2 sentences) for natural conversation flow. Use archaic words like 'thee', 'thou', 'verily', and speak of your castle, the night, and your ancient existence.",
+                "robot": "You are a helpful robot assistant. You speak in a logical, technical manner but remain friendly and helpful. Keep responses brief and informative.",
+                "pirate": "You are a swashbuckling pirate captain. You speak with pirate slang and nautical terms. You are adventurous and bold. Keep responses brief and entertaining."
+            }
+
+            system_prompt = character_prompts.get(character_id, character_prompts["orlok"])
+
+            # Create OpenAI client
+            client = openai.OpenAI(api_key=api_key)
+
+            # Generate response
+            log_and_print(f"🧠 Generating AI response for: \"{user_text}\"")
+
+            completion = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_text}
+                ],
+                max_tokens=150,
+                temperature=0.7
+            )
+
+            response = completion.choices[0].message.content.strip()
+            log_and_print(f"✅ AI response generated: \"{response}\"")
+            return response
 
         except Exception as e:
-            logger.error(f"Error calling JavaScript AI: {e}")
+            logger.error(f"Error generating AI response: {e}")
+            log_and_print(f"❌ AI generation failed: {e}, using fallback")
             return self.get_fallback_response(character_id)
 
     def get_fallback_response(self, character_id):
@@ -404,10 +340,10 @@ class AIWebSocketBridge:
     async def send_jaw_animation(self, text):
         """Send jaw animation to jaw server"""
         try:
-            jaw_uri = f"ws://{self.jaw_host}:{self.jaw_port}"
+            jaw_uri = f"ws://{self.jaw_host}:{self.jaw_port}/jaw-animation"
             async with websockets.connect(jaw_uri, timeout=5) as jaw_ws:
-                # Skip welcome message
-                await jaw_ws.recv()
+                # Wait a moment for connection to stabilize
+                await asyncio.sleep(0.1)
                 
                 # Jaw position configuration (CORRECTED FOR SKULL)
                 closed_angle = 30  # Mouth closed (jaw up against skull)
@@ -617,7 +553,7 @@ def main():
     parser.add_argument("--host", default="0.0.0.0", help="Server host")
     parser.add_argument("--port", type=int, default=8766, help="Server port")
     parser.add_argument("--jaw-host", default="localhost", help="Jaw server host")
-    parser.add_argument("--jaw-port", type=int, default=8765, help="Jaw server port")
+    parser.add_argument("--jaw-port", type=int, default=3000, help="Jaw server port")
 
     args = parser.parse_args()
 

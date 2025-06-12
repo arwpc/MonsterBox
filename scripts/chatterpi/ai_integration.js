@@ -308,9 +308,10 @@ if (require.main === module) {
         console.error(`❌ Error: ${error.message}`);
     });
 
-    // Process the conversation
-    ai.processConversation(userMessage)
+    // Process the conversation - simplified for CLI
+    ai.generateResponse(userMessage)
         .then(result => {
+            console.log(`🎭 ${result.character}: ${result.text}`);
             process.exit(0);
         })
         .catch(error => {

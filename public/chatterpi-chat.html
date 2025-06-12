@@ -199,7 +199,7 @@
                 <label>Jaw Test</label>
                 <div class="jaw-controls">
                     <button id="testJawButton" class="control-button">Test Movement</button>
-                    <button id="calibrateJawButton" class="control-button calibrate-button">🔧 Calibrate</button>
+                    <button id="saveCalibrationButton" class="control-button calibrate-button">💾 Save Open & Close Calibration</button>
                 </div>
             </div>
             <div class="control-group">
@@ -267,7 +267,13 @@
                 this.voiceSelect = document.getElementById('voiceSelect');
                 this.testAudioButton = document.getElementById('testAudioButton');
                 this.testJawButton = document.getElementById('testJawButton');
-                this.calibrateJawButton = document.getElementById('calibrateJawButton');
+                this.saveCalibrationButton = document.getElementById('saveCalibrationButton');
+                this.setClosedButton = document.getElementById('setClosedButton');
+                this.setOpenButton = document.getElementById('setOpenButton');
+                this.closedAngleSlider = document.getElementById('closedAngleSlider');
+                this.openAngleSlider = document.getElementById('openAngleSlider');
+                this.closedAngleValue = document.getElementById('closedAngleValue');
+                this.openAngleValue = document.getElementById('openAngleValue');
                 this.volumeSlider = document.getElementById('volumeSlider');
             }
 
@@ -297,10 +303,23 @@
 
                 this.testAudioButton.addEventListener('click', () => this.testAudio());
                 this.testJawButton.addEventListener('click', () => this.testJawMovement());
-                this.calibrateJawButton.addEventListener('click', () => this.calibrateJaw());
+                this.saveCalibrationButton.addEventListener('click', () => this.saveCalibration());
+
+                // Add calibration button event listeners
+                this.setClosedButton.addEventListener('click', () => this.setClosedPosition());
+                this.setOpenButton.addEventListener('click', () => this.setOpenPosition());
 
                 this.volumeSlider.addEventListener('input', (e) => {
                     this.audioVolume = e.target.value / 100;
+                });
+
+                // Add slider update listeners
+                this.closedAngleSlider.addEventListener('input', (e) => {
+                    this.closedAngleValue.textContent = e.target.value + '°';
+                });
+
+                this.openAngleSlider.addEventListener('input', (e) => {
+                    this.openAngleValue.textContent = e.target.value + '°';
                 });
 
                 // Calibration controls
@@ -477,6 +496,7 @@
 
             connectToAI() {
                 const wsUrl = `ws://${window.location.hostname}:8766`;
+                console.log(`🔗 Attempting to connect to AI WebSocket: ${wsUrl}`);
 
                 try {
                     this.aiWebSocket = new WebSocket(wsUrl);
@@ -492,14 +512,16 @@
                             type: 'set_character',
                             character: 'orlok'
                         });
+                        console.log('🧛‍♂️ Set character to Count Orlok');
                     };
 
                     this.aiWebSocket.onmessage = (event) => {
+                        console.log('📨 AI WebSocket message received:', event.data);
                         this.handleAIMessage(JSON.parse(event.data));
                     };
 
-                    this.aiWebSocket.onclose = () => {
-                        console.log('❌ Disconnected from AI WebSocket');
+                    this.aiWebSocket.onclose = (event) => {
+                        console.log(`❌ Disconnected from AI WebSocket - Code: ${event.code}, Reason: ${event.reason}`);
                         this.isAIConnected = false;
                         this.updateConnectionStatus();
                         this.updateSendButton();
@@ -507,11 +529,12 @@
                     };
 
                     this.aiWebSocket.onerror = (error) => {
-                        console.error('AI WebSocket error:', error);
+                        console.error('🚨 AI WebSocket error:', error);
+                        console.error('WebSocket state:', this.aiWebSocket.readyState);
                     };
 
                 } catch (error) {
-                    console.error('Failed to create AI WebSocket:', error);
+                    console.error('💥 Failed to create AI WebSocket:', error);
                     setTimeout(() => this.connectToAI(), 5000);
                 }
             }
@@ -572,25 +595,45 @@
             }
 
             handleAIMessage(message) {
-                console.log('AI message received:', message);
+                console.log('🤖 AI message received:', message);
 
                 switch (message.type) {
+                    case 'welcome':
+                        console.log('🎉 AI WebSocket welcome received:', message);
+                        break;
+
                     case 'conversation_result':
                         const data = message.data;
-                        this.addMessage(data.aiResponse.text, 'bot');
+                        if (data && data.aiResponse && data.aiResponse.text) {
+                            this.addMessage(data.aiResponse.text, 'bot');
+                            // Speak with character voice and animate jaw
+                            this.speakText(data.aiResponse.text, this.selectedVoice);
+                            this.animateJawWithSpeech(data.aiResponse.text);
+                        } else {
+                            console.error('Invalid conversation result format:', message);
+                        }
+                        break;
 
-                        // Speak with character voice and animate jaw
-                        this.speakText(data.aiResponse.text, this.selectedVoice);
-                        this.animateJawWithSpeech(data.aiResponse.text);
+                    case 'ai_response':
+                        // Handle direct AI response format
+                        if (message.response) {
+                            this.addMessage(message.response, 'bot');
+                            this.speakText(message.response, this.selectedVoice);
+                            this.animateJawWithSpeech(message.response);
+                        }
                         break;
 
                     case 'ai_error':
-                        console.error('AI Error:', message.error);
+                        console.error('🚨 AI Error:', message.error);
                         this.addMessage('Sorry, I encountered an error. Please try again.', 'bot');
                         break;
 
                     case 'characters_list':
-                        console.log('Available characters:', message.characters);
+                        console.log('🎭 Available characters:', message.characters);
+                        break;
+
+                    default:
+                        console.log('🔍 Unknown AI message type:', message.type, message);
                         break;
                 }
             }
@@ -635,19 +678,44 @@
 
             sendMessage() {
                 const message = this.chatInput.value.trim();
-                if (!message || !this.isAIConnected) return;
+                if (!message) return;
+
+                console.log(`📤 Sending message: "${message}"`);
+                console.log(`🔗 AI Connected: ${this.isAIConnected}`);
+                console.log(`🔗 WebSocket State: ${this.aiWebSocket ? this.aiWebSocket.readyState : 'null'}`);
 
                 this.addMessage(message, 'user');
                 this.chatInput.value = '';
                 this.adjustTextareaHeight();
                 this.updateSendButton();
 
-                // Send message to AI
-                this.sendAIMessage({
-                    type: 'chat_message',
-                    message: message,
-                    timestamp: new Date().toISOString()
-                });
+                // Send message to AI if connected, otherwise show error
+                if (this.isAIConnected && this.aiWebSocket && this.aiWebSocket.readyState === WebSocket.OPEN) {
+                    console.log(`🤖 Sending to AI WebSocket...`);
+                    this.sendAIMessage({
+                        type: 'chat_message',
+                        message: message,
+                        timestamp: new Date().toISOString()
+                    });
+                } else {
+                    console.log(`❌ AI not connected. Attempting to reconnect...`);
+                    this.addMessage('AI is not connected. Attempting to reconnect...', 'bot');
+                    // Try to reconnect
+                    this.connectToAI();
+                    // Retry sending the message after a short delay
+                    setTimeout(() => {
+                        if (this.isAIConnected && this.aiWebSocket && this.aiWebSocket.readyState === WebSocket.OPEN) {
+                            console.log(`🔄 Retrying message send...`);
+                            this.sendAIMessage({
+                                type: 'chat_message',
+                                message: message,
+                                timestamp: new Date().toISOString()
+                            });
+                        } else {
+                            this.addMessage('Failed to connect to AI. Please try again.', 'bot');
+                        }
+                    }, 2000);
+                }
             }
 
             testJawMovement() {
@@ -661,13 +729,23 @@
 
                 // Wait a moment for configuration, then test
                 setTimeout(() => {
-                    // Test sequence with proper jaw angles (inverted for correct orientation)
+                    // New test sequence: 3x open/close cycles + gradual close
+                    const closedAngle = parseInt(this.closedAngleSlider.value);
+                    const openAngle = parseInt(this.openAngleSlider.value);
+
                     const testSequence = [
-                        { angle: 90, duration: 0.5 },   // Closed position
-                        { angle: 60, duration: 0.5 },   // Slightly open
-                        { angle: 30, duration: 0.5 },   // More open
-                        { angle: 60, duration: 0.5 },   // Back to slightly open
-                        { angle: 90, duration: 0.5 }    // Back to closed
+                        // First cycle
+                        { angle: openAngle, duration: 0.5 },    // Open
+                        { angle: closedAngle, duration: 0.5 },  // Close
+                        // Second cycle
+                        { angle: openAngle, duration: 0.5 },    // Open
+                        { angle: closedAngle, duration: 0.5 },  // Close
+                        // Third cycle
+                        { angle: openAngle, duration: 0.5 },    // Open
+                        { angle: closedAngle, duration: 0.5 },  // Close
+                        // Final gradual close (wide open to closed in 3 seconds)
+                        { angle: openAngle, duration: 0.2 },    // Ensure wide open
+                        { angle: closedAngle, duration: 3.0 }   // Gradual close over 3 seconds
                     ];
 
                     testSequence.forEach((move, index) => {
@@ -684,29 +762,77 @@
                 }, 200);
             }
 
-            calibrateJaw() {
-                console.log(`🔧 Starting jaw calibration on GPIO ${this.selectedServo}`);
+            saveCalibration() {
+                const closedAngle = parseInt(this.closedAngleSlider.value);
+                const openAngle = parseInt(this.openAngleSlider.value);
 
-                // Disable calibration button during calibration
-                this.calibrateJawButton.disabled = true;
-                this.calibrateJawButton.textContent = '🔧 Calibrating...';
+                console.log(`💾 Saving calibration: Closed=${closedAngle}°, Open=${openAngle}°`);
 
-                // Send calibration command to jaw server
+                // Save to localStorage for persistence
+                localStorage.setItem('chatterpi_closed_angle', closedAngle);
+                localStorage.setItem('chatterpi_open_angle', openAngle);
+                localStorage.setItem('chatterpi_servo_pin', this.selectedServo);
+
+                // Send configuration to jaw server
                 this.sendJawMessage({
-                    type: 'calibrate',
-                    step_size: 5.0,
-                    step_delay: 1.5
+                    type: 'configure_servo',
+                    pin: parseInt(this.selectedServo),
+                    closed_angle: closedAngle,
+                    open_angle: openAngle
                 });
 
-                // Show calibration status
-                this.updateJawStatus('Calibrating jaw range - observe movement carefully');
+                // Show confirmation
+                this.updateJawStatus(`✅ Calibration saved: ${closedAngle}° closed, ${openAngle}° open`);
 
-                // Re-enable button after estimated calibration time (18 steps * 1.5s = ~27s)
+                // Brief visual feedback
+                this.saveCalibrationButton.textContent = '✅ Saved!';
                 setTimeout(() => {
-                    this.calibrateJawButton.disabled = false;
-                    this.calibrateJawButton.textContent = '🔧 Calibrate';
-                    this.updateJawStatus('Calibration completed');
-                }, 30000);
+                    this.saveCalibrationButton.textContent = '💾 Save Open & Close Calibration';
+                }, 2000);
+            }
+
+            setClosedPosition() {
+                const closedAngle = parseInt(this.closedAngleSlider.value);
+                console.log(`🔧 Setting closed position to ${closedAngle}° on GPIO ${this.selectedServo}`);
+
+                // Send servo configuration first
+                this.sendJawMessage({
+                    type: 'configure_servo',
+                    pin: parseInt(this.selectedServo)
+                });
+
+                // Move to closed position
+                setTimeout(() => {
+                    this.sendJawMessage({
+                        type: 'jaw_move',
+                        angle: closedAngle,
+                        duration: 1.0,
+                        curve_type: 'ease_in_out'
+                    });
+                    this.updateJawStatus(`Moving to closed position: ${closedAngle}°`);
+                }, 200);
+            }
+
+            setOpenPosition() {
+                const openAngle = parseInt(this.openAngleSlider.value);
+                console.log(`🔧 Setting open position to ${openAngle}° on GPIO ${this.selectedServo}`);
+
+                // Send servo configuration first
+                this.sendJawMessage({
+                    type: 'configure_servo',
+                    pin: parseInt(this.selectedServo)
+                });
+
+                // Move to open position
+                setTimeout(() => {
+                    this.sendJawMessage({
+                        type: 'jaw_move',
+                        angle: openAngle,
+                        duration: 1.0,
+                        curve_type: 'ease_in_out'
+                    });
+                    this.updateJawStatus(`Moving to open position: ${openAngle}°`);
+                }, 200);
             }
 
             animateJawWithSpeech(text) {
