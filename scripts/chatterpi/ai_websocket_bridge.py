@@ -239,12 +239,20 @@ class AIWebSocketBridge:
             if 'OPENAI_API_KEY' not in env:
                 # Try to load from .env file
                 env_file_path = os.path.join(os.path.dirname(__file__), '..', '..', '.env')
+                log_and_print(f"🔍 Looking for .env file at: {env_file_path}")
                 if os.path.exists(env_file_path):
+                    log_and_print(f"✅ Found .env file, loading environment variables")
                     with open(env_file_path, 'r') as f:
                         for line in f:
-                            if line.strip() and not line.startswith('#'):
+                            if line.strip() and not line.startswith('#') and '=' in line:
                                 key, value = line.strip().split('=', 1)
                                 env[key] = value.strip('"')
+                                if key == 'OPENAI_API_KEY':
+                                    log_and_print(f"✅ Loaded OpenAI API key: {value[:20]}...")
+                else:
+                    log_and_print(f"❌ .env file not found at {env_file_path}")
+            else:
+                log_and_print(f"✅ OpenAI API key already in environment")
 
             # Run from the root directory where node_modules are located
             root_dir = os.path.join(os.path.dirname(__file__), '..', '..')
@@ -269,13 +277,28 @@ class AIWebSocketBridge:
                 # Look for AI response generated line (most reliable)
                 for line in lines:
                     if '✅ AI response generated:' in line:
+                        log_and_print(f"🔍 Found AI response line: {line}")
                         # Extract the text between quotes
                         start_quote = line.find('"')
                         end_quote = line.rfind('"')
+                        log_and_print(f"🔍 Quote positions: start={start_quote}, end={end_quote}")
                         if start_quote != -1 and end_quote != -1 and start_quote < end_quote:
                             response = line[start_quote+1:end_quote]
                             log_and_print(f"✅ Extracted AI response from generated line: {response}")
                             return response
+                        else:
+                            log_and_print(f"⚠️ Could not find proper quotes in line: {line}")
+                            # Try alternative parsing - look for text after the colon
+                            colon_pos = line.find('✅ AI response generated:')
+                            if colon_pos != -1:
+                                after_colon = line[colon_pos + len('✅ AI response generated:'):].strip()
+                                # Remove quotes if they exist
+                                if after_colon.startswith('"') and after_colon.endswith('"'):
+                                    response = after_colon[1:-1]
+                                else:
+                                    response = after_colon
+                                log_and_print(f"✅ Extracted AI response (alternative method): {response}")
+                                return response
 
                 # Look for speech generation line which contains the actual AI response
                 for line in lines:
@@ -386,9 +409,9 @@ class AIWebSocketBridge:
                 # Skip welcome message
                 await jaw_ws.recv()
                 
-                # Jaw position configuration (INVERTED)
-                closed_angle = 70  # Mouth closed (higher angle)
-                open_angle = 30    # Mouth open (lower angle)
+                # Jaw position configuration (CORRECTED FOR SKULL)
+                closed_angle = 30  # Mouth closed (jaw up against skull)
+                open_angle = 70    # Mouth open (jaw dropped down)
 
                 # Send animation sequence
                 words = text.split()

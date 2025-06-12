@@ -48,27 +48,32 @@ class JawControlSystem:
         self.pin = pin
         self.min_pulse = min_pulse
         self.max_pulse = max_pulse
-        
+
         # Hardware state
         self.gpio_handle = None
         self.is_initialized = False
         self.current_position = ServoPosition(0.0, min_pulse, time.time())
-        
+
         # Movement state
         self.is_moving = False
         self.movement_thread = None
         self.stop_movement_flag = threading.Event()
         self.emergency_stop = False
-        
+        self.shutdown_requested = False
+
         # Safety limits
         self.min_angle = 0.0
         self.max_angle = 180.0
         self.max_speed = 180.0  # degrees per second
-        
+
         # Movement queue
         self.movement_queue = []
         self.queue_lock = threading.Lock()
-        
+
+        # Register cleanup handler
+        import atexit
+        atexit.register(self.safe_shutdown)
+
         logger.info(f"Jaw Control System initialized on pin {pin}")
     
     def initialize(self) -> bool:
@@ -90,7 +95,39 @@ class JawControlSystem:
         except Exception as e:
             logger.error(f"❌ Failed to initialize jaw control: {e}")
             return False
-    
+
+    def safe_shutdown(self):
+        """Safe shutdown - stop servo PWM and cleanup"""
+        if self.shutdown_requested:
+            return
+
+        self.shutdown_requested = True
+        logger.info("🛑 Safe shutdown initiated")
+
+        try:
+            # Stop any movement immediately
+            self.emergency_stop = True
+            self.stop_movement_flag.set()
+
+            # Wait for movement thread to stop
+            if self.movement_thread and self.movement_thread.is_alive():
+                self.movement_thread.join(timeout=2.0)
+
+            # Disable PWM to stop servo fighting
+            if self.gpio_handle is not None:
+                try:
+                    lgpio.tx_pwm(self.gpio_handle, self.pin, 0, 0)  # Stop PWM
+                    logger.info("🔌 Servo PWM disabled")
+                except Exception as e:
+                    logger.warning(f"Could not disable PWM: {e}")
+
+            # Clean up GPIO
+            self.cleanup()
+            logger.info("✅ Safe shutdown completed")
+
+        except Exception as e:
+            logger.error(f"Error during safe shutdown: {e}")
+
     def cleanup(self):
         """Clean up GPIO resources"""
         if self.gpio_handle is not None:

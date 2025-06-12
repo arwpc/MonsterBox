@@ -213,6 +213,10 @@ class GPIOJawWebSocketServer:
                 await self.handle_jaw_move(websocket, message)
             elif message_type == "jaw_stop":
                 await self.handle_jaw_stop(websocket, message)
+            elif message_type == "stop_servo":
+                await self.handle_stop_servo(websocket, message)
+            elif message_type == "safe_shutdown":
+                await self.handle_safe_shutdown(websocket, message)
             elif message_type == "get_status":
                 await self.handle_get_status(websocket, message)
             elif message_type == "configure_servo":
@@ -271,6 +275,38 @@ class GPIOJawWebSocketServer:
             "type": "jaw_stopped",
             "timestamp": time.time()
         }
+        await websocket.send(json.dumps(response))
+
+    async def handle_stop_servo(self, websocket, message):
+        """Handle stop servo command"""
+        success = self.jaw_control.stop_servo()
+
+        response = {
+            "type": "servo_stopped" if success else "error",
+            "timestamp": time.time()
+        }
+
+        if not success:
+            response["error"] = "Failed to stop servo"
+
+        await websocket.send(json.dumps(response))
+
+    async def handle_safe_shutdown(self, websocket, message):
+        """Handle safe shutdown command"""
+        logger.info("🛑 Safe shutdown requested")
+
+        # Call safe shutdown on jaw control if it has the method
+        if hasattr(self.jaw_control, 'safe_shutdown'):
+            self.jaw_control.safe_shutdown()
+        else:
+            # Fallback to stop servo
+            self.jaw_control.stop_servo()
+
+        response = {
+            "type": "shutdown_complete",
+            "timestamp": time.time()
+        }
+
         await websocket.send(json.dumps(response))
     
     async def handle_get_status(self, websocket, message):
@@ -374,13 +410,33 @@ def main():
         port=args.port,
         servo_pin=args.servo_pin
     )
-    
+
+    # Setup signal handlers for graceful shutdown
+    import signal
+
+    def signal_handler(signum, frame):
+        logger.info(f"🛑 Received signal {signum}, initiating safe shutdown")
+        if hasattr(server.jaw_control, 'safe_shutdown'):
+            server.jaw_control.safe_shutdown()
+        else:
+            server.jaw_control.stop_servo()
+
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
     try:
         asyncio.run(server.start_server())
     except KeyboardInterrupt:
         logger.info("Server interrupted by user")
     except Exception as e:
         logger.error(f"Server error: {e}")
+    finally:
+        # Ensure safe shutdown
+        logger.info("🛑 Ensuring safe shutdown")
+        if hasattr(server.jaw_control, 'safe_shutdown'):
+            server.jaw_control.safe_shutdown()
+        else:
+            server.jaw_control.stop_servo()
 
 if __name__ == "__main__":
     main()
