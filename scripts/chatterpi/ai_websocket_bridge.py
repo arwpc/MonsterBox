@@ -10,11 +10,25 @@ import json
 import logging
 import time
 import random
+import os
 from typing import Dict, Any, Optional
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),  # Console output
+        logging.FileHandler('ai_bridge.log')  # File output
+    ]
+)
 logger = logging.getLogger(__name__)
+
+# Also add print statements for immediate feedback
+def log_and_print(message):
+    """Log and print message for immediate feedback"""
+    print(message)
+    logger.info(message)
 
 class AIWebSocketBridge:
     """AI WebSocket Bridge for ChatterPi conversations"""
@@ -140,87 +154,187 @@ class AIWebSocketBridge:
     
     async def handle_chat_message(self, client_id, message):
         """Handle chat message and generate AI response"""
-        client_info = self.clients[client_id]
-        websocket = client_info["websocket"]
-        user_text = message.get("text", "")
-        
-        if not user_text.strip():
-            await self.send_error(websocket, "Empty message")
-            return
-        
-        # Add to conversation history
-        client_info["conversation_history"].append({
-            "role": "user",
-            "text": user_text,
-            "timestamp": time.time()
-        })
-        
-        # Send processing started
-        await websocket.send(json.dumps({
-            "type": "processing_started",
-            "timestamp": time.time()
-        }))
-        
-        # Simulate AI processing delay
-        await asyncio.sleep(0.5 + random.random() * 1.5)
-        
-        # Generate AI response
-        ai_response = await self.generate_ai_response(client_id, user_text)
-        
-        # Add AI response to history
-        client_info["conversation_history"].append({
-            "role": "assistant",
-            "text": ai_response,
-            "timestamp": time.time()
-        })
-        
-        # Send response with jaw animation data
-        response_data = {
-            "type": "conversation_result",
-            "data": {
-                "userMessage": user_text,
-                "aiResponse": {
-                    "text": ai_response,
-                    "character": self.characters[client_info["character"]]["name"],
-                    "voice": self.characters[client_info["character"]]["voice"],
-                    "jaw_animation": self.generate_jaw_animation(ai_response)
-                }
-            },
-            "timestamp": time.time()
-        }
-        
-        await websocket.send(json.dumps(response_data))
-        
-        # Send jaw animation commands to jaw server
-        await self.send_jaw_animation(ai_response)
+        try:
+            logger.debug(f"Processing chat message from {client_id}: {message}")
+            client_info = self.clients[client_id]
+            websocket = client_info["websocket"]
+            user_text = message.get("text", "") or message.get("message", "")
+
+            if not user_text.strip():
+                await self.send_error(websocket, "Empty message")
+                return
+
+            # Add to conversation history
+            client_info["conversation_history"].append({
+                "role": "user",
+                "text": user_text,
+                "timestamp": time.time()
+            })
+
+            # Send processing started
+            await websocket.send(json.dumps({
+                "type": "processing_started",
+                "timestamp": time.time()
+            }))
+
+            # Simulate AI processing delay
+            await asyncio.sleep(0.5 + random.random() * 1.5)
+
+            # Generate AI response
+            ai_response = await self.generate_ai_response(client_id, user_text)
+
+            # Add AI response to history
+            client_info["conversation_history"].append({
+                "role": "assistant",
+                "text": ai_response,
+                "timestamp": time.time()
+            })
+
+            # Send response with jaw animation data
+            response_data = {
+                "type": "conversation_result",
+                "data": {
+                    "userMessage": user_text,
+                    "aiResponse": {
+                        "text": ai_response,
+                        "character": self.characters[client_info["character"]]["name"],
+                        "voice": self.characters[client_info["character"]]["voice"],
+                        "jaw_animation": self.generate_jaw_animation(ai_response)
+                    }
+                },
+                "timestamp": time.time()
+            }
+
+            await websocket.send(json.dumps(response_data))
+
+            # Send jaw animation commands to jaw server
+            await self.send_jaw_animation(ai_response)
+
+        except Exception as e:
+            logger.error(f"Error in handle_chat_message: {e}", exc_info=True)
+            await self.send_error(websocket, f"Chat processing error: {str(e)}")
     
     async def generate_ai_response(self, client_id, user_text):
-        """Generate AI response based on character"""
+        """Generate AI response using the real JavaScript AI system"""
         client_info = self.clients[client_id]
-        character = self.characters[client_info["character"]]
-        
-        # Simple response generation (can be enhanced with actual AI)
-        responses = character["responses"]
-        
-        # Add some context-aware responses
-        user_lower = user_text.lower()
-        if any(word in user_lower for word in ["hello", "hi", "hey", "greetings"]):
-            if client_info["character"] == "orlok":
-                return "Greetings, mortal... Welcome to my domain of eternal shadows..."
-            elif client_info["character"] == "robot":
-                return "GREETING PROTOCOL ACTIVATED: Hello, human. How may I assist you today?"
-            elif client_info["character"] == "pirate":
-                return "Ahoy there, matey! Welcome aboard me ship!"
-        
-        if any(word in user_lower for word in ["bye", "goodbye", "farewell"]):
-            if client_info["character"] == "orlok":
-                return "Farewell, mortal... May the shadows guide your path..."
-            elif client_info["character"] == "robot":
-                return "FAREWELL PROTOCOL INITIATED: Goodbye, human. Until next time."
-            elif client_info["character"] == "pirate":
-                return "Fair winds and following seas, me hearty!"
-        
-        # Random response from character's pool
+        character_id = client_info["character"]
+
+        try:
+            # Call the JavaScript AI system
+            import subprocess
+            import json as json_module
+
+            # Prepare the command to call the JavaScript AI
+            ai_script_path = os.path.join(os.path.dirname(__file__), 'ai_integration.js')
+
+            # Create a temporary input for the AI
+            ai_input = {
+                "message": user_text,
+                "character": character_id
+            }
+
+            # Call the JavaScript AI system with environment variables
+            env = os.environ.copy()
+            # Make sure we have the OpenAI API key
+            if 'OPENAI_API_KEY' not in env:
+                # Try to load from .env file
+                env_file_path = os.path.join(os.path.dirname(__file__), '..', '..', '.env')
+                if os.path.exists(env_file_path):
+                    with open(env_file_path, 'r') as f:
+                        for line in f:
+                            if line.strip() and not line.startswith('#'):
+                                key, value = line.strip().split('=', 1)
+                                env[key] = value.strip('"')
+
+            # Run from the root directory where node_modules are located
+            root_dir = os.path.join(os.path.dirname(__file__), '..', '..')
+            process = await asyncio.create_subprocess_exec(
+                'node', ai_script_path, user_text, character_id,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                cwd=root_dir,
+                env=env
+            )
+
+            stdout, stderr = await process.communicate()
+
+            if process.returncode == 0:
+                # Parse the AI response
+                output = stdout.decode().strip()
+                log_and_print(f"🔍 AI Script Output: {output}")
+
+                # Extract the AI response from the output
+                lines = output.split('\n')
+
+                # Look for speech generation line which contains the actual AI response
+                for line in lines:
+                    if '🎤 Generating speech for:' in line:
+                        # Extract the text between quotes
+                        start_quote = line.find('"')
+                        end_quote = line.rfind('"')
+                        if start_quote != -1 and end_quote != -1 and start_quote < end_quote:
+                            response = line[start_quote+1:end_quote]
+                            log_and_print(f"✅ Extracted AI response from speech line: {response}")
+                            return response
+
+                # Fallback: look for character response lines
+                for line in lines:
+                    if '🎭 Count Orlok:' in line:
+                        response = line.split('🎭 Count Orlok:', 1)[1].strip()
+                        log_and_print(f"✅ Extracted Orlok response: {response}")
+                        return response
+                    elif '🎭' in line and ':' in line and 'ChatterPi AI initialized' not in line:
+                        # Generic character response format, but skip initialization lines
+                        response = line.split(':', 1)[1].strip()
+                        log_and_print(f"✅ Extracted generic response: {response}")
+                        return response
+
+                # Final fallback: return the last non-empty line that looks like a response
+                for line in reversed(lines):
+                    if (line.strip() and
+                        not line.startswith('🧠') and
+                        not line.startswith('✅') and
+                        not line.startswith('🎤') and
+                        not line.startswith('❌') and
+                        not line.startswith('🎭 ChatterPi AI initialized') and
+                        not line.startswith('🎭 Processing conversation')):
+                        log_and_print(f"✅ Fallback response: {line.strip()}")
+                        return line.strip()
+
+                # If no response found, log the full output
+                log_and_print(f"⚠️ No response found in output, using fallback")
+                return self.get_fallback_response(character_id)
+
+            # If JavaScript AI fails, use fallback
+            logger.warning(f"JavaScript AI failed: {stderr.decode()}")
+            return self.get_fallback_response(character_id)
+
+        except Exception as e:
+            logger.error(f"Error calling JavaScript AI: {e}")
+            return self.get_fallback_response(character_id)
+
+    def get_fallback_response(self, character_id):
+        """Get fallback response when AI fails"""
+        fallbacks = {
+            "orlok": [
+                "The shadows whisper secrets I cannot share...",
+                "Verily, the night holds many mysteries.",
+                "Thou speakest of matters beyond mortal understanding.",
+                "The ancient ways are not easily explained."
+            ],
+            "robot": [
+                "SYSTEM ERROR: Please try again.",
+                "PROCESSING INTERRUPTED: Rebooting response module.",
+                "ERROR 404: Witty response not found."
+            ],
+            "pirate": [
+                "Arrr, the winds be blowin' strange today!",
+                "By Blackbeard's beard, I be havin' trouble with me words!",
+                "The sea be rough, and so be me thoughts!"
+            ]
+        }
+
+        responses = fallbacks.get(character_id, fallbacks["orlok"])
         return random.choice(responses)
     
     def generate_jaw_animation(self, text):
@@ -284,17 +398,92 @@ class AIWebSocketBridge:
         character = message.get("character", "orlok")
         if character in self.characters:
             self.clients[client_id]["character"] = character
-            
+
             response = {
                 "type": "character_changed",
                 "character": self.characters[character]["name"],
                 "voice": self.characters[character]["voice"],
                 "timestamp": time.time()
             }
-            
+
             await self.clients[client_id]["websocket"].send(json.dumps(response))
+
+            # Send an automatic greeting from the character
+            await self.send_character_greeting(client_id, character)
         else:
             await self.send_error(self.clients[client_id]["websocket"], f"Unknown character: {character}")
+
+    async def send_character_greeting(self, client_id, character):
+        """Send an automatic greeting when character is selected"""
+        try:
+            # Generate a greeting message based on character
+            greeting_prompts = {
+                "orlok": "Introduce yourself as Count Orlok. Welcome the visitor to your domain with an ominous but polite greeting.",
+                "robot": "Introduce yourself as a helpful robot assistant. Give a technical but friendly greeting.",
+                "pirate": "Introduce yourself as a pirate captain. Give a hearty pirate greeting."
+            }
+
+            greeting_prompt = greeting_prompts.get(character, greeting_prompts["orlok"])
+
+            # Generate AI greeting
+            ai_greeting = await self.generate_ai_response(client_id, greeting_prompt)
+
+            # Add to conversation history
+            client_info = self.clients[client_id]
+            client_info["conversation_history"].append({
+                "role": "assistant",
+                "text": ai_greeting,
+                "timestamp": time.time()
+            })
+
+            # Send greeting with jaw animation
+            greeting_data = {
+                "type": "conversation_result",
+                "data": {
+                    "userMessage": "",  # No user message for greeting
+                    "aiResponse": {
+                        "text": ai_greeting,
+                        "character": self.characters[character]["name"],
+                        "voice": self.characters[character]["voice"],
+                        "jaw_animation": self.generate_jaw_animation(ai_greeting),
+                        "is_greeting": True
+                    }
+                },
+                "timestamp": time.time()
+            }
+
+            await self.clients[client_id]["websocket"].send(json.dumps(greeting_data))
+
+            # Send jaw animation
+            await self.send_jaw_animation(ai_greeting)
+
+        except Exception as e:
+            logger.error(f"Error sending character greeting: {e}")
+            # Send a simple fallback greeting
+            fallback_greetings = {
+                "orlok": "Greetings, mortal. You have entered my domain...",
+                "robot": "SYSTEM INITIALIZED. Hello, human user.",
+                "pirate": "Ahoy there, matey! Welcome aboard!"
+            }
+
+            fallback_greeting = fallback_greetings.get(character, fallback_greetings["orlok"])
+
+            greeting_data = {
+                "type": "conversation_result",
+                "data": {
+                    "userMessage": "",
+                    "aiResponse": {
+                        "text": fallback_greeting,
+                        "character": self.characters[character]["name"],
+                        "voice": self.characters[character]["voice"],
+                        "jaw_animation": self.generate_jaw_animation(fallback_greeting),
+                        "is_greeting": True
+                    }
+                },
+                "timestamp": time.time()
+            }
+
+            await self.clients[client_id]["websocket"].send(json.dumps(greeting_data))
     
     async def handle_get_characters(self, websocket):
         """Handle get characters request"""
@@ -349,8 +538,8 @@ class AIWebSocketBridge:
     
     async def start_server(self):
         """Start the AI WebSocket server"""
-        logger.info(f"🚀 Starting AI WebSocket Bridge on {self.host}:{self.port}")
-        
+        log_and_print(f"🚀 Starting AI WebSocket Bridge on {self.host}:{self.port}")
+
         server = await websockets.serve(
             self.handle_client,
             self.host,
@@ -358,38 +547,43 @@ class AIWebSocketBridge:
             ping_interval=30,
             ping_timeout=10
         )
-        
-        logger.info(f"✅ AI WebSocket Bridge running on ws://{self.host}:{self.port}")
-        logger.info(f"🤖 AI Characters: {', '.join(self.characters.keys())}")
-        logger.info(f"🦴 Jaw integration: ws://{self.jaw_host}:{self.jaw_port}")
-        
+
+        log_and_print(f"✅ AI WebSocket Bridge running on ws://{self.host}:{self.port}")
+        log_and_print(f"🤖 AI Characters: {', '.join(self.characters.keys())}")
+        log_and_print(f"🦴 Jaw integration: ws://{self.jaw_host}:{self.jaw_port}")
+
         await server.wait_closed()
 
 def main():
     """Main function"""
     import argparse
-    
+
+    log_and_print("🎬 ChatterPi AI WebSocket Bridge Starting...")
+
     parser = argparse.ArgumentParser(description="AI WebSocket Bridge for ChatterPi")
     parser.add_argument("--host", default="0.0.0.0", help="Server host")
     parser.add_argument("--port", type=int, default=8766, help="Server port")
     parser.add_argument("--jaw-host", default="localhost", help="Jaw server host")
     parser.add_argument("--jaw-port", type=int, default=8765, help="Jaw server port")
-    
+
     args = parser.parse_args()
-    
+
+    log_and_print(f"🔧 Configuration: {args.host}:{args.port} -> jaw:{args.jaw_host}:{args.jaw_port}")
+
     bridge = AIWebSocketBridge(
         host=args.host,
         port=args.port,
         jaw_host=args.jaw_host,
         jaw_port=args.jaw_port
     )
-    
+
     try:
         asyncio.run(bridge.start_server())
     except KeyboardInterrupt:
-        logger.info("AI Bridge interrupted by user")
+        log_and_print("🛑 AI Bridge interrupted by user")
     except Exception as e:
-        logger.error(f"AI Bridge error: {e}")
+        log_and_print(f"💥 AI Bridge error: {e}")
+        logger.error(f"AI Bridge error: {e}", exc_info=True)
 
 if __name__ == "__main__":
     main()

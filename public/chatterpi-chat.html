@@ -29,6 +29,7 @@
         .status-connected { background: #4CAF50; color: white; }
         .status-disconnected { background: #f44336; color: white; }
         .status-connecting { background: #ff9800; color: white; }
+        .status-partial { background: #2196F3; color: white; }
         .chat-messages {
             flex: 1; padding: 20px; overflow-y: auto; background: #f8f9fa;
         }
@@ -175,17 +176,24 @@
     <script>
         class ChatterPiChat {
             constructor() {
-                this.websocket = null;
-                this.isConnected = false;
+                // WebSocket connections
+                this.jawWebSocket = null;
+                this.aiWebSocket = null;
+                this.isJawConnected = false;
+                this.isAIConnected = false;
+
+                // Configuration
                 this.selectedServo = 18;
                 this.selectedVoice = 'orlok';
                 this.audioVolume = 0.7;
                 this.speechSynthesis = window.speechSynthesis;
                 this.voices = [];
+
+                // Initialize
                 this.initializeElements();
                 this.setupEventListeners();
                 this.initializeAudio();
-                this.connect();
+                this.connectToServices();
                 this.updateWelcomeTime();
             }
 
@@ -332,60 +340,108 @@
 
             updateSendButton() {
                 const hasText = this.chatInput.value.trim().length > 0;
-                this.sendButton.disabled = !hasText || !this.isConnected;
+                this.sendButton.disabled = !hasText || !this.isAIConnected;
             }
 
-            connect() {
-                this.updateConnectionStatus('connecting');
-                const wsUrl = 'ws://192.168.8.130:8765';
-                
+            connectToServices() {
+                this.connectToJawControl();
+                this.connectToAI();
+            }
+
+            connectToJawControl() {
+                const wsUrl = `ws://${window.location.hostname}:8765`;
+
                 try {
-                    this.websocket = new WebSocket(wsUrl);
-                    
-                    this.websocket.onopen = () => {
-                        console.log('Connected to ChatterPi WebSocket');
-                        this.isConnected = true;
-                        this.updateConnectionStatus('connected');
-                        this.updateSendButton();
-                        this.sendWebSocketMessage({
+                    this.jawWebSocket = new WebSocket(wsUrl);
+
+                    this.jawWebSocket.onopen = () => {
+                        console.log('✅ Connected to Jaw Control WebSocket');
+                        this.isJawConnected = true;
+                        this.updateConnectionStatus();
+                        this.sendJawMessage({
                             type: 'subscribe',
                             events: ['jaw_movement', 'jaw_stopped']
                         });
-                        this.sendWebSocketMessage({ type: 'get_status' });
+                        this.sendJawMessage({ type: 'get_status' });
                     };
-                    
-                    this.websocket.onmessage = (event) => {
-                        this.handleWebSocketMessage(JSON.parse(event.data));
+
+                    this.jawWebSocket.onmessage = (event) => {
+                        this.handleJawMessage(JSON.parse(event.data));
                     };
-                    
-                    this.websocket.onclose = () => {
-                        console.log('Disconnected from ChatterPi WebSocket');
-                        this.isConnected = false;
-                        this.updateConnectionStatus('disconnected');
-                        this.updateSendButton();
-                        setTimeout(() => this.connect(), 5000);
+
+                    this.jawWebSocket.onclose = () => {
+                        console.log('❌ Disconnected from Jaw Control WebSocket');
+                        this.isJawConnected = false;
+                        this.updateConnectionStatus();
+                        setTimeout(() => this.connectToJawControl(), 5000);
                     };
-                    
-                    this.websocket.onerror = (error) => {
-                        console.error('WebSocket error:', error);
+
+                    this.jawWebSocket.onerror = (error) => {
+                        console.warn('Jaw WebSocket error:', error);
                     };
-                    
+
                 } catch (error) {
-                    console.error('Failed to create WebSocket:', error);
-                    this.updateConnectionStatus('disconnected');
-                    setTimeout(() => this.connect(), 5000);
+                    console.error('Failed to create Jaw WebSocket:', error);
+                    setTimeout(() => this.connectToJawControl(), 5000);
                 }
             }
 
-            sendWebSocketMessage(message) {
-                if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
-                    this.websocket.send(JSON.stringify(message));
+            connectToAI() {
+                const wsUrl = `ws://${window.location.hostname}:8766`;
+
+                try {
+                    this.aiWebSocket = new WebSocket(wsUrl);
+
+                    this.aiWebSocket.onopen = () => {
+                        console.log('✅ Connected to AI WebSocket');
+                        this.isAIConnected = true;
+                        this.updateConnectionStatus();
+                        this.updateSendButton();
+
+                        // Set character to Count Orlok
+                        this.sendAIMessage({
+                            type: 'set_character',
+                            character: 'orlok'
+                        });
+                    };
+
+                    this.aiWebSocket.onmessage = (event) => {
+                        this.handleAIMessage(JSON.parse(event.data));
+                    };
+
+                    this.aiWebSocket.onclose = () => {
+                        console.log('❌ Disconnected from AI WebSocket');
+                        this.isAIConnected = false;
+                        this.updateConnectionStatus();
+                        this.updateSendButton();
+                        setTimeout(() => this.connectToAI(), 5000);
+                    };
+
+                    this.aiWebSocket.onerror = (error) => {
+                        console.error('AI WebSocket error:', error);
+                    };
+
+                } catch (error) {
+                    console.error('Failed to create AI WebSocket:', error);
+                    setTimeout(() => this.connectToAI(), 5000);
                 }
             }
 
-            handleWebSocketMessage(message) {
-                console.log('Received:', message);
-                
+            sendJawMessage(message) {
+                if (this.jawWebSocket && this.jawWebSocket.readyState === WebSocket.OPEN) {
+                    this.jawWebSocket.send(JSON.stringify(message));
+                }
+            }
+
+            sendAIMessage(message) {
+                if (this.aiWebSocket && this.aiWebSocket.readyState === WebSocket.OPEN) {
+                    this.aiWebSocket.send(JSON.stringify(message));
+                }
+            }
+
+            handleJawMessage(message) {
+                console.log('Jaw message received:', message);
+
                 switch (message.type) {
                     case 'welcome':
                         this.jawStatusText.textContent = 'Connected';
@@ -399,16 +455,56 @@
                     case 'jaw_stopped':
                         this.jawStatusText.textContent = 'Stopped';
                         break;
+                    case 'error':
+                        console.error('Jaw WebSocket error:', message.message);
+                        break;
                 }
             }
 
-            updateConnectionStatus(status) {
-                this.connectionStatus.className = `connection-status status-${status}`;
-                switch (status) {
-                    case 'connected': this.connectionStatus.textContent = 'Connected'; break;
-                    case 'connecting': this.connectionStatus.textContent = 'Connecting...'; break;
-                    case 'disconnected': this.connectionStatus.textContent = 'Disconnected'; break;
+            handleAIMessage(message) {
+                console.log('AI message received:', message);
+
+                switch (message.type) {
+                    case 'conversation_result':
+                        const data = message.data;
+                        this.addMessage(data.aiResponse.text, 'bot');
+
+                        // Speak with character voice and animate jaw
+                        this.speakText(data.aiResponse.text, this.selectedVoice);
+                        this.animateJawWithSpeech(data.aiResponse.text);
+                        break;
+
+                    case 'ai_error':
+                        console.error('AI Error:', message.error);
+                        this.addMessage('Sorry, I encountered an error. Please try again.', 'bot');
+                        break;
+
+                    case 'characters_list':
+                        console.log('Available characters:', message.characters);
+                        break;
                 }
+            }
+
+            updateConnectionStatus() {
+                let statusText = '';
+                let statusClass = '';
+
+                if (this.isAIConnected && this.isJawConnected) {
+                    statusText = 'Connected (AI + Jaw)';
+                    statusClass = 'status-connected';
+                } else if (this.isAIConnected) {
+                    statusText = 'AI Connected';
+                    statusClass = 'status-partial';
+                } else if (this.isJawConnected) {
+                    statusText = 'Jaw Connected';
+                    statusClass = 'status-partial';
+                } else {
+                    statusText = 'Connecting...';
+                    statusClass = 'status-connecting';
+                }
+
+                this.connectionStatus.className = `connection-status ${statusClass}`;
+                this.connectionStatus.textContent = statusText;
             }
 
             updateJawStatus(jawStatus) {
@@ -420,47 +516,53 @@
 
             sendMessage() {
                 const message = this.chatInput.value.trim();
-                if (!message || !this.isConnected) return;
-                
+                if (!message || !this.isAIConnected) return;
+
                 this.addMessage(message, 'user');
                 this.chatInput.value = '';
                 this.adjustTextareaHeight();
                 this.updateSendButton();
-                this.simulateJawMovement(message);
-                
-                setTimeout(() => {
-                    this.addBotResponse(message);
-                }, 1000 + Math.random() * 2000);
+
+                // Send message to AI
+                this.sendAIMessage({
+                    type: 'chat_message',
+                    message: message,
+                    timestamp: new Date().toISOString()
+                });
             }
 
             testJawMovement() {
                 console.log(`Testing jaw movement on GPIO ${this.selectedServo}`);
 
                 // Send servo configuration first
-                this.sendWebSocketMessage({
+                this.sendJawMessage({
                     type: 'configure_servo',
-                    pin: this.selectedServo
+                    pin: parseInt(this.selectedServo)
                 });
 
-                // Test sequence
-                const testSequence = [
-                    { angle: 0, duration: 0.5 },
-                    { angle: 30, duration: 0.5 },
-                    { angle: 60, duration: 0.5 },
-                    { angle: 30, duration: 0.5 },
-                    { angle: 0, duration: 0.5 }
-                ];
+                // Wait a moment for configuration, then test
+                setTimeout(() => {
+                    // Test sequence with proper jaw angles (inverted for correct orientation)
+                    const testSequence = [
+                        { angle: 90, duration: 0.5 },   // Closed position
+                        { angle: 60, duration: 0.5 },   // Slightly open
+                        { angle: 30, duration: 0.5 },   // More open
+                        { angle: 60, duration: 0.5 },   // Back to slightly open
+                        { angle: 90, duration: 0.5 }    // Back to closed
+                    ];
 
-                testSequence.forEach((move, index) => {
-                    setTimeout(() => {
-                        this.sendWebSocketMessage({
-                            type: 'jaw_move',
-                            angle: move.angle,
-                            duration: move.duration,
-                            curve_type: 'ease_in_out'
-                        });
-                    }, index * 600);
-                });
+                    testSequence.forEach((move, index) => {
+                        setTimeout(() => {
+                            this.sendJawMessage({
+                                type: 'jaw_move',
+                                angle: move.angle,
+                                duration: move.duration,
+                                curve_type: 'ease_in_out'
+                            });
+                            console.log(`🦴 Jaw command sent: ${move.angle}° for ${move.duration}s`);
+                        }, index * 700);
+                    });
+                }, 200);
             }
 
             animateJawWithSpeech(text) {
@@ -469,25 +571,30 @@
 
                 words.forEach((word, index) => {
                     setTimeout(() => {
-                        const angle = Math.min(45, word.length * 4);
-                        this.sendWebSocketMessage({
+                        // Calculate jaw opening based on word length (inverted angles)
+                        const openAmount = Math.min(30, word.length * 3);
+                        const jawAngle = 90 - openAmount; // 90 = closed, lower = more open
+
+                        this.sendJawMessage({
                             type: 'jaw_move',
-                            angle: angle,
-                            duration: 0.2,
-                            curve_type: 'ease_in_out'
+                            angle: jawAngle,
+                            duration: 0.15,
+                            curve_type: 'ease_out'
                         });
 
+                        // Close jaw after speaking word
                         setTimeout(() => {
-                            this.sendWebSocketMessage({
+                            this.sendJawMessage({
                                 type: 'jaw_move',
-                                angle: 0,
-                                duration: 0.1
+                                angle: 90, // Closed position
+                                duration: 0.1,
+                                curve_type: 'ease_in'
                             });
-                        }, 200);
+                        }, 150);
 
                     }, delay);
 
-                    delay += 300;
+                    delay += 250;
                 });
             }
 

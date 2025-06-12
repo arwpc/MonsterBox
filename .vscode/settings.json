@@ -26,6 +26,33 @@
     "remote.SSH.connectTimeout": 15,
     "remote.SSH.useLocalServer": false,
 
+    // Port forwarding configuration
+    "remote.SSH.defaultForwardedPorts": [
+        {
+            "localPort": 3000,
+            "remotePort": 3000,
+            "name": "MonsterBox App"
+        },
+        {
+            "localPort": 8765,
+            "remotePort": 8765,
+            "name": "Jaw WebSocket"
+        },
+        {
+            "localPort": 8766,
+            "remotePort": 8766,
+            "name": "AI WebSocket"
+        }
+    ],
+    "remote.autoForwardPorts": false,
+    "remote.autoForwardPortsSource": "hybrid",
+
+    // Browser and preview configuration
+    "liveServer.settings.host": "skulltalker",
+    "preview.defaultUri": "http://skulltalker:3000",
+    "vscode-preview-server.defaultBrowser": "chrome",
+    "browser-preview.startUrl": "http://skulltalker:3000",
+
     // Terminal configuration for remote connections
     "terminal.integrated.defaultProfile.linux": "bash",
     "terminal.integrated.profiles.linux": {
@@ -33,5 +60,6 @@
             "path": "/bin/bash",
             "args": ["-l"]
         }
-    }
+    },
+    "terminal.integrated.cwd": "/home/remote/MonsterBox"
 }

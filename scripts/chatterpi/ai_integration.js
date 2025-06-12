@@ -293,24 +293,28 @@ module.exports = ChatterPiAI;
 
 // CLI usage
 if (require.main === module) {
-    const ai = new ChatterPiAI({ characterId: 'orlok' });
-    
+    // Get command line arguments
+    const args = process.argv.slice(2);
+    const userMessage = args[0] || "Hello, who are you?";
+    const characterId = args[1] || 'orlok';
+
+    const ai = new ChatterPiAI({ characterId: characterId });
+
     ai.on('response_generated', (data) => {
-        console.log(`\n🎭 ${data.character}: ${data.aiResponse}\n`);
+        console.log(`🎭 ${data.character}: ${data.aiResponse}`);
     });
-    
+
     ai.on('error', (error) => {
-        console.error(`\n❌ Error: ${error.message}\n`);
+        console.error(`❌ Error: ${error.message}`);
     });
-    
-    // Test conversation
-    ai.processConversation("Hello, who are you?")
+
+    // Process the conversation
+    ai.processConversation(userMessage)
         .then(result => {
-            console.log('\n✅ Test conversation completed:', result);
             process.exit(0);
         })
         .catch(error => {
-            console.error('\n💥 Test failed:', error.message);
+            console.error(`💥 Error: ${error.message}`);
             process.exit(1);
         });
 }
