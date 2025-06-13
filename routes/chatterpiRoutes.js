@@ -1,6 +1,6 @@
 /**
- * ChatterPi Routes - Simple HTTP API for AI Chat and Jaw Control
- * Replaces complex WebSocket approach with simple REST endpoints
+ * ChatterPi Routes - Enhanced HTTP API for AI Chat and Jaw Control
+ * Includes advanced audio processing configuration endpoints
  */
 
 const express = require('express');
@@ -8,11 +8,14 @@ const router = express.Router();
 const ChatterPiAI = require('../scripts/chatterpi/ai_integration');
 const { spawn } = require('child_process');
 const WebSocket = require('ws');
+const fs = require('fs').promises;
+const path = require('path');
 
 // Initialize AI integration
 let aiInstance = null;
 let jawBridgeProcess = null;
 let jawWebSocket = null;
+let enhancedAnimatorProcess = null;
 
 try {
     aiInstance = new ChatterPiAI({
@@ -452,7 +455,7 @@ router.get('/greeting/:character?', async (req, res) => {
 router.post('/jaw/animate', (req, res) => {
     try {
         const { text, animation } = req.body;
-        
+
         let jawAnimation;
         if (animation) {
             jawAnimation = animation;
@@ -464,22 +467,187 @@ router.post('/jaw/animate', (req, res) => {
                 error: 'Either text or animation data is required'
             });
         }
-        
+
         // Here you would send the animation to the jaw servo
         // For now, just return the animation data
         console.log('🦴 Jaw animation requested:', jawAnimation);
-        
+
         res.json({
             success: true,
             jawAnimation: jawAnimation,
             message: 'Jaw animation data generated'
         });
-        
+
     } catch (error) {
         console.error('❌ Error generating jaw animation:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to generate jaw animation'
+        });
+    }
+});
+
+/**
+ * POST /api/chatterpi/jaw/config
+ * Update enhanced audio processing configuration
+ */
+router.post('/jaw/config', async (req, res) => {
+    try {
+        const config = req.body;
+
+        // Validate configuration
+        if (config.audio) {
+            const { smoothing_attack, smoothing_release, silence_threshold, silence_timeout } = config.audio;
+
+            if (smoothing_attack && (smoothing_attack < 0.01 || smoothing_attack > 1.0)) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Invalid smoothing_attack. Must be between 0.01 and 1.0.'
+                });
+            }
+
+            if (smoothing_release && (smoothing_release < 0.001 || smoothing_release > 0.5)) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Invalid smoothing_release. Must be between 0.001 and 0.5.'
+                });
+            }
+
+            if (silence_threshold && (silence_threshold < 0.001 || silence_threshold > 0.1)) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Invalid silence_threshold. Must be between 0.001 and 0.1.'
+                });
+            }
+
+            if (silence_timeout && (silence_timeout < 100 || silence_timeout > 2000)) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Invalid silence_timeout. Must be between 100 and 2000 ms.'
+                });
+            }
+        }
+
+        if (config.servo) {
+            const { step_threshold } = config.servo;
+
+            if (step_threshold && (step_threshold < 0.1 || step_threshold > 5.0)) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Invalid step_threshold. Must be between 0.1 and 5.0.'
+                });
+            }
+        }
+
+        // Send configuration update command via WebSocket
+        if (jawWebSocket && jawWebSocket.readyState === WebSocket.OPEN) {
+            jawWebSocket.send(JSON.stringify({
+                type: 'update_config',
+                config: config
+            }));
+        }
+
+        console.log('🔧 Configuration updated:', config);
+
+        res.json({
+            success: true,
+            message: 'Configuration updated successfully',
+            data: config
+        });
+
+    } catch (error) {
+        console.error('❌ Error in jaw config endpoint:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Internal server error'
+        });
+    }
+});
+
+/**
+ * POST /api/chatterpi/jaw/save-config
+ * Save configuration to file
+ */
+router.post('/jaw/save-config', async (req, res) => {
+    try {
+        const config = req.body;
+        const configPath = path.join(__dirname, '../data/chatterpi-config.json');
+
+        // Add timestamp and version
+        config.saved_at = new Date().toISOString();
+        config.version = '2.0.0';
+
+        // Ensure data directory exists
+        const dataDir = path.dirname(configPath);
+        await fs.mkdir(dataDir, { recursive: true });
+
+        await fs.writeFile(configPath, JSON.stringify(config, null, 2));
+
+        console.log('✅ ChatterPi configuration saved to file');
+
+        res.json({
+            success: true,
+            message: 'Configuration saved successfully',
+            data: { saved_at: config.saved_at }
+        });
+    } catch (error) {
+        console.error('❌ Error saving configuration:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to save configuration'
+        });
+    }
+});
+
+/**
+ * GET /api/chatterpi/jaw/load-config
+ * Load configuration from file
+ */
+router.get('/jaw/load-config', async (req, res) => {
+    try {
+        const configPath = path.join(__dirname, '../data/chatterpi-config.json');
+
+        try {
+            const configData = await fs.readFile(configPath, 'utf8');
+            const config = JSON.parse(configData);
+
+            res.json({
+                success: true,
+                message: 'Configuration loaded successfully',
+                data: config
+            });
+        } catch (fileError) {
+            // File doesn't exist or is invalid, return default config
+            const defaultConfig = {
+                version: '2.0.0',
+                calibration: {
+                    closed_angle: 50,
+                    open_angle: 30,
+                    servo_pin: 18
+                },
+                audio: {
+                    smoothing_attack: 0.1,
+                    smoothing_release: 0.01,
+                    silence_threshold: 0.005,
+                    silence_timeout: 500
+                },
+                servo: {
+                    step_threshold: 1.0
+                },
+                update_rate_hz: 50
+            };
+
+            res.json({
+                success: true,
+                message: 'Default configuration loaded',
+                data: defaultConfig
+            });
+        }
+    } catch (error) {
+        console.error('❌ Error loading configuration:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to load configuration'
         });
     }
 });

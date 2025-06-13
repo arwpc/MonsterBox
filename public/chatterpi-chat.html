@@ -117,6 +117,233 @@
             padding: 5px 10px;
             font-size: 12px;
         }
+
+        .advanced-controls {
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .advanced-controls.show {
+            display: flex;
+        }
+
+        .config-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 10px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 6px;
+        }
+
+        .config-section h4 {
+            margin: 0;
+            font-size: 12px;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .config-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .config-input {
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 11px;
+            background: white;
+            width: 80px;
+        }
+
+        .toggle-button {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .toggle-button:hover {
+            transform: scale(1.05);
+        }
+
+        .toggle-button.collapsed {
+            background: linear-gradient(135deg, #666 0%, #555 100%);
+        }
+
+        .help-icon {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            background: #4CAF50;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            font-size: 11px;
+            line-height: 16px;
+            cursor: help;
+            margin-left: 5px;
+            position: relative;
+        }
+
+        .help-icon:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 1000;
+            max-width: 300px;
+            white-space: normal;
+            width: max-content;
+        }
+
+        .help-icon:hover::before {
+            content: '';
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-top-color: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+        }
+
+        .preset-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .preset-button {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            color: #495057;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .preset-button:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: scale(1.02);
+        }
+
+        .preset-button.active {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border-color: #28a745;
+        }
+
+        .section-header {
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 8px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-icon {
+            font-size: 14px;
+        }
+
+        .config-label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            min-width: 140px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .config-input {
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 11px;
+            background: white;
+            width: 80px;
+        }
+
+        .config-input:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+        }
+
+        .input-unit {
+            font-size: 10px;
+            color: #666;
+            margin-left: 4px;
+        }
+
+        .documentation-section {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .doc-button {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-right: 8px;
+        }
+
+        .doc-button:hover {
+            transform: scale(1.05);
+            background: linear-gradient(135deg, #138496 0%, #117a8b 100%);
+        }
+
+        .recommended-badge {
+            background: #28a745;
+            color: white;
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 5px;
+        }
+
+        .advanced-badge {
+            background: #ffc107;
+            color: #212529;
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 5px;
+        }
         .calibrate-button:hover {
             background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
         }
@@ -220,6 +447,124 @@
                     </div>
                 </div>
             </div>
+            <div class="control-group">
+                <label>Advanced Audio Settings</label>
+                <button id="toggleAdvancedButton" class="toggle-button collapsed">Show Advanced Settings</button>
+                <div id="advancedControls" class="advanced-controls">
+
+                    <!-- Quick Presets -->
+                    <div class="config-section">
+                        <div class="section-header">
+                            <span class="section-icon">⚡</span>
+                            <span>Quick Presets</span>
+                        </div>
+                        <div class="preset-buttons">
+                            <button class="preset-button" data-preset="smooth">🎭 Smooth Animation</button>
+                            <button class="preset-button" data-preset="responsive">⚡ Responsive Animation</button>
+                            <button class="preset-button" data-preset="debug">🔧 Debug Mode</button>
+                            <button class="preset-button" data-preset="custom">✨ Custom</button>
+                        </div>
+                    </div>
+
+                    <!-- Audio Response Settings -->
+                    <div class="config-section">
+                        <div class="section-header">
+                            <span class="section-icon">🎵</span>
+                            <span>Audio Response Settings</span>
+                        </div>
+                        <div class="config-row">
+                            <div class="config-label">
+                                Response Speed:
+                                <span class="help-icon" data-tooltip="How quickly the jaw opens when you start speaking. Higher values = faster response. Recommended: 0.05-0.2">?</span>
+                                <span class="recommended-badge">Recommended</span>
+                            </div>
+                            <input type="number" id="smoothingAttack" class="config-input" min="0.01" max="1.0" step="0.01" value="0.1">
+                            <span class="input-unit">speed</span>
+                        </div>
+                        <div class="config-row">
+                            <div class="config-label">
+                                Decay Speed:
+                                <span class="help-icon" data-tooltip="How quickly the jaw closes when you stop speaking. Lower values = smoother closing. Recommended: 0.01-0.05">?</span>
+                                <span class="recommended-badge">Recommended</span>
+                            </div>
+                            <input type="number" id="smoothingRelease" class="config-input" min="0.001" max="0.5" step="0.001" value="0.01">
+                            <span class="input-unit">speed</span>
+                        </div>
+                    </div>
+
+                    <!-- Voice Detection Settings -->
+                    <div class="config-section">
+                        <div class="section-header">
+                            <span class="section-icon">🎤</span>
+                            <span>Voice Detection Settings</span>
+                        </div>
+                        <div class="config-row">
+                            <div class="config-label">
+                                Voice Sensitivity:
+                                <span class="help-icon" data-tooltip="How sensitive the system is to detecting your voice. Lower values = more sensitive. Adjust if jaw doesn't respond to quiet speech. Recommended: 0.003-0.01">?</span>
+                                <span class="recommended-badge">Recommended</span>
+                            </div>
+                            <input type="number" id="silenceThreshold" class="config-input" min="0.001" max="0.1" step="0.001" value="0.005">
+                            <span class="input-unit">sensitivity</span>
+                        </div>
+                        <div class="config-row">
+                            <div class="config-label">
+                                Auto-Close Delay:
+                                <span class="help-icon" data-tooltip="How long to wait after you stop speaking before closing the jaw. Longer delays = more natural pauses. Recommended: 300-800ms">?</span>
+                                <span class="recommended-badge">Recommended</span>
+                            </div>
+                            <input type="number" id="silenceTimeout" class="config-input" min="100" max="2000" step="50" value="500">
+                            <span class="input-unit">ms</span>
+                        </div>
+                    </div>
+
+                    <!-- Servo Control Settings -->
+                    <div class="config-section">
+                        <div class="section-header">
+                            <span class="section-icon">🦴</span>
+                            <span>Servo Control Settings</span>
+                        </div>
+                        <div class="config-row">
+                            <div class="config-label">
+                                Movement Smoothness:
+                                <span class="help-icon" data-tooltip="Prevents tiny jaw movements that cause jitter. Higher values = smoother but less responsive. Recommended: 0.5-2.0°">?</span>
+                                <span class="advanced-badge">Advanced</span>
+                            </div>
+                            <input type="number" id="servoStep" class="config-input" min="0.1" max="5.0" step="0.1" value="1.0">
+                            <span class="input-unit">°</span>
+                        </div>
+                        <div class="config-row">
+                            <div class="config-label">
+                                Animation Frame Rate:
+                                <span class="help-icon" data-tooltip="How often the jaw position is updated per second. Higher values = smoother animation but more CPU usage. Recommended: 30-60 Hz">?</span>
+                                <span class="advanced-badge">Advanced</span>
+                            </div>
+                            <input type="number" id="updateRate" class="config-input" min="10" max="100" step="5" value="50">
+                            <span class="input-unit">Hz</span>
+                        </div>
+                    </div>
+
+                    <!-- Control Buttons -->
+                    <div class="config-row">
+                        <button id="applyAdvancedButton" class="control-button">✅ Apply Settings</button>
+                        <button id="resetAdvancedButton" class="control-button">🔄 Reset to Defaults</button>
+                        <button id="saveConfigButton" class="control-button">💾 Save Config</button>
+                    </div>
+
+                    <!-- Documentation Section -->
+                    <div class="documentation-section">
+                        <div class="section-header">
+                            <span class="section-icon">📚</span>
+                            <span>Help & Documentation</span>
+                        </div>
+                        <div class="config-row">
+                            <button id="helpReadmeButton" class="doc-button">📖 View README</button>
+                            <button id="helpTuningButton" class="doc-button">🎛️ Tuning Guide</button>
+                            <button id="helpTroubleshootButton" class="doc-button">🔧 Troubleshooting</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="chat-input-container">
             <div class="chat-input-wrapper">
@@ -278,6 +623,19 @@
                 this.closedAngleValue = document.getElementById('closedAngleValue');
                 this.openAngleValue = document.getElementById('openAngleValue');
                 this.volumeSlider = document.getElementById('volumeSlider');
+
+                // Advanced controls
+                this.toggleAdvancedButton = document.getElementById('toggleAdvancedButton');
+                this.advancedControls = document.getElementById('advancedControls');
+                this.smoothingAttack = document.getElementById('smoothingAttack');
+                this.smoothingRelease = document.getElementById('smoothingRelease');
+                this.silenceThreshold = document.getElementById('silenceThreshold');
+                this.silenceTimeout = document.getElementById('silenceTimeout');
+                this.servoStep = document.getElementById('servoStep');
+                this.updateRate = document.getElementById('updateRate');
+                this.applyAdvancedButton = document.getElementById('applyAdvancedButton');
+                this.resetAdvancedButton = document.getElementById('resetAdvancedButton');
+                this.saveConfigButton = document.getElementById('saveConfigButton');
             }
 
             setupEventListeners() {
@@ -352,6 +710,50 @@
                     const angle = parseInt(this.openAngleSlider.value);
                     this.sendJawCommand({ type: 'set_position', angle: angle });
                     console.log(`Setting open position to ${angle}°`);
+                });
+
+                // Advanced controls event listeners
+                this.toggleAdvancedButton.addEventListener('click', () => {
+                    this.toggleAdvancedControls();
+                });
+
+                this.applyAdvancedButton.addEventListener('click', () => {
+                    this.applyAdvancedSettings();
+                });
+
+                this.resetAdvancedButton.addEventListener('click', () => {
+                    this.resetAdvancedSettings();
+                });
+
+                this.saveConfigButton.addEventListener('click', () => {
+                    this.saveConfiguration();
+                });
+
+                // Preset button handlers
+                document.querySelectorAll('.preset-button').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        this.applyPreset(e.target.dataset.preset);
+                    });
+                });
+
+                // Documentation button handlers
+                document.getElementById('helpReadmeButton').addEventListener('click', () => {
+                    this.openDocumentation('readme');
+                });
+
+                document.getElementById('helpTuningButton').addEventListener('click', () => {
+                    this.openDocumentation('tuning');
+                });
+
+                document.getElementById('helpTroubleshootButton').addEventListener('click', () => {
+                    this.openDocumentation('troubleshooting');
+                });
+
+                // Mark custom when any input changes
+                document.querySelectorAll('#advancedControls input').forEach(input => {
+                    input.addEventListener('input', () => {
+                        this.markCustomPreset();
+                    });
                 });
             }
 
@@ -934,10 +1336,387 @@
             scrollToBottom() {
                 this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
             }
+
+            toggleAdvancedControls() {
+                const isVisible = this.advancedControls.classList.contains('show');
+
+                if (isVisible) {
+                    this.advancedControls.classList.remove('show');
+                    this.toggleAdvancedButton.textContent = 'Show Advanced Settings';
+                    this.toggleAdvancedButton.classList.add('collapsed');
+                } else {
+                    this.advancedControls.classList.add('show');
+                    this.toggleAdvancedButton.textContent = 'Hide Advanced Settings';
+                    this.toggleAdvancedButton.classList.remove('collapsed');
+                }
+            }
+
+            applyAdvancedSettings() {
+                const config = {
+                    audio: {
+                        smoothing_attack: parseFloat(this.smoothingAttack.value),
+                        smoothing_release: parseFloat(this.smoothingRelease.value),
+                        silence_threshold: parseFloat(this.silenceThreshold.value),
+                        silence_timeout: parseInt(this.silenceTimeout.value)
+                    },
+                    servo: {
+                        step_threshold: parseFloat(this.servoStep.value)
+                    },
+                    update_rate_hz: parseFloat(this.updateRate.value)
+                };
+
+                console.log('🔧 Applying advanced settings:', config);
+
+                // Send configuration to backend
+                fetch(`${this.apiBaseUrl}/jaw/config`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(config)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        this.updateJawStatus('✅ Advanced settings applied');
+                        console.log('✅ Advanced settings applied successfully');
+                    } else {
+                        this.updateJawStatus('❌ Failed to apply settings');
+                        console.error('❌ Failed to apply settings:', data.error);
+                    }
+                })
+                .catch(error => {
+                    this.updateJawStatus('❌ Connection error');
+                    console.error('❌ Error applying settings:', error);
+                });
+            }
+
+            resetAdvancedSettings() {
+                // Reset to default values
+                this.smoothingAttack.value = '0.1';
+                this.smoothingRelease.value = '0.01';
+                this.silenceThreshold.value = '0.005';
+                this.silenceTimeout.value = '500';
+                this.servoStep.value = '1.0';
+                this.updateRate.value = '50';
+
+                console.log('🔄 Advanced settings reset to defaults');
+                this.updateJawStatus('🔄 Settings reset to defaults');
+            }
+
+            saveConfiguration() {
+                const config = {
+                    calibration: {
+                        closed_angle: parseInt(this.closedAngleSlider.value),
+                        open_angle: parseInt(this.openAngleSlider.value),
+                        servo_pin: this.selectedServo
+                    },
+                    audio: {
+                        smoothing_attack: parseFloat(this.smoothingAttack.value),
+                        smoothing_release: parseFloat(this.smoothingRelease.value),
+                        silence_threshold: parseFloat(this.silenceThreshold.value),
+                        silence_timeout: parseInt(this.silenceTimeout.value)
+                    },
+                    servo: {
+                        step_threshold: parseFloat(this.servoStep.value)
+                    },
+                    update_rate_hz: parseFloat(this.updateRate.value),
+                    voice: this.selectedVoice,
+                    volume: this.audioVolume
+                };
+
+                // Save to localStorage
+                localStorage.setItem('chatterpi_config', JSON.stringify(config));
+
+                // Send to backend for persistent storage
+                fetch(`${this.apiBaseUrl}/jaw/save-config`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(config)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        this.updateJawStatus('💾 Configuration saved');
+                        console.log('💾 Configuration saved successfully');
+
+                        // Visual feedback
+                        this.saveConfigButton.textContent = '✅ Saved!';
+                        setTimeout(() => {
+                            this.saveConfigButton.textContent = 'Save Config';
+                        }, 2000);
+                    } else {
+                        this.updateJawStatus('❌ Failed to save config');
+                        console.error('❌ Failed to save config:', data.error);
+                    }
+                })
+                .catch(error => {
+                    this.updateJawStatus('❌ Save error');
+                    console.error('❌ Error saving config:', error);
+                });
+            }
+
+            // Preset configurations
+            getPresets() {
+                return {
+                    smooth: {
+                        name: 'Smooth Animation',
+                        smoothingAttack: 0.05,
+                        smoothingRelease: 0.008,
+                        silenceThreshold: 0.004,
+                        silenceTimeout: 600,
+                        servoStep: 0.8,
+                        updateRate: 40
+                    },
+                    responsive: {
+                        name: 'Responsive Animation',
+                        smoothingAttack: 0.15,
+                        smoothingRelease: 0.02,
+                        silenceThreshold: 0.006,
+                        silenceTimeout: 300,
+                        servoStep: 1.5,
+                        updateRate: 60
+                    },
+                    debug: {
+                        name: 'Debug Mode',
+                        smoothingAttack: 0.2,
+                        smoothingRelease: 0.05,
+                        silenceThreshold: 0.002,
+                        silenceTimeout: 200,
+                        servoStep: 2.0,
+                        updateRate: 30
+                    }
+                };
+            }
+
+            applyPreset(presetName) {
+                // Remove active class from all buttons
+                document.querySelectorAll('.preset-button').forEach(btn => btn.classList.remove('active'));
+
+                if (presetName === 'custom') {
+                    document.querySelector('[data-preset="custom"]').classList.add('active');
+                    return;
+                }
+
+                const presets = this.getPresets();
+                if (presets[presetName]) {
+                    const preset = presets[presetName];
+
+                    // Apply preset values
+                    this.smoothingAttack.value = preset.smoothingAttack;
+                    this.smoothingRelease.value = preset.smoothingRelease;
+                    this.silenceThreshold.value = preset.silenceThreshold;
+                    this.silenceTimeout.value = preset.silenceTimeout;
+                    this.servoStep.value = preset.servoStep;
+                    this.updateRate.value = preset.updateRate;
+
+                    // Mark this preset as active
+                    document.querySelector(`[data-preset="${presetName}"]`).classList.add('active');
+
+                    // Auto-apply the settings
+                    this.applyAdvancedSettings();
+
+                    this.showStatus(`Applied ${preset.name} preset`, 'success');
+                }
+            }
+
+            markCustomPreset() {
+                document.querySelectorAll('.preset-button').forEach(btn => btn.classList.remove('active'));
+                document.querySelector('[data-preset="custom"]').classList.add('active');
+            }
+
+            openDocumentation(type) {
+                let message = '';
+                let title = '';
+
+                switch(type) {
+                    case 'readme':
+                        title = '📖 ChatterPi README';
+                        message = `
+<strong>ChatterPi - Interactive AI Conversation with Jaw Animation</strong><br><br>
+
+<strong>🎯 Quick Start:</strong><br>
+1. Select your servo GPIO pin<br>
+2. Calibrate jaw positions (Closed: ~50°, Open: ~30°)<br>
+3. Choose your AI character voice<br>
+4. Start chatting!<br><br>
+
+<strong>🎛️ Basic Controls:</strong><br>
+• Test Movement: Verify servo operation<br>
+• Audio Animation: Real-time jaw sync with speech<br>
+• Volume: Adjust AI voice output<br><br>
+
+<strong>⚙️ Advanced Settings:</strong><br>
+• Response Speed: How fast jaw opens<br>
+• Decay Speed: How fast jaw closes<br>
+• Voice Sensitivity: Microphone detection threshold<br>
+• Auto-Close Delay: Pause before jaw closes<br><br>
+
+For detailed setup instructions, visit the project repository.
+                        `;
+                        break;
+
+                    case 'tuning':
+                        title = '🎛️ Parameter Tuning Guide';
+                        message = `
+<strong>Audio Response Settings:</strong><br>
+• <strong>Response Speed (0.05-0.2):</strong> Higher = faster jaw opening. Start with 0.1<br>
+• <strong>Decay Speed (0.008-0.05):</strong> Lower = smoother closing. Start with 0.01<br><br>
+
+<strong>Voice Detection Settings:</strong><br>
+• <strong>Voice Sensitivity (0.003-0.01):</strong> Lower = more sensitive. Adjust for your mic<br>
+• <strong>Auto-Close Delay (300-800ms):</strong> Longer = more natural pauses<br><br>
+
+<strong>Servo Control Settings:</strong><br>
+• <strong>Movement Smoothness (0.5-2.0°):</strong> Higher = less jitter, more smoothing<br>
+• <strong>Frame Rate (30-60 Hz):</strong> Higher = smoother but more CPU usage<br><br>
+
+<strong>🎭 Presets:</strong><br>
+• <strong>Smooth:</strong> Natural, fluid animation<br>
+• <strong>Responsive:</strong> Quick, snappy movements<br>
+• <strong>Debug:</strong> Exaggerated for testing
+                        `;
+                        break;
+
+                    case 'troubleshooting':
+                        title = '🔧 Troubleshooting Guide';
+                        message = `
+<strong>🦴 Jaw Not Moving:</strong><br>
+• Check servo connection to correct GPIO pin<br>
+• Verify servo power supply (5V recommended)<br>
+• Test with "Test Movement" button<br>
+• Check for "bad PWM micros" errors in console<br><br>
+
+<strong>🎤 Audio Not Detected:</strong><br>
+• Allow microphone permissions in browser<br>
+• Lower Voice Sensitivity setting<br>
+• Check microphone levels in system settings<br>
+• Try different browser (Chrome recommended)<br><br>
+
+<strong>🤖 AI Not Responding:</strong><br>
+• Check internet connection<br>
+• Verify OpenAI API configuration<br>
+• Look for error messages in status area<br><br>
+
+<strong>⚡ Poor Animation Quality:</strong><br>
+• Increase Frame Rate for smoother motion<br>
+• Adjust Movement Smoothness to reduce jitter<br>
+• Fine-tune Response/Decay speeds<br>
+• Try different presets for your use case
+                        `;
+                        break;
+                }
+
+                // Create a modal-like display
+                const existingModal = document.getElementById('docModal');
+                if (existingModal) {
+                    existingModal.remove();
+                }
+
+                const modal = document.createElement('div');
+                modal.id = 'docModal';
+                modal.style.cssText = `
+                    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                    background: rgba(0,0,0,0.8); z-index: 10000; display: flex;
+                    align-items: center; justify-content: center; padding: 20px;
+                `;
+
+                const content = document.createElement('div');
+                content.style.cssText = `
+                    background: white; border-radius: 12px; padding: 24px;
+                    max-width: 600px; max-height: 80vh; overflow-y: auto;
+                    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+                `;
+
+                content.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <h3 style="margin: 0; color: #333;">${title}</h3>
+                        <button onclick="this.closest('#docModal').remove()" style="
+                            background: #f44336; color: white; border: none; border-radius: 50%;
+                            width: 30px; height: 30px; cursor: pointer; font-size: 16px;
+                        ">×</button>
+                    </div>
+                    <div style="color: #555; line-height: 1.6; font-size: 14px;">
+                        ${message}
+                    </div>
+                `;
+
+                modal.appendChild(content);
+                document.body.appendChild(modal);
+
+                // Close on background click
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.remove();
+                    }
+                });
+            }
+
+            loadSavedConfiguration() {
+                try {
+                    const savedConfig = localStorage.getItem('chatterpi_config');
+                    if (savedConfig) {
+                        const config = JSON.parse(savedConfig);
+
+                        // Apply calibration settings
+                        if (config.calibration) {
+                            this.closedAngleSlider.value = config.calibration.closed_angle || 50;
+                            this.openAngleSlider.value = config.calibration.open_angle || 30;
+                            this.closedAngleValue.textContent = this.closedAngleSlider.value + '°';
+                            this.openAngleValue.textContent = this.openAngleSlider.value + '°';
+
+                            if (config.calibration.servo_pin) {
+                                this.servoSelect.value = config.calibration.servo_pin;
+                                this.selectedServo = config.calibration.servo_pin;
+                            }
+                        }
+
+                        // Apply audio settings
+                        if (config.audio) {
+                            this.smoothingAttack.value = config.audio.smoothing_attack || 0.1;
+                            this.smoothingRelease.value = config.audio.smoothing_release || 0.01;
+                            this.silenceThreshold.value = config.audio.silence_threshold || 0.005;
+                            this.silenceTimeout.value = config.audio.silence_timeout || 500;
+                        }
+
+                        // Apply servo settings
+                        if (config.servo) {
+                            this.servoStep.value = config.servo.step_threshold || 1.0;
+                        }
+
+                        // Apply other settings
+                        if (config.update_rate_hz) {
+                            this.updateRate.value = config.update_rate_hz;
+                        }
+
+                        if (config.voice) {
+                            this.voiceSelect.value = config.voice;
+                            this.selectedVoice = config.voice;
+                        }
+
+                        if (config.volume) {
+                            this.volumeSlider.value = config.volume * 100;
+                            this.audioVolume = config.volume;
+                        }
+
+                        console.log('📂 Configuration loaded from localStorage');
+                    }
+                } catch (error) {
+                    console.error('❌ Error loading saved configuration:', error);
+                }
+            }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            new ChatterPiChat();
+            const chat = new ChatterPiChat();
+            // Load saved configuration after initialization
+            setTimeout(() => {
+                chat.loadSavedConfiguration();
+                // Mark custom preset as active by default
+                document.querySelector('[data-preset="custom"]').classList.add('active');
+            }, 100);
         });
     </script>
 </body>
