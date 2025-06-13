@@ -200,6 +200,7 @@
                 <div class="jaw-controls">
                     <button id="testJawButton" class="control-button">Test Movement</button>
                     <button id="saveCalibrationButton" class="control-button calibrate-button">💾 Save Open & Close Calibration</button>
+                    <button id="audioAnimationButton" class="control-button">🎤 Start Audio Animation</button>
                 </div>
             </div>
             <div class="control-group">
@@ -207,8 +208,8 @@
                 <div class="calibration-controls">
                     <div class="angle-control">
                         <label>Closed Position:</label>
-                        <input type="range" id="closedAngleSlider" min="0" max="180" value="70" class="angle-slider">
-                        <span id="closedAngleValue">70°</span>
+                        <input type="range" id="closedAngleSlider" min="0" max="180" value="50" class="angle-slider">
+                        <span id="closedAngleValue">50°</span>
                         <button id="setClosedButton" class="control-button small-button">Set Closed</button>
                     </div>
                     <div class="angle-control">
@@ -239,6 +240,7 @@
                 this.apiBaseUrl = '/api/chatterpi';
                 this.isAIAvailable = false;
                 this.isJawAvailable = false;
+                this.isAudioAnimationActive = false;
 
                 // Configuration
                 this.selectedServo = 18;
@@ -268,6 +270,7 @@
                 this.testAudioButton = document.getElementById('testAudioButton');
                 this.testJawButton = document.getElementById('testJawButton');
                 this.saveCalibrationButton = document.getElementById('saveCalibrationButton');
+                this.audioAnimationButton = document.getElementById('audioAnimationButton');
                 this.setClosedButton = document.getElementById('setClosedButton');
                 this.setOpenButton = document.getElementById('setOpenButton');
                 this.closedAngleSlider = document.getElementById('closedAngleSlider');
@@ -304,6 +307,7 @@
                 this.testAudioButton.addEventListener('click', () => this.testAudio());
                 this.testJawButton.addEventListener('click', () => this.testJawMovement());
                 this.saveCalibrationButton.addEventListener('click', () => this.saveCalibration());
+                this.audioAnimationButton.addEventListener('click', () => this.toggleAudioAnimation());
 
                 // Add calibration button event listeners
                 this.setClosedButton.addEventListener('click', () => this.setClosedPosition());
@@ -464,15 +468,15 @@
                     this.isAIAvailable = false;
                 }
 
-                // Check if jaw animation is available (existing jaw animation system)
+                // Check if jaw animation is available (ChatterPi system)
                 try {
-                    const response = await fetch('/jaw-animation/status');
+                    const response = await fetch(`${this.apiBaseUrl}/jaw/status`);
                     if (response.ok) {
                         this.isJawAvailable = true;
-                        console.log('✅ Jaw animation service is available');
+                        console.log('✅ ChatterPi jaw animation service is available');
                     }
                 } catch (error) {
-                    console.warn('⚠️ Jaw animation service not available:', error);
+                    console.warn('⚠️ ChatterPi jaw animation service not available:', error);
                     this.isJawAvailable = false;
                 }
 
@@ -578,46 +582,67 @@
                 }
 
                 try {
-                    // Convert WebSocket-style commands to HTTP API calls
-                    let endpoint = '/jaw-animation/';
-                    let body = { servoPin: this.selectedServo };
+                    // Use our new ChatterPi API endpoints
+                    let endpoint = '/api/chatterpi/';
+                    let body = {};
+                    let method = 'POST';
 
                     switch (command.type) {
                         case 'configure_servo':
-                            endpoint += 'configure';
-                            body.pin = command.pin || this.selectedServo;
-                            if (command.closed_angle) body.closedAngle = command.closed_angle;
-                            if (command.open_angle) body.openAngle = command.open_angle;
-                            break;
+                            // Configuration is handled automatically by our system
+                            console.log('🔧 Servo configuration handled by ChatterPi system');
+                            return;
                         case 'jaw_move':
-                            endpoint += 'move';
+                            endpoint += 'jaw/move';
                             body.angle = command.angle;
-                            body.duration = command.duration || 0.5;
-                            body.curveType = command.curve_type || 'linear';
+                            body.duration = command.duration || 1.0;
+                            body.curve_type = command.curve_type || 'ease_in_out';
+                            break;
+                        case 'start_animation':
+                            endpoint += 'jaw/start-animation';
+                            break;
+                        case 'stop_animation':
+                            endpoint += 'jaw/stop-animation';
                             break;
                         case 'get_status':
-                            endpoint += 'status';
+                            endpoint += 'jaw/status';
+                            method = 'GET';
                             break;
                         default:
                             console.warn('Unknown jaw command type:', command.type);
                             return;
                     }
 
-                    const response = await fetch(endpoint, {
-                        method: 'POST',
+                    const fetchOptions = {
+                        method: method,
                         headers: {
                             'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(body)
-                    });
+                        }
+                    };
 
-                    if (response.ok) {
-                        console.log(`🦴 Jaw command sent: ${command.type}`);
+                    if (method === 'POST') {
+                        fetchOptions.body = JSON.stringify(body);
+                    }
+
+                    const response = await fetch(endpoint, fetchOptions);
+                    const data = await response.json();
+
+                    if (data.success) {
+                        console.log(`✅ Jaw command successful: ${command.type}`);
+                        if (command.type === 'jaw_move') {
+                            this.updateJawStatus(`Jaw moved to ${command.angle}°`);
+                        } else if (command.type === 'start_animation') {
+                            this.updateJawStatus('🎤 Audio animation started');
+                        } else if (command.type === 'stop_animation') {
+                            this.updateJawStatus('🛑 Audio animation stopped');
+                        }
                     } else {
-                        console.warn('⚠️ Jaw command failed:', response.status);
+                        console.warn('⚠️ Jaw command failed:', data.error);
+                        this.updateJawStatus(`❌ ${data.error}`);
                     }
                 } catch (error) {
                     console.warn('⚠️ Could not send jaw command:', error);
+                    this.updateJawStatus(`❌ Connection error`);
                 }
             }
 
@@ -801,9 +826,9 @@
 
                 words.forEach((word, index) => {
                     setTimeout(() => {
-                        // Calculate jaw opening based on word length (inverted angles)
-                        const openAmount = Math.min(30, word.length * 3);
-                        const jawAngle = 90 - openAmount; // 90 = closed, lower = more open
+                        // Calculate jaw opening based on word length (ChatterPi angles: 50°=closed, 30°=open)
+                        const openAmount = Math.min(20, word.length * 2); // Max 20° range
+                        const jawAngle = 50 - openAmount; // 50° = closed, lower = more open
 
                         this.sendJawCommand({
                             type: 'jaw_move',
@@ -816,7 +841,7 @@
                         setTimeout(() => {
                             this.sendJawCommand({
                                 type: 'jaw_move',
-                                angle: 90, // Closed position
+                                angle: 50, // Closed position (50°)
                                 duration: 0.1,
                                 curve_type: 'ease_in'
                             });
@@ -831,6 +856,29 @@
             simulateJawMovement(text) {
                 // Use the new speech-synchronized animation
                 this.animateJawWithSpeech(text);
+            }
+
+            toggleAudioAnimation() {
+                if (!this.isJawAvailable) {
+                    this.updateJawStatus('❌ Jaw animation service not available');
+                    return;
+                }
+
+                if (!this.isAudioAnimationActive) {
+                    // Start audio animation
+                    this.sendJawCommand({ type: 'start_animation' });
+                    this.audioAnimationButton.textContent = '🛑 Stop Audio Animation';
+                    this.audioAnimationButton.style.backgroundColor = '#dc3545';
+                    this.isAudioAnimationActive = true;
+                    console.log('🎤 Starting audio-driven jaw animation');
+                } else {
+                    // Stop audio animation
+                    this.sendJawCommand({ type: 'stop_animation' });
+                    this.audioAnimationButton.textContent = '🎤 Start Audio Animation';
+                    this.audioAnimationButton.style.backgroundColor = '';
+                    this.isAudioAnimationActive = false;
+                    console.log('🛑 Stopping audio-driven jaw animation');
+                }
             }
 
             addMessage(text, sender) {

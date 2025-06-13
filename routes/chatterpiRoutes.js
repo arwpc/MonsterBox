@@ -6,9 +6,13 @@
 const express = require('express');
 const router = express.Router();
 const ChatterPiAI = require('../scripts/chatterpi/ai_integration');
+const { spawn } = require('child_process');
+const WebSocket = require('ws');
 
 // Initialize AI integration
 let aiInstance = null;
+let jawBridgeProcess = null;
+let jawWebSocket = null;
 
 try {
     aiInstance = new ChatterPiAI({
@@ -17,8 +21,65 @@ try {
         temperature: 0.7
     });
     console.log('✅ ChatterPi AI integration initialized');
+
+    // Start the jaw animation bridge
+    startJawBridge();
 } catch (error) {
     console.error('❌ Failed to initialize ChatterPi AI:', error.message);
+}
+
+// Start the jaw animation bridge process
+function startJawBridge() {
+    try {
+        console.log('🦴 Starting ChatterPi jaw animation bridge...');
+
+        jawBridgeProcess = spawn('python3', ['scripts/chatterpi/web_jaw_bridge.py'], {
+            stdio: ['pipe', 'pipe', 'pipe'],
+            cwd: process.cwd()
+        });
+
+        jawBridgeProcess.stdout.on('data', (data) => {
+            console.log(`Jaw Bridge: ${data.toString().trim()}`);
+        });
+
+        jawBridgeProcess.stderr.on('data', (data) => {
+            console.error(`Jaw Bridge Error: ${data.toString().trim()}`);
+        });
+
+        jawBridgeProcess.on('close', (code) => {
+            console.log(`Jaw Bridge process exited with code ${code}`);
+            jawBridgeProcess = null;
+        });
+
+        // Connect to the jaw bridge WebSocket after a delay
+        setTimeout(connectToJawBridge, 3000);
+
+    } catch (error) {
+        console.error('❌ Failed to start jaw bridge:', error.message);
+    }
+}
+
+// Connect to the jaw animation bridge WebSocket
+function connectToJawBridge() {
+    try {
+        jawWebSocket = new WebSocket('ws://localhost:8765');
+
+        jawWebSocket.on('open', () => {
+            console.log('✅ Connected to ChatterPi jaw animation bridge');
+        });
+
+        jawWebSocket.on('error', (error) => {
+            console.error('❌ Jaw bridge WebSocket error:', error.message);
+        });
+
+        jawWebSocket.on('close', () => {
+            console.log('🔌 Jaw bridge WebSocket disconnected');
+            jawWebSocket = null;
+        });
+
+    } catch (error) {
+        console.error('❌ Failed to connect to jaw bridge:', error.message);
+    }
 }
 
 /**
@@ -56,7 +117,20 @@ router.post('/chat', async (req, res) => {
         
         // Generate jaw animation data
         const jawAnimation = generateJawAnimation(result.text);
-        
+
+        // Trigger jaw animation if bridge is connected
+        if (jawWebSocket && jawWebSocket.readyState === WebSocket.OPEN) {
+            try {
+                jawWebSocket.send(JSON.stringify({
+                    type: 'start_animation',
+                    character: result.character,
+                    text: result.text
+                }));
+            } catch (error) {
+                console.error('Error triggering jaw animation:', error.message);
+            }
+        }
+
         res.json({
             success: true,
             data: {
@@ -78,6 +152,159 @@ router.post('/chat', async (req, res) => {
             success: false,
             error: 'Failed to process chat message',
             fallback: getFallbackResponse(req.body.character || 'orlok'),
+            details: error.message
+        });
+    }
+});
+
+/**
+ * POST /api/chatterpi/jaw/move
+ * Move jaw to specific angle
+ */
+router.post('/jaw/move', async (req, res) => {
+    try {
+        const { angle, duration, curve_type } = req.body;
+
+        if (angle === undefined) {
+            return res.status(400).json({
+                success: false,
+                error: 'Angle is required'
+            });
+        }
+
+        if (!jawWebSocket || jawWebSocket.readyState !== WebSocket.OPEN) {
+            return res.status(503).json({
+                success: false,
+                error: 'Jaw animation system not available'
+            });
+        }
+
+        console.log(`🦴 Moving jaw to ${angle}°`);
+
+        jawWebSocket.send(JSON.stringify({
+            type: 'jaw_move',
+            angle: parseFloat(angle),
+            duration: parseFloat(duration || 1.0),
+            curve_type: curve_type || 'ease_in_out'
+        }));
+
+        res.json({
+            success: true,
+            message: `Jaw moving to ${angle}°`,
+            angle: parseFloat(angle),
+            timestamp: new Date().toISOString()
+        });
+
+    } catch (error) {
+        console.error('❌ Error in jaw move endpoint:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to move jaw',
+            details: error.message
+        });
+    }
+});
+
+/**
+ * POST /api/chatterpi/jaw/start-animation
+ * Start audio-driven jaw animation
+ */
+router.post('/jaw/start-animation', async (req, res) => {
+    try {
+        if (!jawWebSocket || jawWebSocket.readyState !== WebSocket.OPEN) {
+            return res.status(503).json({
+                success: false,
+                error: 'Jaw animation system not available'
+            });
+        }
+
+        console.log('🎤 Starting audio-driven jaw animation');
+
+        jawWebSocket.send(JSON.stringify({
+            type: 'start_animation'
+        }));
+
+        res.json({
+            success: true,
+            message: 'Audio-driven jaw animation started',
+            timestamp: new Date().toISOString()
+        });
+
+    } catch (error) {
+        console.error('❌ Error starting jaw animation:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to start jaw animation',
+            details: error.message
+        });
+    }
+});
+
+/**
+ * POST /api/chatterpi/jaw/stop-animation
+ * Stop audio-driven jaw animation
+ */
+router.post('/jaw/stop-animation', async (req, res) => {
+    try {
+        if (!jawWebSocket || jawWebSocket.readyState !== WebSocket.OPEN) {
+            return res.status(503).json({
+                success: false,
+                error: 'Jaw animation system not available'
+            });
+        }
+
+        console.log('🛑 Stopping audio-driven jaw animation');
+
+        jawWebSocket.send(JSON.stringify({
+            type: 'stop_animation'
+        }));
+
+        res.json({
+            success: true,
+            message: 'Audio-driven jaw animation stopped',
+            timestamp: new Date().toISOString()
+        });
+
+    } catch (error) {
+        console.error('❌ Error stopping jaw animation:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to stop jaw animation',
+            details: error.message
+        });
+    }
+});
+
+/**
+ * GET /api/chatterpi/jaw/status
+ * Get jaw animation system status
+ */
+router.get('/jaw/status', async (req, res) => {
+    try {
+        if (!jawWebSocket || jawWebSocket.readyState !== WebSocket.OPEN) {
+            return res.json({
+                success: false,
+                error: 'Jaw animation system not available',
+                connected: false
+            });
+        }
+
+        jawWebSocket.send(JSON.stringify({
+            type: 'get_status'
+        }));
+
+        res.json({
+            success: true,
+            connected: true,
+            message: 'Status request sent',
+            timestamp: new Date().toISOString()
+        });
+
+    } catch (error) {
+        console.error('❌ Error getting jaw status:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get jaw status',
             details: error.message
         });
     }
