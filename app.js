@@ -151,6 +151,7 @@ app.use('/api/character-webcam', require('./routes/api/characterWebcamApiRoutes'
 app.use('/api/motion-tracking', require('./routes/api/motionTrackingApiRoutes'));
 app.use('/api/voice', voiceRoutes);
 app.use('/jaw-animation', jawAnimationRoutes);
+app.use('/api/chatterpi', require('./routes/chatterpiRoutes'));
 
 // Test route for video configuration component
 app.get('/test/video-configuration', (req, res) => {

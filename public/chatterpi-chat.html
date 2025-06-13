@@ -235,11 +235,10 @@
     <script>
         class ChatterPiChat {
             constructor() {
-                // WebSocket connections
-                this.jawWebSocket = null;
-                this.aiWebSocket = null;
-                this.isJawConnected = false;
-                this.isAIConnected = false;
+                // HTTP API configuration (no more WebSockets!)
+                this.apiBaseUrl = '/api/chatterpi';
+                this.isAIAvailable = false;
+                this.isJawAvailable = false;
 
                 // Configuration
                 this.selectedServo = 18;
@@ -252,8 +251,9 @@
                 this.initializeElements();
                 this.setupEventListeners();
                 this.initializeAudio();
-                this.connectToServices();
+                this.checkServices();
                 this.updateWelcomeTime();
+                this.loadCharacterGreeting();
             }
 
             initializeElements() {
@@ -448,211 +448,198 @@
 
             updateSendButton() {
                 const hasText = this.chatInput.value.trim().length > 0;
-                this.sendButton.disabled = !hasText || !this.isAIConnected;
+                this.sendButton.disabled = !hasText || !this.isAIAvailable;
             }
 
-            connectToServices() {
-                this.connectToJawControl();
-                this.connectToAI();
+            async checkServices() {
+                // Check if AI service is available
+                try {
+                    const response = await fetch(`${this.apiBaseUrl}/characters`);
+                    if (response.ok) {
+                        this.isAIAvailable = true;
+                        console.log('✅ AI service is available');
+                    }
+                } catch (error) {
+                    console.warn('⚠️ AI service not available:', error);
+                    this.isAIAvailable = false;
+                }
+
+                // Check if jaw animation is available (existing jaw animation system)
+                try {
+                    const response = await fetch('/jaw-animation/status');
+                    if (response.ok) {
+                        this.isJawAvailable = true;
+                        console.log('✅ Jaw animation service is available');
+                    }
+                } catch (error) {
+                    console.warn('⚠️ Jaw animation service not available:', error);
+                    this.isJawAvailable = false;
+                }
+
+                this.updateConnectionStatus();
+                this.updateSendButton();
             }
 
-            connectToJawControl() {
-                const wsUrl = `ws://${window.location.hostname}:8765`;
+            async loadCharacterGreeting() {
+                if (!this.isAIAvailable) return;
 
                 try {
-                    this.jawWebSocket = new WebSocket(wsUrl);
+                    console.log(`🎭 Loading greeting for character: ${this.selectedVoice}`);
+                    const response = await fetch(`${this.apiBaseUrl}/greeting/${this.selectedVoice}`);
+                    const data = await response.json();
 
-                    this.jawWebSocket.onopen = () => {
-                        console.log('✅ Connected to Jaw Control WebSocket');
-                        this.isJawConnected = true;
-                        this.updateConnectionStatus();
-                        this.sendJawMessage({
-                            type: 'subscribe',
-                            events: ['jaw_movement', 'jaw_stopped']
-                        });
-                        this.sendJawMessage({ type: 'get_status' });
-                    };
+                    if (data.success && data.greeting) {
+                        this.addMessage(data.greeting, 'bot');
+                        this.speakText(data.greeting, this.selectedVoice);
 
-                    this.jawWebSocket.onmessage = (event) => {
-                        this.handleJawMessage(JSON.parse(event.data));
-                    };
-
-                    this.jawWebSocket.onclose = () => {
-                        console.log('❌ Disconnected from Jaw Control WebSocket');
-                        this.isJawConnected = false;
-                        this.updateConnectionStatus();
-                        setTimeout(() => this.connectToJawControl(), 5000);
-                    };
-
-                    this.jawWebSocket.onerror = (error) => {
-                        console.warn('Jaw WebSocket error:', error);
-                    };
-
+                        // Animate jaw if available
+                        if (data.jawAnimation && this.isJawAvailable) {
+                            await this.animateJawWithData(data.jawAnimation);
+                        }
+                    }
                 } catch (error) {
-                    console.error('Failed to create Jaw WebSocket:', error);
-                    setTimeout(() => this.connectToJawControl(), 5000);
+                    console.error('❌ Error loading character greeting:', error);
                 }
             }
 
-            connectToAI() {
-                const wsUrl = `ws://${window.location.hostname}:8766`;
-                console.log(`🔗 Attempting to connect to AI WebSocket: ${wsUrl}`);
+            async sendChatMessage(message) {
+                if (!this.isAIAvailable) {
+                    this.addMessage('AI service is not available. Please try again later.', 'bot');
+                    return;
+                }
 
                 try {
-                    this.aiWebSocket = new WebSocket(wsUrl);
+                    console.log(`🤖 Sending chat message: "${message}"`);
 
-                    this.aiWebSocket.onopen = () => {
-                        console.log('✅ Connected to AI WebSocket');
-                        this.isAIConnected = true;
-                        this.updateConnectionStatus();
-                        this.updateSendButton();
+                    const response = await fetch(`${this.apiBaseUrl}/chat`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            message: message,
+                            character: this.selectedVoice
+                        })
+                    });
 
-                        // Set character to Count Orlok
-                        this.sendAIMessage({
-                            type: 'set_character',
-                            character: 'orlok'
-                        });
-                        console.log('🧛‍♂️ Set character to Count Orlok');
-                    };
+                    const data = await response.json();
 
-                    this.aiWebSocket.onmessage = (event) => {
-                        console.log('📨 AI WebSocket message received:', event.data);
-                        this.handleAIMessage(JSON.parse(event.data));
-                    };
+                    if (data.success && data.data && data.data.aiResponse) {
+                        const aiText = data.data.aiResponse.text;
+                        this.addMessage(aiText, 'bot');
+                        this.speakText(aiText, this.selectedVoice);
 
-                    this.aiWebSocket.onclose = (event) => {
-                        console.log(`❌ Disconnected from AI WebSocket - Code: ${event.code}, Reason: ${event.reason}`);
-                        this.isAIConnected = false;
-                        this.updateConnectionStatus();
-                        this.updateSendButton();
-                        setTimeout(() => this.connectToAI(), 5000);
-                    };
-
-                    this.aiWebSocket.onerror = (error) => {
-                        console.error('🚨 AI WebSocket error:', error);
-                        console.error('WebSocket state:', this.aiWebSocket.readyState);
-                    };
+                        // Animate jaw if available
+                        if (data.data.jawAnimation && this.isJawAvailable) {
+                            await this.animateJawWithData(data.data.jawAnimation);
+                        }
+                    } else if (data.fallback) {
+                        // Use fallback response
+                        this.addMessage(data.fallback, 'bot');
+                        this.speakText(data.fallback, this.selectedVoice);
+                    } else {
+                        throw new Error(data.error || 'Unknown error');
+                    }
 
                 } catch (error) {
-                    console.error('💥 Failed to create AI WebSocket:', error);
-                    setTimeout(() => this.connectToAI(), 5000);
+                    console.error('❌ Error sending chat message:', error);
+                    this.addMessage('Sorry, I encountered an error. Please try again.', 'bot');
                 }
             }
 
-            sendJawMessage(message) {
-                if (this.jawWebSocket && this.jawWebSocket.readyState === WebSocket.OPEN) {
-                    this.jawWebSocket.send(JSON.stringify(message));
+            async animateJawWithData(jawAnimation) {
+                if (!this.isJawAvailable || !jawAnimation) return;
+
+                try {
+                    // Use existing jaw animation system
+                    const response = await fetch('/jaw-animation/animate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            animation: jawAnimation,
+                            servoPin: this.selectedServo
+                        })
+                    });
+
+                    if (response.ok) {
+                        console.log('🦴 Jaw animation sent successfully');
+                    }
+                } catch (error) {
+                    console.warn('⚠️ Could not send jaw animation:', error);
                 }
             }
 
-            sendAIMessage(message) {
-                if (this.aiWebSocket && this.aiWebSocket.readyState === WebSocket.OPEN) {
-                    this.aiWebSocket.send(JSON.stringify(message));
+            async sendJawCommand(command) {
+                if (!this.isJawAvailable) {
+                    console.warn('⚠️ Jaw animation service not available');
+                    return;
+                }
+
+                try {
+                    // Convert WebSocket-style commands to HTTP API calls
+                    let endpoint = '/jaw-animation/';
+                    let body = { servoPin: this.selectedServo };
+
+                    switch (command.type) {
+                        case 'configure_servo':
+                            endpoint += 'configure';
+                            body.pin = command.pin || this.selectedServo;
+                            if (command.closed_angle) body.closedAngle = command.closed_angle;
+                            if (command.open_angle) body.openAngle = command.open_angle;
+                            break;
+                        case 'jaw_move':
+                            endpoint += 'move';
+                            body.angle = command.angle;
+                            body.duration = command.duration || 0.5;
+                            body.curveType = command.curve_type || 'linear';
+                            break;
+                        case 'get_status':
+                            endpoint += 'status';
+                            break;
+                        default:
+                            console.warn('Unknown jaw command type:', command.type);
+                            return;
+                    }
+
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(body)
+                    });
+
+                    if (response.ok) {
+                        console.log(`🦴 Jaw command sent: ${command.type}`);
+                    } else {
+                        console.warn('⚠️ Jaw command failed:', response.status);
+                    }
+                } catch (error) {
+                    console.warn('⚠️ Could not send jaw command:', error);
                 }
             }
 
-            handleJawMessage(message) {
-                console.log('Jaw message received:', message);
+            // Jaw message handling removed - now using HTTP API
 
-                switch (message.type) {
-                    case 'welcome':
-                        this.jawStatusText.textContent = 'Connected';
-                        break;
-                    case 'status_response':
-                        this.updateJawStatus(message.jaw_status);
-                        break;
-                    case 'jaw_move_started':
-                        this.jawStatusText.textContent = `Moving to ${message.angle}°`;
-                        break;
-                    case 'jaw_stopped':
-                        this.jawStatusText.textContent = 'Stopped';
-                        break;
-                    case 'calibration_started':
-                        console.log('🔧 Calibration started');
-                        this.jawStatusText.textContent = 'Calibrating...';
-                        break;
-                    case 'calibration_completed':
-                        console.log('✅ Calibration completed:', message.data);
-                        this.jawStatusText.textContent = 'Calibration Complete';
-                        this.calibrateJawButton.disabled = false;
-                        this.calibrateJawButton.textContent = '🔧 Calibrate';
-
-                        // Show calibration results
-                        if (message.data && message.data.status === 'completed') {
-                            const duration = message.data.duration?.toFixed(1) || 'unknown';
-                            console.log(`Calibration took ${duration} seconds`);
-                        }
-                        break;
-                    case 'error':
-                        console.error('Jaw WebSocket error:', message.message);
-                        // Re-enable calibration button if it was a calibration error
-                        if (this.calibrateJawButton.disabled) {
-                            this.calibrateJawButton.disabled = false;
-                            this.calibrateJawButton.textContent = '🔧 Calibrate';
-                        }
-                        break;
-                }
-            }
-
-            handleAIMessage(message) {
-                console.log('🤖 AI message received:', message);
-
-                switch (message.type) {
-                    case 'welcome':
-                        console.log('🎉 AI WebSocket welcome received:', message);
-                        break;
-
-                    case 'conversation_result':
-                        const data = message.data;
-                        if (data && data.aiResponse && data.aiResponse.text) {
-                            this.addMessage(data.aiResponse.text, 'bot');
-                            // Speak with character voice and animate jaw
-                            this.speakText(data.aiResponse.text, this.selectedVoice);
-                            this.animateJawWithSpeech(data.aiResponse.text);
-                        } else {
-                            console.error('Invalid conversation result format:', message);
-                        }
-                        break;
-
-                    case 'ai_response':
-                        // Handle direct AI response format
-                        if (message.response) {
-                            this.addMessage(message.response, 'bot');
-                            this.speakText(message.response, this.selectedVoice);
-                            this.animateJawWithSpeech(message.response);
-                        }
-                        break;
-
-                    case 'ai_error':
-                        console.error('🚨 AI Error:', message.error);
-                        this.addMessage('Sorry, I encountered an error. Please try again.', 'bot');
-                        break;
-
-                    case 'characters_list':
-                        console.log('🎭 Available characters:', message.characters);
-                        break;
-
-                    default:
-                        console.log('🔍 Unknown AI message type:', message.type, message);
-                        break;
-                }
-            }
+            // AI message handling removed - now using HTTP API
 
             updateConnectionStatus() {
                 let statusText = '';
                 let statusClass = '';
 
-                if (this.isAIConnected && this.isJawConnected) {
-                    statusText = 'Connected (AI + Jaw)';
+                if (this.isAIAvailable && this.isJawAvailable) {
+                    statusText = 'Ready (AI + Jaw)';
                     statusClass = 'status-connected';
-                } else if (this.isAIConnected) {
-                    statusText = 'AI Connected';
+                } else if (this.isAIAvailable) {
+                    statusText = 'AI Ready';
                     statusClass = 'status-partial';
-                } else if (this.isJawConnected) {
-                    statusText = 'Jaw Connected';
+                } else if (this.isJawAvailable) {
+                    statusText = 'Jaw Ready';
                     statusClass = 'status-partial';
                 } else {
-                    statusText = 'Connecting...';
+                    statusText = 'Checking Services...';
                     statusClass = 'status-connecting';
                 }
 
@@ -676,53 +663,26 @@
                 }
             }
 
-            sendMessage() {
+            async sendMessage() {
                 const message = this.chatInput.value.trim();
                 if (!message) return;
 
                 console.log(`📤 Sending message: "${message}"`);
-                console.log(`🔗 AI Connected: ${this.isAIConnected}`);
-                console.log(`🔗 WebSocket State: ${this.aiWebSocket ? this.aiWebSocket.readyState : 'null'}`);
 
                 this.addMessage(message, 'user');
                 this.chatInput.value = '';
                 this.adjustTextareaHeight();
                 this.updateSendButton();
 
-                // Send message to AI if connected, otherwise show error
-                if (this.isAIConnected && this.aiWebSocket && this.aiWebSocket.readyState === WebSocket.OPEN) {
-                    console.log(`🤖 Sending to AI WebSocket...`);
-                    this.sendAIMessage({
-                        type: 'chat_message',
-                        message: message,
-                        timestamp: new Date().toISOString()
-                    });
-                } else {
-                    console.log(`❌ AI not connected. Attempting to reconnect...`);
-                    this.addMessage('AI is not connected. Attempting to reconnect...', 'bot');
-                    // Try to reconnect
-                    this.connectToAI();
-                    // Retry sending the message after a short delay
-                    setTimeout(() => {
-                        if (this.isAIConnected && this.aiWebSocket && this.aiWebSocket.readyState === WebSocket.OPEN) {
-                            console.log(`🔄 Retrying message send...`);
-                            this.sendAIMessage({
-                                type: 'chat_message',
-                                message: message,
-                                timestamp: new Date().toISOString()
-                            });
-                        } else {
-                            this.addMessage('Failed to connect to AI. Please try again.', 'bot');
-                        }
-                    }, 2000);
-                }
+                // Send message to AI using HTTP API
+                await this.sendChatMessage(message);
             }
 
             testJawMovement() {
                 console.log(`Testing jaw movement on GPIO ${this.selectedServo}`);
 
                 // Send servo configuration first
-                this.sendJawMessage({
+                this.sendJawCommand({
                     type: 'configure_servo',
                     pin: parseInt(this.selectedServo)
                 });
@@ -750,7 +710,7 @@
 
                     testSequence.forEach((move, index) => {
                         setTimeout(() => {
-                            this.sendJawMessage({
+                            this.sendJawCommand({
                                 type: 'jaw_move',
                                 angle: move.angle,
                                 duration: move.duration,
@@ -774,7 +734,7 @@
                 localStorage.setItem('chatterpi_servo_pin', this.selectedServo);
 
                 // Send configuration to jaw server
-                this.sendJawMessage({
+                this.sendJawCommand({
                     type: 'configure_servo',
                     pin: parseInt(this.selectedServo),
                     closed_angle: closedAngle,
@@ -796,14 +756,14 @@
                 console.log(`🔧 Setting closed position to ${closedAngle}° on GPIO ${this.selectedServo}`);
 
                 // Send servo configuration first
-                this.sendJawMessage({
+                this.sendJawCommand({
                     type: 'configure_servo',
                     pin: parseInt(this.selectedServo)
                 });
 
                 // Move to closed position
                 setTimeout(() => {
-                    this.sendJawMessage({
+                    this.sendJawCommand({
                         type: 'jaw_move',
                         angle: closedAngle,
                         duration: 1.0,
@@ -818,14 +778,14 @@
                 console.log(`🔧 Setting open position to ${openAngle}° on GPIO ${this.selectedServo}`);
 
                 // Send servo configuration first
-                this.sendJawMessage({
+                this.sendJawCommand({
                     type: 'configure_servo',
                     pin: parseInt(this.selectedServo)
                 });
 
                 // Move to open position
                 setTimeout(() => {
-                    this.sendJawMessage({
+                    this.sendJawCommand({
                         type: 'jaw_move',
                         angle: openAngle,
                         duration: 1.0,
@@ -845,7 +805,7 @@
                         const openAmount = Math.min(30, word.length * 3);
                         const jawAngle = 90 - openAmount; // 90 = closed, lower = more open
 
-                        this.sendJawMessage({
+                        this.sendJawCommand({
                             type: 'jaw_move',
                             angle: jawAngle,
                             duration: 0.15,
@@ -854,7 +814,7 @@
 
                         // Close jaw after speaking word
                         setTimeout(() => {
-                            this.sendJawMessage({
+                            this.sendJawCommand({
                                 type: 'jaw_move',
                                 angle: 90, // Closed position
                                 duration: 0.1,
