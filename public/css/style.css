@@ -164,6 +164,38 @@ footer {
     text-decoration: none;
 }
 
+/* ChatterPi specific styling */
+.nav-button.chatterpi-link {
+    background: linear-gradient(135deg, #4a0e4e 0%, #81007f 100%);
+    border-color: #ff00ff;
+    color: #ff00ff;
+    font-weight: bold;
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-button.chatterpi-link:hover {
+    background: linear-gradient(135deg, #5a1e5e 0%, #91008f 100%);
+    box-shadow: 0 0 15px #ff00ff;
+    color: #ffffff;
+    transform: translateY(-2px);
+}
+
+.nav-button.chatterpi-link::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.nav-button.chatterpi-link:hover::before {
+    left: 100%;
+}
+
 /* Button Styles */
 .button {
     display: inline-block;

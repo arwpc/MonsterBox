@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatterPi AI - Enhanced Conversation</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            height: 100vh; display: flex; justify-content: center; align-items: center;
+        }
+        .chat-container {
+            width: 95%; max-width: 900px; height: 95vh; background: white;
+            border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+        .chat-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; padding: 20px; text-align: center;
+        }
+        .chat-header h1 { font-size: 2em; margin-bottom: 5px; }
+        .subtitle { font-size: 0.9em; opacity: 0.9; margin-bottom: 10px; }
+        .connection-status {
+            padding: 5px 15px; border-radius: 15px; font-size: 0.8em;
+            display: inline-block; margin-top: 10px;
+        }
+        .status-connected { background: rgba(46, 204, 113, 0.3); }
+        .status-disconnected { background: rgba(231, 76, 60, 0.3); }
+        .status-processing { background: rgba(241, 196, 15, 0.3); }
+        
+        .character-selector {
+            background: rgba(255,255,255,0.1); padding: 10px; margin-top: 10px;
+            border-radius: 10px; display: flex; justify-content: center; gap: 10px;
+        }
+        .character-btn {
+            padding: 8px 16px; border: none; border-radius: 20px;
+            background: rgba(255,255,255,0.2); color: white; cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .character-btn:hover { background: rgba(255,255,255,0.3); }
+        .character-btn.active { background: rgba(255,255,255,0.4); font-weight: bold; }
+        
+        .chat-messages {
+            flex: 1; padding: 20px; overflow-y: auto; background: #f8f9fa;
+        }
+        .message {
+            margin-bottom: 20px; display: flex; align-items: flex-start;
+        }
+        .message.user { justify-content: flex-end; }
+        .message-content {
+            max-width: 70%; padding: 15px 20px; border-radius: 20px;
+            position: relative; word-wrap: break-word;
+        }
+        .message.user .message-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; border-bottom-right-radius: 5px;
+        }
+        .message.bot .message-content {
+            background: white; color: #333; border: 1px solid #e0e0e0;
+            border-bottom-left-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .message-time {
+            font-size: 0.7em; opacity: 0.7; margin-top: 5px;
+        }
+        .character-name {
+            font-weight: bold; color: #667eea; margin-bottom: 5px; font-size: 0.9em;
+        }
+        
+        .jaw-status {
+            background: rgba(52, 152, 219, 0.1); padding: 10px; text-align: center;
+            font-size: 0.8em; color: #34495e; border-top: 1px solid #ecf0f1;
+        }
+        .jaw-indicator {
+            display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+            margin-right: 5px; background: #e74c3c;
+        }
+        .jaw-indicator.active { background: #27ae60; animation: pulse 1s infinite; }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .chat-input-container {
+            padding: 20px; background: white; border-top: 1px solid #ecf0f1;
+            display: flex; gap: 10px; align-items: center;
+        }
+        .chat-input {
+            flex: 1; padding: 15px 20px; border: 2px solid #ecf0f1;
+            border-radius: 25px; font-size: 1em; outline: none;
+            transition: border-color 0.3s ease;
+        }
+        .chat-input:focus { border-color: #667eea; }
+        .send-button {
+            padding: 15px 25px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; border: none; border-radius: 25px; cursor: pointer;
+            font-size: 1em; transition: transform 0.2s ease;
+        }
+        .send-button:hover { transform: scale(1.05); }
+        .send-button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        
+        .processing-indicator {
+            display: none; padding: 10px; text-align: center; color: #667eea;
+            font-style: italic; background: rgba(102, 126, 234, 0.1);
+        }
+        .processing-indicator.show { display: block; }
+        
+        .error-message {
+            background: rgba(231, 76, 60, 0.1); color: #e74c3c; padding: 10px;
+            border-radius: 10px; margin: 10px 0; text-align: center;
+        }
+        
+        .audio-controls {
+            display: flex; gap: 10px; align-items: center; margin-top: 10px;
+        }
+        .audio-btn {
+            padding: 5px 10px; border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1); color: white; border-radius: 15px;
+            cursor: pointer; font-size: 0.8em; transition: all 0.3s ease;
+        }
+        .audio-btn:hover { background: rgba(255,255,255,0.2); }
+        .audio-btn.active { background: rgba(255,255,255,0.3); }
+        
+        .volume-control {
+            display: flex; align-items: center; gap: 5px; color: white;
+        }
+        .volume-slider {
+            width: 80px; height: 4px; background: rgba(255,255,255,0.3);
+            border-radius: 2px; outline: none; cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>🤖 ChatterPi AI</h1>
+            <div class="subtitle">Enhanced AI Conversation with Jaw Animation</div>
+            <div class="connection-status status-disconnected" id="connectionStatus">Connecting...</div>
+            
+            <div class="character-selector">
+                <button class="character-btn active" data-character="orlok">🧛 Count Orlok</button>
+                <button class="character-btn" data-character="robochat">🤖 RoboChat</button>
+                <button class="character-btn" data-character="blackbeard">🏴‍☠️ Blackbeard</button>
+            </div>
+            
+            <div class="audio-controls">
+                <button class="audio-btn" id="speechToggle">🔊 Speech: ON</button>
+                <div class="volume-control">
+                    <span>🔉</span>
+                    <input type="range" class="volume-slider" id="volumeSlider" min="0" max="1" step="0.1" value="0.7">
+                </div>
+            </div>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot">
+                <div class="message-content">
+                    <div class="character-name">Count Orlok</div>
+                    Welcome, mortal, to the realm of ChatterPi AI. I am Count Orlok, ancient vampire of the night. 
+                    Choose thy character and speak thy mind... if thou darest! 🦇
+                    <div class="message-time" id="welcomeTime"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="processing-indicator" id="processingIndicator">
+            🧠 AI is thinking... Please wait.
+        </div>
+        
+        <div class="jaw-status" id="jawStatus">
+            <span class="jaw-indicator" id="jawIndicator"></span>
+            <span id="jawStatusText">Jaw Animation: Disconnected</span>
+        </div>
+        
+        <div class="chat-input-container">
+            <input type="text" class="chat-input" id="chatInput" placeholder="Type your message here..." maxlength="500">
+            <button class="send-button" id="sendButton">Send</button>
+        </div>
+    </div>
+
+    <script>
+        class ChatterPiAI {
+            constructor() {
+                this.websocket = null;
+                this.isConnected = false;
+                this.currentCharacter = 'orlok';
+                this.speechEnabled = true;
+                this.volume = 0.7;
+                this.isProcessing = false;
+                
+                this.initializeElements();
+                this.setupEventListeners();
+                this.connectToAI();
+                this.updateWelcomeTime();
+            }
+            
+            initializeElements() {
+                this.chatMessages = document.getElementById('chatMessages');
+                this.chatInput = document.getElementById('chatInput');
+                this.sendButton = document.getElementById('sendButton');
+                this.connectionStatus = document.getElementById('connectionStatus');
+                this.processingIndicator = document.getElementById('processingIndicator');
+                this.jawStatus = document.getElementById('jawStatus');
+                this.jawIndicator = document.getElementById('jawIndicator');
+                this.jawStatusText = document.getElementById('jawStatusText');
+                this.speechToggle = document.getElementById('speechToggle');
+                this.volumeSlider = document.getElementById('volumeSlider');
+            }
+            
+            setupEventListeners() {
+                this.sendButton.addEventListener('click', () => this.sendMessage());
+                this.chatInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.sendMessage();
+                    }
+                });
+                
+                // Character selection
+                document.querySelectorAll('.character-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        this.selectCharacter(e.target.dataset.character);
+                    });
+                });
+                
+                // Audio controls
+                this.speechToggle.addEventListener('click', () => this.toggleSpeech());
+                this.volumeSlider.addEventListener('input', (e) => {
+                    this.volume = parseFloat(e.target.value);
+                });
+            }
+            
+            connectToAI() {
+                const wsUrl = `ws://${window.location.hostname}:8766`;
+                console.log('Connecting to AI WebSocket:', wsUrl);
+                
+                try {
+                    this.websocket = new WebSocket(wsUrl);
+                    
+                    this.websocket.onopen = () => {
+                        console.log('Connected to AI WebSocket');
+                        this.isConnected = true;
+                        this.updateConnectionStatus('Connected', 'connected');
+                    };
+                    
+                    this.websocket.onmessage = (event) => {
+                        this.handleMessage(JSON.parse(event.data));
+                    };
+                    
+                    this.websocket.onclose = () => {
+                        console.log('AI WebSocket connection closed');
+                        this.isConnected = false;
+                        this.updateConnectionStatus('Disconnected', 'disconnected');
+                        
+                        // Attempt to reconnect after 5 seconds
+                        setTimeout(() => this.connectToAI(), 5000);
+                    };
+                    
+                    this.websocket.onerror = (error) => {
+                        console.error('AI WebSocket error:', error);
+                        this.updateConnectionStatus('Connection Error', 'disconnected');
+                    };
+                    
+                } catch (error) {
+                    console.error('Failed to create WebSocket connection:', error);
+                    this.updateConnectionStatus('Connection Failed', 'disconnected');
+                }
+            }
+
+            handleMessage(data) {
+                console.log('Received message:', data);
+
+                switch (data.type) {
+                    case 'welcome':
+                        this.handleWelcome(data);
+                        break;
+                    case 'ai_response':
+                        this.handleAIResponse(data);
+                        break;
+                    case 'processing':
+                        this.showProcessing(true);
+                        break;
+                    case 'character_set':
+                        this.handleCharacterSet(data);
+                        break;
+                    case 'status':
+                        this.handleStatus(data);
+                        break;
+                    case 'error':
+                        this.handleError(data);
+                        break;
+                    default:
+                        console.log('Unknown message type:', data.type);
+                }
+            }
+
+            handleWelcome(data) {
+                console.log('AI Bridge connected:', data);
+                this.updateJawStatus(false); // Will be updated by status check
+            }
+
+            handleAIResponse(data) {
+                this.showProcessing(false);
+                this.addMessage(data.message, 'bot', data.character);
+
+                if (this.speechEnabled) {
+                    this.speakText(data.message, data.character);
+                }
+
+                // Update jaw animation indicator
+                this.updateJawStatus(true);
+                setTimeout(() => this.updateJawStatus(false), 3000);
+            }
+
+            handleCharacterSet(data) {
+                console.log('Character set to:', data.character);
+                this.currentCharacter = data.character;
+                this.updateCharacterButtons();
+            }
+
+            handleStatus(data) {
+                console.log('Status update:', data);
+                this.updateJawStatus(data.jaw_connected);
+            }
+
+            handleError(data) {
+                this.showProcessing(false);
+                this.showError(data.message);
+                console.error('AI Error:', data.message);
+            }
+
+            sendMessage() {
+                if (!this.isConnected || this.isProcessing) {
+                    return;
+                }
+
+                const message = this.chatInput.value.trim();
+                if (!message) {
+                    return;
+                }
+
+                // Add user message to chat
+                this.addMessage(message, 'user');
+
+                // Send to AI
+                this.websocket.send(JSON.stringify({
+                    type: 'chat',
+                    message: message,
+                    character: this.currentCharacter
+                }));
+
+                // Clear input and show processing
+                this.chatInput.value = '';
+                this.showProcessing(true);
+                this.isProcessing = true;
+            }
+
+            selectCharacter(character) {
+                if (this.isConnected && character !== this.currentCharacter) {
+                    this.websocket.send(JSON.stringify({
+                        type: 'set_character',
+                        character: character
+                    }));
+                }
+                this.currentCharacter = character;
+                this.updateCharacterButtons();
+            }
+
+            addMessage(text, sender, character = null) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${sender}`;
+
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'message-content';
+
+                if (sender === 'bot' && character) {
+                    const characterName = this.getCharacterDisplayName(character);
+                    const nameDiv = document.createElement('div');
+                    nameDiv.className = 'character-name';
+                    nameDiv.textContent = characterName;
+                    contentDiv.appendChild(nameDiv);
+                }
+
+                const textNode = document.createTextNode(text);
+                contentDiv.appendChild(textNode);
+
+                const timeDiv = document.createElement('div');
+                timeDiv.className = 'message-time';
+                timeDiv.textContent = new Date().toLocaleTimeString();
+                contentDiv.appendChild(timeDiv);
+
+                messageDiv.appendChild(contentDiv);
+                this.chatMessages.appendChild(messageDiv);
+
+                // Scroll to bottom
+                this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+            }
+
+            getCharacterDisplayName(character) {
+                const names = {
+                    'orlok': '🧛 Count Orlok',
+                    'robochat': '🤖 RoboChat',
+                    'blackbeard': '🏴‍☠️ Captain Blackbeard'
+                };
+                return names[character] || character;
+            }
+
+            updateCharacterButtons() {
+                document.querySelectorAll('.character-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.character === this.currentCharacter);
+                });
+            }
+
+            updateConnectionStatus(text, status) {
+                this.connectionStatus.textContent = text;
+                this.connectionStatus.className = `connection-status status-${status}`;
+            }
+
+            showProcessing(show) {
+                this.processingIndicator.classList.toggle('show', show);
+                this.sendButton.disabled = show;
+                this.isProcessing = show;
+
+                if (show) {
+                    this.updateConnectionStatus('Processing...', 'processing');
+                } else if (this.isConnected) {
+                    this.updateConnectionStatus('Connected', 'connected');
+                }
+            }
+
+            updateJawStatus(active) {
+                this.jawIndicator.classList.toggle('active', active);
+                this.jawStatusText.textContent = active ?
+                    'Jaw Animation: Active' : 'Jaw Animation: Ready';
+            }
+
+            showError(message) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-message';
+                errorDiv.textContent = `Error: ${message}`;
+
+                this.chatMessages.appendChild(errorDiv);
+                this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+
+                // Remove error after 5 seconds
+                setTimeout(() => {
+                    if (errorDiv.parentNode) {
+                        errorDiv.parentNode.removeChild(errorDiv);
+                    }
+                }, 5000);
+            }
+
+            toggleSpeech() {
+                this.speechEnabled = !this.speechEnabled;
+                this.speechToggle.textContent = `🔊 Speech: ${this.speechEnabled ? 'ON' : 'OFF'}`;
+                this.speechToggle.classList.toggle('active', this.speechEnabled);
+            }
+
+            speakText(text, character) {
+                if (!this.speechEnabled || !window.speechSynthesis) {
+                    return;
+                }
+
+                // Cancel any ongoing speech
+                window.speechSynthesis.cancel();
+
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.volume = this.volume;
+
+                // Set voice characteristics based on character
+                switch (character) {
+                    case 'orlok':
+                        utterance.rate = 0.8;
+                        utterance.pitch = 0.7;
+                        break;
+                    case 'robochat':
+                        utterance.rate = 1.1;
+                        utterance.pitch = 1.2;
+                        break;
+                    case 'blackbeard':
+                        utterance.rate = 0.9;
+                        utterance.pitch = 0.8;
+                        break;
+                    default:
+                        utterance.rate = 1.0;
+                        utterance.pitch = 1.0;
+                }
+
+                window.speechSynthesis.speak(utterance);
+            }
+
+            updateWelcomeTime() {
+                const welcomeTimeElement = document.getElementById('welcomeTime');
+                if (welcomeTimeElement) {
+                    welcomeTimeElement.textContent = new Date().toLocaleTimeString();
+                }
+            }
+        }
+
+        // Initialize the ChatterPi AI system when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new ChatterPiAI();
+        });
+    </script>
+</body>
+</html>
