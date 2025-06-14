@@ -24,6 +24,8 @@ class ServoConfig:
     min_angle: float = 30.0          # Minimum angle (open position)
     max_angle: float = 50.0          # Maximum angle (closed position)
     step_threshold: float = 1.0      # Minimum movement threshold (degrees)
+    max_speed: float = 180.0         # Maximum servo speed (degrees/second)
+    enable_immediate_mode: bool = False  # Bypass jitter filtering for real-time response
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert config to dictionary"""
@@ -34,7 +36,9 @@ class ServoConfig:
             'frequency': self.frequency,
             'min_angle': self.min_angle,
             'max_angle': self.max_angle,
-            'step_threshold': self.step_threshold
+            'step_threshold': self.step_threshold,
+            'max_speed': self.max_speed,
+            'enable_immediate_mode': self.enable_immediate_mode
         }
 
 @dataclass
@@ -105,35 +109,37 @@ class ServoController:
     
     def set_position(self, angle: float) -> bool:
         """
-        Set servo position with jitter reduction
-        
+        Set servo position with optional jitter reduction
+
         Args:
             angle: Target angle in degrees
-            
+
         Returns:
             True if servo was moved, False if filtered out
         """
         if not self.is_initialized:
             logger.warning("Servo controller not initialized")
             return False
-        
+
         with self.lock:
             self.stats['commands_received'] += 1
-            
+
             # Clamp angle to valid range
             angle = max(self.config.min_angle, min(self.config.max_angle, angle))
-            
-            # Check step threshold to reduce jitter
-            angle_diff = abs(angle - self.current_state.angle)
-            if angle_diff < self.config.step_threshold:
-                self.stats['commands_filtered'] += 1
-                return False
-            
+
+            # REAL-TIME MODE: Skip jitter filtering for immediate response
+            if not self.config.enable_immediate_mode:
+                # Check step threshold to reduce jitter (only in normal mode)
+                angle_diff = abs(angle - self.current_state.angle)
+                if angle_diff < self.config.step_threshold:
+                    self.stats['commands_filtered'] += 1
+                    return False
+
             # Convert to pulse width
             pulse_width = self._angle_to_pulse_width(angle)
-            
-            # Additional jitter reduction: check pulse width difference
-            if self.last_written_pulse is not None:
+
+            # Additional jitter reduction (only in normal mode)
+            if not self.config.enable_immediate_mode and self.last_written_pulse is not None:
                 pulse_diff = abs(pulse_width - self.last_written_pulse)
                 if pulse_diff < 10:  # Less than 10µs difference
                     self.stats['commands_filtered'] += 1

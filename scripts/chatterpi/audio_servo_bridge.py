@@ -207,7 +207,7 @@ class AudioServoBridge:
             logger.error(f"Error handling message: {e}")
     
     async def _handle_volume_update(self, data: Dict[str, Any]):
-        """Handle volume update from audio analyzer"""
+        """Handle volume update from audio analyzer with REAL-TIME OPTIMIZATIONS"""
         try:
             # Extract volume data
             audio_data = AudioData(
@@ -216,29 +216,29 @@ class AudioServoBridge:
                 peak_volume=data.get("peak", 0.0),
                 timestamp=data.get("timestamp", int(time.time() * 1000))
             )
-            
+
             # Map volume to servo angle
             angle = self._map_volume_to_angle(audio_data.smoothed_volume)
             audio_data.servo_position = angle
-            
-            # Move servo
+
+            # Move servo with MINIMAL LATENCY
             if self.jaw_control and not self.jaw_control.emergency_stop:
-                # Use quick movement for real-time response
-                self.jaw_control.move_to_angle(angle, duration=0.1, curve_type="linear")
+                # REAL-TIME OPTIMIZATION: Use immediate movement (0.05s instead of 0.1s)
+                self.jaw_control.move_to_angle(angle, duration=0.05, curve_type="linear")
                 self.stats["servo_commands_sent"] += 1
-            
+
             # Update statistics
             self.stats["messages_received"] += 1
             self.stats["last_update"] = time.time()
             self.last_audio_data = audio_data
-            
+
             # Calculate latency
             current_time = int(time.time() * 1000)
             latency = current_time - audio_data.timestamp
             self.stats["average_latency"] = (self.stats["average_latency"] * 0.9) + (latency * 0.1)
-            
-            logger.debug(f"Volume: {audio_data.smoothed_volume:.3f} → Angle: {angle:.1f}°")
-            
+
+            logger.debug(f"Volume: {audio_data.smoothed_volume:.3f} → Angle: {angle:.1f}° (latency: {latency}ms)")
+
         except Exception as e:
             logger.error(f"Error handling volume update: {e}")
     

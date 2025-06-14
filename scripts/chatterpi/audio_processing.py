@@ -16,22 +16,26 @@ logger = logging.getLogger(__name__)
 @dataclass
 class AudioConfig:
     """Configuration for audio processing"""
-    # Smoothing parameters
-    SMOOTHING_ATTACK: float = 0.1      # Fast attack coefficient
-    SMOOTHING_RELEASE: float = 0.01    # Slow release coefficient
-    
-    # Voice activity detection
+    # Smoothing parameters - OPTIMIZED FOR REAL-TIME RESPONSE
+    SMOOTHING_ATTACK: float = 0.15     # Fast attack coefficient (increased for quicker response)
+    SMOOTHING_RELEASE: float = 0.08    # Much faster release coefficient (was 0.01, now 8x faster)
+
+    # Voice activity detection - OPTIMIZED FOR IMMEDIATE SILENCE DETECTION
     SILENCE_THRESHOLD: float = 0.005   # Amplitude threshold for silence
-    SILENCE_TIMEOUT: int = 500         # Milliseconds before closing jaw on silence
-    
+    SILENCE_TIMEOUT: int = 100         # Milliseconds before closing jaw (was 500ms, now 5x faster)
+
     # Servo mapping
     SERVO_MIN: float = 50.0           # Closed position (degrees)
-    SERVO_MAX: float = 30.0           # Open position (degrees)  
-    SERVO_STEP: float = 1.0           # Minimum movement threshold (degrees)
-    
-    # Audio processing
+    SERVO_MAX: float = 30.0           # Open position (degrees)
+    SERVO_STEP: float = 0.5           # Reduced movement threshold for more responsive updates
+
+    # Audio processing - OPTIMIZED FOR LOW LATENCY
     SAMPLE_RATE: int = 16000          # Required for VAD
     FRAME_SIZE: int = 320             # 20ms at 16kHz (required for VAD)
+
+    # Real-time performance settings
+    REAL_TIME_MODE: bool = True       # Enable real-time optimizations
+    MAX_BUFFER_FRAMES: int = 3        # Reduced from 10 to minimize latency
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert config to dictionary"""
@@ -44,7 +48,9 @@ class AudioConfig:
             'servo_max': self.SERVO_MAX,
             'servo_step': self.SERVO_STEP,
             'sample_rate': self.SAMPLE_RATE,
-            'frame_size': self.FRAME_SIZE
+            'frame_size': self.FRAME_SIZE,
+            'real_time_mode': self.REAL_TIME_MODE,
+            'max_buffer_frames': self.MAX_BUFFER_FRAMES
         }
 
 class SmoothedEnvelope:
@@ -85,28 +91,34 @@ class SmoothedEnvelope:
         self.last_update = time.time()
 
 class VoiceActivityDetector:
-    """Voice activity detection using amplitude-based method"""
-    
-    def __init__(self, threshold: float = 0.005, timeout_ms: int = 500):
+    """Voice activity detection using amplitude-based method with real-time optimizations"""
+
+    def __init__(self, threshold: float = 0.005, timeout_ms: int = 100):
         self.threshold = threshold
         self.timeout_ms = timeout_ms
         self.last_voice_time = time.time()
         self.is_voice_active = False
-    
+        self.immediate_silence_detection = True  # Enable immediate silence response
+
     def process(self, amplitude: float) -> bool:
-        """Process amplitude and return voice activity status"""
+        """Process amplitude and return voice activity status with immediate silence detection"""
         current_time = time.time()
-        
+
         if amplitude > self.threshold:
             # Voice detected
             self.last_voice_time = current_time
             self.is_voice_active = True
         else:
-            # Check if silence timeout exceeded
-            silence_duration = (current_time - self.last_voice_time) * 1000  # Convert to ms
-            if silence_duration > self.timeout_ms:
+            # REAL-TIME OPTIMIZATION: Immediate silence detection for very low amplitudes
+            if self.immediate_silence_detection and amplitude < (self.threshold * 0.1):
+                # If amplitude drops to less than 10% of threshold, immediately mark as silent
                 self.is_voice_active = False
-        
+            else:
+                # Check if silence timeout exceeded (much shorter timeout now)
+                silence_duration = (current_time - self.last_voice_time) * 1000  # Convert to ms
+                if silence_duration > self.timeout_ms:
+                    self.is_voice_active = False
+
         return self.is_voice_active
     
     def reset(self):
