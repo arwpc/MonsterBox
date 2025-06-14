@@ -147,17 +147,17 @@ class ChatterPiServiceManager {
                 return false;
             }
             
-            const process = spawn('python3', [scriptPath, ...serviceDef.args], {
+            const childProcess = spawn('python3', [scriptPath, ...serviceDef.args], {
                 cwd: process.cwd(),
                 stdio: ['pipe', 'pipe', 'pipe']
             });
             
             // Setup process monitoring
-            this.setupProcessMonitoring(serviceId, process, serviceDef);
-            
+            this.setupProcessMonitoring(serviceId, childProcess, serviceDef);
+
             // Store service info
             this.services.set(serviceId, {
-                process: process,
+                process: childProcess,
                 definition: serviceDef,
                 startTime: Date.now(),
                 restartCount: 0,
