@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-MonsterBox is a sophisticated animatronic control system built with Node.js/Express, designed for managing distributed Raspberry Pi-based animatronic systems in haunted attraction environments. This comprehensive PRD covers the complete system including infrastructure, jaw animation, SSH configuration, security, monitoring, testing, and deployment.
+MonsterBox is a sophisticated animatronic control system built with Node.js/Express, designed for managing distributed Raspberry Pi-based animatronic systems in haunted attraction environments. This comprehensive PRD covers the complete system including infrastructure, jaw animation, SSH configuration, security, monitoring, testing, deployment, and the new WebSocket-based hardware service architecture.
 
 ## Project Overview
 
@@ -454,3 +454,83 @@ The current development workflow suffers from critical reliability issues:
 5. Real-time monitoring and alerting for SSH issues
 6. Comprehensive logging and troubleshooting capabilities
 7. Seamless integration with existing development workflow
+
+## WebSocket-Based Hardware Service Architecture
+
+### Project Overview
+Migrate all hardware control from direct GPIO/I2C calls to a unified WebSocket service architecture that provides consistent activation, feedback, and monitoring across all hardware components, following the successful ChatterPi jaw animation pattern.
+
+### Current Hardware Control Architecture
+The MonsterBox system currently uses direct Python script execution for hardware control:
+- **Motors**: `scripts/motor_control.py` - Direct lgpio control for Jeep wiper motors via MDD10A controller
+- **Linear Actuators**: `scripts/linear_actuator_control.py` - PWM control with safety limits and position tracking
+- **Lights/LEDs**: `scripts/light_control.py` - Simple GPIO on/off control with duration support
+- **Sensors**: `scripts/sensor_control.py` - Motion detection with real-time status streaming
+- **Servos**: `scripts/servo_control.py` - Servo positioning with lgpio PWM control
+- **WebCam**: `scripts/camera_stream.py` - MJPEG streaming with motion detection capabilities
+
+### Target WebSocket Service Architecture
+Transform the current direct-execution model into a service-oriented architecture:
+
+#### Service Components
+1. **Motor Service** (Port 8767): WebSocket wrapper for motor control with speed/direction/duration commands
+2. **Linear Actuator Service** (Port 8768): Position-based control with safety limits and feedback
+3. **Light Service** (Port 8769): LED/light control with effects, dimming, and scheduling
+4. **Sensor Service** (Port 8770): Real-time sensor monitoring with event-driven notifications
+5. **Servo Service** (Port 8771): Precise servo positioning with smooth movement curves
+6. **WebCam Service** (Port 8772): Camera streaming and motion detection with WebSocket status updates
+
+#### Character-Specific Service Management
+Services must only initialize for hardware components configured in each character's JSON configuration:
+- **Skulltalker**: ChatterPi Jaw service (8765/8766) + WebCam service (8772) + any other configured parts
+- **Orlok**: Linear Actuator service (8768) + Light service (8769) + Sensor service (8770) + Servo service (8771)
+- **Coffin**: Linear Actuator service (8768) + Light service (8769) + Sensor service (8770)
+- Dynamic service startup based on `data/characters.json` and `data/parts.json` configurations
+
+#### WebSocket Message Protocol
+Standardized message format across all hardware services:
+```json
+{
+  "type": "command|status|response|error",
+  "component": "motor|actuator|light|sensor|servo|camera",
+  "action": "move|set|get|start|stop|calibrate",
+  "parameters": {
+    "pin": 18,
+    "value": 90,
+    "duration": 1000,
+    "speed": 100
+  },
+  "timestamp": "2025-06-14T12:00:00.000Z",
+  "requestId": "uuid-string"
+}
+```
+
+### Critical Preservation Requirements
+- **DO NOT MODIFY** existing Python hardware control scripts - they are working and hardware-tested
+- **WRAP** existing functionality with WebSocket interfaces, don't rewrite core GPIO/I2C logic
+- Preserve all existing calibration values, timing parameters, and safety limits from `data/parts.json`
+- Maintain backward compatibility with current hardware control methods during transition
+- Ensure all existing servo configurations, PWM settings, and GPIO pin assignments remain unchanged
+
+### Implementation Strategy
+1. **Service Wrapper Pattern**: Create WebSocket servers that call existing Python scripts internally
+2. **Configuration-Driven Initialization**: Services start only for hardware defined in character configurations
+3. **Health Monitoring**: Each service provides status endpoints and heartbeat monitoring
+4. **Graceful Degradation**: Services can fall back to direct script execution if WebSocket fails
+5. **Unified Status Reporting**: Central dashboard showing all hardware service states
+
+### Testing Strategy
+- Use **Orlok** as primary test character (has all hardware types except ChatterPi Jaw)
+- Test each hardware component type individually before integration
+- Verify WebSocket communication, error handling, and graceful degradation
+- Test character-specific service initialization and shutdown
+- Validate that existing Python scripts continue to work unchanged
+
+### Success Criteria
+1. All hardware components accessible via WebSocket APIs
+2. Character-specific service initialization working correctly
+3. Existing Python hardware scripts preserved and functional
+4. Real-time status monitoring and error reporting
+5. Seamless integration with existing MonsterBox UI
+6. Zero hardware functionality regression
+7. Improved system reliability and monitoring capabilities
