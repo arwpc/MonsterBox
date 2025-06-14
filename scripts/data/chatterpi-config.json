@@ -1,0 +1,19 @@
+{
+  "version": "2.0.0",
+  "saved_at": "2025-06-13 09:31:24",
+  "calibration": {
+    "servo_pin": 18,
+    "closed_angle": 50.0,
+    "open_angle": 30.0
+  },
+  "audio": {
+    "smoothing_attack": 0.1,
+    "smoothing_release": 0.01,
+    "silence_threshold": 0.005,
+    "silence_timeout": 500
+  },
+  "servo": {
+    "step_threshold": 1.0
+  },
+  "update_rate_hz": 50.0
+}

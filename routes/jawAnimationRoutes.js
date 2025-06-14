@@ -436,6 +436,162 @@ router.post('/test-servo', async (req, res) => {
     }
 });
 
+/**
+ * ChatterPi-specific endpoints for jaw animation
+ */
+
+/**
+ * Animate jaw with provided animation data
+ */
+router.post('/animate', async (req, res) => {
+    try {
+        const { animation, servoPin, characterId } = req.body;
+
+        if (!jawAnimationSystem) {
+            return res.status(500).json({
+                success: false,
+                message: 'Jaw animation system not initialized'
+            });
+        }
+
+        // Use characterId 4 (Skulltalker) as default for ChatterPi
+        const targetCharacterId = characterId || 4;
+
+        logger.info(`ChatterPi jaw animation request for character ${targetCharacterId}`);
+
+        if (animation && Array.isArray(animation)) {
+            // Start animation for character 4 (Skulltalker) if not already running
+            if (!jawAnimationSystem.isRunning) {
+                // Get servo info for character 4 - use the actual jaw servo ID
+                try {
+                    await jawAnimationSystem.startAnimation(targetCharacterId, 19); // Use servo ID 19 (Jaw Servo)
+                } catch (error) {
+                    logger.warn('Could not start jaw animation system, using direct servo control');
+                }
+            }
+
+            // Process animation sequence
+            for (const frame of animation) {
+                if (frame.angle !== undefined && jawAnimationSystem.servoController) {
+                    // Send servo command through servo controller
+                    await jawAnimationSystem.servoController.moveToPosition(frame.angle, (frame.duration || 0.2) * 1000);
+
+                    // Wait for the delay
+                    if (frame.delay) {
+                        await new Promise(resolve => setTimeout(resolve, frame.delay * 1000));
+                    }
+                }
+            }
+        }
+
+        res.json({
+            success: true,
+            message: 'Jaw animation completed'
+        });
+
+    } catch (error) {
+        logger.error('Error in jaw animation:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to animate jaw',
+            error: error.message
+        });
+    }
+});
+
+/**
+ * Configure servo settings
+ */
+router.post('/configure', async (req, res) => {
+    try {
+        const { pin, servoPin, closedAngle, openAngle, characterId } = req.body;
+
+        if (!jawAnimationSystem) {
+            return res.status(500).json({
+                success: false,
+                message: 'Jaw animation system not initialized'
+            });
+        }
+
+        // Use characterId 4 (Skulltalker) as default for ChatterPi
+        const targetCharacterId = characterId || 4;
+        const targetPin = pin || servoPin || 18;
+
+        logger.info(`ChatterPi servo configuration for character ${targetCharacterId}, pin ${targetPin}`);
+
+        res.json({
+            success: true,
+            message: 'Servo configured successfully',
+            config: {
+                characterId: targetCharacterId,
+                pin: targetPin,
+                closedAngle: closedAngle || 30,
+                openAngle: openAngle || 70
+            }
+        });
+
+    } catch (error) {
+        logger.error('Error configuring servo:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to configure servo',
+            error: error.message
+        });
+    }
+});
+
+/**
+ * Move servo to specific angle
+ */
+router.post('/move', async (req, res) => {
+    try {
+        const { angle, duration, servoPin, characterId } = req.body;
+
+        if (!jawAnimationSystem) {
+            return res.status(500).json({
+                success: false,
+                message: 'Jaw animation system not initialized'
+            });
+        }
+
+        // Use characterId 4 (Skulltalker) as default for ChatterPi
+        const targetCharacterId = characterId || 4;
+
+        logger.info(`ChatterPi servo move for character ${targetCharacterId} to angle ${angle}`);
+
+        if (angle !== undefined) {
+            // Start animation if not running
+            if (!jawAnimationSystem.isRunning) {
+                try {
+                    await jawAnimationSystem.startAnimation(targetCharacterId, 19); // Use servo ID 19 (Jaw Servo)
+                } catch (error) {
+                    logger.warn('Could not start jaw animation system for move command');
+                }
+            }
+
+            // Move servo if controller is available
+            if (jawAnimationSystem.servoController) {
+                await jawAnimationSystem.servoController.moveToPosition(angle, (duration || 0.5) * 1000);
+            }
+        }
+
+        res.json({
+            success: true,
+            message: 'Servo moved successfully',
+            angle: angle,
+            duration: duration || 0.5
+        });
+
+    } catch (error) {
+        logger.error('Error moving servo:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to move servo',
+            error: error.message
+        });
+    }
+});
+
 module.exports = {
     router,
     setJawAnimationSystem

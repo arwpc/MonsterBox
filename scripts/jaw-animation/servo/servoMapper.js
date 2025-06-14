@@ -12,14 +12,18 @@ class ServoMapper {
             // Servo position range
             minPosition: options.minPosition || 0,      // Closed jaw position
             maxPosition: options.maxPosition || 180,    // Open jaw position
-            
+
             // Volume mapping
             volumeThreshold: options.volumeThreshold || 0.01,  // Minimum volume to trigger movement
             volumeMax: options.volumeMax || 1.0,               // Maximum expected volume
-            
+
             // Response curve settings
             responseCurve: options.responseCurve || 'linear',  // linear, exponential, logarithmic, custom
             sensitivity: options.sensitivity || 1.0,           // Sensitivity multiplier
+
+            // Jitter reduction
+            positionDeadband: options.positionDeadband || 0.5, // Minimum position change to trigger movement
+            idleTimeout: options.idleTimeout || 2000,          // Time before servo goes idle (ms)
             
             // Smoothing and timing
             smoothingFactor: options.smoothingFactor || 0.7,   // Position smoothing
@@ -33,9 +37,12 @@ class ServoMapper {
             ...options
         };
         
+        // State tracking
         this.currentPosition = this.options.minPosition;
         this.targetPosition = this.options.minPosition;
         this.lastUpdateTime = Date.now();
+        this.lastMovementTime = Date.now();
+        this.isIdle = false;
         
         // Response curve functions
         this.responseCurves = {
@@ -74,20 +81,38 @@ class ServoMapper {
         } else {
             // Normalize volume to 0-1 range
             const normalizedVolume = Math.min(volume / this.options.volumeMax, 1.0);
-            
+
             // Apply sensitivity
             const sensitiveVolume = Math.min(normalizedVolume * this.options.sensitivity, 1.0);
-            
+
             // Apply compression
             const compressedVolume = this.applyCompression(sensitiveVolume);
-            
+
             // Apply response curve
             const curveFunction = this.responseCurves[this.options.responseCurve] || this.responseCurves.linear;
             const curvedVolume = curveFunction(compressedVolume);
-            
+
             // Map to servo position range
-            this.targetPosition = this.options.minPosition + 
+            this.targetPosition = this.options.minPosition +
                 (curvedVolume * (this.options.maxPosition - this.options.minPosition));
+        }
+
+        // Apply deadband to reduce jitter
+        const positionDelta = Math.abs(this.targetPosition - this.currentPosition);
+        if (positionDelta < this.options.positionDeadband) {
+            // Skip micro-movements
+            return this.currentPosition;
+        }
+
+        // Check for idle state
+        const now = Date.now();
+        if (volume < this.options.volumeThreshold) {
+            if (now - this.lastMovementTime > this.options.idleTimeout) {
+                this.isIdle = true;
+            }
+        } else {
+            this.lastMovementTime = now;
+            this.isIdle = false;
         }
         
         // Apply smoothing with attack/release timing
@@ -211,8 +236,20 @@ class ServoMapper {
         return {
             currentPosition: this.currentPosition,
             targetPosition: this.targetPosition,
+            isIdle: this.isIdle,
+            shouldStop: this.shouldServoBeIdle(),
+            lastMovementTime: this.lastMovementTime,
+            timeSinceMovement: Date.now() - this.lastMovementTime,
             options: { ...this.options }
         };
+    }
+
+    /**
+     * Check if servo should be in idle state
+     * @returns {boolean} True if servo should stop PWM to reduce jitter
+     */
+    shouldServoBeIdle() {
+        return this.isIdle && Math.abs(this.currentPosition - this.options.minPosition) < 1.0;
     }
     
     /**

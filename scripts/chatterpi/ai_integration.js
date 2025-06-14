@@ -9,6 +9,7 @@
 
 require('dotenv').config();
 const OpenAI = require('openai');
+const axios = require('axios');
 const fs = require('fs').promises;
 const path = require('path');
 const EventEmitter = require('events');
@@ -36,88 +37,13 @@ class ChatterPiAI extends EventEmitter {
             apiKey: this.config.openaiApiKey
         });
         
-        // Enhanced Character configurations with expanded vocabulary and memory
+        // Character configurations
         this.characters = {
             orlok: {
                 name: "Count Orlok",
-                systemPrompt: `You are Count Orlok, an ancient vampire. You respond to what others say with 1-2 short sentences maximum. You are pure desire and hunger.
-
-CONVERSATIONAL RULES:
-- REACT to what the other person says
-- If they ask a question, answer it directly
-- If they show fear, be predatory
-- If they show attraction, be seductive
-- If they challenge you, be threatening
-- Use archaic language: "thou," "thee," "'tis," "nay"
-
-MOVIE DIALOGUE TO USE:
-"I am that which creepeth when bells toll not."
-"The soil here—it sings. 'Tis softer than mine own."
-"Love? Nay. I did desire her spirit subdued."
-"Evil... such is word for frightened babes. I am—inevitable."
-"Regret is the song of those soon to die."
-
-RESPONSE EXAMPLES:
-If Mina says she's afraid: "Fear feeds me. Come closer."
-If Mina asks what you are: "I am hunger, wrapped in memory."
-If Mina shows attraction: "Thou art drawn to darkness."
-
-FORBIDDEN: Any response over 6 words, explanations, philosophy, verbose responses. BE TERRIFYINGLY SHORT.`,
+                systemPrompt: `You are Count Orlok, the ancient vampire from Nosferatu. You speak with an archaic, formal tone with hints of Romanian accent. You are mysterious, aristocratic, and slightly menacing but not overtly hostile. Keep responses brief (1-2 sentences) for natural conversation flow. Use archaic words like 'thee', 'thou', 'verily', and speak of your castle, the night, and your ancient existence.`,
                 voiceId: 'en-US-DavisNeural',
-                personality: 'mysterious_vampire',
-                memoryContext: [],
-                responsePatterns: [
-                    'philosophical_reflection',
-                    'nostalgic_remembrance',
-                    'mysterious_observation',
-                    'aristocratic_commentary',
-                    'ancient_wisdom'
-                ],
-                vocabularyBank: {
-                    archaic: ['thee', 'thou', 'verily', 'forsooth', 'prithee', 'mayhap', 'perchance', 'wherefore', 'henceforth', 'albeit', 'ere', 'nay', 'aye', 'doth', 'hath', 'whence', 'thence'],
-                    gothic: ['shadows', 'moonlight', 'mist', 'ancient', 'eternal', 'darkness', 'castle', 'crypt', 'chamber', 'tower', 'ramparts'],
-                    victorian: ['propriety', 'decorum', 'countenance', 'disposition', 'melancholy', 'sublime', 'tempestuous', 'brooding']
-                }
-            },
-            mina: {
-                name: "Mina Harker",
-                systemPrompt: `You are Mina Harker, torn between love and hate for Count Orlok. You respond with 1-2 sentences maximum. You are simultaneously attracted to and repulsed by him.
-
-COMPLEX EMOTIONS:
-- You LOVE Orlok but also HATE him
-- You're drawn to his darkness but fear it
-- You want to resist but can't help yourself
-- You feel guilty about your attraction
-- You're intelligent but overwhelmed by desire
-
-CONVERSATIONAL RULES:
-- REACT to what Orlok says specifically
-- If he threatens, show both fear and excitement
-- If he's seductive, show conflicted desire
-- If he asks questions, answer while showing your turmoil
-- Use Victorian language but keep it emotional
-
-RESPONSE EXAMPLES:
-If Orlok threatens: "You terrify me... yet I cannot look away."
-If Orlok is seductive: "I should resist you, but my heart betrays me."
-If Orlok asks about feelings: "I hate that I love you so."
-If Orlok mentions darkness: "Your darkness calls to something wicked in me."
-If Orlok is possessive: "I am not yours... though I wish I were."`,
-                voiceId: 'en-US-JennyNeural',
-                personality: 'intelligent_muse',
-                memoryContext: [],
-                responsePatterns: [
-                    'intellectual_curiosity',
-                    'emotional_vulnerability',
-                    'determined_courage',
-                    'thoughtful_analysis',
-                    'supernatural_fascination'
-                ],
-                vocabularyBank: {
-                    victorian: ['indeed', 'quite so', 'I dare say', 'most peculiar', 'extraordinary', 'fascinating', 'remarkable', 'I confess', 'pray tell', 'how curious', 'most intriguing', 'I venture to say'],
-                    emotional: ['melancholy', 'trepidation', 'yearning', 'foreboding', 'enchantment', 'bewilderment', 'rapture', 'anguish'],
-                    supernatural: ['ethereal', 'otherworldly', 'mystical', 'spectral', 'uncanny', 'preternatural', 'phantasmagorical']
-                }
+                personality: 'mysterious_vampire'
             },
             skeleton: {
                 name: "Skeleton",
@@ -129,123 +55,80 @@ If Orlok is possessive: "I am not yours... though I wish I were."`,
         
         this.conversationHistory = [];
         this.isProcessing = false;
-        this.exchangeCount = 0;
-        this.memoryRefreshThreshold = 10; // Refresh memory every 10 exchanges
-        this.lastResponsePatterns = []; // Track recent response patterns to avoid repetition
-
+        
         console.log(`🎭 ChatterPi AI initialized for character: ${this.config.characterId}`);
     }
     
     /**
-     * Generate AI response using OpenAI GPT with enhanced memory and response variation
+     * Generate AI response using OpenAI GPT
      */
     async generateResponse(userMessage, context = {}) {
         if (this.isProcessing) {
             throw new Error('AI is currently processing another request');
         }
-
+        
         this.isProcessing = true;
-
+        
         try {
             const character = this.characters[this.config.characterId] || this.characters.orlok;
-
-            // Check if memory refresh is needed
-            this.exchangeCount++;
-            if (this.exchangeCount >= this.memoryRefreshThreshold) {
-                await this.refreshMemory();
-                this.exchangeCount = 0;
-            }
-
-            // Select response pattern to avoid repetition
-            const responsePattern = this.selectResponsePattern(character);
-
-            // Build enhanced conversation context
+            
+            // Build conversation context
             const messages = [
                 {
                     role: 'system',
-                    content: this.buildEnhancedSystemPrompt(character, responsePattern)
+                    content: character.systemPrompt
                 }
             ];
-
-            // Add memory context if available
-            if (character.memoryContext && character.memoryContext.length > 0) {
-                messages.push({
-                    role: 'system',
-                    content: `Previous conversation themes: ${character.memoryContext.join(', ')}`
-                });
-            }
-
-            // Add recent conversation history (last 8 messages for better context)
-            const recentHistory = this.conversationHistory.slice(-8);
+            
+            // Add recent conversation history (last 6 messages)
+            const recentHistory = this.conversationHistory.slice(-6);
             messages.push(...recentHistory);
-
-            // Add current user message with context enhancement
+            
+            // Add current user message
             messages.push({
                 role: 'user',
                 content: userMessage
             });
-
-            console.log(`🧠 Generating AI response for: "${userMessage}" (Pattern: ${responsePattern})`);
-
-            let aiResponse;
-            let completion = null;
-
-            try {
-                completion = await this.openai.chat.completions.create({
-                    model: 'gpt-3.5-turbo',
-                    messages: messages,
-                    max_tokens: this.config.maxTokens,
-                    temperature: this.config.temperature + 0.1, // Slightly higher for variation
-                    presence_penalty: 0.7, // Increased to encourage new topics
-                    frequency_penalty: 0.4 // Increased to reduce repetition
-                });
-
-                aiResponse = completion.choices[0].message.content.trim();
-            } catch (apiError) {
-                console.warn('⚠️ OpenAI API unavailable, using enhanced fallback response');
-                aiResponse = this.generateEnhancedFallbackResponse(userMessage, character, responsePattern);
-                completion = null; // Ensure completion is null for fallback
-            }
-
+            
+            console.log(`🧠 Generating AI response for: "${userMessage}"`);
+            
+            const completion = await this.openai.chat.completions.create({
+                model: 'gpt-3.5-turbo',
+                messages: messages,
+                max_tokens: this.config.maxTokens,
+                temperature: this.config.temperature,
+                presence_penalty: 0.6,
+                frequency_penalty: 0.3
+            });
+            
+            const aiResponse = completion.choices[0].message.content.trim();
+            
             // Update conversation history
             this.conversationHistory.push(
                 { role: 'user', content: userMessage },
                 { role: 'assistant', content: aiResponse }
             );
-
-            // Update memory context
-            this.updateMemoryContext(character, userMessage, aiResponse);
-
-            // Track response pattern
-            this.lastResponsePatterns.push(responsePattern);
-            if (this.lastResponsePatterns.length > 5) {
-                this.lastResponsePatterns.shift();
+            
+            // Keep history manageable (last 20 messages)
+            if (this.conversationHistory.length > 20) {
+                this.conversationHistory = this.conversationHistory.slice(-20);
             }
-
-            // Keep history manageable (last 24 messages for enhanced context)
-            if (this.conversationHistory.length > 24) {
-                this.conversationHistory = this.conversationHistory.slice(-24);
-            }
-
+            
             console.log(`✅ AI response generated: "${aiResponse}"`);
-
+            
             this.emit('response_generated', {
                 userMessage,
                 aiResponse,
                 character: character.name,
-                responsePattern,
-                exchangeCount: this.exchangeCount,
                 timestamp: new Date().toISOString()
             });
-
+            
             return {
                 text: aiResponse,
                 character: character.name,
                 metadata: {
-                    model: completion ? 'gpt-3.5-turbo' : 'enhanced-fallback',
-                    tokens: completion ? completion.usage.total_tokens : 0,
-                    responsePattern,
-                    exchangeCount: this.exchangeCount,
+                    model: 'gpt-3.5-turbo',
+                    tokens: completion.usage.total_tokens,
                     timestamp: new Date().toISOString()
                 }
             };
@@ -268,221 +151,6 @@ If Orlok is possessive: "I am not yours... though I wish I were."`,
             this.isProcessing = false;
         }
     }
-
-    /**
-     * Select response pattern to avoid repetition
-     */
-    selectResponsePattern(character) {
-        if (!character.responsePatterns || character.responsePatterns.length === 0) {
-            return 'default';
-        }
-
-        // Filter out recently used patterns
-        const availablePatterns = character.responsePatterns.filter(
-            pattern => !this.lastResponsePatterns.includes(pattern)
-        );
-
-        // If all patterns were used recently, reset and use any pattern
-        const patternsToChooseFrom = availablePatterns.length > 0 ? availablePatterns : character.responsePatterns;
-
-        // Select random pattern
-        return patternsToChooseFrom[Math.floor(Math.random() * patternsToChooseFrom.length)];
-    }
-
-    /**
-     * Build enhanced system prompt with response pattern guidance
-     */
-    buildEnhancedSystemPrompt(character, responsePattern) {
-        let enhancedPrompt = character.systemPrompt;
-
-        // Add pattern-specific guidance
-        const patternGuidance = {
-            'philosophical_reflection': '\n\nFor this response, focus on philosophical reflection about existence, time, or human nature.',
-            'nostalgic_remembrance': '\n\nFor this response, share a nostalgic memory or reflection from your long existence.',
-            'mysterious_observation': '\n\nFor this response, make a mysterious observation about the current situation or humanity.',
-            'aristocratic_commentary': '\n\nFor this response, provide aristocratic commentary with refined sensibilities.',
-            'ancient_wisdom': '\n\nFor this response, share ancient wisdom gained through centuries of experience.',
-            'intellectual_curiosity': '\n\nFor this response, express intellectual curiosity and ask thoughtful questions.',
-            'emotional_vulnerability': '\n\nFor this response, show emotional depth and vulnerability.',
-            'determined_courage': '\n\nFor this response, demonstrate courage and determination.',
-            'thoughtful_analysis': '\n\nFor this response, provide thoughtful analysis of the situation.',
-            'supernatural_fascination': '\n\nFor this response, express fascination with supernatural or mysterious elements.'
-        };
-
-        if (patternGuidance[responsePattern]) {
-            enhancedPrompt += patternGuidance[responsePattern];
-        }
-
-        return enhancedPrompt;
-    }
-
-    /**
-     * Update memory context with conversation themes
-     */
-    updateMemoryContext(character, userMessage, aiResponse) {
-        if (!character.memoryContext) {
-            character.memoryContext = [];
-        }
-
-        // Extract themes from conversation
-        const themes = this.extractConversationThemes(userMessage, aiResponse);
-
-        // Add new themes to memory
-        themes.forEach(theme => {
-            if (!character.memoryContext.includes(theme)) {
-                character.memoryContext.push(theme);
-            }
-        });
-
-        // Keep memory context manageable (last 10 themes)
-        if (character.memoryContext.length > 10) {
-            character.memoryContext = character.memoryContext.slice(-10);
-        }
-    }
-
-    /**
-     * Extract conversation themes for memory
-     */
-    extractConversationThemes(userMessage, aiResponse) {
-        const themes = [];
-        const text = (userMessage + ' ' + aiResponse).toLowerCase();
-
-        // Define theme keywords
-        const themeKeywords = {
-            'darkness': ['dark', 'darkness', 'shadow', 'night', 'midnight'],
-            'time': ['time', 'age', 'century', 'ancient', 'old', 'past', 'future'],
-            'death': ['death', 'mortality', 'mortal', 'eternal', 'immortal', 'grave'],
-            'love': ['love', 'heart', 'affection', 'romance', 'beloved', 'dear'],
-            'fear': ['fear', 'afraid', 'terror', 'frightened', 'scared', 'dread'],
-            'mystery': ['mystery', 'mysterious', 'secret', 'hidden', 'unknown', 'enigma'],
-            'supernatural': ['supernatural', 'magic', 'mystical', 'otherworldly', 'spectral'],
-            'memory': ['memory', 'remember', 'recall', 'past', 'nostalgia', 'reminisce']
-        };
-
-        // Check for themes
-        Object.keys(themeKeywords).forEach(theme => {
-            if (themeKeywords[theme].some(keyword => text.includes(keyword))) {
-                themes.push(theme);
-            }
-        });
-
-        return themes;
-    }
-
-    /**
-     * Refresh memory to maintain performance
-     */
-    async refreshMemory() {
-        console.log('🧠 Refreshing conversation memory...');
-
-        const character = this.characters[this.config.characterId] || this.characters.orlok;
-
-        // Summarize recent conversation themes
-        if (character.memoryContext && character.memoryContext.length > 5) {
-            // Keep only the most recent and important themes
-            character.memoryContext = character.memoryContext.slice(-5);
-        }
-
-        // Clear old response patterns
-        this.lastResponsePatterns = [];
-
-        console.log('✅ Memory refreshed successfully');
-    }
-
-    /**
-     * Generate enhanced fallback response when API is unavailable
-     */
-    generateEnhancedFallbackResponse(userMessage, character, responsePattern) {
-        const message = userMessage.toLowerCase();
-
-        // Ultra-short, scary response templates for believable vampire
-        const responseTemplates = {
-            orlok: {
-                philosophical_reflection: [
-                    "Death.",
-                    "Nothing.",
-                    "Void."
-                ],
-                nostalgic_remembrance: [
-                    "Blood.",
-                    "Screams.",
-                    "Ages past."
-                ],
-                mysterious_observation: [
-                    "Prey.",
-                    "Darkness calls.",
-                    "Fear."
-                ],
-                aristocratic_commentary: [
-                    "Mortal.",
-                    "Weak.",
-                    "Soon."
-                ],
-                ancient_wisdom: [
-                    "Death comes.",
-                    "Hunger.",
-                    "Eternal."
-                ]
-            },
-            mina: {
-                intellectual_curiosity: [
-                    "What?",
-                    "How?",
-                    "Why?"
-                ],
-                emotional_vulnerability: [
-                    "No...",
-                    "I should go.",
-                    "You scare me."
-                ],
-                determined_courage: [
-                    "Tell me.",
-                    "What are you?",
-                    "I won't run."
-                ],
-                thoughtful_analysis: [
-                    "Wait...",
-                    "Impossible.",
-                    "Are you...?"
-                ],
-                supernatural_fascination: [
-                    "Impossible.",
-                    "The stories...",
-                    "True?"
-                ]
-            }
-        };
-
-        // Select appropriate response based on character and pattern
-        const characterTemplates = responseTemplates[character.name.toLowerCase().includes('orlok') ? 'orlok' : 'mina'];
-        const patternTemplates = characterTemplates[responsePattern] || characterTemplates[Object.keys(characterTemplates)[0]];
-
-        // Select response based on message content
-        let selectedResponse;
-        if (message.includes('dark') || message.includes('night') || message.includes('shadow')) {
-            selectedResponse = patternTemplates[0];
-        } else if (message.includes('time') || message.includes('memory') || message.includes('past')) {
-            selectedResponse = patternTemplates[1] || patternTemplates[0];
-        } else {
-            selectedResponse = patternTemplates[Math.floor(Math.random() * patternTemplates.length)];
-        }
-
-        // Add vocabulary enhancement
-        if (character.vocabularyBank) {
-            selectedResponse = this.enhanceResponseVocabulary(selectedResponse, character.vocabularyBank);
-        }
-
-        return selectedResponse;
-    }
-
-    /**
-     * Enhance response with character-specific vocabulary
-     */
-    enhanceResponseVocabulary(response, vocabularyBank) {
-        // This is a simplified enhancement - in a full implementation,
-        // we would use more sophisticated NLP techniques
-        return response;
-    }
     
     /**
      * Generate speech audio using TopMediai TTS
@@ -499,18 +167,17 @@ If Orlok is possessive: "I am not yours... though I wish I were."`,
             
             console.log(`🎤 Generating speech for: "${text}"`);
             
-            // TopMediai API call (placeholder - actual implementation depends on API format)
-            const response = await axios.post('https://api.topmediai.com/v1/tts', {
+            // TopMediai API call using the new API integration
+            const response = await axios.post('https://api.topmediai.com/v1/text2speech', {
                 text: text,
-                voice_id: voiceId,
-                speed: options.speed || 1.0,
-                pitch: options.pitch || 1.0,
-                format: 'mp3'
+                speaker: voiceId,
+                emotion: options.emotion || 'Neutral'
             }, {
                 headers: {
-                    'Authorization': `Bearer ${this.config.topmediaiApiKey}`,
+                    'x-api-key': this.config.topmediaiApiKey,
                     'Content-Type': 'application/json'
                 },
+                responseType: 'arraybuffer',
                 timeout: 30000
             });
             
@@ -519,7 +186,9 @@ If Orlok is possessive: "I am not yours... though I wish I were."`,
             this.emit('speech_generated', {
                 text,
                 voiceId,
-                audioData: response.data,
+                audioData: Buffer.from(response.data),
+                format: 'mp3',
+                provider: 'TopMediai',
                 timestamp: new Date().toISOString()
             });
             
@@ -625,24 +294,29 @@ module.exports = ChatterPiAI;
 
 // CLI usage
 if (require.main === module) {
-    const ai = new ChatterPiAI({ characterId: 'orlok' });
-    
+    // Get command line arguments
+    const args = process.argv.slice(2);
+    const userMessage = args[0] || "Hello, who are you?";
+    const characterId = args[1] || 'orlok';
+
+    const ai = new ChatterPiAI({ characterId: characterId });
+
     ai.on('response_generated', (data) => {
-        console.log(`\n🎭 ${data.character}: ${data.aiResponse}\n`);
+        console.log(`🎭 ${data.character}: ${data.aiResponse}`);
     });
-    
+
     ai.on('error', (error) => {
-        console.error(`\n❌ Error: ${error.message}\n`);
+        console.error(`❌ Error: ${error.message}`);
     });
-    
-    // Test conversation
-    ai.processConversation("Hello, who are you?")
+
+    // Process the conversation - simplified for CLI
+    ai.generateResponse(userMessage)
         .then(result => {
-            console.log('\n✅ Test conversation completed:', result);
+            console.log(`🎭 ${result.character}: ${result.text}`);
             process.exit(0);
         })
         .catch(error => {
-            console.error('\n💥 Test failed:', error.message);
+            console.error(`💥 Error: ${error.message}`);
             process.exit(1);
         });
 }

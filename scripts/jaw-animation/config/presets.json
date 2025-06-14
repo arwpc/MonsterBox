@@ -2,8 +2,8 @@
   "skeleton": {
     "characterType": "skeleton",
     "servoMapping": {
-      "minPosition": 10,
-      "maxPosition": 45,
+      "minPosition": 45,
+      "maxPosition": 10,
       "responseCurve": "exponential",
       "sensitivity": 1.2,
       "attackTime": 0.03,
@@ -17,8 +17,8 @@
   "bear": {
     "characterType": "bear",
     "servoMapping": {
-      "minPosition": 0,
-      "maxPosition": 60,
+      "minPosition": 60,
+      "maxPosition": 0,
       "responseCurve": "linear",
       "sensitivity": 0.8,
       "attackTime": 0.05,
@@ -32,8 +32,8 @@
   "fish": {
     "characterType": "fish",
     "servoMapping": {
-      "minPosition": 5,
-      "maxPosition": 35,
+      "minPosition": 35,
+      "maxPosition": 5,
       "responseCurve": "logarithmic",
       "sensitivity": 1.5,
       "attackTime": 0.02,
@@ -47,8 +47,8 @@
   "demon": {
     "characterType": "demon",
     "servoMapping": {
-      "minPosition": 0,
-      "maxPosition": 70,
+      "minPosition": 70,
+      "maxPosition": 0,
       "responseCurve": "custom",
       "sensitivity": 1,
       "attackTime": 0.04,

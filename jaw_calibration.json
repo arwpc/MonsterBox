@@ -1,0 +1,26 @@
+{
+  "pin": 18,
+  "servo_type": "MG90S",
+  "min_pulse": 500,
+  "max_pulse": 2400,
+  "jaw_closed_angle": 90,
+  "jaw_open_angle": 0,
+  "safe_range": [
+    0,
+    10,
+    20,
+    30,
+    45,
+    60,
+    90
+  ],
+  "optimal_settings": {
+    "jaw_closed": 90,
+    "jaw_open": 10,
+    "animation_range": 80,
+    "recommended_frequency": 50,
+    "smooth_transitions": true,
+    "volume_sensitivity": 1.0,
+    "response_curve": "linear"
+  }
+}

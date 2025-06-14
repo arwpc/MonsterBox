@@ -1,21 +1,22 @@
 const fs = require('fs').promises;
 const path = require('path');
 const logger = require('../scripts/logger');
-const ReplicaAPI = require('../scripts/replicaAPI');
+const TopMediaiAPI = require('../scripts/topMediaiAPI');
 
 class VoiceService {
     constructor() {
         this.voicesPath = path.join(__dirname, '../data/voices.json');
-        this.replicaAPI = new ReplicaAPI();
+        this.topMediaiAPI = new TopMediaiAPI();
         this.defaultSettings = {
             pitch: 0,
             speed: 1,
             volume: 0,
-            // Use the standardized audio settings from ReplicaAPI
-            sampleRate: this.replicaAPI.audioSettings.sampleRate,
-            bitRate: this.replicaAPI.audioSettings.bitRate,
-            outputFormat: this.replicaAPI.audioSettings.format,
-            channels: this.replicaAPI.audioSettings.channels,
+            emotion: 'Neutral',
+            // Use the standardized audio settings from TopMediaiAPI
+            sampleRate: this.topMediaiAPI.audioSettings.sampleRate,
+            bitRate: this.topMediaiAPI.audioSettings.bitRate,
+            outputFormat: this.topMediaiAPI.audioSettings.targetFormat,
+            channels: this.topMediaiAPI.audioSettings.channels,
             languageCode: 'en'
         };
     }
@@ -123,7 +124,7 @@ class VoiceService {
 
     async getAvailableVoices() {
         try {
-            const voices = await this.replicaAPI.getVoices();
+            const voices = await this.topMediaiAPI.getVoices();
             return voices;
         } catch (error) {
             logger.error(`Error fetching available voices: ${error.message}`);
@@ -131,24 +132,25 @@ class VoiceService {
         }
     }
 
-    async determineModelChain(speaker_id) {
+    async getVoiceCapabilities(speaker_id) {
         const voices = await this.getAvailableVoices();
         const voice = voices.find(v => v.speaker_id === speaker_id);
-        
+
         if (!voice) {
             throw new Error('Voice not found');
         }
 
-        const capabilities = voice.capabilities || {};
-        
-        // Check for vox_2_0 first, fall back to vox_1_0 if available
-        if (capabilities['tts.vox_2_0']) {
-            return 'vox_2_0';
-        } else if (capabilities['tts.vox_1_0']) {
-            return 'vox_1_0';
-        } else {
-            throw new Error('Voice does not support any available model chains');
-        }
+        return {
+            emotions: voice.emotions || ['Neutral'],
+            supportsEmotionControl: voice.capabilities?.emotion_control || false,
+            supportsSpeedControl: voice.capabilities?.speed_control || false,
+            supportsPitchControl: voice.capabilities?.pitch_control || false,
+            language: voice.language,
+            gender: voice.gender,
+            age: voice.age,
+            isVip: voice.isVip,
+            isFree: voice.isFree
+        };
     }
 
     async generateSpeech(text, speaker_id, options = {}, characterId = null) {
@@ -161,17 +163,18 @@ class VoiceService {
                 throw new Error('Speaker ID is required');
             }
 
-            // Determine the appropriate model chain for this voice
-            const modelChain = await this.determineModelChain(speaker_id);
+            // Get voice capabilities for enhanced options
+            const capabilities = await this.getVoiceCapabilities(speaker_id);
 
-            // Use the standardized audio settings from ReplicaAPI
-            const result = await this.replicaAPI.textToSpeech({
+            // Use the standardized audio settings from TopMediaiAPI
+            const result = await this.topMediaiAPI.textToSpeech({
                 voiceId: speaker_id,
                 text: text.trim(),
                 options: {
                     ...this.defaultSettings,
                     ...options,
-                    modelChain
+                    // Use available emotions if supported
+                    emotion: options.emotion || 'Neutral'
                 }
             });
 
@@ -183,10 +186,11 @@ class VoiceService {
                         timestamp: new Date().toISOString(),
                         type: 'generation',
                         textLength: text.length,
-                        settings: { 
-                            ...options, 
-                            modelChain,
-                            audioSettings: this.replicaAPI.audioSettings
+                        settings: {
+                            ...options,
+                            emotion: options.emotion || 'Neutral',
+                            audioSettings: this.topMediaiAPI.audioSettings,
+                            provider: 'TopMediai'
                         },
                         duration: result.duration
                     });

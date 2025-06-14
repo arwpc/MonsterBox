@@ -8,9 +8,10 @@ import asyncio
 import websockets
 import json
 import logging
+import threading
 import time
 from typing import Dict, Any, Optional, Set
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from jaw_control_system import JawControlSystem
 
 # Configure logging
@@ -24,6 +25,7 @@ class ClientInfo:
     websocket: websockets.WebSocketServerProtocol
     ip: str
     connected_at: float
+    character_id: Optional[str] = None
     subscriptions: Optional[Set[str]] = None
     
     def __post_init__(self):
@@ -139,6 +141,18 @@ class JawWebSocketServer:
         except Exception as e:
             logger.error(f"Error sending message to {client_id}: {e}")
     
+    async def broadcast_to_subscribers(self, event_type: str, message: Dict[str, Any]):
+        """Broadcast message to all clients subscribed to event type"""
+        broadcast_message = {
+            "type": event_type,
+            **message,
+            "timestamp": time.time()
+        }
+        
+        for client_id, client_info in self.clients.items():
+            if event_type in client_info.subscriptions:
+                await self.send_to_client(client_id, broadcast_message)
+    
     async def handle_message(self, client_id: str, message_data: str):
         """Handle incoming WebSocket message"""
         try:
@@ -158,6 +172,8 @@ class JawWebSocketServer:
                 await self.handle_get_status(client_id, message)
             elif message_type == "subscribe":
                 await self.handle_subscribe(client_id, message)
+            elif message_type == "unsubscribe":
+                await self.handle_unsubscribe(client_id, message)
             elif message_type == "ping":
                 await self.handle_ping(client_id, message)
             else:
@@ -201,6 +217,15 @@ class JawWebSocketServer:
                     "curve_type": curve_type,
                     "timestamp": time.time()
                 })
+                
+                # Broadcast to subscribers
+                await self.broadcast_to_subscribers("jaw_movement", {
+                    "angle": angle,
+                    "duration": duration,
+                    "curve_type": curve_type,
+                    "client_id": client_id
+                })
+                
             else:
                 await self.send_error(client_id, "Failed to start jaw movement")
                 
@@ -212,10 +237,16 @@ class JawWebSocketServer:
         """Handle jaw stop command"""
         try:
             self.jaw_control.stop_movement()
+            
             await self.send_to_client(client_id, {
                 "type": "jaw_stopped",
                 "timestamp": time.time()
             })
+            
+            await self.broadcast_to_subscribers("jaw_stopped", {
+                "client_id": client_id
+            })
+            
         except Exception as e:
             logger.error(f"Error in jaw_stop: {e}")
             await self.send_error(client_id, f"Jaw stop error: {str(e)}")
@@ -224,15 +255,19 @@ class JawWebSocketServer:
         """Handle position request"""
         try:
             position = self.jaw_control.get_position()
+            
+            position_data = {
+                "angle": position.angle if position else None,
+                "timestamp": position.timestamp if position else None,
+                "pulse_width": position.pulse_width if position else None
+            }
+            
             await self.send_to_client(client_id, {
                 "type": "position_response",
-                "position": {
-                    "angle": position.angle,
-                    "timestamp": position.timestamp,
-                    "pulse_width": position.pulse_width
-                },
+                "position": position_data,
                 "timestamp": time.time()
             })
+            
         except Exception as e:
             logger.error(f"Error getting position: {e}")
             await self.send_error(client_id, f"Position error: {str(e)}")
@@ -254,6 +289,7 @@ class JawWebSocketServer:
                 "server_status": server_status,
                 "timestamp": time.time()
             })
+            
         except Exception as e:
             logger.error(f"Error getting status: {e}")
             await self.send_error(client_id, f"Status error: {str(e)}")
@@ -272,6 +308,24 @@ class JawWebSocketServer:
             
             await self.send_to_client(client_id, {
                 "type": "subscribed",
+                "events": events,
+                "timestamp": time.time()
+            })
+    
+    async def handle_unsubscribe(self, client_id: str, message: Dict[str, Any]):
+        """Handle event unsubscription"""
+        events = message.get("events", [])
+        if not isinstance(events, list):
+            await self.send_error(client_id, "Events must be a list")
+            return
+        
+        client_info = self.clients.get(client_id)
+        if client_info:
+            for event in events:
+                client_info.subscriptions.discard(event)
+            
+            await self.send_to_client(client_id, {
+                "type": "unsubscribed",
                 "events": events,
                 "timestamp": time.time()
             })
@@ -335,6 +389,15 @@ class JawWebSocketServer:
             return False
         finally:
             self.cleanup()
+    
+    async def stop_server(self):
+        """Stop the WebSocket server"""
+        if self.server:
+            self.server.close()
+            await self.server.wait_closed()
+        
+        self.is_running = False
+        logger.info("🛑 Jaw WebSocket Server stopped")
 
 def main():
     """Main function to run the server"""
@@ -361,5 +424,51 @@ def main():
     except Exception as e:
         logger.error(f"Server error: {e}")
 
+async def test_client():
+    """Test client for WebSocket API"""
+    import sys
+
+    if len(sys.argv) > 1 and sys.argv[1] == "test-client":
+        uri = "ws://localhost:8765"
+
+        try:
+            async with websockets.connect(uri) as websocket:
+                logger.info(f"Connected to {uri}")
+
+                # Wait for welcome message
+                welcome = await websocket.recv()
+                logger.info(f"Welcome: {welcome}")
+
+                # Test commands
+                test_commands = [
+                    {"type": "subscribe", "events": ["jaw_movement", "jaw_stopped"]},
+                    {"type": "get_status"},
+                    {"type": "jaw_move", "angle": 22.5, "duration": 1.0},
+                    {"type": "get_position"},
+                    {"type": "jaw_move", "angle": 45, "duration": 1.0, "curve_type": "ease_in_out"},
+                    {"type": "jaw_move", "angle": 0, "duration": 1.0},
+                    {"type": "ping"}
+                ]
+
+                for cmd in test_commands:
+                    logger.info(f"Sending: {cmd}")
+                    await websocket.send(json.dumps(cmd))
+
+                    # Wait for response
+                    response = await websocket.recv()
+                    logger.info(f"Response: {response}")
+
+                    await asyncio.sleep(1)
+
+                logger.info("Test completed successfully!")
+
+        except Exception as e:
+            logger.error(f"Test client error: {e}")
+
 if __name__ == "__main__":
-    main()
+    import sys
+
+    if len(sys.argv) > 1 and sys.argv[1] == "test-client":
+        asyncio.run(test_client())
+    else:
+        main()

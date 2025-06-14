@@ -2,16 +2,18 @@
   "voices": [
     {
       "characterId": 1,
-      "speaker_id": "b80ebe00-4738-4766-85b7-35c3096acb79",
+      "speaker_id": "5ab88eb4-d183-11ef-be1d-e86f38d7ec1a",
       "settings": {
         "pitch": -10,
         "speed": 1,
         "volume": 0,
+        "emotion": "Serious",
         "sampleRate": 44100,
         "bitRate": 128,
-        "outputFormat": "wav",
+        "outputFormat": "mp3",
         "channels": 1,
-        "languageCode": "en"
+        "languageCode": "en",
+        "provider": "TopMediai"
       },
       "metadata": {
         "lastUsed": null,
@@ -20,7 +22,13 @@
         "tags": [],
         "notes": "",
         "created": "2024-10-28T16:24:54.907Z",
-        "lastModified": "2025-05-13T00:12:30.200Z"
+        "lastModified": "2025-06-14T21:22:54.235Z",
+        "migratedFrom": "Replica",
+        "migrationDate": "2025-06-14T20:10:52.729Z",
+        "originalSpeakerId": "b80ebe00-4738-4766-85b7-35c3096acb79",
+        "voiceName": "Brian",
+        "voiceGender": "male",
+        "voiceLanguage": "English(US)"
       },
       "history": [
         {
@@ -493,20 +501,130 @@
             "channels": 1,
             "languageCode": "en"
           }
+        },
+        {
+          "timestamp": "2025-06-14T20:10:52.729Z",
+          "type": "migration",
+          "settings": {
+            "fromProvider": "Replica",
+            "toProvider": "TopMediai",
+            "fromSpeakerId": "b80ebe00-4738-4766-85b7-35c3096acb79",
+            "toSpeakerId": "5ab88eb4-d183-11ef-be1d-e86f38d7ec1a",
+            "voiceName": "Brian"
+          }
+        },
+        {
+          "timestamp": "2025-06-14T20:16:37.571Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": -10,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Serious",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "mp3",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-06-14T20:17:43.182Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": -10,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Serious",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "mp3",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-06-14T20:18:10.590Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": -10,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Serious",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "mp3",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-06-14T20:30:49.630Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": -10,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Serious",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "mp3",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-06-14T21:22:43.481Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": -10,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Serious",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "mp3",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-06-14T21:22:54.235Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": -10,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Serious",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "mp3",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
         }
       ]
     },
     {
       "characterId": 2,
-      "speaker_id": "5575403f-e535-4a84-96a1-8d717d7eab86",
+      "speaker_id": "72dd057e-c1ce-11ef-a432-00163e0649ac",
       "settings": {
         "pitch": 0,
         "speed": 1,
         "volume": 0,
+        "emotion": "Excited",
         "sampleRate": 44100,
         "bitRate": 128,
+        "outputFormat": "mp3",
         "channels": 1,
-        "languageCode": "en"
+        "languageCode": "en",
+        "provider": "TopMediai"
       },
       "metadata": {
         "lastUsed": null,
@@ -515,7 +633,13 @@
         "tags": [],
         "notes": "",
         "created": "2024-10-31T23:03:22.275Z",
-        "lastModified": "2025-05-02T21:11:22.986Z"
+        "lastModified": "2025-06-14T20:10:52.735Z",
+        "migratedFrom": "Replica",
+        "migrationDate": "2025-06-14T20:10:52.735Z",
+        "originalSpeakerId": "5575403f-e535-4a84-96a1-8d717d7eab86",
+        "voiceName": "Mia(Female)",
+        "voiceGender": "female",
+        "voiceLanguage": "English(US),Chinese(Mandarin),Spanish(Mexico),Japanese(Japan),Portuguese(Portugal),French(France),Russian(Russia),Korean(Korea),Malay,Danish(Denmark),Finnish(Finland),Turkish(Turkey),Slovak(Slovakia),Hindi(India),Swedish(Sweden),Italian(Italy),Polish(Poland),Czech(Czech),Dutch(Belgium),German(Germany),Filipino(Philippines),Indonesian(Indonesia),Croatian(Croatia),Arabic(Egyptian),Romanian(Romania),Bulgarian(Bulgaria),Greek(Greece),Tamil(India),Ukrainian(Ukraine),Vietnamese(Vietnam),Norwegian(Norway),Hungarian(Hungary),Portuguese(Brazil),Arabic(Saudi Arabia),Spanish(Spain),English(UK)"
       },
       "history": [
         {
@@ -1037,20 +1161,34 @@
             "channels": 1,
             "languageCode": "en"
           }
+        },
+        {
+          "timestamp": "2025-06-14T20:10:52.735Z",
+          "type": "migration",
+          "settings": {
+            "fromProvider": "Replica",
+            "toProvider": "TopMediai",
+            "fromSpeakerId": "5575403f-e535-4a84-96a1-8d717d7eab86",
+            "toSpeakerId": "72dd057e-c1ce-11ef-a432-00163e0649ac",
+            "voiceName": "Mia(Female)"
+          }
         }
       ]
     },
     {
       "characterId": 4,
-      "speaker_id": "55a0aad5-a739-402f-9cec-36b01ff81a41",
+      "speaker_id": "d23c47eb-5d1b-11ee-a861-00163e2ac61b",
       "settings": {
         "pitch": 0,
         "speed": 1,
         "volume": 0,
+        "emotion": "Neutral",
         "sampleRate": 44100,
         "bitRate": 128,
+        "outputFormat": "mp3",
         "channels": 1,
-        "languageCode": "en"
+        "languageCode": "en",
+        "provider": "TopMediai"
       },
       "metadata": {
         "lastUsed": null,
@@ -1059,7 +1197,13 @@
         "tags": [],
         "notes": "",
         "created": "2025-05-13T00:35:07.630Z",
-        "lastModified": "2025-05-13T00:51:14.338Z"
+        "lastModified": "2025-06-14T20:10:52.736Z",
+        "migratedFrom": "Replica",
+        "migrationDate": "2025-06-14T20:10:52.736Z",
+        "originalSpeakerId": "55a0aad5-a739-402f-9cec-36b01ff81a41",
+        "voiceName": "Jenson Moore",
+        "voiceGender": "male",
+        "voiceLanguage": "English(US)"
       },
       "history": [
         {
@@ -1138,6 +1282,17 @@
             "bitRate": 128,
             "channels": 1,
             "languageCode": "en"
+          }
+        },
+        {
+          "timestamp": "2025-06-14T20:10:52.736Z",
+          "type": "migration",
+          "settings": {
+            "fromProvider": "Replica",
+            "toProvider": "TopMediai",
+            "fromSpeakerId": "55a0aad5-a739-402f-9cec-36b01ff81a41",
+            "toSpeakerId": "d23c47eb-5d1b-11ee-a861-00163e2ac61b",
+            "voiceName": "Jenson Moore"
           }
         }
       ]

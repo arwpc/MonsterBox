@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Test - MonsterBox</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background: #2a2a2a;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        audio {
+            width: 100%;
+            margin: 10px 0;
+        }
+        .log {
+            background: #000;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            background: #333;
+            color: #fff;
+            border: 1px solid #555;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎵 MonsterBox Audio Test</h1>
+    
+    <div class="test-section">
+        <h2>1. Direct Audio File Test</h2>
+        <p>Test the most recent generated audio file:</p>
+        <audio controls id="directAudio">
+            <source src="/sounds/1749932785351-testing_audio_playback_with_im.mp3" type="audio/mpeg">
+            Your browser does not support the audio element.
+        </audio>
+        <button onclick="playDirectAudio()">Play Direct Audio</button>
+        <button onclick="testAudioLoad()">Test Audio Load</button>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Voice Generation Test</h2>
+        <p>Generate new audio and test playback:</p>
+        <input type="text" id="testText" value="Hello, this is a test of the MonsterBox voice system." placeholder="Enter text to generate...">
+        <br>
+        <button onclick="generateAndTest()" id="generateBtn">Generate & Test Audio</button>
+        <audio controls id="generatedAudio" style="display:none;">
+            Your browser does not support the audio element.
+        </audio>
+    </div>
+
+    <div class="test-section">
+        <h2>3. WaveSurfer Test</h2>
+        <p>Test WaveSurfer.js audio visualization:</p>
+        <div id="waveform" style="border: 1px solid #555; height: 60px; margin: 10px 0;"></div>
+        <button onclick="loadWaveSurfer()">Load in WaveSurfer</button>
+        <button onclick="playWaveSurfer()" id="playWaveBtn" disabled>Play WaveSurfer</button>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Browser Audio Support Test</h2>
+        <button onclick="testBrowserSupport()">Test Browser Audio Support</button>
+        <div id="supportResults"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Debug Log</h2>
+        <div id="log" class="log"></div>
+        <button onclick="clearLog()">Clear Log</button>
+    </div>
+
+    <script src="https://unpkg.com/wavesurfer.js@6.6.3/dist/wavesurfer.js"></script>
+    <script>
+        let wavesurfer = null;
+        let currentAudioUrl = null;
+
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        function playDirectAudio() {
+            const audio = document.getElementById('directAudio');
+            log('Attempting to play direct audio...');
+            
+            audio.addEventListener('loadstart', () => log('Audio: loadstart event'));
+            audio.addEventListener('loadeddata', () => log('Audio: loadeddata event'));
+            audio.addEventListener('canplay', () => log('Audio: canplay event'));
+            audio.addEventListener('playing', () => log('Audio: playing event'));
+            audio.addEventListener('error', (e) => log('Audio error: ' + e.message));
+            
+            audio.play().then(() => {
+                log('✅ Direct audio playback started successfully');
+            }).catch(error => {
+                log('❌ Direct audio playback failed: ' + error.message);
+            });
+        }
+
+        function testAudioLoad() {
+            const audio = document.getElementById('directAudio');
+            log('Testing audio file load...');
+            log('Audio src: ' + audio.src);
+            log('Audio readyState: ' + audio.readyState);
+            log('Audio networkState: ' + audio.networkState);
+            log('Audio duration: ' + audio.duration);
+            log('Audio error: ' + (audio.error ? audio.error.message : 'none'));
+        }
+
+        async function generateAndTest() {
+            const btn = document.getElementById('generateBtn');
+            const text = document.getElementById('testText').value;
+            
+            btn.disabled = true;
+            btn.textContent = 'Generating...';
+            log('Generating new audio for text: ' + text);
+
+            try {
+                const response = await fetch('/api/voice/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        speaker_id: '5ab88eb4-d183-11ef-be1d-e86f38d7ec1a',
+                        text: text,
+                        options: { emotion: 'Neutral' }
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                log('✅ Audio generated successfully');
+                log('Response: ' + JSON.stringify(data, null, 2));
+
+                if (data.path) {
+                    currentAudioUrl = data.path;
+                    const audio = document.getElementById('generatedAudio');
+                    audio.src = data.path;
+                    audio.style.display = 'block';
+                    log('Audio URL set: ' + data.path);
+                    
+                    // Auto-play the generated audio
+                    audio.play().then(() => {
+                        log('✅ Generated audio playback started');
+                    }).catch(error => {
+                        log('❌ Generated audio playback failed: ' + error.message);
+                    });
+                } else {
+                    log('❌ No audio path in response');
+                }
+
+            } catch (error) {
+                log('❌ Audio generation failed: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Generate & Test Audio';
+            }
+        }
+
+        function loadWaveSurfer() {
+            log('Initializing WaveSurfer...');
+            
+            if (wavesurfer) {
+                wavesurfer.destroy();
+            }
+
+            wavesurfer = WaveSurfer.create({
+                container: '#waveform',
+                waveColor: '#4a9eff',
+                progressColor: '#1976d2',
+                height: 60,
+                barWidth: 2,
+                barGap: 1,
+                responsive: true,
+                normalize: true
+            });
+
+            wavesurfer.on('ready', () => {
+                log('✅ WaveSurfer ready');
+                document.getElementById('playWaveBtn').disabled = false;
+            });
+
+            wavesurfer.on('error', (error) => {
+                log('❌ WaveSurfer error: ' + error.message);
+            });
+
+            wavesurfer.on('loading', (percent) => {
+                log('WaveSurfer loading: ' + percent + '%');
+            });
+
+            const audioUrl = currentAudioUrl || '/sounds/1749932785351-testing_audio_playback_with_im.mp3';
+            log('Loading audio in WaveSurfer: ' + audioUrl);
+            wavesurfer.load(audioUrl);
+        }
+
+        function playWaveSurfer() {
+            if (wavesurfer) {
+                log('Playing WaveSurfer audio...');
+                wavesurfer.play();
+            }
+        }
+
+        function testBrowserSupport() {
+            const results = document.getElementById('supportResults');
+            let html = '<h4>Browser Audio Support:</h4><ul>';
+            
+            // Test audio element support
+            const audio = document.createElement('audio');
+            html += `<li>HTML5 Audio Element: ${audio ? '✅ Supported' : '❌ Not supported'}</li>`;
+            
+            // Test audio formats
+            const formats = {
+                'MP3': 'audio/mpeg',
+                'WAV': 'audio/wav',
+                'OGG': 'audio/ogg'
+            };
+            
+            for (const [name, type] of Object.entries(formats)) {
+                const canPlay = audio.canPlayType(type);
+                const support = canPlay === 'probably' ? '✅ Full' : 
+                               canPlay === 'maybe' ? '⚠️ Partial' : '❌ None';
+                html += `<li>${name} (${type}): ${support}</li>`;
+            }
+            
+            // Test Web Audio API
+            const hasWebAudio = !!(window.AudioContext || window.webkitAudioContext);
+            html += `<li>Web Audio API: ${hasWebAudio ? '✅ Supported' : '❌ Not supported'}</li>`;
+            
+            html += '</ul>';
+            results.innerHTML = html;
+            
+            log('Browser audio support test completed');
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🎵 Audio test page loaded');
+            testBrowserSupport();
+        });
+    </script>
+</body>
+</html>

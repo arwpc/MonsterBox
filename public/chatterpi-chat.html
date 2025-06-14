@@ -29,6 +29,7 @@
         .status-connected { background: #4CAF50; color: white; }
         .status-disconnected { background: #f44336; color: white; }
         .status-connecting { background: #ff9800; color: white; }
+        .status-partial { background: #2196F3; color: white; }
         .chat-messages {
             flex: 1; padding: 20px; overflow-y: auto; background: #f8f9fa;
         }
@@ -77,8 +78,274 @@
         }
         .control-button:hover { transform: scale(1.05); }
         .control-button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-        .audio-controls {
+        .audio-controls, .jaw-controls {
             display: flex; gap: 10px; align-items: center;
+        }
+        .calibrate-button {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            font-size: 11px; padding: 5px 10px;
+        }
+
+        .calibration-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .angle-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .angle-control label {
+            min-width: 100px;
+            font-weight: bold;
+        }
+
+        .angle-slider {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .small-button {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+        .advanced-controls {
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .advanced-controls.show {
+            display: flex;
+        }
+
+        .config-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 10px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 6px;
+        }
+
+        .config-section h4 {
+            margin: 0;
+            font-size: 12px;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .config-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .config-input {
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 11px;
+            background: white;
+            width: 80px;
+        }
+
+        .toggle-button {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .toggle-button:hover {
+            transform: scale(1.05);
+        }
+
+        .toggle-button.collapsed {
+            background: linear-gradient(135deg, #666 0%, #555 100%);
+        }
+
+        .help-icon {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            background: #4CAF50;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            font-size: 11px;
+            line-height: 16px;
+            cursor: help;
+            margin-left: 5px;
+            position: relative;
+        }
+
+        .help-icon:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 1000;
+            max-width: 300px;
+            white-space: normal;
+            width: max-content;
+        }
+
+        .help-icon:hover::before {
+            content: '';
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-top-color: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+        }
+
+        .preset-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .preset-button {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            color: #495057;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .preset-button:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: scale(1.02);
+        }
+
+        .preset-button.active {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border-color: #28a745;
+        }
+
+        .section-header {
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 8px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-icon {
+            font-size: 14px;
+        }
+
+        .config-label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            min-width: 140px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .config-input {
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 11px;
+            background: white;
+            width: 80px;
+        }
+
+        .config-input:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+        }
+
+        .input-unit {
+            font-size: 10px;
+            color: #666;
+            margin-left: 4px;
+        }
+
+        .documentation-section {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .doc-button {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-right: 8px;
+        }
+
+        .doc-button:hover {
+            transform: scale(1.05);
+            background: linear-gradient(135deg, #138496 0%, #117a8b 100%);
+        }
+
+        .recommended-badge {
+            background: #28a745;
+            color: white;
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 5px;
+        }
+
+        .advanced-badge {
+            background: #ffc107;
+            color: #212529;
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 5px;
+        }
+        .calibrate-button:hover {
+            background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
         }
         .volume-control {
             display: flex; align-items: center; gap: 8px;
@@ -157,7 +424,146 @@
             </div>
             <div class="control-group">
                 <label>Jaw Test</label>
-                <button id="testJawButton" class="control-button">Test Movement</button>
+                <div class="jaw-controls">
+                    <button id="testJawButton" class="control-button">Test Movement</button>
+                    <button id="saveCalibrationButton" class="control-button calibrate-button">💾 Save Open & Close Calibration</button>
+                    <button id="audioAnimationButton" class="control-button">🎤 Start Audio Animation</button>
+                </div>
+            </div>
+            <div class="control-group">
+                <label>Jaw Calibration</label>
+                <div class="calibration-controls">
+                    <div class="angle-control">
+                        <label>Closed Position:</label>
+                        <input type="range" id="closedAngleSlider" min="0" max="180" value="50" class="angle-slider">
+                        <span id="closedAngleValue">50°</span>
+                        <button id="setClosedButton" class="control-button small-button">Set Closed</button>
+                    </div>
+                    <div class="angle-control">
+                        <label>Open Position:</label>
+                        <input type="range" id="openAngleSlider" min="0" max="180" value="30" class="angle-slider">
+                        <span id="openAngleValue">30°</span>
+                        <button id="setOpenButton" class="control-button small-button">Set Open</button>
+                    </div>
+                </div>
+            </div>
+            <div class="control-group">
+                <label>Advanced Audio Settings</label>
+                <button id="toggleAdvancedButton" class="toggle-button collapsed">Show Advanced Settings</button>
+                <div id="advancedControls" class="advanced-controls">
+
+                    <!-- Quick Presets -->
+                    <div class="config-section">
+                        <div class="section-header">
+                            <span class="section-icon">⚡</span>
+                            <span>Quick Presets</span>
+                        </div>
+                        <div class="preset-buttons">
+                            <button class="preset-button" data-preset="smooth">🎭 Smooth Animation</button>
+                            <button class="preset-button" data-preset="responsive">⚡ Responsive Animation</button>
+                            <button class="preset-button" data-preset="debug">🔧 Debug Mode</button>
+                            <button class="preset-button" data-preset="custom">✨ Custom</button>
+                        </div>
+                    </div>
+
+                    <!-- Audio Response Settings -->
+                    <div class="config-section">
+                        <div class="section-header">
+                            <span class="section-icon">🎵</span>
+                            <span>Audio Response Settings</span>
+                        </div>
+                        <div class="config-row">
+                            <div class="config-label">
+                                Response Speed:
+                                <span class="help-icon" data-tooltip="How quickly the jaw opens when you start speaking. Higher values = faster response. Recommended: 0.05-0.2">?</span>
+                                <span class="recommended-badge">Recommended</span>
+                            </div>
+                            <input type="number" id="smoothingAttack" class="config-input" min="0.01" max="1.0" step="0.01" value="0.1">
+                            <span class="input-unit">speed</span>
+                        </div>
+                        <div class="config-row">
+                            <div class="config-label">
+                                Decay Speed:
+                                <span class="help-icon" data-tooltip="How quickly the jaw closes when you stop speaking. Lower values = smoother closing. Recommended: 0.01-0.05">?</span>
+                                <span class="recommended-badge">Recommended</span>
+                            </div>
+                            <input type="number" id="smoothingRelease" class="config-input" min="0.001" max="0.5" step="0.001" value="0.01">
+                            <span class="input-unit">speed</span>
+                        </div>
+                    </div>
+
+                    <!-- Voice Detection Settings -->
+                    <div class="config-section">
+                        <div class="section-header">
+                            <span class="section-icon">🎤</span>
+                            <span>Voice Detection Settings</span>
+                        </div>
+                        <div class="config-row">
+                            <div class="config-label">
+                                Voice Sensitivity:
+                                <span class="help-icon" data-tooltip="How sensitive the system is to detecting your voice. Lower values = more sensitive. Adjust if jaw doesn't respond to quiet speech. Recommended: 0.003-0.01">?</span>
+                                <span class="recommended-badge">Recommended</span>
+                            </div>
+                            <input type="number" id="silenceThreshold" class="config-input" min="0.001" max="0.1" step="0.001" value="0.005">
+                            <span class="input-unit">sensitivity</span>
+                        </div>
+                        <div class="config-row">
+                            <div class="config-label">
+                                Auto-Close Delay:
+                                <span class="help-icon" data-tooltip="How long to wait after you stop speaking before closing the jaw. Longer delays = more natural pauses. Recommended: 300-800ms">?</span>
+                                <span class="recommended-badge">Recommended</span>
+                            </div>
+                            <input type="number" id="silenceTimeout" class="config-input" min="100" max="2000" step="50" value="500">
+                            <span class="input-unit">ms</span>
+                        </div>
+                    </div>
+
+                    <!-- Servo Control Settings -->
+                    <div class="config-section">
+                        <div class="section-header">
+                            <span class="section-icon">🦴</span>
+                            <span>Servo Control Settings</span>
+                        </div>
+                        <div class="config-row">
+                            <div class="config-label">
+                                Movement Smoothness:
+                                <span class="help-icon" data-tooltip="Prevents tiny jaw movements that cause jitter. Higher values = smoother but less responsive. Recommended: 0.5-2.0°">?</span>
+                                <span class="advanced-badge">Advanced</span>
+                            </div>
+                            <input type="number" id="servoStep" class="config-input" min="0.1" max="5.0" step="0.1" value="1.0">
+                            <span class="input-unit">°</span>
+                        </div>
+                        <div class="config-row">
+                            <div class="config-label">
+                                Animation Frame Rate:
+                                <span class="help-icon" data-tooltip="How often the jaw position is updated per second. Higher values = smoother animation but more CPU usage. Recommended: 30-60 Hz">?</span>
+                                <span class="advanced-badge">Advanced</span>
+                            </div>
+                            <input type="number" id="updateRate" class="config-input" min="10" max="100" step="5" value="50">
+                            <span class="input-unit">Hz</span>
+                        </div>
+                    </div>
+
+                    <!-- Control Buttons -->
+                    <div class="config-row">
+                        <button id="applyAdvancedButton" class="control-button">✅ Apply Settings</button>
+                        <button id="resetAdvancedButton" class="control-button">🔄 Reset to Defaults</button>
+                        <button id="saveConfigButton" class="control-button">💾 Save Config</button>
+                    </div>
+
+                    <!-- Documentation Section -->
+                    <div class="documentation-section">
+                        <div class="section-header">
+                            <span class="section-icon">📚</span>
+                            <span>Help & Documentation</span>
+                        </div>
+                        <div class="config-row">
+                            <button id="helpReadmeButton" class="doc-button">📖 View README</button>
+                            <button id="helpTuningButton" class="doc-button">🎛️ Tuning Guide</button>
+                            <button id="helpTroubleshootButton" class="doc-button">🔧 Troubleshooting</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="chat-input-container">
@@ -175,18 +581,26 @@
     <script>
         class ChatterPiChat {
             constructor() {
-                this.websocket = null;
-                this.isConnected = false;
+                // HTTP API configuration (no more WebSockets!)
+                this.apiBaseUrl = '/api/chatterpi';
+                this.isAIAvailable = false;
+                this.isJawAvailable = false;
+                this.isAudioAnimationActive = false;
+
+                // Configuration
                 this.selectedServo = 18;
                 this.selectedVoice = 'orlok';
                 this.audioVolume = 0.7;
                 this.speechSynthesis = window.speechSynthesis;
                 this.voices = [];
+
+                // Initialize
                 this.initializeElements();
                 this.setupEventListeners();
                 this.initializeAudio();
-                this.connect();
+                this.checkServices();
                 this.updateWelcomeTime();
+                this.loadCharacterGreeting();
             }
 
             initializeElements() {
@@ -200,7 +614,28 @@
                 this.voiceSelect = document.getElementById('voiceSelect');
                 this.testAudioButton = document.getElementById('testAudioButton');
                 this.testJawButton = document.getElementById('testJawButton');
+                this.saveCalibrationButton = document.getElementById('saveCalibrationButton');
+                this.audioAnimationButton = document.getElementById('audioAnimationButton');
+                this.setClosedButton = document.getElementById('setClosedButton');
+                this.setOpenButton = document.getElementById('setOpenButton');
+                this.closedAngleSlider = document.getElementById('closedAngleSlider');
+                this.openAngleSlider = document.getElementById('openAngleSlider');
+                this.closedAngleValue = document.getElementById('closedAngleValue');
+                this.openAngleValue = document.getElementById('openAngleValue');
                 this.volumeSlider = document.getElementById('volumeSlider');
+
+                // Advanced controls
+                this.toggleAdvancedButton = document.getElementById('toggleAdvancedButton');
+                this.advancedControls = document.getElementById('advancedControls');
+                this.smoothingAttack = document.getElementById('smoothingAttack');
+                this.smoothingRelease = document.getElementById('smoothingRelease');
+                this.silenceThreshold = document.getElementById('silenceThreshold');
+                this.silenceTimeout = document.getElementById('silenceTimeout');
+                this.servoStep = document.getElementById('servoStep');
+                this.updateRate = document.getElementById('updateRate');
+                this.applyAdvancedButton = document.getElementById('applyAdvancedButton');
+                this.resetAdvancedButton = document.getElementById('resetAdvancedButton');
+                this.saveConfigButton = document.getElementById('saveConfigButton');
             }
 
             setupEventListeners() {
@@ -229,9 +664,96 @@
 
                 this.testAudioButton.addEventListener('click', () => this.testAudio());
                 this.testJawButton.addEventListener('click', () => this.testJawMovement());
+                this.saveCalibrationButton.addEventListener('click', () => this.saveCalibration());
+                this.audioAnimationButton.addEventListener('click', () => this.toggleAudioAnimation());
+
+                // Add calibration button event listeners
+                this.setClosedButton.addEventListener('click', () => this.setClosedPosition());
+                this.setOpenButton.addEventListener('click', () => this.setOpenPosition());
 
                 this.volumeSlider.addEventListener('input', (e) => {
                     this.audioVolume = e.target.value / 100;
+                });
+
+                // Add slider update listeners
+                this.closedAngleSlider.addEventListener('input', (e) => {
+                    this.closedAngleValue.textContent = e.target.value + '°';
+                });
+
+                this.openAngleSlider.addEventListener('input', (e) => {
+                    this.openAngleValue.textContent = e.target.value + '°';
+                });
+
+                // Calibration controls
+                this.closedAngleSlider = document.getElementById('closedAngleSlider');
+                this.openAngleSlider = document.getElementById('openAngleSlider');
+                this.closedAngleValue = document.getElementById('closedAngleValue');
+                this.openAngleValue = document.getElementById('openAngleValue');
+                this.setClosedButton = document.getElementById('setClosedButton');
+                this.setOpenButton = document.getElementById('setOpenButton');
+
+                this.closedAngleSlider.addEventListener('input', (e) => {
+                    this.closedAngleValue.textContent = e.target.value + '°';
+                });
+
+                this.openAngleSlider.addEventListener('input', (e) => {
+                    this.openAngleValue.textContent = e.target.value + '°';
+                });
+
+                this.setClosedButton.addEventListener('click', () => {
+                    const angle = parseInt(this.closedAngleSlider.value);
+                    this.sendJawCommand({ type: 'set_position', angle: angle });
+                    console.log(`Setting closed position to ${angle}°`);
+                });
+
+                this.setOpenButton.addEventListener('click', () => {
+                    const angle = parseInt(this.openAngleSlider.value);
+                    this.sendJawCommand({ type: 'set_position', angle: angle });
+                    console.log(`Setting open position to ${angle}°`);
+                });
+
+                // Advanced controls event listeners
+                this.toggleAdvancedButton.addEventListener('click', () => {
+                    this.toggleAdvancedControls();
+                });
+
+                this.applyAdvancedButton.addEventListener('click', () => {
+                    this.applyAdvancedSettings();
+                });
+
+                this.resetAdvancedButton.addEventListener('click', () => {
+                    this.resetAdvancedSettings();
+                });
+
+                this.saveConfigButton.addEventListener('click', () => {
+                    this.saveConfiguration();
+                });
+
+                // Preset button handlers
+                document.querySelectorAll('.preset-button').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        this.applyPreset(e.target.dataset.preset);
+                    });
+                });
+
+                // Documentation button handlers
+                document.getElementById('helpReadmeButton').addEventListener('click', () => {
+                    this.openDocumentation('readme');
+                });
+
+                document.getElementById('helpTuningButton').addEventListener('click', () => {
+                    this.openDocumentation('tuning');
+                });
+
+                document.getElementById('helpTroubleshootButton').addEventListener('click', () => {
+                    this.openDocumentation('troubleshooting');
+                });
+
+                // Mark custom when any input changes
+                document.querySelectorAll('#advancedControls input').forEach(input => {
+                    input.addEventListener('input', () => {
+                        this.markCustomPreset();
+                    });
                 });
             }
 
@@ -332,135 +854,372 @@
 
             updateSendButton() {
                 const hasText = this.chatInput.value.trim().length > 0;
-                this.sendButton.disabled = !hasText || !this.isConnected;
+                this.sendButton.disabled = !hasText || !this.isAIAvailable;
             }
 
-            connect() {
-                this.updateConnectionStatus('connecting');
-                const wsUrl = 'ws://192.168.8.130:8765';
-                
+            async checkServices() {
+                // Check if AI service is available
                 try {
-                    this.websocket = new WebSocket(wsUrl);
-                    
-                    this.websocket.onopen = () => {
-                        console.log('Connected to ChatterPi WebSocket');
-                        this.isConnected = true;
-                        this.updateConnectionStatus('connected');
-                        this.updateSendButton();
-                        this.sendWebSocketMessage({
-                            type: 'subscribe',
-                            events: ['jaw_movement', 'jaw_stopped']
-                        });
-                        this.sendWebSocketMessage({ type: 'get_status' });
-                    };
-                    
-                    this.websocket.onmessage = (event) => {
-                        this.handleWebSocketMessage(JSON.parse(event.data));
-                    };
-                    
-                    this.websocket.onclose = () => {
-                        console.log('Disconnected from ChatterPi WebSocket');
-                        this.isConnected = false;
-                        this.updateConnectionStatus('disconnected');
-                        this.updateSendButton();
-                        setTimeout(() => this.connect(), 5000);
-                    };
-                    
-                    this.websocket.onerror = (error) => {
-                        console.error('WebSocket error:', error);
-                    };
-                    
+                    const response = await fetch(`${this.apiBaseUrl}/characters`);
+                    if (response.ok) {
+                        this.isAIAvailable = true;
+                        console.log('✅ AI service is available');
+                    }
                 } catch (error) {
-                    console.error('Failed to create WebSocket:', error);
-                    this.updateConnectionStatus('disconnected');
-                    setTimeout(() => this.connect(), 5000);
+                    console.warn('⚠️ AI service not available:', error);
+                    this.isAIAvailable = false;
+                }
+
+                // Check if jaw animation is available (ChatterPi system)
+                try {
+                    const response = await fetch(`${this.apiBaseUrl}/jaw/status`);
+                    if (response.ok) {
+                        this.isJawAvailable = true;
+                        console.log('✅ ChatterPi jaw animation service is available');
+                    }
+                } catch (error) {
+                    console.warn('⚠️ ChatterPi jaw animation service not available:', error);
+                    this.isJawAvailable = false;
+                }
+
+                this.updateConnectionStatus();
+                this.updateSendButton();
+            }
+
+            async loadCharacterGreeting() {
+                if (!this.isAIAvailable) return;
+
+                try {
+                    console.log(`🎭 Loading greeting for character: ${this.selectedVoice}`);
+                    const response = await fetch(`${this.apiBaseUrl}/greeting/${this.selectedVoice}`);
+                    const data = await response.json();
+
+                    if (data.success && data.greeting) {
+                        this.addMessage(data.greeting, 'bot');
+                        this.speakText(data.greeting, this.selectedVoice);
+
+                        // Animate jaw if available
+                        if (data.jawAnimation && this.isJawAvailable) {
+                            await this.animateJawWithData(data.jawAnimation);
+                        }
+                    }
+                } catch (error) {
+                    console.error('❌ Error loading character greeting:', error);
                 }
             }
 
-            sendWebSocketMessage(message) {
-                if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
-                    this.websocket.send(JSON.stringify(message));
+            async sendChatMessage(message) {
+                if (!this.isAIAvailable) {
+                    this.addMessage('AI service is not available. Please try again later.', 'bot');
+                    return;
+                }
+
+                try {
+                    console.log(`🤖 Sending chat message: "${message}"`);
+
+                    const response = await fetch(`${this.apiBaseUrl}/chat`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            message: message,
+                            character: this.selectedVoice
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success && data.data && data.data.aiResponse) {
+                        const aiText = data.data.aiResponse.text;
+                        this.addMessage(aiText, 'bot');
+                        this.speakText(aiText, this.selectedVoice);
+
+                        // Animate jaw if available
+                        if (data.data.jawAnimation && this.isJawAvailable) {
+                            await this.animateJawWithData(data.data.jawAnimation);
+                        }
+                    } else if (data.fallback) {
+                        // Use fallback response
+                        this.addMessage(data.fallback, 'bot');
+                        this.speakText(data.fallback, this.selectedVoice);
+                    } else {
+                        throw new Error(data.error || 'Unknown error');
+                    }
+
+                } catch (error) {
+                    console.error('❌ Error sending chat message:', error);
+                    this.addMessage('Sorry, I encountered an error. Please try again.', 'bot');
                 }
             }
 
-            handleWebSocketMessage(message) {
-                console.log('Received:', message);
-                
-                switch (message.type) {
-                    case 'welcome':
-                        this.jawStatusText.textContent = 'Connected';
-                        break;
-                    case 'status_response':
-                        this.updateJawStatus(message.jaw_status);
-                        break;
-                    case 'jaw_move_started':
-                        this.jawStatusText.textContent = `Moving to ${message.angle}°`;
-                        break;
-                    case 'jaw_stopped':
-                        this.jawStatusText.textContent = 'Stopped';
-                        break;
+            async animateJawWithData(jawAnimation) {
+                if (!this.isJawAvailable || !jawAnimation) return;
+
+                try {
+                    // Use existing jaw animation system
+                    const response = await fetch('/jaw-animation/animate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            animation: jawAnimation,
+                            servoPin: this.selectedServo
+                        })
+                    });
+
+                    if (response.ok) {
+                        console.log('🦴 Jaw animation sent successfully');
+                    }
+                } catch (error) {
+                    console.warn('⚠️ Could not send jaw animation:', error);
                 }
             }
 
-            updateConnectionStatus(status) {
-                this.connectionStatus.className = `connection-status status-${status}`;
-                switch (status) {
-                    case 'connected': this.connectionStatus.textContent = 'Connected'; break;
-                    case 'connecting': this.connectionStatus.textContent = 'Connecting...'; break;
-                    case 'disconnected': this.connectionStatus.textContent = 'Disconnected'; break;
+            async sendJawCommand(command) {
+                if (!this.isJawAvailable) {
+                    console.warn('⚠️ Jaw animation service not available');
+                    return;
                 }
+
+                try {
+                    // Use our new ChatterPi API endpoints
+                    let endpoint = '/api/chatterpi/';
+                    let body = {};
+                    let method = 'POST';
+
+                    switch (command.type) {
+                        case 'configure_servo':
+                            // Configuration is handled automatically by our system
+                            console.log('🔧 Servo configuration handled by ChatterPi system');
+                            return;
+                        case 'jaw_move':
+                            endpoint += 'jaw/move';
+                            body.angle = command.angle;
+                            body.duration = command.duration || 1.0;
+                            body.curve_type = command.curve_type || 'ease_in_out';
+                            break;
+                        case 'start_animation':
+                            endpoint += 'jaw/start-animation';
+                            break;
+                        case 'stop_animation':
+                            endpoint += 'jaw/stop-animation';
+                            break;
+                        case 'get_status':
+                            endpoint += 'jaw/status';
+                            method = 'GET';
+                            break;
+                        default:
+                            console.warn('Unknown jaw command type:', command.type);
+                            return;
+                    }
+
+                    const fetchOptions = {
+                        method: method,
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    };
+
+                    if (method === 'POST') {
+                        fetchOptions.body = JSON.stringify(body);
+                    }
+
+                    const response = await fetch(endpoint, fetchOptions);
+                    const data = await response.json();
+
+                    if (data.success) {
+                        console.log(`✅ Jaw command successful: ${command.type}`);
+                        if (command.type === 'jaw_move') {
+                            this.updateJawStatus(`Jaw moved to ${command.angle}°`);
+                        } else if (command.type === 'start_animation') {
+                            this.updateJawStatus('🎤 Audio animation started');
+                        } else if (command.type === 'stop_animation') {
+                            this.updateJawStatus('🛑 Audio animation stopped');
+                        }
+                    } else {
+                        console.warn('⚠️ Jaw command failed:', data.error);
+                        this.updateJawStatus(`❌ ${data.error}`);
+                    }
+                } catch (error) {
+                    console.warn('⚠️ Could not send jaw command:', error);
+                    this.updateJawStatus(`❌ Connection error`);
+                }
+            }
+
+            // Jaw message handling removed - now using HTTP API
+
+            // AI message handling removed - now using HTTP API
+
+            updateConnectionStatus() {
+                let statusText = '';
+                let statusClass = '';
+
+                if (this.isAIAvailable && this.isJawAvailable) {
+                    statusText = 'Ready (AI + Jaw)';
+                    statusClass = 'status-connected';
+                } else if (this.isAIAvailable) {
+                    statusText = 'AI Ready';
+                    statusClass = 'status-partial';
+                } else if (this.isJawAvailable) {
+                    statusText = 'Jaw Ready';
+                    statusClass = 'status-partial';
+                } else {
+                    statusText = 'Checking Services...';
+                    statusClass = 'status-connecting';
+                }
+
+                this.connectionStatus.className = `connection-status ${statusClass}`;
+                this.connectionStatus.textContent = statusText;
             }
 
             updateJawStatus(jawStatus) {
-                if (jawStatus.current_position !== null) {
-                    this.jawPosition.textContent = `${jawStatus.current_position.toFixed(1)}°`;
+                // Handle both object and string status
+                if (typeof jawStatus === 'string') {
+                    this.jawStatusText.textContent = jawStatus;
+                    return;
                 }
-                this.jawStatusText.textContent = jawStatus.is_moving ? 'Moving' : 'Ready';
+
+                // Handle object status
+                if (jawStatus && typeof jawStatus === 'object') {
+                    if (jawStatus.current_position !== null && jawStatus.current_position !== undefined) {
+                        this.jawPosition.textContent = `${jawStatus.current_position.toFixed(1)}°`;
+                    }
+                    this.jawStatusText.textContent = jawStatus.is_moving ? 'Moving' : 'Ready';
+                }
             }
 
-            sendMessage() {
+            async sendMessage() {
                 const message = this.chatInput.value.trim();
-                if (!message || !this.isConnected) return;
-                
+                if (!message) return;
+
+                console.log(`📤 Sending message: "${message}"`);
+
                 this.addMessage(message, 'user');
                 this.chatInput.value = '';
                 this.adjustTextareaHeight();
                 this.updateSendButton();
-                this.simulateJawMovement(message);
-                
-                setTimeout(() => {
-                    this.addBotResponse(message);
-                }, 1000 + Math.random() * 2000);
+
+                // Send message to AI using HTTP API
+                await this.sendChatMessage(message);
             }
 
             testJawMovement() {
                 console.log(`Testing jaw movement on GPIO ${this.selectedServo}`);
 
                 // Send servo configuration first
-                this.sendWebSocketMessage({
+                this.sendJawCommand({
                     type: 'configure_servo',
-                    pin: this.selectedServo
+                    pin: parseInt(this.selectedServo)
                 });
 
-                // Test sequence
-                const testSequence = [
-                    { angle: 0, duration: 0.5 },
-                    { angle: 30, duration: 0.5 },
-                    { angle: 60, duration: 0.5 },
-                    { angle: 30, duration: 0.5 },
-                    { angle: 0, duration: 0.5 }
-                ];
+                // Wait a moment for configuration, then test
+                setTimeout(() => {
+                    // New test sequence: 3x open/close cycles + gradual close
+                    const closedAngle = parseInt(this.closedAngleSlider.value);
+                    const openAngle = parseInt(this.openAngleSlider.value);
 
-                testSequence.forEach((move, index) => {
-                    setTimeout(() => {
-                        this.sendWebSocketMessage({
-                            type: 'jaw_move',
-                            angle: move.angle,
-                            duration: move.duration,
-                            curve_type: 'ease_in_out'
-                        });
-                    }, index * 600);
+                    const testSequence = [
+                        // First cycle
+                        { angle: openAngle, duration: 0.5 },    // Open
+                        { angle: closedAngle, duration: 0.5 },  // Close
+                        // Second cycle
+                        { angle: openAngle, duration: 0.5 },    // Open
+                        { angle: closedAngle, duration: 0.5 },  // Close
+                        // Third cycle
+                        { angle: openAngle, duration: 0.5 },    // Open
+                        { angle: closedAngle, duration: 0.5 },  // Close
+                        // Final gradual close (wide open to closed in 3 seconds)
+                        { angle: openAngle, duration: 0.2 },    // Ensure wide open
+                        { angle: closedAngle, duration: 3.0 }   // Gradual close over 3 seconds
+                    ];
+
+                    testSequence.forEach((move, index) => {
+                        setTimeout(() => {
+                            this.sendJawCommand({
+                                type: 'jaw_move',
+                                angle: move.angle,
+                                duration: move.duration,
+                                curve_type: 'ease_in_out'
+                            });
+                            console.log(`🦴 Jaw command sent: ${move.angle}° for ${move.duration}s`);
+                        }, index * 700);
+                    });
+                }, 200);
+            }
+
+            saveCalibration() {
+                const closedAngle = parseInt(this.closedAngleSlider.value);
+                const openAngle = parseInt(this.openAngleSlider.value);
+
+                console.log(`💾 Saving calibration: Closed=${closedAngle}°, Open=${openAngle}°`);
+
+                // Save to localStorage for persistence
+                localStorage.setItem('chatterpi_closed_angle', closedAngle);
+                localStorage.setItem('chatterpi_open_angle', openAngle);
+                localStorage.setItem('chatterpi_servo_pin', this.selectedServo);
+
+                // Send configuration to jaw server
+                this.sendJawCommand({
+                    type: 'configure_servo',
+                    pin: parseInt(this.selectedServo),
+                    closed_angle: closedAngle,
+                    open_angle: openAngle
                 });
+
+                // Show confirmation
+                this.updateJawStatus(`✅ Calibration saved: ${closedAngle}° closed, ${openAngle}° open`);
+
+                // Brief visual feedback
+                this.saveCalibrationButton.textContent = '✅ Saved!';
+                setTimeout(() => {
+                    this.saveCalibrationButton.textContent = '💾 Save Open & Close Calibration';
+                }, 2000);
+            }
+
+            setClosedPosition() {
+                const closedAngle = parseInt(this.closedAngleSlider.value);
+                console.log(`🔧 Setting closed position to ${closedAngle}° on GPIO ${this.selectedServo}`);
+
+                // Send servo configuration first
+                this.sendJawCommand({
+                    type: 'configure_servo',
+                    pin: parseInt(this.selectedServo)
+                });
+
+                // Move to closed position
+                setTimeout(() => {
+                    this.sendJawCommand({
+                        type: 'jaw_move',
+                        angle: closedAngle,
+                        duration: 1.0,
+                        curve_type: 'ease_in_out'
+                    });
+                    this.updateJawStatus(`Moving to closed position: ${closedAngle}°`);
+                }, 200);
+            }
+
+            setOpenPosition() {
+                const openAngle = parseInt(this.openAngleSlider.value);
+                console.log(`🔧 Setting open position to ${openAngle}° on GPIO ${this.selectedServo}`);
+
+                // Send servo configuration first
+                this.sendJawCommand({
+                    type: 'configure_servo',
+                    pin: parseInt(this.selectedServo)
+                });
+
+                // Move to open position
+                setTimeout(() => {
+                    this.sendJawCommand({
+                        type: 'jaw_move',
+                        angle: openAngle,
+                        duration: 1.0,
+                        curve_type: 'ease_in_out'
+                    });
+                    this.updateJawStatus(`Moving to open position: ${openAngle}°`);
+                }, 200);
             }
 
             animateJawWithSpeech(text) {
@@ -469,31 +1228,59 @@
 
                 words.forEach((word, index) => {
                     setTimeout(() => {
-                        const angle = Math.min(45, word.length * 4);
-                        this.sendWebSocketMessage({
+                        // Calculate jaw opening based on word length (ChatterPi angles: 50°=closed, 30°=open)
+                        const openAmount = Math.min(20, word.length * 2); // Max 20° range
+                        const jawAngle = 50 - openAmount; // 50° = closed, lower = more open
+
+                        this.sendJawCommand({
                             type: 'jaw_move',
-                            angle: angle,
-                            duration: 0.2,
-                            curve_type: 'ease_in_out'
+                            angle: jawAngle,
+                            duration: 0.15,
+                            curve_type: 'ease_out'
                         });
 
+                        // Close jaw after speaking word
                         setTimeout(() => {
-                            this.sendWebSocketMessage({
+                            this.sendJawCommand({
                                 type: 'jaw_move',
-                                angle: 0,
-                                duration: 0.1
+                                angle: 50, // Closed position (50°)
+                                duration: 0.1,
+                                curve_type: 'ease_in'
                             });
-                        }, 200);
+                        }, 150);
 
                     }, delay);
 
-                    delay += 300;
+                    delay += 250;
                 });
             }
 
             simulateJawMovement(text) {
                 // Use the new speech-synchronized animation
                 this.animateJawWithSpeech(text);
+            }
+
+            toggleAudioAnimation() {
+                if (!this.isJawAvailable) {
+                    this.updateJawStatus('❌ Jaw animation service not available');
+                    return;
+                }
+
+                if (!this.isAudioAnimationActive) {
+                    // Start audio animation
+                    this.sendJawCommand({ type: 'start_animation' });
+                    this.audioAnimationButton.textContent = '🛑 Stop Audio Animation';
+                    this.audioAnimationButton.style.backgroundColor = '#dc3545';
+                    this.isAudioAnimationActive = true;
+                    console.log('🎤 Starting audio-driven jaw animation');
+                } else {
+                    // Stop audio animation
+                    this.sendJawCommand({ type: 'stop_animation' });
+                    this.audioAnimationButton.textContent = '🎤 Start Audio Animation';
+                    this.audioAnimationButton.style.backgroundColor = '';
+                    this.isAudioAnimationActive = false;
+                    console.log('🛑 Stopping audio-driven jaw animation');
+                }
             }
 
             addMessage(text, sender) {
@@ -549,10 +1336,387 @@
             scrollToBottom() {
                 this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
             }
+
+            toggleAdvancedControls() {
+                const isVisible = this.advancedControls.classList.contains('show');
+
+                if (isVisible) {
+                    this.advancedControls.classList.remove('show');
+                    this.toggleAdvancedButton.textContent = 'Show Advanced Settings';
+                    this.toggleAdvancedButton.classList.add('collapsed');
+                } else {
+                    this.advancedControls.classList.add('show');
+                    this.toggleAdvancedButton.textContent = 'Hide Advanced Settings';
+                    this.toggleAdvancedButton.classList.remove('collapsed');
+                }
+            }
+
+            applyAdvancedSettings() {
+                const config = {
+                    audio: {
+                        smoothing_attack: parseFloat(this.smoothingAttack.value),
+                        smoothing_release: parseFloat(this.smoothingRelease.value),
+                        silence_threshold: parseFloat(this.silenceThreshold.value),
+                        silence_timeout: parseInt(this.silenceTimeout.value)
+                    },
+                    servo: {
+                        step_threshold: parseFloat(this.servoStep.value)
+                    },
+                    update_rate_hz: parseFloat(this.updateRate.value)
+                };
+
+                console.log('🔧 Applying advanced settings:', config);
+
+                // Send configuration to backend
+                fetch(`${this.apiBaseUrl}/jaw/config`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(config)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        this.updateJawStatus('✅ Advanced settings applied');
+                        console.log('✅ Advanced settings applied successfully');
+                    } else {
+                        this.updateJawStatus('❌ Failed to apply settings');
+                        console.error('❌ Failed to apply settings:', data.error);
+                    }
+                })
+                .catch(error => {
+                    this.updateJawStatus('❌ Connection error');
+                    console.error('❌ Error applying settings:', error);
+                });
+            }
+
+            resetAdvancedSettings() {
+                // Reset to default values
+                this.smoothingAttack.value = '0.1';
+                this.smoothingRelease.value = '0.01';
+                this.silenceThreshold.value = '0.005';
+                this.silenceTimeout.value = '500';
+                this.servoStep.value = '1.0';
+                this.updateRate.value = '50';
+
+                console.log('🔄 Advanced settings reset to defaults');
+                this.updateJawStatus('🔄 Settings reset to defaults');
+            }
+
+            saveConfiguration() {
+                const config = {
+                    calibration: {
+                        closed_angle: parseInt(this.closedAngleSlider.value),
+                        open_angle: parseInt(this.openAngleSlider.value),
+                        servo_pin: this.selectedServo
+                    },
+                    audio: {
+                        smoothing_attack: parseFloat(this.smoothingAttack.value),
+                        smoothing_release: parseFloat(this.smoothingRelease.value),
+                        silence_threshold: parseFloat(this.silenceThreshold.value),
+                        silence_timeout: parseInt(this.silenceTimeout.value)
+                    },
+                    servo: {
+                        step_threshold: parseFloat(this.servoStep.value)
+                    },
+                    update_rate_hz: parseFloat(this.updateRate.value),
+                    voice: this.selectedVoice,
+                    volume: this.audioVolume
+                };
+
+                // Save to localStorage
+                localStorage.setItem('chatterpi_config', JSON.stringify(config));
+
+                // Send to backend for persistent storage
+                fetch(`${this.apiBaseUrl}/jaw/save-config`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(config)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        this.updateJawStatus('💾 Configuration saved');
+                        console.log('💾 Configuration saved successfully');
+
+                        // Visual feedback
+                        this.saveConfigButton.textContent = '✅ Saved!';
+                        setTimeout(() => {
+                            this.saveConfigButton.textContent = 'Save Config';
+                        }, 2000);
+                    } else {
+                        this.updateJawStatus('❌ Failed to save config');
+                        console.error('❌ Failed to save config:', data.error);
+                    }
+                })
+                .catch(error => {
+                    this.updateJawStatus('❌ Save error');
+                    console.error('❌ Error saving config:', error);
+                });
+            }
+
+            // Preset configurations
+            getPresets() {
+                return {
+                    smooth: {
+                        name: 'Smooth Animation',
+                        smoothingAttack: 0.05,
+                        smoothingRelease: 0.008,
+                        silenceThreshold: 0.004,
+                        silenceTimeout: 600,
+                        servoStep: 0.8,
+                        updateRate: 40
+                    },
+                    responsive: {
+                        name: 'Responsive Animation',
+                        smoothingAttack: 0.15,
+                        smoothingRelease: 0.02,
+                        silenceThreshold: 0.006,
+                        silenceTimeout: 300,
+                        servoStep: 1.5,
+                        updateRate: 60
+                    },
+                    debug: {
+                        name: 'Debug Mode',
+                        smoothingAttack: 0.2,
+                        smoothingRelease: 0.05,
+                        silenceThreshold: 0.002,
+                        silenceTimeout: 200,
+                        servoStep: 2.0,
+                        updateRate: 30
+                    }
+                };
+            }
+
+            applyPreset(presetName) {
+                // Remove active class from all buttons
+                document.querySelectorAll('.preset-button').forEach(btn => btn.classList.remove('active'));
+
+                if (presetName === 'custom') {
+                    document.querySelector('[data-preset="custom"]').classList.add('active');
+                    return;
+                }
+
+                const presets = this.getPresets();
+                if (presets[presetName]) {
+                    const preset = presets[presetName];
+
+                    // Apply preset values
+                    this.smoothingAttack.value = preset.smoothingAttack;
+                    this.smoothingRelease.value = preset.smoothingRelease;
+                    this.silenceThreshold.value = preset.silenceThreshold;
+                    this.silenceTimeout.value = preset.silenceTimeout;
+                    this.servoStep.value = preset.servoStep;
+                    this.updateRate.value = preset.updateRate;
+
+                    // Mark this preset as active
+                    document.querySelector(`[data-preset="${presetName}"]`).classList.add('active');
+
+                    // Auto-apply the settings
+                    this.applyAdvancedSettings();
+
+                    this.showStatus(`Applied ${preset.name} preset`, 'success');
+                }
+            }
+
+            markCustomPreset() {
+                document.querySelectorAll('.preset-button').forEach(btn => btn.classList.remove('active'));
+                document.querySelector('[data-preset="custom"]').classList.add('active');
+            }
+
+            openDocumentation(type) {
+                let message = '';
+                let title = '';
+
+                switch(type) {
+                    case 'readme':
+                        title = '📖 ChatterPi README';
+                        message = `
+<strong>ChatterPi - Interactive AI Conversation with Jaw Animation</strong><br><br>
+
+<strong>🎯 Quick Start:</strong><br>
+1. Select your servo GPIO pin<br>
+2. Calibrate jaw positions (Closed: ~50°, Open: ~30°)<br>
+3. Choose your AI character voice<br>
+4. Start chatting!<br><br>
+
+<strong>🎛️ Basic Controls:</strong><br>
+• Test Movement: Verify servo operation<br>
+• Audio Animation: Real-time jaw sync with speech<br>
+• Volume: Adjust AI voice output<br><br>
+
+<strong>⚙️ Advanced Settings:</strong><br>
+• Response Speed: How fast jaw opens<br>
+• Decay Speed: How fast jaw closes<br>
+• Voice Sensitivity: Microphone detection threshold<br>
+• Auto-Close Delay: Pause before jaw closes<br><br>
+
+For detailed setup instructions, visit the project repository.
+                        `;
+                        break;
+
+                    case 'tuning':
+                        title = '🎛️ Parameter Tuning Guide';
+                        message = `
+<strong>Audio Response Settings:</strong><br>
+• <strong>Response Speed (0.05-0.2):</strong> Higher = faster jaw opening. Start with 0.1<br>
+• <strong>Decay Speed (0.008-0.05):</strong> Lower = smoother closing. Start with 0.01<br><br>
+
+<strong>Voice Detection Settings:</strong><br>
+• <strong>Voice Sensitivity (0.003-0.01):</strong> Lower = more sensitive. Adjust for your mic<br>
+• <strong>Auto-Close Delay (300-800ms):</strong> Longer = more natural pauses<br><br>
+
+<strong>Servo Control Settings:</strong><br>
+• <strong>Movement Smoothness (0.5-2.0°):</strong> Higher = less jitter, more smoothing<br>
+• <strong>Frame Rate (30-60 Hz):</strong> Higher = smoother but more CPU usage<br><br>
+
+<strong>🎭 Presets:</strong><br>
+• <strong>Smooth:</strong> Natural, fluid animation<br>
+• <strong>Responsive:</strong> Quick, snappy movements<br>
+• <strong>Debug:</strong> Exaggerated for testing
+                        `;
+                        break;
+
+                    case 'troubleshooting':
+                        title = '🔧 Troubleshooting Guide';
+                        message = `
+<strong>🦴 Jaw Not Moving:</strong><br>
+• Check servo connection to correct GPIO pin<br>
+• Verify servo power supply (5V recommended)<br>
+• Test with "Test Movement" button<br>
+• Check for "bad PWM micros" errors in console<br><br>
+
+<strong>🎤 Audio Not Detected:</strong><br>
+• Allow microphone permissions in browser<br>
+• Lower Voice Sensitivity setting<br>
+• Check microphone levels in system settings<br>
+• Try different browser (Chrome recommended)<br><br>
+
+<strong>🤖 AI Not Responding:</strong><br>
+• Check internet connection<br>
+• Verify OpenAI API configuration<br>
+• Look for error messages in status area<br><br>
+
+<strong>⚡ Poor Animation Quality:</strong><br>
+• Increase Frame Rate for smoother motion<br>
+• Adjust Movement Smoothness to reduce jitter<br>
+• Fine-tune Response/Decay speeds<br>
+• Try different presets for your use case
+                        `;
+                        break;
+                }
+
+                // Create a modal-like display
+                const existingModal = document.getElementById('docModal');
+                if (existingModal) {
+                    existingModal.remove();
+                }
+
+                const modal = document.createElement('div');
+                modal.id = 'docModal';
+                modal.style.cssText = `
+                    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                    background: rgba(0,0,0,0.8); z-index: 10000; display: flex;
+                    align-items: center; justify-content: center; padding: 20px;
+                `;
+
+                const content = document.createElement('div');
+                content.style.cssText = `
+                    background: white; border-radius: 12px; padding: 24px;
+                    max-width: 600px; max-height: 80vh; overflow-y: auto;
+                    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+                `;
+
+                content.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <h3 style="margin: 0; color: #333;">${title}</h3>
+                        <button onclick="this.closest('#docModal').remove()" style="
+                            background: #f44336; color: white; border: none; border-radius: 50%;
+                            width: 30px; height: 30px; cursor: pointer; font-size: 16px;
+                        ">×</button>
+                    </div>
+                    <div style="color: #555; line-height: 1.6; font-size: 14px;">
+                        ${message}
+                    </div>
+                `;
+
+                modal.appendChild(content);
+                document.body.appendChild(modal);
+
+                // Close on background click
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.remove();
+                    }
+                });
+            }
+
+            loadSavedConfiguration() {
+                try {
+                    const savedConfig = localStorage.getItem('chatterpi_config');
+                    if (savedConfig) {
+                        const config = JSON.parse(savedConfig);
+
+                        // Apply calibration settings
+                        if (config.calibration) {
+                            this.closedAngleSlider.value = config.calibration.closed_angle || 50;
+                            this.openAngleSlider.value = config.calibration.open_angle || 30;
+                            this.closedAngleValue.textContent = this.closedAngleSlider.value + '°';
+                            this.openAngleValue.textContent = this.openAngleSlider.value + '°';
+
+                            if (config.calibration.servo_pin) {
+                                this.servoSelect.value = config.calibration.servo_pin;
+                                this.selectedServo = config.calibration.servo_pin;
+                            }
+                        }
+
+                        // Apply audio settings
+                        if (config.audio) {
+                            this.smoothingAttack.value = config.audio.smoothing_attack || 0.1;
+                            this.smoothingRelease.value = config.audio.smoothing_release || 0.01;
+                            this.silenceThreshold.value = config.audio.silence_threshold || 0.005;
+                            this.silenceTimeout.value = config.audio.silence_timeout || 500;
+                        }
+
+                        // Apply servo settings
+                        if (config.servo) {
+                            this.servoStep.value = config.servo.step_threshold || 1.0;
+                        }
+
+                        // Apply other settings
+                        if (config.update_rate_hz) {
+                            this.updateRate.value = config.update_rate_hz;
+                        }
+
+                        if (config.voice) {
+                            this.voiceSelect.value = config.voice;
+                            this.selectedVoice = config.voice;
+                        }
+
+                        if (config.volume) {
+                            this.volumeSlider.value = config.volume * 100;
+                            this.audioVolume = config.volume;
+                        }
+
+                        console.log('📂 Configuration loaded from localStorage');
+                    }
+                } catch (error) {
+                    console.error('❌ Error loading saved configuration:', error);
+                }
+            }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            new ChatterPiChat();
+            const chat = new ChatterPiChat();
+            // Load saved configuration after initialization
+            setTimeout(() => {
+                chat.loadSavedConfiguration();
+                // Mark custom preset as active by default
+                document.querySelector('[data-preset="custom"]').classList.add('active');
+            }, 100);
         });
     </script>
 </body>

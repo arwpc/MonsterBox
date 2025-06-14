@@ -44,31 +44,36 @@ class MovementCommand:
 class JawControlSystem:
     """Advanced jaw control system with smooth movements"""
     
-    def __init__(self, pin: int = 18, min_pulse: int = 500, max_pulse: int = 2500):
+    def __init__(self, pin: int = 18, min_pulse: int = 500, max_pulse: int = 2400):
         self.pin = pin
         self.min_pulse = min_pulse
         self.max_pulse = max_pulse
-        
+
         # Hardware state
         self.gpio_handle = None
         self.is_initialized = False
-        self.current_position = ServoPosition(0.0, min_pulse, time.time())
-        
+        self.current_position = ServoPosition(50.0, min_pulse, time.time())  # Start at closed position
+
         # Movement state
         self.is_moving = False
         self.movement_thread = None
         self.stop_movement_flag = threading.Event()
         self.emergency_stop = False
-        
-        # Safety limits
-        self.min_angle = 0.0
-        self.max_angle = 180.0
+        self.shutdown_requested = False
+
+        # ChatterPi specific limits (closed=50°, open=30°) - FINAL CORRECTED
+        self.min_angle = 30.0   # Open position (jaw wide)
+        self.max_angle = 50.0   # Closed position (jaw shut)
         self.max_speed = 180.0  # degrees per second
-        
+
         # Movement queue
         self.movement_queue = []
         self.queue_lock = threading.Lock()
-        
+
+        # Register cleanup handler
+        import atexit
+        atexit.register(self.safe_shutdown)
+
         logger.info(f"Jaw Control System initialized on pin {pin}")
     
     def initialize(self) -> bool:
@@ -76,27 +81,54 @@ class JawControlSystem:
         try:
             # Open GPIO chip
             self.gpio_handle = lgpio.gpiochip_open(0)
-
-            # Try to free the pin first in case it's already claimed
-            try:
-                lgpio.gpio_free(self.gpio_handle, self.pin)
-            except:
-                pass  # Pin wasn't claimed, that's fine
-
+            
             # Set pin as output
             lgpio.gpio_claim_output(self.gpio_handle, self.pin)
-
-            # Set initial position
-            self._set_pulse_width(self.min_pulse)
-
+            
+            # Set initial position to closed (50°)
+            closed_pulse = self._angle_to_pulse(50.0)
+            self._set_pulse_width(closed_pulse)
+            
             self.is_initialized = True
             logger.info("✅ Jaw control system initialized successfully")
             return True
-
+            
         except Exception as e:
             logger.error(f"❌ Failed to initialize jaw control: {e}")
             return False
-    
+
+    def safe_shutdown(self):
+        """Safe shutdown - stop servo PWM and cleanup"""
+        if self.shutdown_requested:
+            return
+
+        self.shutdown_requested = True
+        logger.info("🛑 Safe shutdown initiated")
+
+        try:
+            # Stop any movement immediately
+            self.emergency_stop = True
+            self.stop_movement_flag.set()
+
+            # Wait for movement thread to stop
+            if self.movement_thread and self.movement_thread.is_alive():
+                self.movement_thread.join(timeout=2.0)
+
+            # Disable servo signal to stop servo fighting
+            if self.gpio_handle is not None:
+                try:
+                    lgpio.tx_servo(self.gpio_handle, self.pin, 0, 50, 0, 0)  # Stop servo
+                    logger.info("🔌 Servo signal disabled")
+                except Exception as e:
+                    logger.warning(f"Could not disable servo: {e}")
+
+            # Clean up GPIO
+            self.cleanup()
+            logger.info("✅ Safe shutdown completed")
+
+        except Exception as e:
+            logger.error(f"Error during safe shutdown: {e}")
+
     def cleanup(self):
         """Clean up GPIO resources"""
         if self.gpio_handle is not None:
@@ -104,8 +136,9 @@ class JawControlSystem:
                 # Stop any ongoing movement
                 self.stop_movement()
                 
-                # Return to neutral position
-                self._set_pulse_width(self.min_pulse)
+                # Return to closed position (50°)
+                closed_pulse = self._angle_to_pulse(50.0)
+                self._set_pulse_width(closed_pulse)
                 time.sleep(0.5)
                 
                 # Release GPIO
@@ -118,45 +151,86 @@ class JawControlSystem:
                 logger.error(f"Error during cleanup: {e}")
     
     def _set_pulse_width(self, pulse_width: int):
-        """Set servo pulse width directly"""
+        """Set servo pulse width directly with jitter reduction using lgpio.tx_servo"""
         if not self.is_initialized:
             return False
-        
+
         try:
             # Clamp pulse width to safe range
             pulse_width = max(self.min_pulse, min(self.max_pulse, pulse_width))
-            
-            # Set PWM (20ms period = 50Hz, pulse width in microseconds)
-            lgpio.tx_pwm(self.gpio_handle, self.pin, 50, pulse_width / 20000.0 * 100)
-            
+
+            # Implement deadband to reduce jitter
+            if hasattr(self, 'last_pulse_width') and abs(pulse_width - self.last_pulse_width) < 10:
+                return True  # Skip micro-movements (10µs threshold)
+
+            # Validate pulse width range for lgpio (must be 0-40000 microseconds)
+            if pulse_width < 0 or pulse_width > 40000:
+                logger.error(f"Invalid pulse width: {pulse_width}µs (must be 0-40000)")
+                return False
+
+            # Use lgpio's dedicated servo function for more reliable control
+            # tx_servo(handle, gpio, pulse_width, servo_frequency=50, pulse_offset=0, pulse_cycles=0)
+            result = lgpio.tx_servo(self.gpio_handle, self.pin, pulse_width, 50, 0, 1)
+
+            if result < 0:
+                logger.error(f"lgpio.tx_servo failed with code: {result}")
+                return False
+
+            # Store last pulse width for deadband comparison
+            self.last_pulse_width = pulse_width
+
             # Update current position
             angle = self._pulse_to_angle(pulse_width)
             self.current_position = ServoPosition(angle, pulse_width, time.time())
-            
+
             return True
-            
+
         except Exception as e:
             logger.error(f"Error setting pulse width: {e}")
             return False
+
+    def stop_servo(self):
+        """Stop servo signal to reduce jitter when idle"""
+        if not self.is_initialized:
+            return False
+
+        try:
+            # Stop servo signal completely using tx_servo with 0 pulse width
+            result = lgpio.tx_servo(self.gpio_handle, self.pin, 0, 50, 0, 0)
+            if result < 0:
+                logger.warning(f"lgpio.tx_servo stop failed with code: {result}")
+            else:
+                logger.info("Servo signal stopped to reduce jitter")
+            return True
+        except Exception as e:
+            logger.error(f"Error stopping servo: {e}")
+            return False
     
     def _angle_to_pulse(self, angle: float) -> int:
-        """Convert angle to pulse width"""
+        """Convert angle to pulse width for ChatterPi (30°=closed, 70°=open)"""
         # Clamp angle to valid range
         angle = max(self.min_angle, min(self.max_angle, angle))
-        
-        # Map angle to pulse width
+
+        # ChatterPi mapping: 30° (closed) = min_pulse, 70° (open) = max_pulse
+        # This is a normal linear relationship
         pulse_range = self.max_pulse - self.min_pulse
         angle_range = self.max_angle - self.min_angle
-        
-        pulse_width = self.min_pulse + (angle / angle_range) * pulse_range
+
+        # Linear mapping: higher angle = higher pulse width
+        normalized_angle = (angle - self.min_angle) / angle_range
+        pulse_width = self.min_pulse + (normalized_angle * pulse_range)
+
         return int(pulse_width)
-    
+
     def _pulse_to_angle(self, pulse_width: int) -> float:
-        """Convert pulse width to angle"""
+        """Convert pulse width to angle for ChatterPi (30°=closed, 70°=open)"""
         pulse_range = self.max_pulse - self.min_pulse
         angle_range = self.max_angle - self.min_angle
-        
-        angle = ((pulse_width - self.min_pulse) / pulse_range) * angle_range
+
+        # Linear mapping: higher pulse = higher angle
+        normalized_pulse = (pulse_width - self.min_pulse) / pulse_range
+        angle = self.min_angle + (normalized_pulse * angle_range)
+
         return max(self.min_angle, min(self.max_angle, angle))
     
     def _apply_movement_curve(self, t: float, curve: MovementCurve) -> float:
@@ -318,6 +392,64 @@ class JawControlSystem:
                 "max_pulse": self.max_pulse
             }
         }
+
+    def calibrate_jaw_range(self, step_size: float = 5.0, step_delay: float = 1.0) -> Dict[str, Any]:
+        """
+        Interactive jaw calibration to find optimal range
+        Returns calibration data for user to review
+        """
+        if not self.is_initialized:
+            return {"error": "System not initialized"}
+
+        logger.info("🔧 Starting jaw calibration sequence...")
+        calibration_data = {
+            "start_time": time.time(),
+            "steps": [],
+            "recommended_closed": 0,
+            "recommended_open": 45,
+            "status": "in_progress"
+        }
+
+        try:
+            # Step through range slowly for user observation
+            current_angle = 0
+            while current_angle <= self.max_angle:
+                logger.info(f"📍 Calibrating position: {current_angle}°")
+
+                # Move to position
+                self.move_to_angle(current_angle, 0.5, "linear")
+
+                # Wait for movement and user observation
+                while self.is_moving:
+                    time.sleep(0.1)
+                time.sleep(step_delay)
+
+                # Record step
+                calibration_data["steps"].append({
+                    "angle": current_angle,
+                    "timestamp": time.time(),
+                    "pulse_width": self._angle_to_pulse(current_angle)
+                })
+
+                current_angle += step_size
+
+            # Return to closed position
+            self.move_to_angle(0, 1.0, "ease_in_out")
+            while self.is_moving:
+                time.sleep(0.1)
+
+            calibration_data["status"] = "completed"
+            calibration_data["end_time"] = time.time()
+            calibration_data["duration"] = calibration_data["end_time"] - calibration_data["start_time"]
+
+            logger.info("✅ Calibration sequence completed")
+            return calibration_data
+
+        except Exception as e:
+            logger.error(f"❌ Calibration failed: {e}")
+            calibration_data["status"] = "failed"
+            calibration_data["error"] = str(e)
+            return calibration_data
 
 def main():
     """Test the jaw control system"""
