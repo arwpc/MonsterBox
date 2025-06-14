@@ -12,9 +12,8 @@ router.post('/run', async (req, res) => {
         const scriptPath = path.join(__dirname, '../simple_cleanup_sounds.py');
         logger.info(`Running cleanup script: ${scriptPath}`);
         
-        // Use python on Windows, python3 on Linux
-        const isWindows = os.platform() === 'win32';
-        const pythonCommand = isWindows ? 'python' : 'python3';
+        // Linux-only system: use python3
+        const pythonCommand = 'python3';
         const args = ['--delete']; // Always delete the files
         
         const pythonProcess = spawn(pythonCommand, [scriptPath, ...args]);

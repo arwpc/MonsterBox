@@ -50,7 +50,7 @@ class ChatterPiSystemManager:
                     cwd=cwd,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
-                    preexec_fn=os.setsid if os.name != 'nt' else None
+                    preexec_fn=os.setsid
                 )
                 return process
             else:

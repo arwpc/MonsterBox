@@ -47,6 +47,19 @@ nav:
 
   - Security:
       - MCP Setup Notes: security/MCP-SETUP-NOTES.md
+      - Authentication: security/authentication.md
+      - Authorization: security/authorization.md
+      - Remote Access: security/remote-access.md
+
+  - Testing:
+      - Overview: testing/index.md
+      - Test Organization: testing/organization.md
+      - API Testing: testing/api-testing.md
+      - Integration Testing: testing/integration.md
+      - Security Testing: testing/security.md
+      - Hardware Testing: testing/hardware.md
+      - Conversation Testing: testing/conversation.md
+      - Test Reports: testing/reports.md
 
   - Animatronics Workshop:
       - Overview: animatronics/index.md

@@ -17,18 +17,16 @@ const STATUS_CHECK_INTERVAL = 100; // 100ms interval for status checks
 function setupAudioEnvironment() {
     const env = { ...process.env };
 
-    if (os.platform() !== 'win32') {
-        // Unix-like systems
-        const isRoot = process.getuid && process.getuid() === 0;
-        const uid = isRoot ? parseInt(process.env.SUDO_UID || process.getuid()) : (process.getuid && process.getuid());
+    // Linux-only system - setup audio environment
+    const isRoot = process.getuid && process.getuid() === 0;
+    const uid = isRoot ? parseInt(process.env.SUDO_UID || process.getuid()) : (process.getuid && process.getuid());
 
-        if (uid) {
-            const xdgRuntimeDir = `/run/user/${uid}`;
-            env.XDG_RUNTIME_DIR = xdgRuntimeDir;
-            
-            // Set ALSA as the default audio driver
-            env.SDL_AUDIODRIVER = 'alsa';
-        }
+    if (uid) {
+        const xdgRuntimeDir = `/run/user/${uid}`;
+        env.XDG_RUNTIME_DIR = xdgRuntimeDir;
+
+        // Set ALSA as the default audio driver
+        env.SDL_AUDIODRIVER = 'alsa';
     }
 
     env.PYTHONUNBUFFERED = '1';
