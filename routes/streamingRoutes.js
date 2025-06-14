@@ -109,11 +109,29 @@ router.get('/status/:characterId', async (req, res) => {
         const streamInfo = streamingService.getStreamInfo(characterId);
         const webcamStatus = await webcamService.getWebcamStatus(characterId);
 
+        // Create a clean streamInfo object without circular references
+        const cleanStreamInfo = streamInfo ? {
+            streamId: streamInfo.streamId,
+            status: streamInfo.status,
+            startTime: streamInfo.startTime,
+            lastActivity: streamInfo.lastActivity,
+            config: streamInfo.config ? {
+                characterId: streamInfo.config.characterId,
+                deviceId: streamInfo.config.deviceId,
+                devicePath: streamInfo.config.devicePath,
+                width: streamInfo.config.width,
+                height: streamInfo.config.height,
+                fps: streamInfo.config.fps,
+                quality: streamInfo.config.quality,
+                isRemote: streamInfo.config.isRemote
+            } : null
+        } : null;
+
         res.json({
             success: true,
             characterId: characterId,
             hasStream: !!streamInfo,
-            streamInfo: streamInfo,
+            streamInfo: cleanStreamInfo,
             webcamStatus: webcamStatus,
             clientCount: streamingService.getClientCount(characterId)
         });

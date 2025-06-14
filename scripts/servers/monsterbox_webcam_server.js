@@ -49,16 +49,34 @@ function loadCharacterData() {
 // Get webcam for character
 function getWebcamForCharacter(characterId) {
     const { characters, parts } = loadCharacterData();
-    
+
     const character = characters.find(c => c.id === parseInt(characterId));
     if (!character) return null;
-    
-    const webcam = parts.find(p => 
-        p.character_id === parseInt(characterId) && 
-        p.part_type === 'webcam'
+
+    const webcam = parts.find(p =>
+        p.characterId === parseInt(characterId) &&
+        p.type === 'webcam'
     );
-    
-    return webcam;
+
+    if (!webcam) return null;
+
+    // Parse resolution if it exists (e.g., "1280x720")
+    let width = 640, height = 480;
+    if (webcam.resolution) {
+        const [w, h] = webcam.resolution.split('x').map(Number);
+        if (w && h) {
+            width = w;
+            height = h;
+        }
+    }
+
+    // Return webcam with normalized properties
+    return {
+        ...webcam,
+        width: width,
+        height: height,
+        fps: webcam.fps || 30
+    };
 }
 
 // Stop conflicting camera processes

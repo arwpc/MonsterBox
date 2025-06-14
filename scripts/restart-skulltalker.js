@@ -38,7 +38,7 @@ class SkulltalkerRestart {
                 this.log(`Executing: ${description}`);
             }
             
-            const sshCommand = `ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no ${SKULLTALKER_CONFIG.user}@${SKULLTALKER_CONFIG.host} "${command}"`;
+            const sshCommand = `sshpass -p "${SKULLTALKER_CONFIG.password}" ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o PasswordAuthentication=yes -o PubkeyAuthentication=no ${SKULLTALKER_CONFIG.user}@${SKULLTALKER_CONFIG.host} "${command}"`;
 
             const process = spawn('bash', ['-c', sshCommand], { shell: true });
             

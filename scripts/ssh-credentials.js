@@ -24,12 +24,16 @@ class SSHCredentialsManager {
                 passwordVar: 'ORLOK_SSH_PASSWORD'
             },
             'pumpkinhead': {
-                userVar: 'PUMPKINHEAD_SSH_USER', 
+                userVar: 'PUMPKINHEAD_SSH_USER',
                 passwordVar: 'PUMPKINHEAD_SSH_PASSWORD'
             },
             'coffin': {
                 userVar: 'COFFIN_SSH_USER',
                 passwordVar: 'COFFIN_SSH_PASSWORD'
+            },
+            'skulltalker': {
+                userVar: 'SKULLTALKER_SSH_USER',
+                passwordVar: 'SKULLTALKER_SSH_PASSWORD'
             }
         };
 
@@ -86,7 +90,8 @@ class SSHCredentialsManager {
         const hostMap = {
             '192.168.8.120': 'orlok',
             '192.168.1.101': 'pumpkinhead',
-            '192.168.8.140': 'coffin'
+            '192.168.8.140': 'coffin',
+            '192.168.8.130': 'skulltalker'
         };
 
         const animatronicId = hostMap[host];
@@ -112,22 +117,16 @@ class SSHCredentialsManager {
      */
     buildSSHCommand(animatronicId, host, command, options = {}) {
         const credentials = this.getCredentials(animatronicId);
+        const os = require('os');
 
-        // Always use SSH key authentication (no password prompts)
-        // SSH keys are properly configured and working
-        const sshOptions = [
-            '-o ConnectTimeout=10',
-            '-o StrictHostKeyChecking=no',
-            '-o PasswordAuthentication=no',
-            '-o PubkeyAuthentication=yes',
-            '-o UserKnownHostsFile=/dev/null',
-            '-o LogLevel=ERROR'
-        ].join(' ');
-
-        // Escape command for shell execution
-        const escapedCommand = command.replace(/'/g, "'\"'\"'");
-
-        return `ssh ${sshOptions} ${credentials.user}@${host} '${escapedCommand}'`;
+        // Detect platform and use appropriate SSH method
+        if (os.platform() === 'win32') {
+            // Windows: Use PowerShell script for SSH automation
+            return this.buildWindowsSSHCommand(animatronicId, host, command, credentials, options);
+        } else {
+            // Linux/Unix: Use sshpass for SSH automation
+            return this.buildLinuxSSHCommand(animatronicId, host, command, credentials, options);
+        }
     }
 
     /**
@@ -218,7 +217,8 @@ Remove-Item -Path $PSCommandPath -Force -ErrorAction SilentlyContinue
         const hostMap = {
             '192.168.8.120': 'orlok',
             '192.168.1.101': 'pumpkinhead',
-            '192.168.8.140': 'coffin'
+            '192.168.8.140': 'coffin',
+            '192.168.8.130': 'skulltalker'
         };
 
         const animatronicId = hostMap[host] || 'unknown';
