@@ -1,0 +1,171 @@
+{
+  "meta": {
+    "generatedAt": "2025-06-14T00:00:00.000Z",
+    "totalTasks": 18,
+    "completedTasks": 1,
+    "inProgressTasks": 17,
+    "pendingTasks": 0,
+    "overallProgress": 83.6,
+    "projectName": "MonsterBox",
+    "lastUpdated": "2025-06-14"
+  },
+  "taskStatus": [
+    {
+      "taskId": 1,
+      "taskTitle": "Node.js/Express Backend Review & Enhancement",
+      "status": "in-progress",
+      "completionPercentage": 85,
+      "priority": "high",
+      "complexityScore": 5
+    },
+    {
+      "taskId": 2,
+      "taskTitle": "SSH Configuration & Remote Development",
+      "status": "in-progress",
+      "completionPercentage": 90,
+      "priority": "high",
+      "complexityScore": 7
+    },
+    {
+      "taskId": 3,
+      "taskTitle": "Character Configuration System",
+      "status": "in-progress",
+      "completionPercentage": 95,
+      "priority": "medium",
+      "complexityScore": 6
+    },
+    {
+      "taskId": 4,
+      "taskTitle": "MCP Log Collection System",
+      "status": "in-progress",
+      "completionPercentage": 75,
+      "priority": "high",
+      "complexityScore": 8
+    },
+    {
+      "taskId": 5,
+      "taskTitle": "Hardware Integration Layer",
+      "status": "in-progress",
+      "completionPercentage": 90,
+      "priority": "high",
+      "complexityScore": 9
+    },
+    {
+      "taskId": 6,
+      "taskTitle": "Scene Management System",
+      "status": "in-progress",
+      "completionPercentage": 95,
+      "priority": "medium",
+      "complexityScore": 8
+    },
+    {
+      "taskId": 7,
+      "taskTitle": "Multi-Character Coordination",
+      "status": "in-progress",
+      "completionPercentage": 85,
+      "priority": "medium",
+      "complexityScore": 7
+    },
+    {
+      "taskId": 8,
+      "taskTitle": "Real-time Monitoring Dashboard",
+      "status": "in-progress",
+      "completionPercentage": 70,
+      "priority": "medium",
+      "complexityScore": 7
+    },
+    {
+      "taskId": 9,
+      "taskTitle": "AI Text-to-Speech Integration",
+      "status": "in-progress",
+      "completionPercentage": 95,
+      "priority": "high",
+      "complexityScore": 7
+    },
+    {
+      "taskId": 10,
+      "taskTitle": "Enhanced AI Character Library",
+      "status": "in-progress",
+      "completionPercentage": 90,
+      "priority": "medium",
+      "complexityScore": 6
+    },
+    {
+      "taskId": 11,
+      "taskTitle": "Secure Remote Access System",
+      "status": "in-progress",
+      "completionPercentage": 80,
+      "priority": "high",
+      "complexityScore": 8
+    },
+    {
+      "taskId": 13,
+      "taskTitle": "Backup and Recovery System",
+      "status": "in-progress",
+      "completionPercentage": 60,
+      "priority": "medium",
+      "complexityScore": 6
+    },
+    {
+      "taskId": 14,
+      "taskTitle": "Automated Testing Pipeline",
+      "status": "in-progress",
+      "completionPercentage": 80,
+      "priority": "high",
+      "complexityScore": 7
+    },
+    {
+      "taskId": 15,
+      "taskTitle": "Comprehensive Testing Suite",
+      "status": "in-progress",
+      "completionPercentage": 85,
+      "priority": "high",
+      "complexityScore": 7
+    },
+    {
+      "taskId": 16,
+      "taskTitle": "Task Master + MkDocs Integration",
+      "status": "in-progress",
+      "completionPercentage": 95,
+      "priority": "low",
+      "complexityScore": 6
+    },
+    {
+      "taskId": 17,
+      "taskTitle": "Core AI Integration (API Clients)",
+      "status": "in-progress",
+      "completionPercentage": 85,
+      "priority": "high",
+      "complexityScore": 8
+    },
+    {
+      "taskId": 18,
+      "taskTitle": "ChatterPi AI & Jaw Animation System",
+      "status": "done",
+      "completionPercentage": 100,
+      "priority": "high",
+      "complexityScore": 9
+    }
+  ],
+  "removedTasks": [
+    {
+      "taskId": 12,
+      "taskTitle": "Multi-Factor Authentication (MFA)",
+      "status": "cancelled",
+      "completionPercentage": 30,
+      "reason": "Removed from project scope"
+    }
+  ],
+  "summary": {
+    "averageCompletion": 83.6,
+    "tasksNearCompletion": [3, 6, 9, 16],
+    "tasksNeedingAttention": [8, 13, 4],
+    "highPriorityRemaining": [1, 2, 4, 5, 11, 14, 15, 17],
+    "nextMilestones": [
+      "Complete Task #16 (MkDocs Integration) - 5% remaining",
+      "Complete Task #3 (Character Config) - 5% remaining", 
+      "Complete Task #6 (Scene Management) - 5% remaining",
+      "Complete Task #9 (TTS Integration) - 5% remaining"
+    ]
+  }
+}
