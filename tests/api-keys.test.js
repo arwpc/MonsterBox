@@ -157,54 +157,54 @@ describe('API Keys Integration Tests', function() {
         });
     });
 
-    describe('🎤 Replica Studios API', function() {
-        it('should connect to Replica Studios API with valid key', async function() {
-            const apiKey = process.env.REPLICA_API_KEY;
+    describe('🎤 TopMediai API', function() {
+        it('should connect to TopMediai API with valid key', async function() {
+            const apiKey = process.env.TOPMEDIAI_API_KEY;
 
-            if (!apiKey || apiKey === 'your_replica_api_key_here') {
-                this.skip('Replica API key not configured');
+            if (!apiKey || apiKey === 'your_topmediai_api_key_here') {
+                this.skip('TopMediai API key not configured');
             }
 
             try {
-                const response = await axios.get('https://api.replicastudios.com/v2/library/voices', {
+                const response = await axios.get('https://api.topmediai.com/v1/voices_list', {
                     headers: {
-                        'X-Api-Key': apiKey,
+                        'x-api-key': apiKey,
                         'Accept': 'application/json'
                     },
                     timeout: 15000
                 });
 
                 expect(response.status).to.equal(200);
-                expect(response.data).to.have.property('items');
-                expect(response.data.items).to.be.an('array');
+                expect(response.data).to.have.property('Voice');
+                expect(response.data.Voice).to.be.an('array');
 
-                logger.info('✅ Replica Studios API connection successful', {
-                    voiceCount: response.data.items.length
+                logger.info('✅ TopMediai API connection successful', {
+                    voiceCount: response.data.Voice.length
                 });
-                console.log(`   ✅ Replica Studios API - Connected (${response.data.items.length} voices available)`);
+                console.log(`   ✅ TopMediai API - Connected (${response.data.Voice.length} voices available)`);
 
             } catch (error) {
-                logger.error('❌ Replica Studios API test failed', {
+                logger.error('❌ TopMediai API test failed', {
                     error: error.message,
                     status: error.response?.status,
                     data: error.response?.data
                 });
-                throw new Error(`Replica Studios API failed: ${error.response?.data?.error || error.message}`);
+                throw new Error(`TopMediai API failed: ${error.response?.data?.error || error.message}`);
             }
         });
 
-        it('should test Replica API integration through MonsterBox service', async function() {
-            const apiKey = process.env.REPLICA_API_KEY;
+        it('should test TopMediai API integration through MonsterBox service', async function() {
+            const apiKey = process.env.TOPMEDIAI_API_KEY;
 
-            if (!apiKey || apiKey === 'your_replica_api_key_here') {
-                this.skip('Replica API key not configured');
+            if (!apiKey || apiKey === 'your_topmediai_api_key_here') {
+                this.skip('TopMediai API key not configured');
             }
 
-            const ReplicaAPI = require('../scripts/replicaAPI');
+            const TopMediaiAPI = require('../scripts/topMediaiAPI');
 
             try {
-                const replicaAPI = new ReplicaAPI();
-                const voices = await replicaAPI.getVoices();
+                const topMediaiAPI = new TopMediaiAPI();
+                const voices = await topMediaiAPI.getVoices();
 
                 expect(voices).to.be.an('array');
                 expect(voices.length).to.be.above(0);
@@ -215,17 +215,17 @@ describe('API Keys Integration Tests', function() {
                 expect(firstVoice).to.have.property('name');
                 expect(firstVoice).to.have.property('speaker_id');
 
-                logger.info('✅ MonsterBox Replica API integration working', {
+                logger.info('✅ MonsterBox TopMediai API integration working', {
                     voiceCount: voices.length,
                     firstVoiceName: firstVoice.name
                 });
-                console.log(`   ✅ MonsterBox Replica Integration - Working (${voices.length} voices)`);
+                console.log(`   ✅ MonsterBox TopMediai Integration - Working (${voices.length} voices)`);
 
             } catch (error) {
-                logger.error('❌ MonsterBox Replica API integration test failed', {
+                logger.error('❌ MonsterBox TopMediai API integration test failed', {
                     error: error.message
                 });
-                throw new Error(`MonsterBox Replica integration failed: ${error.message}`);
+                throw new Error(`MonsterBox TopMediai integration failed: ${error.message}`);
             }
         });
     });

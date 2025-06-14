@@ -30,7 +30,7 @@ npm run test:api-keys-verbose
 - **Anthropic Claude** - Tests connection and basic message generation
 - **OpenAI GPT** - Tests connection and chat completion
 - **Google Gemini** - Tests connection and content generation
-- **Replica Studios** - Tests voice API and MonsterBox integration
+- **TopMediai** - Tests voice API and MonsterBox integration
 
 ### ✅ Environment Variables
 - **SESSION_SECRET** - Validates session encryption key

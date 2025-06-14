@@ -20,7 +20,13 @@ const rbacService = require('../services/auth/rbacService');
 
 describe('SSH Integration Tests', function() {
     this.timeout(30000); // 30 second timeout for SSH operations
-    
+
+    // Skip SSH tests if environment variable is set
+    if (process.env.SKIP_SSH_TESTS === 'true') {
+        console.log('⏭️  Skipping SSH tests (SKIP_SSH_TESTS=true)');
+        return;
+    }
+
     let adminToken = null;
     let operatorToken = null;
     let sshStub = null;

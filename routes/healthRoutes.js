@@ -100,18 +100,18 @@ router.get('/connectivity', async (req, res) => {
             tests: {}
         };
 
-        // Test Replica API (most important for MonsterBox)
-        if (process.env.REPLICA_API_KEY && !process.env.REPLICA_API_KEY.includes('your_')) {
+        // Test TopMediai API (most important for MonsterBox)
+        if (process.env.TOPMEDIAI_API_KEY && !process.env.TOPMEDIAI_API_KEY.includes('your_')) {
             try {
-                const ReplicaAPI = require('../scripts/replicaAPI');
-                const replicaAPI = new ReplicaAPI();
+                const TopMediaiAPI = require('../scripts/topMediaiAPI');
+                const topMediaiAPI = new TopMediaiAPI();
                 // Just test if we can create the instance (validates API key format)
-                results.tests.replica = { status: 'configured', message: 'API instance created successfully' };
+                results.tests.topmediai = { status: 'configured', message: 'API instance created successfully' };
             } catch (error) {
-                results.tests.replica = { status: 'error', message: 'Failed to create API instance' };
+                results.tests.topmediai = { status: 'error', message: 'Failed to create API instance' };
             }
         } else {
-            results.tests.replica = { status: 'not-configured', message: 'API key not set' };
+            results.tests.topmediai = { status: 'not-configured', message: 'API key not set' };
         }
 
         // Count successful configurations
@@ -160,7 +160,7 @@ router.get('/status', (req, res) => {
                     anthropic: process.env.ANTHROPIC_API_KEY,
                     openai: process.env.OPENAI_API_KEY,
                     google: process.env.GOOGLE_API_KEY,
-                    replica: process.env.REPLICA_API_KEY
+                    topmediai: process.env.TOPMEDIAI_API_KEY
                 }).filter(([key, value]) => value && !value.includes('your_')).length
             }
         };

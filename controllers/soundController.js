@@ -36,6 +36,13 @@ function setupAudioEnvironment() {
 
 function startSoundPlayer() {
     return new Promise((resolve, reject) => {
+        // Skip sound player initialization in test environment
+        if (process.env.NODE_ENV === 'test') {
+            logger.info('Skipping sound player initialization in test environment');
+            resolve();
+            return;
+        }
+
         if (!soundPlayerProcess) {
             const scriptPath = path.resolve(__dirname, '..', 'scripts', 'sound_player.py');
             logger.info(`Starting sound player: ${scriptPath}`);

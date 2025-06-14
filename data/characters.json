@@ -194,11 +194,20 @@
       ],
       "chatterpi_config": {
         "jaw_animation_enabled": true,
-        "ai_characters": ["orlok", "robochat", "blackbeard"],
+        "ai_characters": [
+          "orlok",
+          "robochat",
+          "blackbeard"
+        ],
         "default_character": "orlok",
         "jaw_settings": {
           "auto_detect_servo": true,
-          "preferred_gpio_pins": [18, 19, 20, 21],
+          "preferred_gpio_pins": [
+            18,
+            19,
+            20,
+            21
+          ],
           "calibration": {
             "closed_angle": 50,
             "open_angle": 30,
@@ -214,9 +223,18 @@
           "enabled": true,
           "volume": 0.7,
           "character_voices": {
-            "orlok": {"rate": 0.8, "pitch": 0.7},
-            "robochat": {"rate": 1.1, "pitch": 1.2},
-            "blackbeard": {"rate": 0.9, "pitch": 0.8}
+            "orlok": {
+              "rate": 0.8,
+              "pitch": 0.7
+            },
+            "robochat": {
+              "rate": 1.1,
+              "pitch": 1.2
+            },
+            "blackbeard": {
+              "rate": 0.9,
+              "pitch": 0.8
+            }
           }
         }
       }

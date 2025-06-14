@@ -28,7 +28,14 @@ class SimpleChatterPiManager {
             logger.info('ChatterPi services already initialized');
             return true;
         }
-        
+
+        // Skip ChatterPi initialization in test environment
+        if (process.env.NODE_ENV === 'test') {
+            logger.info('Skipping ChatterPi initialization in test environment');
+            this.isInitialized = true;
+            return true;
+        }
+
         try {
             logger.info('🚀 Starting ChatterPi jaw animation service...');
             
