@@ -217,25 +217,94 @@ class TopMediaiAPI {
 
             logger.info(`Requesting speech generation for speaker: ${params.voiceId}`);
 
-            // Try the actual TopMediai TTS request, fall back to mock if authentication fails
+            // Make the actual TopMediai TTS request with proper error handling
             let audioData;
+            let isRealAudio = false;
+
             try {
-                // Make direct request without retry wrapper to handle auth errors properly
-                const response = await this.axiosInstance.post('/text2speech', requestBody, {
-                    responseType: 'arraybuffer',
-                    headers: {
-                        'x-api-key': this.apiKey,
-                        'Content-Type': 'application/json'
+                logger.info('Making TopMediai TTS request with body:', JSON.stringify(requestBody));
+
+                // Try different authentication methods
+                const authMethods = [
+                    // Method 1: x-api-key header
+                    {
+                        headers: {
+                            'x-api-key': this.apiKey,
+                            'Content-Type': 'application/json'
+                        }
+                    },
+                    // Method 2: Authorization Bearer header
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${this.apiKey}`,
+                            'Content-Type': 'application/json'
+                        }
+                    },
+                    // Method 3: API key in body
+                    {
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        data: {
+                            ...requestBody,
+                            api_key: this.apiKey
+                        }
                     }
-                });
-                audioData = Buffer.from(response.data);
-                logger.info('Successfully generated speech using TopMediai TTS API');
+                ];
+
+                let lastError = null;
+
+                for (const [index, method] of authMethods.entries()) {
+                    try {
+                        logger.info(`Trying authentication method ${index + 1}...`);
+
+                        const requestData = method.data || requestBody;
+                        const response = await this.axiosInstance.post('/text2speech', requestData, {
+                            responseType: 'arraybuffer',
+                            headers: method.headers
+                        });
+
+                        audioData = Buffer.from(response.data);
+                        isRealAudio = true;
+                        logger.info(`✅ Successfully generated speech using TopMediai TTS API (method ${index + 1})`);
+                        break;
+
+                    } catch (methodError) {
+                        lastError = methodError;
+                        logger.warn(`Authentication method ${index + 1} failed:`, methodError.response?.status, methodError.response?.statusText);
+
+                        if (methodError.response?.data) {
+                            try {
+                                const errorText = Buffer.from(methodError.response.data).toString();
+                                logger.warn(`Error response: ${errorText}`);
+                            } catch (e) {
+                                logger.warn('Could not parse error response');
+                            }
+                        }
+                    }
+                }
+
+                // If all methods failed, throw the last error
+                if (!isRealAudio && lastError) {
+                    throw lastError;
+                }
+
             } catch (ttsError) {
-                if (ttsError.response?.status === 400 || ttsError.message.includes('Invalid authentication token')) {
-                    logger.warn('TopMediai TTS authentication failed, using enhanced mock audio');
-                    audioData = this.generateEnhancedMockAudio(params.text, params.voiceId);
-                } else {
-                    throw ttsError;
+                logger.error('All TopMediai authentication methods failed, falling back to system TTS');
+                logger.error('Error details:', {
+                    status: ttsError.response?.status,
+                    statusText: ttsError.response?.statusText,
+                    message: ttsError.message
+                });
+
+                // Fallback to system TTS
+                try {
+                    audioData = await this.generateSystemTTS(params.text, params.voiceId);
+                    isRealAudio = true;
+                    logger.info('✅ Generated audio using system TTS fallback');
+                } catch (fallbackError) {
+                    logger.error('System TTS fallback also failed:', fallbackError.message);
+                    throw new Error(`Both TopMediai and system TTS failed. TopMediai: ${ttsError.message}. System: ${fallbackError.message}`);
                 }
             }
 
@@ -254,17 +323,17 @@ class TopMediaiAPI {
                 await fs.mkdir(soundsDir, { recursive: true });
             }
 
-            // Save audio file directly
-            const mp3Path = path.join(soundsDir, `${filename}.mp3`);
-            await fs.writeFile(mp3Path, audioData);
-            logger.info(`Saved MP3 file to: ${mp3Path}`);
+            // Save audio file (MP3 format for real TopMediai audio)
+            const audioPath = path.join(soundsDir, `${filename}.mp3`);
+            await fs.writeFile(audioPath, audioData);
+            logger.info(`Saved ${isRealAudio ? 'real TopMediai' : 'fallback'} MP3 file to: ${audioPath}`);
 
             // Return the result with proper file paths
-            const mp3Filename = `${filename}.mp3`;
+            const audioFilename = `${filename}.mp3`;
             return {
-                filename: mp3Filename,
-                filepath: mp3Path,
-                url: `/sounds/${mp3Filename}`,  // Return web-accessible path
+                filename: audioFilename,
+                filepath: audioPath,
+                url: `/sounds/${audioFilename}`,  // Return web-accessible path
                 uuid: `topmediai-${timestamp}`, // Generate UUID for compatibility
                 state: 'SUCCESS',
                 duration: null, // TopMediai doesn't provide duration in response
@@ -308,43 +377,79 @@ class TopMediaiAPI {
         }
     }
 
-    /**
-     * Generate enhanced mock audio data
-     * Creates a more realistic MP3 file with duration based on text length
-     */
-    generateEnhancedMockAudio(text, voiceId) {
-        // Calculate approximate duration based on text length (average reading speed)
-        const wordsPerMinute = 150;
-        const words = text.split(' ').length;
-        const durationSeconds = Math.max(1, (words / wordsPerMinute) * 60);
 
-        // Create a more complete MP3 file structure
-        // This is still a mock, but with proper MP3 frame structure
-        const frameSize = 417; // Standard MP3 frame size for 44.1kHz
-        const framesNeeded = Math.ceil(durationSeconds * 38.28); // Frames per second for 44.1kHz
-
-        const mp3Data = Buffer.alloc(framesNeeded * frameSize);
-
-        // Fill with MP3 frame headers and silent audio data
-        for (let i = 0; i < framesNeeded; i++) {
-            const frameStart = i * frameSize;
-            // MP3 frame header for 44.1kHz, 128kbps, mono
-            mp3Data[frameStart] = 0xFF;
-            mp3Data[frameStart + 1] = 0xFB;
-            mp3Data[frameStart + 2] = 0x90;
-            mp3Data[frameStart + 3] = 0x00;
-            // Rest of frame filled with zeros (silence)
-        }
-
-        logger.info(`Generated enhanced mock audio for text: "${text.substring(0, 50)}..." (${durationSeconds.toFixed(1)}s, voice: ${voiceId})`);
-        return mp3Data;
-    }
 
     /**
-     * Generate mock audio data for testing purposes (legacy method)
+     * Generate audio using system TTS as fallback
+     * Uses espeak or festival if available on the system
      */
-    generateMockAudio(text) {
-        return this.generateEnhancedMockAudio(text, 'unknown');
+    async generateSystemTTS(text, voiceId) {
+        const { spawn } = require('child_process');
+        const fs = require('fs').promises;
+        const path = require('path');
+
+        return new Promise((resolve, reject) => {
+            // Create a temporary WAV file
+            const tempFile = path.join('/tmp', `tts_${Date.now()}.wav`);
+
+            // Try espeak first (more common on Linux systems)
+            const espeak = spawn('espeak', [
+                '-s', '150',        // Speed (words per minute)
+                '-p', '50',         // Pitch (0-99)
+                '-a', '100',        // Amplitude (volume)
+                '-v', 'en',         // Voice (English)
+                '-w', tempFile,     // Write to WAV file
+                text
+            ]);
+
+            espeak.on('close', async (code) => {
+                if (code === 0) {
+                    try {
+                        // Read the generated WAV file
+                        const audioData = await fs.readFile(tempFile);
+
+                        // Clean up temp file
+                        await fs.unlink(tempFile).catch(() => {});
+
+                        logger.info(`Generated system TTS audio: ${audioData.length} bytes`);
+                        resolve(audioData);
+                    } catch (error) {
+                        reject(new Error(`Failed to read generated audio file: ${error.message}`));
+                    }
+                } else {
+                    reject(new Error(`espeak failed with exit code ${code}`));
+                }
+            });
+
+            espeak.on('error', (error) => {
+                // If espeak fails, try festival
+                logger.warn('espeak not available, trying festival...');
+
+                const festival = spawn('echo', [text]);
+                const festivalTTS = spawn('festival', ['--tts'], { stdio: ['pipe', 'pipe', 'pipe'] });
+
+                festival.stdout.pipe(festivalTTS.stdin);
+
+                let audioChunks = [];
+                festivalTTS.stdout.on('data', (chunk) => {
+                    audioChunks.push(chunk);
+                });
+
+                festivalTTS.on('close', (code) => {
+                    if (code === 0 && audioChunks.length > 0) {
+                        const audioData = Buffer.concat(audioChunks);
+                        logger.info(`Generated festival TTS audio: ${audioData.length} bytes`);
+                        resolve(audioData);
+                    } else {
+                        reject(new Error('Both espeak and festival TTS failed. Please install espeak: sudo apt-get install espeak'));
+                    }
+                });
+
+                festivalTTS.on('error', () => {
+                    reject(new Error('System TTS not available. Please install espeak: sudo apt-get install espeak'));
+                });
+            });
+        });
     }
 
     clearCache() {

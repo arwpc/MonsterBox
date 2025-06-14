@@ -22,7 +22,7 @@
         "tags": [],
         "notes": "",
         "created": "2024-10-28T16:24:54.907Z",
-        "lastModified": "2025-06-14T20:18:10.590Z",
+        "lastModified": "2025-06-14T20:30:49.630Z",
         "migratedFrom": "Replica",
         "migrationDate": "2025-06-14T20:10:52.729Z",
         "originalSpeakerId": "b80ebe00-4738-4766-85b7-35c3096acb79",
@@ -547,6 +547,22 @@
         },
         {
           "timestamp": "2025-06-14T20:18:10.590Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": -10,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Serious",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "mp3",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-06-14T20:30:49.630Z",
           "type": "settings_update",
           "settings": {
             "pitch": -10,

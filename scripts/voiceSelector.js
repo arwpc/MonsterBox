@@ -74,7 +74,20 @@ class VoiceSelector {
 
         this.wavesurfer.on('error', error => {
             console.error('WaveSurfer error:', error);
-            this.showError('Error loading audio preview');
+            console.error('Error details:', {
+                message: error.message,
+                stack: error.stack,
+                type: error.type
+            });
+            this.showError('Error loading audio preview: ' + error.message);
+        });
+
+        this.wavesurfer.on('loading', (percent) => {
+            console.log('WaveSurfer loading:', percent + '%');
+        });
+
+        this.wavesurfer.on('ready', () => {
+            console.log('WaveSurfer ready - audio loaded successfully');
         });
     }
 
@@ -326,12 +339,19 @@ class VoiceSelector {
             if (data.url) {
                 // Convert relative URL to absolute URL
                 const absoluteUrl = new URL(data.url, window.location.origin).href;
+                console.log('Loading audio from URL:', absoluteUrl);
+                console.log('Audio data received:', data);
+
                 this.wavesurfer.load(absoluteUrl);
                 this.wavesurfer.on('ready', () => {
+                    console.log('Audio ready, starting playback');
                     this.wavesurfer.play();
                     this.isPlaying = true;
                     document.querySelector('#saveToLibrary').disabled = false;
                 });
+            } else {
+                console.error('No audio URL received in response:', data);
+                this.showError('No audio URL received from server');
             }
             
             // Show success message
