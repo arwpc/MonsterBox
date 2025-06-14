@@ -5,6 +5,7 @@
   "main": "app.js",
   "scripts": {
     "start": "node --no-deprecation app.js",
+    "cleanup": "node cleanup-gpio.js",
     "dev": "nodemon --trace-deprecation --trace-warnings app.js",
     "test": "cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js tests/**/*.test.js",
     "test:watch": "cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js --watch tests/**/*.test.js",
@@ -38,7 +39,10 @@
     "debug:mcp-collect": "node scripts/mcp-debug-collector.js",
     "augment": "node scripts/augment.js",
     "augment:list": "node scripts/augment.js list",
-    "augment:run": "node scripts/augment.js run"
+    "augment:run": "node scripts/augment.js run",
+    "migrate:topmediai": "node scripts/migrate-to-topmediai.js",
+    "test:topmediai": "node scripts/test-topmediai-integration.js",
+    "test:voice-endpoints": "node scripts/test-voice-endpoints.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.53.0",

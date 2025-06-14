@@ -133,24 +133,25 @@ class EnhancedAudioJawAnimator:
             return None
     
     def _audio_callback(self, in_data, frame_count, time_info, status):
-        """Audio stream callback for real-time processing"""
+        """Audio stream callback for real-time processing with minimal latency"""
         try:
             self.stats['audio_callbacks'] += 1
-            
+
             # Convert audio data to numpy array
             audio_data = np.frombuffer(in_data, dtype=np.float32)
-            
-            # Add to buffer for processing
+
+            # Add to buffer for processing with REDUCED BUFFER SIZE for real-time response
             with self.buffer_lock:
                 self.audio_buffer.append(audio_data)
-                
-                # Prevent buffer from growing too large
-                if len(self.audio_buffer) > 10:  # Keep max 10 frames
+
+                # REAL-TIME OPTIMIZATION: Keep only 3 frames max (was 10)
+                max_frames = getattr(self.config.audio_config, 'MAX_BUFFER_FRAMES', 3)
+                if len(self.audio_buffer) > max_frames:
                     self.audio_buffer.pop(0)
                     self.stats['buffer_overruns'] += 1
-            
+
             return (None, pyaudio.paContinue)
-            
+
         except Exception as e:
             logger.error(f"Audio callback error: {e}")
             self.stats['processing_errors'] += 1

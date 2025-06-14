@@ -43,6 +43,9 @@ router.patch('/metadata/:characterId', voiceController.updateVoiceMetadata);
 router.get('/history/:characterId', voiceController.getVoiceHistory);
 router.get('/stats/:characterId', voiceController.getVoiceStats);
 router.delete('/history/:characterId', voiceController.deleteVoiceHistory);
+
+// TopMediai specific routes
+router.get('/capabilities/:speaker_id', voiceController.getVoiceCapabilities);
 router.post('/test-connection', voiceController.testVoiceConnection);
 
 // Download file from URL
