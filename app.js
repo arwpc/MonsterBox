@@ -17,6 +17,7 @@ let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, 
 let characterService;
 let authMiddleware, rbacMiddleware;
 let jawAnimationSystem;
+let chatterPiServiceManager;
 
 try {
     express = require('express');
@@ -234,6 +235,9 @@ function startServer() {
         // Initialize jaw animation system
         initializeJawAnimationSystem(server);
 
+        // Initialize ChatterPi services with real-time optimizations
+        initializeChatterPiServices();
+
         logger.info('Ready for Halloween, Sir.');
     });
 
@@ -270,6 +274,38 @@ async function initializeJawAnimationSystem(server) {
     } catch (error) {
         logger.error('Failed to initialize jaw animation system:', error);
         // Don't exit - jaw animation is optional
+    }
+}
+
+// Initialize ChatterPi services with real-time optimizations
+async function initializeChatterPiServices() {
+    try {
+        logger.info('🚀 Initializing ChatterPi services...');
+
+        const ChatterPiServiceManager = require('./services/chatterPiServiceManager');
+        chatterPiServiceManager = new ChatterPiServiceManager();
+
+        const success = await chatterPiServiceManager.initialize();
+
+        if (success) {
+            logger.info('✅ ChatterPi services initialized with real-time optimizations');
+
+            // Make service manager available to routes
+            const chatterpiRoutes = require('./routes/chatterpiRoutes');
+            if (chatterpiRoutes.setServiceManager) {
+                chatterpiRoutes.setServiceManager(chatterPiServiceManager);
+            }
+
+            // Log service status
+            const status = chatterPiServiceManager.getServiceStatus();
+            logger.info('ChatterPi Service Status:', status);
+
+        } else {
+            logger.error('❌ Failed to initialize ChatterPi services');
+        }
+
+    } catch (error) {
+        logger.error('❌ Error initializing ChatterPi services:', error);
     }
 }
 

@@ -11,11 +11,9 @@ const WebSocket = require('ws');
 const fs = require('fs').promises;
 const path = require('path');
 
-// Initialize AI integration
+// Initialize AI integration and service manager
 let aiInstance = null;
-let jawBridgeProcess = null;
-let jawWebSocket = null;
-let enhancedAnimatorProcess = null;
+let chatterPiServiceManager = null;
 
 try {
     aiInstance = new ChatterPiAI({
@@ -25,64 +23,26 @@ try {
     });
     console.log('✅ ChatterPi AI integration initialized');
 
-    // Start the jaw animation bridge
-    startJawBridge();
+    // Initialize the consolidated service manager
+    const ChatterPiServiceManager = require('../services/chatterPiServiceManager');
+    chatterPiServiceManager = new ChatterPiServiceManager();
+
 } catch (error) {
     console.error('❌ Failed to initialize ChatterPi AI:', error.message);
 }
 
-// Start the jaw animation bridge process
-function startJawBridge() {
-    try {
-        console.log('🦴 Starting ChatterPi jaw animation bridge...');
-
-        jawBridgeProcess = spawn('python3', ['scripts/chatterpi/web_jaw_bridge.py'], {
-            stdio: ['pipe', 'pipe', 'pipe'],
-            cwd: process.cwd()
-        });
-
-        jawBridgeProcess.stdout.on('data', (data) => {
-            console.log(`Jaw Bridge: ${data.toString().trim()}`);
-        });
-
-        jawBridgeProcess.stderr.on('data', (data) => {
-            console.error(`Jaw Bridge Error: ${data.toString().trim()}`);
-        });
-
-        jawBridgeProcess.on('close', (code) => {
-            console.log(`Jaw Bridge process exited with code ${code}`);
-            jawBridgeProcess = null;
-        });
-
-        // Connect to the jaw bridge WebSocket after a delay
-        setTimeout(connectToJawBridge, 3000);
-
-    } catch (error) {
-        console.error('❌ Failed to start jaw bridge:', error.message);
-    }
+// Service manager integration
+function setServiceManager(serviceManager) {
+    chatterPiServiceManager = serviceManager;
+    console.log('✅ ChatterPi Service Manager integrated with routes');
 }
 
-// Connect to the jaw animation bridge WebSocket
-function connectToJawBridge() {
-    try {
-        jawWebSocket = new WebSocket('ws://localhost:8765');
-
-        jawWebSocket.on('open', () => {
-            console.log('✅ Connected to ChatterPi jaw animation bridge');
-        });
-
-        jawWebSocket.on('error', (error) => {
-            console.error('❌ Jaw bridge WebSocket error:', error.message);
-        });
-
-        jawWebSocket.on('close', () => {
-            console.log('🔌 Jaw bridge WebSocket disconnected');
-            jawWebSocket = null;
-        });
-
-    } catch (error) {
-        console.error('❌ Failed to connect to jaw bridge:', error.message);
+// Get jaw WebSocket connection from service manager
+function getJawWebSocket() {
+    if (chatterPiServiceManager) {
+        return chatterPiServiceManager.getWebSocket('jawAnimator');
     }
+    return null;
 }
 
 /**
@@ -121,14 +81,20 @@ router.post('/chat', async (req, res) => {
         // Generate jaw animation data
         const jawAnimation = generateJawAnimation(result.text);
 
-        // Trigger jaw animation if bridge is connected
-        if (jawWebSocket && jawWebSocket.readyState === WebSocket.OPEN) {
+        // Trigger jaw animation using service manager
+        if (chatterPiServiceManager) {
             try {
-                jawWebSocket.send(JSON.stringify({
+                const success = chatterPiServiceManager.sendJawCommand({
                     type: 'start_animation',
                     character: result.character,
                     text: result.text
-                }));
+                });
+
+                if (success) {
+                    console.log('🦴 Jaw animation triggered via service manager');
+                } else {
+                    console.warn('⚠️ Jaw animation service not available');
+                }
             } catch (error) {
                 console.error('Error triggering jaw animation:', error.message);
             }
@@ -175,21 +141,28 @@ router.post('/jaw/move', async (req, res) => {
             });
         }
 
-        if (!jawWebSocket || jawWebSocket.readyState !== WebSocket.OPEN) {
+        if (!chatterPiServiceManager) {
             return res.status(503).json({
                 success: false,
-                error: 'Jaw animation system not available'
+                error: 'ChatterPi service manager not available'
             });
         }
 
         console.log(`🦴 Moving jaw to ${angle}°`);
 
-        jawWebSocket.send(JSON.stringify({
+        const success = chatterPiServiceManager.sendJawCommand({
             type: 'jaw_move',
             angle: parseFloat(angle),
-            duration: parseFloat(duration || 1.0),
-            curve_type: curve_type || 'ease_in_out'
-        }));
+            duration: parseFloat(duration || 0.5),  // Faster default duration
+            curve_type: curve_type || 'linear'      // Linear for real-time response
+        });
+
+        if (!success) {
+            return res.status(503).json({
+                success: false,
+                error: 'Jaw animation system not available'
+            });
+        }
 
         res.json({
             success: true,
@@ -712,4 +685,47 @@ function getFallbackGreeting(character) {
     return greetings[character] || greetings.orlok;
 }
 
+/**
+ * GET /api/chatterpi/system/status
+ * Get comprehensive system status including all services
+ */
+router.get('/system/status', (req, res) => {
+    try {
+        if (!chatterPiServiceManager) {
+            return res.json({
+                success: false,
+                error: 'Service manager not initialized',
+                services: {},
+                timestamp: new Date().toISOString()
+            });
+        }
+
+        const status = chatterPiServiceManager.getServiceStatus();
+
+        res.json({
+            success: true,
+            ...status,
+            realTimeOptimizations: {
+                enabled: true,
+                features: [
+                    'Fast silence detection (50ms)',
+                    'Rapid jaw closing (8x faster)',
+                    'Minimal audio buffering (2 frames)',
+                    'High update rate (100Hz)',
+                    'Immediate servo response'
+                ]
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error getting system status:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get system status',
+            details: error.message
+        });
+    }
+});
+
 module.exports = router;
+module.exports.setServiceManager = setServiceManager;
