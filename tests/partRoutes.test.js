@@ -1,5 +1,6 @@
 const fs = require('fs').promises;
 const path = require('path');
+const { chai, app, expect } = require('./setupTests');
 
 describe('Part Routes', () => {
     let originalPartsData;
