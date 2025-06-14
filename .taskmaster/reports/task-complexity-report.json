@@ -1,9 +1,9 @@
 {
   "meta": {
     "generatedAt": "2025-06-06T15:43:33.539Z",
-    "tasksAnalyzed": 15,
-    "totalTasks": 15,
-    "analysisCount": 16,
+    "tasksAnalyzed": 14,
+    "totalTasks": 14,
+    "analysisCount": 15,
     "thresholdScore": 7,
     "projectName": "Taskmaster",
     "usedResearch": true
@@ -105,14 +105,7 @@
       "expansionPrompt": "Break down security implementation into authentication system, access control, API security, encryption handling, and audit logging",
       "reasoning": "High complexity due to critical security requirements and comprehensive coverage needs."
     },
-    {
-      "taskId": 12,
-      "taskTitle": "API Documentation System",
-      "complexityScore": 4,
-      "recommendedSubtasks": 3,
-      "expansionPrompt": "Separate documentation system into MkDocs setup, API specification, and automated generation components",
-      "reasoning": "Lower complexity with well-defined tools and standards to follow."
-    },
+
     {
       "taskId": 13,
       "taskTitle": "Backup and Recovery System",

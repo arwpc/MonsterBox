@@ -40,8 +40,13 @@ class TopMediaiAPI {
         this.cacheLifetime = 5 * 60 * 1000; // 5 minutes
 
         if (!this.apiKey) {
-            logger.error('TOPMEDIAI_API_KEY environment variable is not set');
-            throw new Error('TopMediai API key is required');
+            if (process.env.NODE_ENV === 'test') {
+                logger.warn('TOPMEDIAI_API_KEY not set in test environment - TTS will be disabled');
+                this.apiKey = 'test-key-placeholder';
+            } else {
+                logger.error('TOPMEDIAI_API_KEY environment variable is not set');
+                throw new Error('TopMediai API key is required');
+            }
         }
     }
 

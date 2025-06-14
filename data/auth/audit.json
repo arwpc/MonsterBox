@@ -3092,6 +3092,76 @@
         "timestamp": "2025-06-11T23:36:21.399Z",
         "source": "ssh-auth-service"
       }
+    },
+    {
+      "timestamp": "2025-06-14T22:27:30.280Z",
+      "event": "AUTH_SUCCESS",
+      "data": {
+        "username": "admin",
+        "sessionId": "session_1749940050259_qa2yp9mdk",
+        "ipAddress": "127.0.0.1",
+        "userAgent": "test-agent"
+      }
+    },
+    {
+      "timestamp": "2025-06-14T22:27:30.693Z",
+      "event": "AUTH_FAILED",
+      "data": {
+        "username": "admin",
+        "reason": "Invalid password",
+        "ipAddress": "127.0.0.1",
+        "userAgent": "test-agent"
+      }
+    },
+    {
+      "timestamp": "2025-06-14T22:27:31.269Z",
+      "event": "AUTH_SUCCESS",
+      "data": {
+        "username": "admin",
+        "sessionId": "session_1749940051256_vh8zn5g24",
+        "ipAddress": "::ffff:127.0.0.1",
+        "timestamp": "2025-06-14T22:27:30.795Z"
+      }
+    },
+    {
+      "timestamp": "2025-06-14T22:28:01.697Z",
+      "event": "AUTH_SUCCESS",
+      "data": {
+        "username": "admin",
+        "sessionId": "session_1749940081679_8jcdkslt7",
+        "ipAddress": "127.0.0.1",
+        "userAgent": "mocha-test"
+      }
+    },
+    {
+      "timestamp": "2025-06-14T22:28:02.103Z",
+      "event": "AUTH_FAILED",
+      "data": {
+        "username": "admin",
+        "reason": "Invalid password",
+        "ipAddress": "127.0.0.1",
+        "userAgent": "mocha-test"
+      }
+    },
+    {
+      "timestamp": "2025-06-14T22:28:02.583Z",
+      "event": "AUTH_SUCCESS",
+      "data": {
+        "username": "admin",
+        "sessionId": "session_1749940082569_vqjha55wf",
+        "ipAddress": "127.0.0.1",
+        "userAgent": "mocha-test"
+      }
+    },
+    {
+      "timestamp": "2025-06-14T22:28:03.053Z",
+      "event": "AUTH_SUCCESS",
+      "data": {
+        "username": "admin",
+        "sessionId": "session_1749940083040_zgui8a3sx",
+        "ipAddress": "::ffff:127.0.0.1",
+        "timestamp": "2025-06-14T22:28:02.638Z"
+      }
     }
   ]
 }

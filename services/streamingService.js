@@ -32,26 +32,16 @@ class StreamingService extends EventEmitter {
     }
 
     /**
-     * Get platform-appropriate shell command for executing SSH
+     * Get shell command for executing SSH (Linux-only system)
      * @param {string} command - The command to execute
      * @returns {Object} Shell command configuration
      */
     getShellCommand(command) {
-        const isWindows = os.platform() === 'win32';
-
-        if (isWindows) {
-            return {
-                cmd: 'cmd',
-                args: ['/c', command],
-                options: { shell: true }
-            };
-        } else {
-            return {
-                cmd: 'sh',
-                args: ['-c', command],
-                options: { shell: true }
-            };
-        }
+        return {
+            cmd: 'sh',
+            args: ['-c', command],
+            options: { shell: true }
+        };
     }
 
     /**

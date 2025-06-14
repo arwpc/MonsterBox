@@ -279,77 +279,12 @@ Remove-Item -Path $PSCommandPath -Force -ErrorAction SilentlyContinue
      */
     buildSCPCommand(animatronicId, host, sourcePath, destPath, options = {}) {
         const credentials = this.getCredentials(animatronicId);
-        const os = require('os');
 
-        // Detect platform and use appropriate SCP method
-        if (os.platform() === 'win32') {
-            // Windows: Use PowerShell script for SCP automation
-            return this.buildWindowsSCPCommand(animatronicId, host, sourcePath, destPath, credentials, options);
-        } else {
-            // Linux/Unix: Use sshpass for SCP automation
-            return this.buildLinuxSCPCommand(animatronicId, host, sourcePath, destPath, credentials, options);
-        }
+        // Linux-only system: Use sshpass for SCP automation
+        return this.buildLinuxSCPCommand(animatronicId, host, sourcePath, destPath, credentials, options);
     }
 
-    /**
-     * Build SCP command for Windows using PowerShell
-     */
-    buildWindowsSCPCommand(animatronicId, host, sourcePath, destPath, credentials, options = {}) {
-        const fs = require('fs');
-        const path = require('path');
-        const os = require('os');
 
-        // Create a unique temporary script file
-        const tempDir = os.tmpdir();
-        const scriptName = `scp_${animatronicId}_${Date.now()}.ps1`;
-        const scriptPath = path.join(tempDir, scriptName);
-
-        // Escape special characters for PowerShell
-        const escapedPassword = credentials.password.replace(/'/g, "''");
-        const recursiveFlag = options.recursive ? '-r' : '';
-
-        // PowerShell script content for SCP
-        const powershellScript = `
-# SCP automation script for ${animatronicId}
-$scpPassword = '${escapedPassword}'
-
-# Use Start-Process with input redirection
-$psi = New-Object System.Diagnostics.ProcessStartInfo
-$psi.FileName = "scp"
-$psi.Arguments = "-o ConnectTimeout=10 -o StrictHostKeyChecking=no -o PasswordAuthentication=yes -o PubkeyAuthentication=no ${recursiveFlag} ${credentials.user}@${host}:${sourcePath} '${destPath}'"
-$psi.UseShellExecute = $false
-$psi.RedirectStandardInput = $true
-$psi.RedirectStandardOutput = $true
-$psi.RedirectStandardError = $true
-
-$process = [System.Diagnostics.Process]::Start($psi)
-
-# Send password when prompted
-Start-Sleep -Milliseconds 500
-$process.StandardInput.WriteLine($scpPassword)
-$process.StandardInput.Close()
-
-# Wait for completion and get output
-$output = $process.StandardOutput.ReadToEnd()
-$errorOutput = $process.StandardError.ReadToEnd()
-$process.WaitForExit()
-
-if ($process.ExitCode -eq 0) {
-    Write-Output $output
-} else {
-    Write-Host $errorOutput -ForegroundColor Red
-    exit $process.ExitCode
-}
-
-# Clean up
-Remove-Item -Path $PSCommandPath -Force -ErrorAction SilentlyContinue
-`;
-
-        // Write the script to temp file
-        fs.writeFileSync(scriptPath, powershellScript);
-
-        return `powershell -ExecutionPolicy Bypass -File "${scriptPath}"`;
-    }
 
     /**
      * Build SCP command for Linux/Unix using sshpass

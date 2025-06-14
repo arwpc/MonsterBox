@@ -8,6 +8,50 @@ echo "🎬 Starting ChatterPi AI System..."
 # Change to the MonsterBox directory
 cd "$(dirname "$0")/../.."
 
+# Function to detect jaw servos
+detect_jaw_servos() {
+    echo "🔍 Detecting jaw servos from parts configuration..."
+
+    if [ ! -f "data/parts.json" ]; then
+        echo "⚠️ Parts configuration not found: data/parts.json"
+        return 1
+    fi
+
+    # Use Python to parse JSON and detect jaw servos
+    python3 -c "
+import json
+import sys
+
+try:
+    with open('data/parts.json', 'r') as f:
+        parts = json.load(f)
+
+    jaw_servos = []
+    for part in parts:
+        if (part.get('type') == 'servo' and
+            'jaw' in part.get('name', '').lower() and
+            part.get('pin') is not None):
+            jaw_servos.append({
+                'name': part.get('name'),
+                'pin': part.get('pin'),
+                'characterId': part.get('characterId')
+            })
+
+    if jaw_servos:
+        print('✅ Detected jaw servos:')
+        for servo in jaw_servos:
+            print(f'   - {servo[\"name\"]} (GPIO {servo[\"pin\"]}, Character {servo[\"characterId\"]})')
+    else:
+        print('⚠️ No jaw servos detected in parts configuration')
+
+except Exception as e:
+    print(f'❌ Error detecting jaw servos: {e}')
+"
+}
+
+# Detect jaw servos
+detect_jaw_servos
+
 # Function to cleanup processes on exit
 cleanup() {
     echo ""
