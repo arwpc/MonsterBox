@@ -194,13 +194,13 @@ exports.generateSpeech = async (req, res) => {
             return handleError(res, new Error('Speaker ID and text are required'), 400);
         }
 
-        // Transform options into generation options
+        // Transform options into generation options for TopMediai
         const generationOptions = {
             ...options,
             speed: options?.speed || 1.0,
             pitch: options?.pitch || 0,
             volume: options?.volume || 0,
-            extensions: ['mp3'],  // Request MP3 format directly
+            emotion: options?.emotion || 'Neutral', // TopMediai emotion parameter
             bitRate: 128  // Standard MP3 bitrate
         };
 
@@ -404,6 +404,24 @@ exports.getVoiceStats = async (req, res) => {
     }
 };
 
+exports.getVoiceCapabilities = async (req, res) => {
+    try {
+        const { speaker_id } = req.params;
+
+        if (!speaker_id) {
+            return handleError(res, new Error('Speaker ID is required'), 400);
+        }
+
+        const capabilities = await voiceService.getVoiceCapabilities(speaker_id);
+        res.json(capabilities);
+    } catch (error) {
+        if (error.message.includes('Voice not found')) {
+            return handleError(res, error, 404);
+        }
+        handleError(res, error);
+    }
+};
+
 exports.testVoiceConnection = async (req, res) => {
     try {
         const { speaker_id } = req.body;
@@ -412,8 +430,19 @@ exports.testVoiceConnection = async (req, res) => {
             return handleError(res, new Error('Speaker ID is required'), 400);
         }
 
-        const testResult = await voiceService.testConnection(speaker_id);
-        res.json(testResult);
+        // For TopMediai, we can test by generating a short sample
+        const testResult = await voiceService.generateSpeech(
+            'Hello, this is a test.',
+            speaker_id,
+            { emotion: 'Neutral' }
+        );
+
+        res.json({
+            success: true,
+            message: 'Voice connection test successful',
+            testAudio: testResult.url,
+            provider: 'TopMediai'
+        });
     } catch (error) {
         if (error.message.includes('API key is required')) {
             return handleError(res, error, 401);

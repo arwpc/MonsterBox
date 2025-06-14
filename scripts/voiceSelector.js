@@ -175,9 +175,15 @@ class VoiceSelector {
     }
 
     getVoiceStyles(voice) {
-        const baseStyles = ['neutral'];
-        if (voice.capabilities && voice.capabilities['tts.vox_2_0']) {
-            baseStyles.push('happy', 'sad', 'angry', 'fearful');
+        // For TopMediai, use the emotions array if available
+        if (voice.emotions && Array.isArray(voice.emotions)) {
+            return voice.emotions;
+        }
+
+        // Fallback for compatibility
+        const baseStyles = ['Neutral'];
+        if (voice.capabilities && voice.capabilities['emotion_control']) {
+            baseStyles.push('Happy', 'Sad', 'Angry', 'Excited', 'Calm');
         }
         return baseStyles;
     }
@@ -191,13 +197,13 @@ class VoiceSelector {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${voice.name}</td>
-                <td>${voice.description || 'No description available'}</td>
+                <td>${voice.description || voice.classification || 'No description available'}</td>
                 <td>${voice.gender || 'Unknown'}</td>
                 <td>${voice.age || 'Unknown'}</td>
-                <td>${voice.accent || 'None'}</td>
+                <td>${voice.language || voice.accent || 'Unknown'}</td>
                 <td>
                     ${this.getVoiceStyles(voice).map(style => `
-                        <button class="style-btn" data-voice-id="${voice.uuid}" data-style="${style}">
+                        <button class="style-btn" data-voice-id="${voice.uuid}" data-style="${style}" title="Preview with ${style} emotion">
                             <i class="fas fa-play"></i> ${style}
                         </button>
                     `).join('')}
@@ -299,12 +305,12 @@ class VoiceSelector {
                 body: JSON.stringify({
                     speaker_id: speakerId,
                     text: previewText,
-                    style,
                     characterId: this.characterId,
                     options: {
                         speed: parseFloat(document.querySelector('#speed').value),
                         pitch: parseInt(document.querySelector('#pitch').value),
-                        volume: parseInt(document.querySelector('#volume').value)
+                        volume: parseInt(document.querySelector('#volume').value),
+                        emotion: style // Use style as emotion for TopMediai
                     }
                 })
             });

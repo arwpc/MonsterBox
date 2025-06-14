@@ -167,18 +167,17 @@ class ChatterPiAI extends EventEmitter {
             
             console.log(`🎤 Generating speech for: "${text}"`);
             
-            // TopMediai API call (placeholder - actual implementation depends on API format)
-            const response = await axios.post('https://api.topmediai.com/v1/tts', {
+            // TopMediai API call using the new API integration
+            const response = await axios.post('https://api.topmediai.com/v1/text2speech', {
                 text: text,
-                voice_id: voiceId,
-                speed: options.speed || 1.0,
-                pitch: options.pitch || 1.0,
-                format: 'mp3'
+                speaker: voiceId,
+                emotion: options.emotion || 'Neutral'
             }, {
                 headers: {
-                    'Authorization': `Bearer ${this.config.topmediaiApiKey}`,
+                    'x-api-key': this.config.topmediaiApiKey,
                     'Content-Type': 'application/json'
                 },
+                responseType: 'arraybuffer',
                 timeout: 30000
             });
             
@@ -187,7 +186,9 @@ class ChatterPiAI extends EventEmitter {
             this.emit('speech_generated', {
                 text,
                 voiceId,
-                audioData: response.data,
+                audioData: Buffer.from(response.data),
+                format: 'mp3',
+                provider: 'TopMediai',
                 timestamp: new Date().toISOString()
             });
             

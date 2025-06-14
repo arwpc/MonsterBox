@@ -282,8 +282,8 @@ async function initializeChatterPiServices() {
     try {
         logger.info('🚀 Initializing ChatterPi services...');
 
-        const ChatterPiServiceManager = require('./services/chatterPiServiceManager');
-        chatterPiServiceManager = new ChatterPiServiceManager();
+        const SimpleChatterPiManager = require('./services/simpleChatterPiManager');
+        chatterPiServiceManager = new SimpleChatterPiManager();
 
         const success = await chatterPiServiceManager.initialize();
 

@@ -70,16 +70,21 @@ class ChatterPiServiceManager {
             await this.applyRealTimeConfiguration();
             
             // Start services in optimal order
-            const startupOrder = ['enhancedJawAnimator', 'audioServoBridge'];
-            
+            const startupOrder = ['gpioJawServer'];
+
             for (const serviceId of startupOrder) {
+                logger.info(`🔄 Attempting to start service: ${serviceId}`);
                 const success = await this.startService(serviceId);
+
                 if (!success && this.serviceDefinitions[serviceId].critical) {
-                    throw new Error(`Failed to start critical service: ${serviceId}`);
+                    logger.warn(`Failed to start critical service: ${serviceId}`);
+                    logger.info('System will continue without jaw animation features');
+                } else if (success) {
+                    logger.info(`✅ Successfully started ${this.serviceDefinitions[serviceId].name}`);
                 }
-                
+
                 // Brief delay between service starts
-                await this.delay(1000);
+                await this.delay(2000);
             }
             
             // Setup WebSocket connections
@@ -106,24 +111,30 @@ class ChatterPiServiceManager {
     async applyRealTimeConfiguration() {
         try {
             logger.info('⚙️ Applying real-time timing configuration...');
-            
+
             const configScript = path.join(process.cwd(), 'scripts/chatterpi/apply_real_time_fix.py');
-            
+
             if (await this.fileExists(configScript)) {
+                logger.info('Real-time config script found, applying optimizations...');
+
                 const configProcess = spawn('python3', [configScript], {
                     cwd: process.cwd(),
                     stdio: ['pipe', 'pipe', 'pipe']
                 });
-                
-                await this.waitForProcess(configProcess, 'Real-time config application');
-                logger.info('✅ Real-time configuration applied');
+
+                try {
+                    await this.waitForProcess(configProcess, 'Real-time config application');
+                    logger.info('✅ Real-time configuration applied successfully');
+                } catch (configError) {
+                    logger.warn('Real-time config application failed, using default settings:', configError.message);
+                }
             } else {
-                logger.warn('Real-time config script not found, using default settings');
+                logger.info('Real-time config script not found, using default settings');
             }
-            
+
         } catch (error) {
-            logger.error('Failed to apply real-time configuration:', error);
-            // Continue anyway - not critical for basic operation
+            logger.warn('Could not apply real-time configuration:', error.message);
+            logger.info('Continuing with default settings...');
         }
     }
     
@@ -165,9 +176,15 @@ class ChatterPiServiceManager {
             });
             
             // Wait for service to be ready
-            await this.waitForServiceReady(serviceId);
+            const ready = await this.waitForServiceReady(serviceId);
+
+            if (ready) {
+                logger.info(`✅ ${serviceDef.name} is ready and running`);
+            } else {
+                logger.warn(`⚠️ ${serviceDef.name} started but may not be fully ready`);
+            }
             
-            logger.info(`✅ ${serviceDef.name} started successfully (PID: ${process.pid})`);
+            logger.info(`✅ ${serviceDef.name} started successfully (PID: ${childProcess.pid})`);
             return true;
             
         } catch (error) {
@@ -181,11 +198,17 @@ class ChatterPiServiceManager {
      */
     setupProcessMonitoring(serviceId, process, serviceDef) {
         process.stdout.on('data', (data) => {
-            logger.info(`[${serviceDef.name}] ${data.toString().trim()}`);
+            const output = data.toString().trim();
+            if (output) {
+                this.logServiceOutput(serviceDef.name, output, 'stdout');
+            }
         });
-        
+
         process.stderr.on('data', (data) => {
-            logger.error(`[${serviceDef.name}] ${data.toString().trim()}`);
+            const output = data.toString().trim();
+            if (output) {
+                this.logServiceOutput(serviceDef.name, output, 'stderr');
+            }
         });
         
         process.on('close', (code) => {
@@ -361,6 +384,69 @@ class ChatterPiServiceManager {
         logger.info('✅ ChatterPi services cleaned up');
     }
     
+    /**
+     * Intelligently log service subprocess output based on content
+     * @param {string} serviceName - Name of the service
+     * @param {string} output - The output message from service process
+     * @param {string} stream - Either 'stdout' or 'stderr'
+     */
+    logServiceOutput(serviceName, output, stream) {
+        // Parse Python logging format: YYYY-MM-DD HH:MM:SS,mmm - LEVEL - message
+        const pythonLogPattern = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} - (\w+) - (.+)$/;
+        const match = output.match(pythonLogPattern);
+
+        if (match) {
+            const [, level, message] = match;
+            const logMessage = `[${serviceName}] ${message}`;
+
+            // Map Python log levels to Winston log levels
+            switch (level.toUpperCase()) {
+                case 'DEBUG':
+                    logger.debug(logMessage);
+                    break;
+                case 'INFO':
+                    logger.info(logMessage);
+                    break;
+                case 'WARNING':
+                case 'WARN':
+                    logger.warn(logMessage);
+                    break;
+                case 'ERROR':
+                    logger.error(logMessage);
+                    break;
+                case 'CRITICAL':
+                case 'FATAL':
+                    logger.error(logMessage);
+                    break;
+                default:
+                    // Unknown level, use info for stderr, debug for stdout
+                    if (stream === 'stderr') {
+                        logger.info(logMessage);
+                    } else {
+                        logger.debug(logMessage);
+                    }
+            }
+        } else {
+            // Non-standard format - check for common patterns
+            const lowerOutput = output.toLowerCase();
+            const logMessage = `[${serviceName}] ${output}`;
+
+            if (lowerOutput.includes('error') || lowerOutput.includes('failed') || lowerOutput.includes('exception')) {
+                logger.error(logMessage);
+            } else if (lowerOutput.includes('warning') || lowerOutput.includes('warn')) {
+                logger.warn(logMessage);
+            } else if (lowerOutput.includes('✅') || lowerOutput.includes('success') || lowerOutput.includes('started') || lowerOutput.includes('initialized')) {
+                logger.info(logMessage);
+            } else if (stream === 'stderr') {
+                // For stderr without clear indicators, use info level (not error)
+                logger.info(logMessage);
+            } else {
+                // For stdout, use debug level for general output
+                logger.debug(logMessage);
+            }
+        }
+    }
+
     // Utility methods
     async fileExists(filePath) {
         try {

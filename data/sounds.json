@@ -269,5 +269,33 @@
       3
     ],
     "characterId": null
+  },
+  {
+    "id": 131,
+    "name": "Welcome to my castle, mortal. You have entered the domain of Count Orlok.",
+    "filename": "1749932197579-Welcome_to_my_castle__mortal__.mp3",
+    "file": "1749932197579-Welcome_to_my_castle__mortal__.mp3",
+    "characterIds": [
+      1
+    ],
+    "type": "voice",
+    "created": "2025-06-14T20:16:37.585Z",
+    "metadata": {
+      "originalText": "Welcome to my castle, mortal. You have entered the domain of Count Orlok.",
+      "voiceId": "5ab88eb4-d183-11ef-be1d-e86f38d7ec1a",
+      "voiceSettings": {
+        "pitch": -10,
+        "speed": 1,
+        "volume": 0,
+        "emotion": "Serious",
+        "sampleRate": 44100,
+        "bitRate": 128,
+        "outputFormat": "mp3",
+        "channels": 1,
+        "languageCode": "en",
+        "provider": "TopMediai"
+      }
+    },
+    "characterId": null
   }
 ]
