@@ -4161,6 +4161,36 @@
         "ipAddress": "127.0.0.1",
         "userAgent": "mocha-test"
       }
+    },
+    {
+      "timestamp": "2025-06-15T03:23:22.363Z",
+      "event": "AUTH_SUCCESS",
+      "data": {
+        "username": "admin",
+        "sessionId": "session_1749957802341_iqjtbafak",
+        "ipAddress": "127.0.0.1",
+        "userAgent": "test-agent"
+      }
+    },
+    {
+      "timestamp": "2025-06-15T03:23:22.770Z",
+      "event": "AUTH_FAILED",
+      "data": {
+        "username": "admin",
+        "reason": "Invalid password",
+        "ipAddress": "127.0.0.1",
+        "userAgent": "test-agent"
+      }
+    },
+    {
+      "timestamp": "2025-06-15T03:23:23.292Z",
+      "event": "AUTH_SUCCESS",
+      "data": {
+        "username": "admin",
+        "sessionId": "session_1749957803277_nrp79cys5",
+        "ipAddress": "::ffff:127.0.0.1",
+        "timestamp": "2025-06-15T03:23:22.873Z"
+      }
     }
   ]
 }

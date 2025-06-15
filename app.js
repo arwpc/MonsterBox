@@ -18,6 +18,7 @@ let characterService;
 let authMiddleware, rbacMiddleware;
 let jawAnimationSystem;
 let chatterPiServiceManager;
+let hardwareServiceManager;
 
 try {
     express = require('express');
@@ -153,6 +154,7 @@ app.use('/api/motion-tracking', require('./routes/api/motionTrackingApiRoutes'))
 app.use('/api/voice', voiceRoutes);
 app.use('/jaw-animation', jawAnimationRoutes);
 app.use('/api/chatterpi', require('./routes/chatterpiRoutes'));
+app.use('/api/hardware', require('./routes/api/hardwareApiRoutes').router);
 
 // Test route for video configuration component
 app.get('/test/video-configuration', (req, res) => {
@@ -238,6 +240,9 @@ function startServer() {
         // Initialize ChatterPi services with real-time optimizations
         initializeChatterPiServices();
 
+        // Initialize Hardware WebSocket Services
+        initializeHardwareServices();
+
         logger.info('Ready for Halloween, Sir.');
     });
 
@@ -309,6 +314,36 @@ async function initializeChatterPiServices() {
     }
 }
 
+// Initialize Hardware WebSocket Services
+async function initializeHardwareServices() {
+    try {
+        logger.info('🦾 Initializing Hardware WebSocket Services...');
+
+        const HardwareServiceManager = require('./services/hardwareServiceManager');
+        hardwareServiceManager = new HardwareServiceManager();
+
+        const success = await hardwareServiceManager.initialize();
+
+        if (success) {
+            logger.info('✅ Hardware WebSocket Services initialized successfully');
+
+            // Connect hardware service manager to API routes
+            const hardwareApiRoutes = require('./routes/api/hardwareApiRoutes');
+            hardwareApiRoutes.setHardwareServiceManager(hardwareServiceManager);
+
+            // Start hardware services for default character (Skulltalker - ID 4)
+            await hardwareServiceManager.startCharacterServices(4);
+
+            logger.info('🎭 Hardware services started for Skulltalker character');
+        } else {
+            logger.error('❌ Failed to initialize Hardware WebSocket Services');
+        }
+
+    } catch (error) {
+        logger.error('❌ Error initializing Hardware WebSocket Services:', error);
+    }
+}
+
 // Initialize the application
 async function initializeApp() {
     try {
@@ -354,6 +389,16 @@ async function gracefulShutdown(reason) {
         logger.info('All sounds stopped');
     } catch (error) {
         logger.error('Error stopping sounds during shutdown:', error);
+    }
+
+    try {
+        // Shutdown hardware services
+        if (hardwareServiceManager) {
+            await hardwareServiceManager.shutdown();
+            logger.info('Hardware services stopped');
+        }
+    } catch (error) {
+        logger.error('Error stopping hardware services during shutdown:', error);
     }
 
     server.close(() => {

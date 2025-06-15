@@ -309,16 +309,20 @@ class CharacterServiceManager:
     async def get_available_characters(self) -> List[Dict[str, Any]]:
         """Get list of available characters"""
         characters = self.characters_data.get("characters", [])
-        return [
-            {
+
+        # Build character info list with async requirements gathering
+        character_list = []
+        for char in characters:
+            char_info = {
                 "id": char.get("id"),
                 "name": char.get("char_name", char.get("name", "Unknown")),
                 "description": char.get("char_description", ""),
                 "animatronic_enabled": char.get("animatronic", {}).get("enabled", False),
                 "hardware_requirements": await self.get_character_requirements(char.get("id"))
             }
-            for char in characters
-        ]
+            character_list.append(char_info)
+
+        return character_list
         
     async def shutdown(self):
         """Shutdown all services and cleanup"""
