@@ -105,8 +105,15 @@ class CharacterServiceManager:
                 return
                 
             with open(self.characters_file, 'r') as f:
-                self.characters_data = json.load(f)
-                
+                raw_data = json.load(f)
+
+            # Handle both array and object formats
+            if isinstance(raw_data, list):
+                # Convert array to expected format
+                self.characters_data = {"characters": raw_data}
+            else:
+                self.characters_data = raw_data
+
             logger.info(f"📋 Loaded {len(self.characters_data.get('characters', []))} character configurations")
             
         except Exception as e:
@@ -116,11 +123,33 @@ class CharacterServiceManager:
     async def get_character_requirements(self, character_id: int) -> Dict[str, Any]:
         """Get hardware requirements for a specific character"""
         characters = self.characters_data.get("characters", [])
-        
+
         for character in characters:
             if character.get("id") == character_id:
-                return character.get("hardware_requirements", {})
-                
+                # Check if character has hardware_requirements field
+                if "hardware_requirements" in character:
+                    return character.get("hardware_requirements", {})
+
+                # Otherwise, derive requirements from animatronic services
+                animatronic = character.get("animatronic", {})
+                if animatronic.get("enabled", False):
+                    services = animatronic.get("services", [])
+                    requirements = {}
+
+                    # Map services to hardware requirements
+                    if any("servo" in s or "motor" in s for s in services):
+                        requirements["motor"] = {"enabled": True}
+                    if any("gpio" in s or "light" in s or "led" in s for s in services):
+                        requirements["light"] = {"enabled": True}
+                    if "camera" in services:
+                        requirements["webcam"] = {"enabled": True}
+                    if "linear-actuator" in services:
+                        requirements["actuator"] = {"enabled": True}
+                    if any("sensor" in s for s in services):
+                        requirements["sensor"] = {"enabled": True}
+
+                    return requirements
+
         logger.warning(f"⚠️ Character {character_id} not found, using default requirements")
         return {
             "motor": {"enabled": True},
@@ -283,8 +312,10 @@ class CharacterServiceManager:
         return [
             {
                 "id": char.get("id"),
-                "name": char.get("name"),
-                "hardware_requirements": char.get("hardware_requirements", {})
+                "name": char.get("char_name", char.get("name", "Unknown")),
+                "description": char.get("char_description", ""),
+                "animatronic_enabled": char.get("animatronic", {}).get("enabled", False),
+                "hardware_requirements": await self.get_character_requirements(char.get("id"))
             }
             for char in characters
         ]
