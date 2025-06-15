@@ -192,12 +192,17 @@ class MotorWebSocketService(BaseHardwareService):
             pin_or_channel = data.get("pin", data.get("channel", 20))
             
             logger.info(f"🛑 Stopping motor: {motor_id}")
-            
-            # Execute stop command (0 speed, 0 duration)
-            result = await self.run_motor_command(
-                "control", control_type, str(pin_or_channel), 
-                "forward", "0", "0"
-            )
+
+            # Execute stop command using HAL or legacy method
+            if self.hardware_system:
+                result = await self.run_motor_command_hal(
+                    motor_id, pin_or_channel, "forward", 0, 0
+                )
+            else:
+                result = await self.run_motor_command_legacy(
+                    "control", control_type, str(pin_or_channel),
+                    "forward", "0", "0"
+                )
             
             # Remove from active motors
             if motor_id in self.active_motors:
@@ -293,9 +298,54 @@ class MotorWebSocketService(BaseHardwareService):
             "configs": self.motor_configs
         }
         
-    async def run_motor_command(self, command: str, control_type: str, pin: str, 
-                               direction: str, speed: str, duration: str) -> Dict[str, Any]:
-        """Run motor control command using existing motor_control.py script"""
+    async def run_motor_command_hal(self, motor_id: str, pin: int, direction: str,
+                                   speed: int, duration: int) -> Dict[str, Any]:
+        """Run motor control command using Hardware Integration Layer"""
+        try:
+            if not self.hardware_system:
+                raise ValueError("Hardware Integration Layer not available")
+
+            # Create device ID for the motor
+            device_id = f"motor_{pin}"
+
+            # Prepare command parameters
+            parameters = {
+                "direction": direction,
+                "speed": speed,
+                "duration": duration,
+                "pin": pin
+            }
+
+            # Execute command through HAL
+            response = await asyncio.get_event_loop().run_in_executor(
+                None,
+                self.hardware_system.execute_hardware_command,
+                device_id, CommandType.CONTROL, parameters
+            )
+
+            if response and response.success:
+                return {
+                    "status": "success",
+                    "message": f"Motor {motor_id} controlled via HAL",
+                    "response": response.data
+                }
+            else:
+                error_msg = response.error_message if response else "Unknown HAL error"
+                return {
+                    "status": "error",
+                    "message": f"HAL motor control failed: {error_msg}"
+                }
+
+        except Exception as e:
+            logger.error(f"Error in HAL motor command: {e}")
+            return {
+                "status": "error",
+                "message": str(e)
+            }
+
+    async def run_motor_command_legacy(self, command: str, control_type: str, pin: str,
+                                      direction: str, speed: str, duration: str) -> Dict[str, Any]:
+        """Run motor control command using legacy motor_control.py script"""
         try:
             # Path to motor control script
             script_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "motor_control.py")
