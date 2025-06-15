@@ -13,7 +13,7 @@ process.env.NODE_NO_WARNINGS = '1';
 
 let express, path, http, logger, app, server, port, audioStream, soundController, fs, os, session;
 let videoStream; // <-- Add videoStream variable
-let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, webcamRoutes, voiceRoutes, cleanupRoutes, healthRoutes, authRoutes, sshRoutes, jawAnimationRoutes;
+let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, webcamRoutes, voiceRoutes, cleanupRoutes, healthRoutes, authRoutes, sshRoutes, jawAnimationRoutes, aiConfigRoutes;
 let characterService;
 let authMiddleware, rbacMiddleware;
 let jawAnimationSystem;
@@ -61,6 +61,9 @@ try {
     // Import authentication routes
     authRoutes = require('./routes/auth/authRoutes');
     sshRoutes = require('./routes/auth/sshRoutes');
+
+    // Import AI configuration routes
+    aiConfigRoutes = require('./routes/ai-config');
 
     // Import jaw animation routes
     const jawAnimationRoutesModule = require('./routes/jawAnimationRoutes');
@@ -186,6 +189,9 @@ app.get('/test/video-configuration', (req, res) => {
 
 app.use('/cleanup', cleanupRoutes);
 app.use('/health', healthRoutes);
+
+// AI Configuration routes
+app.use('/ai-config', aiConfigRoutes);
 
 // Root route
 app.get('/', async (req, res) => {

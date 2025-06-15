@@ -196,6 +196,38 @@ footer {
     left: 100%;
 }
 
+/* AI Configuration specific styling */
+.nav-button.ai-config-link {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+    border-color: #60a5fa;
+    color: #dbeafe;
+    font-weight: bold;
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-button.ai-config-link:hover {
+    background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+    box-shadow: 0 0 15px #60a5fa;
+    color: #ffffff;
+    transform: translateY(-2px);
+}
+
+.nav-button.ai-config-link::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.nav-button.ai-config-link:hover::before {
+    left: 100%;
+}
+
 /* Button Styles */
 .button {
     display: inline-block;
