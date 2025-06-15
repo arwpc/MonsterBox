@@ -52,7 +52,11 @@
     "docs:generate": "node scripts/generate-task-docs.js",
     "docs:build": "bash scripts/build-docs.sh",
     "docs:serve": "bash scripts/build-docs.sh --serve",
-    "docs:deploy": "mkdocs gh-deploy --force"
+    "docs:deploy": "mkdocs gh-deploy --force",
+    "test:ai-integration": "mocha tests/ai-integration-comprehensive.test.js --timeout 30000",
+    "ai:health-check": "node -e \"const {getInstance} = require('./ai/integrations'); getInstance().initialize().then(ai => ai.healthCheck()).then(console.log)\"",
+    "ai:test": "node -e \"const {getInstance} = require('./ai/integrations'); getInstance().initialize().then(ai => ai.testIntegration()).then(console.log)\"",
+    "ai:status": "node -e \"const {getInstance} = require('./ai/integrations'); getInstance().initialize().then(ai => ai.getStatus()).then(console.log)\""
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.53.0",
