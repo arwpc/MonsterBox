@@ -18,6 +18,9 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from motor_websocket_service import MotorWebSocketService
 from light_websocket_service import LightWebSocketService
+from actuator_websocket_service import ActuatorWebSocketService
+from sensor_websocket_service import SensorWebSocketService
+from webcam_websocket_service import WebcamWebSocketService
 from service_registry import ServiceRegistry
 
 # Configure logging
@@ -54,10 +57,9 @@ class CharacterServiceManager:
         self.available_services = {
             "motor": ServiceConfig("motor", MotorWebSocketService, 8771),
             "light": ServiceConfig("light", LightWebSocketService, 8772),
-            # Add more services as they are implemented
-            # "sensor": ServiceConfig("sensor", SensorWebSocketService, 8773),
-            # "webcam": ServiceConfig("webcam", WebcamWebSocketService, 8774),
-            # "actuator": ServiceConfig("actuator", ActuatorWebSocketService, 8775),
+            "sensor": ServiceConfig("sensor", SensorWebSocketService, 8773),
+            "webcam": ServiceConfig("webcam", WebcamWebSocketService, 8774),
+            "actuator": ServiceConfig("actuator", ActuatorWebSocketService, 8775),
         }
         
     async def initialize(self):

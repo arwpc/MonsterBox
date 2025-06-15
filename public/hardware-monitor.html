@@ -234,6 +234,24 @@
                     <p>Port: 8770</p>
                 </div>
             </div>
+
+            <div class="status-card">
+                <h3><span class="status-indicator status-offline" id="sensorServiceStatus"></span> Sensor Service</h3>
+                <div id="sensorServiceInfo">
+                    <p>Status: <span id="sensorServiceStatusText">Offline</span></p>
+                    <p>Active Sensors: <span id="activeSensorCount">0</span></p>
+                    <p>Port: 8773</p>
+                </div>
+            </div>
+
+            <div class="status-card">
+                <h3><span class="status-indicator status-offline" id="webcamServiceStatus"></span> Webcam Service</h3>
+                <div id="webcamServiceInfo">
+                    <p>Status: <span id="webcamServiceStatusText">Offline</span></p>
+                    <p>Active Webcams: <span id="activeWebcamCount">0</span></p>
+                    <p>Port: 8774</p>
+                </div>
+            </div>
         </div>
 
         <div class="controls">
@@ -241,10 +259,16 @@
             <div class="control-group">
                 <select id="characterSelect">
                     <option value="">Select Character...</option>
-                    <option value="4">Orlok (ID: 4)</option>
                 </select>
                 <button onclick="switchCharacter()">Switch Character</button>
                 <button onclick="refreshStatus()">Refresh Status</button>
+            </div>
+            <div class="control-group">
+                <div id="characterInfo" style="display: none;">
+                    <p><strong>Current Character:</strong> <span id="selectedCharacterName">None</span></p>
+                    <p><strong>Hardware Parts:</strong> <span id="characterHardwareParts">None</span></p>
+                    <p><strong>Services:</strong> <span id="characterServices">None</span></p>
+                </div>
             </div>
         </div>
 
@@ -278,6 +302,81 @@
         </div>
 
         <div class="controls">
+            <h3>🦴 Linear Actuator Control</h3>
+            <div class="control-group">
+                <input type="number" id="actuatorPin" placeholder="Pin" value="22" min="0" max="27">
+                <select id="actuatorDirection">
+                    <option value="extend">Extend</option>
+                    <option value="retract">Retract</option>
+                </select>
+                <input type="number" id="actuatorSpeed" placeholder="Speed %" value="75" min="0" max="100">
+                <input type="number" id="actuatorDuration" placeholder="Duration (ms)" value="2000" min="0" max="10000">
+                <button onclick="controlActuator()">Control Actuator</button>
+                <button onclick="stopActuator()" class="btn-danger">Stop Actuator</button>
+            </div>
+        </div>
+
+        <div class="controls">
+            <h3>🦷 Jaw Servo Control</h3>
+            <div class="control-group">
+                <input type="number" id="jawPin" placeholder="Pin" value="18" min="0" max="27">
+                <input type="number" id="jawAngle" placeholder="Angle" value="90" min="0" max="180">
+                <input type="number" id="jawSpeed" placeholder="Speed" value="50" min="1" max="100">
+                <button onclick="controlJaw()">Move Jaw</button>
+                <button onclick="animateJaw()" class="btn-warning">Animate Jaw</button>
+                <button onclick="calibrateJaw()">Calibrate Jaw</button>
+            </div>
+        </div>
+
+        <div class="controls">
+            <h3>📡 Sensor Control</h3>
+            <div class="control-group">
+                <input type="number" id="sensorPin" placeholder="Pin" value="24" min="0" max="27">
+                <select id="sensorType">
+                    <option value="digital">Digital</option>
+                    <option value="analog">Analog</option>
+                    <option value="pir">PIR Motion</option>
+                    <option value="ultrasonic">Ultrasonic</option>
+                    <option value="temperature">Temperature</option>
+                </select>
+                <input type="number" id="sensorInterval" placeholder="Interval (s)" value="1" min="0.1" max="10" step="0.1">
+                <button onclick="readSensor()">Read Sensor</button>
+                <button onclick="startSensorMonitoring()">Start Monitoring</button>
+                <button onclick="stopSensorMonitoring()" class="btn-danger">Stop Monitoring</button>
+            </div>
+        </div>
+
+        <div class="controls">
+            <h3>📹 Webcam Control</h3>
+            <div class="control-group">
+                <select id="webcamDevice">
+                    <option value="/dev/video0">Camera 0</option>
+                    <option value="/dev/video1">Camera 1</option>
+                </select>
+                <select id="webcamResolution">
+                    <option value="640x480">640x480</option>
+                    <option value="800x600">800x600</option>
+                    <option value="1024x768">1024x768</option>
+                    <option value="1280x720">1280x720</option>
+                </select>
+                <input type="number" id="webcamFps" placeholder="FPS" value="30" min="15" max="60">
+                <button onclick="startWebcam()">Start Webcam</button>
+                <button onclick="stopWebcam()" class="btn-danger">Stop Webcam</button>
+                <button onclick="captureImage()" class="btn-warning">Capture Image</button>
+            </div>
+        </div>
+
+        <div class="controls">
+            <h3>📊 Hardware Testing</h3>
+            <div class="control-group">
+                <button onclick="testAllHardware()">Test All Hardware</button>
+                <button onclick="testCharacterHardware()">Test Character Hardware</button>
+                <button onclick="runSafetyCheck()">Run Safety Check</button>
+                <button onclick="validateCalibration()">Validate Calibration</button>
+            </div>
+        </div>
+
+        <div class="controls">
             <h3>📊 Activity Log</h3>
             <div class="log-container" id="logContainer">
                 <div class="log-entry log-info">Hardware monitor initialized...</div>
@@ -291,16 +390,30 @@
                 this.mainWs = null;
                 this.motorWs = null;
                 this.lightWs = null;
+                this.sensorWs = null;
+                this.webcamWs = null;
                 this.registryWs = null;
-                this.reconnectInterval = 10000; // 10 seconds for better responsiveness
+                this.reconnectInterval = 5000; // 5 seconds for better responsiveness
                 this.maxLogEntries = 100;
                 this.debugMode = true; // Enable debug messages to diagnose connection issues
                 this.connectionStates = {
                     mainServer: 'disconnected',
                     motorService: 'disconnected',
                     lightService: 'disconnected',
+                    sensorService: 'disconnected',
+                    webcamService: 'disconnected',
                     registry: 'disconnected'
                 };
+                this.reconnectAttempts = {
+                    mainServer: 0,
+                    motorService: 0,
+                    lightService: 0,
+                    sensorService: 0,
+                    webcamService: 0,
+                    registry: 0
+                };
+                this.maxReconnectAttempts = 5;
+                this.autoInitialized = false;
 
                 this.init();
             }
@@ -313,8 +426,83 @@
                     this.log(`Hostname: ${window.location.hostname}`, 'info');
                     this.connectToServices();
                     this.setupReconnection();
+                    this.loadCharacters();
                     this.log('Hardware monitor started', 'info');
+
+                    // Auto-initialize after connections are established
+                    setTimeout(() => {
+                        this.autoInitialize();
+                    }, 3000);
                 }, 5000); // Wait 5 seconds for services to be fully ready
+            }
+
+            async loadCharacters() {
+                try {
+                    const response = await fetch('/api/characters');
+                    const characters = await response.json();
+
+                    const characterSelect = document.getElementById('characterSelect');
+                    characterSelect.innerHTML = '<option value="">Select Character</option>';
+
+                    characters.forEach(character => {
+                        const option = document.createElement('option');
+                        option.value = character.id;
+                        option.textContent = `${character.name} (ID: ${character.id})`;
+                        characterSelect.appendChild(option);
+                    });
+
+                    // Store characters data for later use
+                    this.charactersData = characters;
+                    this.log(`Loaded ${characters.length} characters`, 'info');
+                } catch (error) {
+                    this.log('Failed to load characters: ' + error.message, 'error');
+                }
+            }
+
+            updateCharacterInfo(characterId) {
+                const character = this.charactersData?.find(c => c.id == characterId);
+                if (character) {
+                    document.getElementById('selectedCharacterName').textContent = character.name;
+                    document.getElementById('characterInfo').style.display = 'block';
+
+                    // Show hardware parts if available
+                    if (character.animatronic && character.animatronic.services) {
+                        const hardwareParts = character.animatronic.services.filter(s =>
+                            s.includes('gpio') || s.includes('motor') || s.includes('servo') ||
+                            s.includes('light') || s.includes('actuator') || s.includes('jaw')
+                        );
+                        document.getElementById('characterHardwareParts').textContent =
+                            hardwareParts.length > 0 ? hardwareParts.join(', ') : 'None configured';
+                        document.getElementById('characterServices').textContent =
+                            character.animatronic.services.join(', ');
+                    } else {
+                        document.getElementById('characterHardwareParts').textContent = 'None configured';
+                        document.getElementById('characterServices').textContent = 'None configured';
+                    }
+                } else {
+                    document.getElementById('characterInfo').style.display = 'none';
+                }
+            }
+
+            autoInitialize() {
+                if (this.autoInitialized) return;
+
+                // Auto-select first character if none selected
+                const characterSelect = document.getElementById('characterSelect');
+                if (characterSelect && characterSelect.value === '') {
+                    const firstOption = characterSelect.querySelector('option[value]:not([value=""])');
+                    if (firstOption) {
+                        characterSelect.value = firstOption.value;
+                        this.log(`Auto-selected character: ${firstOption.textContent}`, 'info');
+
+                        // Auto-switch to the selected character
+                        setTimeout(() => {
+                            switchCharacter();
+                        }, 1000);
+                    }
+                }
+
+                this.autoInitialized = true;
             }
 
             connectToServices() {
@@ -324,6 +512,8 @@
                 this.connectMainServer();
                 this.connectMotorService();
                 this.connectLightService();
+                this.connectSensorService();
+                this.connectWebcamService();
                 this.connectRegistry();
             }
 
@@ -353,9 +543,9 @@
                     }
 
                     this.connectionStates.mainServer = 'connecting';
-                    // Use proxy port for browser compatibility (8790 instead of 8780)
-                    const wsUrl = `ws://${window.location.hostname}:8790`;
-                    this.log(`Attempting to connect to main server proxy at ${wsUrl}...`, 'info');
+                    // Connect directly to Python hardware service
+                    const wsUrl = `ws://${window.location.hostname}:8780`;
+                    this.log(`Attempting to connect to main server at ${wsUrl}...`, 'info');
                     console.log('WebSocket URL:', wsUrl, 'Page location:', window.location.href);
                     this.mainWs = new WebSocket(wsUrl);
 
@@ -402,9 +592,9 @@
                         return; // Already connected
                     }
 
-                    // Use proxy port for browser compatibility (8792 instead of 8771)
-                    const wsUrl = `ws://${window.location.hostname}:8792`;
-                    this.log(`Attempting to connect to motor service proxy at ${wsUrl}...`, 'info');
+                    // Connect directly to Python motor service
+                    const wsUrl = `ws://${window.location.hostname}:8771`;
+                    this.log(`Attempting to connect to motor service at ${wsUrl}...`, 'info');
                     this.motorWs = new WebSocket(wsUrl);
 
                     this.motorWs.onopen = () => {
@@ -442,9 +632,9 @@
                         return; // Already connected
                     }
 
-                    // Use proxy port for browser compatibility (8793 instead of 8772)
-                    const wsUrl = `ws://${window.location.hostname}:8793`;
-                    this.log(`Attempting to connect to light service proxy at ${wsUrl}...`, 'info');
+                    // Connect directly to Python light service
+                    const wsUrl = `ws://${window.location.hostname}:8772`;
+                    this.log(`Attempting to connect to light service at ${wsUrl}...`, 'info');
                     this.lightWs = new WebSocket(wsUrl);
 
                     this.lightWs.onopen = () => {
@@ -476,15 +666,95 @@
                 }
             }
 
+            connectSensorService() {
+                try {
+                    if (this.sensorWs && this.sensorWs.readyState === WebSocket.OPEN) {
+                        return; // Already connected
+                    }
+
+                    // Connect directly to Python sensor service
+                    const wsUrl = `ws://${window.location.hostname}:8773`;
+                    this.log(`Attempting to connect to sensor service at ${wsUrl}...`, 'info');
+                    this.sensorWs = new WebSocket(wsUrl);
+
+                    this.sensorWs.onopen = () => {
+                        this.updateConnectionStatus('sensorService', true);
+                        this.log('Connected to sensor service', 'info');
+                    };
+
+                    this.sensorWs.onmessage = (event) => {
+                        try {
+                            const data = JSON.parse(event.data);
+                            this.handleSensorServiceMessage(data);
+                        } catch (e) {
+                            this.log('Error parsing sensor service message: ' + e.message, 'error');
+                        }
+                    };
+
+                    this.sensorWs.onclose = (event) => {
+                        this.updateConnectionStatus('sensorService', false);
+                        this.log(`Disconnected from sensor service (code: ${event.code})`, 'warning');
+                    };
+
+                    this.sensorWs.onerror = (error) => {
+                        this.updateConnectionStatus('sensorService', false);
+                        this.log('Sensor service connection error', 'error');
+                    };
+                } catch (error) {
+                    this.updateConnectionStatus('sensorService', false);
+                    this.log('Failed to connect to sensor service: ' + error.message, 'error');
+                }
+            }
+
+            connectWebcamService() {
+                try {
+                    if (this.webcamWs && this.webcamWs.readyState === WebSocket.OPEN) {
+                        return; // Already connected
+                    }
+
+                    // Connect directly to Python webcam service
+                    const wsUrl = `ws://${window.location.hostname}:8774`;
+                    this.log(`Attempting to connect to webcam service at ${wsUrl}...`, 'info');
+                    this.webcamWs = new WebSocket(wsUrl);
+
+                    this.webcamWs.onopen = () => {
+                        this.updateConnectionStatus('webcamService', true);
+                        this.log('Connected to webcam service', 'info');
+                    };
+
+                    this.webcamWs.onmessage = (event) => {
+                        try {
+                            const data = JSON.parse(event.data);
+                            this.handleWebcamServiceMessage(data);
+                        } catch (e) {
+                            this.log('Error parsing webcam service message: ' + e.message, 'error');
+                        }
+                    };
+
+                    this.webcamWs.onclose = (event) => {
+                        this.updateConnectionStatus('webcamService', false);
+                        this.log(`Disconnected from webcam service (code: ${event.code})`, 'warning');
+                    };
+
+                    this.webcamWs.onerror = (error) => {
+                        this.updateConnectionStatus('webcamService', false);
+                        this.log('Webcam service connection error', 'error');
+                    };
+                } catch (error) {
+                    this.updateConnectionStatus('webcamService', false);
+                    this.log('Failed to connect to webcam service: ' + error.message, 'error');
+                }
+            }
+
             connectRegistry() {
                 try {
                     if (this.registryWs && this.registryWs.readyState === WebSocket.OPEN) {
                         return; // Already connected
                     }
 
-                    // Use proxy port for browser compatibility (8791 instead of 8770)
-                    const wsUrl = `ws://${window.location.hostname}:8791`;
-                    this.log(`Attempting to connect to service registry proxy at ${wsUrl}...`, 'info');
+                    // Connect directly to Python service registry
+                    const wsUrl = `ws://${window.location.hostname}:8770`;
+                    this.log(`Attempting to connect to service registry at ${wsUrl}...`, 'info');
                     this.registryWs = new WebSocket(wsUrl);
 
                     this.registryWs.onopen = () => {
@@ -568,6 +838,51 @@
                 }
             }
 
+            handleSensorServiceMessage(data) {
+                this.log(`Sensor service message: ${data.type}`, 'debug');
+
+                if (data.type === 'welcome') {
+                    this.log('Sensor service ready', 'info');
+                } else if (data.type === 'sensor_reading') {
+                    this.log(`Sensor ${data.sensor_id}: ${data.value}`, 'info');
+                    // Update sensor count display
+                    document.getElementById('activeSensorCount').textContent = data.sensor_count || '1';
+                } else if (data.type === 'sensor_read_response') {
+                    this.log(`Sensor read: ${data.status} - ${data.message} (value: ${data.value})`, data.status === 'success' ? 'info' : 'error');
+                } else if (data.type === 'sensor_monitor_response') {
+                    this.log(`Sensor monitoring: ${data.status} - ${data.message}`, data.status === 'success' ? 'info' : 'error');
+                } else if (data.type === 'sensor_status_response') {
+                    document.getElementById('activeSensorCount').textContent = data.sensor_count || '0';
+                } else {
+                    this.log(`Unknown sensor service message type: ${data.type}`, 'warning');
+                }
+            }
+
+            handleWebcamServiceMessage(data) {
+                this.log(`Webcam service message: ${data.type}`, 'debug');
+
+                if (data.type === 'welcome') {
+                    this.log('Webcam service ready', 'info');
+                } else if (data.type === 'webcam_status_update') {
+                    this.log(`Webcam ${data.webcam_id}: ${data.status}`, 'info');
+                    // Update webcam count display
+                    document.getElementById('activeWebcamCount').textContent = data.webcam_count || '1';
+                } else if (data.type === 'webcam_start_response') {
+                    this.log(`Webcam start: ${data.status} - ${data.message}`, data.status === 'success' ? 'info' : 'error');
+                } else if (data.type === 'webcam_stop_response') {
+                    this.log(`Webcam stop: ${data.status} - ${data.message}`, data.status === 'success' ? 'info' : 'error');
+                } else if (data.type === 'webcam_capture_response') {
+                    this.log(`Webcam capture: ${data.status} - ${data.message}`, data.status === 'success' ? 'info' : 'error');
+                } else if (data.type === 'webcam_status_response') {
+                    document.getElementById('activeWebcamCount').textContent = data.webcam_count || '0';
+                } else if (data.type === 'webcam_frame') {
+                    // Handle webcam frame data (could display in UI)
+                    this.log(`Webcam frame received from ${data.webcam_id}`, 'debug');
+                } else {
+                    this.log(`Unknown webcam service message type: ${data.type}`, 'warning');
+                }
+            }
+
             handleRegistryMessage(data) {
                 this.log(`Registry message: ${data.type}`, 'debug');
 
@@ -595,6 +910,8 @@
                 const anyConnected = this.mainWs?.readyState === WebSocket.OPEN ||
                                    this.motorWs?.readyState === WebSocket.OPEN ||
                                    this.lightWs?.readyState === WebSocket.OPEN ||
+                                   this.sensorWs?.readyState === WebSocket.OPEN ||
+                                   this.webcamWs?.readyState === WebSocket.OPEN ||
                                    this.registryWs?.readyState === WebSocket.OPEN;
 
                 const connectionStatus = document.getElementById('connectionStatus');
@@ -619,6 +936,16 @@
                         (!this.lightWs || this.lightWs.readyState === WebSocket.CLOSED)) {
                         this.log('Attempting to reconnect to light service...', 'info');
                         this.connectLightService();
+                    }
+                    if (this.connectionStates.sensorService === 'disconnected' &&
+                        (!this.sensorWs || this.sensorWs.readyState === WebSocket.CLOSED)) {
+                        this.log('Attempting to reconnect to sensor service...', 'info');
+                        this.connectSensorService();
+                    }
+                    if (this.connectionStates.webcamService === 'disconnected' &&
+                        (!this.webcamWs || this.webcamWs.readyState === WebSocket.CLOSED)) {
+                        this.log('Attempting to reconnect to webcam service...', 'info');
+                        this.connectWebcamService();
                     }
                     if (this.connectionStates.registry === 'disconnected' &&
                         (!this.registryWs || this.registryWs.readyState === WebSocket.CLOSED)) {
@@ -677,6 +1004,7 @@
 
             if (monitor.sendMessage(monitor.mainWs, message)) {
                 monitor.log(`Switching to character ${characterId}...`, 'info');
+                monitor.updateCharacterInfo(characterId);
             } else {
                 monitor.log('Not connected to main server', 'error');
             }
@@ -767,6 +1095,291 @@
                 monitor.log(`Toggling light on pin ${pin}`, 'info');
             } else {
                 monitor.log('Not connected to light service', 'error');
+            }
+        }
+
+        // Linear Actuator Control Functions
+        function controlActuator() {
+            const pin = parseInt(document.getElementById('actuatorPin').value);
+            const direction = document.getElementById('actuatorDirection').value;
+            const speed = parseInt(document.getElementById('actuatorSpeed').value);
+            const duration = parseInt(document.getElementById('actuatorDuration').value);
+
+            const message = {
+                type: 'actuator_control',
+                actuator_id: `actuator_pin_${pin}`,
+                pin: pin,
+                direction: direction,
+                speed: speed,
+                duration: duration
+            };
+
+            // Try to send to motor service (actuators use motor control)
+            if (monitor.sendMessage(monitor.motorWs, message)) {
+                monitor.log(`Actuator control: pin ${pin}, ${direction}, ${speed}%, ${duration}ms`, 'info');
+            } else {
+                monitor.log('Not connected to motor service', 'error');
+            }
+        }
+
+        function stopActuator() {
+            const pin = parseInt(document.getElementById('actuatorPin').value);
+
+            const message = {
+                type: 'actuator_stop',
+                actuator_id: `actuator_pin_${pin}`,
+                pin: pin
+            };
+
+            if (monitor.sendMessage(monitor.motorWs, message)) {
+                monitor.log(`Stopping actuator on pin ${pin}`, 'info');
+            } else {
+                monitor.log('Not connected to motor service', 'error');
+            }
+        }
+
+        // Jaw Servo Control Functions
+        function controlJaw() {
+            const pin = parseInt(document.getElementById('jawPin').value);
+            const angle = parseInt(document.getElementById('jawAngle').value);
+            const speed = parseInt(document.getElementById('jawSpeed').value);
+
+            const message = {
+                type: 'jaw_control',
+                jaw_id: `jaw_pin_${pin}`,
+                pin: pin,
+                angle: angle,
+                speed: speed
+            };
+
+            // Try to send to motor service (servos use motor control)
+            if (monitor.sendMessage(monitor.motorWs, message)) {
+                monitor.log(`Jaw control: pin ${pin}, angle ${angle}°, speed ${speed}`, 'info');
+            } else {
+                monitor.log('Not connected to motor service', 'error');
+            }
+        }
+
+        function animateJaw() {
+            const pin = parseInt(document.getElementById('jawPin').value);
+
+            const message = {
+                type: 'jaw_animate',
+                jaw_id: `jaw_pin_${pin}`,
+                pin: pin,
+                animation: 'talk'
+            };
+
+            if (monitor.sendMessage(monitor.motorWs, message)) {
+                monitor.log(`Starting jaw animation on pin ${pin}`, 'info');
+            } else {
+                monitor.log('Not connected to motor service', 'error');
+            }
+        }
+
+        function calibrateJaw() {
+            const pin = parseInt(document.getElementById('jawPin').value);
+
+            const message = {
+                type: 'jaw_calibrate',
+                jaw_id: `jaw_pin_${pin}`,
+                pin: pin
+            };
+
+            if (monitor.sendMessage(monitor.motorWs, message)) {
+                monitor.log(`Calibrating jaw servo on pin ${pin}`, 'info');
+            } else {
+                monitor.log('Not connected to motor service', 'error');
+            }
+        }
+
+        // Hardware Testing Functions
+        async function testAllHardware() {
+            monitor.log('Starting comprehensive hardware test...', 'info');
+
+            // Test motor service
+            const motorTest = {
+                type: 'motor_control',
+                motor_id: 'test_motor',
+                pin: 20,
+                direction: 'forward',
+                speed: 25,
+                duration: 500
+            };
+
+            if (monitor.sendMessage(monitor.motorWs, motorTest)) {
+                monitor.log('Motor test command sent', 'info');
+            }
+
+            // Test light service
+            setTimeout(() => {
+                const lightTest = {
+                    type: 'light_control',
+                    light_id: 'test_light',
+                    pin: 21,
+                    state: 'on',
+                    duration: 500
+                };
+
+                if (monitor.sendMessage(monitor.lightWs, lightTest)) {
+                    monitor.log('Light test command sent', 'info');
+                }
+            }, 1000);
+        }
+
+        async function testCharacterHardware() {
+            const characterId = parseInt(document.getElementById('characterSelect').value);
+            if (!characterId) {
+                monitor.log('Please select a character first', 'warning');
+                return;
+            }
+
+            monitor.log(`Testing hardware for character ${characterId}...`, 'info');
+
+            const message = {
+                type: 'test_character_hardware',
+                character_id: characterId
+            };
+
+            if (monitor.sendMessage(monitor.mainWs, message)) {
+                monitor.log('Character hardware test initiated', 'info');
+            } else {
+                monitor.log('Not connected to main server', 'error');
+            }
+        }
+
+        async function runSafetyCheck() {
+            monitor.log('Running safety check...', 'info');
+
+            const message = {
+                type: 'safety_check'
+            };
+
+            if (monitor.sendMessage(monitor.mainWs, message)) {
+                monitor.log('Safety check initiated', 'info');
+            } else {
+                monitor.log('Not connected to main server', 'error');
+            }
+        }
+
+        async function validateCalibration() {
+            monitor.log('Validating calibration data...', 'info');
+
+            const message = {
+                type: 'validate_calibration'
+            };
+
+            if (monitor.sendMessage(monitor.mainWs, message)) {
+                monitor.log('Calibration validation initiated', 'info');
+            } else {
+                monitor.log('Not connected to main server', 'error');
+            }
+        }
+
+        // Sensor Control Functions
+        function readSensor() {
+            const pin = parseInt(document.getElementById('sensorPin').value);
+            const sensorType = document.getElementById('sensorType').value;
+
+            const message = {
+                type: 'sensor_read',
+                sensor_id: `sensor_pin_${pin}`,
+                pin: pin,
+                sensor_type: sensorType
+            };
+
+            if (monitor.sendMessage(monitor.sensorWs, message)) {
+                monitor.log(`Reading sensor on pin ${pin} (type: ${sensorType})`, 'info');
+            } else {
+                monitor.log('Not connected to sensor service', 'error');
+            }
+        }
+
+        function startSensorMonitoring() {
+            const pin = parseInt(document.getElementById('sensorPin').value);
+            const sensorType = document.getElementById('sensorType').value;
+            const interval = parseFloat(document.getElementById('sensorInterval').value);
+
+            const message = {
+                type: 'sensor_monitor_start',
+                sensor_id: `sensor_pin_${pin}`,
+                pin: pin,
+                sensor_type: sensorType,
+                interval: interval
+            };
+
+            if (monitor.sendMessage(monitor.sensorWs, message)) {
+                monitor.log(`Starting sensor monitoring on pin ${pin} (interval: ${interval}s)`, 'info');
+            } else {
+                monitor.log('Not connected to sensor service', 'error');
+            }
+        }
+
+        function stopSensorMonitoring() {
+            const pin = parseInt(document.getElementById('sensorPin').value);
+
+            const message = {
+                type: 'sensor_monitor_stop',
+                sensor_id: `sensor_pin_${pin}`
+            };
+
+            if (monitor.sendMessage(monitor.sensorWs, message)) {
+                monitor.log(`Stopping sensor monitoring on pin ${pin}`, 'info');
+            } else {
+                monitor.log('Not connected to sensor service', 'error');
+            }
+        }
+
+        // Webcam Control Functions
+        function startWebcam() {
+            const device = document.getElementById('webcamDevice').value;
+            const resolution = document.getElementById('webcamResolution').value;
+            const fps = parseInt(document.getElementById('webcamFps').value);
+
+            const message = {
+                type: 'webcam_start',
+                webcam_id: `webcam_${device.replace('/dev/video', '')}`,
+                device: device,
+                resolution: resolution,
+                fps: fps
+            };
+
+            if (monitor.sendMessage(monitor.webcamWs, message)) {
+                monitor.log(`Starting webcam ${device} at ${resolution}, ${fps} fps`, 'info');
+            } else {
+                monitor.log('Not connected to webcam service', 'error');
+            }
+        }
+
+        function stopWebcam() {
+            const device = document.getElementById('webcamDevice').value;
+
+            const message = {
+                type: 'webcam_stop',
+                webcam_id: `webcam_${device.replace('/dev/video', '')}`
+            };
+
+            if (monitor.sendMessage(monitor.webcamWs, message)) {
+                monitor.log(`Stopping webcam ${device}`, 'info');
+            } else {
+                monitor.log('Not connected to webcam service', 'error');
+            }
+        }
+
+        function captureImage() {
+            const device = document.getElementById('webcamDevice').value;
+            const filename = `capture_${Date.now()}.jpg`;
+
+            const message = {
+                type: 'webcam_capture',
+                webcam_id: `webcam_${device.replace('/dev/video', '')}`,
+                filename: filename
+            };
+
+            if (monitor.sendMessage(monitor.webcamWs, message)) {
+                monitor.log(`Capturing image from webcam ${device}`, 'info');
+            } else {
+                monitor.log('Not connected to webcam service', 'error');
             }
         }
     </script>

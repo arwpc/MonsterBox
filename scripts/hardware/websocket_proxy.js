@@ -104,7 +104,10 @@ class HardwareWebSocketProxy {
             // Forward messages from Python service to browser
             try {
                 if (browserWs.readyState === WebSocket.OPEN) {
-                    browserWs.send(data);
+                    // Ensure data is sent as string for JSON compatibility
+                    const messageStr = Buffer.isBuffer(data) ? data.toString('utf8') : data.toString();
+                    browserWs.send(messageStr);
+                    logger.debug(`📤 Forwarded message to browser for ${clientId}: ${messageStr.substring(0, 100)}...`);
                 }
             } catch (error) {
                 logger.error(`❌ Error forwarding message to browser for ${clientId}:`, error);
@@ -130,7 +133,10 @@ class HardwareWebSocketProxy {
             try {
                 // Forward messages from browser to Python service
                 if (pythonWs.readyState === WebSocket.OPEN) {
-                    pythonWs.send(data);
+                    // Ensure data is properly formatted for Python service
+                    const messageStr = Buffer.isBuffer(data) ? data.toString('utf8') : data.toString();
+                    pythonWs.send(messageStr);
+                    logger.debug(`📥 Forwarded message to Python for ${clientId}: ${messageStr.substring(0, 100)}...`);
                 } else {
                     logger.warn(`Cannot forward message - Python ${serviceName} not connected for ${clientId}`);
                 }

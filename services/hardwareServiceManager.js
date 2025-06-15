@@ -6,7 +6,7 @@
 const { spawn } = require('child_process');
 const path = require('path');
 const logger = require('../scripts/logger');
-const HardwareWebSocketProxy = require('../scripts/hardware/websocket_proxy');
+
 const WebSocket = require('ws');
 const FallbackHardwareServer = require('./fallbackHardwareServer');
 
@@ -15,7 +15,7 @@ class HardwareServiceManager {
         this.hardwareProcess = null;
         this.fallbackServer = null;
         this.isRunning = false;
-        this.webSocketProxy = new HardwareWebSocketProxy();
+
         this.usingFallback = false;
         this.reconnectAttempts = 0;
         this.maxReconnectAttempts = 3;
@@ -43,13 +43,6 @@ class HardwareServiceManager {
 
             // Start health monitoring
             this.startHealthMonitoring();
-
-            // Start WebSocket proxy for browser compatibility
-            const proxyStarted = await this.webSocketProxy.start();
-            if (!proxyStarted) {
-                logger.error('❌ Failed to start WebSocket proxy');
-                return false;
-            }
 
             logger.info('✅ Hardware Service Manager initialized successfully');
             return true;
@@ -328,10 +321,7 @@ class HardwareServiceManager {
                 clearInterval(this.healthCheckInterval);
             }
 
-            // Stop WebSocket proxy
-            if (this.webSocketProxy) {
-                await this.webSocketProxy.stop();
-            }
+
 
             // Stop fallback server if running
             if (this.fallbackServer) {

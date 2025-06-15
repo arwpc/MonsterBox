@@ -156,6 +156,25 @@ app.use('/jaw-animation', jawAnimationRoutes);
 app.use('/api/chatterpi', require('./routes/chatterpiRoutes'));
 app.use('/api/hardware', require('./routes/api/hardwareApiRoutes').router);
 
+// Simple characters API endpoint for hardware monitor
+app.get('/api/characters', async (req, res) => {
+    try {
+        const characterService = require('./services/characterService');
+        const characters = await characterService.getAllCharacters();
+
+        // Format for hardware monitor dropdown
+        const formattedCharacters = characters.map(char => ({
+            id: char.id,
+            name: char.char_name || char.name || `Character ${char.id}`
+        }));
+
+        res.json(formattedCharacters);
+    } catch (error) {
+        console.error('Error loading characters:', error);
+        res.status(500).json({ error: 'Failed to load characters' });
+    }
+});
+
 // Test route for video configuration component
 app.get('/test/video-configuration', (req, res) => {
     res.render('test-video-configuration', {
