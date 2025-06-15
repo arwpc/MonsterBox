@@ -47,7 +47,11 @@
     "test:websockets-full": "node tests/websocket-connectivity-test.js && node tests/hardware-services-test.js && node tests/websocket-proxy-test.js",
     "test:hardware-services": "node tests/hardware-services-test.js",
     "test:websocket-proxy": "node tests/websocket-proxy-test.js",
-    "task-master": "node node_modules/task-master-ai/bin/task-master.js"
+    "task-master": "node node_modules/task-master-ai/bin/task-master.js",
+    "docs:generate": "node scripts/generate-task-docs.js",
+    "docs:build": "bash scripts/build-docs.sh",
+    "docs:serve": "bash scripts/build-docs.sh --serve",
+    "docs:deploy": "mkdocs gh-deploy --force"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.53.0",
