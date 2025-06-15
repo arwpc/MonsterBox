@@ -42,7 +42,8 @@
     "augment:run": "node scripts/augment.js run",
     "migrate:topmediai": "node scripts/migrate-to-topmediai.js",
     "test:topmediai": "node scripts/test-topmediai-integration.js",
-    "test:voice-endpoints": "node scripts/test-voice-endpoints.js"
+    "test:voice-endpoints": "node scripts/test-voice-endpoints.js",
+    "task-master": "node node_modules/task-master-ai/bin/task-master.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.53.0",
