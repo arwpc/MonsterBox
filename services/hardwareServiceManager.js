@@ -6,6 +6,7 @@
 const { spawn } = require('child_process');
 const path = require('path');
 const logger = require('../scripts/logger');
+const HardwareWebSocketProxy = require('../scripts/hardware/websocket_proxy');
 const WebSocket = require('ws');
 const FallbackHardwareServer = require('./fallbackHardwareServer');
 
@@ -14,6 +15,7 @@ class HardwareServiceManager {
         this.hardwareProcess = null;
         this.fallbackServer = null;
         this.isRunning = false;
+        this.webSocketProxy = new HardwareWebSocketProxy();
         this.usingFallback = false;
         this.reconnectAttempts = 0;
         this.maxReconnectAttempts = 3;
@@ -41,6 +43,13 @@ class HardwareServiceManager {
 
             // Start health monitoring
             this.startHealthMonitoring();
+
+            // Start WebSocket proxy for browser compatibility
+            const proxyStarted = await this.webSocketProxy.start();
+            if (!proxyStarted) {
+                logger.error('❌ Failed to start WebSocket proxy');
+                return false;
+            }
 
             logger.info('✅ Hardware Service Manager initialized successfully');
             return true;
@@ -149,22 +158,23 @@ class HardwareServiceManager {
 
     async testPythonServices() {
         try {
-            // Quick test to see if main server is responding
-            const ws = new WebSocket('ws://localhost:8780');
+            // Quick test to see if main server is responding using TCP connection
+            const net = require('net');
+            const socket = new net.Socket();
 
             return new Promise((resolve) => {
                 const timeout = setTimeout(() => {
-                    ws.terminate();
+                    socket.destroy();
                     resolve(false);
-                }, 2000);
+                }, 3000);
 
-                ws.on('open', () => {
+                socket.connect(8780, 'localhost', () => {
                     clearTimeout(timeout);
-                    ws.close();
+                    socket.destroy();
                     resolve(true);
                 });
 
-                ws.on('error', () => {
+                socket.on('error', () => {
                     clearTimeout(timeout);
                     resolve(false);
                 });
@@ -225,11 +235,11 @@ class HardwareServiceManager {
     }
 
     startHealthMonitoring() {
-        // Check service health every 30 seconds
+        // Check service health every 60 seconds (reduced frequency)
         this.healthCheckInterval = setInterval(async () => {
             await this.performHealthCheck();
-        }, 30000);
-        
+        }, 60000);
+
         logger.info('🏥 Hardware service health monitoring started');
     }
 
@@ -259,36 +269,24 @@ class HardwareServiceManager {
     async checkServiceHealth(host, port) {
         return new Promise((resolve) => {
             try {
-                const ws = new WebSocket(`ws://${host}:${port}`);
+                // Use a simple TCP connection check instead of WebSocket to avoid interference
+                const net = require('net');
+                const socket = new net.Socket();
 
                 const timeout = setTimeout(() => {
-                    try {
-                        ws.terminate();
-                    } catch (e) {
-                        // Ignore termination errors
-                    }
+                    socket.destroy();
                     resolve(false);
-                }, 3000); // Reduced timeout to 3 seconds
+                }, 2000); // Reduced timeout to 2 seconds
 
-                ws.on('open', () => {
+                socket.connect(port, host, () => {
                     clearTimeout(timeout);
-                    try {
-                        ws.close();
-                    } catch (e) {
-                        // Ignore close errors
-                    }
+                    socket.destroy();
                     resolve(true);
                 });
 
-                ws.on('error', () => {
+                socket.on('error', () => {
                     clearTimeout(timeout);
                     resolve(false);
-                });
-
-                ws.on('close', () => {
-                    clearTimeout(timeout);
-                    // Connection was established and then closed, which is good
-                    resolve(true);
                 });
 
             } catch (error) {
@@ -328,6 +326,11 @@ class HardwareServiceManager {
             // Stop health monitoring
             if (this.healthCheckInterval) {
                 clearInterval(this.healthCheckInterval);
+            }
+
+            // Stop WebSocket proxy
+            if (this.webSocketProxy) {
+                await this.webSocketProxy.stop();
             }
 
             // Stop fallback server if running

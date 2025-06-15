@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MonsterBox Hardware Monitor</title>
+    <title>MonsterBox Hardware Monitor v2</title>
     <style>
         * {
             margin: 0;
@@ -292,9 +292,9 @@
                 this.motorWs = null;
                 this.lightWs = null;
                 this.registryWs = null;
-                this.reconnectInterval = 30000; // Increase to 30 seconds to reduce aggressive reconnection
+                this.reconnectInterval = 10000; // 10 seconds for better responsiveness
                 this.maxLogEntries = 100;
-                this.debugMode = false; // Set to true for debug messages
+                this.debugMode = true; // Enable debug messages to diagnose connection issues
                 this.connectionStates = {
                     mainServer: 'disconnected',
                     motorService: 'disconnected',
@@ -309,10 +309,12 @@
                 // Wait longer for services to fully start and stabilize
                 setTimeout(() => {
                     this.log('Hardware monitor initialized...', 'info');
+                    this.log(`Browser location: ${window.location.href}`, 'info');
+                    this.log(`Hostname: ${window.location.hostname}`, 'info');
                     this.connectToServices();
                     this.setupReconnection();
                     this.log('Hardware monitor started', 'info');
-                }, 5000);
+                }, 5000); // Wait 5 seconds for services to be fully ready
             }
 
             connectToServices() {
@@ -351,14 +353,18 @@
                     }
 
                     this.connectionStates.mainServer = 'connecting';
-                    this.mainWs = new WebSocket('ws://localhost:8780');
+                    // Use proxy port for browser compatibility (8790 instead of 8780)
+                    const wsUrl = `ws://${window.location.hostname}:8790`;
+                    this.log(`Attempting to connect to main server proxy at ${wsUrl}...`, 'info');
+                    console.log('WebSocket URL:', wsUrl, 'Page location:', window.location.href);
+                    this.mainWs = new WebSocket(wsUrl);
 
                     this.mainWs.onopen = () => {
                         this.connectionStates.mainServer = 'connected';
                         this.updateConnectionStatus('mainServer', true);
                         this.log('Connected to main server', 'info');
-                        // Send a ping to keep connection alive
-                        this.sendMessage(this.mainWs, {type: 'ping'});
+                        // Send a ping to keep connection alive and get initial status
+                        this.sendMessage(this.mainWs, {type: 'get_active_services'});
                     };
 
                     this.mainWs.onmessage = (event) => {
@@ -373,15 +379,19 @@
                     this.mainWs.onclose = (event) => {
                         this.connectionStates.mainServer = 'disconnected';
                         this.updateConnectionStatus('mainServer', false);
-                        this.log(`Disconnected from main server (code: ${event.code})`, 'error');
+                        this.log(`Disconnected from main server (code: ${event.code}, reason: ${event.reason})`, 'warning');
+                        console.warn('Main server WebSocket closed:', event);
                     };
 
                     this.mainWs.onerror = (error) => {
                         this.connectionStates.mainServer = 'disconnected';
-                        this.log('Main server connection error: ' + error.message, 'error');
+                        this.updateConnectionStatus('mainServer', false);
+                        this.log(`Main server connection error: ${JSON.stringify(error)}`, 'error');
+                        console.error('Main server WebSocket error:', error);
                     };
                 } catch (error) {
                     this.connectionStates.mainServer = 'disconnected';
+                    this.updateConnectionStatus('mainServer', false);
                     this.log('Failed to connect to main server: ' + error.message, 'error');
                 }
             }
@@ -392,7 +402,10 @@
                         return; // Already connected
                     }
 
-                    this.motorWs = new WebSocket('ws://localhost:8771');
+                    // Use proxy port for browser compatibility (8792 instead of 8771)
+                    const wsUrl = `ws://${window.location.hostname}:8792`;
+                    this.log(`Attempting to connect to motor service proxy at ${wsUrl}...`, 'info');
+                    this.motorWs = new WebSocket(wsUrl);
 
                     this.motorWs.onopen = () => {
                         this.updateConnectionStatus('motorService', true);
@@ -410,13 +423,15 @@
 
                     this.motorWs.onclose = (event) => {
                         this.updateConnectionStatus('motorService', false);
-                        this.log(`Disconnected from motor service (code: ${event.code})`, 'error');
+                        this.log(`Disconnected from motor service (code: ${event.code})`, 'warning');
                     };
 
                     this.motorWs.onerror = (error) => {
-                        this.log('Motor service connection error: ' + error.message, 'error');
+                        this.updateConnectionStatus('motorService', false);
+                        this.log('Motor service connection error', 'error');
                     };
                 } catch (error) {
+                    this.updateConnectionStatus('motorService', false);
                     this.log('Failed to connect to motor service: ' + error.message, 'error');
                 }
             }
@@ -427,7 +442,10 @@
                         return; // Already connected
                     }
 
-                    this.lightWs = new WebSocket('ws://localhost:8772');
+                    // Use proxy port for browser compatibility (8793 instead of 8772)
+                    const wsUrl = `ws://${window.location.hostname}:8793`;
+                    this.log(`Attempting to connect to light service proxy at ${wsUrl}...`, 'info');
+                    this.lightWs = new WebSocket(wsUrl);
 
                     this.lightWs.onopen = () => {
                         this.updateConnectionStatus('lightService', true);
@@ -445,13 +463,15 @@
 
                     this.lightWs.onclose = (event) => {
                         this.updateConnectionStatus('lightService', false);
-                        this.log(`Disconnected from light service (code: ${event.code})`, 'error');
+                        this.log(`Disconnected from light service (code: ${event.code})`, 'warning');
                     };
 
                     this.lightWs.onerror = (error) => {
-                        this.log('Light service connection error: ' + error.message, 'error');
+                        this.updateConnectionStatus('lightService', false);
+                        this.log('Light service connection error', 'error');
                     };
                 } catch (error) {
+                    this.updateConnectionStatus('lightService', false);
                     this.log('Failed to connect to light service: ' + error.message, 'error');
                 }
             }
@@ -462,7 +482,10 @@
                         return; // Already connected
                     }
 
-                    this.registryWs = new WebSocket('ws://localhost:8770');
+                    // Use proxy port for browser compatibility (8791 instead of 8770)
+                    const wsUrl = `ws://${window.location.hostname}:8791`;
+                    this.log(`Attempting to connect to service registry proxy at ${wsUrl}...`, 'info');
+                    this.registryWs = new WebSocket(wsUrl);
 
                     this.registryWs.onopen = () => {
                         this.updateConnectionStatus('registry', true);
@@ -484,13 +507,15 @@
 
                     this.registryWs.onclose = (event) => {
                         this.updateConnectionStatus('registry', false);
-                        this.log(`Disconnected from service registry (code: ${event.code})`, 'error');
+                        this.log(`Disconnected from service registry (code: ${event.code})`, 'warning');
                     };
 
                     this.registryWs.onerror = (error) => {
-                        this.log('Registry connection error: ' + error.message, 'error');
+                        this.updateConnectionStatus('registry', false);
+                        this.log('Registry connection error', 'error');
                     };
                 } catch (error) {
+                    this.updateConnectionStatus('registry', false);
                     this.log('Failed to connect to service registry: ' + error.message, 'error');
                 }
             }
@@ -581,22 +606,22 @@
                 setInterval(() => {
                     // Only attempt reconnection if the connection is actually closed and not already connecting
                     if (this.connectionStates.mainServer === 'disconnected' &&
-                        (this.mainWs?.readyState === WebSocket.CLOSED || !this.mainWs)) {
+                        (!this.mainWs || this.mainWs.readyState === WebSocket.CLOSED)) {
                         this.log('Attempting to reconnect to main server...', 'info');
                         this.connectMainServer();
                     }
                     if (this.connectionStates.motorService === 'disconnected' &&
-                        (this.motorWs?.readyState === WebSocket.CLOSED || !this.motorWs)) {
+                        (!this.motorWs || this.motorWs.readyState === WebSocket.CLOSED)) {
                         this.log('Attempting to reconnect to motor service...', 'info');
                         this.connectMotorService();
                     }
                     if (this.connectionStates.lightService === 'disconnected' &&
-                        (this.lightWs?.readyState === WebSocket.CLOSED || !this.lightWs)) {
+                        (!this.lightWs || this.lightWs.readyState === WebSocket.CLOSED)) {
                         this.log('Attempting to reconnect to light service...', 'info');
                         this.connectLightService();
                     }
                     if (this.connectionStates.registry === 'disconnected' &&
-                        (this.registryWs?.readyState === WebSocket.CLOSED || !this.registryWs)) {
+                        (!this.registryWs || this.registryWs.readyState === WebSocket.CLOSED)) {
                         this.log('Attempting to reconnect to service registry...', 'info');
                         this.connectRegistry();
                     }
