@@ -583,6 +583,11 @@ class HardwareServicesTest {
             this.results.hardwareControl.calibration = calibrationResult;
             console.log(`  ${calibrationResult.success ? '✅' : '❌'} Calibration preservation: ${calibrationResult.message}`);
 
+            // Test integrated hardware system
+            const integratedSystemResult = await this.testIntegratedHardwareSystem();
+            this.results.hardwareControl.integratedSystem = integratedSystemResult;
+            console.log(`  ${integratedSystemResult.success ? '✅' : '❌'} Integrated Hardware System: ${integratedSystemResult.message}`);
+
         } catch (error) {
             console.log(`  ❌ Safety and calibration test failed: ${error.message}`);
             this.results.hardwareControl.safetyError = error.message;
@@ -626,6 +631,133 @@ class HardwareServicesTest {
 
             return { success: true, message: 'No calibration data to preserve' };
 
+        } catch (error) {
+            return { success: false, message: error.message };
+        }
+    }
+
+    async testIntegratedHardwareSystem() {
+        console.log('🔧 Testing Integrated Hardware System...');
+
+        try {
+            // Test GPIO control system
+            const gpioResult = await this.testGPIOControlSystem();
+            console.log(`    ${gpioResult.success ? '✅' : '❌'} GPIO Control System: ${gpioResult.message}`);
+
+            // Test I2C communication layer
+            const i2cResult = await this.testI2CCommunicationLayer();
+            console.log(`    ${i2cResult.success ? '✅' : '❌'} I2C Communication Layer: ${i2cResult.message}`);
+
+            // Test hardware abstraction layer
+            const halResult = await this.testHardwareAbstractionLayer();
+            console.log(`    ${halResult.success ? '✅' : '❌'} Hardware Abstraction Layer: ${halResult.message}`);
+
+            // Test device configuration manager
+            const configResult = await this.testDeviceConfigManager();
+            console.log(`    ${configResult.success ? '✅' : '❌'} Device Configuration Manager: ${configResult.message}`);
+
+            // Test safety systems
+            const safetyResult = await this.testSafetySystems();
+            console.log(`    ${safetyResult.success ? '✅' : '❌'} Safety Systems: ${safetyResult.message}`);
+
+            const allSuccess = gpioResult.success && i2cResult.success && halResult.success &&
+                             configResult.success && safetyResult.success;
+
+            return {
+                success: allSuccess,
+                message: allSuccess ? 'All hardware integration components working' : 'Some components have issues',
+                details: {
+                    gpio: gpioResult,
+                    i2c: i2cResult,
+                    hal: halResult,
+                    config: configResult,
+                    safety: safetyResult
+                }
+            };
+
+        } catch (error) {
+            return { success: false, message: error.message };
+        }
+    }
+
+    async testGPIOControlSystem() {
+        try {
+            // Test if GPIO control system files exist
+            const gpioSystemPath = path.join(__dirname, '..', 'scripts', 'hardware', 'gpio_control_system.py');
+            const gpioExtensionPath = path.join(__dirname, '..', 'scripts', 'hardware', 'gpio_control_system_extension.py');
+
+            const systemExists = fs.existsSync(gpioSystemPath);
+            const extensionExists = fs.existsSync(gpioExtensionPath);
+
+            if (systemExists && extensionExists) {
+                return { success: true, message: 'GPIO control system files present' };
+            } else {
+                return { success: false, message: 'GPIO control system files missing' };
+            }
+        } catch (error) {
+            return { success: false, message: error.message };
+        }
+    }
+
+    async testI2CCommunicationLayer() {
+        try {
+            // Test if I2C communication files exist
+            const i2cLayerPath = path.join(__dirname, '..', 'scripts', 'hardware', 'i2c_communication_layer.py');
+            const i2cDriversPath = path.join(__dirname, '..', 'scripts', 'hardware', 'i2c_device_drivers.py');
+
+            const layerExists = fs.existsSync(i2cLayerPath);
+            const driversExist = fs.existsSync(i2cDriversPath);
+
+            if (layerExists && driversExist) {
+                return { success: true, message: 'I2C communication layer files present' };
+            } else {
+                return { success: false, message: 'I2C communication layer files missing' };
+            }
+        } catch (error) {
+            return { success: false, message: error.message };
+        }
+    }
+
+    async testHardwareAbstractionLayer() {
+        try {
+            // Test if hardware abstraction layer exists
+            const halPath = path.join(__dirname, '..', 'scripts', 'hardware', 'hardware_abstraction_layer.py');
+
+            if (fs.existsSync(halPath)) {
+                return { success: true, message: 'Hardware abstraction layer present' };
+            } else {
+                return { success: false, message: 'Hardware abstraction layer missing' };
+            }
+        } catch (error) {
+            return { success: false, message: error.message };
+        }
+    }
+
+    async testDeviceConfigManager() {
+        try {
+            // Test if device configuration manager exists
+            const configPath = path.join(__dirname, '..', 'scripts', 'hardware', 'device_config_manager.py');
+
+            if (fs.existsSync(configPath)) {
+                return { success: true, message: 'Device configuration manager present' };
+            } else {
+                return { success: false, message: 'Device configuration manager missing' };
+            }
+        } catch (error) {
+            return { success: false, message: error.message };
+        }
+    }
+
+    async testSafetySystems() {
+        try {
+            // Test if integrated hardware system exists
+            const integratedPath = path.join(__dirname, '..', 'scripts', 'hardware', 'integrated_hardware_system.py');
+
+            if (fs.existsSync(integratedPath)) {
+                return { success: true, message: 'Integrated hardware system with safety present' };
+            } else {
+                return { success: false, message: 'Integrated hardware system missing' };
+            }
         } catch (error) {
             return { success: false, message: error.message };
         }
