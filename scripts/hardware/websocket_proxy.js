@@ -76,13 +76,6 @@ class HardwareWebSocketProxy {
                     reject(error);
                 });
 
-                server.on('upgrade', (request, socket, head) => {
-                    logger.debug(`WebSocket upgrade request for ${serviceName}`);
-                    wss.handleUpgrade(request, socket, head, (ws) => {
-                        wss.emit('connection', ws, request);
-                    });
-                });
-
             } catch (error) {
                 logger.error(`❌ Failed to start ${serviceName} proxy:`, error);
                 reject(error);
