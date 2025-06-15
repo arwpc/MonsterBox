@@ -1,0 +1,2135 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.14">
+    
+    
+      
+        <title>🎃 MonsterBox Technical Overview & Setup Guide - MonsterBox Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.342714a4.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#monsterbox-technical-overview-setup-guide" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="MonsterBox Documentation" class="md-header__button md-logo" aria-label="MonsterBox Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            MonsterBox Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              🎃 MonsterBox Technical Overview &amp; Setup Guide
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="MonsterBox Documentation" class="md-nav__button md-logo" aria-label="MonsterBox Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    MonsterBox Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Character Sheets
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Character Sheets
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../character_orlok/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Orlok
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../character_coffin_breaker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Coffin Breaker
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../character_pumpkinhead/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    PumpkinHead
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Installation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Usage Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Configuration
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../structure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Directory Structure
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    FAQ / Troubleshooting
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../license/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    License
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Networking
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Setup Guides
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            Setup Guides
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../setup/ANIMATRONIC-SETUP-GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Animatronic Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../setup/ANIMATRONIC-SSH-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    SSH Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../setup/MCP-LOG-COLLECTION-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    MCP Log Collection
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Integration
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            Integration
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integration/elevenlabs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    ElevenLabs TTS
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Hardware
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            Hardware
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hardware/gpio_assignments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    GPIO Assignments
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hardware/hardware_schedule/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Hardware Schedule
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_13" id="__nav_13_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    API Documentation
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_13">
+            <span class="md-nav__icon md-icon"></span>
+            API Documentation
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/API-TESTING-SUMMARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    API Testing Summary
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_14" >
+        
+          
+          <label class="md-nav__link" for="__nav_14" id="__nav_14_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Development
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_14_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_14">
+            <span class="md-nav__icon md-icon"></span>
+            Development
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/task-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Task Management
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/task-workflows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Task Workflows
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/development-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Development Process
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/taskmaster-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Task Master Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/taskmaster-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    TaskMaster Integration
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/task-status/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Task Status
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_15" >
+        
+          
+          <label class="md-nav__link" for="__nav_15" id="__nav_15_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Security
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_15_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_15">
+            <span class="md-nav__icon md-icon"></span>
+            Security
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/MCP-SETUP-NOTES/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    MCP Setup Notes
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/authentication/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Authentication
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/authorization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Authorization
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/remote-access/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Remote Access
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16" >
+        
+          
+          <label class="md-nav__link" for="__nav_16" id="__nav_16_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Testing
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_16_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_16">
+            <span class="md-nav__icon md-icon"></span>
+            Testing
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/organization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Test Organization
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/api-testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    API Testing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Integration Testing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Security Testing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/hardware/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Hardware Testing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/conversation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Conversation Testing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/reports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Test Reports
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_17" >
+        
+          
+          <label class="md-nav__link" for="__nav_17" id="__nav_17_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Animatronics Workshop
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_17_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_17">
+            <span class="md-nav__icon md-icon"></span>
+            Animatronics Workshop
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../animatronics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../animatronics/familiarization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Familiarization
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../animatronics/simple_steps/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Simple Steps
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../animatronics/hands_on/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Hands-On Activities
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../animatronics/presentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Final Presentation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="monsterbox-technical-overview-setup-guide">🎃 MonsterBox Technical Overview &amp; Setup Guide</h1>
+<h2 id="executive-summary">Executive Summary</h2>
+<p>MonsterBox is a sophisticated animatronic control system built with Node.js/Express, designed for managing distributed Raspberry Pi-based animatronic systems in haunted attraction environments. The platform features enterprise-level architecture, comprehensive testing, and professional development practices.</p>
+<h2 id="1-codebase-statistics">1. Codebase Statistics</h2>
+<ul>
+<li><strong>Total Files</strong>: 19,127 files (including node_modules)</li>
+<li><strong>Source Code Files</strong>: ~350 files (excluding node_modules, .git, site)</li>
+<li><strong>Estimated Total Lines of Code</strong>: ~25,000-30,000 lines</li>
+<li><strong>Project Structure Depth</strong>: 4-5 levels deep</li>
+<li><strong>Main Directories</strong>: 15 primary directories</li>
+</ul>
+<h2 id="2-programming-languages-lines-of-code-distribution">2. Programming Languages &amp; Lines of Code Distribution</h2>
+<h3 id="primary-languages-22000-lines-85">Primary Languages (~22,000 lines, 85%):</h3>
+<table>
+<thead>
+<tr>
+<th>Language</th>
+<th>Lines of Code</th>
+<th>Percentage</th>
+<th>Files</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>JavaScript (Node.js)</strong></td>
+<td>~15,000</td>
+<td>60%</td>
+<td>~80</td>
+</tr>
+<tr>
+<td><strong>Python</strong></td>
+<td>~4,000</td>
+<td>15%</td>
+<td>~25</td>
+</tr>
+<tr>
+<td><strong>EJS Templates</strong></td>
+<td>~1,500</td>
+<td>5%</td>
+<td>~20</td>
+</tr>
+<tr>
+<td><strong>JSON</strong></td>
+<td>~1,500</td>
+<td>5%</td>
+<td>~15</td>
+</tr>
+</tbody>
+</table>
+<h3 id="secondary-languages-4000-lines-15">Secondary Languages (~4,000 lines, 15%):</h3>
+<table>
+<thead>
+<tr>
+<th>Language</th>
+<th>Lines of Code</th>
+<th>Percentage</th>
+<th>Files</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Markdown</strong></td>
+<td>~2,000</td>
+<td>7%</td>
+<td>~50</td>
+</tr>
+<tr>
+<td><strong>CSS</strong></td>
+<td>~800</td>
+<td>3%</td>
+<td>~5</td>
+</tr>
+<tr>
+<td><strong>Shell Scripts</strong></td>
+<td>~800</td>
+<td>3%</td>
+<td>~10</td>
+</tr>
+<tr>
+<td><strong>PowerShell</strong></td>
+<td>~400</td>
+<td>2%</td>
+<td>~5</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Total: ~25,000 lines across ~210 source files</strong></p>
+<h2 id="3-technology-stack">3. Technology Stack</h2>
+<h3 id="backend-framework">Backend Framework</h3>
+<ul>
+<li><strong>Node.js</strong>: v18.0.0+ (Runtime Environment)</li>
+<li><strong>Express.js</strong>: v4.21.1 (Web Application Framework)</li>
+<li><strong>EJS</strong>: v3.1.9 (Embedded JavaScript Templating)</li>
+</ul>
+<h3 id="frontend-technologies">Frontend Technologies</h3>
+<ul>
+<li><strong>EJS Templating</strong>: Server-side rendering with dynamic content</li>
+<li><strong>CSS3</strong>: Custom styling with Google Fonts (Creepster theme)</li>
+<li><strong>JavaScript (Client-side)</strong>: jQuery 3.6.0, Axios for AJAX</li>
+<li><strong>WebSocket</strong>: Real-time audio/video streaming (ws v8.14.2)</li>
+</ul>
+<h3 id="databasestorage-solutions">Database/Storage Solutions</h3>
+<ul>
+<li><strong>JSON File-based Storage</strong>: Character, scene, part, and sound configurations</li>
+<li><strong>Session Storage</strong>: Express-session v1.17.3 for user sessions</li>
+<li><strong>File System</strong>: Direct file operations for media and logs</li>
+</ul>
+<h3 id="hardware-integration-libraries">Hardware Integration Libraries</h3>
+<ul>
+<li><strong>GPIO Control</strong>: <code>onoff</code> v6.0.3 (Raspberry Pi GPIO)</li>
+<li><strong>I2C Communication</strong>: <code>i2c-bus</code> v5.2.3 (Sensor and device communication)</li>
+<li><strong>Audio Playback</strong>: <code>mpg123</code> v0.2.3 (Sound system integration)</li>
+<li><strong>System Information</strong>: <code>node-disk-info</code> v1.3.0 (Hardware monitoring)</li>
+</ul>
+<h2 id="4-key-dependencies">4. Key Dependencies</h2>
+<h3 id="core-framework-dependencies">Core Framework Dependencies</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">&quot;express&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;^4.21.1&quot;</span><span class="p">,</span><span class="w">           </span><span class="c1">// Web framework</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">&quot;ejs&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;^3.1.9&quot;</span><span class="p">,</span><span class="w">                </span><span class="c1">// Templating engine</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="nt">&quot;express-session&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;^1.17.3&quot;</span><span class="p">,</span><span class="w">   </span><span class="c1">// Session management</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="nt">&quot;dotenv&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;^16.4.5&quot;</span><span class="p">,</span><span class="w">            </span><span class="c1">// Environment configuration</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="nt">&quot;winston&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;^3.11.0&quot;</span><span class="p">,</span><span class="w">           </span><span class="c1">// Logging framework</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="nt">&quot;ws&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;^8.14.2&quot;</span><span class="w">                 </span><span class="c1">// WebSocket support</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="p">}</span>
+</code></pre></div>
+<h3 id="hardware-control-libraries">Hardware Control Libraries</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">{</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">&quot;i2c-bus&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;^5.2.3&quot;</span><span class="p">,</span><span class="w">            </span><span class="c1">// I2C device communication</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="nt">&quot;onoff&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;^6.0.3&quot;</span><span class="p">,</span><span class="w">              </span><span class="c1">// GPIO control for RPi</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span><span class="nt">&quot;mpg123&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;^0.2.3&quot;</span><span class="p">,</span><span class="w">             </span><span class="c1">// Audio playback</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">  </span><span class="nt">&quot;node-disk-info&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;^1.3.0&quot;</span><span class="w">      </span><span class="c1">// System monitoring</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="p">}</span>
+</code></pre></div>
+<h3 id="aiml-integrations">AI/ML Integrations</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p">{</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">&quot;task-master-ai&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;^0.16.1&quot;</span><span class="p">,</span><span class="w">    </span><span class="c1">// AI-powered task management</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="nt">&quot;@ai-sdk/openai&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1.3.22&quot;</span><span class="p">,</span><span class="w">     </span><span class="c1">// OpenAI integration</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">  </span><span class="nt">&quot;@anthropic-ai/sdk&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;0.39.0&quot;</span><span class="p">,</span><span class="w">  </span><span class="c1">// Claude AI integration</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">  </span><span class="nt">&quot;openai&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;^4.104.0&quot;</span><span class="w">            </span><span class="c1">// OpenAI API client</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="p">}</span>
+</code></pre></div>
+<h3 id="testing-frameworks">Testing Frameworks</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">&quot;mocha&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;^10.7.3&quot;</span><span class="p">,</span><span class="w">             </span><span class="c1">// Test runner</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="nt">&quot;chai&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;^4.5.0&quot;</span><span class="p">,</span><span class="w">               </span><span class="c1">// Assertion library</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span><span class="nt">&quot;chai-http&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;^4.3.0&quot;</span><span class="p">,</span><span class="w">          </span><span class="c1">// HTTP testing</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">  </span><span class="nt">&quot;cross-env&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;^7.0.3&quot;</span><span class="w">           </span><span class="c1">// Environment management</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="p">}</span>
+</code></pre></div>
+<h2 id="5-architecture-overview">5. Architecture Overview</h2>
+<h3 id="mvc-structure">MVC Structure</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>MonsterBox/
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>├── app.js                 # Main application entry point (280 lines)
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>├── controllers/           # Business logic layer (~2,500 lines)
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>│   ├── sceneController.js
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>│   ├── partController.js
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>│   ├── soundController.js
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>│   └── ...
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>├── services/              # Service layer (~1,500 lines)
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>│   ├── characterService.js
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>│   ├── sceneService.js
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>│   └── ...
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>├── routes/                # API endpoints (~3,500 lines)
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>│   ├── characterRoutes.js
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>│   ├── sceneRoutes.js
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>│   └── ...
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>└── views/                 # EJS templates (~1,500 lines)
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>    ├── index.ejs
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>    ├── scenes.ejs
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a>    └── ...
+</code></pre></div>
+<h3 id="api-endpoints-structure">API Endpoints Structure</h3>
+<ul>
+<li><strong>Character Management</strong>: <code>/characters</code> - CRUD operations for animatronic characters</li>
+<li><strong>Scene Builder</strong>: <code>/scenes</code> - Scene creation, editing, and execution</li>
+<li><strong>Hardware Control</strong>: <code>/parts/*</code> - GPIO, servo, LED, sensor control</li>
+<li><strong>Audio System</strong>: <code>/sounds</code> - Sound management and playback</li>
+<li><strong>Real-time Control</strong>: <code>/active-mode</code> - Live performance automation</li>
+<li><strong>System Monitoring</strong>: <code>/health</code>, <code>/logs</code> - Health checks and log viewing</li>
+<li><strong>Configuration</strong>: <code>/system-config</code> - System-wide settings</li>
+</ul>
+<h3 id="hardware-integration-patterns">Hardware Integration Patterns</h3>
+<ol>
+<li><strong>Python Script Execution</strong>: Node.js spawns Python processes for hardware control</li>
+<li><strong>JSON Configuration</strong>: Hardware settings stored in character-specific JSON files</li>
+<li><strong>SSH Remote Control</strong>: Secure communication with distributed RPi systems</li>
+<li><strong>Real-time WebSocket</strong>: Live streaming for audio/video feeds</li>
+</ol>
+<h3 id="distributed-architecture">Distributed Architecture</h3>
+<ul>
+<li><strong>Development Workstation</strong>: Windows-based control center</li>
+<li><strong>Orlok RPi</strong> (192.168.8.120): Vampire animatronic with servo/GPIO control</li>
+<li><strong>Coffin RPi</strong> (192.168.8.140): Coffin mechanism with linear actuators</li>
+<li><strong>Pumpkinhead RPi</strong> (192.168.1.101): Currently offline/disabled</li>
+</ul>
+<h2 id="6-development-tools">6. Development Tools</h2>
+<h3 id="build-tools">Build Tools</h3>
+<ul>
+<li><strong>npm scripts</strong>: 20+ predefined scripts for development, testing, and deployment</li>
+<li><strong>nodemon</strong>: Hot-reload development server</li>
+<li><strong>cross-env</strong>: Cross-platform environment variable management</li>
+</ul>
+<h3 id="testing-setup">Testing Setup</h3>
+<ul>
+<li><strong>Mocha + Chai</strong>: Unit and integration testing (~2,000 lines)</li>
+<li><strong>Custom Test Reporter</strong>: Clean output formatting</li>
+<li><strong>Environment-specific Testing</strong>: Separate test configurations</li>
+<li><strong>Hardware Test Isolation</strong>: RPI-specific tests excluded on non-RPI environments</li>
+</ul>
+<h3 id="documentation-system-mkdocs">Documentation System (MkDocs)</h3>
+<ul>
+<li><strong>Material Theme</strong>: Modern, responsive documentation</li>
+<li><strong>57 documentation files</strong> (~2,000 lines) organized in structured navigation</li>
+<li><strong>Automated GitHub Pages Deployment</strong></li>
+<li><strong>Comprehensive Coverage</strong>: Setup guides, API docs, character sheets, security</li>
+</ul>
+<h3 id="project-management">Project Management</h3>
+<ul>
+<li><strong>Task Master AI</strong>: v0.16.1 integrated for project management</li>
+<li><strong>15 main tasks</strong> with 45+ subtasks currently tracked</li>
+<li><strong>Remote Agent Support</strong>: 3 specialized agents working in parallel</li>
+<li><strong>Automated Task Generation</strong>: PRD-based task creation and management</li>
+</ul>
+<h3 id="monitoring-logging">Monitoring &amp; Logging</h3>
+<ul>
+<li><strong>Winston Logging</strong>: Structured application logging (~800 lines)</li>
+<li><strong>MCP Log Collection</strong>: Distributed log aggregation from RPi systems (~1,200 lines)</li>
+<li><strong>Sematext Integration</strong>: External monitoring and alerting</li>
+<li><strong>Health Monitoring</strong>: Real-time system status endpoints</li>
+</ul>
+<hr />
+<h1 id="monsterbox-development-environment-setup-script">MonsterBox Development Environment Setup Script</h1>
+<p>The following script provides automated setup for the MonsterBox development environment on Ubuntu/Debian systems:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="ch">#!/bin/bash</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="c1"># MonsterBox Development Environment Setup Script</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="c1"># For Ubuntu/Debian systems including Raspberry Pi</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;🎃 Setting up MonsterBox Development Environment...&quot;</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="c1"># Update system packages</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;📦 Updating system packages...&quot;</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>sudo<span class="w"> </span>apt-get<span class="w"> </span>update
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="c1"># Install Node.js and npm if not present</span>
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;📦 Installing Node.js and npm...&quot;</span>
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>curl
+<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://deb.nodesource.com/setup_20.x<span class="w"> </span><span class="p">|</span><span class="w"> </span>sudo<span class="w"> </span>-E<span class="w"> </span>bash<span class="w"> </span>-
+<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>nodejs
+<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a>
+<a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a><span class="c1"># Install Python and pip</span>
+<a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;🐍 Installing Python and pip...&quot;</span>
+<a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>python3<span class="w"> </span>python3-pip<span class="w"> </span>python3-dev<span class="w"> </span>python3-venv
+<a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a>
+<a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a><span class="c1"># Install system dependencies for MonsterBox</span>
+<a id="__codelineno-5-23" name="__codelineno-5-23" href="#__codelineno-5-23"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;🔧 Installing system dependencies...&quot;</span>
+<a id="__codelineno-5-24" name="__codelineno-5-24" href="#__codelineno-5-24"></a>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-25" name="__codelineno-5-25" href="#__codelineno-5-25"></a><span class="w">    </span>build-essential<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-26" name="__codelineno-5-26" href="#__codelineno-5-26"></a><span class="w">    </span>git<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-27" name="__codelineno-5-27" href="#__codelineno-5-27"></a><span class="w">    </span>ffmpeg<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-28" name="__codelineno-5-28" href="#__codelineno-5-28"></a><span class="w">    </span>mpg123<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-29" name="__codelineno-5-29" href="#__codelineno-5-29"></a><span class="w">    </span>libmp3lame0<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-30" name="__codelineno-5-30" href="#__codelineno-5-30"></a><span class="w">    </span>libmp3lame-dev<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-31" name="__codelineno-5-31" href="#__codelineno-5-31"></a><span class="w">    </span>alsa-utils<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-32" name="__codelineno-5-32" href="#__codelineno-5-32"></a><span class="w">    </span>libasound2<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-33" name="__codelineno-5-33" href="#__codelineno-5-33"></a><span class="w">    </span>libasound2-dev<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-34" name="__codelineno-5-34" href="#__codelineno-5-34"></a><span class="w">    </span>v4l-utils<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-35" name="__codelineno-5-35" href="#__codelineno-5-35"></a><span class="w">    </span>i2c-tools
+<a id="__codelineno-5-36" name="__codelineno-5-36" href="#__codelineno-5-36"></a>
+<a id="__codelineno-5-37" name="__codelineno-5-37" href="#__codelineno-5-37"></a><span class="c1"># Install hardware-specific packages (for RPI compatibility)</span>
+<a id="__codelineno-5-38" name="__codelineno-5-38" href="#__codelineno-5-38"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;🔌 Installing hardware packages...&quot;</span>
+<a id="__codelineno-5-39" name="__codelineno-5-39" href="#__codelineno-5-39"></a>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-40" name="__codelineno-5-40" href="#__codelineno-5-40"></a><span class="w">    </span>python3-numpy<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-41" name="__codelineno-5-41" href="#__codelineno-5-41"></a><span class="w">    </span>python3-opencv<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-42" name="__codelineno-5-42" href="#__codelineno-5-42"></a><span class="w">    </span>python3-setuptools<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-43" name="__codelineno-5-43" href="#__codelineno-5-43"></a><span class="w">    </span>python3-wheel<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-44" name="__codelineno-5-44" href="#__codelineno-5-44"></a><span class="w">    </span>libopencv-dev<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-45" name="__codelineno-5-45" href="#__codelineno-5-45"></a><span class="w">    </span>libatlas-base-dev<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-46" name="__codelineno-5-46" href="#__codelineno-5-46"></a><span class="w">    </span>libhdf5-dev<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-47" name="__codelineno-5-47" href="#__codelineno-5-47"></a><span class="w">    </span>libgtk-3-0<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-48" name="__codelineno-5-48" href="#__codelineno-5-48"></a><span class="w">    </span>libavcodec-dev<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-49" name="__codelineno-5-49" href="#__codelineno-5-49"></a><span class="w">    </span>libavformat-dev<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-50" name="__codelineno-5-50" href="#__codelineno-5-50"></a><span class="w">    </span>libswscale-dev<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-51" name="__codelineno-5-51" href="#__codelineno-5-51"></a><span class="w">    </span>libv4l-dev<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-52" name="__codelineno-5-52" href="#__codelineno-5-52"></a><span class="w">    </span>libxvidcore-dev<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-53" name="__codelineno-5-53" href="#__codelineno-5-53"></a><span class="w">    </span>libx264-dev
+<a id="__codelineno-5-54" name="__codelineno-5-54" href="#__codelineno-5-54"></a>
+<a id="__codelineno-5-55" name="__codelineno-5-55" href="#__codelineno-5-55"></a><span class="c1"># Navigate to project directory</span>
+<a id="__codelineno-5-56" name="__codelineno-5-56" href="#__codelineno-5-56"></a><span class="nb">cd</span><span class="w"> </span>/mnt/persist/workspace
+<a id="__codelineno-5-57" name="__codelineno-5-57" href="#__codelineno-5-57"></a>
+<a id="__codelineno-5-58" name="__codelineno-5-58" href="#__codelineno-5-58"></a><span class="c1"># Install Node.js dependencies</span>
+<a id="__codelineno-5-59" name="__codelineno-5-59" href="#__codelineno-5-59"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;📦 Installing Node.js dependencies...&quot;</span>
+<a id="__codelineno-5-60" name="__codelineno-5-60" href="#__codelineno-5-60"></a>npm<span class="w"> </span>install
+<a id="__codelineno-5-61" name="__codelineno-5-61" href="#__codelineno-5-61"></a>
+<a id="__codelineno-5-62" name="__codelineno-5-62" href="#__codelineno-5-62"></a><span class="c1"># Install Python dependencies</span>
+<a id="__codelineno-5-63" name="__codelineno-5-63" href="#__codelineno-5-63"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;🐍 Installing Python dependencies...&quot;</span>
+<a id="__codelineno-5-64" name="__codelineno-5-64" href="#__codelineno-5-64"></a><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>-f<span class="w"> </span>scripts/requirements.txt<span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<a id="__codelineno-5-65" name="__codelineno-5-65" href="#__codelineno-5-65"></a><span class="w">    </span>python3<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--user<span class="w"> </span>-r<span class="w"> </span>scripts/requirements.txt
+<a id="__codelineno-5-66" name="__codelineno-5-66" href="#__codelineno-5-66"></a><span class="k">fi</span>
+<a id="__codelineno-5-67" name="__codelineno-5-67" href="#__codelineno-5-67"></a>
+<a id="__codelineno-5-68" name="__codelineno-5-68" href="#__codelineno-5-68"></a><span class="c1"># Create necessary directories</span>
+<a id="__codelineno-5-69" name="__codelineno-5-69" href="#__codelineno-5-69"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;📁 Creating necessary directories...&quot;</span>
+<a id="__codelineno-5-70" name="__codelineno-5-70" href="#__codelineno-5-70"></a>mkdir<span class="w"> </span>-p<span class="w"> </span>log
+<a id="__codelineno-5-71" name="__codelineno-5-71" href="#__codelineno-5-71"></a>mkdir<span class="w"> </span>-p<span class="w"> </span>public/sounds
+<a id="__codelineno-5-72" name="__codelineno-5-72" href="#__codelineno-5-72"></a>mkdir<span class="w"> </span>-p<span class="w"> </span>data
+<a id="__codelineno-5-73" name="__codelineno-5-73" href="#__codelineno-5-73"></a>
+<a id="__codelineno-5-74" name="__codelineno-5-74" href="#__codelineno-5-74"></a><span class="c1"># Set up environment variables for testing</span>
+<a id="__codelineno-5-75" name="__codelineno-5-75" href="#__codelineno-5-75"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;🔧 Setting up test environment...&quot;</span>
+<a id="__codelineno-5-76" name="__codelineno-5-76" href="#__codelineno-5-76"></a><span class="nb">export</span><span class="w"> </span><span class="nv">NODE_ENV</span><span class="o">=</span><span class="nb">test</span>
+<a id="__codelineno-5-77" name="__codelineno-5-77" href="#__codelineno-5-77"></a><span class="nb">export</span><span class="w"> </span><span class="nv">PORT</span><span class="o">=</span><span class="m">3000</span>
+<a id="__codelineno-5-78" name="__codelineno-5-78" href="#__codelineno-5-78"></a><span class="nb">export</span><span class="w"> </span><span class="nv">SESSION_SECRET</span><span class="o">=</span>test-session-secret-for-setup
+<a id="__codelineno-5-79" name="__codelineno-5-79" href="#__codelineno-5-79"></a><span class="nb">export</span><span class="w"> </span><span class="nv">ANTHROPIC_API_KEY</span><span class="o">=</span>your_anthropic_api_key_here
+<a id="__codelineno-5-80" name="__codelineno-5-80" href="#__codelineno-5-80"></a><span class="nb">export</span><span class="w"> </span><span class="nv">OPENAI_API_KEY</span><span class="o">=</span>your_openai_api_key_here
+<a id="__codelineno-5-81" name="__codelineno-5-81" href="#__codelineno-5-81"></a><span class="nb">export</span><span class="w"> </span><span class="nv">GOOGLE_API_KEY</span><span class="o">=</span>your_google_api_key_here
+<a id="__codelineno-5-82" name="__codelineno-5-82" href="#__codelineno-5-82"></a><span class="nb">export</span><span class="w"> </span><span class="nv">REPLICA_API_KEY</span><span class="o">=</span>your_replica_api_key_here
+<a id="__codelineno-5-83" name="__codelineno-5-83" href="#__codelineno-5-83"></a><span class="nb">export</span><span class="w"> </span><span class="nv">PERPLEXITY_API_KEY</span><span class="o">=</span>your_perplexity_api_key_here
+<a id="__codelineno-5-84" name="__codelineno-5-84" href="#__codelineno-5-84"></a><span class="nb">export</span><span class="w"> </span><span class="nv">MISTRAL_API_KEY</span><span class="o">=</span>your_mistral_key_here
+<a id="__codelineno-5-85" name="__codelineno-5-85" href="#__codelineno-5-85"></a><span class="nb">export</span><span class="w"> </span><span class="nv">XAI_API_KEY</span><span class="o">=</span>YOUR_XAI_KEY_HERE
+<a id="__codelineno-5-86" name="__codelineno-5-86" href="#__codelineno-5-86"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AZURE_OPENAI_API_KEY</span><span class="o">=</span>your_azure_key_here
+<a id="__codelineno-5-87" name="__codelineno-5-87" href="#__codelineno-5-87"></a><span class="nb">export</span><span class="w"> </span><span class="nv">OLLAMA_API_KEY</span><span class="o">=</span>your_ollama_api_key_here
+<a id="__codelineno-5-88" name="__codelineno-5-88" href="#__codelineno-5-88"></a><span class="nb">export</span><span class="w"> </span><span class="nv">SKIP_CI_INTEGRATION</span><span class="o">=</span><span class="nb">true</span>
+<a id="__codelineno-5-89" name="__codelineno-5-89" href="#__codelineno-5-89"></a>
+<a id="__codelineno-5-90" name="__codelineno-5-90" href="#__codelineno-5-90"></a><span class="c1"># Add environment variables to profile</span>
+<a id="__codelineno-5-91" name="__codelineno-5-91" href="#__codelineno-5-91"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;📝 Adding environment variables to profile...&quot;</span>
+<a id="__codelineno-5-92" name="__codelineno-5-92" href="#__codelineno-5-92"></a>cat<span class="w"> </span>&gt;&gt;<span class="w"> </span><span class="nv">$HOME</span>/.profile<span class="w"> </span><span class="s">&lt;&lt; &#39;EOF&#39;</span>
+<a id="__codelineno-5-93" name="__codelineno-5-93" href="#__codelineno-5-93"></a>
+<a id="__codelineno-5-94" name="__codelineno-5-94" href="#__codelineno-5-94"></a><span class="s"># MonsterBox environment variables</span>
+<a id="__codelineno-5-95" name="__codelineno-5-95" href="#__codelineno-5-95"></a><span class="s">export NODE_ENV=test</span>
+<a id="__codelineno-5-96" name="__codelineno-5-96" href="#__codelineno-5-96"></a><span class="s">export PORT=3000</span>
+<a id="__codelineno-5-97" name="__codelineno-5-97" href="#__codelineno-5-97"></a><span class="s">export SESSION_SECRET=test-session-secret-for-setup</span>
+<a id="__codelineno-5-98" name="__codelineno-5-98" href="#__codelineno-5-98"></a><span class="s">export ANTHROPIC_API_KEY=your_anthropic_api_key_here</span>
+<a id="__codelineno-5-99" name="__codelineno-5-99" href="#__codelineno-5-99"></a><span class="s">export OPENAI_API_KEY=your_openai_api_key_here</span>
+<a id="__codelineno-5-100" name="__codelineno-5-100" href="#__codelineno-5-100"></a><span class="s">export GOOGLE_API_KEY=your_google_api_key_here</span>
+<a id="__codelineno-5-101" name="__codelineno-5-101" href="#__codelineno-5-101"></a><span class="s">export REPLICA_API_KEY=your_replica_api_key_here</span>
+<a id="__codelineno-5-102" name="__codelineno-5-102" href="#__codelineno-5-102"></a><span class="s">export PERPLEXITY_API_KEY=your_perplexity_api_key_here</span>
+<a id="__codelineno-5-103" name="__codelineno-5-103" href="#__codelineno-5-103"></a><span class="s">export MISTRAL_API_KEY=your_mistral_key_here</span>
+<a id="__codelineno-5-104" name="__codelineno-5-104" href="#__codelineno-5-104"></a><span class="s">export XAI_API_KEY=YOUR_XAI_KEY_HERE</span>
+<a id="__codelineno-5-105" name="__codelineno-5-105" href="#__codelineno-5-105"></a><span class="s">export AZURE_OPENAI_API_KEY=your_azure_key_here</span>
+<a id="__codelineno-5-106" name="__codelineno-5-106" href="#__codelineno-5-106"></a><span class="s">export OLLAMA_API_KEY=your_ollama_api_key_here</span>
+<a id="__codelineno-5-107" name="__codelineno-5-107" href="#__codelineno-5-107"></a><span class="s">export SKIP_CI_INTEGRATION=true</span>
+<a id="__codelineno-5-108" name="__codelineno-5-108" href="#__codelineno-5-108"></a>
+<a id="__codelineno-5-109" name="__codelineno-5-109" href="#__codelineno-5-109"></a><span class="s"># Add npm global bin to PATH</span>
+<a id="__codelineno-5-110" name="__codelineno-5-110" href="#__codelineno-5-110"></a><span class="s">export PATH=&quot;$HOME/.local/bin:$PATH&quot;</span>
+<a id="__codelineno-5-111" name="__codelineno-5-111" href="#__codelineno-5-111"></a><span class="s">EOF</span>
+<a id="__codelineno-5-112" name="__codelineno-5-112" href="#__codelineno-5-112"></a>
+<a id="__codelineno-5-113" name="__codelineno-5-113" href="#__codelineno-5-113"></a><span class="c1"># Source the profile to make variables available</span>
+<a id="__codelineno-5-114" name="__codelineno-5-114" href="#__codelineno-5-114"></a><span class="nb">source</span><span class="w"> </span><span class="nv">$HOME</span>/.profile
+<a id="__codelineno-5-115" name="__codelineno-5-115" href="#__codelineno-5-115"></a>
+<a id="__codelineno-5-116" name="__codelineno-5-116" href="#__codelineno-5-116"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;✅ MonsterBox development environment setup complete!&quot;</span>
+<a id="__codelineno-5-117" name="__codelineno-5-117" href="#__codelineno-5-117"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;🧪 Ready to run tests...&quot;</span>
+<a id="__codelineno-5-118" name="__codelineno-5-118" href="#__codelineno-5-118"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
+<a id="__codelineno-5-119" name="__codelineno-5-119" href="#__codelineno-5-119"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Next steps:&quot;</span>
+<a id="__codelineno-5-120" name="__codelineno-5-120" href="#__codelineno-5-120"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;1. Update API keys in .env file&quot;</span>
+<a id="__codelineno-5-121" name="__codelineno-5-121" href="#__codelineno-5-121"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;2. Run &#39;npm test&#39; to verify installation&quot;</span>
+<a id="__codelineno-5-122" name="__codelineno-5-122" href="#__codelineno-5-122"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;3. Run &#39;npm start&#39; to launch MonsterBox&quot;</span>
+<a id="__codelineno-5-123" name="__codelineno-5-123" href="#__codelineno-5-123"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;4. Access web interface at http://localhost:3000&quot;</span>
+</code></pre></div>
+<h2 id="setup-script-features">Setup Script Features</h2>
+<h3 id="system-dependencies">System Dependencies</h3>
+<ul>
+<li><strong>Node.js 20.x</strong>: Latest LTS version for optimal performance</li>
+<li><strong>Python 3</strong>: Required for hardware control scripts</li>
+<li><strong>Build Tools</strong>: Essential compilation tools for native modules</li>
+<li><strong>Audio/Video</strong>: FFmpeg, MPG123 for multimedia processing</li>
+<li><strong>Hardware</strong>: I2C tools, V4L utilities for RPI integration</li>
+</ul>
+<h3 id="development-environment">Development Environment</h3>
+<ul>
+<li><strong>Automated Dependency Installation</strong>: Both Node.js and Python packages</li>
+<li><strong>Directory Structure</strong>: Creates necessary project directories</li>
+<li><strong>Environment Configuration</strong>: Sets up all required environment variables</li>
+<li><strong>Profile Integration</strong>: Persists settings across sessions</li>
+</ul>
+<h3 id="security-considerations">Security Considerations</h3>
+<ul>
+<li><strong>Placeholder API Keys</strong>: Requires manual configuration of actual keys</li>
+<li><strong>Test Environment</strong>: Configured for development/testing by default</li>
+<li><strong>CI Integration</strong>: Includes flags for continuous integration</li>
+</ul>
+<hr />
+<h2 id="7-remote-agent-task-management-system">7. Remote Agent Task Management System</h2>
+<h3 id="current-active-agents">Current Active Agents</h3>
+<p>The MonsterBox project utilizes Task Master AI v0.16.1 with three specialized remote agents working in parallel:</p>
+<h4 id="remote-agent-1-security-authentication-specialist">🔐 Remote Agent 1: Security &amp; Authentication Specialist</h4>
+<p><strong>Primary Task</strong>: Task 11 - Implement Secure Remote Access System
+<strong>Status</strong>: ACTIVE - 4 subtasks in progress
+- JWT Authentication Architecture Design
+- Role-Based Access Control (RBAC) Framework
+- SSH Infrastructure Integration
+- Multi-Factor Authentication (MFA)</p>
+<h4 id="remote-agent-2-monitoring-logging-specialist">📊 Remote Agent 2: Monitoring &amp; Logging Specialist</h4>
+<p><strong>Primary Task</strong>: Task 4 - Implement MCP Log Collection System
+<strong>Status</strong>: ACTIVE - 4 subtasks in progress
+- MCP Log Collection Protocol Design
+- Server Log Collection Components
+- Automated Log Analysis System
+- Real-time Monitoring Dashboard</p>
+<h4 id="remote-agent-3-testing-quality-assurance-specialist">🧪 Remote Agent 3: Testing &amp; Quality Assurance Specialist</h4>
+<p><strong>Primary Task</strong>: Task 15 - Implement Comprehensive Testing Suite
+<strong>Status</strong>: ACTIVE - 4 subtasks in progress
+- Current Test Coverage Analysis
+- Unit Test Framework Enhancement
+- Integration Test Suite Implementation
+- Continuous Integration Pipeline Configuration</p>
+<h3 id="project-progress-metrics">Project Progress Metrics</h3>
+<ul>
+<li><strong>Total Tasks</strong>: 15</li>
+<li><strong>Completed</strong>: 2 (13.3%)</li>
+<li><strong>In Progress</strong>: 4 (26.7%)</li>
+<li><strong>Subtask Completion</strong>: 42.2% (19/45 completed)</li>
+</ul>
+<h2 id="8-hardware-configuration">8. Hardware Configuration</h2>
+<h3 id="target-systems">Target Systems</h3>
+<ul>
+<li><strong>Orlok RPi</strong> (192.168.8.120): Operational - Vampire animatronic</li>
+<li><strong>Coffin RPi</strong> (192.168.8.140): Operational - Coffin mechanism</li>
+<li><strong>Pumpkinhead RPi</strong> (192.168.1.101): Offline - Excluded from testing</li>
+</ul>
+<h3 id="hardware-components">Hardware Components</h3>
+<ul>
+<li><strong>GPIO Control</strong>: Direct pin manipulation for basic I/O</li>
+<li><strong>I2C Communication</strong>: Sensor and advanced device integration</li>
+<li><strong>Servo Motors</strong>: Precise movement control with PCA9685 support</li>
+<li><strong>Linear Actuators</strong>: Heavy-duty movement mechanisms</li>
+<li><strong>Audio System</strong>: Multi-channel sound playback</li>
+<li><strong>LED Control</strong>: Lighting effects and indicators</li>
+</ul>
+<h2 id="9-security-features">9. Security Features</h2>
+<h3 id="authentication-authorization">Authentication &amp; Authorization</h3>
+<ul>
+<li><strong>JWT-based Authentication</strong>: Secure token-based access control</li>
+<li><strong>Role-Based Access Control</strong>: Granular permission management</li>
+<li><strong>Multi-Factor Authentication</strong>: Enhanced security for remote access</li>
+<li><strong>SSH Key Management</strong>: Secure inter-system communication</li>
+</ul>
+<h3 id="network-security">Network Security</h3>
+<ul>
+<li><strong>Private Network</strong>: MonsterNet WiFi (192.168.8.x range)</li>
+<li><strong>IP Whitelisting</strong>: Restricted access to authorized devices</li>
+<li><strong>Encrypted Communication</strong>: TLS/SSL for all web traffic</li>
+<li><strong>Audit Logging</strong>: Comprehensive activity tracking</li>
+</ul>
+<h2 id="10-monitoring-observability">10. Monitoring &amp; Observability</h2>
+<h3 id="logging-infrastructure">Logging Infrastructure</h3>
+<ul>
+<li><strong>Winston Logging</strong>: Structured application logs</li>
+<li><strong>MCP Log Collection</strong>: Distributed log aggregation</li>
+<li><strong>Sematext Integration</strong>: External monitoring service</li>
+<li><strong>Real-time Streaming</strong>: Live log monitoring capabilities</li>
+</ul>
+<h3 id="health-monitoring">Health Monitoring</h3>
+<ul>
+<li><strong>System Health Endpoints</strong>: <code>/health</code> API for status checks</li>
+<li><strong>Performance Metrics</strong>: CPU, memory, disk usage tracking</li>
+<li><strong>Service Monitoring</strong>: Individual component health checks</li>
+<li><strong>Alert System</strong>: Automated notification for critical issues</li>
+</ul>
+<h2 id="11-development-workflow">11. Development Workflow</h2>
+<h3 id="version-control">Version Control</h3>
+<ul>
+<li><strong>Git Repository</strong>: GitHub-hosted with automated workflows</li>
+<li><strong>Branch Strategy</strong>: Feature branches with pull request reviews</li>
+<li><strong>Automated Testing</strong>: CI/CD pipeline with comprehensive test suite</li>
+<li><strong>Documentation</strong>: Automated MkDocs deployment</li>
+</ul>
+<h3 id="code-quality">Code Quality</h3>
+<ul>
+<li><strong>ESLint</strong>: JavaScript code linting and formatting</li>
+<li><strong>Mocha/Chai Testing</strong>: Unit and integration test coverage</li>
+<li><strong>Custom Test Reporter</strong>: Clean, readable test output</li>
+<li><strong>Code Coverage</strong>: Tracking and enforcement of test coverage</li>
+</ul>
+<h3 id="deployment">Deployment</h3>
+<ul>
+<li><strong>Automated Scripts</strong>: Shell and PowerShell deployment automation</li>
+<li><strong>Environment Management</strong>: Separate dev/test/production configurations</li>
+<li><strong>Remote Deployment</strong>: SSH-based deployment to RPi systems</li>
+<li><strong>Health Checks</strong>: Post-deployment verification</li>
+</ul>
+<hr />
+<p><em>This document provides a comprehensive overview of the MonsterBox animatronic control system, including detailed technical specifications, automated setup procedures, and current development status with active remote agent task management.</em></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.instant", "navigation.sections", "toc.integrate", "content.code.annotate", "search.suggest", "search.highlight"], "search": "../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+    
+  </body>
+</html>
