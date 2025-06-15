@@ -1,13 +1,13 @@
 {
   "meta": {
-    "generatedAt": "2025-06-14T00:00:00.000Z",
+    "generatedAt": "2025-06-15T20:15:00.000Z",
     "totalTasks": 18,
-    "completedTasks": 1,
-    "inProgressTasks": 17,
+    "completedTasks": 2,
+    "inProgressTasks": 16,
     "pendingTasks": 0,
-    "overallProgress": 83.6,
+    "overallProgress": 86.1,
     "projectName": "MonsterBox",
-    "lastUpdated": "2025-06-14"
+    "lastUpdated": "2025-06-15"
   },
   "taskStatus": [
     {
@@ -125,8 +125,8 @@
     {
       "taskId": 16,
       "taskTitle": "Task Master + MkDocs Integration",
-      "status": "in-progress",
-      "completionPercentage": 95,
+      "status": "done",
+      "completionPercentage": 100,
       "priority": "low",
       "complexityScore": 6
     },
@@ -157,15 +157,19 @@
     }
   ],
   "summary": {
-    "averageCompletion": 83.6,
-    "tasksNearCompletion": [3, 6, 9, 16],
+    "averageCompletion": 86.1,
+    "tasksNearCompletion": [3, 6, 9],
     "tasksNeedingAttention": [8, 13, 4],
     "highPriorityRemaining": [1, 2, 4, 5, 11, 14, 15, 17],
     "nextMilestones": [
-      "Complete Task #16 (MkDocs Integration) - 5% remaining",
-      "Complete Task #3 (Character Config) - 5% remaining", 
+      "Complete Task #3 (Character Config) - 5% remaining",
       "Complete Task #6 (Scene Management) - 5% remaining",
-      "Complete Task #9 (TTS Integration) - 5% remaining"
+      "Complete Task #9 (TTS Integration) - 5% remaining",
+      "Complete Task #5 (Hardware Integration) - 10% remaining"
+    ],
+    "recentlyCompleted": [
+      "Task #16 (TaskMaster + MkDocs Integration) - COMPLETED",
+      "Task #18 (ChatterPi AI & Jaw Animation System) - COMPLETED"
     ]
   }
 }
