@@ -1,11 +1,11 @@
 {
   "meta": {
-    "generatedAt": "2025-06-15T20:15:00.000Z",
+    "generatedAt": "2025-06-15T20:45:00.000Z",
     "totalTasks": 19,
-    "completedTasks": 3,
-    "inProgressTasks": 15,
+    "completedTasks": 4,
+    "inProgressTasks": 14,
     "pendingTasks": 1,
-    "overallProgress": 87.5,
+    "overallProgress": 89.5,
     "projectName": "MonsterBox",
     "lastUpdated": "2025-06-15"
   },
@@ -133,10 +133,12 @@
     {
       "taskId": 17,
       "taskTitle": "Core AI Integration (API Clients)",
-      "status": "in-progress",
-      "completionPercentage": 85,
+      "status": "done",
+      "completionPercentage": 100,
       "priority": "high",
-      "complexityScore": 8
+      "complexityScore": 8,
+      "currentSubtask": "Task completed successfully",
+      "lastUpdated": "2025-06-15T20:45:00.000Z"
     },
     {
       "taskId": 18,
@@ -165,21 +167,22 @@
     }
   ],
   "summary": {
-    "averageCompletion": 87.5,
-    "tasksNearCompletion": [3, 6, 9, 16],
+    "averageCompletion": 89.5,
+    "tasksNearCompletion": [3, 6, 9],
     "tasksNeedingAttention": [8, 13, 4],
-    "highPriorityRemaining": [1, 2, 4, 5, 11, 14, 15, 17],
-    "completedTasks": [16, 18, 19],
+    "highPriorityRemaining": [1, 2, 4, 5, 11, 14, 15],
+    "completedTasks": [16, 17, 18, 19],
     "nextMilestones": [
       "Complete Task #3 (Character Config) - 5% remaining",
       "Complete Task #6 (Scene Management) - 5% remaining",
       "Complete Task #9 (TTS Integration) - 5% remaining",
       "Complete Task #5 (Hardware Integration) - 10% remaining"
     ],
-    "recentCompletions": [
-      "Task #16: TaskMaster + MkDocs Integration - 100% complete",
-      "Task #18: ChatterPi AI & Jaw Animation System - 100% complete",
-      "Task #19: WebSocket Hardware Service Architecture Migration - 100% complete"
+    "recentlyCompleted": [
+      "Task #17 (Core AI Integration) - COMPLETED",
+      "Task #16 (TaskMaster + MkDocs Integration) - COMPLETED",
+      "Task #18 (ChatterPi AI & Jaw Animation System) - COMPLETED",
+      "Task #19 (WebSocket Hardware Service Architecture Migration) - COMPLETED"
     ]
   }
 }
