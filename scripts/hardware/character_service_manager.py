@@ -97,9 +97,9 @@ class CharacterServiceManager:
                             "hardware_requirements": {
                                 "motor": {"enabled": True, "pins": [20, 21]},
                                 "light": {"enabled": True, "pins": [22, 23]},
-                                "sensor": {"enabled": False},
+                                "sensor": {"enabled": True, "pins": [24, 25]},
                                 "webcam": {"enabled": True},
-                                "actuator": {"enabled": False}
+                                "actuator": {"enabled": True, "pins": [26, 27]}
                             }
                         }
                     ]

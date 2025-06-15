@@ -349,11 +349,15 @@ class MotorWebSocketService(BaseHardwareService):
         try:
             # Path to motor control script
             script_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "motor_control.py")
-            
-            # Build command arguments
+
+            # Build command arguments in the correct order for motor_control.py
+            # motor_control.py expects: direction, speed, duration, dir_pin, pwm_pin
+            dir_pin = pin
+            pwm_pin = str(int(pin) + 1)  # Use next pin for PWM
+
             cmd_args = [
                 "python3", script_path,
-                command, control_type, pin, direction, speed, duration
+                direction, speed, duration, dir_pin, pwm_pin
             ]
             
             # Execute command

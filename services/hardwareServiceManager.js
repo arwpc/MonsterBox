@@ -25,7 +25,10 @@ class HardwareServiceManager {
             registry: { port: 8770, status: 'offline' },
             main: { port: 8780, status: 'offline' },
             motor: { port: 8771, status: 'offline' },
-            light: { port: 8772, status: 'offline' }
+            light: { port: 8772, status: 'offline' },
+            sensor: { port: 8773, status: 'offline' },
+            webcam: { port: 8774, status: 'offline' },
+            actuator: { port: 8775, status: 'offline' }
         };
     }
 
@@ -94,6 +97,15 @@ class HardwareServiceManager {
                         }
                         if (output.includes('light_service WebSocket Server running')) {
                             this.updateServiceStatus('light', 'online');
+                        }
+                        if (output.includes('sensor_service WebSocket Server running')) {
+                            this.updateServiceStatus('sensor', 'online');
+                        }
+                        if (output.includes('webcam_service WebSocket Server running')) {
+                            this.updateServiceStatus('webcam', 'online');
+                        }
+                        if (output.includes('actuator_service WebSocket Server running')) {
+                            this.updateServiceStatus('actuator', 'online');
                         }
                     }
                 });
@@ -253,6 +265,18 @@ class HardwareServiceManager {
             // Check light service
             const isLightHealthy = await this.checkServiceHealth('localhost', 8772);
             this.updateServiceStatus('light', isLightHealthy ? 'online' : 'offline');
+
+            // Check sensor service
+            const isSensorHealthy = await this.checkServiceHealth('localhost', 8773);
+            this.updateServiceStatus('sensor', isSensorHealthy ? 'online' : 'offline');
+
+            // Check webcam service
+            const isWebcamHealthy = await this.checkServiceHealth('localhost', 8774);
+            this.updateServiceStatus('webcam', isWebcamHealthy ? 'online' : 'offline');
+
+            // Check actuator service
+            const isActuatorHealthy = await this.checkServiceHealth('localhost', 8775);
+            this.updateServiceStatus('actuator', isActuatorHealthy ? 'online' : 'offline');
 
         } catch (error) {
             logger.debug('Health check error (this is normal):', error.message);
