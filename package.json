@@ -63,7 +63,6 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.53.0",
-    "@echogarden/fvad-wasm": "^1.0.0",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -82,6 +81,8 @@
     "openai": "^4.20.1",
     "qrcode": "^1.5.4",
     "speakeasy": "^2.0.0",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^4.6.3",
     "task-master-ai": "^0.16.1",
     "webrtc-adapter": "^8.2.3",
     "winston": "^3.11.0",
