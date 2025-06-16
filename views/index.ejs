@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
     <link rel="stylesheet" href="/css/style.css">
 </head>
+
 <body class="landing-page">
     <header>
         <h1 class="landing-title">MonsterBox™</h1>
@@ -14,17 +16,19 @@
     <main>
         <h2>Welcome to the MonsterBox Control Panel</h2>
         <p>Choose a character and an option from the menu to get started.</p>
-        
-        <% if (characters && characters.length > 0) { %>
+
+        <% if (characters && characters.length> 0) { %>
             <select id="character-select" onchange="updateCharacter(this.value)">
                 <option value="">Select a character</option>
                 <% characters.forEach(function(character) { %>
-                    <option value="<%= character.id %>"><%= character.char_name %></option>
-                <% }); %>
+                    <option value="<%= character.id %>">
+                        <%= character.char_name %>
+                    </option>
+                    <% }); %>
             </select>
-        <% } else { %>
-            <p class="error-message">No characters defined. Please create a character first.</p>
-        <% } %>
+            <% } else { %>
+                <p class="error-message">No characters defined. Please create a character first.</p>
+                <% } %>
     </main>
 
     <nav id="navigation">
@@ -36,14 +40,12 @@
         <a href="/scenes" class="nav-button">🎬 Scenes</a>
         <a href="/active-mode" class="nav-button">⚡ Active Mode</a>
         <a href="/chatterpi-chat.html" class="nav-button chatterpi-link">🎭 ChatterPi AI</a>
-<<<<<<< HEAD
         <a href="/hardware-monitor.html" class="nav-button">📊 Hardware Monitor</a>
-=======
+        <a href="/log-collection/dashboard" class="nav-button">📈 Log Collection</a>
         <a href="/ai-config" class="nav-button ai-config-link">🤖 AI Configuration</a>
->>>>>>> 925ff5f677d4301e8df8c1285ec8e9ad305b8e19
         <!-- System Config moved to character-specific management -->
     </nav>
-    
+
     <footer>
         <p>An animatronic automation package by ARW Halloween 2024 2.0.</p>
     </footer>
@@ -59,17 +61,17 @@
                 },
                 body: JSON.stringify({ characterId: characterId }),
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    console.log('Character updated successfully');
-                } else {
-                    console.error('Failed to update character');
-                }
-            })
-            .catch((error) => {
-                console.error('Error:', error);
-            });
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log('Character updated successfully');
+                    } else {
+                        console.error('Failed to update character');
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
         }
 
         function updateNavigation(characterId) {
@@ -87,7 +89,7 @@
         }
 
         // Load the selected character from localStorage on page load
-        window.onload = function() {
+        window.onload = function () {
             const savedCharacter = localStorage.getItem('selectedCharacter');
             if (savedCharacter) {
                 document.getElementById('character-select').value = savedCharacter;
@@ -97,4 +99,5 @@
         }
     </script>
 </body>
+
 </html>

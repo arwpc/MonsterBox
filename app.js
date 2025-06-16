@@ -1,6 +1,6 @@
 // Print uncaught exceptions for debugging
 process.on('uncaughtException', function (err) {
-  console.error('Uncaught Exception:', err.stack || err);
+    console.error('Uncaught Exception:', err.stack || err);
 });
 
 // Load environment variables first
@@ -282,6 +282,10 @@ app.get('/test/video-configuration', (req, res) => {
 app.use('/cleanup', cleanupRoutes);
 app.use('/health', healthRoutes);
 
+// Log Collection routes
+app.use('/log-collection', require('./routes/logCollectionRoutes'));
+app.use('/api/log-collection', require('./routes/logCollectionRoutes'));
+
 // AI Configuration routes
 app.use('/ai-config', aiConfigRoutes);
 
@@ -289,25 +293,25 @@ app.use('/ai-config', aiConfigRoutes);
 app.get('/api/connections/status',
     monitoringLimiter,
     asyncHandler(async (req, res) => {
-    if (!serviceConnectionManager) {
-        return res.status(503).json({
-            success: false,
-            error: 'Connection manager not initialized'
-        });
-    }
-
-    const statuses = await serviceConnectionManager.getServiceStatuses();
-    const stats = serviceConnectionManager.getConnectionStats();
-
-    res.json({
-        success: true,
-        data: {
-            services: statuses,
-            statistics: stats,
-            timestamp: new Date().toISOString()
+        if (!serviceConnectionManager) {
+            return res.status(503).json({
+                success: false,
+                error: 'Connection manager not initialized'
+            });
         }
-    });
-}));
+
+        const statuses = await serviceConnectionManager.getServiceStatuses();
+        const stats = serviceConnectionManager.getConnectionStats();
+
+        res.json({
+            success: true,
+            data: {
+                services: statuses,
+                statistics: stats,
+                timestamp: new Date().toISOString()
+            }
+        });
+    }));
 
 // Cache management endpoints
 app.get('/api/cache/stats',
@@ -625,11 +629,11 @@ async function gracefulShutdown(reason) {
     logger.info(`Initiating graceful shutdown. Reason: ${reason}`);
 
     try {
-        // Stop all sounds
-        await soundController.stopAllSounds();
-        logger.info('All sounds stopped');
+        // Use graceful shutdown for sound controller
+        await soundController.gracefulShutdown();
+        logger.info('Sound controller shutdown completed');
     } catch (error) {
-        logger.error('Error stopping sounds during shutdown:', error);
+        logger.error('Error during sound controller shutdown:', error);
     }
 
     try {
