@@ -19,9 +19,13 @@ let authMiddleware, rbacMiddleware;
 let jawAnimationSystem;
 let chatterPiServiceManager;
 let hardwareServiceManager;
+let serviceConnectionManager;
 
 // Import error handling middleware
 const { errorHandler, notFoundHandler, asyncHandler } = require('./middleware/errorHandler');
+
+// Import connection management
+const ServiceConnectionManager = require('./services/serviceConnectionManager');
 
 try {
     express = require('express');
@@ -248,6 +252,28 @@ app.use('/health', healthRoutes);
 // AI Configuration routes
 app.use('/ai-config', aiConfigRoutes);
 
+// Connection monitoring endpoint
+app.get('/api/connections/status', asyncHandler(async (req, res) => {
+    if (!serviceConnectionManager) {
+        return res.status(503).json({
+            success: false,
+            error: 'Connection manager not initialized'
+        });
+    }
+
+    const statuses = await serviceConnectionManager.getServiceStatuses();
+    const stats = serviceConnectionManager.getConnectionStats();
+
+    res.json({
+        success: true,
+        data: {
+            services: statuses,
+            statistics: stats,
+            timestamp: new Date().toISOString()
+        }
+    });
+}));
+
 // Error handling middleware - must be last
 app.use(notFoundHandler);
 app.use(errorHandler);
@@ -423,6 +449,15 @@ async function initializeHardwareServices() {
 // Initialize the application
 async function initializeApp() {
     try {
+        // Initialize connection manager first
+        serviceConnectionManager = new ServiceConnectionManager({
+            maxConnections: 100,
+            connectionTimeout: 30000,
+            retryInterval: 5000,
+            maxRetries: 5,
+            healthCheckInterval: 30000
+        });
+
         // Initialize the sound controller
         await soundController.startSoundPlayer();
         logger.info('Sound player initialized successfully');
@@ -468,13 +503,19 @@ async function gracefulShutdown(reason) {
     }
 
     try {
+        // Shutdown connection manager
+        if (serviceConnectionManager) {
+            await serviceConnectionManager.shutdown();
+            logger.info('Service connections closed');
+        }
+
         // Shutdown hardware services
         if (hardwareServiceManager) {
             await hardwareServiceManager.shutdown();
             logger.info('Hardware services stopped');
         }
     } catch (error) {
-        logger.error('Error stopping hardware services during shutdown:', error);
+        logger.error('Error stopping services during shutdown:', error);
     }
 
     server.close(() => {
