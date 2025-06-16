@@ -1,7 +1,7 @@
 /**
  * ChatterPi Service Manager
  * Consolidated service management for all ChatterPi components
- * Integrates jaw animation, AI bridge, and real-time audio processing
+ * Integrates animatronic animation system, audio bridge, and real-time audio processing
  */
 
 const { spawn } = require('child_process');
@@ -16,7 +16,8 @@ class ChatterPiServiceManager {
         this.webSockets = new Map();
         this.isInitialized = false;
         this.config = {
-            jawServerPort: 8765,
+            animationServerPort: 8765,
+            audioBridgePort: 8767,
             aiServerPort: 8766,
             realTimeMode: true,
             autoRestart: true,
@@ -25,28 +26,28 @@ class ChatterPiServiceManager {
         
         // Service definitions with real-time optimizations
         this.serviceDefinitions = {
-            enhancedJawAnimator: {
-                name: 'Enhanced Jaw Animator',
+            chatterpiAnimationSystem: {
+                name: 'ChatterPi Animation System',
                 script: 'scripts/chatterpi/enhanced_audio_jaw_animator.py',
                 args: ['--real-time'],
                 port: 8765,
-                healthCheck: () => this.checkWebSocketConnection('jawAnimator'),
+                healthCheck: () => this.checkWebSocketConnection('animationSystem'),
                 critical: true
             },
-            audioServoBridge: {
-                name: 'Audio-Servo Bridge',
-                script: 'scripts/chatterpi/audio_servo_bridge.py',
-                args: ['--websocket-url', 'ws://localhost:3000'],
-                port: null,
-                healthCheck: () => this.checkServiceHealth('audioServoBridge'),
-                critical: true
+            chatterpiAudioBridge: {
+                name: 'ChatterPi Audio Bridge',
+                script: 'scripts/chatterpi/chatterpi_audio_bridge.py',
+                args: ['--host', '0.0.0.0', '--port', '8767'],
+                port: 8767,
+                healthCheck: () => this.checkWebSocketConnection('audioBridge'),
+                critical: false
             },
-            jawControlSystem: {
-                name: 'Jaw Control System',
+            primaryAnimatronicController: {
+                name: 'Primary Animatronic Controller',
                 script: 'scripts/chatterpi/gpio_jaw_server.py',
                 args: ['--host', '0.0.0.0', '--port', '8765', '--servo-pin', '18'],
                 port: 8765,
-                healthCheck: () => this.checkWebSocketConnection('jawControl'),
+                healthCheck: () => this.checkWebSocketConnection('primaryController'),
                 critical: true
             }
         };
@@ -70,7 +71,7 @@ class ChatterPiServiceManager {
             await this.applyRealTimeConfiguration();
             
             // Start services in optimal order
-            const startupOrder = ['gpioJawServer'];
+            const startupOrder = ['primaryAnimatronicController'];
 
             for (const serviceId of startupOrder) {
                 logger.info(`🔄 Attempting to start service: ${serviceId}`);
@@ -78,7 +79,7 @@ class ChatterPiServiceManager {
 
                 if (!success && this.serviceDefinitions[serviceId].critical) {
                     logger.warn(`Failed to start critical service: ${serviceId}`);
-                    logger.info('System will continue without jaw animation features');
+                    logger.info('System will continue without animatronic animation features');
                 } else if (success) {
                     logger.info(`✅ Successfully started ${this.serviceDefinitions[serviceId].name}`);
                 }
@@ -250,10 +251,13 @@ class ChatterPiServiceManager {
      */
     async setupWebSocketConnections() {
         logger.info('🔌 Setting up WebSocket connections...');
-        
-        // Connect to jaw animator
-        await this.connectWebSocket('jawAnimator', 'ws://localhost:8765');
-        
+
+        // Connect to animation system
+        await this.connectWebSocket('animationSystem', 'ws://localhost:8765');
+
+        // Connect to audio bridge (optional)
+        await this.connectWebSocket('audioBridge', 'ws://localhost:8767');
+
         logger.info('✅ WebSocket connections established');
     }
     
@@ -300,16 +304,23 @@ class ChatterPiServiceManager {
     }
     
     /**
-     * Send message to jaw animation system
+     * Send message to animation system
      */
-    sendJawCommand(command) {
-        const ws = this.getWebSocket('jawAnimator');
+    sendAnimationCommand(command) {
+        const ws = this.getWebSocket('animationSystem');
         if (ws) {
             ws.send(JSON.stringify(command));
             return true;
         }
-        logger.warn('Jaw animator WebSocket not available');
+        logger.warn('Animation system WebSocket not available');
         return false;
+    }
+
+    /**
+     * Send message to jaw animation system (backward compatibility)
+     */
+    sendJawCommand(command) {
+        return this.sendAnimationCommand(command);
     }
     
     /**
