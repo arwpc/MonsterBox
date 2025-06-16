@@ -16,30 +16,30 @@ const LogStorageAndIndexing = require('./logStorageAndIndexing');
 class IntegratedLogCollectionService extends EventEmitter {
     constructor(config = {}) {
         super();
-        
+
         this.config = {
             // Service ports
             aggregationPort: config.aggregationPort || 8781,
             streamingPort: config.streamingPort || 8782,
-            
+
             // Storage configuration
             storageDir: config.storageDir || './log/integrated',
             retentionDays: config.retentionDays || 30,
             compressionEnabled: config.compressionEnabled !== false,
-            
+
             // Processing configuration
             enablePatternDetection: config.enablePatternDetection !== false,
             enableAnomalyDetection: config.enableAnomalyDetection !== false,
             enableAlerting: config.enableAlerting !== false,
-            
+
             // Performance settings
             maxBufferSize: config.maxBufferSize || 1000,
             flushInterval: config.flushInterval || 5000,
-            
+
             // Alerting thresholds
             errorThreshold: config.errorThreshold || 10,
             warningThreshold: config.warningThreshold || 50,
-            
+
             ...config
         };
 
@@ -143,21 +143,21 @@ class IntegratedLogCollectionService extends EventEmitter {
     async start() {
         try {
             this.logger.info('Starting Integrated Log Collection Service...');
-            
+
             // Start all services
             await this.services.aggregation.start();
             await this.services.streaming.start();
             await this.services.storage.initializeStorage();
-            
+
             this.isRunning = true;
             this.statistics.startTime = new Date().toISOString();
-            
+
             // Setup alerting rules
             this.setupDefaultAlertingRules();
-            
+
             // Start monitoring loop
             this.startMonitoring();
-            
+
             this.logger.info('Integrated Log Collection Service started successfully', {
                 aggregationPort: this.config.aggregationPort,
                 streamingPort: this.config.streamingPort,
@@ -166,7 +166,7 @@ class IntegratedLogCollectionService extends EventEmitter {
 
             this.emit('started');
             return true;
-            
+
         } catch (error) {
             this.logger.error('Failed to start Integrated Log Collection Service', {
                 error: error.message
@@ -178,23 +178,23 @@ class IntegratedLogCollectionService extends EventEmitter {
     async stop() {
         try {
             this.logger.info('Stopping Integrated Log Collection Service...');
-            
+
             this.isRunning = false;
-            
+
             // Stop all services
             await this.services.aggregation.stop();
             await this.services.streaming.stop();
             await this.services.storage.stop();
             this.services.processing.stop();
-            
+
             // Clear monitoring interval
             if (this.monitoringInterval) {
                 clearInterval(this.monitoringInterval);
             }
-            
+
             this.logger.info('Integrated Log Collection Service stopped');
             this.emit('stopped');
-            
+
         } catch (error) {
             this.logger.error('Error stopping service', { error: error.message });
         }
@@ -203,26 +203,26 @@ class IntegratedLogCollectionService extends EventEmitter {
     async ingestLog(logEntry) {
         try {
             this.statistics.totalLogsProcessed++;
-            
+
             // Process the log entry
             const processedEntry = this.services.processing.processLogEntry(logEntry);
-            
+
             // Store the log entry
             await this.services.storage.storeLogEntry(processedEntry);
-            
+
             // Send to aggregation service
             await this.services.aggregation.ingestLogEntry(processedEntry);
-            
+
             // Stream to real-time subscribers
             this.services.streaming.streamLogEntry(processedEntry);
-            
+
             // Check alerting rules
             if (this.config.enableAlerting) {
                 this.checkAlertingRules(processedEntry);
             }
-            
+
             return processedEntry.id;
-            
+
         } catch (error) {
             this.logger.error('Error ingesting log entry', {
                 error: error.message,
@@ -239,9 +239,9 @@ class IntegratedLogCollectionService extends EventEmitter {
 
     handlePatternDetection(pattern) {
         this.statistics.patternsDetected++;
-        
+
         this.logger.warn('Pattern detected', pattern);
-        
+
         // Generate alert if pattern is concerning
         if (pattern.type === 'repeating_errors' || pattern.type === 'frequent_restarts') {
             this.generateAlert('pattern', {
@@ -251,18 +251,18 @@ class IntegratedLogCollectionService extends EventEmitter {
                 message: `Detected concerning pattern: ${pattern.type} in ${pattern.source}`
             });
         }
-        
+
         this.emit('pattern_detected', pattern);
     }
 
     handleAnomalyDetection(logEntry) {
         this.statistics.anomaliesDetected++;
-        
+
         this.logger.warn('Anomaly detected', {
             logEntry: logEntry.id,
             anomaly: logEntry.anomaly
         });
-        
+
         // Generate alert for high-score anomalies
         if (logEntry.anomaly.score > 2.0) {
             this.generateAlert('anomaly', {
@@ -272,7 +272,7 @@ class IntegratedLogCollectionService extends EventEmitter {
                 message: `High anomaly score (${logEntry.anomaly.score.toFixed(2)}) detected in ${logEntry.animatronic}/${logEntry.service}`
             });
         }
-        
+
         this.emit('anomaly_detected', logEntry);
     }
 
@@ -332,15 +332,15 @@ class IntegratedLogCollectionService extends EventEmitter {
     evaluateAlertingRule(rule, logEntry) {
         switch (rule.condition) {
             case 'classification_match':
-                return logEntry.classifications && 
-                       logEntry.classifications.some(c => c.rule === rule.classification);
-            
+                return logEntry.classifications &&
+                    logEntry.classifications.some(c => c.rule === rule.classification);
+
             case 'error_count_per_minute':
                 return logEntry.level === 'error';
-            
+
             case 'warning_count_per_minute':
                 return logEntry.level === 'warn';
-            
+
             default:
                 return false;
         }
@@ -348,15 +348,15 @@ class IntegratedLogCollectionService extends EventEmitter {
 
     triggerAlert(ruleName, rule, logEntry) {
         const now = Date.now();
-        
+
         // Prevent alert spam - minimum 5 minutes between same alerts
         if (rule.lastTriggered && (now - rule.lastTriggered) < 300000) {
             return;
         }
-        
+
         rule.lastTriggered = now;
         rule.triggerCount++;
-        
+
         this.generateAlert('rule', {
             type: 'alerting_rule_triggered',
             ruleName: ruleName,
@@ -369,22 +369,22 @@ class IntegratedLogCollectionService extends EventEmitter {
 
     generateAlert(source, alertData) {
         this.statistics.alertsGenerated++;
-        
+
         const alert = {
             id: `alert_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             source: source,
             timestamp: new Date().toISOString(),
             ...alertData
         };
-        
+
         this.logger.warn('Alert generated', alert);
-        
+
         // Emit alert for external handling
         this.emit('alert_generated', alert);
-        
+
         // Store alert for dashboard
         this.storeAlert(alert);
-        
+
         return alert;
     }
 
@@ -439,14 +439,14 @@ class IntegratedLogCollectionService extends EventEmitter {
             const unhealthyServices = Object.values(health.services).filter(status => status === 'unhealthy');
             if (unhealthyServices.length > 0) {
                 health.overall = 'degraded';
-                
+
                 if (unhealthyServices.length > 2) {
                     health.overall = 'unhealthy';
                 }
             }
 
             this.emit('health_check', health);
-            
+
         } catch (error) {
             this.logger.error('Error during health check', { error: error.message });
         }
@@ -491,22 +491,40 @@ class IntegratedLogCollectionService extends EventEmitter {
     // Fix for the sound player shutdown issue
     async handleGracefulShutdown() {
         this.logger.info('Handling graceful shutdown...');
-        
+
         try {
             // Stop sound player gracefully before other services
-            const soundService = require('./soundService');
-            if (soundService && typeof soundService.stop === 'function') {
-                await soundService.stop();
-                this.logger.info('Sound service stopped gracefully');
+            const soundController = require('../controllers/soundController');
+            if (soundController && typeof soundController.gracefulShutdown === 'function') {
+                await soundController.gracefulShutdown();
+                this.logger.info('Sound controller stopped gracefully');
             }
         } catch (error) {
-            this.logger.warn('Sound service already stopped or not available', {
+            this.logger.warn('Sound controller already stopped or not available', {
                 error: error.message
             });
         }
-        
+
         // Stop log collection services
         await this.stop();
+    }
+
+    // Production-ready status endpoint
+    getProductionStatus() {
+        return {
+            status: this.isRunning ? 'running' : 'stopped',
+            uptime: this.statistics.startTime ?
+                Date.now() - new Date(this.statistics.startTime).getTime() : 0,
+            statistics: this.statistics,
+            services: {
+                aggregation: this.services.aggregation?.isRunning || false,
+                streaming: this.services.streaming?.streamStats ? true : false,
+                storage: this.services.storage?.statistics ? true : false,
+                processing: this.services.processing?.statistics ? true : false
+            },
+            alerting: this.getAlertingSummary(),
+            lastHealthCheck: new Date().toISOString()
+        };
     }
 }
 
