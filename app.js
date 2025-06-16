@@ -27,6 +27,9 @@ const { errorHandler, notFoundHandler, asyncHandler } = require('./middleware/er
 // Import connection management
 const ServiceConnectionManager = require('./services/serviceConnectionManager');
 
+// Import caching middleware
+const { cache, invalidateCache, cacheManager } = require('./middleware/cacheMiddleware');
+
 try {
     express = require('express');
     path = require('path');
@@ -138,6 +141,30 @@ const apiLimiter = rateLimit({
     legacyHeaders: false
 });
 
+// Strict rate limiting for cache management endpoints
+const cacheManagementLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // Very limited cache management operations
+    message: {
+        error: 'Too many cache management requests from this IP.',
+        retryAfter: '15 minutes'
+    },
+    standardHeaders: true,
+    legacyHeaders: false
+});
+
+// Moderate rate limiting for monitoring endpoints
+const monitoringLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000, // 1 minute
+    max: 60, // 1 request per second average
+    message: {
+        error: 'Too many monitoring requests from this IP.',
+        retryAfter: '1 minute'
+    },
+    standardHeaders: true,
+    legacyHeaders: false
+});
+
 // Apply general rate limiting to all requests
 app.use(generalLimiter);
 
@@ -206,7 +233,10 @@ app.use('/parts/sensor', sensorRoutes);
 app.use('/parts/linear-actuator', linearActuatorRoutes);
 app.use('/parts/webcam', webcamRoutes);
 app.use('/parts', partRoutes.router);
-app.use('/characters', characterRoutes);
+app.use('/characters',
+    invalidateCache('GET:/api/characters:'), // Invalidate character cache on modifications
+    characterRoutes
+);
 app.use('/ai-instances', require('./routes/aiInstanceRoutes'));
 app.use('/sounds', soundRoutes);
 app.use('/active-mode', activeModeRoutes);
@@ -223,19 +253,22 @@ app.use('/jaw-animation', jawAnimationRoutes);
 app.use('/api/chatterpi', require('./routes/chatterpiRoutes'));
 app.use('/api/hardware', require('./routes/api/hardwareApiRoutes').router);
 
-// Simple characters API endpoint for hardware monitor
-app.get('/api/characters', asyncHandler(async (req, res) => {
-    const characterService = require('./services/characterService');
-    const characters = await characterService.getAllCharacters();
+// Simple characters API endpoint for hardware monitor (cached)
+app.get('/api/characters',
+    cache({ ttl: 600000 }), // Cache for 10 minutes
+    asyncHandler(async (req, res) => {
+        const characterService = require('./services/characterService');
+        const characters = await characterService.getAllCharacters();
 
-    // Format for hardware monitor dropdown
-    const formattedCharacters = characters.map(char => ({
-        id: char.id,
-        name: char.char_name || char.name || `Character ${char.id}`
-    }));
+        // Format for hardware monitor dropdown
+        const formattedCharacters = characters.map(char => ({
+            id: char.id,
+            name: char.char_name || char.name || `Character ${char.id}`
+        }));
 
-    res.json(formattedCharacters);
-}));
+        res.json(formattedCharacters);
+    })
+);
 
 // Test route for video configuration component
 app.get('/test/video-configuration', (req, res) => {
@@ -253,7 +286,9 @@ app.use('/health', healthRoutes);
 app.use('/ai-config', aiConfigRoutes);
 
 // Connection monitoring endpoint
-app.get('/api/connections/status', asyncHandler(async (req, res) => {
+app.get('/api/connections/status',
+    monitoringLimiter,
+    asyncHandler(async (req, res) => {
     if (!serviceConnectionManager) {
         return res.status(503).json({
             success: false,
@@ -273,6 +308,34 @@ app.get('/api/connections/status', asyncHandler(async (req, res) => {
         }
     });
 }));
+
+// Cache management endpoints
+app.get('/api/cache/stats',
+    monitoringLimiter,
+    asyncHandler(async (req, res) => {
+        const stats = cacheManager.getStats();
+        res.json({
+            success: true,
+            data: stats,
+            timestamp: new Date().toISOString()
+        });
+    })
+);
+
+app.post('/api/cache/clear',
+    cacheManagementLimiter,
+    asyncHandler(async (req, res) => {
+        const { pattern } = req.body;
+        const cleared = cacheManager.clear(pattern);
+
+        res.json({
+            success: true,
+            message: `Cache cleared: ${cleared} entries removed`,
+            pattern: pattern || 'all',
+            timestamp: new Date().toISOString()
+        });
+    })
+);
 
 // Error handling middleware - must be last
 app.use(notFoundHandler);
@@ -503,6 +566,10 @@ async function gracefulShutdown(reason) {
     }
 
     try {
+        // Shutdown cache manager
+        cacheManager.shutdown();
+        logger.info('Cache manager stopped');
+
         // Shutdown connection manager
         if (serviceConnectionManager) {
             await serviceConnectionManager.shutdown();
