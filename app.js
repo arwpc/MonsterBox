@@ -20,6 +20,9 @@ let jawAnimationSystem;
 let chatterPiServiceManager;
 let hardwareServiceManager;
 
+// Import error handling middleware
+const { errorHandler, notFoundHandler, asyncHandler } = require('./middleware/errorHandler');
+
 try {
     express = require('express');
     path = require('path');
@@ -88,9 +91,62 @@ try {
     process.exit(1);
 }
 
-// Basic Express setup
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Security middleware - must be first
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+
+// Configure Helmet for security headers
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+            fontSrc: ["'self'", "https://fonts.gstatic.com"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Required for EJS and WebSocket
+            imgSrc: ["'self'", "data:", "blob:"],
+            connectSrc: ["'self'", "ws:", "wss:"],
+            mediaSrc: ["'self'", "blob:"]
+        }
+    },
+    crossOriginEmbedderPolicy: false // Required for WebRTC
+}));
+
+// Configure rate limiting
+const generalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 1000, // Limit each IP to 1000 requests per windowMs
+    message: {
+        error: 'Too many requests from this IP, please try again later.',
+        retryAfter: '15 minutes'
+    },
+    standardHeaders: true,
+    legacyHeaders: false
+});
+
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 500, // Limit each IP to 500 API requests per windowMs
+    message: {
+        error: 'Too many API requests from this IP, please try again later.',
+        retryAfter: '15 minutes'
+    },
+    standardHeaders: true,
+    legacyHeaders: false
+});
+
+// Apply general rate limiting to all requests
+app.use(generalLimiter);
+
+// Basic Express setup with enhanced security
+app.use(express.json({
+    limit: '10mb', // Prevent large payload attacks
+    strict: true
+}));
+app.use(express.urlencoded({
+    extended: true,
+    limit: '10mb',
+    parameterLimit: 1000 // Prevent parameter pollution
+}));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
@@ -135,6 +191,9 @@ app.use('/auth', authRoutes);
 // Set up SSH routes (JWT auth required)
 app.use('/ssh', sshRoutes);
 
+// Apply API rate limiting to API routes
+app.use('/api', apiLimiter);
+
 // Set up routes
 app.use('/parts/led', ledRoutes);
 app.use('/parts/light', lightRoutes);
@@ -161,23 +220,18 @@ app.use('/api/chatterpi', require('./routes/chatterpiRoutes'));
 app.use('/api/hardware', require('./routes/api/hardwareApiRoutes').router);
 
 // Simple characters API endpoint for hardware monitor
-app.get('/api/characters', async (req, res) => {
-    try {
-        const characterService = require('./services/characterService');
-        const characters = await characterService.getAllCharacters();
+app.get('/api/characters', asyncHandler(async (req, res) => {
+    const characterService = require('./services/characterService');
+    const characters = await characterService.getAllCharacters();
 
-        // Format for hardware monitor dropdown
-        const formattedCharacters = characters.map(char => ({
-            id: char.id,
-            name: char.char_name || char.name || `Character ${char.id}`
-        }));
+    // Format for hardware monitor dropdown
+    const formattedCharacters = characters.map(char => ({
+        id: char.id,
+        name: char.char_name || char.name || `Character ${char.id}`
+    }));
 
-        res.json(formattedCharacters);
-    } catch (error) {
-        console.error('Error loading characters:', error);
-        res.status(500).json({ error: 'Failed to load characters' });
-    }
-});
+    res.json(formattedCharacters);
+}));
 
 // Test route for video configuration component
 app.get('/test/video-configuration', (req, res) => {
@@ -194,22 +248,18 @@ app.use('/health', healthRoutes);
 // AI Configuration routes
 app.use('/ai-config', aiConfigRoutes);
 
+// Error handling middleware - must be last
+app.use(notFoundHandler);
+app.use(errorHandler);
+
 // Root route
-app.get('/', async (req, res) => {
-    try {
-        const characters = await characterService.getAllCharacters();
-        res.render('index', { 
-            title: 'MonsterBox Control Panel',
-            characters: characters
-        });
-    } catch (error) {
-        logger.error('Error fetching characters for main menu:', error);
-        res.status(500).render('error', { 
-            error: 'Failed to fetch characters',
-            details: error.message
-        });
-    }
-});
+app.get('/', asyncHandler(async (req, res) => {
+    const characters = await characterService.getAllCharacters();
+    res.render('index', {
+        title: 'MonsterBox Control Panel',
+        characters: characters
+    });
+}));
 
 // New route for setting the selected character
 app.post('/set-character', (req, res) => {
