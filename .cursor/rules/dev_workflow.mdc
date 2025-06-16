@@ -19,12 +19,11 @@ Task Master offers two primary ways to interact:
     - A comprehensive list and description of MCP tools and their corresponding CLI commands can be found in [`taskmaster.mdc`](mdc:.cursor/rules/taskmaster.mdc).
     - **Restart the MCP server** if core logic in `scripts/modules` or MCP tool/direct function definitions change.
 
-2.  **`task-master` CLI (For Users & Fallback)**:
-    - The global `task-master` command provides a user-friendly interface for direct terminal interaction.
-    - It can also serve as a fallback if the MCP server is inaccessible or a specific function isn't exposed via MCP.
-    - Install globally with `npm install -g task-master-ai` or use locally via `npx task-master-ai ...`.
-    - The CLI commands often mirror the MCP tools (e.g., `task-master list` corresponds to `get_tasks`).
-    - Refer to [`taskmaster.mdc`](mdc:.cursor/rules/taskmaster.mdc) for a detailed command reference.
+2.  **Task Management (Augment Built-in)**:
+    - Task management is now handled through Augment's built-in system.
+    - No external CLI tools or MCP servers needed for task management.
+    - Use the AI assistant interface for all task operations.
+    - Tasks are managed through conversation context with real-time updates.
 
 ## Standard Development Workflow Process
 
@@ -104,12 +103,11 @@ Task Master offers two primary ways to interact:
 
 Taskmaster configuration is managed through two main mechanisms:
 
-1.  **`.taskmaster/config.json` File (Primary):**
-    *   Located in the project root directory.
-    *   Stores most configuration settings: AI model selections (main, research, fallback), parameters (max tokens, temperature), logging level, default subtasks/priority, project name, etc.
-    *   **Managed via `task-master models --setup` command.** Do not edit manually unless you know what you are doing.
-    *   **View/Set specific models via `task-master models` command or `models` MCP tool.**
-    *   Created automatically when you run `task-master models --setup` for the first time.
+1.  **Task Management Configuration:**
+    *   Task management is now handled through Augment's built-in system.
+    *   No external configuration files needed.
+    *   Tasks are managed through conversation context.
+    *   All task operations handled through AI assistant interface.
 
 2.  **Environment Variables (`.env` / `mcp.json`):**
     *   Used **only** for sensitive API keys and specific endpoint URLs.

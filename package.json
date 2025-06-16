@@ -48,7 +48,6 @@
     "test:hardware-services": "node tests/hardware-services-test.js",
     "test:hardware-comprehensive": "node tests/comprehensive-hardware-test.js",
     "test:websocket-proxy": "node tests/websocket-proxy-test.js",
-    "task-master": "node node_modules/task-master-ai/bin/task-master.js",
     "docs:generate": "node scripts/generate-task-docs.js",
     "docs:build": "bash scripts/build-docs.sh",
     "docs:serve": "bash scripts/build-docs.sh --serve",
@@ -84,7 +83,6 @@
     "speakeasy": "^2.0.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^4.6.3",
-    "task-master-ai": "^0.16.1",
     "webrtc-adapter": "^8.2.3",
     "winston": "^3.11.0",
     "ws": "^8.18.2"

@@ -1,31 +1,32 @@
-# TaskMaster + MkDocs Integration
+# Task Management + MkDocs Integration
 
 ## Overview
 
-This document describes the complete integration between TaskMaster AI and the MkDocs documentation system, providing automated task documentation generation and seamless workflow coordination.
+This document describes the integration between Augment's built-in task management system and the MkDocs documentation system, providing automated task documentation generation and seamless workflow coordination.
 
 ## Integration Architecture
 
 ### Components
-1. **TaskMaster AI**: Task management and tracking system
+1. **Augment Task Management**: Built-in task management and tracking system
 2. **MkDocs**: Documentation generation and hosting
 3. **GitHub Actions**: Automated deployment pipeline
 4. **Task Documentation Generator**: Automated content creation
 
 ### Data Flow
 ```
-TaskMaster Tasks → Documentation Generator → MkDocs → GitHub Pages
+Augment Tasks → Documentation Generator → MkDocs → GitHub Pages
 ```
 
-## TaskMaster Configuration
+## Task Management Configuration
 
-### Configuration Files
-- **`.taskmaster/config.json`**: Main TaskMaster configuration
-- **`.taskmaster/reports/current-task-status.json`**: Real-time task status
-- **`.taskmaster/docs/prd.txt`**: Product Requirements Document
+### Task Management Features
+- Built-in hierarchical task organization with subtasks
+- Task states: NOT_STARTED, IN_PROGRESS, COMPLETE, CANCELLED
+- Batch operations for efficient updates
+- Real-time progress tracking through conversation context
 
 ### Task Status Integration
-TaskMaster provides real-time task status that integrates with documentation:
+Augment's task management provides real-time task status that integrates with documentation:
 
 <augment_code_snippet path=".taskmaster/reports/current-task-status.json" mode="EXCERPT">
 ````json
@@ -181,16 +182,14 @@ mkdocs build
 mkdocs serve
 ```
 
-### TaskMaster Commands
+### Task Management Commands
 ```bash
-# View task status
-npm run task-master show 16
-
-# Update task status
-npm run task-master set-status --id=16 --status=done
-
-# List all tasks
-npm run task-master list
+# Task management is now handled through Augment's built-in system
+# Use the AI assistant interface to:
+# - View current task list
+# - Update task states
+# - Add new tasks and subtasks
+# - Reorganize task hierarchy
 ```
 
 ## Quality Assurance
@@ -228,7 +227,7 @@ npm run task-master list
 - ✅ All task documentation auto-generates correctly
 - ✅ Navigation structure is complete and functional
 - ✅ Documentation site is accessible and responsive
-- ✅ TaskMaster shows Task 16 as 'done'
+- ✅ Task management system shows MkDocs integration as 'COMPLETE'
 
 ### Quality Metrics
 - ✅ All links work correctly

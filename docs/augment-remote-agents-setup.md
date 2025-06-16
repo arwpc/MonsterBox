@@ -163,17 +163,11 @@ git checkout feature/enhanced-mcp-log-collection
 git log --oneline -10
 ```
 
-### **Update Task Master as Work Completes**
+### **Update Task Status as Work Completes**
 ```bash
-# Update task status as agents complete work
-task-master set-status --id=11.1 --status=done
-task-master update-subtask --id=11.1 --prompt="Implemented by Augment Code remote agent - JWT architecture complete"
-
-task-master set-status --id=15.1 --status=done
-task-master update-subtask --id=15.1 --prompt="Implemented by Augment Code remote agent - Test coverage analysis complete"
-
-task-master set-status --id=4.1 --status=done
-task-master update-subtask --id=4.1 --prompt="Implemented by Augment Code remote agent - MCP protocol design complete"
+# Task status is now managed through Augment's built-in task management system
+# Progress tracking is handled automatically through the conversation interface
+# No manual commands needed - tasks are updated through the AI assistant
 ```
 
 ## 🔄 **Expected Timeline**

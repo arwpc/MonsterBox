@@ -32,18 +32,12 @@ If you need to customize the MCP configuration locally:
    echo ".cursor/mcp.local.json" >> .gitignore
    ```
 
-3. **Update your local copy with actual API keys:**
+3. **Note: Task management is now handled through Augment's built-in system:**
    ```json
    {
        "mcpServers": {
-           "task-master-ai": {
-               "command": "npx",
-               "args": ["-y", "--package=task-master-ai", "task-master-ai"],
-               "env": {
-                   "ANTHROPIC_API_KEY": "your_actual_anthropic_key_here",
-                   "OPENAI_API_KEY": "your_actual_openai_key_here",
-                   "GOOGLE_API_KEY": "your_actual_google_key_here"
-               }
+           "// Task management no longer requires external MCP configuration": {
+               "// Augment provides built-in task management capabilities": "No setup required"
            }
        }
    }
