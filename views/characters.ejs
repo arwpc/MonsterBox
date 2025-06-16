@@ -10,12 +10,19 @@
 </head>
 <body>
     <header>
-        <h1 class="landing-title"><%= title %></h1>
+        <h1 class="landing-title">🎭 <%= title %></h1>
     </header>
-    
+
     <main>
+        <div class="info-section">
+            <h3>🎭 Character Management</h3>
+            <p>Manage animatronic characters and their configurations. Assign hardware parts and AI instances to create complete character experiences.</p>
+        </div>
+
         <div class="button-group">
-            <a href="/characters/new" class="button primary-btn">Add New Character</a>
+            <a href="/characters/new" class="button primary-btn">🎭 Add New Character</a>
+            <a href="/ai-instances" class="button">🧠 Manage AI Instances</a>
+            <a href="/parts" class="button">🔧 Manage Hardware Parts</a>
             <a href="/" class="button secondary-btn">Back to Main Menu</a>
         </div>
 
@@ -27,7 +34,8 @@
                         <th>Name</th>
                         <th>Description</th>
                         <th>Animatronic Status</th>
-                        <th>Parts</th>
+                        <th>Hardware Parts</th>
+                        <th>AI Instances</th>
                         <th>Sounds</th>
                         <th>Actions</th>
                     </tr>
@@ -71,53 +79,84 @@
                                 <% } %>
                             </td>
                             <td>
-                                <% 
-                                let displayParts = [];
-                                // Check parts with characterId
-                                parts.forEach(function(part) {
-                                    if (part.characterId === character.id) {
-                                        displayParts.push(part);
-                                    }
-                                });
-                                // Check character's parts array
-                                if (character.parts && character.parts.length > 0) {
+                                <div class="parts-assignment">
+                                    <%
+                                    let displayParts = [];
+                                    // Check parts with characterId
                                     parts.forEach(function(part) {
-                                        if (character.parts.includes(part.id) && !displayParts.find(p => p.id === part.id)) {
+                                        if (part.characterId === character.id) {
                                             displayParts.push(part);
                                         }
                                     });
-                                }
-                                displayParts.forEach(function(part) { 
-                                %>
-                                    <%= part.name %><br>
-                                <% }); %>
+                                    // Check character's parts array
+                                    if (character.parts && character.parts.length > 0) {
+                                        parts.forEach(function(part) {
+                                            if (character.parts.includes(part.id) && !displayParts.find(p => p.id === part.id)) {
+                                                displayParts.push(part);
+                                            }
+                                        });
+                                    }
+                                    if (displayParts.length > 0) {
+                                        displayParts.forEach(function(part) {
+                                    %>
+                                        <span class="part-tag"><%= part.name %></span>
+                                    <% });
+                                    } else { %>
+                                        <small style="color: #888;">No parts assigned</small>
+                                    <% } %>
+                                    <br>
+                                    <button onclick="manageParts(<%= character.id %>)" class="button small-btn">🔧 Manage Parts</button>
+                                </div>
                             </td>
                             <td>
-                                <% 
-                                let displaySounds = [];
-                                // Check sounds with characterIds array
-                                sounds.forEach(function(sound) {
-                                    if (sound.characterIds && sound.characterIds.includes(character.id)) {
-                                        displaySounds.push(sound);
-                                    }
-                                });
-                                // Check character's sounds array
-                                if (character.sounds && character.sounds.length > 0) {
+                                <div class="ai-assignment">
+                                    <% if (character.chatterpi_config && character.chatterpi_config.ai_characters) { %>
+                                        <% character.chatterpi_config.ai_characters.forEach(function(aiId) { %>
+                                            <span class="ai-tag"><%= aiId %></span>
+                                        <% }); %>
+                                        <br>
+                                        <small>Default: <%= character.chatterpi_config.default_character || 'None' %></small>
+                                    <% } else { %>
+                                        <small style="color: #888;">No AI assigned</small>
+                                    <% } %>
+                                    <br>
+                                    <button onclick="manageAI(<%= character.id %>)" class="button small-btn">🧠 Manage AI</button>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="sounds-assignment">
+                                    <%
+                                    let displaySounds = [];
+                                    // Check sounds with characterIds array
                                     sounds.forEach(function(sound) {
-                                        if (character.sounds.includes(sound.id) && !displaySounds.find(s => s.id === sound.id)) {
+                                        if (sound.characterIds && sound.characterIds.includes(character.id)) {
                                             displaySounds.push(sound);
                                         }
                                     });
-                                }
-                                displaySounds.forEach(function(sound) { 
-                                %>
-                                    <%= sound.name %><br>
-                                <% }); %>
+                                    // Check character's sounds array
+                                    if (character.sounds && character.sounds.length > 0) {
+                                        sounds.forEach(function(sound) {
+                                            if (character.sounds.includes(sound.id) && !displaySounds.find(s => s.id === sound.id)) {
+                                                displaySounds.push(sound);
+                                            }
+                                        });
+                                    }
+                                    if (displaySounds.length > 0) {
+                                        displaySounds.forEach(function(sound) {
+                                    %>
+                                        <span class="sound-tag"><%= sound.name %></span>
+                                    <% });
+                                    } else { %>
+                                        <small style="color: #888;">No sounds assigned</small>
+                                    <% } %>
+                                </div>
                             </td>
                             <td>
                                 <div class="button-group">
-                                    <a href="/characters/<%= character.id %>/edit" class="button">Edit</a>
-                                    <button onclick="deleteCharacter(<%= character.id %>)" class="button">Delete</button>
+                                    <a href="/characters/<%= character.id %>/edit" class="button">✏️ Edit</a>
+                                    <a href="/characters/<%= character.id %>/parts" class="button">🔧 Parts</a>
+                                    <a href="/characters/<%= character.id %>/ai" class="button">🧠 AI</a>
+                                    <button onclick="deleteCharacter(<%= character.id %>)" class="button danger-btn">🗑️ Delete</button>
                                 </div>
                             </td>
                         </tr>
@@ -223,6 +262,50 @@
             background-color: #111;
             padding: 5px;
             border: 1px solid #333;
+        }
+
+        .info-section {
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid #00ff00;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .info-section h3 {
+            color: #00ff00;
+            margin-bottom: 10px;
+        }
+
+        .parts-assignment, .ai-assignment, .sounds-assignment {
+            font-size: 12px;
+        }
+
+        .part-tag, .ai-tag, .sound-tag {
+            display: inline-block;
+            padding: 2px 6px;
+            margin: 1px;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .part-tag {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4CAF50;
+            border: 1px solid #4CAF50;
+        }
+
+        .ai-tag {
+            background: rgba(33, 150, 243, 0.2);
+            color: #2196F3;
+            border: 1px solid #2196F3;
+        }
+
+        .sound-tag {
+            background: rgba(255, 152, 0, 0.2);
+            color: #ff9800;
+            border: 1px solid #ff9800;
         }
     </style>
 
@@ -409,6 +492,16 @@
                         showModal('Reboot Error', '<p style="color: #ff0000;">❌ Error: ' + xhr.responseText + '</p>');
                     });
             }
+        }
+
+        function manageParts(characterId) {
+            // Redirect to parts management with character context
+            window.location.href = `/characters/${characterId}/parts`;
+        }
+
+        function manageAI(characterId) {
+            // Redirect to AI management with character context
+            window.location.href = `/characters/${characterId}/ai`;
         }
 
         // Close modal when clicking outside of it

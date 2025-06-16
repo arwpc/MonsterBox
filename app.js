@@ -141,6 +141,7 @@ app.use('/parts/linear-actuator', linearActuatorRoutes);
 app.use('/parts/webcam', webcamRoutes);
 app.use('/parts', partRoutes.router);
 app.use('/characters', characterRoutes);
+app.use('/ai-instances', require('./routes/aiInstanceRoutes'));
 app.use('/sounds', soundRoutes);
 app.use('/active-mode', activeModeRoutes);
 // System config routes for global servo management

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header>
+        <h1 class="landing-title"><%= title %></h1>
+    </header>
+    
+    <main>
+        <% if (typeof error !== 'undefined' && error) { %>
+            <div class="error-message">
+                <strong>Error:</strong> <%= error %>
+            </div>
+        <% } %>
+
+        <form action="<%= isEdit ? '/ai-instances/' + instance.id + '/update' : '/ai-instances' %>" method="POST" class="form-container">
+            <div class="form-section">
+                <h3>🤖 Basic Information</h3>
+                
+                <div class="form-group">
+                    <label for="id">Instance ID:</label>
+                    <input type="text" id="id" name="id" value="<%= instance ? instance.id : '' %>" 
+                           <%= isEdit ? 'readonly' : '' %> required 
+                           pattern="[a-zA-Z0-9_-]+" 
+                           title="Only letters, numbers, underscores, and hyphens allowed">
+                    <small>Unique identifier for the AI instance (cannot be changed after creation)</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="name">Display Name:</label>
+                    <input type="text" id="name" name="name" value="<%= instance ? instance.name : '' %>" required>
+                    <small>Human-readable name for the AI instance</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="type">Instance Type:</label>
+                    <select id="type" name="type" required>
+                        <option value="character" <%= instance && instance.type === 'character' ? 'selected' : '' %>>🎭 Character AI</option>
+                        <option value="assistant" <%= instance && instance.type === 'assistant' ? 'selected' : '' %>>🤖 Assistant AI</option>
+                    </select>
+                    <small>Character AI for personalities, Assistant AI for tasks</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Description:</label>
+                    <textarea id="description" name="description" rows="3" required><%= instance ? instance.description : '' %></textarea>
+                    <small>Brief description of the AI instance's purpose and personality</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="enabled">Status:</label>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="enabled" name="enabled" <%= instance && instance.enabled ? 'checked' : '' %>>
+                        <label for="enabled">Enable this AI instance</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>🧠 AI Configuration</h3>
+                
+                <div class="form-group">
+                    <label for="model">AI Model:</label>
+                    <select id="model" name="model" required>
+                        <option value="gpt-4" <%= instance && instance.config.model === 'gpt-4' ? 'selected' : '' %>>GPT-4 (Recommended)</option>
+                        <option value="gpt-3.5-turbo" <%= instance && instance.config.model === 'gpt-3.5-turbo' ? 'selected' : '' %>>GPT-3.5 Turbo</option>
+                        <option value="claude-3" <%= instance && instance.config.model === 'claude-3' ? 'selected' : '' %>>Claude 3</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="temperature">Temperature:</label>
+                    <input type="range" id="temperature" name="temperature" 
+                           min="0" max="2" step="0.1" 
+                           value="<%= instance ? instance.config.temperature : '0.8' %>"
+                           oninput="updateTemperatureDisplay(this.value)">
+                    <div class="range-display">
+                        <span>Conservative (0)</span>
+                        <span id="temperatureValue"><%= instance ? instance.config.temperature : '0.8' %></span>
+                        <span>Creative (2)</span>
+                    </div>
+                    <small>Controls randomness in responses (0.8 recommended for characters)</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="max_tokens">Max Tokens:</label>
+                    <input type="number" id="max_tokens" name="max_tokens" 
+                           min="50" max="500" 
+                           value="<%= instance ? instance.config.max_tokens : '150' %>" required>
+                    <small>Maximum length of AI responses (150 recommended)</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="personality">Personality Description:</label>
+                    <textarea id="personality" name="personality" rows="4" required><%= instance ? instance.config.personality : '' %></textarea>
+                    <small>Detailed description of the AI's personality, speaking style, and behavior</small>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>🔊 Voice Settings</h3>
+                
+                <div class="form-group">
+                    <label for="voice_rate">Speech Rate:</label>
+                    <input type="range" id="voice_rate" name="voice_rate" 
+                           min="0.5" max="2" step="0.1" 
+                           value="<%= instance ? instance.config.voice_settings.rate : '1.0' %>"
+                           oninput="updateRateDisplay(this.value)">
+                    <div class="range-display">
+                        <span>Slow (0.5)</span>
+                        <span id="rateValue"><%= instance ? instance.config.voice_settings.rate : '1.0' %></span>
+                        <span>Fast (2.0)</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="voice_pitch">Voice Pitch:</label>
+                    <input type="range" id="voice_pitch" name="voice_pitch" 
+                           min="0.5" max="2" step="0.1" 
+                           value="<%= instance ? instance.config.voice_settings.pitch : '1.0' %>"
+                           oninput="updatePitchDisplay(this.value)">
+                    <div class="range-display">
+                        <span>Low (0.5)</span>
+                        <span id="pitchValue"><%= instance ? instance.config.voice_settings.pitch : '1.0' %></span>
+                        <span>High (2.0)</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="voice_volume">Voice Volume:</label>
+                    <input type="range" id="voice_volume" name="voice_volume" 
+                           min="0.1" max="1.0" step="0.1" 
+                           value="<%= instance ? instance.config.voice_settings.volume : '0.8' %>"
+                           oninput="updateVolumeDisplay(this.value)">
+                    <div class="range-display">
+                        <span>Quiet (0.1)</span>
+                        <span id="volumeValue"><%= instance ? instance.config.voice_settings.volume : '0.8' %></span>
+                        <span>Loud (1.0)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="button primary-btn">
+                    <%= isEdit ? '💾 Update AI Instance' : '🧠 Create AI Instance' %>
+                </button>
+                <a href="/ai-instances" class="button secondary-btn">Cancel</a>
+            </div>
+        </form>
+    </main>
+
+    <style>
+        .form-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .form-section {
+            background: rgba(0, 255, 0, 0.05);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-section h3 {
+            color: #00ff00;
+            margin-bottom: 15px;
+            border-bottom: 1px solid rgba(0, 255, 0, 0.3);
+            padding-bottom: 5px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #00ff00;
+            font-weight: bold;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid rgba(0, 255, 0, 0.5);
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.7);
+            color: #00ff00;
+            font-family: inherit;
+        }
+
+        .form-group input[readonly] {
+            background: rgba(0, 0, 0, 0.5);
+            color: #888;
+        }
+
+        .form-group small {
+            display: block;
+            margin-top: 5px;
+            color: #888;
+            font-size: 12px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+        }
+
+        .range-display {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 5px;
+            font-size: 12px;
+            color: #888;
+        }
+
+        .range-display span:nth-child(2) {
+            color: #00ff00;
+            font-weight: bold;
+            background: rgba(0, 255, 0, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .error-message {
+            background: rgba(244, 67, 54, 0.1);
+            border: 1px solid #f44336;
+            color: #f44336;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+
+    <script>
+        function updateTemperatureDisplay(value) {
+            document.getElementById('temperatureValue').textContent = value;
+        }
+
+        function updateRateDisplay(value) {
+            document.getElementById('rateValue').textContent = value;
+        }
+
+        function updatePitchDisplay(value) {
+            document.getElementById('pitchValue').textContent = value;
+        }
+
+        function updateVolumeDisplay(value) {
+            document.getElementById('volumeValue').textContent = value;
+        }
+
+        // Update personality placeholder based on type
+        document.getElementById('type').addEventListener('change', function() {
+            const personalityField = document.getElementById('personality');
+            if (this.value === 'character') {
+                personalityField.placeholder = 'e.g., A gothic vampire nobleman with centuries of wisdom, speaks in an archaic manner with dramatic flair...';
+            } else {
+                personalityField.placeholder = 'e.g., A helpful robotic assistant with technical expertise, speaks clearly and concisely...';
+            }
+        });
+
+        // Trigger initial placeholder update
+        document.getElementById('type').dispatchEvent(new Event('change'));
+    </script>
+</body>
+</html>
