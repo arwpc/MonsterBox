@@ -56,7 +56,10 @@
     "test:ai-integration": "mocha tests/ai-integration-comprehensive.test.js --timeout 30000",
     "ai:health-check": "node -e \"const {getInstance} = require('./ai/integrations'); getInstance().initialize().then(ai => ai.healthCheck()).then(console.log)\"",
     "ai:test": "node -e \"const {getInstance} = require('./ai/integrations'); getInstance().initialize().then(ai => ai.testIntegration()).then(console.log)\"",
-    "ai:status": "node -e \"const {getInstance} = require('./ai/integrations'); getInstance().initialize().then(ai => ai.getStatus()).then(console.log)\""
+    "ai:status": "node -e \"const {getInstance} = require('./ai/integrations'); getInstance().initialize().then(ai => ai.getStatus()).then(console.log)\"",
+    "ai:config": "echo 'AI Configuration UI available at http://localhost:3000/ai-config'",
+    "ai:validate": "node -e \"const {getInstance} = require('./ai/integrations'); getInstance().initialize().then(ai => ai.validateAPIKeys()).then(console.log)\"",
+    "test:ai-config": "echo 'AI Configuration UI tests - visit http://localhost:3000/ai-config to test manually'"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.53.0",
