@@ -1,0 +1,95 @@
+
+=== systemctl status fluent-bit --no-pager ===
+ERROR: Command failed: sshpass -p 'klrklr89!' ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o PasswordAuthentication=yes -o PubkeyAuthentication=no remote@192.168.8.120 'systemctl status fluent-bit --no-pager'
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                              MonsterBox System                              ║
+║                         Raspberry Pi 4B Development                         ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║                                                                              ║
+║  WARNING: This system is for authorized users only.                         ║
+║  All activities are monitored and logged.                                   ║
+║  Unauthorized access is prohibited.                                         ║
+║                                                                              ║
+║  This is a MonsterBox animatronic control system.                          ║
+║  Please follow security protocols and development guidelines.               ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+remote@192.168.8.120: Permission denied (publickey).
+
+
+=== journalctl -u fluent-bit -n 50 --no-pager ===
+ERROR: Command failed: sshpass -p 'klrklr89!' ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o PasswordAuthentication=yes -o PubkeyAuthentication=no remote@192.168.8.120 'journalctl -u fluent-bit -n 50 --no-pager'
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                              MonsterBox System                              ║
+║                         Raspberry Pi 4B Development                         ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║                                                                              ║
+║  WARNING: This system is for authorized users only.                         ║
+║  All activities are monitored and logged.                                   ║
+║  Unauthorized access is prohibited.                                         ║
+║                                                                              ║
+║  This is a MonsterBox animatronic control system.                          ║
+║  Please follow security protocols and development guidelines.               ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+remote@192.168.8.120: Permission denied (publickey).
+
+
+=== curl -s http://localhost:2020/api/v1/metrics ===
+ERROR: Command failed: sshpass -p 'klrklr89!' ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o PasswordAuthentication=yes -o PubkeyAuthentication=no remote@192.168.8.120 'curl -s http://localhost:2020/api/v1/metrics'
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                              MonsterBox System                              ║
+║                         Raspberry Pi 4B Development                         ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║                                                                              ║
+║  WARNING: This system is for authorized users only.                         ║
+║  All activities are monitored and logged.                                   ║
+║  Unauthorized access is prohibited.                                         ║
+║                                                                              ║
+║  This is a MonsterBox animatronic control system.                          ║
+║  Please follow security protocols and development guidelines.               ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+remote@192.168.8.120: Permission denied (publickey).
+
+
+=== ls -la /home/remote/log_export/ ===
+ERROR: Command failed: sshpass -p 'klrklr89!' ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o PasswordAuthentication=yes -o PubkeyAuthentication=no remote@192.168.8.120 'ls -la /home/remote/log_export/'
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                              MonsterBox System                              ║
+║                         Raspberry Pi 4B Development                         ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║                                                                              ║
+║  WARNING: This system is for authorized users only.                         ║
+║  All activities are monitored and logged.                                   ║
+║  Unauthorized access is prohibited.                                         ║
+║                                                                              ║
+║  This is a MonsterBox animatronic control system.                          ║
+║  Please follow security protocols and development guidelines.               ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+remote@192.168.8.120: Permission denied (publickey).
+
+
+=== cat /etc/fluent-bit/fluent-bit.conf ===
+ERROR: Command failed: sshpass -p 'klrklr89!' ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o PasswordAuthentication=yes -o PubkeyAuthentication=no remote@192.168.8.120 'cat /etc/fluent-bit/fluent-bit.conf'
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                              MonsterBox System                              ║
+║                         Raspberry Pi 4B Development                         ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║                                                                              ║
+║  WARNING: This system is for authorized users only.                         ║
+║  All activities are monitored and logged.                                   ║
+║  Unauthorized access is prohibited.                                         ║
+║                                                                              ║
+║  This is a MonsterBox animatronic control system.                          ║
+║  Please follow security protocols and development guidelines.               ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+remote@192.168.8.120: Permission denied (publickey).
+
