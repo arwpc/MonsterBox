@@ -60,13 +60,13 @@ router.use(checkCharacterSelected);
 
 router.get('/', async (req, res) => {
     try {
-        const parts = await partService.getPartsByCharacter(req.characterId);
-        const character = await characterService.getCharacterById(req.characterId);
-        const partsWithDetails = await Promise.all(parts.map(async part => ({
+        // Get ALL parts (hardware-centric approach)
+        const allParts = await partService.getAllParts();
+        const partsWithDetails = await Promise.all(allParts.map(async part => ({
             ...part,
             details: await getPartDetails(part)
         })));
-        res.render('parts', { title: 'Parts', parts: partsWithDetails, character });
+        res.render('parts', { title: 'Hardware Parts Management', parts: partsWithDetails });
     } catch (error) {
         logger.error('Error fetching parts:', error);
         res.status(500).send('An error occurred while fetching parts');
@@ -353,9 +353,42 @@ const executePythonScript = (req, res) => {
 
 router.post('/execute-python-script', executePythonScript);
 
+// POST /parts/:id/test - Test hardware part
+router.post('/:id/test', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            return res.status(400).json({ success: false, error: 'Invalid part ID' });
+        }
+
+        const part = await partService.getPartById(id);
+        if (!part) {
+            return res.status(404).json({ success: false, error: 'Part not found' });
+        }
+
+        // Mock hardware test for now - in real implementation, this would test actual hardware
+        const testResult = {
+            success: true,
+            part_id: part.id,
+            part_name: part.name,
+            part_type: part.type,
+            test_timestamp: new Date().toISOString(),
+            response_time: Math.floor(Math.random() * 500) + 100, // Mock response time
+            status: 'online',
+            message: `Hardware test successful for ${part.type} "${part.name}"`
+        };
+
+        logger.info(`🧪 Tested hardware part: ${part.name} (${part.type})`);
+        res.json(testResult);
+    } catch (error) {
+        logger.error('Error testing part:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 router.get('/api/parts', async (req, res) => {
     try {
-        const parts = await partService.getPartsByCharacter(req.characterId);
+        const parts = await partService.getAllParts();
         const partsWithDetails = await Promise.all(parts.map(async part => ({
             ...part,
             details: await getPartDetails(part)

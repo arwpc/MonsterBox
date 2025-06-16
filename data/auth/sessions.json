@@ -1145,6 +1145,23 @@
       "ipAddress": "127.0.0.1",
       "userAgent": "mocha-test",
       "active": true
+    },
+    {
+      "sessionId": "session_1749957802341_iqjtbafak",
+      "userId": "admin-001",
+      "createdAt": "2025-06-15T03:23:22.354Z",
+      "lastActivity": "2025-06-15T03:23:22.354Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "test-agent",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749957803277_nrp79cys5",
+      "userId": "admin-001",
+      "createdAt": "2025-06-15T03:23:23.284Z",
+      "lastActivity": "2025-06-15T03:23:23.284Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
     }
   ]
 }

@@ -59,12 +59,19 @@ class WebSocketHardwareServer:
                 
             logger.info(f"🌐 Starting WebSocket server on {self.host}:{self.port}")
             
+            # Add origin validation to accept browser connections
+            def check_origin(origin):
+                # Allow connections from localhost and any origin for development
+                logger.info(f"🌐 WebSocket origin check: {origin}")
+                return True
+
             self.server = await websockets.serve(
                 self.handle_client,
                 self.host,
                 self.port,
                 ping_interval=30,
-                ping_timeout=10
+                ping_timeout=10,
+                origins=None  # Allow all origins
             )
             
             self.is_running = True

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 Light WebSocket Service
-Wraps existing light_control.py script with WebSocket interface
-Following ChatterPi WebSocket architecture pattern
+Enhanced with Hardware Integration Layer (HAL) support
+Maintains backward compatibility while using new HAL architecture
 """
 
 import asyncio
@@ -17,17 +17,29 @@ from base_hardware_service import BaseHardwareService
 # Add parent directory to path to import light_control
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# Import Hardware Integration Layer components
+try:
+    from integrated_hardware_system import IntegratedHardwareSystem
+    from hardware_abstraction_layer import CommandType
+    HAL_AVAILABLE = True
+    logger = logging.getLogger(__name__)
+    logger.info("✅ Hardware Integration Layer available for lights")
+except ImportError as e:
+    HAL_AVAILABLE = False
+    logger = logging.getLogger(__name__)
+    logger.warning(f"⚠️ Hardware Integration Layer not available for lights, using legacy mode: {e}")
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 class LightWebSocketService(BaseHardwareService):
-    """WebSocket service for light control"""
-    
+    """WebSocket service for light control with HAL integration"""
+
     def __init__(self, port: int = 8772, host: str = "0.0.0.0"):
         super().__init__("light_service", "light", port, host)
         self.light_configs = {}  # Store light configurations
         self.light_states = {}   # Track current light states
+        self.hardware_system = None  # Integrated Hardware System instance
         
     async def initialize_hardware(self) -> bool:
         """Initialize light hardware"""

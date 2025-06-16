@@ -615,4 +615,192 @@ router.delete('/:id/servos/:servoId', async (req, res) => {
     }
 });
 
+// Character-Part Assignment Routes
+router.get('/:id/parts', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.id);
+        const character = await characterService.getCharacterById(characterId);
+        if (!character) {
+            return res.status(404).send('Character not found');
+        }
+
+        // Get all parts and filter by character assignment
+        const allParts = await partService.getAllParts();
+        const assignedParts = allParts.filter(part => part.characterId === characterId);
+        const availableParts = allParts.filter(part => !part.characterId || part.characterId === characterId);
+
+        res.render('character-parts', {
+            title: `${character.char_name} - Hardware Parts`,
+            character,
+            assignedParts,
+            availableParts
+        });
+    } catch (error) {
+        logger.error('Error fetching character parts:', error);
+        res.status(500).send('An error occurred while fetching character parts');
+    }
+});
+
+// Assign part to character
+router.post('/:id/parts/assign', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.id);
+        const partId = parseInt(req.body.partId);
+
+        const character = await characterService.getCharacterById(characterId);
+        if (!character) {
+            return res.status(404).json({ success: false, error: 'Character not found' });
+        }
+
+        const part = await partService.getPartById(partId);
+        if (!part) {
+            return res.status(404).json({ success: false, error: 'Part not found' });
+        }
+
+        // Check if part is already assigned to another character
+        if (part.characterId && part.characterId !== characterId) {
+            return res.status(400).json({
+                success: false,
+                error: 'Part is already assigned to another character'
+            });
+        }
+
+        // Assign part to character
+        await partService.updatePart(partId, { ...part, characterId });
+
+        logger.info(`✅ Assigned part ${partId} to character ${characterId}`);
+        res.json({ success: true, message: 'Part assigned successfully' });
+    } catch (error) {
+        logger.error('Error assigning part to character:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Unassign part from character
+router.post('/:id/parts/unassign', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.id);
+        const partId = parseInt(req.body.partId);
+
+        const part = await partService.getPartById(partId);
+        if (!part) {
+            return res.status(404).json({ success: false, error: 'Part not found' });
+        }
+
+        if (part.characterId !== characterId) {
+            return res.status(400).json({
+                success: false,
+                error: 'Part is not assigned to this character'
+            });
+        }
+
+        // Unassign part from character
+        await partService.updatePart(partId, { ...part, characterId: null });
+
+        logger.info(`✅ Unassigned part ${partId} from character ${characterId}`);
+        res.json({ success: true, message: 'Part unassigned successfully' });
+    } catch (error) {
+        logger.error('Error unassigning part from character:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Character-AI Assignment Routes
+router.get('/:id/ai', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.id);
+        const character = await characterService.getCharacterById(characterId);
+        if (!character) {
+            return res.status(404).send('Character not found');
+        }
+
+        // Load AI instances
+        const aiInstancesPath = path.join(__dirname, '..', 'data', 'ai-instances.json');
+        const aiInstancesData = await fs.readFile(aiInstancesPath, 'utf8');
+        const allAIInstances = JSON.parse(aiInstancesData);
+
+        // Get assigned AI instances for this character
+        const assignedAIInstances = character.ai_instances || [];
+        const availableAIInstances = allAIInstances.filter(ai =>
+            !assignedAIInstances.includes(ai.id)
+        );
+
+        res.render('character-ai', {
+            title: `${character.char_name} - AI Instances`,
+            character,
+            assignedAIInstances: allAIInstances.filter(ai => assignedAIInstances.includes(ai.id)),
+            availableAIInstances
+        });
+    } catch (error) {
+        logger.error('Error fetching character AI instances:', error);
+        res.status(500).send('An error occurred while fetching character AI instances');
+    }
+});
+
+// Assign AI instance to character
+router.post('/:id/ai/assign', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.id);
+        const aiInstanceId = req.body.aiInstanceId;
+
+        const character = await characterService.getCharacterById(characterId);
+        if (!character) {
+            return res.status(404).json({ success: false, error: 'Character not found' });
+        }
+
+        // Initialize ai_instances array if it doesn't exist
+        if (!character.ai_instances) {
+            character.ai_instances = [];
+        }
+
+        // Check if AI instance is already assigned
+        if (character.ai_instances.includes(aiInstanceId)) {
+            return res.status(400).json({
+                success: false,
+                error: 'AI instance is already assigned to this character'
+            });
+        }
+
+        // Add AI instance to character
+        character.ai_instances.push(aiInstanceId);
+        await characterService.updateCharacter(characterId, character);
+
+        logger.info(`✅ Assigned AI instance ${aiInstanceId} to character ${characterId}`);
+        res.json({ success: true, message: 'AI instance assigned successfully' });
+    } catch (error) {
+        logger.error('Error assigning AI instance to character:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Unassign AI instance from character
+router.post('/:id/ai/unassign', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.id);
+        const aiInstanceId = req.body.aiInstanceId;
+
+        const character = await characterService.getCharacterById(characterId);
+        if (!character) {
+            return res.status(404).json({ success: false, error: 'Character not found' });
+        }
+
+        if (!character.ai_instances || !character.ai_instances.includes(aiInstanceId)) {
+            return res.status(400).json({
+                success: false,
+                error: 'AI instance is not assigned to this character'
+            });
+        }
+
+        // Remove AI instance from character
+        character.ai_instances = character.ai_instances.filter(id => id !== aiInstanceId);
+        await characterService.updateCharacter(characterId, character);
+
+        logger.info(`✅ Unassigned AI instance ${aiInstanceId} from character ${characterId}`);
+        res.json({ success: true, message: 'AI instance unassigned successfully' });
+    } catch (error) {
+        logger.error('Error unassigning AI instance from character:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 module.exports = router;

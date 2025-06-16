@@ -9,6 +9,22 @@ theme:
     - navigation.sections
     - toc.integrate
     - content.code.annotate
+    - search.suggest
+    - search.highlight
+
+plugins:
+  - search
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - admonition
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
 
 nav:
   - Home: index.md
@@ -44,6 +60,8 @@ nav:
       - Task Workflows: development/task-workflows.md
       - Development Process: development/development-process.md
       - Task Master Guide: development/taskmaster-guide.md
+      - TaskMaster Integration: development/taskmaster-integration.md
+      - Task Status: development/task-status.md
 
   - Security:
       - MCP Setup Notes: security/MCP-SETUP-NOTES.md

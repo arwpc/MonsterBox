@@ -1,6 +1,6 @@
 // Print uncaught exceptions for debugging
 process.on('uncaughtException', function (err) {
-  console.error('Uncaught Exception:', err.stack || err);
+    console.error('Uncaught Exception:', err.stack || err);
 });
 
 // Load environment variables first
@@ -13,11 +13,22 @@ process.env.NODE_NO_WARNINGS = '1';
 
 let express, path, http, logger, app, server, port, audioStream, soundController, fs, os, session;
 let videoStream; // <-- Add videoStream variable
-let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, webcamRoutes, voiceRoutes, cleanupRoutes, healthRoutes, authRoutes, sshRoutes, jawAnimationRoutes;
+let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, webcamRoutes, voiceRoutes, cleanupRoutes, healthRoutes, authRoutes, sshRoutes, jawAnimationRoutes, aiConfigRoutes;
 let characterService;
 let authMiddleware, rbacMiddleware;
 let jawAnimationSystem;
 let chatterPiServiceManager;
+let hardwareServiceManager;
+let serviceConnectionManager;
+
+// Import error handling middleware
+const { errorHandler, notFoundHandler, asyncHandler } = require('./middleware/errorHandler');
+
+// Import connection management
+const ServiceConnectionManager = require('./services/serviceConnectionManager');
+
+// Import caching middleware
+const { cache, invalidateCache, cacheManager } = require('./middleware/cacheMiddleware');
 
 try {
     express = require('express');
@@ -61,6 +72,9 @@ try {
     authRoutes = require('./routes/auth/authRoutes');
     sshRoutes = require('./routes/auth/sshRoutes');
 
+    // Import AI configuration routes
+    aiConfigRoutes = require('./routes/ai-config');
+
     // Import jaw animation routes
     const jawAnimationRoutesModule = require('./routes/jawAnimationRoutes');
     jawAnimationRoutes = jawAnimationRoutesModule.router;
@@ -84,9 +98,86 @@ try {
     process.exit(1);
 }
 
-// Basic Express setup
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Security middleware - must be first
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+
+// Configure Helmet for security headers
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+            fontSrc: ["'self'", "https://fonts.gstatic.com"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Required for EJS and WebSocket
+            imgSrc: ["'self'", "data:", "blob:"],
+            connectSrc: ["'self'", "ws:", "wss:"],
+            mediaSrc: ["'self'", "blob:"]
+        }
+    },
+    crossOriginEmbedderPolicy: false // Required for WebRTC
+}));
+
+// Configure rate limiting
+const generalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 1000, // Limit each IP to 1000 requests per windowMs
+    message: {
+        error: 'Too many requests from this IP, please try again later.',
+        retryAfter: '15 minutes'
+    },
+    standardHeaders: true,
+    legacyHeaders: false
+});
+
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 500, // Limit each IP to 500 API requests per windowMs
+    message: {
+        error: 'Too many API requests from this IP, please try again later.',
+        retryAfter: '15 minutes'
+    },
+    standardHeaders: true,
+    legacyHeaders: false
+});
+
+// Strict rate limiting for cache management endpoints
+const cacheManagementLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // Very limited cache management operations
+    message: {
+        error: 'Too many cache management requests from this IP.',
+        retryAfter: '15 minutes'
+    },
+    standardHeaders: true,
+    legacyHeaders: false
+});
+
+// Moderate rate limiting for monitoring endpoints
+const monitoringLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000, // 1 minute
+    max: 60, // 1 request per second average
+    message: {
+        error: 'Too many monitoring requests from this IP.',
+        retryAfter: '1 minute'
+    },
+    standardHeaders: true,
+    legacyHeaders: false
+});
+
+// Apply general rate limiting to all requests
+app.use(generalLimiter);
+
+// Basic Express setup with enhanced security
+app.use(express.json({
+    limit: '10mb', // Prevent large payload attacks
+    strict: true
+}));
+app.use(express.urlencoded({
+    extended: true,
+    limit: '10mb',
+    parameterLimit: 1000 // Prevent parameter pollution
+}));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
@@ -131,6 +222,9 @@ app.use('/auth', authRoutes);
 // Set up SSH routes (JWT auth required)
 app.use('/ssh', sshRoutes);
 
+// Apply API rate limiting to API routes
+app.use('/api', apiLimiter);
+
 // Set up routes
 app.use('/parts/led', ledRoutes);
 app.use('/parts/light', lightRoutes);
@@ -139,7 +233,11 @@ app.use('/parts/sensor', sensorRoutes);
 app.use('/parts/linear-actuator', linearActuatorRoutes);
 app.use('/parts/webcam', webcamRoutes);
 app.use('/parts', partRoutes.router);
-app.use('/characters', characterRoutes);
+app.use('/characters',
+    invalidateCache('GET:/api/characters:'), // Invalidate character cache on modifications
+    characterRoutes
+);
+app.use('/ai-instances', require('./routes/aiInstanceRoutes'));
 app.use('/sounds', soundRoutes);
 app.use('/active-mode', activeModeRoutes);
 // System config routes for global servo management
@@ -153,6 +251,24 @@ app.use('/api/motion-tracking', require('./routes/api/motionTrackingApiRoutes'))
 app.use('/api/voice', voiceRoutes);
 app.use('/jaw-animation', jawAnimationRoutes);
 app.use('/api/chatterpi', require('./routes/chatterpiRoutes'));
+app.use('/api/hardware', require('./routes/api/hardwareApiRoutes').router);
+
+// Simple characters API endpoint for hardware monitor (cached)
+app.get('/api/characters',
+    cache({ ttl: 600000 }), // Cache for 10 minutes
+    asyncHandler(async (req, res) => {
+        const characterService = require('./services/characterService');
+        const characters = await characterService.getAllCharacters();
+
+        // Format for hardware monitor dropdown
+        const formattedCharacters = characters.map(char => ({
+            id: char.id,
+            name: char.char_name || char.name || `Character ${char.id}`
+        }));
+
+        res.json(formattedCharacters);
+    })
+);
 
 // Test route for video configuration component
 app.get('/test/video-configuration', (req, res) => {
@@ -166,22 +282,144 @@ app.get('/test/video-configuration', (req, res) => {
 app.use('/cleanup', cleanupRoutes);
 app.use('/health', healthRoutes);
 
-// Root route
-app.get('/', async (req, res) => {
-    try {
-        const characters = await characterService.getAllCharacters();
-        res.render('index', { 
-            title: 'MonsterBox Control Panel',
-            characters: characters
+// Log Collection routes
+app.use('/log-collection', require('./routes/logCollectionRoutes'));
+app.use('/api/log-collection', require('./routes/logCollectionRoutes'));
+
+// AI Configuration routes
+app.use('/ai-config', aiConfigRoutes);
+
+// Connection monitoring endpoint
+app.get('/api/connections/status',
+    monitoringLimiter,
+    asyncHandler(async (req, res) => {
+        if (!serviceConnectionManager) {
+            return res.status(503).json({
+                success: false,
+                error: 'Connection manager not initialized'
+            });
+        }
+
+        const statuses = await serviceConnectionManager.getServiceStatuses();
+        const stats = serviceConnectionManager.getConnectionStats();
+
+        res.json({
+            success: true,
+            data: {
+                services: statuses,
+                statistics: stats,
+                timestamp: new Date().toISOString()
+            }
         });
+    }));
+
+// Cache management endpoints
+app.get('/api/cache/stats',
+    monitoringLimiter,
+    asyncHandler(async (req, res) => {
+        const stats = cacheManager.getStats();
+        res.json({
+            success: true,
+            data: stats,
+            timestamp: new Date().toISOString()
+        });
+    })
+);
+
+app.post('/api/cache/clear',
+    cacheManagementLimiter,
+    asyncHandler(async (req, res) => {
+        const { pattern } = req.body;
+        const cleared = cacheManager.clear(pattern);
+
+        res.json({
+            success: true,
+            message: `Cache cleared: ${cleared} entries removed`,
+            pattern: pattern || 'all',
+            timestamp: new Date().toISOString()
+        });
+    })
+);
+
+// API Documentation endpoint
+app.get('/api/docs', asyncHandler(async (req, res) => {
+    const fs = require('fs').promises;
+    const path = require('path');
+    const marked = require('marked');
+
+    try {
+        const docPath = path.join(__dirname, 'docs/api/api-documentation.md');
+        const markdown = await fs.readFile(docPath, 'utf8');
+
+        if (req.headers.accept && req.headers.accept.includes('text/html')) {
+            // Return HTML version
+            const html = marked.parse(markdown);
+            const fullHtml = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MonsterBox API Documentation</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+               line-height: 1.6; max-width: 1200px; margin: 0 auto; padding: 20px; }
+        code { background: #f4f4f4; padding: 2px 4px; border-radius: 3px; }
+        pre { background: #f4f4f4; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .endpoint { background: #e8f4fd; padding: 10px; border-left: 4px solid #2196F3; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    ${html}
+</body>
+</html>`;
+            res.send(fullHtml);
+        } else {
+            // Return markdown
+            res.type('text/markdown').send(markdown);
+        }
     } catch (error) {
-        logger.error('Error fetching characters for main menu:', error);
-        res.status(500).render('error', { 
-            error: 'Failed to fetch characters',
-            details: error.message
+        res.status(404).json({
+            success: false,
+            error: 'API documentation not found'
         });
     }
-});
+}));
+
+// API Schema endpoint (OpenAPI 3.0)
+app.get('/api/schema', asyncHandler(async (req, res) => {
+    const fs = require('fs').promises;
+    const path = require('path');
+
+    try {
+        const schemaPath = path.join(__dirname, 'docs/api/api-schema.json');
+        const schema = await fs.readFile(schemaPath, 'utf8');
+        const schemaObj = JSON.parse(schema);
+
+        res.json(schemaObj);
+    } catch (error) {
+        res.status(404).json({
+            success: false,
+            error: 'API schema not found'
+        });
+    }
+}));
+
+// Error handling middleware - must be last
+app.use(notFoundHandler);
+app.use(errorHandler);
+
+// Root route
+app.get('/', asyncHandler(async (req, res) => {
+    const characters = await characterService.getAllCharacters();
+    res.render('index', {
+        title: 'MonsterBox Control Panel',
+        characters: characters
+    });
+}));
 
 // New route for setting the selected character
 app.post('/set-character', (req, res) => {
@@ -237,6 +475,9 @@ function startServer() {
 
         // Initialize ChatterPi services with real-time optimizations
         initializeChatterPiServices();
+
+        // Initialize Hardware WebSocket Services
+        initializeHardwareServices();
 
         logger.info('Ready for Halloween, Sir.');
     });
@@ -309,9 +550,48 @@ async function initializeChatterPiServices() {
     }
 }
 
+// Initialize Hardware WebSocket Services
+async function initializeHardwareServices() {
+    try {
+        logger.info('🦾 Initializing Hardware WebSocket Services...');
+
+        const HardwareServiceManager = require('./services/hardwareServiceManager');
+        hardwareServiceManager = new HardwareServiceManager();
+
+        const success = await hardwareServiceManager.initialize();
+
+        if (success) {
+            logger.info('✅ Hardware WebSocket Services initialized successfully');
+
+            // Connect hardware service manager to API routes
+            const hardwareApiRoutes = require('./routes/api/hardwareApiRoutes');
+            hardwareApiRoutes.setHardwareServiceManager(hardwareServiceManager);
+
+            // Start hardware services for default character (Skulltalker - ID 4)
+            await hardwareServiceManager.startCharacterServices(4);
+
+            logger.info('🎭 Hardware services started for Skulltalker character');
+        } else {
+            logger.error('❌ Failed to initialize Hardware WebSocket Services');
+        }
+
+    } catch (error) {
+        logger.error('❌ Error initializing Hardware WebSocket Services:', error);
+    }
+}
+
 // Initialize the application
 async function initializeApp() {
     try {
+        // Initialize connection manager first
+        serviceConnectionManager = new ServiceConnectionManager({
+            maxConnections: 100,
+            connectionTimeout: 30000,
+            retryInterval: 5000,
+            maxRetries: 5,
+            healthCheckInterval: 30000
+        });
+
         // Initialize the sound controller
         await soundController.startSoundPlayer();
         logger.info('Sound player initialized successfully');
@@ -349,11 +629,31 @@ async function gracefulShutdown(reason) {
     logger.info(`Initiating graceful shutdown. Reason: ${reason}`);
 
     try {
-        // Stop all sounds
-        await soundController.stopAllSounds();
-        logger.info('All sounds stopped');
+        // Use graceful shutdown for sound controller
+        await soundController.gracefulShutdown();
+        logger.info('Sound controller shutdown completed');
     } catch (error) {
-        logger.error('Error stopping sounds during shutdown:', error);
+        logger.error('Error during sound controller shutdown:', error);
+    }
+
+    try {
+        // Shutdown cache manager
+        cacheManager.shutdown();
+        logger.info('Cache manager stopped');
+
+        // Shutdown connection manager
+        if (serviceConnectionManager) {
+            await serviceConnectionManager.shutdown();
+            logger.info('Service connections closed');
+        }
+
+        // Shutdown hardware services
+        if (hardwareServiceManager) {
+            await hardwareServiceManager.shutdown();
+            logger.info('Hardware services stopped');
+        }
+    } catch (error) {
+        logger.error('Error stopping services during shutdown:', error);
     }
 
     server.close(() => {

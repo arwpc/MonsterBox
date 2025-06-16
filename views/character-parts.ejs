@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <header>
+        <h1 class="landing-title">🔧 <%= title %></h1>
+    </header>
+
+    <main>
+        <div class="info-section">
+            <h3>🎭 Character: <%= character.char_name %></h3>
+            <p><%= character.char_description %></p>
+            <p>Manage hardware parts assigned to this character. Parts can only be assigned to one character at a time.</p>
+        </div>
+
+        <div class="button-group">
+            <a href="/characters/<%= character.id %>/edit" class="button">✏️ Edit Character</a>
+            <a href="/characters/<%= character.id %>/ai" class="button">🧠 Manage AI Instances</a>
+            <a href="/characters" class="button secondary-btn">Back to Characters</a>
+        </div>
+
+        <!-- Assigned Parts Section -->
+        <div class="section-container">
+            <h3>🔧 Assigned Hardware Parts</h3>
+            <% if (assignedParts.length > 0) { %>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Configuration</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% for(let part of assignedParts) { %>
+                                <tr>
+                                    <td><%= part.name %></td>
+                                    <td><%= part.type %></td>
+                                    <td>
+                                        <% if (part.type === 'servo') { %>
+                                            Pin: <%= part.pin %>, Angle: <%= part.defaultAngle %>°
+                                        <% } else if (part.type === 'motor') { %>
+                                            Dir: <%= part.directionPin %>, PWM: <%= part.pwmPin %>
+                                        <% } else if (part.type === 'light' || part.type === 'led') { %>
+                                            GPIO: <%= part.gpioPin %>
+                                        <% } else if (part.type === 'sensor') { %>
+                                            GPIO: <%= part.gpioPin %>, Type: <%= part.sensorType %>
+                                        <% } else if (part.type === 'linear-actuator') { %>
+                                            Dir: <%= part.directionPin %>, PWM: <%= part.pwmPin %>
+                                        <% } else if (part.type === 'webcam') { %>
+                                            Device: <%= part.devicePath %>, Resolution: <%= part.resolution %>
+                                        <% } else { %>
+                                            <span class="text-muted">Configuration varies</span>
+                                        <% } %>
+                                    </td>
+                                    <td>
+                                        <button class="button danger-btn" onclick="unassignPart(<%= part.id %>)">
+                                            🗑️ Unassign
+                                        </button>
+                                    </td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            <% } else { %>
+                <div class="empty-state">
+                    <p>No hardware parts assigned to this character yet.</p>
+                </div>
+            <% } %>
+        </div>
+
+        <!-- Available Parts Section -->
+        <div class="section-container">
+            <h3>🔧 Available Hardware Parts</h3>
+            <% if (availableParts.filter(part => !part.characterId).length > 0) { %>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Configuration</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% for(let part of availableParts.filter(part => !part.characterId)) { %>
+                                <tr>
+                                    <td><%= part.name %></td>
+                                    <td><%= part.type %></td>
+                                    <td>
+                                        <% if (part.type === 'servo') { %>
+                                            Pin: <%= part.pin %>, Angle: <%= part.defaultAngle %>°
+                                        <% } else if (part.type === 'motor') { %>
+                                            Dir: <%= part.directionPin %>, PWM: <%= part.pwmPin %>
+                                        <% } else if (part.type === 'light' || part.type === 'led') { %>
+                                            GPIO: <%= part.gpioPin %>
+                                        <% } else if (part.type === 'sensor') { %>
+                                            GPIO: <%= part.gpioPin %>, Type: <%= part.sensorType %>
+                                        <% } else if (part.type === 'linear-actuator') { %>
+                                            Dir: <%= part.directionPin %>, PWM: <%= part.pwmPin %>
+                                        <% } else if (part.type === 'webcam') { %>
+                                            Device: <%= part.devicePath %>, Resolution: <%= part.resolution %>
+                                        <% } else { %>
+                                            <span class="text-muted">Configuration varies</span>
+                                        <% } %>
+                                    </td>
+                                    <td>
+                                        <button class="button primary-btn" onclick="assignPart(<%= part.id %>)">
+                                            ➕ Assign
+                                        </button>
+                                    </td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            <% } else { %>
+                <div class="empty-state">
+                    <p>No unassigned hardware parts available. <a href="/parts">Create new parts</a> or unassign parts from other characters.</p>
+                </div>
+            <% } %>
+        </div>
+    </main>
+
+    <script>
+        function assignPart(partId) {
+            if (confirm('Assign this part to <%= character.char_name %>?')) {
+                $.post('/characters/<%= character.id %>/parts/assign', { partId: partId })
+                    .done(function(response) {
+                        if (response.success) {
+                            location.reload();
+                        } else {
+                            alert('Error: ' + response.error);
+                        }
+                    })
+                    .fail(function() {
+                        alert('Failed to assign part. Please try again.');
+                    });
+            }
+        }
+
+        function unassignPart(partId) {
+            if (confirm('Unassign this part from <%= character.char_name %>?')) {
+                $.post('/characters/<%= character.id %>/parts/unassign', { partId: partId })
+                    .done(function(response) {
+                        if (response.success) {
+                            location.reload();
+                        } else {
+                            alert('Error: ' + response.error);
+                        }
+                    })
+                    .fail(function() {
+                        alert('Failed to unassign part. Please try again.');
+                    });
+            }
+        }
+    </script>
+</body>
+</html>

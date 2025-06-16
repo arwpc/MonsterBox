@@ -1,22 +1,21 @@
-# Task Master Guide
+# Task Management Guide
 
 ## Overview
 
-Task Master is an AI-powered task management system integrated into the MonsterBox development workflow. This guide provides comprehensive instructions for using Task Master effectively.
+MonsterBox uses Augment's built-in task management system integrated into the development workflow. This guide provides comprehensive instructions for using the task management features effectively.
 
 ## Getting Started
 
 ### System Requirements
 - MonsterBox project initialized
-- Task Master installed and configured
-- Access to AI assistant with MCP integration
+- Access to Augment Agent with built-in task management
 - MkDocs documentation system
 
-### Initial Setup
-Task Master is already initialized in your MonsterBox project with:
-- Configuration files in `.taskmaster/`
-- PRD document for task generation
-- 15 active tasks across all development areas
+### Current Setup
+The task management system is already initialized in your MonsterBox project with:
+- 19 main tasks covering all development areas
+- Hierarchical organization with subtasks for complex work
+- Real-time progress tracking through conversation context
 - Integration with existing MkDocs documentation
 
 ## Core Concepts
@@ -162,24 +161,26 @@ Check for dependency issues
 
 ## Advanced Features
 
-### Complexity Analysis
-Task Master provides AI-powered complexity analysis:
+### Task Organization
+Augment's task management provides intelligent task organization:
 
-#### Automatic Scoring
-- **Complexity Score**: 1-10 scale based on task requirements
-- **Subtask Recommendations**: Suggested number of subtasks
-- **Expansion Prompts**: AI-generated suggestions for task breakdown
+#### Hierarchical Structure
+- **Main Tasks**: High-level project components
+- **Subtasks**: Detailed work items within main tasks
+- **Task States**: NOT_STARTED, IN_PROGRESS, COMPLETE, CANCELLED
+- **Batch Operations**: Efficient updates of multiple tasks
 
-#### Complexity Reports
+#### Task Management Features
 ```
-Generate comprehensive complexity analysis
-- Identify high-complexity tasks needing breakdown
-- Recommend task expansion strategies
-- Provide effort estimation guidance
+Built-in task management capabilities:
+- Add new tasks and subtasks
+- Update task states and descriptions
+- Reorganize task hierarchy
+- View comprehensive task lists
 ```
 
-### Task Expansion
-For complex tasks (complexity 8+), use task expansion:
+### Task Operations
+For complex work, use hierarchical task breakdown:
 
 #### Expand Single Task
 ```
@@ -214,7 +215,7 @@ Automatically expand all high-complexity tasks
 ## Integration with MonsterBox
 
 ### MkDocs Integration
-Task Master integrates seamlessly with MonsterBox documentation:
+Augment's task management integrates seamlessly with MonsterBox documentation:
 
 #### Automatic Updates
 - **Documentation Generation**: Task information included in docs

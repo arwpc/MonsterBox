@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <header>
+        <h1 class="landing-title"><%= title %></h1>
+    </header>
+    
+    <main>
+        <div class="button-group">
+            <a href="/ai-instances/new" class="button primary-btn">🧠 Add New AI Instance</a>
+            <a href="/" class="button secondary-btn">Back to Main Menu</a>
+        </div>
+
+        <div class="info-section">
+            <h3>🤖 AI Instance Management</h3>
+            <p>Manage AI personalities and configurations that can be assigned to characters. Each AI instance has its own personality, voice settings, and behavior parameters.</p>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                        <th>Model</th>
+                        <th>Status</th>
+                        <th>Voice Settings</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (instances.length === 0) { %>
+                        <tr>
+                            <td colspan="8" style="text-align: center; padding: 20px;">
+                                No AI instances found. Create your first AI instance to get started.
+                            </td>
+                        </tr>
+                    <% } else { %>
+                        <% instances.forEach(function(instance) { %>
+                            <tr>
+                                <td><code><%= instance.id %></code></td>
+                                <td><%= instance.name %></td>
+                                <td>
+                                    <span class="badge <%= instance.type === 'character' ? 'badge-character' : 'badge-assistant' %>">
+                                        <%= instance.type === 'character' ? '🎭' : '🤖' %> <%= instance.type %>
+                                    </span>
+                                </td>
+                                <td><%= instance.description %></td>
+                                <td><%= instance.config.model %></td>
+                                <td>
+                                    <span class="status-indicator <%= instance.enabled ? 'status-enabled' : 'status-disabled' %>">
+                                        <%= instance.enabled ? '✅ Enabled' : '❌ Disabled' %>
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="voice-settings">
+                                        <small>
+                                            Rate: <%= instance.config.voice_settings.rate %><br>
+                                            Pitch: <%= instance.config.voice_settings.pitch %><br>
+                                            Volume: <%= instance.config.voice_settings.volume %>
+                                        </small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="button-group">
+                                        <a href="/ai-instances/<%= instance.id %>/edit" class="button small-btn">✏️ Edit</a>
+                                        <button onclick="testAIInstance('<%= instance.id %>')" class="button small-btn test-btn">🧪 Test</button>
+                                        <button onclick="deleteAIInstance('<%= instance.id %>')" class="button small-btn delete-btn">🗑️ Delete</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="info-section">
+            <h3>📋 AI Instance Usage</h3>
+            <p><strong>Character AI:</strong> Personality-driven AI instances for animatronic characters with specific traits and behaviors.</p>
+            <p><strong>Assistant AI:</strong> Task-oriented AI instances for system assistance and technical support.</p>
+            <p><strong>Assignment:</strong> AI instances can be assigned to characters in the Characters menu for ChatterPi integration.</p>
+        </div>
+    </main>
+
+    <!-- Test Result Modal -->
+    <div id="testModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close" onclick="closeTestModal()">&times;</span>
+            <h2 id="testModalTitle">AI Instance Test</h2>
+            <div id="testModalBody"></div>
+        </div>
+    </div>
+
+    <style>
+        .info-section {
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid #00ff00;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .info-section h3 {
+            color: #00ff00;
+            margin-bottom: 10px;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .badge-character {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .badge-assistant {
+            background: #2196F3;
+            color: white;
+        }
+
+        .status-indicator {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status-enabled {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4CAF50;
+            border: 1px solid #4CAF50;
+        }
+
+        .status-disabled {
+            background: rgba(244, 67, 54, 0.2);
+            color: #f44336;
+            border: 1px solid #f44336;
+        }
+
+        .voice-settings {
+            font-family: monospace;
+            font-size: 11px;
+        }
+
+        .small-btn {
+            padding: 4px 8px;
+            font-size: 12px;
+            margin: 2px;
+            min-width: auto;
+        }
+
+        .test-btn {
+            background: linear-gradient(45deg, #2196F3, #1976D2);
+        }
+
+        .delete-btn {
+            background: linear-gradient(45deg, #f44336, #d32f2f);
+        }
+
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+        }
+
+        .modal-content {
+            background-color: #000;
+            border: 2px solid #00ff00;
+            margin: 5% auto;
+            padding: 20px;
+            width: 80%;
+            max-width: 600px;
+            border-radius: 5px;
+            color: #00ff00;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .close {
+            color: #ff0000;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #ff6666;
+        }
+
+        .test-result {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #333;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+
+        .test-success {
+            border-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.1);
+        }
+
+        .test-error {
+            border-color: #f44336;
+            background: rgba(244, 67, 54, 0.1);
+        }
+
+        code {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+    </style>
+
+    <script>
+        function deleteAIInstance(instanceId) {
+            if (confirm(`Are you sure you want to delete AI instance "${instanceId}"? This action cannot be undone.`)) {
+                $.post('/ai-instances/' + instanceId + '/delete')
+                    .done(function(response) {
+                        if (response.success) {
+                            location.reload();
+                        } else {
+                            alert('Error deleting AI instance: ' + response.error);
+                        }
+                    })
+                    .fail(function(xhr, status, error) {
+                        console.error('Error details:', xhr.responseText);
+                        alert('Error deleting AI instance: ' + xhr.status + ' ' + xhr.statusText);
+                    });
+            }
+        }
+
+        function testAIInstance(instanceId) {
+            showTestModal('Testing AI Instance...', '<p>Testing AI instance "' + instanceId + '", please wait...</p>');
+
+            $.post('/ai-instances/' + instanceId + '/test')
+                .done(function(response) {
+                    if (response.success) {
+                        let html = '<div class="test-result test-success">';
+                        html += '<h4>✅ Test Successful</h4>';
+                        html += '<p><strong>Instance ID:</strong> ' + response.instance_id + '</p>';
+                        html += '<p><strong>Response Time:</strong> ' + response.response_time + 'ms</p>';
+                        html += '<p><strong>Test Message:</strong> "' + response.test_message + '"</p>';
+                        html += '<p><strong>Config Valid:</strong> ' + (response.config_valid ? '✅ Yes' : '❌ No') + '</p>';
+                        html += '<p><strong>Voice Synthesis:</strong> ' + (response.voice_synthesis_available ? '✅ Available' : '❌ Unavailable') + '</p>';
+                        html += '</div>';
+                        
+                        showTestModal('AI Instance Test Results', html);
+                    } else {
+                        showTestModal('AI Instance Test Failed', '<div class="test-result test-error"><h4>❌ Test Failed</h4><p>' + response.error + '</p></div>');
+                    }
+                })
+                .fail(function(xhr) {
+                    showTestModal('AI Instance Test Error', '<div class="test-result test-error"><h4>❌ Test Error</h4><p>' + xhr.responseText + '</p></div>');
+                });
+        }
+
+        function showTestModal(title, content) {
+            document.getElementById('testModalTitle').textContent = title;
+            document.getElementById('testModalBody').innerHTML = content;
+            document.getElementById('testModal').style.display = 'block';
+        }
+
+        function closeTestModal() {
+            document.getElementById('testModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside of it
+        window.onclick = function(event) {
+            const modal = document.getElementById('testModal');
+            if (event.target == modal) {
+                closeTestModal();
+            }
+        }
+    </script>
+</body>
+</html>
