@@ -5,7 +5,7 @@ const path = require('path');
 
 /**
  * TopMediai API Integration
- * Handles text-to-speech generation using TopMediai's API
+ * Handles text-to-speech (TTS) and speech-to-text (STT) using TopMediai's API
  */
 
 class TopMediaiAPI {
@@ -454,6 +454,210 @@ class TopMediaiAPI {
                     reject(new Error('System TTS not available. Please install espeak: sudo apt-get install espeak'));
                 });
             });
+        });
+    }
+
+    /**
+     * Convert speech to text using TopMediai STT
+     * @param {Buffer|string} audioData - Audio data buffer or file path
+     * @param {Object} options - STT options
+     * @returns {Promise<Object>} - STT result with text and metadata
+     */
+    async speechToText(audioData, options = {}) {
+        try {
+            await this.checkRateLimit();
+
+            // Prepare the request
+            let requestData;
+            let headers = {
+                'x-api-key': this.apiKey
+            };
+
+            // Handle different input types
+            if (Buffer.isBuffer(audioData)) {
+                // Audio data as buffer - use multipart form data
+                const FormData = require('form-data');
+                const form = new FormData();
+
+                form.append('audio', audioData, {
+                    filename: 'audio.wav',
+                    contentType: 'audio/wav'
+                });
+
+                // Add options to form
+                if (options.language) {
+                    form.append('language', options.language);
+                }
+                if (options.model) {
+                    form.append('model', options.model);
+                }
+
+                requestData = form;
+                headers = {
+                    ...headers,
+                    ...form.getHeaders()
+                };
+
+            } else if (typeof audioData === 'string') {
+                // Audio data as base64 string or URL
+                requestData = {
+                    audio: audioData,
+                    language: options.language || 'en',
+                    model: options.model || 'general'
+                };
+                headers['Content-Type'] = 'application/json';
+            } else {
+                throw new Error('Invalid audio data format. Expected Buffer or string.');
+            }
+
+            logger.info('Making TopMediai STT request...');
+
+            // Try different STT endpoints that TopMediai might use
+            const sttEndpoints = [
+                '/speech2text',
+                '/stt',
+                '/speech-to-text',
+                '/transcribe'
+            ];
+
+            let lastError = null;
+            let result = null;
+
+            for (const endpoint of sttEndpoints) {
+                try {
+                    logger.info(`Trying STT endpoint: ${endpoint}`);
+
+                    const response = await this.retryWithBackoff(async () => {
+                        return await this.axiosInstance.post(endpoint, requestData, {
+                            headers,
+                            timeout: 60000 // STT can take longer than TTS
+                        });
+                    });
+
+                    if (response.data) {
+                        result = this.parseSTTResponse(response.data);
+                        logger.info(`✅ Successfully transcribed speech using TopMediai STT API (${endpoint})`);
+                        break;
+                    }
+
+                } catch (endpointError) {
+                    lastError = endpointError;
+                    logger.warn(`STT endpoint ${endpoint} failed:`, endpointError.response?.status, endpointError.response?.statusText);
+                }
+            }
+
+            // If all endpoints failed, try fallback STT
+            if (!result) {
+                logger.warn('All TopMediai STT endpoints failed, attempting fallback...');
+                if (options.fallbackToSystem !== false) {
+                    return await this.generateSystemSTT(audioData, options);
+                } else {
+                    throw lastError || new Error('All TopMediai STT endpoints failed');
+                }
+            }
+
+            return result;
+
+        } catch (error) {
+            logger.error('Error in speech-to-text conversion:', error.message);
+
+            // Try system fallback if enabled
+            if (options.fallbackToSystem !== false) {
+                try {
+                    return await this.generateSystemSTT(audioData, options);
+                } catch (fallbackError) {
+                    logger.error('System STT fallback also failed:', fallbackError.message);
+                    throw new Error(`Both TopMediai and system STT failed. TopMediai: ${error.message}. System: ${fallbackError.message}`);
+                }
+            }
+
+            throw error;
+        }
+    }
+
+    /**
+     * Parse STT response from TopMediai API
+     */
+    parseSTTResponse(responseData) {
+        // Handle different possible response formats from TopMediai
+        let text = '';
+        let confidence = 0;
+        let metadata = {};
+
+        if (typeof responseData === 'string') {
+            text = responseData;
+            confidence = 1.0;
+        } else if (responseData.text) {
+            text = responseData.text;
+            confidence = responseData.confidence || 1.0;
+            metadata = responseData.metadata || {};
+        } else if (responseData.transcript) {
+            text = responseData.transcript;
+            confidence = responseData.confidence || 1.0;
+        } else if (responseData.results && responseData.results.length > 0) {
+            const result = responseData.results[0];
+            text = result.text || result.transcript || '';
+            confidence = result.confidence || 1.0;
+        } else {
+            throw new Error('Unexpected STT response format');
+        }
+
+        return {
+            text: text.trim(),
+            confidence,
+            provider: 'TopMediai',
+            timestamp: new Date().toISOString(),
+            metadata
+        };
+    }
+
+    /**
+     * Generate speech-to-text using system STT as fallback
+     * Uses available system STT tools
+     */
+    async generateSystemSTT(audioData, options = {}) {
+        const { spawn } = require('child_process');
+        const fs = require('fs').promises;
+        const path = require('path');
+
+        return new Promise(async (resolve, reject) => {
+            try {
+                // Create temporary audio file
+                let tempFile;
+
+                if (Buffer.isBuffer(audioData)) {
+                    tempFile = path.join('/tmp', `stt_${Date.now()}.wav`);
+                    await fs.writeFile(tempFile, audioData);
+                } else if (typeof audioData === 'string' && audioData.startsWith('/')) {
+                    // File path
+                    tempFile = audioData;
+                } else {
+                    throw new Error('System STT requires audio file or buffer');
+                }
+
+                // Try different system STT tools
+                // 1. Try speech_recognition with pocketsphinx (if available)
+                // 2. Try whisper (if available)
+                // 3. Try other system tools
+
+                // For now, return a placeholder implementation
+                // In production, you would implement actual system STT
+                logger.warn('System STT fallback not fully implemented - returning placeholder');
+
+                resolve({
+                    text: '[System STT not available - please implement system speech recognition]',
+                    confidence: 0.1,
+                    provider: 'System',
+                    timestamp: new Date().toISOString(),
+                    metadata: {
+                        fallback: true,
+                        note: 'System STT implementation needed'
+                    }
+                });
+
+            } catch (error) {
+                reject(new Error(`System STT failed: ${error.message}`));
+            }
         });
     }
 

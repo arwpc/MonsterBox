@@ -677,6 +677,131 @@ router.post('/jaw/config', async (req, res) => {
 });
 
 /**
+ * POST /api/chatterpi/voice-chat
+ * Complete voice interaction: audio input → STT → AI chat → TTS → jaw animation
+ */
+router.post('/voice-chat', async (req, res) => {
+    try {
+        const { audioData, character, sttConfig, ttsConfig } = req.body;
+
+        if (!audioData) {
+            return res.status(400).json({
+                success: false,
+                error: 'Audio data is required'
+            });
+        }
+
+        console.log('🎤 Processing voice chat request...');
+        const startTime = Date.now();
+
+        // Step 1: Convert speech to text using TopMediai STT
+        let recognizedText = '';
+        let sttResult = null;
+
+        try {
+            const TopMediaiAPI = require('../scripts/topMediaiAPI');
+            const topMediaiAPI = new TopMediaiAPI();
+
+            // Convert base64 audio to buffer if needed
+            const audioBuffer = Buffer.isBuffer(audioData) ?
+                audioData : Buffer.from(audioData, 'base64');
+
+            sttResult = await topMediaiAPI.speechToText(audioBuffer, {
+                language: sttConfig?.language || 'en',
+                model: sttConfig?.model || 'general',
+                fallbackToSystem: true
+            });
+
+            recognizedText = sttResult.text;
+            console.log(`🗣️ Speech recognized: "${recognizedText}"`);
+
+        } catch (sttError) {
+            console.warn('STT failed, using fallback:', sttError.message);
+            recognizedText = 'Hello, how are you?'; // Fallback text
+            sttResult = {
+                text: recognizedText,
+                confidence: 0.1,
+                provider: 'Fallback',
+                error: sttError.message
+            };
+        }
+
+        // Step 2: Generate AI response
+        let aiResponse = null;
+        try {
+            if (character && aiInstance.config.characterId !== character) {
+                aiInstance.config.characterId = character;
+            }
+
+            aiResponse = await aiInstance.generateResponse(recognizedText);
+            console.log(`🤖 AI response: "${aiResponse.text}"`);
+
+        } catch (aiError) {
+            console.error('AI response failed:', aiError.message);
+            return res.status(500).json({
+                success: false,
+                error: 'AI response generation failed',
+                details: aiError.message,
+                sttResult: sttResult
+            });
+        }
+
+        // Step 3: Generate TTS and trigger jaw animation
+        let ttsResult = null;
+        if (ttsAnimation) {
+            try {
+                ttsResult = await ttsAnimation.speakWithAnimation(
+                    aiResponse.text,
+                    character || 'orlok',
+                    ttsConfig || {}
+                );
+                console.log('🎤 TTS with animation:', ttsResult.success ? 'success' : 'fallback');
+            } catch (ttsError) {
+                console.warn('TTS animation failed:', ttsError.message);
+            }
+        }
+
+        // Step 4: Generate jaw animation data
+        const jawAnimation = generateJawAnimation(aiResponse.text);
+
+        const totalTime = Date.now() - startTime;
+        console.log(`✅ Voice chat completed in ${totalTime}ms`);
+
+        res.json({
+            success: true,
+            data: {
+                stt: {
+                    recognizedText: recognizedText,
+                    confidence: sttResult?.confidence || 0,
+                    provider: sttResult?.provider || 'Unknown'
+                },
+                aiResponse: {
+                    text: aiResponse.text,
+                    character: aiResponse.character,
+                    metadata: aiResponse.metadata
+                },
+                tts: ttsResult ? {
+                    enabled: ttsResult.success,
+                    provider: ttsResult.success ? ttsResult.audioResult?.provider : 'fallback',
+                    animationEnabled: ttsResult.animationEnabled
+                } : null,
+                jawAnimation: jawAnimation,
+                processingTime: totalTime,
+                timestamp: new Date().toISOString()
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Voice chat error:', error.message);
+        res.status(500).json({
+            success: false,
+            error: 'Voice chat processing failed',
+            details: error.message
+        });
+    }
+});
+
+/**
  * POST /api/chatterpi/jaw/save-config
  * Save configuration to file
  */

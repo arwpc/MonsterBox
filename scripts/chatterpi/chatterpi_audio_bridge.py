@@ -25,6 +25,14 @@ from generic_audio_stream_handler import AudioStreamConfig, AudioSourceType
 
 logger = logging.getLogger(__name__)
 
+# Import STT integration
+try:
+    from topmediai_stt_integration import TopMediaiSTTIntegration
+    STT_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"STT integration not available: {e}")
+    STT_AVAILABLE = False
+
 class ChatterPiAudioBridge:
     """
     Audio bridge that connects browser audio to ChatterPi animation system
@@ -52,7 +60,23 @@ class ChatterPiAudioBridge:
         )
 
         self.animation_system = ChatterPiAnimationSystem(config)
-        
+
+        # Initialize STT integration if available
+        self.stt_integration = None
+        if STT_AVAILABLE:
+            try:
+                self.stt_integration = TopMediaiSTTIntegration({
+                    'language': 'en',
+                    'confidenceThreshold': 0.7,
+                    'chunkDuration': 2000
+                })
+                # Set up STT event handlers
+                self.stt_integration.on('speech_recognized', self.handle_speech_recognized)
+                self.stt_integration.on('error', self.handle_stt_error)
+                logger.info("✅ STT integration initialized")
+            except Exception as e:
+                logger.warning(f"Failed to initialize STT: {e}")
+
         # WebSocket server state
         self.server = None
         self.clients: Set[websockets.WebSocketServerProtocol] = set()
@@ -76,6 +100,10 @@ class ChatterPiAudioBridge:
             if not self.animation_system.start_system():
                 logger.error("Failed to start ChatterPi animation system")
                 return False
+
+            # Initialize STT integration
+            if self.stt_integration:
+                await self.stt_integration.initialize()
             
             # Start WebSocket server
             self.server = await websockets.serve(
@@ -160,7 +188,13 @@ class ChatterPiAudioBridge:
             
             elif message_type == 'get_status':
                 await self.handle_get_status(websocket, message)
-            
+
+            elif message_type == 'enable_stt':
+                await self.handle_enable_stt(websocket, message)
+
+            elif message_type == 'disable_stt':
+                await self.handle_disable_stt(websocket, message)
+
             else:
                 await self.send_error(websocket, f"Unknown message type: {message_type}")
         
@@ -244,14 +278,26 @@ class ChatterPiAudioBridge:
             format_type = message.get('format', 'pcm')
             metadata = message.get('metadata', {})
             
-            # Add audio data to the stream handler
+            # Add audio data to the stream handler for jaw animation
             self.animation_system.stream_handler.add_audio_data(
                 audio_bytes,
                 AudioSourceType.WEBSOCKET_STREAM,
                 sample_rate,
                 metadata
             )
-            
+
+            # Process audio for STT if enabled
+            if self.stt_integration:
+                try:
+                    await self.stt_integration.processAudioData(audio_bytes, {
+                        'sample_rate': sample_rate,
+                        'format': format_type,
+                        'timestamp': time.time(),
+                        **metadata
+                    })
+                except Exception as e:
+                    logger.debug(f"STT processing error: {e}")
+
             self.session_stats['audio_frames_processed'] += 1
             
             # Send acknowledgment (optional, for debugging)
@@ -389,7 +435,92 @@ class ChatterPiAudioBridge:
         except Exception as e:
             logger.error(f"Error getting status: {e}")
             await self.send_error(websocket, f"Status error: {str(e)}")
-    
+
+    async def handle_enable_stt(self, websocket, message):
+        """Enable STT processing"""
+        try:
+            if not self.stt_integration:
+                await self.send_error(websocket, "STT integration not available")
+                return
+
+            config = message.get('config', {})
+
+            # Update STT configuration if provided
+            if 'language' in config:
+                self.stt_integration.config['language'] = config['language']
+            if 'confidenceThreshold' in config:
+                self.stt_integration.config['confidenceThreshold'] = config['confidenceThreshold']
+
+            await websocket.send(json.dumps({
+                'type': 'stt_enabled',
+                'config': self.stt_integration.config,
+                'timestamp': time.time()
+            }))
+
+            logger.info("🎤 STT processing enabled")
+
+        except Exception as e:
+            logger.error(f"Error enabling STT: {e}")
+            await self.send_error(websocket, f"STT enable error: {str(e)}")
+
+    async def handle_disable_stt(self, websocket, message):
+        """Disable STT processing"""
+        try:
+            if self.stt_integration:
+                self.stt_integration.clearBuffer()
+
+            await websocket.send(json.dumps({
+                'type': 'stt_disabled',
+                'timestamp': time.time()
+            }))
+
+            logger.info("🔇 STT processing disabled")
+
+        except Exception as e:
+            logger.error(f"Error disabling STT: {e}")
+            await self.send_error(websocket, f"STT disable error: {str(e)}")
+
+    def handle_speech_recognized(self, event_data):
+        """Handle speech recognition results"""
+        try:
+            logger.info(f"🗣️ Speech recognized: '{event_data['text']}' (confidence: {event_data['confidence']:.2f})")
+
+            # Broadcast speech recognition result to all connected clients
+            message = json.dumps({
+                'type': 'speech_recognized',
+                'text': event_data['text'],
+                'confidence': event_data['confidence'],
+                'provider': event_data['provider'],
+                'timestamp': event_data['timestamp']
+            })
+
+            # Send to all connected clients
+            asyncio.create_task(self.broadcast_to_clients(message))
+
+        except Exception as e:
+            logger.error(f"Error handling speech recognition: {e}")
+
+    def handle_stt_error(self, error):
+        """Handle STT errors"""
+        logger.error(f"STT error: {error}")
+
+        # Broadcast error to clients
+        message = json.dumps({
+            'type': 'stt_error',
+            'error': str(error),
+            'timestamp': time.time()
+        })
+
+        asyncio.create_task(self.broadcast_to_clients(message))
+
+    async def broadcast_to_clients(self, message):
+        """Broadcast message to all connected clients"""
+        if self.clients:
+            await asyncio.gather(
+                *[client.send(message) for client in self.clients],
+                return_exceptions=True
+            )
+
     async def send_error(self, websocket, error_message: str):
         """Send error message to client"""
         try:
@@ -406,9 +537,13 @@ class ChatterPiAudioBridge:
         try:
             self.is_running = False
             
+            # Stop STT integration
+            if self.stt_integration:
+                self.stt_integration.stop()
+
             # Stop animation system
             self.animation_system.stop_system()
-            
+
             # Close all client connections
             if self.clients:
                 await asyncio.gather(
