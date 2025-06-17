@@ -14,6 +14,7 @@ const path = require('path');
 // Initialize AI integration and service manager
 let aiInstance = null;
 let chatterPiServiceManager = null;
+let ttsAnimation = null;
 
 try {
     aiInstance = new ChatterPiAI({
@@ -22,6 +23,23 @@ try {
         temperature: 0.7
     });
     console.log('✅ ChatterPi AI integration initialized');
+
+    // Initialize TTS Animation Integration
+    const TTSAnimationIntegration = require('../scripts/chatterpi/tts_animation_integration');
+    ttsAnimation = new TTSAnimationIntegration({
+        topmediaiApiKey: process.env.TOPMEDIAI_API_KEY,
+        streamingEnabled: true,
+        realtimeAnimation: true
+    });
+
+    // Initialize TTS integration
+    ttsAnimation.initialize().then(success => {
+        if (success) {
+            console.log('✅ TTS Animation Integration initialized');
+        } else {
+            console.warn('⚠️ TTS Animation Integration failed to initialize');
+        }
+    });
 
     // Initialize the consolidated service manager
     const ChatterPiServiceManager = require('../services/chatterPiServiceManager');
@@ -78,10 +96,10 @@ router.post('/chat', async (req, res) => {
         // Generate AI response
         const result = await aiInstance.generateResponse(message);
         
-        // Generate jaw animation data
+        // Generate animatronic animation data
         const jawAnimation = generateJawAnimation(result.text);
 
-        // Trigger jaw animation using service manager
+        // Trigger animatronic animation using service manager
         if (chatterPiServiceManager) {
             try {
                 const success = chatterPiServiceManager.sendJawCommand({
@@ -91,12 +109,26 @@ router.post('/chat', async (req, res) => {
                 });
 
                 if (success) {
-                    console.log('🦴 Jaw animation triggered via service manager');
+                    console.log('🎭 Animatronic animation triggered via service manager');
                 } else {
-                    console.warn('⚠️ Jaw animation service not available');
+                    console.warn('⚠️ Animatronic animation service not available');
                 }
             } catch (error) {
-                console.error('Error triggering jaw animation:', error.message);
+                console.error('Error triggering animatronic animation:', error.message);
+            }
+        }
+
+        // Try TTS with animation integration
+        let ttsResult = null;
+        if (ttsAnimation) {
+            try {
+                ttsResult = await ttsAnimation.speakWithAnimation(
+                    result.text,
+                    result.character || 'orlok'
+                );
+                console.log('🎤 TTS with animation:', ttsResult.success ? 'success' : 'fallback');
+            } catch (error) {
+                console.warn('TTS animation failed, using fallback:', error.message);
             }
         }
 
@@ -110,6 +142,11 @@ router.post('/chat', async (req, res) => {
                     metadata: result.metadata
                 },
                 jawAnimation: jawAnimation,
+                tts: ttsResult ? {
+                    enabled: ttsResult.success,
+                    provider: ttsResult.success ? ttsResult.audioResult?.provider : 'fallback',
+                    animationEnabled: ttsResult.animationEnabled
+                } : null,
                 timestamp: new Date().toISOString()
             }
         });
@@ -121,6 +158,104 @@ router.post('/chat', async (req, res) => {
             success: false,
             error: 'Failed to process chat message',
             fallback: getFallbackResponse(req.body.character || 'orlok'),
+            details: error.message
+        });
+    }
+});
+
+/**
+ * POST /api/chatterpi/speak
+ * Generate TTS with real-time jaw animation
+ */
+router.post('/speak', async (req, res) => {
+    try {
+        const { text, character, voiceConfig } = req.body;
+
+        if (!text || !text.trim()) {
+            return res.status(400).json({
+                success: false,
+                error: 'Text is required'
+            });
+        }
+
+        if (!ttsAnimation) {
+            return res.status(503).json({
+                success: false,
+                error: 'TTS Animation service not available',
+                fallback: 'browser_speech'
+            });
+        }
+
+        console.log(`🎤 TTS request: "${text}" for character: ${character || 'orlok'}`);
+
+        const result = await ttsAnimation.speakWithAnimation(
+            text,
+            character || 'orlok',
+            voiceConfig || {}
+        );
+
+        if (result.success) {
+            res.json({
+                success: true,
+                data: {
+                    text,
+                    character: character || 'orlok',
+                    audioResult: {
+                        provider: result.audioResult.provider,
+                        format: result.audioResult.format,
+                        duration: result.audioResult.duration,
+                        timestamp: result.audioResult.timestamp
+                    },
+                    animationEnabled: result.animationEnabled,
+                    voiceConfig: result.voiceConfig
+                }
+            });
+        } else {
+            res.json({
+                success: false,
+                error: result.error,
+                fallback: result.fallback,
+                text,
+                character: result.character
+            });
+        }
+
+    } catch (error) {
+        console.error('❌ Error in TTS speak endpoint:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to generate speech',
+            details: error.message
+        });
+    }
+});
+
+/**
+ * GET /api/chatterpi/voices
+ * Get available TTS voices
+ */
+router.get('/voices', async (req, res) => {
+    try {
+        if (!ttsAnimation) {
+            return res.status(503).json({
+                success: false,
+                error: 'TTS service not available'
+            });
+        }
+
+        const voices = await ttsAnimation.getAvailableVoices();
+
+        res.json({
+            success: true,
+            voices: voices,
+            characterMappings: ttsAnimation.characterVoices
+        });
+
+    } catch (error) {
+        console.error('❌ Error getting voices:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get voices',
             details: error.message
         });
     }
@@ -160,7 +295,7 @@ router.post('/jaw/move', async (req, res) => {
         if (!success) {
             return res.status(503).json({
                 success: false,
-                error: 'Jaw animation system not available'
+                error: 'Animatronic animation system not available'
             });
         }
 
@@ -187,6 +322,7 @@ router.post('/jaw/move', async (req, res) => {
  */
 router.post('/jaw/start-animation', async (req, res) => {
     try {
+        const jawWebSocket = getJawWebSocket();
         if (!jawWebSocket || jawWebSocket.readyState !== WebSocket.OPEN) {
             return res.status(503).json({
                 success: false,
@@ -222,6 +358,7 @@ router.post('/jaw/start-animation', async (req, res) => {
  */
 router.post('/jaw/stop-animation', async (req, res) => {
     try {
+        const jawWebSocket = getJawWebSocket();
         if (!jawWebSocket || jawWebSocket.readyState !== WebSocket.OPEN) {
             return res.status(503).json({
                 success: false,
@@ -257,6 +394,7 @@ router.post('/jaw/stop-animation', async (req, res) => {
  */
 router.get('/jaw/status', async (req, res) => {
     try {
+        const jawWebSocket = getJawWebSocket();
         if (!jawWebSocket || jawWebSocket.readyState !== WebSocket.OPEN) {
             return res.json({
                 success: false,
@@ -513,6 +651,7 @@ router.post('/jaw/config', async (req, res) => {
         }
 
         // Send configuration update command via WebSocket
+        const jawWebSocket = getJawWebSocket();
         if (jawWebSocket && jawWebSocket.readyState === WebSocket.OPEN) {
             jawWebSocket.send(JSON.stringify({
                 type: 'update_config',
@@ -533,6 +672,131 @@ router.post('/jaw/config', async (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Internal server error'
+        });
+    }
+});
+
+/**
+ * POST /api/chatterpi/voice-chat
+ * Complete voice interaction: audio input → STT → AI chat → TTS → jaw animation
+ */
+router.post('/voice-chat', async (req, res) => {
+    try {
+        const { audioData, character, sttConfig, ttsConfig } = req.body;
+
+        if (!audioData) {
+            return res.status(400).json({
+                success: false,
+                error: 'Audio data is required'
+            });
+        }
+
+        console.log('🎤 Processing voice chat request...');
+        const startTime = Date.now();
+
+        // Step 1: Convert speech to text using TopMediai STT
+        let recognizedText = '';
+        let sttResult = null;
+
+        try {
+            const TopMediaiAPI = require('../scripts/topMediaiAPI');
+            const topMediaiAPI = new TopMediaiAPI();
+
+            // Convert base64 audio to buffer if needed
+            const audioBuffer = Buffer.isBuffer(audioData) ?
+                audioData : Buffer.from(audioData, 'base64');
+
+            sttResult = await topMediaiAPI.speechToText(audioBuffer, {
+                language: sttConfig?.language || 'en',
+                model: sttConfig?.model || 'general',
+                fallbackToSystem: true
+            });
+
+            recognizedText = sttResult.text;
+            console.log(`🗣️ Speech recognized: "${recognizedText}"`);
+
+        } catch (sttError) {
+            console.warn('STT failed, using fallback:', sttError.message);
+            recognizedText = 'Hello, how are you?'; // Fallback text
+            sttResult = {
+                text: recognizedText,
+                confidence: 0.1,
+                provider: 'Fallback',
+                error: sttError.message
+            };
+        }
+
+        // Step 2: Generate AI response
+        let aiResponse = null;
+        try {
+            if (character && aiInstance.config.characterId !== character) {
+                aiInstance.config.characterId = character;
+            }
+
+            aiResponse = await aiInstance.generateResponse(recognizedText);
+            console.log(`🤖 AI response: "${aiResponse.text}"`);
+
+        } catch (aiError) {
+            console.error('AI response failed:', aiError.message);
+            return res.status(500).json({
+                success: false,
+                error: 'AI response generation failed',
+                details: aiError.message,
+                sttResult: sttResult
+            });
+        }
+
+        // Step 3: Generate TTS and trigger jaw animation
+        let ttsResult = null;
+        if (ttsAnimation) {
+            try {
+                ttsResult = await ttsAnimation.speakWithAnimation(
+                    aiResponse.text,
+                    character || 'orlok',
+                    ttsConfig || {}
+                );
+                console.log('🎤 TTS with animation:', ttsResult.success ? 'success' : 'fallback');
+            } catch (ttsError) {
+                console.warn('TTS animation failed:', ttsError.message);
+            }
+        }
+
+        // Step 4: Generate jaw animation data
+        const jawAnimation = generateJawAnimation(aiResponse.text);
+
+        const totalTime = Date.now() - startTime;
+        console.log(`✅ Voice chat completed in ${totalTime}ms`);
+
+        res.json({
+            success: true,
+            data: {
+                stt: {
+                    recognizedText: recognizedText,
+                    confidence: sttResult?.confidence || 0,
+                    provider: sttResult?.provider || 'Unknown'
+                },
+                aiResponse: {
+                    text: aiResponse.text,
+                    character: aiResponse.character,
+                    metadata: aiResponse.metadata
+                },
+                tts: ttsResult ? {
+                    enabled: ttsResult.success,
+                    provider: ttsResult.success ? ttsResult.audioResult?.provider : 'fallback',
+                    animationEnabled: ttsResult.animationEnabled
+                } : null,
+                jawAnimation: jawAnimation,
+                processingTime: totalTime,
+                timestamp: new Date().toISOString()
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Voice chat error:', error.message);
+        res.status(500).json({
+            success: false,
+            error: 'Voice chat processing failed',
+            details: error.message
         });
     }
 });

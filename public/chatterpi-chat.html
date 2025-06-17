@@ -413,6 +413,13 @@
                 </select>
             </div>
             <div class="control-group">
+                <label>TTS Provider</label>
+                <select id="ttsProviderSelect" class="control-select">
+                    <option value="topmediai">TopMediai (High Quality)</option>
+                    <option value="browser">Browser Speech (Fallback)</option>
+                </select>
+            </div>
+            <div class="control-group">
                 <label>Audio Controls</label>
                 <div class="audio-controls">
                     <button id="testAudioButton" class="control-button">Test Voice</button>
@@ -590,9 +597,11 @@
                 // Configuration
                 this.selectedServo = 18;
                 this.selectedVoice = 'orlok';
+                this.selectedTTSProvider = 'topmediai';
                 this.audioVolume = 0.7;
                 this.speechSynthesis = window.speechSynthesis;
                 this.voices = [];
+                this.availableTTSVoices = [];
 
                 // Initialize
                 this.initializeElements();
@@ -612,6 +621,7 @@
                 this.jawStatusText = document.getElementById('jawStatusText');
                 this.servoSelect = document.getElementById('servoSelect');
                 this.voiceSelect = document.getElementById('voiceSelect');
+                this.ttsProviderSelect = document.getElementById('ttsProviderSelect');
                 this.testAudioButton = document.getElementById('testAudioButton');
                 this.testJawButton = document.getElementById('testJawButton');
                 this.saveCalibrationButton = document.getElementById('saveCalibrationButton');
@@ -660,6 +670,11 @@
                 this.voiceSelect.addEventListener('change', (e) => {
                     this.selectedVoice = e.target.value;
                     console.log(`Voice changed to ${this.selectedVoice}`);
+                });
+
+                this.ttsProviderSelect.addEventListener('change', (e) => {
+                    this.selectedTTSProvider = e.target.value;
+                    console.log(`TTS provider changed to ${this.selectedTTSProvider}`);
                 });
 
                 this.testAudioButton.addEventListener('click', () => this.testAudio());
