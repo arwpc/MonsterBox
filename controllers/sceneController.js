@@ -4,6 +4,7 @@ const sceneService = require('../services/sceneService');
 const characterService = require('../services/characterService');
 const partService = require('../services/partService');
 const soundService = require('../services/soundService');
+const sceneAnalyticsService = require('../services/sceneAnalyticsService');
 const logger = require('../scripts/logger');
 
 const sceneController = {
@@ -11,17 +12,17 @@ const sceneController = {
         try {
             const scenes = await sceneService.getScenesByCharacter(characterId);
             const character = await characterService.getCharacterById(characterId);
-            
+
             logger.debug(`Character data: ${JSON.stringify(character)}`);
-            
+
             if (!character) {
                 logger.warn(`Character with ID ${characterId} not found`);
                 return res.status(404).json({ error: 'Character not found' });
             }
-            
+
             logger.info(`Retrieved ${scenes.length} scenes for character ${characterId}`);
             logger.debug(`Scenes data: ${JSON.stringify(scenes)}`);
-            
+
             if (process.env.NODE_ENV === 'test') {
                 return res.json({ scenes, character });
             } else {
@@ -50,9 +51,9 @@ const sceneController = {
 
             if (scene && scene.character_id === parseInt(characterId)) {
                 logger.info(`Retrieved scene ${sceneId} for character ${characterId}`);
-                res.render('scene-form', { 
-                    title: 'Edit Scene', 
-                    scene, 
+                res.render('scene-form', {
+                    title: 'Edit Scene',
+                    scene,
                     action: `/scenes/${scene.id}`,
                     character,
                     sounds: sounds || [],
@@ -75,12 +76,12 @@ const sceneController = {
                 soundService.getSoundsByCharacter(characterId),
                 partService.getPartsByCharacter(characterId)
             ]);
-            
+
             if (!character) {
                 logger.warn(`Character with ID ${characterId} not found`);
                 return res.status(404).render('error', { error: 'Character not found' });
             }
-            
+
             logger.info(`Rendering new scene form for character ${characterId}`);
             res.render('scene-form', {
                 title: 'New Scene',
@@ -102,12 +103,12 @@ const sceneController = {
             if (isNaN(characterId)) {
                 throw new Error('Invalid character ID');
             }
-            
+
             // Log the scene_name from the request body
             logger.info(`Received scene_name: ${req.body.scene_name}`);
-            
+
             logger.info(`Attempting to create new scene with data:`, JSON.stringify(req.body));
-            
+
             // Parse steps from the new format
             const steps = [];
             for (let key in req.body) {
@@ -121,7 +122,7 @@ const sceneController = {
                     }
                 }
             }
-            
+
             logger.info(`Parsed steps:`, JSON.stringify(steps));
 
             const sceneData = {
@@ -129,14 +130,14 @@ const sceneController = {
                 scene_name: req.body.scene_name,
                 steps: steps
             };
-            
+
             // Validate scene data
             sceneService.validateSceneData(sceneData);
 
             logger.info(`Scene data being sent to service:`, JSON.stringify(sceneData));
 
             const newScene = await sceneService.createScene(sceneData);
-            
+
             logger.info(`Created new scene:`, JSON.stringify(newScene));
 
             if (!newScene.scene_name || newScene.steps.length === 0) {
@@ -228,7 +229,7 @@ const sceneController = {
                 soundService.getSoundsByCharacter(characterId),
                 partService.getPartsByCharacter(characterId)
             ]);
-            
+
             const step = {
                 type: type,
                 name: '',
@@ -246,6 +247,163 @@ const sceneController = {
         } catch (error) {
             logger.error(`Error rendering step template for character ${characterId}:`, error);
             res.status(500).json({ error: 'Failed to render step template' });
+        }
+    },
+
+    exportScenes: async (req, res) => {
+        try {
+            const characterId = req.query.characterId;
+            const exportData = await sceneService.exportScenes(characterId);
+
+            const filename = characterId
+                ? `scenes_character_${characterId}_${new Date().toISOString().split('T')[0]}.json`
+                : `scenes_all_${new Date().toISOString().split('T')[0]}.json`;
+
+            res.setHeader('Content-Type', 'application/json');
+            res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+            res.json(exportData);
+
+            logger.info(`Exported scenes${characterId ? ` for character ${characterId}` : ''}`);
+        } catch (error) {
+            logger.error('Error exporting scenes:', error);
+            res.status(500).json({ error: 'Failed to export scenes', details: error.message });
+        }
+    },
+
+    importScenes: async (req, res) => {
+        try {
+            const importData = req.body;
+            const options = {
+                overwrite: req.body.overwrite === 'true' || req.body.overwrite === true,
+                characterId: req.body.targetCharacterId || req.query.characterId
+            };
+
+            const result = await sceneService.importScenes(importData, options);
+
+            logger.info(`Scene import completed: ${JSON.stringify(result)}`);
+
+            if (process.env.NODE_ENV === 'test') {
+                res.json(result);
+            } else {
+                res.json({
+                    success: true,
+                    message: `Import completed: ${result.imported} imported, ${result.updated} updated, ${result.skipped} skipped`,
+                    details: result
+                });
+            }
+        } catch (error) {
+            logger.error('Error importing scenes:', error);
+            res.status(500).json({ error: 'Failed to import scenes', details: error.message });
+        }
+    },
+
+    duplicateScene: async (req, res) => {
+        try {
+            const sceneId = req.params.id;
+            const newName = req.body.newName;
+
+            const duplicatedScene = await sceneService.duplicateScene(sceneId, newName);
+
+            logger.info(`Duplicated scene ${sceneId} as new scene ${duplicatedScene.id}`);
+
+            if (process.env.NODE_ENV === 'test') {
+                res.json(duplicatedScene);
+            } else {
+                res.redirect(`/scenes?characterId=${duplicatedScene.character_id}`);
+            }
+        } catch (error) {
+            logger.error(`Error duplicating scene ${req.params.id}:`, error);
+            res.status(500).json({ error: 'Failed to duplicate scene', details: error.message });
+        }
+    },
+
+    getSceneTemplates: async (req, res) => {
+        try {
+            const templates = await sceneService.getSceneTemplates();
+
+            if (process.env.NODE_ENV === 'test') {
+                res.json(templates);
+            } else {
+                res.json(templates);
+            }
+        } catch (error) {
+            logger.error('Error getting scene templates:', error);
+            res.status(500).json({ error: 'Failed to get scene templates', details: error.message });
+        }
+    },
+
+    createSceneFromTemplate: async (req, res) => {
+        try {
+            const templateId = req.body.templateId;
+            const characterId = req.body.character_id || req.query.characterId;
+            const sceneName = req.body.scene_name;
+
+            if (!templateId) {
+                return res.status(400).json({ error: 'Template ID is required' });
+            }
+
+            if (!characterId) {
+                return res.status(400).json({ error: 'Character ID is required' });
+            }
+
+            const newScene = await sceneService.createSceneFromTemplate(templateId, characterId, sceneName);
+
+            logger.info(`Created scene from template ${templateId}: ${newScene.scene_name}`);
+
+            if (process.env.NODE_ENV === 'test') {
+                res.json(newScene);
+            } else {
+                res.redirect(`/scenes/${newScene.id}/edit?characterId=${characterId}`);
+            }
+        } catch (error) {
+            logger.error('Error creating scene from template:', error);
+            res.status(500).json({ error: 'Failed to create scene from template', details: error.message });
+        }
+    },
+
+    getSceneAnalytics: async (req, res) => {
+        try {
+            const sceneId = req.query.sceneId;
+            const characterId = req.query.characterId;
+
+            const analytics = await sceneAnalyticsService.getSceneAnalytics(sceneId, characterId);
+
+            res.json(analytics);
+        } catch (error) {
+            logger.error('Error getting scene analytics:', error);
+            res.status(500).json({ error: 'Failed to get scene analytics', details: error.message });
+        }
+    },
+
+    getPopularScenes: async (req, res) => {
+        try {
+            const characterId = req.query.characterId;
+            const limit = parseInt(req.query.limit) || 10;
+
+            const popularScenes = await sceneAnalyticsService.getPopularScenes(characterId, limit);
+
+            res.json(popularScenes);
+        } catch (error) {
+            logger.error('Error getting popular scenes:', error);
+            res.status(500).json({ error: 'Failed to get popular scenes', details: error.message });
+        }
+    },
+
+    getScenePerformanceMetrics: async (req, res) => {
+        try {
+            const sceneId = req.params.id;
+            const characterId = req.query.characterId;
+
+            const metrics = await sceneAnalyticsService.getScenePerformanceMetrics(sceneId, characterId);
+
+            if (!metrics) {
+                return res.status(404).json({ error: 'No performance data found for this scene' });
+            }
+
+            res.json(metrics);
+        } catch (error) {
+            logger.error('Error getting scene performance metrics:', error);
+            res.status(500).json({ error: 'Failed to get scene performance metrics', details: error.message });
         }
     }
 };
