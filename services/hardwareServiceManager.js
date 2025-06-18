@@ -111,11 +111,9 @@ class HardwareServiceManager {
                 });
 
                 this.hardwareProcess.stderr.on('data', (data) => {
-                    const error = data.toString().trim();
-                    if (error && !error.includes('WARNING')) {
-                        logger.error(`[Hardware Services Error] ${error}`);
-                    } else if (error) {
-                        logger.warn(`[Hardware Services Warning] ${error}`);
+                    const output = data.toString().trim();
+                    if (output) {
+                        this.logServiceOutput('Hardware Services', output, 'stderr');
                     }
                 });
 
@@ -373,6 +371,75 @@ class HardwareServiceManager {
 
         } catch (error) {
             logger.error('Error during hardware service shutdown:', error);
+        }
+    }
+
+    /**
+     * Intelligently log service subprocess output based on content
+     * @param {string} serviceName - Name of the service
+     * @param {string} output - The output message from service process
+     * @param {string} stream - Either 'stdout' or 'stderr'
+     */
+    logServiceOutput(serviceName, output, stream) {
+        // Parse Python logging format: YYYY-MM-DD HH:MM:SS,mmm - LEVEL - message
+        const pythonLogPattern = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} - (\w+) - (.+)$/;
+        // Also handle Python logging format with module names: LEVEL:module:message
+        const pythonModuleLogPattern = /^(\w+):[\w._]+:(.+)$/;
+
+        let match = output.match(pythonLogPattern);
+        if (!match) {
+            match = output.match(pythonModuleLogPattern);
+        }
+
+        if (match) {
+            const [, level, message] = match;
+            const logMessage = `[${serviceName}] ${message}`;
+
+            // Map Python log levels to Winston log levels
+            switch (level.toUpperCase()) {
+                case 'DEBUG':
+                    logger.debug(logMessage);
+                    break;
+                case 'INFO':
+                    logger.info(logMessage);
+                    break;
+                case 'WARNING':
+                case 'WARN':
+                    logger.warn(logMessage);
+                    break;
+                case 'ERROR':
+                    logger.error(logMessage);
+                    break;
+                case 'CRITICAL':
+                case 'FATAL':
+                    logger.error(logMessage);
+                    break;
+                default:
+                    // Unknown level, use info for stderr, debug for stdout
+                    if (stream === 'stderr') {
+                        logger.info(logMessage);
+                    } else {
+                        logger.debug(logMessage);
+                    }
+            }
+        } else {
+            // Non-standard format - check for common patterns
+            const lowerOutput = output.toLowerCase();
+            const logMessage = `[${serviceName}] ${output}`;
+
+            if (lowerOutput.includes('error') || lowerOutput.includes('failed') || lowerOutput.includes('exception')) {
+                logger.error(logMessage);
+            } else if (lowerOutput.includes('warning') || lowerOutput.includes('warn')) {
+                logger.warn(logMessage);
+            } else if (lowerOutput.includes('✅') || lowerOutput.includes('success') || lowerOutput.includes('started') || lowerOutput.includes('initialized')) {
+                logger.info(logMessage);
+            } else if (stream === 'stderr') {
+                // For stderr without clear indicators, use info level (not error)
+                logger.info(logMessage);
+            } else {
+                // For stdout, use debug level for general output
+                logger.debug(logMessage);
+            }
         }
     }
 }

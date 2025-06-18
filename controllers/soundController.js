@@ -492,15 +492,17 @@ async function stopAllSounds() {
             logger.debug('Stop all sounds command timed out - this is normal');
         } else if (error.message === 'Sound player is not running') {
             logger.debug('Sound player is not running during stop all sounds - this is normal during shutdown');
+        } else if (error.message === 'Sound player process closed') {
+            logger.debug('Sound player process closed during stop all sounds - this is normal during shutdown');
         } else {
             logger.error(`Error stopping all sounds: ${error.message}`);
         }
         // Even if the command fails, clear the play status
         playStatus = {};
 
-        // Don't throw error if sound player is not running (normal during shutdown)
-        if (error.message === 'Sound player is not running') {
-            return { status: 'success', message: 'Sound player not running, status cleared' };
+        // Don't throw error if sound player is not running or process closed (normal during shutdown)
+        if (error.message === 'Sound player is not running' || error.message === 'Sound player process closed') {
+            return { status: 'success', message: 'Sound player not available, status cleared' };
         }
 
         throw error;
@@ -600,7 +602,14 @@ async function gracefulShutdown() {
         // First try to stop all sounds gracefully
         if (soundPlayerProcess) {
             logger.info('Sound controller: Stopping all sounds before shutdown...');
-            await stopAllSounds();
+            try {
+                await stopAllSounds();
+            } catch (error) {
+                // Don't log expected shutdown errors
+                if (error.message !== 'Sound player process closed') {
+                    logger.warn('Sound controller: Error stopping sounds during shutdown:', error.message);
+                }
+            }
         }
 
         // Then close the sound player process

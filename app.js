@@ -408,11 +408,7 @@ app.get('/api/schema', asyncHandler(async (req, res) => {
     }
 }));
 
-// Error handling middleware - must be last
-app.use(notFoundHandler);
-app.use(errorHandler);
-
-// Root route
+// Root route - must be before error handling middleware
 app.get('/', asyncHandler(async (req, res) => {
     const characters = await characterService.getAllCharacters();
     res.render('index', {
@@ -420,6 +416,10 @@ app.get('/', asyncHandler(async (req, res) => {
         characters: characters
     });
 }));
+
+// Error handling middleware - must be last
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 // New route for setting the selected character
 app.post('/set-character', (req, res) => {
