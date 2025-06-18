@@ -25,13 +25,13 @@ from generic_audio_stream_handler import AudioStreamConfig, AudioSourceType
 
 logger = logging.getLogger(__name__)
 
-# Import STT integration
+# Import OpenAI Whisper STT integration
 try:
-    from topmediai_stt_integration import TopMediaiSTTIntegration
-    STT_AVAILABLE = True
+    from openai_stt_integration import OpenAISTTIntegration
+    OPENAI_STT_AVAILABLE = True
 except ImportError as e:
-    logger.warning(f"STT integration not available: {e}")
-    STT_AVAILABLE = False
+    logger.warning(f"OpenAI Whisper STT integration not available: {e}")
+    OPENAI_STT_AVAILABLE = False
 
 class ChatterPiAudioBridge:
     """
@@ -61,11 +61,11 @@ class ChatterPiAudioBridge:
 
         self.animation_system = ChatterPiAnimationSystem(config)
 
-        # Initialize STT integration if available
+        # Initialize OpenAI Whisper STT integration if available
         self.stt_integration = None
-        if STT_AVAILABLE:
+        if OPENAI_STT_AVAILABLE:
             try:
-                self.stt_integration = TopMediaiSTTIntegration({
+                self.stt_integration = OpenAISTTIntegration({
                     'language': 'en',
                     'confidenceThreshold': 0.7,
                     'chunkDuration': 2000

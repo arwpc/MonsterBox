@@ -98,7 +98,11 @@ class TopMediaiAPI {
             }
 
             const response = await this.retryWithBackoff(async () => {
-                return await this.axiosInstance.get('/voices_list');
+                return await this.axiosInstance.get('/voices_list', {
+                    headers: {
+                        'x-api-key': this.apiKey
+                    }
+                });
             });
 
             if (!response.data?.Voice) {
@@ -213,7 +217,7 @@ class TopMediaiAPI {
 
             await this.checkRateLimit();
 
-            // Map parameters to TopMediai format
+            // Map parameters to TopMediai official API format
             const requestBody = {
                 text: params.text.trim(),
                 speaker: params.voiceId,
@@ -229,70 +233,20 @@ class TopMediaiAPI {
             try {
                 logger.info('Making TopMediai TTS request with body:', JSON.stringify(requestBody));
 
-                // Try different authentication methods
-                const authMethods = [
-                    // Method 1: x-api-key header
-                    {
+                // Use official TopMediai API format
+                const response = await this.retryWithBackoff(async () => {
+                    return await this.axiosInstance.post('/text2speech', requestBody, {
+                        responseType: 'arraybuffer',
                         headers: {
                             'x-api-key': this.apiKey,
                             'Content-Type': 'application/json'
                         }
-                    },
-                    // Method 2: Authorization Bearer header
-                    {
-                        headers: {
-                            'Authorization': `Bearer ${this.apiKey}`,
-                            'Content-Type': 'application/json'
-                        }
-                    },
-                    // Method 3: API key in body
-                    {
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        data: {
-                            ...requestBody,
-                            api_key: this.apiKey
-                        }
-                    }
-                ];
+                    });
+                });
 
-                let lastError = null;
-
-                for (const [index, method] of authMethods.entries()) {
-                    try {
-                        logger.info(`Trying authentication method ${index + 1}...`);
-
-                        const requestData = method.data || requestBody;
-                        const response = await this.axiosInstance.post('/text2speech', requestData, {
-                            responseType: 'arraybuffer',
-                            headers: method.headers
-                        });
-
-                        audioData = Buffer.from(response.data);
-                        isRealAudio = true;
-                        logger.info(`✅ Successfully generated speech using TopMediai TTS API (method ${index + 1})`);
-                        break;
-
-                    } catch (methodError) {
-                        lastError = methodError;
-                        logger.warn(`Authentication method ${index + 1} failed:`, methodError.response?.status, methodError.response?.statusText);
-
-                        if (methodError.response?.data) {
-                            try {
-                                const errorText = Buffer.from(methodError.response.data).toString();
-                                logger.warn(`Error response: ${errorText}`);
-                            } catch (e) {
-                                logger.warn('Could not parse error response');
-                            }
-                        }
-                    }
-                }
-
-                // If all methods failed, throw the last error
-                if (!isRealAudio && lastError) {
-                    throw lastError;
-                }
+                audioData = Buffer.from(response.data);
+                isRealAudio = true;
+                logger.info('✅ Successfully generated speech using TopMediai TTS API');
 
             } catch (ttsError) {
                 logger.error('All TopMediai authentication methods failed, falling back to system TTS');
@@ -458,7 +412,8 @@ class TopMediaiAPI {
     }
 
     /**
-     * Convert speech to text using TopMediai STT
+     * Convert speech to text using OpenAI Whisper (deprecated - use OpenAI STT integration instead)
+     * @deprecated Use OpenAISTTIntegration class instead
      * @param {Buffer|string} audioData - Audio data buffer or file path
      * @param {Object} options - STT options
      * @returns {Promise<Object>} - STT result with text and metadata

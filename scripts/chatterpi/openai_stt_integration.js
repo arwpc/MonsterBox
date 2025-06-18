@@ -1,28 +1,31 @@
 #!/usr/bin/env node
 
 /**
- * TopMediai Speech-to-Text Integration for ChatterPi
- * 
- * Integrates TopMediai STT with ChatterPi's audio streaming infrastructure
+ * OpenAI Whisper Speech-to-Text Integration for ChatterPi
+ *
+ * Integrates OpenAI Whisper STT with ChatterPi's audio streaming infrastructure
  * for real-time speech recognition and voice-driven AI interactions.
  */
 
 require('dotenv').config();
 const EventEmitter = require('events');
-const TopMediaiAPI = require('../topMediaiAPI');
+const OpenAI = require('openai');
+const FormData = require('form-data');
+const fs = require('fs').promises;
+const path = require('path');
 const logger = require('../logger');
 
-class TopMediaiSTTIntegration extends EventEmitter {
+class OpenAISTTIntegration extends EventEmitter {
     constructor(options = {}) {
         super();
-        
+
         this.config = {
-            // TopMediai API configuration
-            topmediaiApiKey: process.env.TOPMEDIAI_API_KEY,
-            
-            // STT configuration
+            // OpenAI API configuration
+            openaiApiKey: process.env.OPENAI_API_KEY,
+
+            // Whisper STT configuration
+            model: 'whisper-1',
             language: 'en',
-            model: 'general',
             fallbackToSystem: true,
             
             // Audio processing configuration
@@ -42,7 +45,7 @@ class TopMediaiSTTIntegration extends EventEmitter {
             ...options
         };
 
-        this.topMediaiAPI = new TopMediaiAPI();
+        this.openai = null;
         this.isInitialized = false;
         this.isProcessing = false;
         this.activeRequests = 0;
@@ -61,7 +64,7 @@ class TopMediaiSTTIntegration extends EventEmitter {
             averageResponseTime: 0
         };
 
-        logger.info('TopMediai STT Integration initialized');
+        logger.info('OpenAI Whisper STT Integration initialized');
     }
 
     /**
@@ -69,17 +72,22 @@ class TopMediaiSTTIntegration extends EventEmitter {
      */
     async initialize() {
         try {
-            if (!this.config.topmediaiApiKey) {
-                logger.warn('TopMediai API key not configured - STT will use fallback only');
+            if (!this.config.openaiApiKey) {
+                logger.warn('OpenAI API key not configured - STT will use fallback only');
                 return false;
             }
 
-            // Test API connectivity
+            // Initialize OpenAI client
+            this.openai = new OpenAI({
+                apiKey: this.config.openaiApiKey
+            });
+
+            // Test API connectivity with a simple request
             try {
-                await this.topMediaiAPI.checkRateLimit();
-                logger.info('✅ TopMediai STT API connectivity verified');
+                // We'll test connectivity when we make the first actual request
+                logger.info('✅ OpenAI Whisper STT client initialized');
             } catch (error) {
-                logger.warn('⚠️ TopMediai API test failed, will use fallback:', error.message);
+                logger.warn('⚠️ OpenAI API test failed, will use fallback:', error.message);
             }
 
             this.isInitialized = true;
@@ -87,7 +95,7 @@ class TopMediaiSTTIntegration extends EventEmitter {
             return true;
 
         } catch (error) {
-            logger.error('Failed to initialize TopMediai STT:', error.message);
+            logger.error('Failed to initialize OpenAI Whisper STT:', error.message);
             this.emit('initialized', { success: false, error: error.message });
             return false;
         }
@@ -161,14 +169,13 @@ class TopMediaiSTTIntegration extends EventEmitter {
             const combinedAudio = this.combineAudioChunks(this.audioBuffer);
             this.audioBuffer = []; // Clear buffer
 
-            // Convert to appropriate format for STT
-            const processedAudio = await this.prepareAudioForSTT(combinedAudio);
+            // Convert to appropriate format for Whisper STT
+            const audioFile = await this.prepareAudioForWhisper(combinedAudio);
 
-            // Send to TopMediai STT
-            const result = await this.topMediaiAPI.speechToText(processedAudio, {
+            // Send to OpenAI Whisper STT
+            const result = await this.processWithWhisper(audioFile, {
                 language: this.config.language,
-                model: this.config.model,
-                fallbackToSystem: this.config.fallbackToSystem
+                model: this.config.model
             });
 
             // Update statistics
@@ -221,17 +228,94 @@ class TopMediaiSTTIntegration extends EventEmitter {
     }
 
     /**
-     * Prepare audio data for STT processing
+     * Prepare audio data for OpenAI Whisper processing
      */
-    async prepareAudioForSTT(audioData) {
-        // For now, return the audio data as-is
-        // In production, you might want to:
-        // - Convert sample rate to match STT requirements
-        // - Apply noise reduction
-        // - Normalize audio levels
-        // - Convert format if needed
+    async prepareAudioForWhisper(audioData) {
+        try {
+            // Create a temporary WAV file for Whisper
+            const tempDir = '/tmp';
+            const timestamp = Date.now();
+            const tempFilePath = path.join(tempDir, `whisper_audio_${timestamp}.wav`);
 
-        return audioData;
+            // Write raw audio data to temporary file
+            // Note: This assumes the audio data is already in a compatible format
+            // In production, you might want to use a library like 'wav' to create proper WAV headers
+            await fs.writeFile(tempFilePath, audioData);
+
+            return tempFilePath;
+
+        } catch (error) {
+            logger.error('Error preparing audio for Whisper:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Process audio with OpenAI Whisper
+     */
+    async processWithWhisper(audioFilePath, options = {}) {
+        try {
+            if (!this.openai) {
+                throw new Error('OpenAI client not initialized');
+            }
+
+            logger.info('Processing audio with OpenAI Whisper...');
+
+            // Create a readable stream from the audio file
+            const audioStream = await fs.readFile(audioFilePath);
+
+            // Create form data for the Whisper API
+            const formData = new FormData();
+            formData.append('file', audioStream, {
+                filename: 'audio.wav',
+                contentType: 'audio/wav'
+            });
+            formData.append('model', options.model || this.config.model);
+
+            if (options.language && options.language !== 'auto') {
+                formData.append('language', options.language);
+            }
+
+            // Call OpenAI Whisper API
+            const response = await this.openai.audio.transcriptions.create({
+                file: audioStream,
+                model: options.model || this.config.model,
+                language: options.language === 'auto' ? undefined : options.language,
+                response_format: 'json'
+            });
+
+            // Clean up temporary file
+            try {
+                await fs.unlink(audioFilePath);
+            } catch (cleanupError) {
+                logger.warn('Failed to clean up temporary audio file:', cleanupError.message);
+            }
+
+            // Parse and return result
+            const result = {
+                text: response.text || '',
+                confidence: 1.0, // Whisper doesn't provide confidence scores
+                provider: 'OpenAI Whisper',
+                timestamp: new Date().toISOString(),
+                metadata: {
+                    model: options.model || this.config.model,
+                    language: options.language
+                }
+            };
+
+            logger.info(`✅ Whisper transcription: "${result.text}"`);
+            return result;
+
+        } catch (error) {
+            logger.error('OpenAI Whisper processing failed:', error.message);
+
+            // Try system fallback if enabled
+            if (this.config.fallbackToSystem) {
+                return await this.generateSystemSTT(audioFilePath, options);
+            }
+
+            throw error;
+        }
     }
 
     /**
@@ -285,8 +369,8 @@ class TopMediaiSTTIntegration extends EventEmitter {
         this.clearBuffer();
         this.isProcessing = false;
         this.emit('stopped');
-        logger.info('TopMediai STT processing stopped');
+        logger.info('OpenAI Whisper STT processing stopped');
     }
 }
 
-module.exports = TopMediaiSTTIntegration;
+module.exports = OpenAISTTIntegration;

@@ -8,7 +8,7 @@
 require('dotenv').config();
 const axios = require('axios');
 const WebSocket = require('ws');
-const TopMediaiSTTIntegration = require('./topmediai_stt_integration');
+const OpenAISTTIntegration = require('./openai_stt_integration');
 const fs = require('fs').promises;
 
 class VoiceInteractionTester {
@@ -77,7 +77,7 @@ class VoiceInteractionTester {
 
     async initializeSTT() {
         try {
-            this.sttIntegration = new TopMediaiSTTIntegration({
+            this.sttIntegration = new OpenAISTTIntegration({
                 language: 'en',
                 confidenceThreshold: 0.5,
                 fallbackToSystem: true

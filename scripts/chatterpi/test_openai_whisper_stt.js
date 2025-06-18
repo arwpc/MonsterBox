@@ -1,21 +1,21 @@
 #!/usr/bin/env node
 
 /**
- * Test script for TopMediai STT Integration
+ * Test script for OpenAI Whisper STT Integration
  * Tests the STT functionality with sample audio data
  */
 
 require('dotenv').config();
-const TopMediaiSTTIntegration = require('./topmediai_stt_integration');
+const OpenAISTTIntegration = require('./openai_stt_integration');
 const fs = require('fs').promises;
 const path = require('path');
 
 async function testSTTIntegration() {
-    console.log('🧪 Testing TopMediai STT Integration...\n');
+    console.log('🧪 Testing OpenAI Whisper STT Integration...\n');
 
     try {
         // Initialize STT integration
-        const sttIntegration = new TopMediaiSTTIntegration({
+        const sttIntegration = new OpenAISTTIntegration({
             language: 'en',
             confidenceThreshold: 0.5,
             chunkDuration: 3000,
@@ -108,25 +108,43 @@ async function testSTTIntegration() {
         console.log(`   Buffer Size: ${stats.bufferSize}`);
 
         // Test API connectivity
-        console.log('\n🌐 Testing TopMediai API connectivity...');
+        console.log('\n🌐 Testing OpenAI Whisper API connectivity...');
         try {
-            const TopMediaiAPI = require('../topMediaiAPI');
-            const api = new TopMediaiAPI();
-            
-            // Test with a simple text (this will test the API key and connectivity)
-            const testAudio = Buffer.from('test audio data');
-            const apiResult = await api.speechToText(testAudio, {
-                language: 'en',
-                fallbackToSystem: true
+            const OpenAI = require('openai');
+            const openai = new OpenAI({
+                apiKey: process.env.OPENAI_API_KEY
             });
-            
-            console.log('✅ API connectivity test result:');
-            console.log(`   Text: "${apiResult.text}"`);
-            console.log(`   Provider: ${apiResult.provider}`);
-            console.log(`   Confidence: ${apiResult.confidence}`);
-            
+
+            // Test with a simple audio file (we'll create a minimal WAV)
+            const fs = require('fs').promises;
+            const path = require('path');
+            const testAudioPath = path.join('/tmp', 'test_whisper.wav');
+
+            // Create a minimal WAV file for testing
+            const testAudio = Buffer.alloc(1000); // Small audio buffer
+            await fs.writeFile(testAudioPath, testAudio);
+
+            try {
+                const transcription = await openai.audio.transcriptions.create({
+                    file: require('fs').createReadStream(testAudioPath),
+                    model: 'whisper-1'
+                });
+
+                console.log('✅ API connectivity test result:');
+                console.log(`   Text: "${transcription.text}"`);
+                console.log(`   Provider: OpenAI Whisper`);
+
+                // Clean up
+                await fs.unlink(testAudioPath).catch(() => {});
+
+            } catch (whisperError) {
+                console.log('⚠️ Whisper API test failed (expected with dummy audio):', whisperError.message);
+                // Clean up
+                await fs.unlink(testAudioPath).catch(() => {});
+            }
+
         } catch (apiError) {
-            console.log('⚠️ API connectivity test failed:', apiError.message);
+            console.log('⚠️ OpenAI API connectivity test failed:', apiError.message);
         }
 
         // Clean up

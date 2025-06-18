@@ -694,29 +694,47 @@ router.post('/voice-chat', async (req, res) => {
         console.log('🎤 Processing voice chat request...');
         const startTime = Date.now();
 
-        // Step 1: Convert speech to text using TopMediai STT
+        // Step 1: Convert speech to text using OpenAI Whisper
         let recognizedText = '';
         let sttResult = null;
 
         try {
-            const TopMediaiAPI = require('../scripts/topMediaiAPI');
-            const topMediaiAPI = new TopMediaiAPI();
+            const OpenAI = require('openai');
+            const openai = new OpenAI({
+                apiKey: process.env.OPENAI_API_KEY
+            });
 
             // Convert base64 audio to buffer if needed
             const audioBuffer = Buffer.isBuffer(audioData) ?
                 audioData : Buffer.from(audioData, 'base64');
 
-            sttResult = await topMediaiAPI.speechToText(audioBuffer, {
-                language: sttConfig?.language || 'en',
-                model: sttConfig?.model || 'general',
-                fallbackToSystem: true
+            // Create a temporary file for Whisper API
+            const fs = require('fs').promises;
+            const path = require('path');
+            const tempFile = path.join('/tmp', `whisper_${Date.now()}.wav`);
+            await fs.writeFile(tempFile, audioBuffer);
+
+            // Call OpenAI Whisper API
+            const transcription = await openai.audio.transcriptions.create({
+                file: require('fs').createReadStream(tempFile),
+                model: sttConfig?.model || 'whisper-1',
+                language: sttConfig?.language || 'en'
             });
 
-            recognizedText = sttResult.text;
+            // Clean up temp file
+            await fs.unlink(tempFile).catch(() => {});
+
+            recognizedText = transcription.text || '';
+            sttResult = {
+                text: recognizedText,
+                confidence: 1.0, // Whisper doesn't provide confidence
+                provider: 'OpenAI Whisper'
+            };
+
             console.log(`🗣️ Speech recognized: "${recognizedText}"`);
 
         } catch (sttError) {
-            console.warn('STT failed, using fallback:', sttError.message);
+            console.warn('OpenAI Whisper STT failed, using fallback:', sttError.message);
             recognizedText = 'Hello, how are you?'; // Fallback text
             sttResult = {
                 text: recognizedText,

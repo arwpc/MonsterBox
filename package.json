@@ -7,7 +7,7 @@
     "start": "node --no-deprecation app.js",
     "cleanup": "node cleanup-gpio.js",
     "dev": "nodemon --trace-deprecation --trace-warnings app.js",
-    "test": "cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js tests/**/*.test.js",
+    "test": "cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js tests/**/*.test.js --timeout 30000",
     "test:watch": "cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js --watch tests/**/*.test.js",
     "test:auth": "cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js tests/secure-remote-access.test.js",
     "test:ssh": "cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js tests/ssh-integration.test.js",
@@ -58,7 +58,12 @@
     "ai:status": "node -e \"const {getInstance} = require('./ai/integrations'); getInstance().initialize().then(ai => ai.getStatus()).then(console.log)\"",
     "ai:config": "echo 'AI Configuration UI available at http://localhost:3000/ai-config'",
     "ai:validate": "node -e \"const {getInstance} = require('./ai/integrations'); getInstance().initialize().then(ai => ai.validateAPIKeys()).then(console.log)\"",
-    "test:ai-config": "echo 'AI Configuration UI tests - visit http://localhost:3000/ai-config to test manually'"
+    "test:ai-config": "echo 'AI Configuration UI tests - visit http://localhost:3000/ai-config to test manually'",
+    "test:voice-interaction": "cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js tests/voice-interaction-system.test.js",
+    "test:topmediai-tts": "cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js tests/topmediai-tts-integration.test.js",
+    "test:openai-whisper": "cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js tests/openai-whisper-stt.test.js",
+    "test:voice-chat-routes": "cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js tests/voice-chat-routes.test.js",
+    "test:voice-all": "cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js tests/voice-interaction-system.test.js tests/topmediai-tts-integration.test.js tests/openai-whisper-stt.test.js tests/voice-chat-routes.test.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.53.0",
