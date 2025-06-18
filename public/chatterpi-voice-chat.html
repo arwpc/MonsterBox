@@ -138,6 +138,29 @@
             font-size: 0.9em; color: #34495e; border-top: 1px solid #ecf0f1;
             min-height: 40px; display: flex; align-items: center; justify-content: center;
         }
+
+        .settings-panel {
+            position: fixed; top: 0; right: -400px; width: 400px; height: 100vh;
+            background: white; box-shadow: -5px 0 15px rgba(0,0,0,0.2);
+            transition: right 0.3s ease; z-index: 1000; overflow-y: auto;
+        }
+        .settings-panel.open { right: 0; }
+        .settings-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; padding: 20px; position: sticky; top: 0;
+        }
+        .settings-content { padding: 20px; }
+        .setting-group { margin-bottom: 20px; }
+        .setting-label { display: block; margin-bottom: 5px; font-weight: 600; }
+        .setting-input, .setting-select {
+            width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;
+        }
+        .setting-range { width: 100%; margin: 5px 0; }
+        .range-value { font-weight: bold; color: #667eea; }
+        .close-settings {
+            float: right; background: none; border: none; color: white;
+            font-size: 1.5em; cursor: pointer;
+        }
         
         .confidence-bar {
             width: 100%; height: 4px; background: #ecf0f1; border-radius: 2px;
@@ -171,6 +194,10 @@
                     <span class="stt-indicator" id="sttIndicator"></span>
                     <span id="sttStatusText">STT: Disconnected</span>
                 </div>
+                <button class="voice-btn" id="settingsToggle">
+                    <span>⚙️</span>
+                    <span>Voice Settings</span>
+                </button>
             </div>
         </div>
         
@@ -196,6 +223,49 @@
         <div class="chat-input-container">
             <input type="text" class="chat-input" id="chatInput" placeholder="Type your message or use voice chat..." maxlength="500">
             <button class="send-button" id="sendButton">Send</button>
+        </div>
+    </div>
+
+    <!-- Settings Panel -->
+    <div class="settings-panel" id="settingsPanel">
+        <div class="settings-header">
+            <button class="close-settings" id="closeSettings">×</button>
+            <h3>🎛️ Voice Settings</h3>
+        </div>
+        <div class="settings-content">
+            <div class="setting-group">
+                <label class="setting-label">STT Language</label>
+                <select class="setting-select" id="sttLanguage">
+                    <option value="en">English</option>
+                    <option value="es">Spanish</option>
+                    <option value="fr">French</option>
+                    <option value="de">German</option>
+                </select>
+            </div>
+
+            <div class="setting-group">
+                <label class="setting-label">Confidence Threshold: <span class="range-value" id="confidenceValue">70%</span></label>
+                <input type="range" class="setting-range" id="confidenceThreshold" min="0" max="100" value="70">
+            </div>
+
+            <div class="setting-group">
+                <label class="setting-label">TTS Emotion</label>
+                <select class="setting-select" id="ttsEmotion">
+                    <option value="Neutral">Neutral</option>
+                    <option value="Happy">Happy</option>
+                    <option value="Sad">Sad</option>
+                    <option value="Excited">Excited</option>
+                </select>
+            </div>
+
+            <div class="setting-group">
+                <label class="setting-label">Speech Speed: <span class="range-value" id="speedValue">1.0x</span></label>
+                <input type="range" class="setting-range" id="speechSpeed" min="0.5" max="2.0" value="1.0" step="0.1">
+            </div>
+
+            <div class="setting-group">
+                <button class="send-button" id="applySettings" style="width: 100%;">Apply Settings</button>
+            </div>
         </div>
     </div>
 
@@ -227,6 +297,9 @@
                 this.sttIndicator = document.getElementById('sttIndicator');
                 this.sttStatusText = document.getElementById('sttStatusText');
                 this.voiceFeedback = document.getElementById('voiceFeedback');
+                this.settingsToggle = document.getElementById('settingsToggle');
+                this.settingsPanel = document.getElementById('settingsPanel');
+                this.closeSettings = document.getElementById('closeSettings');
             }
             
             setupEventListeners() {
@@ -239,7 +312,22 @@
                 });
                 
                 this.voiceToggle.addEventListener('click', () => this.toggleVoiceChat());
-                
+                this.settingsToggle.addEventListener('click', () => this.toggleSettings());
+                this.closeSettings.addEventListener('click', () => this.closeSettingsPanel());
+
+                // Settings controls
+                document.getElementById('confidenceThreshold').addEventListener('input', (e) => {
+                    document.getElementById('confidenceValue').textContent = e.target.value + '%';
+                });
+
+                document.getElementById('speechSpeed').addEventListener('input', (e) => {
+                    document.getElementById('speedValue').textContent = e.target.value + 'x';
+                });
+
+                document.getElementById('applySettings').addEventListener('click', () => {
+                    this.applySettings();
+                });
+
                 // Character selection
                 document.querySelectorAll('.character-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => {
@@ -393,13 +481,8 @@
                         body: JSON.stringify({
                             audioData: base64Audio,
                             character: this.currentCharacter,
-                            sttConfig: {
-                                language: 'en',
-                                model: 'general'
-                            },
-                            ttsConfig: {
-                                emotion: 'Neutral'
-                            }
+                            sttConfig: this.getSTTConfig(),
+                            ttsConfig: this.getTTSConfig()
                         })
                     });
                     
@@ -589,11 +672,89 @@
                     welcomeTimeElement.textContent = new Date().toLocaleTimeString();
                 }
             }
+
+            toggleSettings() {
+                this.settingsPanel.classList.toggle('open');
+            }
+
+            closeSettingsPanel() {
+                this.settingsPanel.classList.remove('open');
+            }
+
+            applySettings() {
+                // Collect settings from UI
+                const settings = {
+                    stt: {
+                        language: document.getElementById('sttLanguage').value,
+                        confidenceThreshold: parseFloat(document.getElementById('confidenceThreshold').value) / 100
+                    },
+                    tts: {
+                        emotion: document.getElementById('ttsEmotion').value,
+                        speed: parseFloat(document.getElementById('speechSpeed').value)
+                    }
+                };
+
+                // Store settings
+                localStorage.setItem('chatterpi-voice-settings', JSON.stringify(settings));
+
+                // Update voice feedback
+                this.updateVoiceFeedback('Settings applied successfully!');
+
+                // Close settings panel
+                this.closeSettingsPanel();
+
+                console.log('Applied voice settings:', settings);
+            }
+
+            loadSettings() {
+                try {
+                    const saved = localStorage.getItem('chatterpi-voice-settings');
+                    if (saved) {
+                        const settings = JSON.parse(saved);
+
+                        // Apply to UI
+                        if (settings.stt) {
+                            document.getElementById('sttLanguage').value = settings.stt.language || 'en';
+                            document.getElementById('confidenceThreshold').value = (settings.stt.confidenceThreshold || 0.7) * 100;
+                            document.getElementById('confidenceValue').textContent = Math.round((settings.stt.confidenceThreshold || 0.7) * 100) + '%';
+                        }
+
+                        if (settings.tts) {
+                            document.getElementById('ttsEmotion').value = settings.tts.emotion || 'Neutral';
+                            document.getElementById('speechSpeed').value = settings.tts.speed || 1.0;
+                            document.getElementById('speedValue').textContent = (settings.tts.speed || 1.0) + 'x';
+                        }
+
+                        return settings;
+                    }
+                } catch (error) {
+                    console.error('Failed to load settings:', error);
+                }
+                return null;
+            }
+
+            getSTTConfig() {
+                const saved = this.loadSettings();
+                return {
+                    language: saved?.stt?.language || document.getElementById('sttLanguage').value || 'en',
+                    model: 'whisper-1',
+                    confidenceThreshold: saved?.stt?.confidenceThreshold || parseFloat(document.getElementById('confidenceThreshold').value) / 100 || 0.7
+                };
+            }
+
+            getTTSConfig() {
+                const saved = this.loadSettings();
+                return {
+                    emotion: saved?.tts?.emotion || document.getElementById('ttsEmotion').value || 'Neutral',
+                    speed: saved?.tts?.speed || parseFloat(document.getElementById('speechSpeed').value) || 1.0
+                };
+            }
         }
 
         // Initialize the voice chat when page loads
         document.addEventListener('DOMContentLoaded', () => {
-            new ChatterPiVoiceChat();
+            const chat = new ChatterPiVoiceChat();
+            chat.loadSettings(); // Load saved settings
         });
     </script>
 </body>

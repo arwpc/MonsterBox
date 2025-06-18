@@ -77,7 +77,8 @@ class TTSAnimationIntegration {
         try {
             // Connect to ChatterPi Animation System audio bridge
             if (this.config.streamingEnabled) {
-                await this.connectToAnimationBridge();
+                logger.info('Skipping animation bridge connection for now');
+                // await this.connectToAnimationBridge();
             }
             
             // Verify TopMediai API access
@@ -126,9 +127,9 @@ class TTSAnimationIntegration {
                 this.animationBridge.on('close', () => {
                     logger.warn('Animation bridge disconnected');
                     this.animationBridge = null;
-                    
-                    // Auto-reconnect after delay
-                    setTimeout(() => this.connectToAnimationBridge(), 5000);
+
+                    // Auto-reconnect disabled for now
+                    // setTimeout(() => this.connectToAnimationBridge(), 5000);
                 });
                 
             } catch (error) {

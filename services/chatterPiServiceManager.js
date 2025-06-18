@@ -255,8 +255,8 @@ class ChatterPiServiceManager {
         // Connect to animation system
         await this.connectWebSocket('animationSystem', 'ws://localhost:8765');
 
-        // Connect to audio bridge (optional)
-        await this.connectWebSocket('audioBridge', 'ws://localhost:8767');
+        // Connect to audio bridge (optional) - temporarily disabled
+        // await this.connectWebSocket('audioBridge', 'ws://localhost:8767');
 
         logger.info('✅ WebSocket connections established');
     }
