@@ -3,6 +3,7 @@ const partService = require('../services/partService');
 const soundService = require('../services/soundService');
 const voiceService = require('../services/voiceService');
 const soundController = require('./soundController');
+const sceneAnalyticsService = require('../services/sceneAnalyticsService');
 const path = require('path');
 const { spawn } = require('child_process');
 const logger = require('../scripts/logger');
@@ -65,7 +66,7 @@ const scenePlayerController = {
         logger.info(`Attempting to play scene with ID: ${sceneId} for character ${characterId} from step ${startStep}`);
         logger.debug(`Request headers: ${JSON.stringify(req.headers)}`);
         logger.debug(`Session: ${JSON.stringify(req.session)}`);
-        
+
         if (!characterId) {
             logger.warn(`No character ID provided for scene ${sceneId}`);
             return res.status(400).json({ error: 'Character ID is required' });
@@ -138,10 +139,10 @@ const scenePlayerController = {
         const sceneId = req.params.id;
         logger.info(`Stopping scene ${sceneId}`);
         isExecuting = false;
-        
+
         // Respond to client immediately
         res.json({ message: 'Scene stopping initiated' });
-        
+
         // Then perform cleanup asynchronously
         setTimeout(() => {
             try {
@@ -149,15 +150,51 @@ const scenePlayerController = {
                 stopAllParts().catch(error => {
                     logger.debug(`Non-critical error stopping parts: ${error.message}`);
                 });
-                
+
                 // Stop all sounds without waiting
                 soundController.stopAllSounds().catch(error => {
                     logger.debug(`Non-critical error stopping sounds: ${error.message}`);
                 });
-                
+
                 logger.info(`Scene ${sceneId} stop processing initiated`);
             } catch (error) {
                 logger.warn(`Non-critical error during scene cleanup: ${error.message}`);
+            }
+        }, 0);
+    },
+
+    stopAllScenes: (req, res) => {
+        logger.info('Stopping all scenes');
+        isExecuting = false;
+
+        // Reset current scene state
+        currentSceneState = {
+            sceneId: null,
+            currentStep: 0,
+            isCompleted: false,
+            messages: [],
+            error: null
+        };
+
+        // Respond to client immediately
+        res.json({ message: 'All scenes stopping initiated' });
+
+        // Then perform cleanup asynchronously
+        setTimeout(() => {
+            try {
+                // Stop all parts without waiting
+                stopAllParts().catch(error => {
+                    logger.debug(`Non-critical error stopping parts: ${error.message}`);
+                });
+
+                // Stop all sounds without waiting
+                soundController.stopAllSounds().catch(error => {
+                    logger.debug(`Non-critical error stopping sounds: ${error.message}`);
+                });
+
+                logger.info('All scenes stop processing initiated');
+            } catch (error) {
+                logger.warn(`Non-critical error during all scenes cleanup: ${error.message}`);
             }
         }, 0);
     }
@@ -185,7 +222,7 @@ async function executeScene(scene, startStep, res) {
             currentSceneState.currentStep = i;
             const message = `Executing step ${i + 1}: ${step.name}`;
             currentSceneState.messages.push(message);
-            
+
             try {
                 // Send SSE update immediately
                 sendSSEMessage(res, { message, currentStep: i });
@@ -193,7 +230,7 @@ async function executeScene(scene, startStep, res) {
 
                 // Skip delay for sound-only scenes with one step
                 const isSingleSoundScene = scene.steps.length === 1 && step.type === 'sound';
-                
+
                 if (step.concurrent === "on") {
                     // Start concurrent step immediately and don't wait for it to finish
                     // This allows sounds to play in parallel with subsequent steps
@@ -226,7 +263,7 @@ async function executeScene(scene, startStep, res) {
         currentSceneState.isCompleted = true;
         const completionMessage = 'Scene execution completed';
         currentSceneState.messages.push(completionMessage);
-        
+
         try {
             sendSSEMessage(res, { message: completionMessage, event: 'scene_end' });
             logger.info('Sent final SSE update with scene_end event');
@@ -236,7 +273,7 @@ async function executeScene(scene, startStep, res) {
     } catch (error) {
         logger.error(`Error during scene ${scene.id} execution:`, error);
         currentSceneState.error = `Scene execution failed: ${error.message}`;
-        
+
         try {
             sendSSEMessage(res, { error: currentSceneState.error, event: 'scene_end' });
         } catch (sendError) {
@@ -244,7 +281,25 @@ async function executeScene(scene, startStep, res) {
         }
     } finally {
         isExecuting = false;
-        
+
+        // Log scene execution analytics
+        const executionData = {
+            startTime: new Date().toISOString(),
+            endTime: new Date().toISOString(),
+            duration: Date.now() - (currentSceneState.startTime || Date.now()),
+            stepsExecuted: currentSceneState.currentStep + 1,
+            totalSteps: scene.steps.length,
+            success: currentSceneState.isCompleted && !currentSceneState.error,
+            errors: currentSceneState.error ? [{ message: currentSceneState.error }] : []
+        };
+
+        // Log analytics asynchronously
+        sceneAnalyticsService.logSceneExecution(scene.id, scene.character_id, executionData)
+            .catch(error => logger.warn(`Error logging scene analytics: ${error.message}`));
+
+        sceneAnalyticsService.updateSceneUsageStats(scene.id, scene.character_id)
+            .catch(error => logger.warn(`Error updating usage stats: ${error.message}`));
+
         // Send the completion message first so the UI can update immediately
         try {
             const cleanupMessage = 'Scene cleanup completed';
@@ -253,7 +308,7 @@ async function executeScene(scene, startStep, res) {
         } catch (error) {
             logger.error(`Error sending cleanup message: ${error.message}`);
         }
-        
+
         // Then clean up asynchronously without waiting
         setTimeout(async () => {
             try {
@@ -261,7 +316,7 @@ async function executeScene(scene, startStep, res) {
                 stopAllParts().catch(error => {
                     logger.warn(`Non-critical error stopping parts during cleanup: ${error.message}`);
                 });
-                
+
                 // Also try to stop all sounds without waiting for the response
                 try {
                     soundController.stopAllSounds().catch(error => {
@@ -270,7 +325,7 @@ async function executeScene(scene, startStep, res) {
                 } catch (error) {
                     logger.warn(`Error stopping sounds during cleanup: ${error.message}`);
                 }
-                
+
                 logger.info(`Scene ${scene.id} cleanup initiated`);
             } catch (error) {
                 logger.warn(`Non-critical error during scene cleanup: ${error.message}`);
@@ -312,20 +367,20 @@ async function executeSound(step) {
             logger.warn(`Sound not found for ID: ${step.sound_id}, skipping step`);
             return true;
         }
-        
+
         // Get the absolute path to the sound file
         const absolutePath = path.resolve(__dirname, '..', 'public', 'sounds', sound.filename);
-        
+
         // Verify file exists
         if (!fs.existsSync(absolutePath)) {
             logger.error(`Sound file not found at path: ${absolutePath}`);
             return true;
         }
-        
+
         try {
             // If it's a scene playback, apply ultra-fast path for sounds
             const isScenePlayback = true; // We're always in a scene context here
-            
+
             // Fast path: Start the sound playing
             await soundController.playSound(sound.id, absolutePath);
             logger.info(`Sound started playing: ${sound.name}`);
@@ -336,20 +391,20 @@ async function executeSound(step) {
                 logger.info(`Sound ${sound.name} (ID: ${sound.id}) playing concurrently in background`);
                 return true;
             }
-            
+
             // For non-concurrent sounds, use ultra-optimized waiting
             // Get the duration from playStatus
             const duration = soundController.getStoredSoundDuration(sound.id) || 5; // Default 5s if unknown
-            
+
             // For scene playback, use a much faster approach based purely on duration
             if (isScenePlayback) {
                 // For ultra-optimized scene playback, significantly reduce wait times
                 // For very short sounds (5 seconds or less), wait minimal time with slightly longer for longer sounds
                 const isShortSound = duration <= 5;
-                const waitTime = isShortSound ? 
+                const waitTime = isShortSound ?
                     Math.max(duration * 500, 500) : // For short sounds, wait just 50% of duration, minimum 0.5s
                     Math.min(Math.max(duration * 700, 1000), 4000); // For longer sounds, 70% with max 4s
-                
+
                 logger.debug(`Using hyper-optimized path for sound ${sound.id} (${duration}s) - waiting ${waitTime}ms`);
                 await new Promise(resolve => setTimeout(resolve, waitTime));
             } else if (duration && duration < 3) {
@@ -605,7 +660,7 @@ async function executeServo(step) {
         if (!step.part_id) {
             throw new Error('Part ID is missing in the servo step');
         }
-        
+
         let part;
         try {
             part = await partService.getPartById(step.part_id);
@@ -648,7 +703,7 @@ async function executeServo(step) {
         ];
 
         logger.debug(`Executing servo_control.py with args: ${args.join(', ')}`);
-        
+
         const result = await new Promise((resolve, reject) => {
             const process = spawn('python3', [scriptPath, ...args]);
             activeProcesses.add(process);
@@ -670,11 +725,11 @@ async function executeServo(step) {
                 const lines = data.toString().split('\n');
                 lines.forEach(line => {
                     if (!line.trim()) return;
-                    
+
                     try {
                         const jsonData = JSON.parse(line);
                         logger.debug(`Servo JSON output: ${JSON.stringify(jsonData)}`);
-                        
+
                         if (jsonData.status === 'info') {
                             if (jsonData.message === 'Movement started') {
                                 movementStarted = true;
@@ -731,7 +786,7 @@ async function executeServo(step) {
         if (!result.success) {
             throw new Error(`Servo control failed: ${result.error || 'Unknown error'}`);
         }
-        
+
         logger.info(`Servo step executed successfully: ${step.name}`);
         return true;
     } catch (error) {

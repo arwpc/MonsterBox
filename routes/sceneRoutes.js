@@ -41,6 +41,29 @@ router.get('/step-template', (req, res, next) => {
     sceneController.getStepTemplate(req, res, next, req.characterId);
 });
 
+// Scene templates routes (must come before /:id route)
+router.get('/templates', (req, res, next) => {
+    logger.info('Getting scene templates');
+    sceneController.getSceneTemplates(req, res, next);
+});
+
+// Scene import/export routes (must come before /:id route)
+router.get('/export', (req, res, next) => {
+    logger.info(`Exporting scenes for character ${req.characterId}`);
+    sceneController.exportScenes(req, res, next);
+});
+
+// Analytics routes (must come before /:id route)
+router.get('/analytics', (req, res, next) => {
+    logger.info('Getting scene analytics');
+    sceneController.getSceneAnalytics(req, res, next);
+});
+
+router.get('/popular', (req, res, next) => {
+    logger.info('Getting popular scenes');
+    sceneController.getPopularScenes(req, res, next);
+});
+
 router.get('/:id', (req, res, next) => {
     logger.info(`Getting scene player for scene ${req.params.id}, character ${req.characterId}`);
     scenePlayerController.getScenePlayer(req, res, next);
@@ -54,6 +77,22 @@ router.get('/:id/edit', (req, res, next) => {
 router.post('/', (req, res, next) => {
     logger.info(`Creating new scene for character ${req.characterId}`);
     sceneController.createScene(req, res, next);
+});
+
+// POST routes that must come before /:id route
+router.post('/stop-all', (req, res, next) => {
+    logger.info(`Stopping all scenes`);
+    scenePlayerController.stopAllScenes(req, res, next);
+});
+
+router.post('/import', (req, res, next) => {
+    logger.info(`Importing scenes for character ${req.characterId}`);
+    sceneController.importScenes(req, res, next);
+});
+
+router.post('/from-template', (req, res, next) => {
+    logger.info(`Creating scene from template for character ${req.characterId}`);
+    sceneController.createSceneFromTemplate(req, res, next);
 });
 
 router.post('/:id', (req, res, next) => {
@@ -81,9 +120,15 @@ router.post('/:id/stop', (req, res, next) => {
     scenePlayerController.stopScene(req, res, next);
 });
 
-router.post('/stop-all', (req, res, next) => {
-    logger.info(`Stopping all scenes`);
-    scenePlayerController.stopAllScenes(req, res, next);
+// Scene duplication route
+router.post('/:id/duplicate', (req, res, next) => {
+    logger.info(`Duplicating scene ${req.params.id}`);
+    sceneController.duplicateScene(req, res, next);
+});
+
+router.get('/:id/metrics', (req, res, next) => {
+    logger.info(`Getting performance metrics for scene ${req.params.id}`);
+    sceneController.getScenePerformanceMetrics(req, res, next);
 });
 
 module.exports = router;
