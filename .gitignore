@@ -37,3 +37,5 @@ __pycache__/
 # Task files
 tasks.json
 tasks/
+# MkDocs generated site
+site/

@@ -281,9 +281,34 @@ router.get('/sensor/test', (req, res) => {
     });
 
     process.stderr.on('data', (data) => {
-        const error = data.toString().trim();
-        logger.error(`Sensor script error: ${error}`);
-        res.write(`data: ${JSON.stringify({ error: error })}\n\n`);
+        const output = data.toString().trim();
+        // Parse Python log levels instead of treating all stderr as errors
+        const pythonModuleLogPattern = /^(\w+):[\w._]+:(.+)$/;
+        const match = output.match(pythonModuleLogPattern);
+
+        if (match) {
+            const [, level, message] = match;
+            switch (level.toUpperCase()) {
+                case 'INFO':
+                    logger.info(`Sensor script: ${message}`);
+                    break;
+                case 'WARNING':
+                case 'WARN':
+                    logger.warn(`Sensor script: ${message}`);
+                    break;
+                case 'ERROR':
+                    logger.error(`Sensor script error: ${message}`);
+                    res.write(`data: ${JSON.stringify({ error: message })}\n\n`);
+                    break;
+                default:
+                    logger.info(`Sensor script: ${output}`);
+            }
+        } else if (output.toLowerCase().includes('error') || output.toLowerCase().includes('exception')) {
+            logger.error(`Sensor script error: ${output}`);
+            res.write(`data: ${JSON.stringify({ error: output })}\n\n`);
+        } else {
+            logger.info(`Sensor script: ${output}`);
+        }
     });
 
     process.on('close', (code) => {
@@ -321,7 +346,33 @@ const executePythonScript = (req, res) => {
 
         process.stderr.on('data', (data) => {
             stderrData += data.toString();
-            logger.error(`Python script error: ${data}`);
+            const output = data.toString().trim();
+
+            // Parse Python log levels instead of treating all stderr as errors
+            const pythonModuleLogPattern = /^(\w+):[\w._]+:(.+)$/;
+            const match = output.match(pythonModuleLogPattern);
+
+            if (match) {
+                const [, level, message] = match;
+                switch (level.toUpperCase()) {
+                    case 'INFO':
+                        logger.info(`Python script: ${message}`);
+                        break;
+                    case 'WARNING':
+                    case 'WARN':
+                        logger.warn(`Python script: ${message}`);
+                        break;
+                    case 'ERROR':
+                        logger.error(`Python script error: ${message}`);
+                        break;
+                    default:
+                        logger.info(`Python script: ${output}`);
+                }
+            } else if (output.toLowerCase().includes('error') || output.toLowerCase().includes('exception')) {
+                logger.error(`Python script error: ${output}`);
+            } else {
+                logger.info(`Python script: ${output}`);
+            }
         });
 
         process.on('close', (code) => {

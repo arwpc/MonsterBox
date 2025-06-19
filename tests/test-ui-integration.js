@@ -3,6 +3,7 @@
 /**
  * MonsterBox UI Integration Test Suite
  * Tests Phase 2 (Backend Integration) and Phase 3 (Testing & Validation)
+ * Moved from root directory during cleanup
  */
 
 const axios = require('axios');

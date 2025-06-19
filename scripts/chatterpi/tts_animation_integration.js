@@ -16,14 +16,14 @@ class TTSAnimationIntegration {
             // TopMediai API configuration
             topmediaiApiKey: process.env.TOPMEDIAI_API_KEY,
             topmediaiBaseUrl: 'https://api.topmediai.com/v1',
-            
+
             // ChatterPi Animation System configuration
             animationBridgeUrl: 'ws://localhost:8767',
             fallbackToSystemTTS: true,
-            
-            // Audio streaming configuration
-            streamingEnabled: true,
-            realtimeAnimation: true,
+
+            // Audio streaming configuration - disabled to prevent connection errors
+            streamingEnabled: false,
+            realtimeAnimation: false,
             
             // Voice configuration
             defaultVoiceId: 'en-US-AriaNeural',

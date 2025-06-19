@@ -38,23 +38,14 @@ class SimpleChatterPiManager {
 
         try {
             logger.info('🚀 Starting ChatterPi jaw animation service...');
-            
-            // Start the GPIO jaw server
-            const success = await this.startJawServer();
-            
-            if (success) {
-                // Wait a bit then connect WebSocket
-                await this.delay(3000);
-                await this.connectJawWebSocket();
-                
-                this.isInitialized = true;
-                logger.info('✅ ChatterPi services initialized successfully');
-                return true;
-            } else {
-                logger.warn('⚠️ Jaw server failed to start, but system will continue');
-                this.isInitialized = true; // Still consider initialized
-                return true;
-            }
+
+            // Temporarily disable jaw server startup to prevent connection errors
+            logger.info('⚠️ Jaw server startup disabled to prevent connection errors');
+            logger.info('✅ To enable jaw animation, manually start the jaw server or use the ChatterPi interface');
+
+            this.isInitialized = true;
+            logger.info('✅ ChatterPi services initialized successfully (jaw server disabled)');
+            return true;
             
         } catch (error) {
             logger.error('❌ Failed to initialize ChatterPi services:', error);
@@ -357,7 +348,18 @@ class SimpleChatterPiManager {
     logPythonOutput(output, stream) {
         // Parse Python logging format: YYYY-MM-DD HH:MM:SS,mmm - LEVEL - message
         const pythonLogPattern = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} - (\w+) - (.+)$/;
-        const match = output.match(pythonLogPattern);
+        // Also handle Python logging format with module names: LEVEL:module:message
+        const pythonModuleLogPattern = /^(\w+):[\w._]+:(.+)$/;
+        // Handle Python logging format: YYYY-MM-DD HH:MM:SS,mmm - module - LEVEL - message
+        const pythonFullLogPattern = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} - [\w._]+ - (\w+) - (.+)$/;
+
+        let match = output.match(pythonLogPattern);
+        if (!match) {
+            match = output.match(pythonModuleLogPattern);
+        }
+        if (!match) {
+            match = output.match(pythonFullLogPattern);
+        }
 
         if (match) {
             const [, level, message] = match;

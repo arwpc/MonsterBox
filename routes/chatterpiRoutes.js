@@ -28,8 +28,8 @@ try {
     const TTSAnimationIntegration = require('../scripts/chatterpi/tts_animation_integration');
     ttsAnimation = new TTSAnimationIntegration({
         topmediaiApiKey: process.env.TOPMEDIAI_API_KEY,
-        streamingEnabled: true,
-        realtimeAnimation: true
+        streamingEnabled: false,  // Disabled to prevent connection errors
+        realtimeAnimation: false
     });
 
     // Initialize TTS integration

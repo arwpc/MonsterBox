@@ -404,7 +404,18 @@ class ChatterPiServiceManager {
     logServiceOutput(serviceName, output, stream) {
         // Parse Python logging format: YYYY-MM-DD HH:MM:SS,mmm - LEVEL - message
         const pythonLogPattern = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} - (\w+) - (.+)$/;
-        const match = output.match(pythonLogPattern);
+        // Also handle Python logging format with module names: LEVEL:module:message
+        const pythonModuleLogPattern = /^(\w+):[\w._]+:(.+)$/;
+        // Handle Python logging format: YYYY-MM-DD HH:MM:SS,mmm - module - LEVEL - message
+        const pythonFullLogPattern = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} - [\w._]+ - (\w+) - (.+)$/;
+
+        let match = output.match(pythonLogPattern);
+        if (!match) {
+            match = output.match(pythonModuleLogPattern);
+        }
+        if (!match) {
+            match = output.match(pythonFullLogPattern);
+        }
 
         if (match) {
             const [, level, message] = match;

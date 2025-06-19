@@ -113,7 +113,11 @@ class HardwareServiceManager {
                 this.hardwareProcess.stderr.on('data', (data) => {
                     const output = data.toString().trim();
                     if (output) {
-                        this.logServiceOutput('Hardware Services', output, 'stderr');
+                        // Split multi-line output and process each line separately
+                        const lines = output.split('\n').filter(line => line.trim());
+                        lines.forEach(line => {
+                            this.logServiceOutput('Hardware Services', line.trim(), 'stderr');
+                        });
                     }
                 });
 
@@ -385,10 +389,15 @@ class HardwareServiceManager {
         const pythonLogPattern = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} - (\w+) - (.+)$/;
         // Also handle Python logging format with module names: LEVEL:module:message
         const pythonModuleLogPattern = /^(\w+):[\w._]+:(.+)$/;
+        // Handle Python logging format: YYYY-MM-DD HH:MM:SS,mmm - module - LEVEL - message
+        const pythonFullLogPattern = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} - [\w._]+ - (\w+) - (.+)$/;
 
         let match = output.match(pythonLogPattern);
         if (!match) {
             match = output.match(pythonModuleLogPattern);
+        }
+        if (!match) {
+            match = output.match(pythonFullLogPattern);
         }
 
         if (match) {

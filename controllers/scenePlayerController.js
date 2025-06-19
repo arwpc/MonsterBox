@@ -524,7 +524,33 @@ async function executeMotor(step) {
             });
             process.stderr.on('data', (data) => {
                 errorOutput += data.toString();
-                logger.error(`Motor control error: ${data}`);
+                const output = data.toString().trim();
+
+                // Parse Python log levels instead of treating all stderr as errors
+                const pythonModuleLogPattern = /^(\w+):[\w._]+:(.+)$/;
+                const match = output.match(pythonModuleLogPattern);
+
+                if (match) {
+                    const [, level, message] = match;
+                    switch (level.toUpperCase()) {
+                        case 'INFO':
+                            logger.info(`Motor control: ${message}`);
+                            break;
+                        case 'WARNING':
+                        case 'WARN':
+                            logger.warn(`Motor control: ${message}`);
+                            break;
+                        case 'ERROR':
+                            logger.error(`Motor control error: ${message}`);
+                            break;
+                        default:
+                            logger.info(`Motor control: ${output}`);
+                    }
+                } else if (output.toLowerCase().includes('error') || output.toLowerCase().includes('exception')) {
+                    logger.error(`Motor control error: ${output}`);
+                } else {
+                    logger.info(`Motor control: ${output}`);
+                }
             });
             process.on('close', (code) => {
                 activeProcesses.delete(process);
