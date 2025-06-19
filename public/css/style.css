@@ -1,11 +1,11 @@
-/* Base Styles */
+/* Base Styles - TEST */
 body {
-    font-family: 'Courier New', Courier, monospace;
+    font-family: 'Courier New', Courier, monospace !important;
     line-height: 1.6;
     margin: 0;
     padding: 20px;
-    background-color: #000000;
-    color: #00ff00;
+    background-color: #000000 !important;
+    color: #00ff00 !important;
     box-sizing: border-box;
 }
 

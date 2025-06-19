@@ -102,21 +102,30 @@ try {
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 
-// Configure Helmet for security headers
+// Configure Helmet for security headers (disable CSP to set manually)
 app.use(helmet({
-    contentSecurityPolicy: {
-        directives: {
-            defaultSrc: ["'self'"],
-            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-            fontSrc: ["'self'", "https://fonts.gstatic.com"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Required for EJS and WebSocket
-            imgSrc: ["'self'", "data:", "blob:"],
-            connectSrc: ["'self'", "ws:", "wss:"],
-            mediaSrc: ["'self'", "blob:"]
-        }
-    },
+    contentSecurityPolicy: false, // Disable to set manually
     crossOriginEmbedderPolicy: false // Required for WebRTC
 }));
+
+// Set Content Security Policy manually to avoid formatting issues
+app.use((req, res, next) => {
+    res.setHeader('Content-Security-Policy',
+        "default-src 'self'; " +
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+        "font-src 'self' https://fonts.gstatic.com; " +
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+        "img-src 'self' data: blob:; " +
+        "connect-src 'self' ws: wss:; " +
+        "media-src 'self' blob:; " +
+        "base-uri 'self'; " +
+        "form-action 'self'; " +
+        "frame-ancestors 'self'; " +
+        "object-src 'none'; " +
+        "script-src-attr 'none'"
+    );
+    next();
+});
 
 // Configure rate limiting
 const generalLimiter = rateLimit({
