@@ -6,6 +6,7 @@ const logger = require('../scripts/logger');
 const partService = require('./partService');
 const characterService = require('./characterService');
 const sshAuthService = require('./auth/sshAuthService');
+const sshCredentials = require('../scripts/ssh-credentials');
 
 class WebcamService {
     /**
@@ -51,6 +52,28 @@ class WebcamService {
         } catch (error) {
             logger.error('Error getting all webcams:', error);
             return [];
+        }
+    }
+
+    /**
+     * Build SSH command for a character using their stored password or fallback to SSH credentials manager
+     */
+    buildSSHCommand(character, command) {
+        const rpiConfig = character.animatronic.rpi_config;
+
+        // If character has a password stored directly, use it
+        if (rpiConfig.password && rpiConfig.password.trim() !== '') {
+            // Escape special characters for bash
+            const escapedPassword = rpiConfig.password.replace(/'/g, "'\"'\"'");
+            const escapedCommand = command.replace(/'/g, "'\"'\"'");
+
+            // Use sshpass for SSH with password
+            const sshCommand = `ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o PasswordAuthentication=yes -o PubkeyAuthentication=no ${rpiConfig.user}@${rpiConfig.host} '${escapedCommand}'`;
+            return `sshpass -p '${escapedPassword}' ${sshCommand}`;
+        } else {
+            // Fall back to SSH credentials manager (environment variables)
+            const characterKey = character.char_name.toLowerCase().replace(/\s+/g, '');
+            return sshCredentials.buildSSHCommand(characterKey, rpiConfig.host, command);
         }
     }
 
@@ -455,32 +478,15 @@ class WebcamService {
             const devicePath = `/dev/video${deviceId}`;
             const testCommand = `test -c ${devicePath} && echo "exists" || echo "missing"`;
 
+            // Use the same SSH authentication method as animatronic service
+            const sshCommand = this.buildSSHCommand(character, testCommand);
+
             return new Promise((resolve) => {
-                const process = spawn('ssh', [
-                    '-o', 'ConnectTimeout=10',
-                    '-o', 'StrictHostKeyChecking=no',
-                    '-o', 'PasswordAuthentication=no',
-                    '-o', 'PubkeyAuthentication=yes',
-                    '-o', 'UserKnownHostsFile=/dev/null',
-                    '-o', 'LogLevel=ERROR',
-                    `${user}@${host}`,
-                    testCommand
-                ]);
+                const { exec } = require('child_process');
+                exec(sshCommand, { timeout: 10000 }, (error, stdout, stderr) => {
 
-                let output = '';
-                let error = '';
-
-                process.stdout.on('data', (data) => {
-                    output += data.toString();
-                });
-
-                process.stderr.on('data', (data) => {
-                    error += data.toString();
-                });
-
-                process.on('close', (code) => {
-                    const result = output.trim();
-                    if (code === 0 && result === 'exists') {
+                    const result = stdout ? stdout.trim() : '';
+                    if (!error && result === 'exists') {
                         resolve({
                             valid: true,
                             message: `Device ${devicePath} is accessible on ${host}`,
@@ -496,16 +502,6 @@ class WebcamService {
                         });
                     }
                 });
-
-                setTimeout(() => {
-                    process.kill();
-                    resolve({
-                        valid: false,
-                        message: `Device validation timed out for ${host}`,
-                        devicePath: devicePath,
-                        host: host
-                    });
-                }, 10000);
             });
 
         } catch (error) {
@@ -553,35 +549,17 @@ class WebcamService {
             // Test basic camera functionality
             const rpiConfig = character.animatronic.rpi_config;
             const host = rpiConfig.host;
-            const user = rpiConfig.user || 'remote';
             const testScript = `python3 -c "import cv2; cap = cv2.VideoCapture(${webcam.deviceId}, cv2.CAP_V4L2); ret, frame = cap.read(); cap.release(); print('OK' if ret and frame is not None else 'FAIL')"`;
 
+            // Use the same SSH authentication method as animatronic service
+            const sshCommand = this.buildSSHCommand(character, testScript);
+
             return new Promise((resolve) => {
-                const process = spawn('ssh', [
-                    '-o', 'ConnectTimeout=10',
-                    '-o', 'StrictHostKeyChecking=no',
-                    '-o', 'PasswordAuthentication=no',
-                    '-o', 'PubkeyAuthentication=yes',
-                    '-o', 'UserKnownHostsFile=/dev/null',
-                    '-o', 'LogLevel=ERROR',
-                    `${user}@${host}`,
-                    testScript
-                ]);
+                const { exec } = require('child_process');
+                exec(sshCommand, { timeout: 15000 }, (error, stdout, stderr) => {
 
-                let output = '';
-                let error = '';
-
-                process.stdout.on('data', (data) => {
-                    output += data.toString();
-                });
-
-                process.stderr.on('data', (data) => {
-                    error += data.toString();
-                });
-
-                process.on('close', (code) => {
-                    const result = output.trim();
-                    if (code === 0 && result === 'OK') {
+                    const result = stdout ? stdout.trim() : '';
+                    if (!error && result === 'OK') {
                         resolve({
                             healthy: true,
                             message: `Webcam ${webcam.name} is functioning properly on ${host}`,
@@ -592,24 +570,13 @@ class WebcamService {
                     } else {
                         resolve({
                             healthy: false,
-                            message: `Webcam ${webcam.name} failed health check on ${host}: ${error || 'Camera test failed'}`,
+                            message: `Webcam ${webcam.name} failed health check on ${host}: ${stderr || error || 'Camera test failed'}`,
                             webcam: webcam,
                             host: host,
                             lastChecked: new Date().toISOString()
                         });
                     }
                 });
-
-                setTimeout(() => {
-                    process.kill();
-                    resolve({
-                        healthy: false,
-                        message: `Health check timed out for webcam ${webcam.name} on ${host}`,
-                        webcam: webcam,
-                        host: host,
-                        lastChecked: new Date().toISOString()
-                    });
-                }, 15000);
             });
 
         } catch (error) {

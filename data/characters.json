@@ -15,7 +15,7 @@
       "rpi_config": {
         "host": "192.168.8.120",
         "user": "remote",
-        "password_env": "ORLOK_SSH_PASSWORD",
+        "password": "",
         "ssh_key_path": "~/.ssh/id_rsa",
         "collection_interval": 300,
         "max_lines": 1000
@@ -50,6 +50,10 @@
         "Hand of Azura",
         "Eye of Orlok"
       ]
+    },
+    "chatterpi_config": {
+      "ai_characters": [],
+      "default_character": null
     }
   },
   {
@@ -68,7 +72,7 @@
       "rpi_config": {
         "host": "192.168.8.140",
         "user": "remote",
-        "password_env": "COFFIN_SSH_PASSWORD",
+        "password": "",
         "ssh_key_path": "~/.ssh/id_rsa",
         "collection_interval": 300,
         "max_lines": 1000
@@ -99,6 +103,10 @@
         "motion_center": null
       },
       "animatronic_parts": []
+    },
+    "chatterpi_config": {
+      "ai_characters": [],
+      "default_character": null
     }
   },
   {
@@ -163,7 +171,7 @@
       "rpi_config": {
         "host": "192.168.8.130",
         "user": "remote",
-        "password_env": "SKULLTALKER_SSH_PASSWORD",
+        "password": "test123",
         "ssh_key_path": "~/.ssh/id_rsa",
         "collection_interval": 300,
         "max_lines": 1000
@@ -254,7 +262,8 @@
       }
     },
     "ai_instances": [
-      "orlok"
+      "orlok",
+      "test-ai"
     ]
   }
 ]

@@ -114,7 +114,7 @@ app.use((req, res, next) => {
         "default-src 'self'; " +
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
         "font-src 'self' https://fonts.gstatic.com; " +
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://code.jquery.com; " +
         "img-src 'self' data: blob:; " +
         "connect-src 'self' ws: wss:; " +
         "media-src 'self' blob:; " +
@@ -122,7 +122,7 @@ app.use((req, res, next) => {
         "form-action 'self'; " +
         "frame-ancestors 'self'; " +
         "object-src 'none'; " +
-        "script-src-attr 'none'"
+        "script-src-attr 'unsafe-inline'"
     );
     next();
 });

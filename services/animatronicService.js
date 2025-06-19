@@ -50,12 +50,34 @@ class AnimatronicService {
      */
     async getAnimatronicCharacters() {
         const characters = await this.loadCharacters();
-        return characters.filter(char => 
-            char.animatronic && 
-            char.animatronic.enabled && 
+        return characters.filter(char =>
+            char.animatronic &&
+            char.animatronic.enabled &&
             char.animatronic.rpi_config &&
             char.animatronic.rpi_config.host
         );
+    }
+
+    /**
+     * Build SSH command for a character using their stored password or fallback to SSH credentials manager
+     */
+    buildSSHCommand(character, command) {
+        const rpiConfig = character.animatronic.rpi_config;
+
+        // If character has a password stored directly, use it
+        if (rpiConfig.password && rpiConfig.password.trim() !== '') {
+            // Escape special characters for bash
+            const escapedPassword = rpiConfig.password.replace(/'/g, "'\"'\"'");
+            const escapedCommand = command.replace(/'/g, "'\"'\"'");
+
+            // Use sshpass for SSH with password
+            const sshCommand = `ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o PasswordAuthentication=yes -o PubkeyAuthentication=no ${rpiConfig.user}@${rpiConfig.host} '${escapedCommand}'`;
+            return `sshpass -p '${escapedPassword}' ${sshCommand}`;
+        } else {
+            // Fall back to SSH credentials manager (environment variables)
+            const characterKey = character.char_name.toLowerCase().replace(/\s+/g, '');
+            return sshCredentials.buildSSHCommand(characterKey, rpiConfig.host, command);
+        }
     }
 
     /**
@@ -112,8 +134,7 @@ class AnimatronicService {
         const sshStart = Date.now();
 
         try {
-            const characterKey = character.char_name.toLowerCase().replace(/\s+/g, '');
-            const sshCommand = sshCredentials.buildSSHCommand(characterKey, rpiConfig.host, "echo 'SSH test successful'");
+            const sshCommand = this.buildSSHCommand(character, "echo 'SSH test successful'");
             const { stdout } = await execAsync(sshCommand);
             
             if (stdout.includes('SSH test successful')) {
@@ -139,9 +160,8 @@ class AnimatronicService {
             const logStart = Date.now();
 
             try {
-                const characterKey = character.char_name.toLowerCase().replace(/\s+/g, '');
-                const logCommand = sshCredentials.buildSSHCommand(characterKey, rpiConfig.host, "sudo journalctl -n 5 --no-pager");
-                const { stdout } = await execAsync(logCommand);
+                const sshCommand = this.buildSSHCommand(character, "sudo journalctl -n 5 --no-pager");
+                const { stdout } = await execAsync(sshCommand);
                 
                 if (stdout && stdout.trim().length > 0) {
                     result.tests.logs.passed = true;
@@ -183,7 +203,6 @@ class AnimatronicService {
         }
 
         const logs = {};
-        const characterKey = character.char_name.toLowerCase().replace(/\s+/g, '');
 
         for (const logType of logTypes) {
             try {
@@ -209,7 +228,7 @@ class AnimatronicService {
                     command += ` --since="${since}"`;
                 }
 
-                const sshCommand = sshCredentials.buildSSHCommand(characterKey, rpiConfig.host, command);
+                const sshCommand = this.buildSSHCommand(character, command);
                 const { stdout } = await execAsync(sshCommand);
                 
                 logs[logType] = {
@@ -282,7 +301,6 @@ class AnimatronicService {
             throw new Error('RPI configuration not found for character');
         }
 
-        const characterKey = character.char_name.toLowerCase().replace(/\s+/g, '');
         const commands = {
             uptime: 'uptime',
             memory: 'free -h',
@@ -295,7 +313,7 @@ class AnimatronicService {
 
         for (const [key, command] of Object.entries(commands)) {
             try {
-                const sshCommand = sshCredentials.buildSSHCommand(characterKey, rpiConfig.host, command);
+                const sshCommand = this.buildSSHCommand(character, command);
                 const { stdout } = await execAsync(sshCommand);
                 systemInfo[key] = stdout.trim();
             } catch (error) {

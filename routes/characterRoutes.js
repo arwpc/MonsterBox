@@ -343,17 +343,7 @@ router.post('/:id/delete', async (req, res) => {
     }
 });
 
-router.get('/:id/parts', async (req, res) => {
-    try {
-        const characterId = parseInt(req.params.id);
-        const allParts = await partService.getAllParts();
-        const characterParts = allParts.filter(part => part.characterId === characterId);
-        res.json(characterParts);
-    } catch (error) {
-        logger.error('Error in GET /characters/:id/parts route:', error);
-        res.status(500).json({ error: 'An error occurred while fetching character parts' });
-    }
-});
+
 
 // Animatronic Management Routes
 
@@ -763,6 +753,25 @@ router.post('/:id/ai/assign', async (req, res) => {
 
         // Add AI instance to character
         character.ai_instances.push(aiInstanceId);
+
+        // Also update chatterpi_config for compatibility
+        if (!character.chatterpi_config) {
+            character.chatterpi_config = {};
+        }
+        if (!character.chatterpi_config.ai_characters) {
+            character.chatterpi_config.ai_characters = [];
+        }
+
+        // Add to chatterpi_config if not already there
+        if (!character.chatterpi_config.ai_characters.includes(aiInstanceId)) {
+            character.chatterpi_config.ai_characters.push(aiInstanceId);
+        }
+
+        // Set as default if it's the first AI assigned
+        if (!character.chatterpi_config.default_character) {
+            character.chatterpi_config.default_character = aiInstanceId;
+        }
+
         await characterService.updateCharacter(characterId, character);
 
         logger.info(`✅ Assigned AI instance ${aiInstanceId} to character ${characterId}`);
@@ -793,12 +802,54 @@ router.post('/:id/ai/unassign', async (req, res) => {
 
         // Remove AI instance from character
         character.ai_instances = character.ai_instances.filter(id => id !== aiInstanceId);
+
+        // Also update chatterpi_config for compatibility
+        if (character.chatterpi_config && character.chatterpi_config.ai_characters) {
+            character.chatterpi_config.ai_characters = character.chatterpi_config.ai_characters.filter(id => id !== aiInstanceId);
+
+            // If this was the default character, clear the default
+            if (character.chatterpi_config.default_character === aiInstanceId) {
+                character.chatterpi_config.default_character = character.chatterpi_config.ai_characters.length > 0
+                    ? character.chatterpi_config.ai_characters[0]
+                    : null;
+            }
+        }
+
         await characterService.updateCharacter(characterId, character);
 
         logger.info(`✅ Unassigned AI instance ${aiInstanceId} from character ${characterId}`);
         res.json({ success: true, message: 'AI instance unassigned successfully' });
     } catch (error) {
         logger.error('Error unassigning AI instance from character:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Remove all AI assignments from character
+router.post('/:id/ai/remove-all', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.id);
+
+        const character = await characterService.getCharacterById(characterId);
+        if (!character) {
+            return res.status(404).json({ success: false, error: 'Character not found' });
+        }
+
+        // Clear all AI assignments
+        if (character.chatterpi_config) {
+            character.chatterpi_config.ai_characters = [];
+            character.chatterpi_config.default_character = null;
+        }
+        if (character.ai_instances) {
+            character.ai_instances = [];
+        }
+
+        await characterService.updateCharacter(characterId, character);
+
+        logger.info(`✅ Removed all AI assignments from character ${characterId}`);
+        res.json({ success: true, message: 'All AI assignments removed successfully' });
+    } catch (error) {
+        logger.error('Error removing all AI assignments from character:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
