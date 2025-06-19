@@ -71,7 +71,11 @@
                                             <button onclick="testConnection(<%= character.id %>)" class="button small-btn" title="Test Connection">🧪</button>
                                             <button onclick="collectLogs(<%= character.id %>)" class="button small-btn" title="Collect Logs">📋</button>
                                             <button onclick="showSystemInfo(<%= character.id %>)" class="button small-btn" title="System Info">📊</button>
-                                            <button onclick="rebootSystem(<%= character.id %>)" class="button small-btn" title="Reboot System">🔄</button>
+                                            <% if (character.animatronic.rpi_config && character.animatronic.rpi_config.host !== '192.168.8.130') { %>
+                                                <button onclick="rebootSystem(<%= character.id %>)" class="button small-btn" title="Reboot System">🔄</button>
+                                            <% } else { %>
+                                                <button class="button small-btn disabled" title="Cannot reboot local system" disabled>🔄</button>
+                                            <% } %>
                                         </div>
                                     </div>
                                 <% } else { %>
@@ -218,6 +222,13 @@
             min-width: 25px;
         }
 
+        .small-btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background-color: #333;
+            color: #666;
+        }
+
         .animatronic-status {
             font-size: 12px;
         }
@@ -360,6 +371,19 @@
                         html += '<p><strong>Status:</strong> ' + (result.tests.ssh.passed ? '✅ PASSED' : '❌ FAILED') + '</p>';
                         html += '<p><strong>Message:</strong> ' + result.tests.ssh.message + '</p>';
                         html += '<p><strong>Duration:</strong> ' + result.tests.ssh.duration + 'ms</p>';
+
+                        // Add troubleshooting info for SSH failures
+                        if (!result.tests.ssh.passed) {
+                            html += '<div style="margin-top: 10px; padding: 10px; background-color: rgba(255, 255, 0, 0.1); border: 1px solid #ffff00; border-radius: 3px;">';
+                            html += '<h5 style="color: #ffff00; margin: 0 0 5px 0;">🔧 Troubleshooting SSH Issues:</h5>';
+                            html += '<ul style="margin: 5px 0; padding-left: 20px; font-size: 12px;">';
+                            html += '<li>Verify SSH service is running on the remote system</li>';
+                            html += '<li>Check if SSH keys are properly configured</li>';
+                            html += '<li>Ensure password authentication is enabled if using passwords</li>';
+                            html += '<li>Verify firewall settings allow SSH connections</li>';
+                            html += '</ul>';
+                            html += '</div>';
+                        }
                         html += '</div>';
 
                         // Log test
