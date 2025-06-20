@@ -497,6 +497,174 @@ class SystemConfigService {
         logger.info(`Updated system configuration for character ${characterId}`);
         return characters[characterIndex].systemConfig;
     }
+
+    /**
+     * Get comprehensive system information for local system
+     */
+    async getLocalSystemInfo() {
+        const os = require('os');
+        const { exec } = require('child_process');
+        const util = require('util');
+        const execAsync = util.promisify(exec);
+
+        try {
+            const systemInfo = {
+                // Basic OS information
+                platform: os.platform(),
+                architecture: os.arch(),
+                hostname: os.hostname(),
+                osType: os.type(),
+                osRelease: os.release(),
+
+                // Hardware information
+                cpuCount: os.cpus().length,
+                cpuModel: os.cpus()[0]?.model || 'Unknown',
+                totalMemory: (os.totalmem() / (1024 * 1024 * 1024)).toFixed(2) + ' GB',
+                freeMemory: (os.freemem() / (1024 * 1024 * 1024)).toFixed(2) + ' GB',
+                usedMemory: ((os.totalmem() - os.freemem()) / (1024 * 1024 * 1024)).toFixed(2) + ' GB',
+
+                // System uptime
+                uptime: this.formatUptime(os.uptime()),
+
+                // Load average (Unix-like systems only)
+                loadAverage: os.platform() !== 'win32' ? os.loadavg() : null,
+
+                // Network interfaces
+                networkInterfaces: this.formatNetworkInterfaces(os.networkInterfaces()),
+
+                // MonsterBox application info
+                monsterBoxVersion: require('../package.json').version,
+                nodeVersion: process.version,
+                processUptime: this.formatUptime(process.uptime()),
+                processMemory: this.formatProcessMemory(process.memoryUsage()),
+
+                timestamp: new Date().toISOString()
+            };
+
+            // Try to get additional system information
+            try {
+                // Disk usage
+                if (os.platform() !== 'win32') {
+                    const { stdout: diskInfo } = await execAsync('df -h / | tail -1');
+                    systemInfo.diskUsage = this.parseDiskUsage(diskInfo);
+                }
+
+                // Temperature (Raspberry Pi specific)
+                try {
+                    const { stdout: tempInfo } = await execAsync('vcgencmd measure_temp 2>/dev/null');
+                    const tempMatch = tempInfo.match(/temp=(\d+\.\d+)'C/);
+                    if (tempMatch) {
+                        systemInfo.temperature = `${tempMatch[1]}°C`;
+                    }
+                } catch (e) {
+                    systemInfo.temperature = 'N/A';
+                }
+
+                // System services status
+                systemInfo.services = await this.getMonsterBoxServices();
+
+            } catch (error) {
+                logger.warn('Could not get extended system information:', error.message);
+            }
+
+            return systemInfo;
+        } catch (error) {
+            logger.error('Error getting local system info:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Format uptime in human readable format
+     */
+    formatUptime(seconds) {
+        const days = Math.floor(seconds / 86400);
+        const hours = Math.floor((seconds % 86400) / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+
+        if (days > 0) {
+            return `${days}d ${hours}h ${minutes}m`;
+        } else if (hours > 0) {
+            return `${hours}h ${minutes}m`;
+        } else {
+            return `${minutes}m`;
+        }
+    }
+
+    /**
+     * Format network interfaces
+     */
+    formatNetworkInterfaces(interfaces) {
+        const formatted = [];
+
+        for (const [name, addresses] of Object.entries(interfaces)) {
+            for (const addr of addresses) {
+                if (addr.family === 'IPv4' && !addr.internal) {
+                    formatted.push({
+                        interface: name,
+                        address: addr.address,
+                        netmask: addr.netmask,
+                        mac: addr.mac
+                    });
+                }
+            }
+        }
+
+        return formatted;
+    }
+
+    /**
+     * Format process memory usage
+     */
+    formatProcessMemory(memUsage) {
+        return {
+            rss: (memUsage.rss / 1024 / 1024).toFixed(2) + ' MB',
+            heapTotal: (memUsage.heapTotal / 1024 / 1024).toFixed(2) + ' MB',
+            heapUsed: (memUsage.heapUsed / 1024 / 1024).toFixed(2) + ' MB',
+            external: (memUsage.external / 1024 / 1024).toFixed(2) + ' MB'
+        };
+    }
+
+    /**
+     * Parse disk usage from df command output
+     */
+    parseDiskUsage(diskInfo) {
+        const parts = diskInfo.trim().split(/\s+/);
+        if (parts.length >= 6) {
+            return {
+                filesystem: parts[0],
+                size: parts[1],
+                used: parts[2],
+                available: parts[3],
+                usePercent: parts[4],
+                mountPoint: parts[5]
+            };
+        }
+        return null;
+    }
+
+    /**
+     * Get MonsterBox service status
+     */
+    async getMonsterBoxServices() {
+        const services = {
+            webServer: {
+                name: 'Web Server',
+                status: 'running',
+                port: process.env.PORT || 3000
+            },
+            audioCleanup: {
+                name: 'Audio Cleanup Service',
+                status: global.audioCleanupService?.isRunning ? 'running' : 'stopped'
+            },
+            soundPlayer: {
+                name: 'Sound Player',
+                status: 'unknown' // Would need to check actual status
+            }
+        };
+
+        return services;
+    }
 }
 
 module.exports = new SystemConfigService();

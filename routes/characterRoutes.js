@@ -386,13 +386,48 @@ router.post('/:id/setup-ssh', async (req, res) => {
     }
 });
 
-// Get animatronic system information
+// Get comprehensive system information
 router.get('/:id/system-info', async (req, res) => {
     try {
         const characterId = parseInt(req.params.id);
-        logger.info(`Getting system info for character ${characterId}`);
+        logger.info(`Getting comprehensive system info for character ${characterId}`);
 
-        const result = await systemConfigService.getCharacterSystemInfo(characterId);
+        const character = await characterService.getCharacterById(characterId);
+        if (!character) {
+            return res.status(404).json({
+                success: false,
+                error: 'Character not found'
+            });
+        }
+
+        let result = {
+            character: character.char_name,
+            characterId: characterId,
+            timestamp: new Date().toISOString()
+        };
+
+        // Always get local system information
+        try {
+            result.localSystem = await systemConfigService.getLocalSystemInfo();
+        } catch (error) {
+            logger.error('Error getting local system info:', error);
+            result.localSystem = { error: error.message };
+        }
+
+        // Get remote system information if character has RPI configuration
+        if (character.animatronic && character.animatronic.enabled &&
+            character.animatronic.rpi_config && character.animatronic.rpi_config.host) {
+            try {
+                result.remoteSystem = await systemConfigService.getCharacterSystemInfo(characterId);
+            } catch (error) {
+                logger.error('Error getting remote system info:', error);
+                result.remoteSystem = { error: error.message };
+            }
+        } else {
+            result.remoteSystem = {
+                error: 'No remote RPI configuration found for this character'
+            };
+        }
 
         res.json({
             success: true,

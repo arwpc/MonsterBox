@@ -505,41 +505,107 @@
 
 
         function showSystemInfo(characterId) {
-            showModal('Getting System Info...', '<p>Retrieving system information, please wait...</p>');
+            showModal('Getting System Info...', '<p>Retrieving comprehensive system information, please wait...</p>');
 
             fetch('/characters/' + characterId + '/system-info')
                 .then(response => response.json())
                 .then(response => {
                     if (response.success) {
                         const result = response.result;
-                        const info = result.systemInfo;
-                        let html = '<h3>System Information for ' + result.character + '</h3>';
-                        html += '<p><strong>Host:</strong> ' + result.host + '</p>';
+                        let html = '<h3>📊 System Information for ' + result.character + '</h3>';
                         html += '<p><strong>Timestamp:</strong> ' + new Date(result.timestamp).toLocaleString() + '</p>';
 
-                        html += '<div class="test-result test-passed">';
-                        html += '<h4>🖥️ System Details</h4>';
-                        html += '<p><strong>Platform:</strong> ' + info.platform + '</p>';
-                        html += '<p><strong>Architecture:</strong> ' + info.arch + '</p>';
-                        html += '<p><strong>Hostname:</strong> ' + info.hostname + '</p>';
-                        html += '<p><strong>Uptime:</strong> ' + info.uptime + '</p>';
-                        html += '</div>';
+                        // Local System Information
+                        if (result.localSystem && !result.localSystem.error) {
+                            const local = result.localSystem;
+                            html += '<div class="test-result test-passed">';
+                            html += '<h4>🖥️ MonsterBox Server (Local)</h4>';
+                            html += '<p><strong>Platform:</strong> ' + local.platform + '</p>';
+                            html += '<p><strong>Architecture:</strong> ' + local.architecture + '</p>';
+                            html += '<p><strong>Hostname:</strong> ' + local.hostname + '</p>';
+                            html += '<p><strong>OS Type:</strong> ' + local.osType + '</p>';
+                            html += '<p><strong>OS Release:</strong> ' + local.osRelease + '</p>';
+                            html += '<p><strong>Node Version:</strong> ' + local.nodeVersion + '</p>';
+                            html += '<p><strong>MonsterBox Version:</strong> ' + local.monsterBoxVersion + '</p>';
+                            html += '</div>';
 
-                        html += '<div class="test-result test-passed">';
-                        html += '<h4>💾 Memory & Storage</h4>';
-                        html += '<p><strong>Total Memory:</strong> ' + info.totalMem + '</p>';
-                        html += '<p><strong>Used Memory:</strong> ' + info.usedMem + '</p>';
-                        html += '<p><strong>Free Memory:</strong> ' + info.freeMem + '</p>';
-                        html += '<p><strong>Disk Usage:</strong> ' + info.diskUsage + '</p>';
-                        html += '<p><strong>Disk Free:</strong> ' + info.diskFree + '</p>';
-                        html += '</div>';
+                            html += '<div class="test-result test-passed">';
+                            html += '<h4>🧠 Hardware Specifications</h4>';
+                            html += '<p><strong>CPU Count:</strong> ' + local.cpuCount + '</p>';
+                            html += '<p><strong>CPU Model:</strong> ' + local.cpuModel + '</p>';
+                            html += '<p><strong>Total Memory:</strong> ' + local.totalMemory + '</p>';
+                            html += '<p><strong>Used Memory:</strong> ' + local.usedMemory + '</p>';
+                            html += '<p><strong>Free Memory:</strong> ' + local.freeMemory + '</p>';
+                            html += '<p><strong>System Uptime:</strong> ' + local.uptime + '</p>';
+                            html += '<p><strong>Process Uptime:</strong> ' + local.processUptime + '</p>';
+                            if (local.temperature) {
+                                html += '<p><strong>Temperature:</strong> ' + local.temperature + '</p>';
+                            }
+                            html += '</div>';
 
-                        html += '<div class="test-result test-passed">';
-                        html += '<h4>⚡ Hardware Status</h4>';
-                        html += '<p><strong>Temperature:</strong> ' + info.temperature + '</p>';
-                        html += '<p><strong>Voltage:</strong> ' + info.voltage + '</p>';
-                        html += '<p><strong>WiFi Signal:</strong> ' + info.wifiSignal + '</p>';
-                        html += '</div>';
+                            if (local.diskUsage) {
+                                html += '<div class="test-result test-passed">';
+                                html += '<h4>💾 Storage Information</h4>';
+                                html += '<p><strong>Filesystem:</strong> ' + local.diskUsage.filesystem + '</p>';
+                                html += '<p><strong>Size:</strong> ' + local.diskUsage.size + '</p>';
+                                html += '<p><strong>Used:</strong> ' + local.diskUsage.used + '</p>';
+                                html += '<p><strong>Available:</strong> ' + local.diskUsage.available + '</p>';
+                                html += '<p><strong>Usage:</strong> ' + local.diskUsage.usePercent + '</p>';
+                                html += '</div>';
+                            }
+
+                            if (local.networkInterfaces && local.networkInterfaces.length > 0) {
+                                html += '<div class="test-result test-passed">';
+                                html += '<h4>🌐 Network Configuration</h4>';
+                                local.networkInterfaces.forEach(iface => {
+                                    html += '<p><strong>' + iface.interface + ':</strong> ' + iface.address + '</p>';
+                                });
+                                html += '</div>';
+                            }
+
+                            if (local.services) {
+                                html += '<div class="test-result test-passed">';
+                                html += '<h4>🔧 MonsterBox Services</h4>';
+                                Object.values(local.services).forEach(service => {
+                                    const statusColor = service.status === 'running' ? '#00ff00' : '#ff0000';
+                                    html += '<p><strong>' + service.name + ':</strong> <span style="color: ' + statusColor + '">' + service.status + '</span>';
+                                    if (service.port) {
+                                        html += ' (Port: ' + service.port + ')';
+                                    }
+                                    html += '</p>';
+                                });
+                                html += '</div>';
+                            }
+                        } else {
+                            html += '<div class="test-result test-failed">';
+                            html += '<h4>❌ Local System Error</h4>';
+                            html += '<p>' + (result.localSystem?.error || 'Unknown error') + '</p>';
+                            html += '</div>';
+                        }
+
+                        // Remote System Information (Character RPI)
+                        if (result.remoteSystem && !result.remoteSystem.error) {
+                            const remote = result.remoteSystem;
+                            const info = remote.systemInfo;
+                            html += '<div class="test-result test-passed">';
+                            html += '<h4>🤖 Character RPI (' + remote.host + ')</h4>';
+                            html += '<p><strong>Platform:</strong> ' + info.platform + '</p>';
+                            html += '<p><strong>Architecture:</strong> ' + info.arch + '</p>';
+                            html += '<p><strong>Hostname:</strong> ' + info.hostname + '</p>';
+                            html += '<p><strong>Uptime:</strong> ' + info.uptime + '</p>';
+                            html += '<p><strong>Total Memory:</strong> ' + info.totalMem + '</p>';
+                            html += '<p><strong>Used Memory:</strong> ' + info.usedMem + '</p>';
+                            html += '<p><strong>Free Memory:</strong> ' + info.freeMem + '</p>';
+                            html += '<p><strong>Temperature:</strong> ' + info.temperature + '</p>';
+                            html += '<p><strong>Voltage:</strong> ' + info.voltage + '</p>';
+                            html += '<p><strong>WiFi Signal:</strong> ' + info.wifiSignal + '</p>';
+                            html += '</div>';
+                        } else {
+                            html += '<div class="test-result test-warning">';
+                            html += '<h4>⚠️ Remote Character System</h4>';
+                            html += '<p>' + (result.remoteSystem?.error || 'No remote system configured') + '</p>';
+                            html += '</div>';
+                        }
 
                         showModal('System Information', html);
                     } else {

@@ -167,7 +167,8 @@ exports.generateAndSaveForScene = async (req, res) => {
                 success: true,
                 soundId: soundEntry.id,
                 filename: path.basename(absolutePath),
-                path: `/sounds/${path.basename(absolutePath)}` // Return web-accessible path
+                path: `/sounds/${path.basename(absolutePath)}`, // Return web-accessible path
+                url: `/sounds/${path.basename(absolutePath)}` // Frontend expects 'url' property
             });
         } catch (err) {
             logger.error(`Failed to process audio file: ${err.message}`);
@@ -223,7 +224,8 @@ exports.generateSpeech = async (req, res) => {
                 success: true,
                 filename: path.basename(absolutePath),
                 path: `/sounds/${path.basename(absolutePath)}`, // Return web-accessible path
-                url: result.url,
+                url: `/sounds/${path.basename(absolutePath)}`, // Use local file instead of expired S3 URL
+                originalUrl: result.url, // Keep original URL for reference
                 duration: result.duration,
                 metadata: result.metadata
             });

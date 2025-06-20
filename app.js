@@ -20,6 +20,7 @@ let jawAnimationSystem;
 let chatterPiServiceManager;
 let hardwareServiceManager;
 let serviceConnectionManager;
+let audioCleanupService;
 
 // Import error handling middleware
 const { errorHandler, notFoundHandler, asyncHandler } = require('./middleware/errorHandler');
@@ -86,6 +87,14 @@ try {
 
     // Import services
     characterService = require('./services/characterService');
+
+    // Initialize audio cleanup service
+    const AudioCleanupService = require('./services/audioCleanupService');
+    audioCleanupService = new AudioCleanupService({
+        maxFileAge: 24 * 60 * 60 * 1000, // 24 hours
+        cleanupInterval: 2 * 60 * 60 * 1000, // 2 hours
+        preserveRecentFiles: 30 * 60 * 1000 // 30 minutes
+    });
 
     // Import jaw animation system
     const JawAnimationSystem = require('./scripts/jaw-animation/jawAnimationSystem');
@@ -196,6 +205,12 @@ app.use(express.static(path.join(__dirname, 'public'), {
     setHeaders: (res, path) => {
         if (path.endsWith('.css')) {
             res.setHeader('Content-Type', 'text/css');
+        } else if (path.endsWith('.mp3')) {
+            res.setHeader('Content-Type', 'audio/mpeg');
+        } else if (path.endsWith('.wav')) {
+            res.setHeader('Content-Type', 'audio/wav');
+        } else if (path.endsWith('.ogg')) {
+            res.setHeader('Content-Type', 'audio/ogg');
         }
     }
 }));
@@ -291,6 +306,34 @@ app.get('/test/video-configuration', (req, res) => {
 
 app.use('/cleanup', cleanupRoutes);
 app.use('/health', healthRoutes);
+
+// Audio cleanup API endpoints
+app.get('/api/audio-cleanup/stats',
+    monitoringLimiter,
+    asyncHandler(async (req, res) => {
+        const stats = await audioCleanupService.getCleanupStats();
+        res.json({
+            success: true,
+            data: stats,
+            timestamp: new Date().toISOString()
+        });
+    })
+);
+
+app.post('/api/audio-cleanup/run',
+    cacheManagementLimiter,
+    asyncHandler(async (req, res) => {
+        const result = await audioCleanupService.manualCleanup();
+        res.json({
+            success: result.success,
+            message: result.success ?
+                `Audio cleanup completed. ${result.totalCleaned} files cleaned.` :
+                `Audio cleanup failed: ${result.error}`,
+            data: result,
+            timestamp: new Date().toISOString()
+        });
+    })
+);
 
 // Log Collection routes
 app.use('/log-collection', require('./routes/logCollectionRoutes'));
@@ -490,6 +533,10 @@ function startServer() {
         // Initialize Hardware WebSocket Services
         initializeHardwareServices();
 
+        // Start audio cleanup service
+        audioCleanupService.start();
+        logger.info('🧹 Audio cleanup service started');
+
         logger.info('Ready for Halloween, Sir.');
     });
 
@@ -662,6 +709,12 @@ async function gracefulShutdown(reason) {
         if (hardwareServiceManager) {
             await hardwareServiceManager.shutdown();
             logger.info('Hardware services stopped');
+        }
+
+        // Stop audio cleanup service
+        if (audioCleanupService) {
+            audioCleanupService.stop();
+            logger.info('Audio cleanup service stopped');
         }
     } catch (error) {
         logger.error('Error stopping services during shutdown:', error);

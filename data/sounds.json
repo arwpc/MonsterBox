@@ -297,5 +297,33 @@
       }
     },
     "characterId": null
+  },
+  {
+    "id": 132,
+    "name": "Hello, I am your character speaking.",
+    "filename": "1750448601363-Hello__I_am_your_character_spe.mp3",
+    "file": "1750448601363-Hello__I_am_your_character_spe.mp3",
+    "characterIds": [
+      4
+    ],
+    "type": "voice",
+    "created": "2025-06-20T19:43:21.370Z",
+    "metadata": {
+      "originalText": "Hello, I am your character speaking.",
+      "voiceId": "d23c47eb-5d1b-11ee-a861-00163e2ac61b",
+      "voiceSettings": {
+        "pitch": 0,
+        "speed": 1,
+        "volume": 0,
+        "emotion": "Neutral",
+        "sampleRate": 44100,
+        "bitRate": 128,
+        "outputFormat": "mp3",
+        "channels": 1,
+        "languageCode": "en",
+        "provider": "TopMediai"
+      }
+    },
+    "characterId": null
   }
 ]
