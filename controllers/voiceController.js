@@ -452,3 +452,97 @@ exports.testVoiceConnection = async (req, res) => {
         handleError(res, error);
     }
 };
+
+exports.testAudioIntegrity = async (req, res) => {
+    try {
+        const { audioUrl, characterId } = req.body;
+
+        if (!audioUrl) {
+            return handleError(res, new Error('audioUrl is required'), 400);
+        }
+
+        // Extract filename from URL
+        const filename = path.basename(audioUrl);
+        const audioPath = path.join(process.cwd(), 'public', 'sounds', filename);
+
+        // Check if file exists
+        try {
+            await fs.promises.access(audioPath);
+        } catch (error) {
+            return handleError(res, new Error('Audio file not found'), 404);
+        }
+
+        // Test audio integrity using ffprobe
+        const { spawn } = require('child_process');
+
+        const testResult = await new Promise((resolve) => {
+            const ffprobe = spawn('ffprobe', [
+                '-v', 'error',
+                '-select_streams', 'a:0',
+                '-show_entries', 'stream=codec_name,duration,sample_rate,channels,bit_rate',
+                '-show_entries', 'format=format_name,duration,size',
+                '-of', 'json',
+                audioPath
+            ]);
+
+            let output = '';
+            let error = '';
+
+            ffprobe.stdout.on('data', (data) => {
+                output += data.toString();
+            });
+
+            ffprobe.stderr.on('data', (data) => {
+                error += data.toString();
+            });
+
+            ffprobe.on('close', (code) => {
+                if (code === 0 && output) {
+                    try {
+                        const info = JSON.parse(output);
+                        resolve({
+                            success: true,
+                            valid: true,
+                            info: info,
+                            message: 'Audio file is valid and playable'
+                        });
+                    } catch (parseError) {
+                        resolve({
+                            success: true,
+                            valid: false,
+                            error: 'Failed to parse audio information',
+                            details: parseError.message
+                        });
+                    }
+                } else {
+                    resolve({
+                        success: true,
+                        valid: false,
+                        error: 'Audio file appears to be corrupted or invalid',
+                        details: error,
+                        exitCode: code
+                    });
+                }
+            });
+
+            ffprobe.on('error', (err) => {
+                resolve({
+                    success: true,
+                    valid: false,
+                    error: 'ffprobe not available for audio testing',
+                    details: err.message
+                });
+            });
+        });
+
+        res.json({
+            success: true,
+            filename: filename,
+            path: audioPath,
+            ...testResult
+        });
+
+    } catch (error) {
+        handleError(res, error);
+    }
+};

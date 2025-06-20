@@ -48,6 +48,9 @@ router.delete('/history/:characterId', voiceController.deleteVoiceHistory);
 router.get('/capabilities/:speaker_id', voiceController.getVoiceCapabilities);
 router.post('/test-connection', voiceController.testVoiceConnection);
 
+// Audio integrity testing
+router.post('/test-audio-integrity', voiceController.testAudioIntegrity);
+
 // Download file from URL
 async function downloadFile(url) {
     return new Promise((resolve, reject) => {

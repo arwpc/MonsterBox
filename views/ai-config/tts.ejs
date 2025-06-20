@@ -607,6 +607,9 @@
                     Audio waveform visualization
                 </div>
                 <div style="margin-top: 10px;">
+                    <button class="button secondary-btn" onclick="testAudioIntegrity()">
+                        <i class="fas fa-stethoscope"></i> Test Audio Integrity
+                    </button>
                     <button class="button secondary-btn" onclick="downloadAudio()">
                         <i class="fas fa-download"></i> Download
                     </button>
@@ -1161,6 +1164,59 @@
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
+            }
+        }
+
+        async function testAudioIntegrity() {
+            if (!currentAudioUrl) {
+                showMessage('No audio file to test. Please generate speech first.', 'error');
+                return;
+            }
+
+            try {
+                showMessage('Testing audio file integrity...', 'info');
+
+                const response = await fetch('/api/voice/test-audio-integrity', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        audioUrl: currentAudioUrl
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    if (data.valid) {
+                        let message = `✅ Audio file is valid and playable!`;
+                        if (data.info && data.info.streams && data.info.streams[0]) {
+                            const stream = data.info.streams[0];
+                            message += `\n\nDetails:`;
+                            message += `\n• Codec: ${stream.codec_name || 'Unknown'}`;
+                            message += `\n• Duration: ${stream.duration ? parseFloat(stream.duration).toFixed(2) + 's' : 'Unknown'}`;
+                            message += `\n• Sample Rate: ${stream.sample_rate || 'Unknown'}`;
+                            message += `\n• Channels: ${stream.channels || 'Unknown'}`;
+                            message += `\n• Bit Rate: ${stream.bit_rate || 'Unknown'}`;
+                        }
+                        if (data.info && data.info.format) {
+                            message += `\n• Format: ${data.info.format.format_name || 'Unknown'}`;
+                            message += `\n• File Size: ${data.info.format.size ? (parseInt(data.info.format.size) / 1024).toFixed(1) + ' KB' : 'Unknown'}`;
+                        }
+                        showMessage(message, 'success');
+                    } else {
+                        let message = `❌ Audio file appears to be corrupted or invalid!`;
+                        message += `\n\nError: ${data.error || 'Unknown error'}`;
+                        if (data.details) {
+                            message += `\n\nDetails: ${data.details}`;
+                        }
+                        message += `\n\n💡 Try regenerating the audio or use WAV format instead.`;
+                        showMessage(message, 'error');
+                    }
+                } else {
+                    showMessage(`Audio integrity test failed: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showMessage(`Audio integrity test error: ${error.message}`, 'error');
             }
         }
 

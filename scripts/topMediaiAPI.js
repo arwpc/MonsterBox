@@ -282,10 +282,14 @@ class TopMediaiAPI {
                 await fs.mkdir(soundsDir, { recursive: true });
             }
 
-            // Save audio file (MP3 format for real TopMediai audio)
+            // Save audio file with TopMediai-specific MP3 validation
             const audioPath = path.join(soundsDir, `${filename}.mp3`);
+
+            // Validate TopMediai MP3 response
+            await this.validateTopMediaiMP3(audioData);
+
             await fs.writeFile(audioPath, audioData);
-            logger.info(`Saved ${isRealAudio ? 'real TopMediai' : 'fallback'} MP3 file to: ${audioPath}`);
+            logger.info(`Saved ${isRealAudio ? 'real TopMediai' : 'fallback'} MP3 file to: ${audioPath} (${audioData.length} bytes)`);
 
             // Return the result with proper file paths
             const audioFilename = `${filename}.mp3`;
@@ -296,18 +300,19 @@ class TopMediaiAPI {
                 uuid: `topmediai-${timestamp}`, // Generate UUID for compatibility
                 state: 'SUCCESS',
                 duration: null, // TopMediai doesn't provide duration in response
-                format: this.audioSettings.targetFormat,
+                format: 'mp3',
                 metadata: {
                     requestTime: new Date().toISOString(),
                     textLength: params.text.length,
                     audioSettings: {
-                        format: this.audioSettings.targetFormat,
+                        format: 'mp3',
                         sampleRate: this.audioSettings.sampleRate,
                         bitRate: this.audioSettings.bitRate,
                         channels: this.audioSettings.channels
                     },
                     settings: requestBody,
-                    provider: 'TopMediai'
+                    provider: 'TopMediai',
+                    audioDataSize: audioData.length
                 }
             };
         } catch (error) {
@@ -615,6 +620,59 @@ class TopMediaiAPI {
             }
         });
     }
+
+    /**
+     * Validate TopMediai MP3 response specifically
+     */
+    async validateTopMediaiMP3(audioData) {
+        // Basic validation: ensure we have audio data
+        if (!Buffer.isBuffer(audioData)) {
+            throw new Error('TopMediai response must be a Buffer');
+        }
+
+        if (audioData.length === 0) {
+            throw new Error('No audio data received from TopMediai API');
+        }
+
+        if (audioData.length < 100) {
+            throw new Error('TopMediai audio data is too small to be valid MP3');
+        }
+
+        // Check if the response looks like an error message instead of audio
+        const dataString = audioData.toString('utf8', 0, Math.min(200, audioData.length));
+        if (dataString.includes('error') || dataString.includes('Error') ||
+            dataString.includes('<!DOCTYPE') || dataString.includes('<html') ||
+            dataString.includes('{"error"') || dataString.includes('"success":false')) {
+            logger.error('TopMediai API returned error response instead of audio:', dataString);
+            throw new Error('TopMediai API returned an error response instead of audio data');
+        }
+
+        // Check for MP3 headers (ID3 tag or MP3 frame sync)
+        const header = audioData.slice(0, 10);
+        const hasID3Header = header.slice(0, 3).toString() === 'ID3'; // ID3 tag
+        const hasMP3Header = header[0] === 0xFF && (header[1] & 0xE0) === 0xE0; // MP3 frame sync
+
+        if (!hasID3Header && !hasMP3Header) {
+            // Look for MP3 frame sync further in the file (after potential metadata)
+            let foundMP3Frame = false;
+            for (let i = 0; i < Math.min(1000, audioData.length - 1); i++) {
+                if (audioData[i] === 0xFF && (audioData[i + 1] & 0xE0) === 0xE0) {
+                    foundMP3Frame = true;
+                    break;
+                }
+            }
+
+            if (!foundMP3Frame) {
+                logger.warn('TopMediai response does not contain recognizable MP3 headers');
+                // Don't throw error - some valid MP3s might not have standard headers
+            }
+        }
+
+        logger.info(`TopMediai MP3 validation passed: ${audioData.length} bytes`);
+        return true;
+    }
+
+
 
     clearCache() {
         this.voicesCache = null;
