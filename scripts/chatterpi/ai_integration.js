@@ -167,39 +167,44 @@ class ChatterPiAI extends EventEmitter {
             
             console.log(`🎤 Generating speech for: "${text}"`);
             
-            // TopMediai API call using the new API integration
-            const response = await axios.post('https://api.topmediai.com/v1/text2speech', {
+            // Use the fixed TopMediai API integration
+            const TopMediaiAPI = require('../topMediaiAPI');
+            const topMediaiAPI = new TopMediaiAPI();
+
+            const result = await topMediaiAPI.textToSpeech({
                 text: text,
-                speaker: voiceId,
-                emotion: options.emotion || 'Neutral'
-            }, {
-                headers: {
-                    'x-api-key': this.config.topmediaiApiKey,
-                    'Content-Type': 'application/json'
-                },
-                responseType: 'arraybuffer',
-                timeout: 30000
+                voiceId: voiceId,
+                options: {
+                    emotion: options.emotion || 'Neutral',
+                    speed: options.speed,
+                    pitch: options.pitch,
+                    volume: options.volume
+                }
             });
-            
+
             console.log('✅ Speech generated successfully');
-            
+
             this.emit('speech_generated', {
                 text,
                 voiceId,
-                audioData: Buffer.from(response.data),
-                format: 'mp3',
+                audioData: await require('fs').promises.readFile(result.filepath),
+                format: result.format, // Now correctly returns 'wav' or 'mp3'
                 provider: 'TopMediai',
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                url: result.url,
+                filename: result.filename
             });
             
             return {
-                audioData: response.data,
-                format: 'mp3',
+                audioData: await require('fs').promises.readFile(result.filepath),
+                format: result.format,
                 voiceId: voiceId,
                 metadata: {
                     text,
-                    duration: response.data.duration || null,
-                    timestamp: new Date().toISOString()
+                    duration: result.duration || null,
+                    timestamp: new Date().toISOString(),
+                    url: result.url,
+                    filename: result.filename
                 }
             };
             

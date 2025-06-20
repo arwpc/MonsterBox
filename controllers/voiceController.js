@@ -71,18 +71,15 @@ exports.getAvailableVoices = async (req, res) => {
 exports.getVoiceSettings = async (req, res) => {
     try {
         const { characterId } = req.params;
-        
+
         if (!characterId) {
             return handleError(res, new Error('Character ID is required'), 400);
         }
 
-        const voice = await voiceService.getVoiceByCharacterId(characterId);
-        
-        if (!voice) {
-            return handleError(res, new Error('Voice not found'), 404);
-        }
+        // Use the new persistent voice settings method
+        const voiceSettings = await voiceService.getVoiceSettings(characterId);
 
-        res.json(voice);
+        res.json(voiceSettings);
     } catch (error) {
         handleError(res, error);
     }
@@ -92,17 +89,99 @@ exports.saveVoiceSettings = async (req, res) => {
     try {
         const { characterId, voiceId, settings } = req.body;
 
-        if (!characterId || !voiceId) {
-            return handleError(res, new Error('Character ID and voice ID are required'), 400);
+        if (!characterId) {
+            return handleError(res, new Error('Character ID is required'), 400);
         }
 
-        const savedVoice = await voiceService.saveVoice({
-            characterId,
-            speaker_id: voiceId,
-            settings: settings || {}
+        logger.info(`Saving voice settings for character ${characterId}:`, {
+            voiceId,
+            settings
         });
 
-        res.json(savedVoice);
+        // Use the new persistent voice settings method
+        const updatedVoice = await voiceService.updateVoiceSettings(characterId, settings || {});
+
+        // Update speaker_id if provided (this is the key fix)
+        if (voiceId) {
+            logger.info(`Updating speaker_id from ${updatedVoice.speaker_id} to ${voiceId}`);
+            updatedVoice.speaker_id = voiceId;
+
+            // Also update voice metadata if we can find the voice info
+            try {
+                const availableVoices = await voiceService.getAvailableVoices();
+                const selectedVoice = availableVoices.find(v => v.uuid === voiceId || v.speaker_id === voiceId);
+                if (selectedVoice) {
+                    updatedVoice.metadata = {
+                        ...updatedVoice.metadata,
+                        voiceName: selectedVoice.name,
+                        voiceGender: selectedVoice.gender,
+                        voiceLanguage: selectedVoice.language || selectedVoice.accent,
+                        lastModified: new Date().toISOString()
+                    };
+                    logger.info(`Updated voice metadata for ${selectedVoice.name}`);
+                }
+            } catch (metadataError) {
+                logger.warn(`Could not update voice metadata: ${metadataError.message}`);
+            }
+
+            await voiceService.saveVoice(updatedVoice);
+            logger.info(`Voice settings saved successfully for character ${characterId}`);
+        }
+
+        res.json(updatedVoice);
+    } catch (error) {
+        handleError(res, error);
+    }
+};
+
+exports.updateVoiceSettings = async (req, res) => {
+    try {
+        const { characterId } = req.params;
+        const { settings, voiceId } = req.body;
+
+        if (!characterId) {
+            return handleError(res, new Error('Character ID is required'), 400);
+        }
+
+        logger.info(`Updating voice settings for character ${characterId}:`, {
+            voiceId,
+            settings
+        });
+
+        // Use the new persistent voice settings method
+        const updatedVoice = await voiceService.updateVoiceSettings(characterId, settings || {});
+
+        // Update speaker_id if provided (this is the key fix)
+        if (voiceId) {
+            logger.info(`Updating speaker_id from ${updatedVoice.speaker_id} to ${voiceId}`);
+            updatedVoice.speaker_id = voiceId;
+
+            // Also update voice metadata if we can find the voice info
+            try {
+                const availableVoices = await voiceService.getAvailableVoices();
+                const selectedVoice = availableVoices.find(v => v.uuid === voiceId || v.speaker_id === voiceId);
+                if (selectedVoice) {
+                    updatedVoice.metadata = {
+                        ...updatedVoice.metadata,
+                        voiceName: selectedVoice.name,
+                        voiceGender: selectedVoice.gender,
+                        voiceLanguage: selectedVoice.language || selectedVoice.accent,
+                        lastModified: new Date().toISOString()
+                    };
+                    logger.info(`Updated voice metadata for ${selectedVoice.name}`);
+                }
+            } catch (metadataError) {
+                logger.warn(`Could not update voice metadata: ${metadataError.message}`);
+            }
+
+            await voiceService.saveVoice(updatedVoice);
+            logger.info(`Voice settings updated successfully for character ${characterId}`);
+        }
+
+        res.json({
+            success: true,
+            voice: updatedVoice
+        });
     } catch (error) {
         handleError(res, error);
     }
@@ -132,10 +211,12 @@ exports.generateAndSaveForScene = async (req, res) => {
         const result = await voiceService.generateSpeech(text, voice.speaker_id, voice.settings || {}, characterId);
         logger.info(`Speech generation result:`, result);
 
-        // Create filename and path
+        // Create filename and path with correct extension
         const timestamp = Date.now();
         const sanitizedText = text.substring(0, 30).replace(/[^a-zA-Z0-9]/g, '_');
-        const filename = `${timestamp}-${sanitizedText}.mp3`;
+        // Use the actual format from TopMediai result (WAV or MP3)
+        const extension = result.format === 'wav' ? '.wav' : '.mp3';
+        const filename = `${timestamp}-${sanitizedText}${extension}`;
         const filePath = path.join('public', 'sounds', filename);
         const absolutePath = path.resolve(__dirname, '..', filePath);
         logger.info(`File path: ${absolutePath}`);

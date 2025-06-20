@@ -15,7 +15,7 @@ class VoiceService {
             // Use the standardized audio settings from TopMediaiAPI
             sampleRate: this.topMediaiAPI.audioSettings.sampleRate,
             bitRate: this.topMediaiAPI.audioSettings.bitRate,
-            outputFormat: this.topMediaiAPI.audioSettings.targetFormat,
+            outputFormat: 'wav', // Force WAV format for TopMediai
             channels: this.topMediaiAPI.audioSettings.channels,
             languageCode: 'en'
         };
@@ -226,6 +226,95 @@ class VoiceService {
         } catch (error) {
             logger.error(`Error testing connection: ${error.message}`);
             throw new Error(`Connection test failed: ${error.message}`);
+        }
+    }
+
+    /**
+     * Update voice settings for a character and automatically save them
+     */
+    async updateVoiceSettings(characterId, settings) {
+        try {
+            if (!characterId) {
+                throw new Error('Character ID is required');
+            }
+
+            logger.info(`Updating voice settings for character ${characterId}`);
+
+            // Get existing voice configuration
+            let voice = await this.getVoiceByCharacterId(characterId);
+
+            if (!voice) {
+                // Create new voice configuration with default speaker if none exists
+                const availableVoices = await this.getAvailableVoices();
+                if (!availableVoices || availableVoices.length === 0) {
+                    throw new Error('No available voices found');
+                }
+
+                voice = {
+                    characterId: parseInt(characterId),
+                    speaker_id: availableVoices[0].uuid,
+                    settings: { ...this.defaultSettings },
+                    metadata: {
+                        lastUsed: null,
+                        useCount: 0,
+                        favorited: false,
+                        tags: [],
+                        notes: '',
+                        voiceName: availableVoices[0].name,
+                        voiceGender: availableVoices[0].gender,
+                        voiceLanguage: availableVoices[0].language
+                    }
+                };
+            }
+
+            // Update settings with new values
+            voice.settings = {
+                ...voice.settings,
+                ...settings,
+                // Ensure WAV format for TopMediai
+                outputFormat: 'wav',
+                provider: 'TopMediai'
+            };
+
+            // Save the updated voice configuration
+            const savedVoice = await this.saveVoice(voice);
+
+            logger.info(`Voice settings updated and saved for character ${characterId}`);
+            return savedVoice;
+
+        } catch (error) {
+            logger.error(`Error updating voice settings: ${error.message}`);
+            throw new Error(`Failed to update voice settings: ${error.message}`);
+        }
+    }
+
+    /**
+     * Get voice settings for a character, creating defaults if none exist
+     */
+    async getVoiceSettings(characterId) {
+        try {
+            if (!characterId) {
+                throw new Error('Character ID is required');
+            }
+
+            let voice = await this.getVoiceByCharacterId(characterId);
+
+            if (!voice) {
+                // Create default voice settings for this character
+                logger.info(`Creating default voice settings for character ${characterId}`);
+                voice = await this.updateVoiceSettings(characterId, {});
+            }
+
+            return {
+                characterId: voice.characterId,
+                speaker_id: voice.speaker_id,
+                settings: voice.settings,
+                metadata: voice.metadata
+            };
+
+        } catch (error) {
+            logger.error(`Error getting voice settings: ${error.message}`);
+            throw new Error(`Failed to get voice settings: ${error.message}`);
         }
     }
 }

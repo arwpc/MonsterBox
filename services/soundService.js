@@ -76,16 +76,27 @@ const getNextId = (sounds) => {
 const createSound = async (soundData) => {
     try {
         const sounds = await getAllSounds();
+
+        // Determine audio format from filename
+        const filename = soundData.filename || soundData.file;
+        const audioFormat = filename ? (filename.toLowerCase().endsWith('.wav') ? 'wav' : 'mp3') : 'mp3';
+
         const newSound = {
             id: getNextId(sounds),
             ...soundData,
-            characterIds: soundData.characterIds ? 
+            characterIds: soundData.characterIds ?
                 soundData.characterIds.map(id => parseInt(id)) : [],
-            characterId: null // Keep this for backward compatibility but set to null
+            characterId: null, // Keep this for backward compatibility but set to null
+            format: audioFormat, // Add format information
+            metadata: {
+                ...soundData.metadata,
+                audioFormat: audioFormat,
+                created: soundData.created || new Date().toISOString()
+            }
         };
         sounds.push(newSound);
         await fs.writeFile(dataPath, JSON.stringify(sounds, null, 2));
-        logger.info(`Created new sound with id ${newSound.id}`);
+        logger.info(`Created new sound with id ${newSound.id} (${audioFormat.toUpperCase()} format)`);
         return newSound;
     } catch (error) {
         logger.error('Error creating new sound:', error);

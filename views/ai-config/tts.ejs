@@ -37,17 +37,23 @@
         
         .character-voice-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
             gap: 20px;
             margin: 20px 0;
         }
-        
+
         .character-voice-card {
             background: #000800;
-            border: 1px solid #00ff00;
-            border-radius: 8px;
-            padding: 20px;
+            border: 2px solid #00ff00;
+            border-radius: 12px;
+            padding: 24px;
             position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .character-voice-card:hover {
+            border-color: #66ff66;
+            box-shadow: 0 4px 12px rgba(0, 255, 0, 0.2);
         }
         
         .character-header {
@@ -81,37 +87,75 @@
         }
         
         .voice-assignment {
-            margin: 15px 0;
+            margin: 20px 0;
         }
-        
+
+        .voice-assignment label {
+            display: block;
+            color: #00ff00;
+            font-weight: bold;
+            margin-bottom: 12px;
+            font-size: 1.1em;
+        }
+
         .voice-preview {
-            background: #000800;
-            border: 1px solid #333333;
-            border-radius: 5px;
-            padding: 10px;
+            background: #001100;
+            border: 2px solid #333333;
+            border-radius: 8px;
+            padding: 16px;
             margin: 10px 0;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            transition: all 0.3s ease;
         }
-        
+
+        .voice-preview:hover {
+            border-color: #00ff00;
+            background: #002200;
+        }
+
+        .voice-preview.has-voice {
+            border-color: #00ff00;
+        }
+
+        .voice-preview.no-voice {
+            border-color: #666666;
+            border-style: dashed;
+        }
+
         .voice-info {
             flex: 1;
         }
-        
+
         .voice-name {
             color: #ffffff;
             font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 4px;
         }
-        
+
         .voice-details {
             color: #cccccc;
-            font-size: 0.8em;
+            font-size: 0.9em;
         }
-        
+
         .voice-controls {
             display: flex;
-            gap: 5px;
+            gap: 8px;
+        }
+
+        .voice-settings-summary {
+            background: #000800;
+            border: 1px solid #333333;
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 12px;
+        }
+
+        .voice-settings-summary small {
+            color: #cccccc;
+            font-size: 0.85em;
         }
         
         .voice-catalog {
@@ -389,6 +433,62 @@
             margin: 20px 0;
             color: #6666ff;
         }
+
+        /* Button improvements */
+        .button.small-btn {
+            padding: 8px 12px;
+            font-size: 0.9em;
+            min-width: auto;
+        }
+
+        .button.small-btn i {
+            margin-right: 4px;
+        }
+
+        /* Responsive improvements */
+        @media (max-width: 768px) {
+            .character-voice-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .settings-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .voice-controls {
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            .button.small-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* Loading states */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            margin: -10px 0 0 -10px;
+            border: 2px solid #00ff00;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -434,32 +534,42 @@
                             </div>
 
                             <div class="voice-assignment">
-                                <label>Assigned Voice:</label>
-                                <div class="voice-preview" id="voicePreview_<%= character.id %>">
+                                <label><i class="fas fa-microphone"></i> Assigned Voice:</label>
+                                <div class="voice-preview <%= character.voiceConfig && character.voiceConfig.speaker_id ? 'has-voice' : 'no-voice' %>" id="voicePreview_<%= character.id %>">
                                     <% if (character.voiceConfig && character.voiceConfig.speaker_id) { %>
                                         <div class="voice-info">
-                                            <div class="voice-name"><%= character.voiceConfig.voiceName || 'Unknown Voice' %></div>
+                                            <div class="voice-name">
+                                                <i class="fas fa-user-circle" style="color: #00ff00; margin-right: 8px;"></i>
+                                                <%= character.voiceConfig.metadata?.voiceName || character.voiceConfig.voiceName || 'Unknown Voice' %>
+                                            </div>
                                             <div class="voice-details">
-                                                <%= character.voiceConfig.voiceGender || 'Unknown' %> •
-                                                <%= character.voiceConfig.voiceLanguage || 'Unknown' %>
+                                                <i class="fas fa-info-circle" style="color: #666; margin-right: 6px;"></i>
+                                                <%= character.voiceConfig.metadata?.voiceGender || character.voiceConfig.voiceGender || 'Unknown' %> •
+                                                <%= character.voiceConfig.metadata?.voiceLanguage || character.voiceConfig.voiceLanguage || 'Unknown' %>
                                             </div>
                                         </div>
                                         <div class="voice-controls">
-                                            <button class="button small-btn secondary-btn" onclick="previewVoice('<%= character.id %>', '<%= character.voiceConfig.speaker_id %>')">
-                                                <i class="fas fa-play"></i>
+                                            <button class="button small-btn secondary-btn" onclick="previewVoice('<%= character.id %>', '<%= character.voiceConfig.speaker_id %>')" title="Preview Voice">
+                                                <i class="fas fa-play"></i> Preview
                                             </button>
-                                            <button class="button small-btn primary-btn" onclick="configureVoice('<%= character.id %>')">
-                                                <i class="fas fa-cog"></i>
+                                            <button class="button small-btn primary-btn" onclick="configureVoice('<%= character.id %>')" title="Configure Voice Settings">
+                                                <i class="fas fa-cog"></i> Configure
                                             </button>
                                         </div>
                                     <% } else { %>
                                         <div class="voice-info">
-                                            <div class="voice-name">No Voice Assigned</div>
-                                            <div class="voice-details">Click Configure to assign a voice</div>
+                                            <div class="voice-name">
+                                                <i class="fas fa-exclamation-triangle" style="color: #ff6600; margin-right: 8px;"></i>
+                                                No Voice Assigned
+                                            </div>
+                                            <div class="voice-details">
+                                                <i class="fas fa-arrow-right" style="color: #666; margin-right: 6px;"></i>
+                                                Click "Assign Voice" to select from 2000+ available voices
+                                            </div>
                                         </div>
                                         <div class="voice-controls">
-                                            <button class="button small-btn primary-btn" onclick="configureVoice('<%= character.id %>')">
-                                                <i class="fas fa-plus"></i> Assign
+                                            <button class="button small-btn primary-btn" onclick="configureVoice('<%= character.id %>')" title="Assign a voice to this character">
+                                                <i class="fas fa-plus"></i> Assign Voice
                                             </button>
                                         </div>
                                     <% } %>
@@ -468,9 +578,14 @@
                                 <% if (character.voiceConfig && character.voiceConfig.settings) { %>
                                     <div class="voice-settings-summary">
                                         <small>
-                                            Speed: <%= character.voiceConfig.settings.speed || 1.0 %> •
-                                            Pitch: <%= character.voiceConfig.settings.pitch || 0 %> •
-                                            Volume: <%= character.voiceConfig.settings.volume || 0 %>
+                                            <i class="fas fa-sliders-h" style="color: #00ff00; margin-right: 6px;"></i>
+                                            <strong>Settings:</strong>
+                                            Speed: <span style="color: #66ff66;"><%= character.voiceConfig.settings.speed || 1.0 %></span> •
+                                            Pitch: <span style="color: #66ff66;"><%= character.voiceConfig.settings.pitch || 0 %></span> •
+                                            Volume: <span style="color: #66ff66;"><%= character.voiceConfig.settings.volume || 0 %></span>
+                                            <% if (character.voiceConfig.settings.emotion && character.voiceConfig.settings.emotion !== 'Neutral') { %>
+                                                • Emotion: <span style="color: #66ff66;"><%= character.voiceConfig.settings.emotion %></span>
+                                            <% } %>
                                         </small>
                                     </div>
                                 <% } %>
@@ -953,7 +1068,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        speaker_id: selectedVoice.speaker_id,
+                        speaker_id: selectedVoice.uuid || selectedVoice.speaker_id,
                         text: text,
                         options: settings
                     })
@@ -1005,7 +1120,7 @@
 
                 const voiceData = {
                     characterId: parseInt(characterId),
-                    speaker_id: selectedVoice.speaker_id,
+                    voiceId: selectedVoice.uuid || selectedVoice.speaker_id,
                     settings: settings,
                     metadata: {
                         voiceName: selectedVoice.name,
@@ -1030,13 +1145,62 @@
                 if (data.success) {
                     showMessage('Voice assigned successfully!', 'success');
                     closeCatalogModal();
-                    setTimeout(() => location.reload(), 1000);
+                    // Update the voice preview without full page reload
+                    updateVoicePreview(characterId, selectedVoice, settings);
                 } else {
                     showMessage(`Failed to assign voice: ${data.error}`, 'error');
                 }
             } catch (error) {
                 showMessage(`Error assigning voice: ${error.message}`, 'error');
             }
+        }
+
+        function updateVoicePreview(characterId, voice, settings) {
+            const previewElement = document.getElementById(`voicePreview_${characterId}`);
+            if (!previewElement) return;
+
+            // Update the preview element with new voice information
+            previewElement.className = 'voice-preview has-voice';
+            previewElement.innerHTML = `
+                <div class="voice-info">
+                    <div class="voice-name">
+                        <i class="fas fa-user-circle" style="color: #00ff00; margin-right: 8px;"></i>
+                        ${voice.name}
+                    </div>
+                    <div class="voice-details">
+                        <i class="fas fa-info-circle" style="color: #666; margin-right: 6px;"></i>
+                        ${voice.gender || 'Unknown'} • ${voice.language || voice.accent || 'Unknown'}
+                    </div>
+                </div>
+                <div class="voice-controls">
+                    <button class="button small-btn secondary-btn" onclick="previewVoice('${characterId}', '${voice.uuid || voice.speaker_id}')" title="Preview Voice">
+                        <i class="fas fa-play"></i> Preview
+                    </button>
+                    <button class="button small-btn primary-btn" onclick="configureVoice('${characterId}')" title="Configure Voice Settings">
+                        <i class="fas fa-cog"></i> Configure
+                    </button>
+                </div>
+            `;
+
+            // Add or update settings summary
+            let settingsSummary = previewElement.parentElement.querySelector('.voice-settings-summary');
+            if (!settingsSummary) {
+                settingsSummary = document.createElement('div');
+                settingsSummary.className = 'voice-settings-summary';
+                previewElement.parentElement.appendChild(settingsSummary);
+            }
+
+            settingsSummary.innerHTML = `
+                <small>
+                    <i class="fas fa-sliders-h" style="color: #00ff00; margin-right: 6px;"></i>
+                    <strong>Settings:</strong>
+                    Speed: <span style="color: #66ff66;">${settings.speed || 1.0}</span> •
+                    Pitch: <span style="color: #66ff66;">${settings.pitch || 0}</span> •
+                    Volume: <span style="color: #66ff66;">${settings.volume || 0}</span>
+                    ${settings.emotion && settings.emotion !== 'Neutral' ?
+                        `• Emotion: <span style="color: #66ff66;">${settings.emotion}</span>` : ''}
+                </small>
+            `;
         }
 
         async function previewVoice(characterId, speakerId) {

@@ -270,44 +270,47 @@ class TTSAnimationIntegration {
                 logger.info('Using cached TTS audio');
                 return this.audioCache.get(cacheKey);
             }
-            
-            const response = await axios.post(`${this.config.topmediaiBaseUrl}/text2speech`, {
+
+            // Use the fixed TopMediai API integration
+            const TopMediaiAPI = require('../topMediaiAPI');
+            const topMediaiAPI = new TopMediaiAPI();
+
+            const result = await topMediaiAPI.textToSpeech({
                 text: text.trim(),
-                speaker: voiceConfig.voiceId,
-                emotion: voiceConfig.emotion,
-                speed: voiceConfig.speed,
-                pitch: voiceConfig.pitch
-            }, {
-                headers: {
-                    'x-api-key': this.config.topmediaiApiKey,
-                    'Content-Type': 'application/json'
-                },
-                responseType: 'arraybuffer',
-                timeout: 30000
+                voiceId: voiceConfig.voiceId,
+                options: {
+                    emotion: voiceConfig.emotion || 'Neutral',
+                    speed: voiceConfig.speed,
+                    pitch: voiceConfig.pitch,
+                    volume: voiceConfig.volume
+                }
             });
-            
-            const audioBuffer = Buffer.from(response.data);
-            
-            const result = {
+
+            // Read the audio data from the generated file
+            const audioBuffer = await require('fs').promises.readFile(result.filepath);
+
+            const audioResult = {
                 audioData: audioBuffer,
-                format: 'mp3',
+                format: result.format, // Now correctly returns 'wav' or 'mp3'
                 provider: 'TopMediai',
                 voiceConfig,
                 timestamp: new Date().toISOString(),
-                textLength: text.length
+                textLength: text.length,
+                url: result.url,
+                filename: result.filename
             };
-            
+
             // Cache the result
-            this.audioCache.set(cacheKey, result);
-            
+            this.audioCache.set(cacheKey, audioResult);
+
             // Limit cache size
             if (this.audioCache.size > 50) {
                 const firstKey = this.audioCache.keys().next().value;
                 this.audioCache.delete(firstKey);
             }
-            
-            logger.info(`✅ Generated TTS audio: ${audioBuffer.length} bytes`);
-            return result;
+
+            logger.info(`✅ Generated TTS audio: ${audioBuffer.length} bytes (${result.format.toUpperCase()})`);
+            return audioResult;
             
         } catch (error) {
             logger.error('TopMediai TTS generation failed:', error.message);
@@ -396,22 +399,21 @@ class TTSAnimationIntegration {
      */
     async getAvailableVoices() {
         try {
-            const response = await axios.get(`${this.config.topmediaiBaseUrl}/voices`, {
-                headers: {
-                    'x-api-key': this.config.topmediaiApiKey
-                },
-                timeout: 10000
-            });
-            
-            return response.data.map(voice => ({
-                id: voice.speaker_id,
-                name: voice.speaker_name,
+            // Use the fixed TopMediai API integration
+            const TopMediaiAPI = require('../topMediaiAPI');
+            const topMediaiAPI = new TopMediaiAPI();
+
+            const voices = await topMediaiAPI.getVoices();
+
+            return voices.map(voice => ({
+                id: voice.uuid,
+                name: voice.name,
                 language: voice.language,
                 gender: voice.gender,
                 emotions: voice.emotions || ['Neutral'],
                 isVip: voice.isVip || false
             }));
-            
+
         } catch (error) {
             logger.error('Error fetching available voices:', error);
             return [];

@@ -114,8 +114,24 @@ class VoiceSelector {
             input.addEventListener('input', (e) => {
                 value.textContent = e.target.value;
                 this.updatePreviewButtonState();
+                // Auto-save settings when they change
+                clearTimeout(this.autoSaveTimeout);
+                this.autoSaveTimeout = setTimeout(() => {
+                    this.autoSaveSettings();
+                }, 1000); // Save after 1 second of no changes
             });
         });
+
+        // Add auto-save for emotion dropdown
+        const emotionSelect = document.querySelector('#emotion');
+        if (emotionSelect) {
+            emotionSelect.addEventListener('change', () => {
+                clearTimeout(this.autoSaveTimeout);
+                this.autoSaveTimeout = setTimeout(() => {
+                    this.autoSaveSettings();
+                }, 500); // Save after 0.5 seconds for dropdown
+            });
+        }
 
         // Add event listener for the new Save Settings button
         const saveSettingsButton = document.querySelector('#saveVoiceSettings');
@@ -169,7 +185,9 @@ class VoiceSelector {
                     if (voiceSettingsResponse.ok) {
                         const voiceSettings = await voiceSettingsResponse.json();
                         if (voiceSettings && voiceSettings.speaker_id) {
-                            this.selectedVoice = this.voices.find(v => v.speaker_id === voiceSettings.speaker_id);
+                            // Find voice by speaker_id (which is uuid for TopMediai)
+                            this.selectedVoice = this.voices.find(v => v.uuid === voiceSettings.speaker_id || v.speaker_id === voiceSettings.speaker_id);
+                            console.log('Pre-selected voice from settings:', this.selectedVoice?.name);
                         }
                     }
                 } catch (settingsError) {
@@ -235,6 +253,12 @@ class VoiceSelector {
         });
 
         this.setupVoiceRowHandlers();
+
+        // If we have a pending speaker ID to select, do it now
+        if (this.pendingSpeakerId) {
+            this.selectVoiceById(this.pendingSpeakerId);
+            this.pendingSpeakerId = null;
+        }
     }
 
     setupVoiceRowHandlers() {
@@ -304,8 +328,8 @@ class VoiceSelector {
             this.showLoading('Generating preview...');
             const previewText = document.querySelector('#previewText').value;
 
-            // Use the speaker_id from the voice data
-            const speakerId = this.currentPreviewVoice.speaker_id;
+            // Use the speaker_id from the voice data (TopMediai uses uuid as speaker_id)
+            const speakerId = this.currentPreviewVoice.uuid || this.currentPreviewVoice.speaker_id;
             if (!speakerId) {
                 throw new Error('No valid speaker ID found for this voice');
             }
@@ -431,14 +455,22 @@ class VoiceSelector {
                 const settings = {
                     speed: parseFloat(document.querySelector('#speed').value),
                     pitch: parseInt(document.querySelector('#pitch').value),
-                    volume: parseInt(document.querySelector('#volume').value)
+                    volume: parseInt(document.querySelector('#volume').value),
+                    emotion: document.querySelector('#emotion').value
                 };
 
-                // Use the speaker_id from the voice data
-                const speakerId = this.selectedVoice.speaker_id;
+                // Use the speaker_id from the voice data (TopMediai uses uuid as speaker_id)
+                const speakerId = this.selectedVoice.uuid || this.selectedVoice.speaker_id;
                 if (!speakerId) {
                     throw new Error('No valid speaker ID found for this voice');
                 }
+
+                console.log('Saving voice configuration:', {
+                    characterId: this.characterId,
+                    voiceId: speakerId,
+                    voiceName: this.selectedVoice.name,
+                    settings
+                });
 
                 const response = await fetch('/api/voice/settings', {
                     method: 'POST',
@@ -457,15 +489,145 @@ class VoiceSelector {
                     throw new Error(error.error || 'Failed to save voice configuration');
                 }
 
+                const result = await response.json();
+                console.log('Voice configuration saved successfully:', result);
+
                 this.addToRecentlyUsed(this.selectedVoice);
+                // Store the current voice assignment
+                this.currentSpeakerId = speakerId;
+
                 // Show success message and redirect to sounds page
-                this.showError('Voice settings saved successfully. Redirecting to Sound Library...', true);
+                this.showError(`Voice "${this.selectedVoice.name}" assigned to character successfully! Redirecting to Sound Library...`, true);
                 setTimeout(() => {
                     window.location.href = `/sounds?characterId=${this.characterId}`;
                 }, 2000);
             } catch (error) {
                 console.error('Error saving voice configuration:', error);
                 this.showError('Failed to save voice configuration: ' + error.message);
+            }
+        }
+    }
+
+    async loadVoiceSettings() {
+        if (!this.characterId) {
+            console.log('No character ID available for loading voice settings');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/voice/settings/${this.characterId}`);
+            if (response.ok) {
+                const voiceSettings = await response.json();
+                console.log('Loaded voice settings:', voiceSettings);
+
+                if (voiceSettings && voiceSettings.settings) {
+                    // Update UI with loaded settings
+                    const speedSlider = document.querySelector('#speed');
+                    const pitchSlider = document.querySelector('#pitch');
+                    const volumeSlider = document.querySelector('#volume');
+                    const emotionSelect = document.querySelector('#emotion');
+
+                    if (speedSlider) {
+                        speedSlider.value = voiceSettings.settings.speed || 1;
+                        speedSlider.nextElementSibling.textContent = voiceSettings.settings.speed || 1;
+                    }
+                    if (pitchSlider) {
+                        pitchSlider.value = voiceSettings.settings.pitch || 0;
+                        pitchSlider.nextElementSibling.textContent = voiceSettings.settings.pitch || 0;
+                    }
+                    if (volumeSlider) {
+                        volumeSlider.value = voiceSettings.settings.volume || 0;
+                        volumeSlider.nextElementSibling.textContent = voiceSettings.settings.volume || 0;
+                    }
+                    if (emotionSelect) {
+                        emotionSelect.value = voiceSettings.settings.emotion || 'Neutral';
+                    }
+
+                    // Store the loaded voice data and speaker_id
+                    this.currentVoiceSettings = voiceSettings.settings;
+                    this.currentSpeakerId = voiceSettings.speaker_id;
+
+                    // Update selected voice in the UI if we have speaker_id
+                    if (voiceSettings.speaker_id) {
+                        // Wait for voices to be loaded before selecting
+                        if (this.voices && this.voices.length > 0) {
+                            this.selectVoiceById(voiceSettings.speaker_id);
+                        } else {
+                            // Store the speaker_id to select later when voices are loaded
+                            this.pendingSpeakerId = voiceSettings.speaker_id;
+                        }
+                    }
+
+                    console.log('Voice settings loaded and applied to UI');
+                }
+            } else {
+                console.log('No existing voice settings found for character - will create defaults');
+                // Initialize with default settings
+                this.currentVoiceSettings = {
+                    speed: 1,
+                    pitch: 0,
+                    volume: 0,
+                    emotion: 'Neutral'
+                };
+            }
+        } catch (error) {
+            console.error('Error loading voice settings:', error);
+        }
+    }
+
+    selectVoiceById(speakerId) {
+        console.log('Selecting voice by ID:', speakerId);
+
+        // Find and select voice by speaker_id
+        const voices = this.allVoices || this.voices || [];
+        const voice = voices.find(v => v.speaker_id === speakerId || v.uuid === speakerId);
+
+        if (voice) {
+            console.log('Found voice:', voice.name);
+            this.selectVoice(voice);
+
+            // Scroll to the selected voice in the table
+            setTimeout(() => {
+                const selectedRow = document.querySelector('#voiceTableBody tr.selected');
+                if (selectedRow) {
+                    selectedRow.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center'
+                    });
+                    console.log('Scrolled to selected voice');
+                }
+            }, 100);
+        } else {
+            console.log('Voice not found for speaker ID:', speakerId);
+        }
+    }
+
+    async autoSaveSettings() {
+        // Automatically save settings when they change
+        if (this.characterId && this.selectedVoice) {
+            try {
+                const settings = {
+                    speed: parseFloat(document.querySelector('#speed').value),
+                    pitch: parseInt(document.querySelector('#pitch').value),
+                    volume: parseInt(document.querySelector('#volume').value),
+                    emotion: document.querySelector('#emotion').value
+                };
+
+                await fetch('/api/voice/settings', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        characterId: this.characterId,
+                        voiceId: this.selectedVoice.uuid || this.selectedVoice.speaker_id,
+                        settings
+                    })
+                });
+
+                console.log('Settings auto-saved');
+            } catch (error) {
+                console.error('Error auto-saving settings:', error);
             }
         }
     }
@@ -591,6 +753,11 @@ class VoiceSelector {
         this.characterId = id;
         if (this.selectedVoice) {
             document.querySelector('#selectVoice').disabled = false;
+        }
+
+        // Load voice settings for this character
+        if (id) {
+            this.loadVoiceSettings();
         }
     }
 }

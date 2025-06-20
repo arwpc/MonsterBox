@@ -224,19 +224,36 @@ class TopMediaiAPI {
                 emotion: params.options?.emotion || 'Neutral'
             };
 
-            logger.info(`Requesting speech generation for speaker: ${params.voiceId}`);
+            // Add optional voice parameters if provided
+            if (params.options?.speed !== undefined && params.options.speed !== 1.0) {
+                requestBody.speed = params.options.speed;
+            }
+            if (params.options?.pitch !== undefined && params.options.pitch !== 0) {
+                requestBody.pitch = params.options.pitch;
+            }
+            if (params.options?.volume !== undefined && params.options.volume !== 0) {
+                requestBody.volume = params.options.volume;
+            }
+
+            logger.info(`Requesting speech generation for speaker: ${params.voiceId}`, {
+                emotion: requestBody.emotion,
+                speed: requestBody.speed,
+                pitch: requestBody.pitch,
+                volume: requestBody.volume
+            });
 
             // Make the actual TopMediai TTS request with proper error handling
             let audioData;
             let isRealAudio = false;
+            let audioFormat = 'wav'; // TopMediai returns WAV files
 
             try {
-                logger.info('Making TopMediai TTS request with body:', JSON.stringify(requestBody));
+                logger.info('Making TopMediai TTS request with body:', JSON.stringify(requestBody, null, 2));
 
-                // Use official TopMediai API format
+                // Use official TopMediai API format - expect JSON response with audio URL
                 const response = await this.retryWithBackoff(async () => {
                     return await this.axiosInstance.post('/text2speech', requestBody, {
-                        responseType: 'arraybuffer',
+                        responseType: 'json', // Changed from 'arraybuffer' to 'json'
                         headers: {
                             'x-api-key': this.apiKey,
                             'Content-Type': 'application/json'
@@ -244,9 +261,22 @@ class TopMediaiAPI {
                     });
                 });
 
-                audioData = Buffer.from(response.data);
-                isRealAudio = true;
-                logger.info('✅ Successfully generated speech using TopMediai TTS API');
+                // TopMediai returns JSON with oss_url pointing to the actual audio file
+                if (response.data && response.data.status === 200 && response.data.data && response.data.data.oss_url) {
+                    const audioUrl = response.data.data.oss_url;
+                    logger.info(`TopMediai returned audio URL: ${audioUrl}`);
+
+                    // Download the actual audio file
+                    audioData = await this.downloadAudioFromUrl(audioUrl);
+
+                    // Determine format from URL
+                    audioFormat = audioUrl.toLowerCase().includes('.mp3') ? 'mp3' : 'wav';
+
+                    isRealAudio = true;
+                    logger.info(`✅ Successfully downloaded ${audioFormat.toUpperCase()} audio from TopMediai (${audioData.length} bytes)`);
+                } else {
+                    throw new Error('TopMediai API returned unexpected response format');
+                }
 
             } catch (ttsError) {
                 logger.error('All TopMediai authentication methods failed, falling back to system TTS');
@@ -259,6 +289,7 @@ class TopMediaiAPI {
                 // Fallback to system TTS
                 try {
                     audioData = await this.generateSystemTTS(params.text, params.voiceId);
+                    audioFormat = 'wav'; // System TTS generates WAV files
                     isRealAudio = true;
                     logger.info('✅ Generated audio using system TTS fallback');
                 } catch (fallbackError) {
@@ -282,17 +313,17 @@ class TopMediaiAPI {
                 await fs.mkdir(soundsDir, { recursive: true });
             }
 
-            // Save audio file with TopMediai-specific MP3 validation
-            const audioPath = path.join(soundsDir, `${filename}.mp3`);
+            // Save audio file with proper format extension
+            const audioPath = path.join(soundsDir, `${filename}.${audioFormat}`);
 
-            // Validate TopMediai MP3 response
-            await this.validateTopMediaiMP3(audioData);
+            // Validate TopMediai audio response (supports both WAV and MP3)
+            await this.validateTopMediaiAudio(audioData, audioFormat);
 
             await fs.writeFile(audioPath, audioData);
-            logger.info(`Saved ${isRealAudio ? 'real TopMediai' : 'fallback'} MP3 file to: ${audioPath} (${audioData.length} bytes)`);
+            logger.info(`Saved ${isRealAudio ? 'real TopMediai' : 'fallback'} ${audioFormat.toUpperCase()} file to: ${audioPath} (${audioData.length} bytes)`);
 
             // Return the result with proper file paths
-            const audioFilename = `${filename}.mp3`;
+            const audioFilename = `${filename}.${audioFormat}`;
             return {
                 filename: audioFilename,
                 filepath: audioPath,
@@ -300,12 +331,12 @@ class TopMediaiAPI {
                 uuid: `topmediai-${timestamp}`, // Generate UUID for compatibility
                 state: 'SUCCESS',
                 duration: null, // TopMediai doesn't provide duration in response
-                format: 'mp3',
+                format: audioFormat,
                 metadata: {
                     requestTime: new Date().toISOString(),
                     textLength: params.text.length,
                     audioSettings: {
-                        format: 'mp3',
+                        format: audioFormat,
                         sampleRate: this.audioSettings.sampleRate,
                         bitRate: this.audioSettings.bitRate,
                         channels: this.audioSettings.channels
@@ -622,9 +653,35 @@ class TopMediaiAPI {
     }
 
     /**
-     * Validate TopMediai MP3 response specifically
+     * Download audio file from TopMediai URL
      */
-    async validateTopMediaiMP3(audioData) {
+    async downloadAudioFromUrl(audioUrl) {
+        try {
+            logger.info(`Downloading audio from: ${audioUrl}`);
+
+            const response = await axios.get(audioUrl, {
+                responseType: 'arraybuffer',
+                timeout: 30000,
+                headers: {
+                    'User-Agent': 'MonsterBox/1.0'
+                }
+            });
+
+            const audioData = Buffer.from(response.data);
+            logger.info(`Successfully downloaded audio: ${audioData.length} bytes`);
+
+            return audioData;
+
+        } catch (error) {
+            logger.error('Failed to download audio from URL:', error.message);
+            throw new Error(`Failed to download audio from TopMediai URL: ${error.message}`);
+        }
+    }
+
+    /**
+     * Validate TopMediai audio response (supports both WAV and MP3)
+     */
+    async validateTopMediaiAudio(audioData, format = 'wav') {
         // Basic validation: ensure we have audio data
         if (!Buffer.isBuffer(audioData)) {
             throw new Error('TopMediai response must be a Buffer');
@@ -635,7 +692,7 @@ class TopMediaiAPI {
         }
 
         if (audioData.length < 100) {
-            throw new Error('TopMediai audio data is too small to be valid MP3');
+            throw new Error(`TopMediai audio data is too small to be valid ${format.toUpperCase()}`);
         }
 
         // Check if the response looks like an error message instead of audio
@@ -647,28 +704,41 @@ class TopMediaiAPI {
             throw new Error('TopMediai API returned an error response instead of audio data');
         }
 
-        // Check for MP3 headers (ID3 tag or MP3 frame sync)
-        const header = audioData.slice(0, 10);
-        const hasID3Header = header.slice(0, 3).toString() === 'ID3'; // ID3 tag
-        const hasMP3Header = header[0] === 0xFF && (header[1] & 0xE0) === 0xE0; // MP3 frame sync
+        // Format-specific validation
+        if (format.toLowerCase() === 'wav') {
+            // Check for WAV header (RIFF)
+            const header = audioData.slice(0, 12);
+            const hasRIFFHeader = header.slice(0, 4).toString() === 'RIFF';
+            const hasWAVEHeader = header.slice(8, 12).toString() === 'WAVE';
 
-        if (!hasID3Header && !hasMP3Header) {
-            // Look for MP3 frame sync further in the file (after potential metadata)
-            let foundMP3Frame = false;
-            for (let i = 0; i < Math.min(1000, audioData.length - 1); i++) {
-                if (audioData[i] === 0xFF && (audioData[i + 1] & 0xE0) === 0xE0) {
-                    foundMP3Frame = true;
-                    break;
-                }
+            if (!hasRIFFHeader || !hasWAVEHeader) {
+                logger.warn('TopMediai response does not contain recognizable WAV headers');
+                // Don't throw error - some valid WAVs might have variations
             }
+        } else if (format.toLowerCase() === 'mp3') {
+            // Check for MP3 headers (ID3 tag or MP3 frame sync)
+            const header = audioData.slice(0, 10);
+            const hasID3Header = header.slice(0, 3).toString() === 'ID3'; // ID3 tag
+            const hasMP3Header = header[0] === 0xFF && (header[1] & 0xE0) === 0xE0; // MP3 frame sync
 
-            if (!foundMP3Frame) {
-                logger.warn('TopMediai response does not contain recognizable MP3 headers');
-                // Don't throw error - some valid MP3s might not have standard headers
+            if (!hasID3Header && !hasMP3Header) {
+                // Look for MP3 frame sync further in the file (after potential metadata)
+                let foundMP3Frame = false;
+                for (let i = 0; i < Math.min(1000, audioData.length - 1); i++) {
+                    if (audioData[i] === 0xFF && (audioData[i + 1] & 0xE0) === 0xE0) {
+                        foundMP3Frame = true;
+                        break;
+                    }
+                }
+
+                if (!foundMP3Frame) {
+                    logger.warn('TopMediai response does not contain recognizable MP3 headers');
+                    // Don't throw error - some valid MP3s might not have standard headers
+                }
             }
         }
 
-        logger.info(`TopMediai MP3 validation passed: ${audioData.length} bytes`);
+        logger.info(`TopMediai ${format.toUpperCase()} validation passed: ${audioData.length} bytes`);
         return true;
     }
 

@@ -35,6 +35,7 @@ router.get('/characters', async (req, res) => {
 router.get('/available', voiceController.getAvailableVoices);
 router.get('/settings/:characterId', voiceController.getVoiceSettings);
 router.post('/settings', voiceController.saveVoiceSettings);
+router.put('/settings/:characterId', voiceController.updateVoiceSettings);
 router.post('/generate', voiceController.generateSpeech);
 router.post('/generate-for-scene', voiceController.generateAndSaveForScene);
 
@@ -82,8 +83,12 @@ router.post('/save-to-sounds', async (req, res) => {
         // Download the file from S3
         tempFilePath = await downloadFile(url.toString());
         
-        // Create the target filename
-        const targetFileName = `${Date.now()}-${text.slice(0, 30).replace(/[^a-zA-Z0-9]/g, '_')}.mp3`;
+        // Determine file extension from the original URL
+        const urlPath = new URL(audioUrl).pathname;
+        const originalExtension = path.extname(urlPath) || '.wav'; // Default to WAV for TopMediai
+
+        // Create the target filename with correct extension
+        const targetFileName = `${Date.now()}-${text.slice(0, 30).replace(/[^a-zA-Z0-9]/g, '_')}${originalExtension}`;
         const targetFilePath = path.join(__dirname, '..', 'public', 'sounds', targetFileName);
 
         // Ensure the sounds directory exists
