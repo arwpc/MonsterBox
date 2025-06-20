@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - MonsterBox</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css?v=<%= Date.now() %>">
+    <style>
+        .ai-dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .ai-system-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .ai-system-card {
+            background: #001100;
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .ai-system-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #ff0000, #00ff00, #ff0000);
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        .system-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .system-icon {
+            font-size: 2em;
+            margin-right: 15px;
+            color: #00ff00;
+        }
+        
+        .system-title {
+            color: #00ff00;
+            font-size: 1.4em;
+            font-weight: bold;
+        }
+        
+        .system-status {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-online { background-color: #00ff00; }
+        .status-offline { background-color: #ff0000; }
+        .status-warning { background-color: #ffff00; }
+        
+        .system-details {
+            margin: 15px 0;
+            font-size: 0.9em;
+            color: #cccccc;
+        }
+        
+        .system-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .pipeline-flow {
+            background: #000800;
+            border: 1px solid #00ff00;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .flow-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .flow-step {
+            background: #001100;
+            border: 1px solid #00ff00;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            min-width: 120px;
+            position: relative;
+        }
+        
+        .flow-arrow {
+            color: #00ff00;
+            font-size: 1.5em;
+        }
+        
+        .flow-step.active {
+            border-color: #ffff00;
+            box-shadow: 0 0 10px rgba(255, 255, 0, 0.3);
+        }
+        
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .action-card {
+            background: #000800;
+            border: 1px solid #00ff00;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .action-card:hover {
+            border-color: #ffff00;
+            transform: translateY(-2px);
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .metric-card {
+            background: #000800;
+            border: 1px solid #00ff00;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .metric-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #00ff00;
+        }
+        
+        .metric-label {
+            font-size: 0.9em;
+            color: #cccccc;
+            margin-top: 5px;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .error-message {
+            background: #330000;
+            border: 1px solid #ff0000;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #ff6666;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🤖 AI Management Dashboard</h1>
+        <nav class="breadcrumb">
+            <a href="/">Home</a> &gt; 
+            <span>AI Management</span>
+        </nav>
+    </header>
+
+    <main class="ai-dashboard">
+        <div class="info-section">
+            <h2>🧠 Comprehensive AI System Management</h2>
+            <p>Centralized configuration and monitoring for all AI systems: Speech-to-Text, AI Personalities, and Text-to-Speech</p>
+        </div>
+
+        <% if (error) { %>
+            <div class="error-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>Error:</strong> <%= error %>
+            </div>
+        <% } %>
+
+        <!-- AI Pipeline Flow Diagram -->
+        <div class="pipeline-flow">
+            <h3>🔄 AI Processing Pipeline</h3>
+            <div class="flow-diagram">
+                <div class="flow-step <%= status && status.stt ? 'active' : '' %>">
+                    <i class="fas fa-microphone system-icon"></i>
+                    <div>Speech-to-Text</div>
+                    <small>OpenAI Whisper</small>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step <%= status && status.ai ? 'active' : '' %>">
+                    <i class="fas fa-brain system-icon"></i>
+                    <div>AI Personality</div>
+                    <small>OpenAI GPT</small>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step <%= status && status.tts ? 'active' : '' %>">
+                    <i class="fas fa-volume-up system-icon"></i>
+                    <div>Text-to-Speech</div>
+                    <small>TopMediaAI</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Systems Grid -->
+        <div class="ai-system-grid">
+            <!-- Speech-to-Text System -->
+            <div class="ai-system-card">
+                <div class="system-header">
+                    <i class="fas fa-microphone system-icon"></i>
+                    <div class="system-title">Speech-to-Text (STT)</div>
+                </div>
+                <div class="system-status">
+                    <div class="status-indicator <%= status && status.stt && status.stt.online ? 'status-online' : 'status-offline' %>"></div>
+                    <span><%= status && status.stt ? (status.stt.online ? 'Online' : 'Offline') : 'Unknown' %></span>
+                </div>
+                <div class="system-details">
+                    <p><strong>Provider:</strong> OpenAI Whisper</p>
+                    <p><strong>Model:</strong> <%= status && status.stt ? status.stt.model || 'whisper-1' : 'Not configured' %></p>
+                    <p><strong>Language:</strong> <%= status && status.stt ? status.stt.language || 'en' : 'Not configured' %></p>
+                    <p><strong>Status:</strong> <%= status && status.stt ? status.stt.status || 'Unknown' : 'Not initialized' %></p>
+                </div>
+                <div class="system-actions">
+                    <a href="/ai-management/stt" class="button primary-btn">
+                        <i class="fas fa-cog"></i> Configure
+                    </a>
+                    <button class="button secondary-btn" onclick="testSTT()">
+                        <i class="fas fa-test-tube"></i> Test
+                    </button>
+                </div>
+            </div>
+
+            <!-- AI Personality System -->
+            <div class="ai-system-card">
+                <div class="system-header">
+                    <i class="fas fa-brain system-icon"></i>
+                    <div class="system-title">AI Personalities</div>
+                </div>
+                <div class="system-status">
+                    <div class="status-indicator <%= status && status.ai && status.ai.online ? 'status-online' : 'status-offline' %>"></div>
+                    <span><%= status && status.ai ? (status.ai.online ? 'Online' : 'Offline') : 'Unknown' %></span>
+                </div>
+                <div class="system-details">
+                    <p><strong>Provider:</strong> OpenAI</p>
+                    <p><strong>Active Characters:</strong> <%= status && status.ai ? status.ai.activeCharacters || 0 : 0 %></p>
+                    <p><strong>Default Model:</strong> <%= status && status.ai ? status.ai.defaultModel || 'gpt-4' : 'Not configured' %></p>
+                    <p><strong>Status:</strong> <%= status && status.ai ? status.ai.status || 'Unknown' : 'Not initialized' %></p>
+                </div>
+                <div class="system-actions">
+                    <a href="/ai-management/personalities" class="button primary-btn">
+                        <i class="fas fa-cog"></i> Configure
+                    </a>
+                    <button class="button secondary-btn" onclick="testAI()">
+                        <i class="fas fa-test-tube"></i> Test
+                    </button>
+                </div>
+            </div>
+
+            <!-- Text-to-Speech System -->
+            <div class="ai-system-card">
+                <div class="system-header">
+                    <i class="fas fa-volume-up system-icon"></i>
+                    <div class="system-title">Text-to-Speech (TTS)</div>
+                </div>
+                <div class="system-status">
+                    <div class="status-indicator <%= status && status.tts && status.tts.online ? 'status-online' : 'status-offline' %>"></div>
+                    <span><%= status && status.tts ? (status.tts.online ? 'Online' : 'Offline') : 'Unknown' %></span>
+                </div>
+
+        <!-- Performance Metrics -->
+        <% if (metrics) { %>
+        <div class="section-container">
+            <h3>📊 Performance Metrics (Last 24 Hours)</h3>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-value"><%= metrics.totalRequests || 0 %></div>
+                    <div class="metric-label">Total Requests</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value"><%= metrics.averageResponseTime || 0 %>ms</div>
+                    <div class="metric-label">Avg Response Time</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value"><%= metrics.successRate || 0 %>%</div>
+                    <div class="metric-label">Success Rate</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value"><%= metrics.errorCount || 0 %></div>
+                    <div class="metric-label">Errors</div>
+                </div>
+            </div>
+        </div>
+        <% } %>
+
+        <!-- Quick Actions -->
+        <div class="section-container">
+            <h3>⚡ Quick Actions</h3>
+            <div class="quick-actions">
+                <div class="action-card" onclick="testFullPipeline()">
+                    <i class="fas fa-play-circle" style="font-size: 2em; color: #00ff00;"></i>
+                    <h4>Test Full Pipeline</h4>
+                    <p>Test complete STT → AI → TTS workflow</p>
+                </div>
+                <div class="action-card" onclick="exportConfig()">
+                    <i class="fas fa-download" style="font-size: 2em; color: #00ff00;"></i>
+                    <h4>Export Configuration</h4>
+                    <p>Download AI settings backup</p>
+                </div>
+                <div class="action-card" onclick="importConfig()">
+                    <i class="fas fa-upload" style="font-size: 2em; color: #00ff00;"></i>
+                    <h4>Import Configuration</h4>
+                    <p>Restore AI settings from backup</p>
+                </div>
+                <div class="action-card" onclick="viewLogs()">
+                    <i class="fas fa-file-alt" style="font-size: 2em; color: #00ff00;"></i>
+                    <h4>View AI Logs</h4>
+                    <p>Monitor AI system activity</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="button-group" style="margin-top: 30px;">
+            <a href="/characters" class="button">🎭 Characters</a>
+            <a href="/ai-instances" class="button">🧠 AI Instances</a>
+            <a href="/chatterpi-chat.html" class="button">💬 ChatterPi Chat</a>
+            <a href="/" class="button secondary-btn">Back to Main Menu</a>
+        </div>
+    </main>
+
+    <script>
+        // Test functions
+        function testSTT() {
+            showModal('Testing STT...', '<p>Testing Speech-to-Text system...</p>');
+            fetch('/ai-management/api/test/stt', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showModal('STT Test Result', `<p><strong>Success!</strong></p><p>Response Time: ${data.responseTime}ms</p><p>Status: ${data.status}</p>`);
+                    } else {
+                        showModal('STT Test Failed', `<p><strong>Error:</strong> ${data.error}</p>`);
+                    }
+                })
+                .catch(error => {
+                    showModal('STT Test Error', `<p><strong>Error:</strong> ${error.message}</p>`);
+                });
+        }
+
+        function testAI() {
+            showModal('Testing AI...', '<p>Testing AI Personality system...</p>');
+            fetch('/ai-management/api/test/ai', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt: 'Hello, this is a test message.' })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showModal('AI Test Result', `<p><strong>Success!</strong></p><p>Response: "${data.response}"</p><p>Response Time: ${data.responseTime}ms</p>`);
+                    } else {
+                        showModal('AI Test Failed', `<p><strong>Error:</strong> ${data.error}</p>`);
+                    }
+                })
+                .catch(error => {
+                    showModal('AI Test Error', `<p><strong>Error:</strong> ${error.message}</p>`);
+                });
+        }
+
+        function testTTS() {
+            showModal('Testing TTS...', '<p>Testing Text-to-Speech system...</p>');
+            fetch('/ai-management/api/test/tts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: 'Hello, this is a test message.' })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showModal('TTS Test Result', `<p><strong>Success!</strong></p><p>Audio generated successfully</p><p>Response Time: ${data.responseTime}ms</p>`);
+                        if (data.audioUrl) {
+                            const audio = new Audio(data.audioUrl);
+                            audio.play();
+                        }
+                    } else {
+                        showModal('TTS Test Failed', `<p><strong>Error:</strong> ${data.error}</p>`);
+                    }
+                })
+                .catch(error => {
+                    showModal('TTS Test Error', `<p><strong>Error:</strong> ${error.message}</p>`);
+                });
+        }
+
+        function testFullPipeline() {
+            showModal('Testing Full Pipeline...', '<p>Testing complete STT → AI → TTS workflow...</p><div id="pipelineProgress"></div>');
+
+            const progressDiv = document.getElementById('pipelineProgress');
+            progressDiv.innerHTML = '<p>🎤 Starting Speech-to-Text test...</p>';
+
+            fetch('/ai-management/api/test/pipeline', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        let html = '<h4>Pipeline Test Results:</h4>';
+                        html += `<p>🎤 STT: ${data.stt.success ? '✅ Success' : '❌ Failed'} (${data.stt.responseTime}ms)</p>`;
+                        html += `<p>🧠 AI: ${data.ai.success ? '✅ Success' : '❌ Failed'} (${data.ai.responseTime}ms)</p>`;
+                        html += `<p>🔊 TTS: ${data.tts.success ? '✅ Success' : '❌ Failed'} (${data.tts.responseTime}ms)</p>`;
+                        html += `<p><strong>Total Time:</strong> ${data.totalTime}ms</p>`;
+                        if (data.audioUrl) {
+                            html += '<button onclick="playTestAudio(\'' + data.audioUrl + '\')" class="button">🔊 Play Result</button>';
+                        }
+                        showModal('Pipeline Test Complete', html);
+                    } else {
+                        showModal('Pipeline Test Failed', `<p><strong>Error:</strong> ${data.error}</p>`);
+                    }
+                })
+                .catch(error => {
+                    showModal('Pipeline Test Error', `<p><strong>Error:</strong> ${error.message}</p>`);
+                });
+        }
+
+        function playTestAudio(url) {
+            const audio = new Audio(url);
+            audio.play();
+        }
+
+        function exportConfig() {
+            window.location.href = '/ai-management/api/export';
+        }
+
+        function importConfig() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const formData = new FormData();
+                    formData.append('config', file);
+
+                    fetch('/ai-management/api/import', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showModal('Import Successful', '<p>Configuration imported successfully. Page will reload.</p>');
+                            setTimeout(() => location.reload(), 2000);
+                        } else {
+                            showModal('Import Failed', `<p><strong>Error:</strong> ${data.error}</p>`);
+                        }
+                    })
+                    .catch(error => {
+                        showModal('Import Error', `<p><strong>Error:</strong> ${error.message}</p>`);
+                    });
+                }
+            };
+            input.click();
+        }
+
+        function viewLogs() {
+            window.open('/log-collection/dashboard', '_blank');
+        }
+
+        // Modal functions
+        function showModal(title, content) {
+            // Create modal if it doesn't exist
+            let modal = document.getElementById('testModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'testModal';
+                modal.className = 'modal';
+                modal.innerHTML = `
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 id="modalTitle"></h3>
+                            <span class="close" onclick="closeModal()">&times;</span>
+                        </div>
+                        <div class="modal-body" id="modalBody"></div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalBody').innerHTML = content;
+            modal.style.display = 'block';
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('testModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // Auto-refresh status every 30 seconds
+        setInterval(() => {
+            fetch('/ai-management/api/status')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    }
+                })
+                .catch(error => console.log('Status refresh failed:', error));
+        }, 30000);
+    </script>
+
+    <style>
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+
+        .modal-content {
+            background-color: #001100;
+            margin: 10% auto;
+            padding: 0;
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 600px;
+        }
+
+        .modal-header {
+            background-color: #000800;
+            padding: 15px 20px;
+            border-bottom: 1px solid #00ff00;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            color: #00ff00;
+        }
+
+        .close {
+            color: #ff0000;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #ff6666;
+        }
+
+        .modal-body {
+            padding: 20px;
+            color: #cccccc;
+        }
+    </style>
+</body>
+</html>
+                <div class="system-details">
+                    <p><strong>Provider:</strong> TopMediaAI</p>
+                    <p><strong>Available Voices:</strong> <%= status && status.tts ? status.tts.voiceCount || 'Loading...' : 'Unknown' %></p>
+                    <p><strong>Configured Characters:</strong> <%= status && status.tts ? status.tts.configuredCharacters || 0 : 0 %></p>
+                    <p><strong>Status:</strong> <%= status && status.tts ? status.tts.status || 'Unknown' : 'Not initialized' %></p>
+                </div>
+                <div class="system-actions">
+                    <a href="/ai-management/tts" class="button primary-btn">
+                        <i class="fas fa-cog"></i> Configure
+                    </a>
+                    <button class="button secondary-btn" onclick="testTTS()">
+                        <i class="fas fa-test-tube"></i> Test
+                    </button>
+                </div>
+            </div>
+        </div>

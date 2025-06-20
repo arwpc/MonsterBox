@@ -7,7 +7,12 @@
     "start": "node --no-deprecation app.js",
     "cleanup": "node cleanup-gpio.js",
     "dev": "nodemon --trace-deprecation --trace-warnings app.js",
-    "test": "cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js tests/**/*.test.js --timeout 30000",
+    "test": "npm run test:unit && npm run test:e2e",
+    "test:unit": "cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js tests/**/*.test.js --timeout 30000",
+    "test:unit-only": "npm run test:unit",
+    "test:ci": "npm run test:unit && npm run test:e2e-ci",
+    "test:e2e-ci": "npx playwright test --reporter=html,json,junit",
+    "test:full": "node scripts/test-full.js",
     "test:watch": "cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js --watch tests/**/*.test.js",
     "test:auth": "cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js tests/secure-remote-access.test.js",
     "test:ssh": "cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js tests/ssh-integration.test.js",
@@ -56,6 +61,19 @@
     "ai:health-check": "node -e \"const {getInstance} = require('./ai/integrations'); getInstance().initialize().then(ai => ai.healthCheck()).then(console.log)\"",
     "ai:test": "node -e \"const {getInstance} = require('./ai/integrations'); getInstance().initialize().then(ai => ai.testIntegration()).then(console.log)\"",
     "ai:status": "node -e \"const {getInstance} = require('./ai/integrations'); getInstance().initialize().then(ai => ai.getStatus()).then(console.log)\"",
+    "test:e2e": "npx playwright test",
+    "test:e2e-headed": "npx playwright test --headed",
+    "test:e2e-debug": "npx playwright test --debug",
+    "test:e2e-ui": "npx playwright test --ui",
+    "test:e2e-report": "npx playwright show-report",
+    "test:e2e-full": "node tests/run-tests.js",
+    "test:navigation": "npx playwright test tests/01-navigation.spec.js",
+    "test:characters": "npx playwright test tests/02-character-management.spec.js",
+    "test:sounds": "npx playwright test tests/03-sound-management.spec.js",
+    "test:ai-management": "npx playwright test tests/04-ai-management.spec.js",
+    "test:modals": "npx playwright test tests/05-modals-and-interactive.spec.js",
+    "test:validation": "npx playwright test tests/06-form-validation.spec.js",
+    "test:responsive": "npx playwright test tests/07-responsive-cross-browser.spec.js",
     "ai:config": "echo 'AI Configuration UI available at http://localhost:3000/ai-config'",
     "ai:validate": "node -e \"const {getInstance} = require('./ai/integrations'); getInstance().initialize().then(ai => ai.validateAPIKeys()).then(console.log)\"",
     "test:ai-config": "echo 'AI Configuration UI tests - visit http://localhost:3000/ai-config to test manually'",
@@ -94,6 +112,7 @@
     "ws": "^8.18.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.53.1",
     "axios": "^1.9.0",
     "chai": "^4.5.0",
     "chai-http": "^4.3.0",
@@ -103,7 +122,8 @@
     "nodemon": "^3.1.7",
     "puppeteer": "^21.11.0",
     "sinon": "^17.0.1",
-    "supertest": "^7.1.1"
+    "supertest": "^7.1.1",
+    "wait-on": "^8.0.3"
   },
   "engines": {
     "node": ">=20.0.0"

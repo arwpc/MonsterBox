@@ -1,0 +1,22 @@
+{
+  "timestamp": "2025-06-19T21:39:18.897Z",
+  "testRun": {
+    "completed": true,
+    "duration": "Unknown",
+    "totalTests": 0,
+    "passed": 0,
+    "failed": 0,
+    "skipped": 0
+  },
+  "environment": {
+    "nodeVersion": "v18.19.0",
+    "platform": "linux",
+    "arch": "arm64"
+  },
+  "artifacts": {
+    "screenshots": 5,
+    "videos": 0,
+    "traces": 0,
+    "htmlReport": false
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "model": "whisper-1",
+  "language": "en",
+  "confidenceThreshold": 0.7,
+  "chunkDuration": 2000,
+  "timeout": 30000,
+  "fallbackToSystem": true,
+  "created": "2025-06-19T00:00:00.000Z",
+  "lastModified": "2025-06-19T00:00:00.000Z"
+}

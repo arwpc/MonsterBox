@@ -1,0 +1,42 @@
+# Page snapshot
+
+```yaml
+- banner:
+  - heading "MonsterBox™" [level=1]
+- main:
+  - heading "Welcome to the MonsterBox Control Panel" [level=2]
+  - paragraph: Choose a character and an option from the menu to get started.
+  - combobox:
+    - option "Select a character" [selected]
+    - option "Orlok"
+    - option "Coffin Breaker"
+    - option "PumpkinHead"
+    - option "Skulltalker"
+- navigation:
+  - link "🎭 Characters":
+    - /url: /characters
+  - link "🔧 Hardware Parts":
+    - /url: /parts
+  - link "🧠 AI Instances":
+    - /url: /ai-instances
+  - link "🔊 Sounds":
+    - /url: /sounds
+  - link "📹 Video":
+    - /url: /Camera
+  - link "🎬 Scenes":
+    - /url: /scenes
+  - link "⚡ Active Mode":
+    - /url: /active-mode
+  - link "🎭 ChatterPi AI":
+    - /url: /chatterpi-chat.html
+  - link "🤖 AI Management":
+    - /url: /ai-management
+  - link "📊 Hardware Monitor":
+    - /url: /hardware-monitor.html
+  - link "📈 Log Collection":
+    - /url: /log-collection/dashboard
+  - link "🧠 AI Configuration":
+    - /url: /ai-config
+- contentinfo:
+  - paragraph: An animatronic automation package by ARW Halloween 2024 2.0.
+```

@@ -92,7 +92,7 @@
             characterSelect.addEventListener('change', function() {
                 if (this.selectedOptions.length > 0) {
                     const selectedCharacterId = this.selectedOptions[0].value;
-                    configureVoiceBtn.href = `/api/voice/configure?characterId=${selectedCharacterId}`;
+                    configureVoiceBtn.href = `/ai-management/tts?characterId=${selectedCharacterId}`;
                 }
             });
         }

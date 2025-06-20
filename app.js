@@ -74,6 +74,7 @@ try {
 
     // Import AI configuration routes
     aiConfigRoutes = require('./routes/ai-config');
+    aiManagementRoutes = require('./routes/aiManagementRoutes');
 
     // Import jaw animation routes
     const jawAnimationRoutesModule = require('./routes/jawAnimationRoutes');
@@ -297,6 +298,7 @@ app.use('/api/log-collection', require('./routes/logCollectionRoutes'));
 
 // AI Configuration routes
 app.use('/ai-config', aiConfigRoutes);
+app.use('/ai-management', aiManagementRoutes);
 
 // Connection monitoring endpoint
 app.get('/api/connections/status',
