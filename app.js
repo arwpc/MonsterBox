@@ -428,11 +428,7 @@ app.get('/', asyncHandler(async (req, res) => {
     });
 }));
 
-// Error handling middleware - must be last
-app.use(notFoundHandler);
-app.use(errorHandler);
-
-// New route for setting the selected character
+// Route for setting the selected character
 app.post('/set-character', (req, res) => {
     const characterId = req.body.characterId;
     req.session.characterId = characterId;
@@ -440,14 +436,18 @@ app.post('/set-character', (req, res) => {
     res.json({ success: true, message: 'Character updated successfully' });
 });
 
-// Updated route for client-side logging - DISABLED to prevent spam
+// Route for client-side logging - DISABLED to prevent spam
 app.post('/client-log', (req, res) => {
     // Silently accept and discard client logs to prevent spam
     res.sendStatus(200);
 });
 
-// New route for executing Python scripts
+// Route for executing Python scripts
 app.post('/execute-python-script', partRoutes.executePythonScript);
+
+// Error handling middleware - must be last
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 // Function to get the local IP address
 function getLocalIpAddress() {

@@ -67,27 +67,7 @@ async function testWebAnimatronicRoutes() {
             console.log(`⚠️  Connection test failed (expected for network issues): ${error.message}`);
         }
         
-        // Test 4: Test log collection endpoint (POST)
-        console.log('\n📋 Test 4: Testing log collection endpoint...');
-        try {
-            const response = await request(app)
-                .post('/characters/1/collect-logs')
-                .send({
-                    lines: 10,
-                    logTypes: ['system']
-                })
-                .expect('Content-Type', /json/);
-            
-            if (response.status === 200) {
-                console.log('✅ Log collection endpoint works');
-                console.log(`   Character: ${response.body.result.character}`);
-                console.log(`   Log types collected: ${Object.keys(response.body.result.logs).length}`);
-            } else {
-                console.log(`⚠️  Log collection endpoint returned status ${response.status} (expected for network issues)`);
-            }
-        } catch (error) {
-            console.log(`⚠️  Log collection test failed (expected for network issues): ${error.message}`);
-        }
+
         
         // Test 5: Test SSH setup endpoint (POST)
         console.log('\n🔑 Test 5: Testing SSH setup endpoint...');

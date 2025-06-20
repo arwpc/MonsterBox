@@ -12,14 +12,7 @@
       "status": "running",
       "character_type": "Count Orlok",
       "description": "Vampire animatronic with moving arms and glowing eyes",
-      "rpi_config": {
-        "host": "192.168.8.120",
-        "user": "remote",
-        "password": "",
-        "ssh_key_path": "~/.ssh/id_rsa",
-        "collection_interval": 300,
-        "max_lines": 1000
-      },
+      "rpi_config": null,
       "services": [
         "monsterbox",
         "nginx",

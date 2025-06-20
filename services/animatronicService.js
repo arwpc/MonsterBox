@@ -103,8 +103,7 @@ class AnimatronicService {
             timestamp: new Date().toISOString(),
             tests: {
                 ping: { passed: false, message: '', duration: 0 },
-                ssh: { passed: false, message: '', duration: 0 },
-                logs: { passed: false, message: '', duration: 0, sampleLogs: '' }
+                ssh: { passed: false, message: '', duration: 0 }
             }
         };
 
@@ -151,111 +150,12 @@ class AnimatronicService {
             result.tests.ssh.message = `SSH connection failed: ${error.message}`;
             result.tests.ssh.duration = Date.now() - sshStart;
             logger.error(`SSH connection failed for ${character.char_name}:`, error.message);
-            return result; // Skip log test if SSH fails
-        }
-
-        // Test 3: Log collection
-        if (result.tests.ssh.passed) {
-            logger.info(`Testing log collection for ${character.char_name}`);
-            const logStart = Date.now();
-
-            try {
-                const sshCommand = this.buildSSHCommand(character, "sudo journalctl -n 5 --no-pager");
-                const { stdout } = await execAsync(sshCommand);
-                
-                if (stdout && stdout.trim().length > 0) {
-                    result.tests.logs.passed = true;
-                    result.tests.logs.message = 'Log collection successful';
-                    result.tests.logs.sampleLogs = stdout.trim();
-                    result.tests.logs.duration = Date.now() - logStart;
-                    logger.info(`Log collection successful for ${character.char_name}`);
-                } else {
-                    result.tests.logs.message = 'No logs returned';
-                    result.tests.logs.duration = Date.now() - logStart;
-                    logger.warn(`No logs returned for ${character.char_name}`);
-                }
-            } catch (error) {
-                result.tests.logs.message = `Log collection failed: ${error.message}`;
-                result.tests.logs.duration = Date.now() - logStart;
-                logger.error(`Log collection failed for ${character.char_name}:`, error.message);
-            }
         }
 
         return result;
     }
 
-    /**
-     * Collect logs from a specific animatronic character
-     */
-    async collectCharacterLogs(characterId, options = {}) {
-        const { lines = 100, since = null, logTypes = ['system', 'auth', 'kernel'] } = options;
-        
-        const characters = await this.loadCharacters();
-        const character = characters.find(c => c.id === parseInt(characterId));
-        
-        if (!character || !character.animatronic || !character.animatronic.enabled) {
-            throw new Error('Character not found or animatronic not enabled');
-        }
 
-        const rpiConfig = character.animatronic.rpi_config;
-        if (!rpiConfig || !rpiConfig.host) {
-            throw new Error('RPI configuration not found for character');
-        }
-
-        const logs = {};
-
-        for (const logType of logTypes) {
-            try {
-                let command;
-                switch (logType) {
-                    case 'system':
-                        command = `sudo journalctl -u systemd -n ${lines} --no-pager`;
-                        break;
-                    case 'auth':
-                        command = `sudo journalctl -u ssh -n ${lines} --no-pager`;
-                        break;
-                    case 'kernel':
-                        command = `sudo journalctl -k -n ${lines} --no-pager`;
-                        break;
-                    case 'daemon':
-                        command = `sudo journalctl --system -n ${lines} --no-pager`;
-                        break;
-                    default:
-                        command = `sudo journalctl -n ${lines} --no-pager`;
-                }
-
-                if (since) {
-                    command += ` --since="${since}"`;
-                }
-
-                const sshCommand = this.buildSSHCommand(character, command);
-                const { stdout } = await execAsync(sshCommand);
-                
-                logs[logType] = {
-                    success: true,
-                    data: stdout.trim(),
-                    timestamp: new Date().toISOString()
-                };
-                
-                logger.info(`Collected ${logType} logs for ${character.char_name}`);
-            } catch (error) {
-                logs[logType] = {
-                    success: false,
-                    error: error.message,
-                    timestamp: new Date().toISOString()
-                };
-                
-                logger.error(`Failed to collect ${logType} logs for ${character.char_name}:`, error.message);
-            }
-        }
-
-        return {
-            character: character.char_name,
-            host: rpiConfig.host,
-            logs: logs,
-            timestamp: new Date().toISOString()
-        };
-    }
 
     /**
      * Setup SSH keys for a specific animatronic character

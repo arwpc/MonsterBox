@@ -191,10 +191,7 @@ router.post('/', upload.single('character_image'), async (req, res) => {
                     host: req.body.rpi_host,
                     user: req.body.rpi_user || 'remote',
                     password: req.body.rpi_password || '',
-                    password: req.body.rpi_password || '',
-                    ssh_key_path: "~/.ssh/id_rsa",
-                    collection_interval: parseInt(req.body.collection_interval) || 300,
-                    max_lines: parseInt(req.body.max_lines) || 1000
+                    ssh_key_path: "~/.ssh/id_rsa"
                 };
             }
         } else {
@@ -279,9 +276,7 @@ router.post('/:id', upload.single('character_image'), async (req, res) => {
                     host: req.body.rpi_host,
                     user: req.body.rpi_user || 'remote',
                     password: req.body.rpi_password || '',
-                    ssh_key_path: "~/.ssh/id_rsa",
-                    collection_interval: parseInt(req.body.collection_interval) || 300,
-                    max_lines: parseInt(req.body.max_lines) || 1000
+                    ssh_key_path: "~/.ssh/id_rsa"
                 };
             }
         } else {
@@ -368,32 +363,7 @@ router.post('/:id/test-connection', async (req, res) => {
     }
 });
 
-// Collect logs from animatronic
-router.post('/:id/collect-logs', async (req, res) => {
-    try {
-        const characterId = parseInt(req.params.id);
-        const { lines = 100, since = null, logTypes = ['system', 'auth', 'kernel'] } = req.body;
 
-        logger.info(`Collecting logs for character ${characterId}`);
-
-        const result = await animatronicService.collectCharacterLogs(characterId, {
-            lines: parseInt(lines),
-            since: since,
-            logTypes: Array.isArray(logTypes) ? logTypes : [logTypes]
-        });
-
-        res.json({
-            success: true,
-            result: result
-        });
-    } catch (error) {
-        logger.error('Error collecting animatronic logs:', error);
-        res.status(500).json({
-            success: false,
-            error: error.message
-        });
-    }
-});
 
 // Setup SSH for animatronic
 router.post('/:id/setup-ssh', async (req, res) => {

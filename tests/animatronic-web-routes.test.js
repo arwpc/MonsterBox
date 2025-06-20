@@ -132,39 +132,7 @@ describe('🤖 Animatronic Web Routes Integration Tests', function() {
         
     });
     
-    describe('📋 Log Collection Routes', function() {
-        
-        it('should provide log collection endpoint', async function() {
-            try {
-                const response = await request
-                    .post(`${baseUrl}/characters/${testCharacterId}/collect-logs`)
-                    .send({
-                        lines: 10,
-                        logTypes: ['system']
-                    })
-                    .timeout(15000);
-                
-                expect(response.status).to.be.oneOf([200, 500]); // 500 expected for network issues
-                expect(response.body).to.have.property('success');
-                
-                if (response.body.success) {
-                    expect(response.body.result).to.have.property('character');
-                    expect(response.body.result).to.have.property('host');
-                    expect(response.body.result).to.have.property('logs');
-                    
-                    console.log(`   ✅ Log collection completed for ${response.body.result.character}`);
-                    console.log(`   📊 Log types collected: ${Object.keys(response.body.result.logs).length}`);
-                } else {
-                    console.log('   ⚠️  Log collection failed (expected for network issues)');
-                }
-            } catch (error) {
-                console.log('   ⚠️  Log collection test failed (expected for network issues)');
-                // Don't fail the test for network issues
-                expect(error.message).to.include('timeout').or.include('ECONNREFUSED').or.include('ENOTFOUND');
-            }
-        });
-        
-    });
+
     
     describe('🔑 SSH Setup Routes', function() {
         

@@ -132,19 +132,7 @@
                                 <small style="color: #888;">Password will be stored securely and used for automated SSH connections</small>
                             </div>
 
-                            <div class="form-group">
-                                <label for="collection_interval">Log Collection Interval (seconds):</label>
-                                <input type="number" id="collection_interval" name="collection_interval"
-                                       value="<%= (character && character.animatronic && character.animatronic.rpi_config) ? character.animatronic.rpi_config.collection_interval || 300 : 300 %>"
-                                       min="60" max="3600">
-                            </div>
 
-                            <div class="form-group">
-                                <label for="max_lines">Max Log Lines:</label>
-                                <input type="number" id="max_lines" name="max_lines"
-                                       value="<%= (character && character.animatronic && character.animatronic.rpi_config) ? character.animatronic.rpi_config.max_lines || 1000 : 1000 %>"
-                                       min="100" max="10000">
-                            </div>
 
                             <div class="form-group">
                                 <label for="hardware_monitoring">
@@ -173,7 +161,6 @@
                                     <h4>🤖 Animatronic Management</h4>
                                     <div class="button-group">
                                         <button type="button" onclick="testConnection(<%= character.id %>)" class="button secondary-btn">🧪 Test Connection</button>
-                                        <button type="button" onclick="collectLogs(<%= character.id %>)" class="button secondary-btn">📋 Collect Logs</button>
                                         <button type="button" onclick="showSystemInfo(<%= character.id %>)" class="button secondary-btn">📊 System Info</button>
                                         <button type="button" onclick="rebootSystem(<%= character.id %>)" class="button secondary-btn">🔄 Reboot System</button>
                                     </div>
@@ -461,23 +448,7 @@
                             border-color: #ff0000;
                             background-color: rgba(255, 0, 0, 0.1);
                         }
-                        .log-section {
-                            margin: 10px 0;
-                            padding: 10px;
-                            border: 1px solid #333;
-                            border-radius: 3px;
-                            background-color: rgba(0, 0, 0, 0.3);
-                        }
-                        .log-content {
-                            font-family: monospace;
-                            font-size: 11px;
-                            white-space: pre-wrap;
-                            max-height: 200px;
-                            overflow-y: auto;
-                            background-color: #111;
-                            padding: 5px;
-                            border: 1px solid #333;
-                        }
+
                     `;
                     document.head.appendChild(style);
                 }
@@ -519,18 +490,7 @@
 
 
 
-                        // Log test
-                        const logClass = result.tests.logs.passed ? 'test-passed' : 'test-failed';
-                        html += '<div class="test-result ' + logClass + '">';
-                        html += '<h4>📋 Log Collection</h4>';
-                        html += '<p><strong>Status:</strong> ' + (result.tests.logs.passed ? '✅ PASSED' : '❌ FAILED') + '</p>';
-                        html += '<p><strong>Message:</strong> ' + result.tests.logs.message + '</p>';
-                        html += '<p><strong>Duration:</strong> ' + result.tests.logs.duration + 'ms</p>';
-                        if (result.tests.logs.sampleLogs) {
-                            html += '<p><strong>Sample Logs:</strong></p>';
-                            html += '<div class="log-content">' + result.tests.logs.sampleLogs + '</div>';
-                        }
-                        html += '</div>';
+
 
                         showModal('Connection Test Results', html);
                     } else {
@@ -542,49 +502,7 @@
                 });
         }
 
-        function collectLogs(characterId) {
-            showModal('Collecting Logs...', '<p>Collecting logs from animatronic, please wait...</p>');
 
-            fetch('/characters/' + characterId + '/collect-logs', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    lines: 50,
-                    logTypes: ['system', 'auth', 'kernel']
-                })
-            })
-                .then(response => response.json())
-                .then(response => {
-                    if (response.success) {
-                        const result = response.result;
-                        let html = '<h3>Log Collection Results for ' + result.character + '</h3>';
-                        html += '<p><strong>Host:</strong> ' + result.host + '</p>';
-                        html += '<p><strong>Timestamp:</strong> ' + new Date(result.timestamp).toLocaleString() + '</p>';
-
-                        Object.keys(result.logs).forEach(logType => {
-                            const log = result.logs[logType];
-                            const logClass = log.success ? 'test-passed' : 'test-failed';
-                            html += '<div class="log-section ' + logClass + '">';
-                            html += '<h4>📋 ' + logType.toUpperCase() + ' Logs</h4>';
-                            if (log.success) {
-                                html += '<p><strong>Status:</strong> ✅ SUCCESS</p>';
-                                html += '<div class="log-content">' + log.data + '</div>';
-                            } else {
-                                html += '<p><strong>Status:</strong> ❌ FAILED</p>';
-                                html += '<p><strong>Error:</strong> ' + log.error + '</p>';
-                            }
-                            html += '</div>';
-                        });
-
-                        showModal('Log Collection Results', html);
-                    } else {
-                        showModal('Log Collection Failed', '<p style="color: #ff0000;">❌ ' + response.error + '</p>');
-                    }
-                })
-                .catch(error => {
-                    showModal('Log Collection Error', '<p style="color: #ff0000;">❌ Error: ' + error.message + '</p>');
-                });
-        }
 
         function showSystemInfo(characterId) {
             showModal('Getting System Info...', '<p>Retrieving system information, please wait...</p>');
