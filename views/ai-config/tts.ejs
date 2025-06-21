@@ -37,7 +37,7 @@
         
         .character-voice-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
             gap: 20px;
             margin: 20px 0;
         }
@@ -49,6 +49,9 @@
             padding: 24px;
             position: relative;
             transition: all 0.3s ease;
+            min-height: 300px;
+            display: flex;
+            flex-direction: column;
         }
 
         .character-voice-card:hover {
@@ -88,6 +91,7 @@
         
         .voice-assignment {
             margin: 20px 0;
+            flex: 1;
         }
 
         .voice-assignment label {
@@ -105,9 +109,10 @@
             padding: 16px;
             margin: 10px 0;
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             justify-content: space-between;
             transition: all 0.3s ease;
+            min-height: 80px;
         }
 
         .voice-preview:hover {
@@ -122,27 +127,43 @@
         .voice-preview.no-voice {
             border-color: #666666;
             border-style: dashed;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: #888888;
+            font-style: italic;
         }
 
         .voice-info {
             flex: 1;
+            margin-right: 10px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
 
         .voice-name {
-            color: #ffffff;
+            color: #00ff00;
             font-weight: bold;
             font-size: 1.1em;
             margin-bottom: 4px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
 
         .voice-details {
             color: #cccccc;
             font-size: 0.9em;
+            line-height: 1.4;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
 
         .voice-controls {
             display: flex;
+            flex-direction: column;
             gap: 8px;
+            flex-shrink: 0;
+            min-width: 100px;
         }
 
         .voice-settings-summary {
@@ -156,6 +177,9 @@
         .voice-settings-summary small {
             color: #cccccc;
             font-size: 0.85em;
+            line-height: 1.4;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
         
         .voice-catalog {
@@ -439,13 +463,38 @@
             padding: 8px 12px;
             font-size: 0.9em;
             min-width: auto;
+            white-space: nowrap;
+            text-align: center;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .button.small-btn i {
             margin-right: 4px;
         }
 
+        /* Text overflow fixes */
+        .character-info h4 {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+        }
+
+        .character-info p {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+            line-height: 1.3;
+        }
+
         /* Responsive improvements */
+        @media (max-width: 1024px) {
+            .character-voice-grid {
+                grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            }
+        }
+
         @media (max-width: 768px) {
             .character-voice-grid {
                 grid-template-columns: 1fr;
@@ -455,6 +504,36 @@
                 grid-template-columns: 1fr;
             }
 
+            .voice-preview {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .voice-info {
+                margin-right: 0;
+                margin-bottom: 10px;
+            }
+
+            .voice-controls {
+                flex-direction: row;
+                gap: 8px;
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .button.small-btn {
+                flex: 1;
+                justify-content: center;
+                min-width: 80px;
+            }
+
+            .character-voice-card {
+                min-height: auto;
+            }
+        }
+
+        @media (max-width: 480px) {
             .voice-controls {
                 flex-direction: column;
                 gap: 4px;
@@ -462,7 +541,6 @@
 
             .button.small-btn {
                 width: 100%;
-                justify-content: center;
             }
         }
 
