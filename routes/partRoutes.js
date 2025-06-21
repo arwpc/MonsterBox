@@ -185,6 +185,8 @@ router.post('/:type', checkCharacterSelected, async (req, res) => {
             logger.info(`Created sensor: ${JSON.stringify(newPart)}`);
         } else if (type === 'webcam') {
             logger.info(`Created webcam: ${JSON.stringify(newPart)}`);
+        } else if (type === 'microphone') {
+            logger.info(`Created microphone: ${JSON.stringify(newPart)}`);
         }
         const redirectUrl = `/parts?characterId=${req.characterId}`;
         logger.info(`Redirecting to: ${redirectUrl}`);
@@ -450,6 +452,112 @@ router.get('/api/parts', async (req, res) => {
     } catch (error) {
         logger.error('Error fetching parts for API:', error);
         res.status(500).json({ error: 'An error occurred while fetching parts' });
+    }
+});
+
+// Microphone routes
+router.get('/microphone/new', async (req, res) => {
+    try {
+        const character = await characterService.getCharacterById(req.characterId);
+        const characters = await characterService.getAllCharacters();
+        const part = { type: 'microphone', characterId: req.characterId };
+        res.render('part-form', {
+            title: 'Add Microphone',
+            action: `/parts/microphone`,
+            part,
+            character,
+            characters
+        });
+    } catch (error) {
+        logger.error('Error rendering microphone form:', error);
+        res.status(500).send('An error occurred while loading the form');
+    }
+});
+
+router.get('/microphone/:id/edit', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            logger.warn(`Invalid part ID (not a number): ${req.params.id}`);
+            return res.status(404).send('Part not found');
+        }
+        const part = await partService.getPartById(id);
+        if (!part) {
+            logger.warn(`Part not found with id: ${id}`);
+            return res.status(404).send('Part not found');
+        }
+        const character = await characterService.getCharacterById(req.characterId);
+        const characters = await characterService.getAllCharacters();
+        res.render('part-form', {
+            title: 'Edit Microphone',
+            action: `/parts/microphone/${id}/update`,
+            part,
+            character,
+            characters
+        });
+    } catch (error) {
+        logger.error('Error fetching part for editing:', error);
+        res.status(500).send('An error occurred while fetching the part');
+    }
+});
+
+router.post('/microphone', checkCharacterSelected, async (req, res) => {
+    try {
+        const partData = req.body;
+        partData.type = 'microphone';
+        partData.characterId = req.characterId;
+
+        // Convert string values to appropriate types
+        if (partData.sampleRate) partData.sampleRate = parseInt(partData.sampleRate);
+        if (partData.channels) partData.channels = parseInt(partData.channels);
+        if (partData.sensitivity) partData.sensitivity = parseFloat(partData.sensitivity);
+        if (partData.voiceActivationThreshold) partData.voiceActivationThreshold = parseFloat(partData.voiceActivationThreshold);
+
+        // Convert checkbox values to booleans
+        partData.echoCancellation = partData.echoCancellation === 'on';
+        partData.noiseSuppression = partData.noiseSuppression === 'on';
+        partData.autoGainControl = partData.autoGainControl === 'on';
+        partData.voiceActivation = partData.voiceActivation === 'on';
+
+        logger.info(`Creating microphone with data: ${JSON.stringify(partData)}`);
+        const newPart = await partService.createPart(partData);
+        logger.info(`Created microphone: ${JSON.stringify(newPart)}`);
+        res.redirect(`/parts?characterId=${req.characterId}`);
+    } catch (error) {
+        logger.error('Error creating microphone:', error);
+        res.status(500).send('An error occurred while creating the microphone');
+    }
+});
+
+router.post('/microphone/:id/update', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            logger.warn(`Invalid part ID (not a number): ${req.params.id}`);
+            return res.status(404).send('Part not found');
+        }
+
+        const partData = req.body;
+        partData.characterId = req.characterId;
+
+        // Convert string values to appropriate types
+        if (partData.sampleRate) partData.sampleRate = parseInt(partData.sampleRate);
+        if (partData.channels) partData.channels = parseInt(partData.channels);
+        if (partData.sensitivity) partData.sensitivity = parseFloat(partData.sensitivity);
+        if (partData.voiceActivationThreshold) partData.voiceActivationThreshold = parseFloat(partData.voiceActivationThreshold);
+
+        // Convert checkbox values to booleans
+        partData.echoCancellation = partData.echoCancellation === 'on';
+        partData.noiseSuppression = partData.noiseSuppression === 'on';
+        partData.autoGainControl = partData.autoGainControl === 'on';
+        partData.voiceActivation = partData.voiceActivation === 'on';
+
+        const updatedPart = await partService.updatePart(id, partData);
+        logger.info(`Updated microphone: ${JSON.stringify(updatedPart)}`);
+        res.redirect(`/parts?characterId=${req.characterId}`);
+    } catch (error) {
+        logger.error('Error updating microphone:', error);
+        res.status(500).send('An error occurred while updating the microphone');
     }
 });
 

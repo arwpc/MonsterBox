@@ -145,7 +145,7 @@ class WebSocketHardwareServer:
                 "character_switching": True,
                 "service_management": True,
                 "real_time_monitoring": True,
-                "supported_hardware": ["motor", "light", "sensor", "webcam", "actuator"]
+                "supported_hardware": ["motor", "light", "sensor", "webcam", "microphone", "actuator"]
             }
         }
         await websocket.send(json.dumps(welcome_message))

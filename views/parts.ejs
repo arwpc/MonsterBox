@@ -33,6 +33,7 @@
             <a href="/parts/new/sensor" class="button">📡 Add Sensor</a>
             <a href="/parts/webcam/new" class="button">📹 Add Webcam</a>
             <a href="/parts/head-tracking/new" class="button">🎯 Add Head Tracking</a>
+            <a href="/parts/new/microphone" class="button">🎤 Add Microphone</a>
             <a href="/hardware-monitor.html" class="button secondary-btn">📊 Hardware Monitor</a>
         </div>
 
@@ -95,7 +96,8 @@
                                                 <%= part.type==='linear-actuator' ? '🦴' : part.type==='servo' ? '🦷' :
                                                     part.type==='motor' ? '🔄' : part.type==='light' ? '💡' :
                                                     part.type==='led' ? '🔆' : part.type==='sensor' ? '📡' :
-                                                    part.type==='webcam' ? '📹' : '🔧' %>
+                                                    part.type==='webcam' ? '📹' : part.type==='microphone' ? '🎤' : '🔧'
+                                                    %>
                                                     <%= part.type %>
                                             </span>
                                         </td>
@@ -133,16 +135,20 @@
                                                             <% } else if (part.type==='webcam' ) { %>
                                                                 <a href="/parts/webcam/<%= part.id %>/edit"
                                                                     class="button small-btn">✏️ Edit</a>
-                                                                <% } else { %>
-                                                                    <a href="/parts/<%= part.id %>/edit"
+                                                                <% } else if (part.type==='microphone' ) { %>
+                                                                    <a href="/parts/microphone/<%= part.id %>/edit"
                                                                         class="button small-btn">✏️ Edit</a>
-                                                                    <% } %>
-                                                                        <button onclick="testPart('<%= part.id %>')"
-                                                                            class="button small-btn test-btn">🧪
-                                                                            Test</button>
-                                                                        <button
-                                                                            class="button small-btn delete-btn delete-part"
-                                                                            data-id="<%= part.id %>">🗑️ Delete</button>
+                                                                    <% } else { %>
+                                                                        <a href="/parts/<%= part.id %>/edit"
+                                                                            class="button small-btn">✏️ Edit</a>
+                                                                        <% } %>
+                                                                            <button onclick="testPart('<%= part.id %>')"
+                                                                                class="button small-btn test-btn">🧪
+                                                                                Test</button>
+                                                                            <button
+                                                                                class="button small-btn delete-btn delete-part"
+                                                                                data-id="<%= part.id %>">🗑️
+                                                                                Delete</button>
                                             </div>
                                         </td>
                                     </tr>
