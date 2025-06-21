@@ -18,8 +18,8 @@ app.use(express.static('public'));
 
 // Basic test endpoint
 app.get('/test', (req, res) => {
-    res.json({ 
-        status: 'OK', 
+    res.json({
+        status: 'OK',
         message: 'Simple webcam server is running',
         timestamp: new Date().toISOString()
     });
@@ -28,55 +28,49 @@ app.get('/test', (req, res) => {
 // Simple webcam stream endpoint
 app.get('/webcam/stream', (req, res) => {
     console.log('📹 New webcam stream request');
-    
+
     try {
         // Kill any existing stream
         if (streamProcess && !streamProcess.killed) {
             streamProcess.kill();
         }
-        
-        // Start new stream process
-        const scriptPath = path.join(__dirname, 'scripts', 'webcam_persistent_stream.py');
-        streamProcess = spawn('python3', [
-            scriptPath,
-            '--device-id', '0',
-            '--width', '640',
-            '--height', '480',
-            '--fps', '15',
-            '--quality', '85',
-            '--persistent'
-        ]);
-        
+
+        // Webcam streaming is now handled by the WebSocket webcam service
+        console.log('Webcam streaming migrated to WebSocket service on port 8774');
+
+        // This functionality is deprecated - use the WebSocket webcam service instead
+        throw new Error('Webcam streaming migrated to WebSocket service. Use ws://localhost:8774 instead.');
+
         // Set response headers for MJPEG stream
         res.setHeader('Content-Type', 'multipart/x-mixed-replace; boundary=frame');
         res.setHeader('Cache-Control', 'no-cache');
         res.setHeader('Connection', 'keep-alive');
         res.setHeader('Access-Control-Allow-Origin', '*');
-        
+
         console.log('✅ Stream headers set, piping data...');
-        
+
         // Pipe stream data to response
         streamProcess.stdout.pipe(res, { end: false });
-        
+
         // Handle stream errors
         streamProcess.stderr.on('data', (data) => {
             console.error('Stream error:', data.toString());
         });
-        
+
         streamProcess.on('close', (code) => {
             console.log(`Stream process closed with code ${code}`);
             if (!res.headersSent) {
                 res.status(500).send('Stream ended');
             }
         });
-        
+
         streamProcess.on('error', (error) => {
             console.error('Stream process error:', error);
             if (!res.headersSent) {
                 res.status(500).send('Stream error');
             }
         });
-        
+
         // Handle client disconnect
         res.on('close', () => {
             console.log('📱 Client disconnected');
@@ -84,7 +78,7 @@ app.get('/webcam/stream', (req, res) => {
                 streamProcess.kill();
             }
         });
-        
+
     } catch (error) {
         console.error('Error starting stream:', error);
         res.status(500).send('Failed to start stream: ' + error.message);
@@ -94,7 +88,7 @@ app.get('/webcam/stream', (req, res) => {
 // Webcam test endpoint
 app.get('/webcam/test', (req, res) => {
     console.log('🧪 Testing webcam...');
-    
+
     const testScript = spawn('python3', ['-c', `
 import cv2
 try:
@@ -111,16 +105,16 @@ try:
 except Exception as e:
     print("ERROR:", str(e))
 `]);
-    
+
     let output = '';
     testScript.stdout.on('data', (data) => {
         output += data.toString();
     });
-    
+
     testScript.stderr.on('data', (data) => {
         output += data.toString();
     });
-    
+
     testScript.on('close', (code) => {
         res.json({
             success: code === 0 && output.includes('SUCCESS'),

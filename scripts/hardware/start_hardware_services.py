@@ -44,6 +44,8 @@ def print_service_info():
 🦾 Main Hardware Server: ws://0.0.0.0:8780
 🔄 Motor Service:        ws://0.0.0.0:8771
 💡 Light Service:        ws://0.0.0.0:8772
+📹 Webcam Service:       ws://0.0.0.0:8774
+🎯 Head Tracking:        ws://0.0.0.0:8776
 
 🎭 Character-based service loading enabled
 📋 Using configuration from: data/characters.json
@@ -58,7 +60,7 @@ async def main():
     parser = argparse.ArgumentParser(description='Start MonsterBox Hardware WebSocket Services')
     parser.add_argument('--host', default='0.0.0.0', help='Host to bind to (default: 0.0.0.0)')
     parser.add_argument('--port', type=int, default=8780, help='Main server port (default: 8780)')
-    parser.add_argument('--character', type=int, default=4, help='Initial character ID (default: 4 - Orlok)')
+    parser.add_argument('--character', type=int, default=1, help='Initial character ID (default: 1 - Orlok)')
     parser.add_argument('--debug', action='store_true', help='Enable debug logging')
     
     args = parser.parse_args()

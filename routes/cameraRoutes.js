@@ -31,7 +31,7 @@ async function loadCameraSettings() {
             fps: settings.fps || DEFAULT_FPS
         };
     } catch (error) {
-        return { 
+        return {
             selectedCamera: null,
             width: DEFAULT_WIDTH,
             height: DEFAULT_HEIGHT,
@@ -101,7 +101,7 @@ async function cleanupLockFiles() {
 async function startCameraStream(cameraId, width = DEFAULT_WIDTH, height = DEFAULT_HEIGHT, fps = DEFAULT_FPS) {
     return new Promise((resolve, reject) => {
         const streamScript = path.join(__dirname, '..', 'scripts', 'camera_stream.py');
-        
+
         const process = spawn('python3', [
             streamScript,
             '--camera-id', cameraId.toString(),
@@ -207,7 +207,7 @@ router.get('/', async (req, res) => {
         const characterService = require('../services/characterService');
         const characters = await characterService.getAllCharacters();
         const selectedCharacter = characterId ? await characterService.getCharacterById(characterId) : null;
-        res.render('camera', { 
+        res.render('camera', {
             title: 'Camera Control',
             characterId: characterId || null,
             selectedCamera: settings.selectedCamera,
@@ -217,7 +217,7 @@ router.get('/', async (req, res) => {
         });
     } catch (error) {
         logger.error('Failed to render camera view', { error: error.message });
-        res.status(500).render('error', { 
+        res.status(500).render('error', {
             error: 'Failed to load camera interface',
             details: error.message
         });
@@ -244,7 +244,7 @@ router.get('/stream', async (req, res) => {
         streamProcess = await startCameraStream(settings.selectedCamera, width, height, fps);
 
         res.setHeader('Content-Type', 'multipart/x-mixed-replace; boundary=frame');
-        
+
         streamProcess.stdout.on('data', (data) => {
             try {
                 res.write(data);
@@ -411,7 +411,7 @@ router.post('/select', async (req, res) => {
 
         // Verify camera is accessible
         const verifyScript = path.join(__dirname, '..', 'scripts', 'camera_control.py');
-        
+
         const process = spawn('python3', [
             verifyScript,
             'settings',
@@ -443,9 +443,9 @@ router.post('/select', async (req, res) => {
                     const lines = output.trim().split('\n');
                     const lastLine = lines[lines.length - 1];
                     const result = JSON.parse(lastLine);
-                    
+
                     if (result.success) {
-                        await saveCameraSettings({ 
+                        await saveCameraSettings({
                             selectedCamera: cameraId,
                             width: result.width,
                             height: result.height,
@@ -475,7 +475,7 @@ router.post('/select', async (req, res) => {
 router.post('/control', async (req, res) => {
     const { command, params = {} } = req.body;
     const controlScript = path.join(__dirname, '..', 'scripts', 'camera_control.py');
-    
+
     try {
         const settings = await loadCameraSettings();
         if (!settings.selectedCamera && settings.selectedCamera !== 0) {
@@ -598,8 +598,8 @@ router.post('/control', async (req, res) => {
                     res.json({ success: true, message: output });
                 }
             } else {
-                res.status(500).json({ 
-                    success: false, 
+                res.status(500).json({
+                    success: false,
                     error: error || 'Camera control failed'
                 });
             }
@@ -616,8 +616,8 @@ router.post('/control', async (req, res) => {
 
     } catch (error) {
         logger.error('Camera control error:', error);
-        res.status(500).json({ 
-            success: false, 
+        res.status(500).json({
+            success: false,
             error: error.message
         });
     }
@@ -626,7 +626,7 @@ router.post('/control', async (req, res) => {
 // Head tracking route
 router.post('/head-track', async (req, res) => {
     const { servoId } = req.body;
-    
+
     try {
         // Validate servo ID
         if (!servoId) {
@@ -643,93 +643,22 @@ router.post('/head-track', async (req, res) => {
         await killExistingCameraProcesses();
         await cleanupLockFiles();
 
-        // Start head tracking process
-        const trackScript = path.join(__dirname, '..', 'scripts', 'head_track.py');
-        const args = [
-            '--camera-id', settings.selectedCamera.toString(),
-            '--servo-id', servoId,
-            '--width', '320',  // Use lower resolution for faster processing
-            '--height', '240'
-        ];
-
-        const process = spawn('python3', [trackScript, ...args]);
-
-        // Track this process
-        activeProcesses.set('head_track', process);
-
-        // Set response headers for streaming
-        res.setHeader('Content-Type', 'application/x-ndjson');
-        res.setHeader('Cache-Control', 'no-cache');
-        res.setHeader('Connection', 'keep-alive');
-
-        // Handle stdout data (tracking results)
-        let buffer = '';
-        process.stdout.on('data', (data) => {
-            try {
-                // Append new data to buffer
-                buffer += data.toString();
-
-                // Process complete JSON objects
-                let newlineIndex;
-                while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
-                    const jsonStr = buffer.slice(0, newlineIndex);
-                    buffer = buffer.slice(newlineIndex + 1);
-
-                    // Skip empty lines
-                    if (!jsonStr.trim()) {
-                        continue;
-                    }
-
-                    try {
-                        // Check if this is initialization output
-                        if (jsonStr.includes('"message":"Head tracking initialized"')) {
-                            continue;
-                        }
-
-                        // Try to parse as JSON
-                        const result = JSON.parse(jsonStr);
-                        if (result.success) {
-                            res.write(JSON.stringify(result) + '\n');
-                        } else {
-                            logger.error('Head tracking error:', result.error);
-                        }
-                    } catch (e) {
-                        // Only log parsing errors for non-empty strings that aren't debug output
-                        if (jsonStr.trim() && !jsonStr.startsWith('Device') && !jsonStr.includes('v4l2')) {
-                            logger.error('Error parsing head tracking data:', e);
-                        }
-                    }
-                }
-            } catch (e) {
-                logger.error('Error processing head tracking data:', e);
-            }
-        });
-
-        // Handle stderr output (debug/info messages)
-        process.stderr.on('data', (data) => {
-            // Debug level for head tracking output
-            logger.debug(`Head tracking output: ${data}`);
-        });
-
-        // Handle process close
-        process.on('close', (code) => {
-            activeProcesses.delete('head_track');
-            res.end();
-        });
-
-        // Handle client disconnect
-        req.on('close', () => {
-            if (activeProcesses.has('head_track')) {
-                const process = activeProcesses.get('head_track');
-                process.kill('SIGTERM');
-                activeProcesses.delete('head_track');
+        // Head tracking is now handled by the WebSocket head tracking service
+        // This endpoint is deprecated - use the new head tracking API instead
+        return res.status(410).json({
+            success: false,
+            message: 'Head tracking endpoint deprecated. Use /api/hardware/head-tracking/start instead.',
+            migration_info: {
+                new_endpoint: '/api/hardware/head-tracking/start',
+                websocket_service: 'ws://localhost:8776',
+                documentation: '/hardware-monitor.html'
             }
         });
 
     } catch (error) {
         logger.error('Head tracking error:', error);
-        res.status(500).json({ 
-            success: false, 
+        res.status(500).json({
+            success: false,
             error: error.message
         });
     }

@@ -13,7 +13,7 @@ process.env.NODE_NO_WARNINGS = '1';
 
 let express, path, http, logger, app, server, port, audioStream, soundController, fs, os, session;
 let videoStream; // <-- Add videoStream variable
-let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, webcamRoutes, voiceRoutes, cleanupRoutes, healthRoutes, authRoutes, sshRoutes, jawAnimationRoutes, aiConfigRoutes, configRoutes;
+let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, webcamRoutes, voiceRoutes, cleanupRoutes, healthRoutes, authRoutes, sshRoutes, jawAnimationRoutes, aiConfigRoutes, configRoutes, headTrackingRoutes;
 let characterService;
 let authMiddleware, rbacMiddleware;
 let jawAnimationSystem;
@@ -70,6 +70,7 @@ try {
     cleanupRoutes = require('./routes/cleanup');
     healthRoutes = require('./routes/healthRoutes');
     configRoutes = require('./routes/configRoutes');
+    headTrackingRoutes = require('./routes/headTrackingRoutes');
 
     // Import authentication routes
     authRoutes = require('./routes/auth/authRoutes');
@@ -259,6 +260,7 @@ app.use('/parts/servo', servoRoutes);
 app.use('/parts/sensor', sensorRoutes);
 app.use('/parts/linear-actuator', linearActuatorRoutes);
 app.use('/parts/webcam', webcamRoutes);
+app.use('/parts/head-tracking', headTrackingRoutes);
 app.use('/parts', partRoutes.router);
 app.use('/characters',
     invalidateCache('GET:/api/characters:'), // Invalidate character cache on modifications
@@ -279,6 +281,7 @@ app.use('/api/voice', voiceRoutes);
 app.use('/jaw-animation', jawAnimationRoutes);
 app.use('/api/chatterpi', require('./routes/chatterpiRoutes'));
 app.use('/api/hardware', require('./routes/api/hardwareApiRoutes').router);
+app.use('/api/hardware/head-tracking', require('./routes/api/headTrackingApiRoutes'));
 app.use('/api/character-audio-config', require('./routes/api/characterAudioConfigRoutes'));
 
 // Simple characters API endpoint for hardware monitor (cached)

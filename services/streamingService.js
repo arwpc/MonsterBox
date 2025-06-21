@@ -355,10 +355,10 @@ class StreamingService extends EventEmitter {
                 }
                 logger.debug(`Local IP addresses: ${localIPs.join(', ')}`);
             }
-            
+
             // Parse resolution
             const [width, height] = webcam.resolution.split('x').map(Number);
-            
+
             // Create stream configuration
             const streamConfig = {
                 characterId: characterId,
@@ -374,7 +374,7 @@ class StreamingService extends EventEmitter {
 
             // Start the stream process
             const streamResult = await this.createStreamProcess(streamConfig);
-            
+
             if (streamResult.success) {
                 // Store stream information
                 const streamInfo = {
@@ -478,7 +478,7 @@ class StreamingService extends EventEmitter {
                 ];
 
                 const process = spawn('python3', args);
-                
+
                 let initialized = false;
                 let initTimeout = setTimeout(() => {
                     if (!initialized) {
@@ -613,15 +613,8 @@ class StreamingService extends EventEmitter {
                 // Clean up any existing camera processes first
                 await this.cleanupRemoteCameraProcesses(host, characterKey);
 
-                const remoteScript = `/home/remote/MonsterBox/scripts/webcam_persistent_stream.py`;
-                const remoteArgs = [
-                    '--device-id', config.deviceId.toString(),
-                    '--width', config.width.toString(),
-                    '--height', config.height.toString(),
-                    '--fps', config.fps.toString(),
-                    '--quality', config.quality.toString(),
-                    '--persistent'
-                ].join(' ');
+                // Webcam streaming is now handled by the WebSocket webcam service
+                throw new Error('Webcam streaming migrated to WebSocket service. Use ws://localhost:8774 instead.');
 
                 const remoteCommand = `python3 ${remoteScript} ${remoteArgs}`;
                 const fullCommand = sshCredentials.buildSSHCommand(characterKey, host, remoteCommand);
@@ -770,9 +763,9 @@ class StreamingService extends EventEmitter {
         const attempts = this.reconnectAttempts.get(characterId) || 0;
         if (attempts < this.maxReconnectAttempts) {
             this.reconnectAttempts.set(characterId, attempts + 1);
-            
+
             logger.info(`Attempting to reconnect stream for character ${characterId} (attempt ${attempts + 1}/${this.maxReconnectAttempts})`);
-            
+
             setTimeout(async () => {
                 const reconnectResult = await this.startStream(characterId, streamInfo.config);
                 if (reconnectResult.success) {

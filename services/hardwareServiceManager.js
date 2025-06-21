@@ -69,11 +69,11 @@ class HardwareServiceManager {
         return new Promise((resolve, reject) => {
             try {
                 logger.info('🦾 Starting Python Hardware WebSocket Services...');
-                
+
                 const hardwareScriptPath = path.join(__dirname, '..', 'scripts', 'hardware', 'start_hardware_services.py');
-                
-                // Spawn the Python hardware services process
-                this.hardwareProcess = spawn('python3', [hardwareScriptPath], {
+
+                // Spawn the Python hardware services process with character 1 (Orlok)
+                this.hardwareProcess = spawn('python3', [hardwareScriptPath, '--character', '1'], {
                     cwd: path.join(__dirname, '..', 'scripts', 'hardware'),
                     stdio: ['pipe', 'pipe', 'pipe']
                 });
@@ -83,7 +83,7 @@ class HardwareServiceManager {
                     const output = data.toString().trim();
                     if (output) {
                         logger.info(`[Hardware Services] ${output}`);
-                        
+
                         // Check for successful startup indicators
                         if (output.includes('WebSocket Hardware Server running')) {
                             this.isRunning = true;
@@ -125,7 +125,7 @@ class HardwareServiceManager {
                     logger.warn(`Hardware services process exited with code ${code}`);
                     this.isRunning = false;
                     this.updateAllServicesStatus('offline');
-                    
+
                     // Attempt to restart if not intentionally stopped
                     if (code !== 0 && this.reconnectAttempts < this.maxReconnectAttempts) {
                         this.attemptRestart();
@@ -137,7 +137,7 @@ class HardwareServiceManager {
                     reject(error);
                 });
 
-                // Give the services time to start up
+                // Give the services more time to start up (increased from 3s to 8s)
                 setTimeout(async () => {
                     if (this.hardwareProcess && !this.hardwareProcess.killed) {
                         // Test if services are actually responding
@@ -154,7 +154,7 @@ class HardwareServiceManager {
                         logger.warn('⚠️ Hardware services process failed to start');
                         resolve(false);
                     }
-                }, 3000);
+                }, 8000);
 
             } catch (error) {
                 logger.error('Error starting hardware services:', error);
@@ -217,10 +217,10 @@ class HardwareServiceManager {
     async startCharacterServices(characterId) {
         try {
             logger.info(`🎭 Starting services for character ${characterId}...`);
-            
+
             // The Python services automatically start with the default character
             // This method is here for future character switching functionality
-            
+
             return true;
         } catch (error) {
             logger.error(`Failed to start services for character ${characterId}:`, error);
@@ -317,7 +317,7 @@ class HardwareServiceManager {
     async attemptRestart() {
         this.reconnectAttempts++;
         logger.info(`🔄 Attempting to restart hardware services (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
-        
+
         setTimeout(async () => {
             try {
                 await this.startHardwareServices();

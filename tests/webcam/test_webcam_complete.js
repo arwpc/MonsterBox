@@ -39,20 +39,20 @@ class WebcamSystemTester {
         return new Promise((resolve) => {
             const sshCommand = `ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no ${TEST_CONFIG.rpiUser}@${TEST_CONFIG.rpiHost}`;
             const fullCommand = `${sshCommand} "${command}"`;
-            
+
             const process = spawn('cmd', ['/c', fullCommand], { shell: true });
-            
+
             let output = '';
             let error = '';
-            
+
             process.stdout.on('data', (data) => {
                 output += data.toString();
             });
-            
+
             process.stderr.on('data', (data) => {
                 error += data.toString();
             });
-            
+
             process.on('close', (code) => {
                 resolve({
                     success: code === 0,
@@ -61,7 +61,7 @@ class WebcamSystemTester {
                     code: code
                 });
             });
-            
+
             setTimeout(() => {
                 process.kill();
                 resolve({
@@ -79,9 +79,9 @@ class WebcamSystemTester {
      */
     async testCameraDetection() {
         this.log('🔍 Testing camera detection...');
-        
+
         const result = await this.runSSHCommand('cd /home/remote/MonsterBox && python3 scripts/webcam_detect.py');
-        
+
         if (result.success && result.output.includes('"success": true')) {
             try {
                 const jsonMatch = result.output.match(/\{[\s\S]*\}/);
@@ -96,7 +96,7 @@ class WebcamSystemTester {
                 this.log(`❌ Failed to parse detection result: ${parseError.message}`);
             }
         }
-        
+
         this.log(`❌ Camera detection failed: ${result.error || 'No cameras found'}`);
         return { success: false, error: result.error };
     }
@@ -106,7 +106,7 @@ class WebcamSystemTester {
      */
     async testCameraFunctionality() {
         this.log('📷 Testing basic camera functionality...');
-        
+
         const testScript = `
 import cv2
 import sys
@@ -124,14 +124,14 @@ try:
 except Exception as e:
     print(f"CAMERA_ERROR: {e}")
 `;
-        
+
         const result = await this.runSSHCommand(`cd /home/remote/MonsterBox && echo '${testScript}' > test_camera_basic.py && python3 test_camera_basic.py`);
-        
+
         if (result.success && result.output.includes('CAMERA_OK')) {
             this.log('✅ Basic camera functionality test passed');
             return { success: true };
         }
-        
+
         this.log(`❌ Basic camera functionality test failed: ${result.output || result.error}`);
         return { success: false, error: result.output || result.error };
     }
@@ -141,32 +141,33 @@ except Exception as e:
      */
     async testWebcamStreaming() {
         this.log('🎥 Testing webcam streaming script...');
-        
+
         const result = await this.runSSHCommand('cd /home/remote/MonsterBox && timeout 5 python3 scripts/webcam_test_stream.py --device-id 0 --width 640 --height 480 --fps 15 --duration 3');
-        
+
         if (result.success || result.output.includes('Starting test stream')) {
             this.log('✅ Webcam streaming script test passed');
             return { success: true };
         }
-        
+
         this.log(`❌ Webcam streaming script test failed: ${result.error || 'Stream failed to start'}`);
         return { success: false, error: result.error };
     }
 
     /**
-     * Test 4: Persistent streaming script
+     * Test 4: WebSocket webcam service
      */
-    async testPersistentStreaming() {
-        this.log('🔄 Testing persistent streaming script...');
-        
-        const result = await this.runSSHCommand('cd /home/remote/MonsterBox && timeout 5 python3 scripts/webcam_persistent_stream.py --device-id 0 --width 640 --height 480 --fps 15 --persistent');
-        
-        if (result.success || result.output.includes('Starting persistent stream')) {
-            this.log('✅ Persistent streaming script test passed');
+    async testWebSocketWebcamService() {
+        this.log('🔄 Testing WebSocket webcam service...');
+
+        // Test WebSocket connection to webcam service
+        const result = await this.runSSHCommand('cd /home/remote/MonsterBox && timeout 5 node -e "const WebSocket = require(\'ws\'); const ws = new WebSocket(\'ws://localhost:8774\'); ws.on(\'open\', () => { console.log(\'WebSocket webcam service available\'); process.exit(0); }); ws.on(\'error\', () => process.exit(1));"');
+
+        if (result.success || result.output.includes('WebSocket webcam service available')) {
+            this.log('✅ WebSocket webcam service test passed');
             return { success: true };
         }
-        
-        this.log(`❌ Persistent streaming script test failed: ${result.error || 'Persistent stream failed to start'}`);
+
+        this.log(`❌ WebSocket webcam service test failed: ${result.error || 'WebSocket service not available'}`);
         return { success: false, error: result.error };
     }
 
@@ -175,23 +176,23 @@ except Exception as e:
      */
     async testServerStartup() {
         this.log('🚀 Testing MonsterBox server startup...');
-        
+
         // Kill any existing server processes
         await this.runSSHCommand('pkill -f "node app.js"');
-        
+
         // Start server in background
         const startResult = await this.runSSHCommand('cd /home/remote/MonsterBox && nohup node app.js > test_server.log 2>&1 & sleep 3 && echo "SERVER_STARTED"');
-        
+
         if (startResult.success && startResult.output.includes('SERVER_STARTED')) {
             // Test if server is responding
             const testResult = await this.runSSHCommand('curl -s http://localhost:3000/health || echo "SERVER_NOT_RESPONDING"');
-            
+
             if (testResult.success && !testResult.output.includes('SERVER_NOT_RESPONDING')) {
                 this.log('✅ MonsterBox server startup test passed');
                 return { success: true };
             }
         }
-        
+
         this.log(`❌ MonsterBox server startup test failed`);
         return { success: false, error: 'Server failed to start or respond' };
     }
@@ -202,22 +203,22 @@ except Exception as e:
     async runAllTests() {
         this.log('🎭 Starting comprehensive webcam system tests...');
         this.log(`Testing on RPI: ${TEST_CONFIG.rpiHost}`);
-        
+
         const tests = [
             { name: 'Camera Detection', test: () => this.testCameraDetection() },
             { name: 'Camera Functionality', test: () => this.testCameraFunctionality() },
             { name: 'Webcam Streaming', test: () => this.testWebcamStreaming() },
-            { name: 'Persistent Streaming', test: () => this.testPersistentStreaming() },
+            { name: 'WebSocket Webcam Service', test: () => this.testWebSocketWebcamService() },
             { name: 'Server Startup', test: () => this.testServerStartup() }
         ];
-        
+
         this.totalTests = tests.length;
         let passedTests = 0;
-        
+
         for (const testCase of tests) {
             this.currentTest++;
             this.log(`\n📋 Running test ${this.currentTest}/${this.totalTests}: ${testCase.name}`);
-            
+
             try {
                 const result = await testCase.test();
                 this.testResults.push({
@@ -225,7 +226,7 @@ except Exception as e:
                     success: result.success,
                     error: result.error || null
                 });
-                
+
                 if (result.success) {
                     passedTests++;
                 }
@@ -238,7 +239,7 @@ except Exception as e:
                 });
             }
         }
-        
+
         // Print summary
         this.log('\n📊 TEST SUMMARY');
         this.log('='.repeat(50));
@@ -246,7 +247,7 @@ except Exception as e:
         this.log(`Passed: ${passedTests}`);
         this.log(`Failed: ${this.totalTests - passedTests}`);
         this.log(`Success rate: ${Math.round((passedTests / this.totalTests) * 100)}%`);
-        
+
         this.log('\n📋 DETAILED RESULTS:');
         this.testResults.forEach((result, index) => {
             const status = result.success ? '✅' : '❌';
@@ -255,11 +256,11 @@ except Exception as e:
                 this.log(`   Error: ${result.error}`);
             }
         });
-        
+
         // Cleanup
         await this.runSSHCommand('pkill -f "node app.js"');
         await this.runSSHCommand('cd /home/remote/MonsterBox && rm -f test_camera_basic.py test_server.log');
-        
+
         return {
             totalTests: this.totalTests,
             passedTests: passedTests,

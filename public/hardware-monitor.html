@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -32,7 +33,7 @@
         .header h1 {
             font-size: 2.5em;
             margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
         }
 
         .status-grid {
@@ -70,9 +71,17 @@
             display: inline-block;
         }
 
-        .status-online { background-color: #4CAF50; }
-        .status-offline { background-color: #f44336; }
-        .status-warning { background-color: #ff9800; }
+        .status-online {
+            background-color: #4CAF50;
+        }
+
+        .status-offline {
+            background-color: #f44336;
+        }
+
+        .status-warning {
+            background-color: #ff9800;
+        }
 
         .controls {
             background: rgba(255, 255, 255, 0.1);
@@ -107,7 +116,7 @@
 
         button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
 
         button:disabled {
@@ -124,7 +133,8 @@
             background: linear-gradient(45deg, #ff9800, #f57c00);
         }
 
-        input, select {
+        input,
+        select {
             padding: 8px 12px;
             border: 1px solid rgba(255, 255, 255, 0.3);
             border-radius: 6px;
@@ -153,10 +163,21 @@
             padding: 2px 0;
         }
 
-        .log-info { color: #4CAF50; }
-        .log-error { color: #f44336; }
-        .log-warning { color: #ff9800; }
-        .log-debug { color: #2196F3; }
+        .log-info {
+            color: #4CAF50;
+        }
+
+        .log-error {
+            color: #f44336;
+        }
+
+        .log-warning {
+            color: #ff9800;
+        }
+
+        .log-debug {
+            color: #2196F3;
+        }
 
         .connection-status {
             position: fixed;
@@ -182,16 +203,17 @@
             .control-group {
                 flex-direction: column;
             }
-            
+
             .status-grid {
                 grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
+
 <body>
     <div class="connection-status" id="connectionStatus">Disconnected</div>
-    
+
     <div class="container">
         <div class="header">
             <h1>🦾 MonsterBox Hardware Monitor</h1>
@@ -250,6 +272,16 @@
                     <p>Status: <span id="webcamServiceStatusText">Offline</span></p>
                     <p>Active Webcams: <span id="activeWebcamCount">0</span></p>
                     <p>Port: 8774</p>
+                </div>
+            </div>
+
+            <div class="status-card">
+                <h3><span class="status-indicator status-offline" id="headTrackingServiceStatus"></span> Head Tracking
+                </h3>
+                <div id="headTrackingServiceInfo">
+                    <p>Status: <span id="headTrackingServiceStatusText">Offline</span></p>
+                    <p>Active Trackers: <span id="activeTrackerCount">0</span></p>
+                    <p>Port: 8776</p>
                 </div>
             </div>
 
@@ -359,7 +391,8 @@
                     <option value="ultrasonic">Ultrasonic</option>
                     <option value="temperature">Temperature</option>
                 </select>
-                <input type="number" id="sensorInterval" placeholder="Interval (s)" value="1" min="0.1" max="10" step="0.1">
+                <input type="number" id="sensorInterval" placeholder="Interval (s)" value="1" min="0.1" max="10"
+                    step="0.1">
                 <button onclick="readSensor()">Read Sensor</button>
                 <button onclick="startSensorMonitoring()">Start Monitoring</button>
                 <button onclick="stopSensorMonitoring()" class="btn-danger">Stop Monitoring</button>
@@ -387,6 +420,41 @@
         </div>
 
         <div class="controls">
+            <h3>🎯 Head Tracking Control</h3>
+            <div class="control-group">
+                <select id="headTrackingCharacter">
+                    <option value="">Select Character...</option>
+                </select>
+                <select id="headTrackingWebcam">
+                    <option value="/dev/video0">Camera 0</option>
+                    <option value="/dev/video1">Camera 1</option>
+                </select>
+                <input type="number" id="trackingSensitivity" placeholder="Sensitivity" value="1.0" min="0.1" max="3.0"
+                    step="0.1">
+                <button onclick="startHeadTracking()">Start Tracking</button>
+                <button onclick="stopHeadTracking()" class="btn-danger">Stop Tracking</button>
+            </div>
+            <div class="control-group">
+                <input type="number" id="trackingThreshold" placeholder="Motion Threshold" value="25" min="10"
+                    max="100">
+                <input type="number" id="trackingSmoothing" placeholder="Smoothing" value="0.3" min="0.1" max="1.0"
+                    step="0.1">
+                <input type="number" id="trackingDeadzone" placeholder="Deadzone %" value="5" min="1" max="20">
+                <button onclick="configureHeadTracking()">Configure</button>
+                <button onclick="calibrateHeadTracking()" class="btn-warning">Calibrate</button>
+                <button onclick="testHeadTrackingServo()">Test Servo</button>
+            </div>
+            <div class="control-group">
+                <div id="headTrackingStatus" style="display: none; margin-top: 10px;">
+                    <h4>Tracking Status:</h4>
+                    <div id="trackingStatusText"
+                        style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 5px; font-family: monospace; font-size: 12px;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
             <h3>🛡️ HAL Safety System</h3>
             <div class="control-group">
                 <button onclick="checkSafetyStatus()">Check Safety Status</button>
@@ -407,7 +475,9 @@
             <div class="control-group">
                 <div id="deviceDiscoveryResults" style="display: none; margin-top: 10px;">
                     <h4>Discovered Devices:</h4>
-                    <div id="deviceList" style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 5px; font-family: monospace; font-size: 12px;"></div>
+                    <div id="deviceList"
+                        style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 5px; font-family: monospace; font-size: 12px;">
+                    </div>
                 </div>
             </div>
         </div>
@@ -428,10 +498,13 @@
                 <button onclick="stopAllDevices()" class="btn-danger">Stop All Devices</button>
             </div>
             <div class="control-group">
-                <textarea id="deviceParameters" placeholder='{"speed": 50, "duration": 1000}' style="width: 300px; height: 60px; resize: vertical;"></textarea>
+                <textarea id="deviceParameters" placeholder='{"speed": 50, "duration": 1000}'
+                    style="width: 300px; height: 60px; resize: vertical;"></textarea>
                 <div id="deviceCommandResult" style="display: none; margin-top: 10px;">
                     <h4>Command Result:</h4>
-                    <div id="commandResultText" style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 5px; font-family: monospace; font-size: 12px;"></div>
+                    <div id="commandResultText"
+                        style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 5px; font-family: monospace; font-size: 12px;">
+                    </div>
                 </div>
             </div>
         </div>
@@ -468,6 +541,7 @@
                 this.lightWs = null;
                 this.sensorWs = null;
                 this.webcamWs = null;
+                this.headTrackingWs = null;
                 this.registryWs = null;
                 this.reconnectInterval = 5000; // 5 seconds for better responsiveness
                 this.maxLogEntries = 100;
@@ -478,6 +552,7 @@
                     lightService: 'disconnected',
                     sensorService: 'disconnected',
                     webcamService: 'disconnected',
+                    headTrackingService: 'disconnected',
                     registry: 'disconnected'
                 };
                 this.reconnectAttempts = {
@@ -486,6 +561,7 @@
                     lightService: 0,
                     sensorService: 0,
                     webcamService: 0,
+                    headTrackingService: 0,
                     registry: 0
                 };
                 this.maxReconnectAttempts = 5;
@@ -590,6 +666,7 @@
                 this.connectLightService();
                 this.connectSensorService();
                 this.connectWebcamService();
+                this.connectHeadTrackingService();
                 this.connectRegistry();
             }
 
@@ -630,7 +707,7 @@
                         this.updateConnectionStatus('mainServer', true);
                         this.log('Connected to main server', 'info');
                         // Send a ping to keep connection alive and get initial status
-                        this.sendMessage(this.mainWs, {type: 'get_active_services'});
+                        this.sendMessage(this.mainWs, { type: 'get_active_services' });
                     };
 
                     this.mainWs.onmessage = (event) => {
@@ -822,6 +899,48 @@
                 }
             }
 
+            connectHeadTrackingService() {
+                try {
+                    if (this.headTrackingWs && this.headTrackingWs.readyState === WebSocket.OPEN) {
+                        return; // Already connected
+                    }
+
+                    // Connect directly to Python head tracking service
+                    const wsUrl = `ws://${window.location.hostname}:8776`;
+                    this.log(`Attempting to connect to head tracking service at ${wsUrl}...`, 'info');
+                    this.headTrackingWs = new WebSocket(wsUrl);
+
+                    this.headTrackingWs.onopen = () => {
+                        this.updateConnectionStatus('headTrackingService', true);
+                        this.log('Connected to head tracking service', 'info');
+                        // Populate character select for head tracking
+                        this.populateHeadTrackingCharacters();
+                    };
+
+                    this.headTrackingWs.onmessage = (event) => {
+                        try {
+                            const data = JSON.parse(event.data);
+                            this.handleHeadTrackingServiceMessage(data);
+                        } catch (e) {
+                            this.log('Error parsing head tracking service message: ' + e.message, 'error');
+                        }
+                    };
+
+                    this.headTrackingWs.onclose = (event) => {
+                        this.updateConnectionStatus('headTrackingService', false);
+                        this.log(`Disconnected from head tracking service (code: ${event.code})`, 'warning');
+                    };
+
+                    this.headTrackingWs.onerror = (error) => {
+                        this.updateConnectionStatus('headTrackingService', false);
+                        this.log('Head tracking service connection error', 'error');
+                    };
+                } catch (error) {
+                    this.updateConnectionStatus('headTrackingService', false);
+                    this.log('Failed to connect to head tracking service: ' + error.message, 'error');
+                }
+            }
+
             connectRegistry() {
                 try {
                     if (this.registryWs && this.registryWs.readyState === WebSocket.OPEN) {
@@ -838,7 +957,7 @@
                         this.log('Connected to service registry', 'info');
                         // Send get_services request after connection
                         setTimeout(() => {
-                            this.sendMessage(this.registryWs, {type: 'get_services'});
+                            this.sendMessage(this.registryWs, { type: 'get_services' });
                         }, 100);
                     };
 
@@ -959,6 +1078,77 @@
                 }
             }
 
+            handleHeadTrackingServiceMessage(data) {
+                this.log(`Head tracking service message: ${data.type}`, 'debug');
+
+                if (data.type === 'tracking_started') {
+                    this.log(`Head tracking started for character ${data.character_id}`, 'info');
+                    document.getElementById('activeTrackerCount').textContent = '1';
+                    this.updateHeadTrackingStatus(data);
+                } else if (data.type === 'tracking_stopped') {
+                    this.log(`Head tracking stopped for character ${data.character_id}`, 'info');
+                    document.getElementById('activeTrackerCount').textContent = '0';
+                    this.hideHeadTrackingStatus();
+                } else if (data.type === 'tracking_status_update') {
+                    this.updateHeadTrackingStatus(data);
+                } else if (data.type === 'tracking_configured') {
+                    this.log(`Head tracking configured for character ${data.character_id}`, 'info');
+                } else if (data.type === 'servo_test_result') {
+                    this.log(`Servo test: ${data.success ? 'Success' : 'Failed'} - Angle: ${data.angle}°`, data.success ? 'info' : 'error');
+                } else if (data.type === 'calibration_complete') {
+                    this.log(`Head tracking calibrated for character ${data.character_id}`, 'info');
+                } else {
+                    this.log(`Unknown head tracking service message type: ${data.type}`, 'warning');
+                }
+            }
+
+            populateHeadTrackingCharacters() {
+                const headTrackingCharacterSelect = document.getElementById('headTrackingCharacter');
+                if (headTrackingCharacterSelect && this.charactersData) {
+                    headTrackingCharacterSelect.innerHTML = '<option value="">Select Character...</option>';
+
+                    this.charactersData.forEach(character => {
+                        const option = document.createElement('option');
+                        option.value = character.id;
+                        option.textContent = character.char_name || character.name;
+                        headTrackingCharacterSelect.appendChild(option);
+                    });
+                }
+            }
+
+            updateHeadTrackingStatus(data) {
+                const statusDiv = document.getElementById('headTrackingStatus');
+                const statusText = document.getElementById('trackingStatusText');
+
+                if (statusDiv && statusText && data.status) {
+                    statusDiv.style.display = 'block';
+
+                    const status = data.status;
+                    let statusHtml = `
+                        <strong>Character:</strong> ${data.character_id}<br>
+                        <strong>Active:</strong> ${status.active ? 'Yes' : 'No'}<br>
+                        <strong>Target Detected:</strong> ${status.target_detected ? 'Yes' : 'No'}<br>
+                        <strong>FPS:</strong> ${status.fps ? status.fps.toFixed(1) : 'N/A'}<br>
+                        <strong>Frame Count:</strong> ${status.frame_count || 0}
+                    `;
+
+                    if (status.target_detected && status.target_position) {
+                        statusHtml += `<br><strong>Target Position:</strong> ${status.target_position[0].toFixed(1)}%, ${status.target_position[1].toFixed(1)}%`;
+                        statusHtml += `<br><strong>Target Size:</strong> ${status.target_size ? status.target_size.toFixed(1) : 'N/A'}%`;
+                        statusHtml += `<br><strong>Servo Angle:</strong> ${status.servo_angle ? status.servo_angle.toFixed(1) : 'N/A'}°`;
+                    }
+
+                    statusText.innerHTML = statusHtml;
+                }
+            }
+
+            hideHeadTrackingStatus() {
+                const statusDiv = document.getElementById('headTrackingStatus');
+                if (statusDiv) {
+                    statusDiv.style.display = 'none';
+                }
+            }
+
             handleRegistryMessage(data) {
                 this.log(`Registry message: ${data.type}`, 'debug');
 
@@ -973,22 +1163,23 @@
             updateConnectionStatus(service, connected) {
                 const statusElement = document.getElementById(`${service}Status`);
                 const statusTextElement = document.getElementById(`${service}StatusText`);
-                
+
                 if (statusElement) {
                     statusElement.className = `status-indicator ${connected ? 'status-online' : 'status-offline'}`;
                 }
-                
+
                 if (statusTextElement) {
                     statusTextElement.textContent = connected ? 'Online' : 'Offline';
                 }
 
                 // Update main connection status
                 const anyConnected = this.mainWs?.readyState === WebSocket.OPEN ||
-                                   this.motorWs?.readyState === WebSocket.OPEN ||
-                                   this.lightWs?.readyState === WebSocket.OPEN ||
-                                   this.sensorWs?.readyState === WebSocket.OPEN ||
-                                   this.webcamWs?.readyState === WebSocket.OPEN ||
-                                   this.registryWs?.readyState === WebSocket.OPEN;
+                    this.motorWs?.readyState === WebSocket.OPEN ||
+                    this.lightWs?.readyState === WebSocket.OPEN ||
+                    this.sensorWs?.readyState === WebSocket.OPEN ||
+                    this.webcamWs?.readyState === WebSocket.OPEN ||
+                    this.headTrackingWs?.readyState === WebSocket.OPEN ||
+                    this.registryWs?.readyState === WebSocket.OPEN;
 
                 const connectionStatus = document.getElementById('connectionStatus');
                 connectionStatus.textContent = anyConnected ? 'Connected' : 'Disconnected';
@@ -1022,6 +1213,11 @@
                         (!this.webcamWs || this.webcamWs.readyState === WebSocket.CLOSED)) {
                         this.log('Attempting to reconnect to webcam service...', 'info');
                         this.connectWebcamService();
+                    }
+                    if (this.connectionStates.headTrackingService === 'disconnected' &&
+                        (!this.headTrackingWs || this.headTrackingWs.readyState === WebSocket.CLOSED)) {
+                        this.log('Attempting to reconnect to head tracking service...', 'info');
+                        this.connectHeadTrackingService();
                     }
                     if (this.connectionStates.registry === 'disconnected' &&
                         (!this.registryWs || this.registryWs.readyState === WebSocket.CLOSED)) {
@@ -1092,7 +1288,7 @@
             // Use API to check status first
             await monitor.checkServiceStatus();
 
-            if (monitor.sendMessage(monitor.mainWs, {type: 'get_active_services'})) {
+            if (monitor.sendMessage(monitor.mainWs, { type: 'get_active_services' })) {
                 monitor.log('Status refresh requested', 'info');
             } else {
                 monitor.log('Not connected to main server, attempting reconnection...', 'warning');
@@ -1469,10 +1665,10 @@
                     const safety = data.safety_system;
                     monitor.log(`Safety Status: ${safety.safety_level}`, 'info');
                     monitor.log(`Emergency Stop: ${safety.emergency_stop_active ? 'ACTIVE' : 'Inactive'}`,
-                               safety.emergency_stop_active ? 'error' : 'info');
+                        safety.emergency_stop_active ? 'error' : 'info');
                     monitor.log(`Safety Limits: ${safety.total_safety_limits}`, 'info');
                     monitor.log(`Violations: ${safety.total_violations}`,
-                               safety.total_violations > 0 ? 'warning' : 'info');
+                        safety.total_violations > 0 ? 'warning' : 'info');
 
                     // Update UI
                     document.getElementById('emergencyStopStatus').textContent =
@@ -1770,6 +1966,136 @@
                 monitor.log('Test report generated and downloaded', 'info');
             }, 2000);
         }
+
+        // Head Tracking Control Functions
+        function startHeadTracking() {
+            const characterId = document.getElementById('headTrackingCharacter').value;
+            if (!characterId) {
+                monitor.log('Please select a character for head tracking', 'warning');
+                return;
+            }
+
+            const config = {
+                webcam_device: document.getElementById('headTrackingWebcam').value,
+                tracking_sensitivity: parseFloat(document.getElementById('trackingSensitivity').value),
+                motion_threshold: parseInt(document.getElementById('trackingThreshold').value),
+                tracking_smoothing: parseFloat(document.getElementById('trackingSmoothing').value),
+                tracking_deadzone: parseFloat(document.getElementById('trackingDeadzone').value)
+            };
+
+            const message = {
+                type: 'configure_tracking',
+                character_id: characterId,
+                config: config
+            };
+
+            // First configure, then start
+            if (monitor.sendMessage(monitor.headTrackingWs, message)) {
+                setTimeout(() => {
+                    const startMessage = {
+                        type: 'start_tracking',
+                        character_id: characterId
+                    };
+
+                    if (monitor.sendMessage(monitor.headTrackingWs, startMessage)) {
+                        monitor.log(`Starting head tracking for character ${characterId}`, 'info');
+                    } else {
+                        monitor.log('Not connected to head tracking service', 'error');
+                    }
+                }, 500);
+            } else {
+                monitor.log('Not connected to head tracking service', 'error');
+            }
+        }
+
+        function stopHeadTracking() {
+            const characterId = document.getElementById('headTrackingCharacter').value;
+            if (!characterId) {
+                monitor.log('Please select a character', 'warning');
+                return;
+            }
+
+            const message = {
+                type: 'stop_tracking',
+                character_id: characterId
+            };
+
+            if (monitor.sendMessage(monitor.headTrackingWs, message)) {
+                monitor.log(`Stopping head tracking for character ${characterId}`, 'info');
+            } else {
+                monitor.log('Not connected to head tracking service', 'error');
+            }
+        }
+
+        function configureHeadTracking() {
+            const characterId = document.getElementById('headTrackingCharacter').value;
+            if (!characterId) {
+                monitor.log('Please select a character', 'warning');
+                return;
+            }
+
+            const config = {
+                webcam_device: document.getElementById('headTrackingWebcam').value,
+                tracking_sensitivity: parseFloat(document.getElementById('trackingSensitivity').value),
+                motion_threshold: parseInt(document.getElementById('trackingThreshold').value),
+                tracking_smoothing: parseFloat(document.getElementById('trackingSmoothing').value),
+                tracking_deadzone: parseFloat(document.getElementById('trackingDeadzone').value)
+            };
+
+            const message = {
+                type: 'configure_tracking',
+                character_id: characterId,
+                config: config
+            };
+
+            if (monitor.sendMessage(monitor.headTrackingWs, message)) {
+                monitor.log(`Configuring head tracking for character ${characterId}`, 'info');
+            } else {
+                monitor.log('Not connected to head tracking service', 'error');
+            }
+        }
+
+        function calibrateHeadTracking() {
+            const characterId = document.getElementById('headTrackingCharacter').value;
+            if (!characterId) {
+                monitor.log('Please select a character', 'warning');
+                return;
+            }
+
+            const message = {
+                type: 'calibrate_tracking',
+                character_id: characterId
+            };
+
+            if (monitor.sendMessage(monitor.headTrackingWs, message)) {
+                monitor.log(`Calibrating head tracking for character ${characterId}`, 'info');
+            } else {
+                monitor.log('Not connected to head tracking service', 'error');
+            }
+        }
+
+        function testHeadTrackingServo() {
+            const characterId = document.getElementById('headTrackingCharacter').value;
+            if (!characterId) {
+                monitor.log('Please select a character', 'warning');
+                return;
+            }
+
+            // Test servo at center position (90 degrees)
+            const message = {
+                type: 'test_servo',
+                character_id: characterId,
+                servo_id: 'head_servo', // This would be configured per character
+                angle: 90
+            };
+
+            if (monitor.sendMessage(monitor.headTrackingWs, message)) {
+                monitor.log(`Testing head tracking servo for character ${characterId}`, 'info');
+            } else {
+                monitor.log('Not connected to head tracking service', 'error');
+            }
+        }
     </script>
 </body>
+
 </html>
