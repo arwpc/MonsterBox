@@ -68,7 +68,17 @@ router.get('/', async (req, res) => {
             ...part,
             details: await getPartDetails(part)
         })));
-        res.render('parts', { title: 'Hardware Parts Management', parts: partsWithDetails });
+
+        // Get character data for the template
+        const character = await characterService.getCharacterById(req.characterId);
+        const characters = await characterService.getAllCharacters();
+
+        res.render('parts', {
+            title: 'Hardware Parts Management',
+            parts: partsWithDetails,
+            character,
+            characters
+        });
     } catch (error) {
         logger.error('Error fetching parts:', error);
         res.status(500).send('An error occurred while fetching parts');
