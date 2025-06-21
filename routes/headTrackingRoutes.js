@@ -222,6 +222,76 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
+// GET /parts/head-tracking/webcam-devices - Discover available webcam devices
+router.get('/webcam-devices', async (req, res) => {
+    try {
+        logger.info('Discovering available webcam devices for head tracking');
+
+        const { spawn } = require('child_process');
+        const scriptPath = path.join(__dirname, '..', 'scripts', 'webcam_detect.py');
+
+        const pythonProcess = spawn('python3', [scriptPath], {
+            stdio: ['pipe', 'pipe', 'pipe']
+        });
+
+        let stdout = '';
+        let stderr = '';
+
+        pythonProcess.stdout.on('data', (data) => {
+            stdout += data.toString();
+        });
+
+        pythonProcess.stderr.on('data', (data) => {
+            stderr += data.toString();
+        });
+
+        pythonProcess.on('close', (code) => {
+            if (code === 0) {
+                try {
+                    const result = JSON.parse(stdout);
+                    logger.info(`Discovered ${result.cameras ? result.cameras.length : 0} webcam devices`);
+                    res.json({
+                        success: true,
+                        cameras: result.cameras || [],
+                        message: `Found ${result.cameras ? result.cameras.length : 0} webcam device(s)`
+                    });
+                } catch (parseError) {
+                    logger.error('Error parsing webcam discovery result:', parseError);
+                    res.status(500).json({
+                        success: false,
+                        error: 'Failed to parse webcam discovery result',
+                        cameras: []
+                    });
+                }
+            } else {
+                logger.error(`Webcam discovery failed with code ${code}: ${stderr}`);
+                res.status(500).json({
+                    success: false,
+                    error: `Webcam discovery failed: ${stderr}`,
+                    cameras: []
+                });
+            }
+        });
+
+        pythonProcess.on('error', (error) => {
+            logger.error('Error executing webcam discovery:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to execute webcam discovery script',
+                cameras: []
+            });
+        });
+
+    } catch (error) {
+        logger.error('Error in webcam device discovery:', error);
+        res.status(500).json({
+            success: false,
+            error: 'An error occurred while discovering webcam devices',
+            cameras: []
+        });
+    }
+});
+
 // GET /parts/head-tracking - List all head tracking configurations (API endpoint)
 router.get('/', async (req, res) => {
     try {
