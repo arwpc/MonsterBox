@@ -278,6 +278,7 @@ app.use('/api/voice', voiceRoutes);
 app.use('/jaw-animation', jawAnimationRoutes);
 app.use('/api/chatterpi', require('./routes/chatterpiRoutes'));
 app.use('/api/hardware', require('./routes/api/hardwareApiRoutes').router);
+app.use('/api/character-audio-config', require('./routes/api/characterAudioConfigRoutes'));
 
 // Simple characters API endpoint for hardware monitor (cached)
 app.get('/api/characters',
@@ -511,8 +512,8 @@ function getLocalIpAddress() {
 }
 
 // Wrap server startup in a function
-function startServer() {
-    server.listen(port, () => {
+async function startServer() {
+    server.listen(port, async () => {
         const localIp = getLocalIpAddress();
         const hostname = os.hostname();
         // Keep these console.log calls for IP and host information
@@ -538,6 +539,11 @@ function startServer() {
 
         // Initialize Hardware WebSocket Services
         initializeHardwareServices();
+
+        // Initialize Character Audio Config Service
+        const characterAudioConfigService = require('./services/characterAudioConfigService');
+        await characterAudioConfigService.initialize();
+        logger.info('🎤 Character Audio Config Service initialized');
 
         // Start audio cleanup service
         audioCleanupService.start();

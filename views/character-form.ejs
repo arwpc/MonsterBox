@@ -82,9 +82,107 @@
             margin-bottom: 15px;
         }
 
+        /* Enhanced Audio Configuration Styles */
+        .config-section {
+            background: #000600;
+            border: 1px solid #00cc00;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .config-section h4 {
+            color: #00ff00;
+            margin: 0 0 15px 0;
+            font-size: 1.1em;
+            border-bottom: 1px solid #00cc00;
+            padding-bottom: 8px;
+        }
+
+        .settings-loading {
+            text-align: center;
+            color: #cccccc;
+            padding: 20px;
+        }
+
+        .settings-loading i {
+            margin-right: 10px;
+            color: #00ff00;
+        }
+
+        .config-error {
+            background: #330000;
+            border: 1px solid #ff0000;
+            border-radius: 8px;
+            padding: 15px;
+            color: #ff6666;
+            text-align: center;
+        }
+
+        .config-error i {
+            margin-right: 10px;
+            color: #ff0000;
+        }
+
+        .config-error button {
+            background: #ff0000;
+            border: none;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 4px;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+
+        .config-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #00cc00;
+        }
+
+        .form-message {
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease;
+        }
+
+        .form-message-info {
+            background: #003366;
+            border: 1px solid #0066cc;
+            color: #66ccff;
+        }
+
+        .form-message-success {
+            background: #003300;
+            border: 1px solid #00ff00;
+            color: #66ff66;
+        }
+
+        .form-message-error {
+            background: #330000;
+            border: 1px solid #ff0000;
+            color: #ff6666;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         @media (max-width: 768px) {
             .audio-settings {
                 grid-template-columns: 1fr;
+            }
+
+            .config-actions {
+                flex-direction: column;
             }
         }
     </style>
@@ -316,34 +414,10 @@
                     <div class="form-section">
                         <h3>🎤 Audio Configuration</h3>
                         <div class="audio-config-container">
-                            <div class="audio-settings">
-                                <div class="form-group">
-                                    <label for="microphoneEnabled">Enable Microphone</label>
-                                    <select id="microphoneEnabled" name="microphoneEnabled">
-                                        <option value="true" <%= character.audioConfig && character.audioConfig.microphoneEnabled ? 'selected' : '' %>>Enabled</option>
-                                        <option value="false" <%= character.audioConfig && !character.audioConfig.microphoneEnabled ? 'selected' : '' %>>Disabled</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="microphoneSensitivity">Microphone Sensitivity</label>
-                                    <input type="range" id="microphoneSensitivity" name="microphoneSensitivity"
-                                           min="0.1" max="2.0" step="0.1"
-                                           value="<%= character.audioConfig && character.audioConfig.microphoneSensitivity ? character.audioConfig.microphoneSensitivity : '1.0' %>">
-                                    <span class="setting-value"><%= character.audioConfig && character.audioConfig.microphoneSensitivity ? character.audioConfig.microphoneSensitivity : '1.0' %></span>
-                                </div>
-                                <div class="form-group">
-                                    <label>
-                                        <input type="checkbox" id="voiceActivation" name="voiceActivation"
-                                               <%= character.audioConfig && character.audioConfig.voiceActivation ? 'checked' : '' %>>
-                                        Voice Activation Detection
-                                    </label>
-                                </div>
-                                <div class="form-group">
-                                    <label>
-                                        <input type="checkbox" id="jawAnimationEnabled" name="jawAnimationEnabled"
-                                               <%= character.audioConfig && character.audioConfig.jawAnimationEnabled !== false ? 'checked' : '' %>>
-                                        Enable Jaw Animation
-                                    </label>
+                            <div class="audio-settings" id="audioSettings">
+                                <div class="settings-loading">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                    Loading audio configuration...
                                 </div>
                             </div>
 
@@ -811,32 +885,300 @@
             }
         }
 
-        // Initialize Enhanced Microphone Component for character-specific testing
+        // Initialize Enhanced Microphone Component and Audio Configuration
         document.addEventListener('DOMContentLoaded', function() {
-            const micContainer = document.getElementById('characterMicrophoneContainer');
-            if (micContainer) {
-                const characterId = <%= character && character.id ? character.id : 'null' %>;
-                const microphoneComponent = new EnhancedMicrophoneComponent({
-                    containerId: 'characterMicrophoneContainer',
-                    characterId: characterId,
-                    onTranscription: function(text, confidence) {
-                        console.log('Character microphone transcription:', text, 'Confidence:', confidence);
-                        // Update form or show feedback
-                    },
-                    onError: function(error) {
-                        console.error('Character microphone error:', error);
-                    },
-                    onStatusChange: function(status, message) {
-                        console.log('Character microphone status:', status, message);
-                    }
-                });
+            const characterId = <%= character && character.id ? character.id : 'null' %>;
+
+            if (characterId) {
+                // Load character audio configuration
+                loadCharacterAudioConfig(characterId);
+
+                // Initialize microphone component
+                const micContainer = document.getElementById('characterMicrophoneContainer');
+                if (micContainer) {
+                    const microphoneComponent = new EnhancedMicrophoneComponent({
+                        containerId: 'characterMicrophoneContainer',
+                        characterId: characterId,
+                        onTranscription: function(text, confidence) {
+                            console.log('Character microphone transcription:', text, 'Confidence:', confidence);
+                        },
+                        onError: function(error) {
+                            console.error('Character microphone error:', error);
+                        },
+                        onStatusChange: function(status, message) {
+                            console.log('Character microphone status:', status, message);
+                        }
+                    });
+                }
             }
         });
 
-        // Update sensitivity display
-        document.getElementById('microphoneSensitivity').addEventListener('input', function(e) {
-            e.target.nextElementSibling.textContent = e.target.value;
-        });
+        // Load character audio configuration
+        async function loadCharacterAudioConfig(characterId) {
+            try {
+                const response = await fetch(`/api/character-audio-config/${characterId}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    renderAudioConfigForm(result.data);
+                } else {
+                    console.error('Failed to load audio config:', result.error);
+                    renderAudioConfigError('Failed to load audio configuration');
+                }
+            } catch (error) {
+                console.error('Error loading audio config:', error);
+                renderAudioConfigError('Error loading audio configuration');
+            }
+        }
+
+        // Render audio configuration form
+        function renderAudioConfigForm(config) {
+            const container = document.getElementById('audioSettings');
+            container.innerHTML = `
+                <div class="config-section">
+                    <h4>🎤 Microphone Settings</h4>
+                    <div class="form-group">
+                        <label for="microphoneEnabled">Enable Microphone</label>
+                        <select id="microphoneEnabled" name="microphoneEnabled">
+                            <option value="true" ${config.microphone.enabled ? 'selected' : ''}>Enabled</option>
+                            <option value="false" ${!config.microphone.enabled ? 'selected' : ''}>Disabled</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="microphoneSensitivity">Microphone Sensitivity</label>
+                        <input type="range" id="microphoneSensitivity" name="microphoneSensitivity"
+                               min="0.1" max="3.0" step="0.1" value="${config.microphone.sensitivity}">
+                        <span class="setting-value">${config.microphone.sensitivity}</span>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="voiceActivation" name="voiceActivation"
+                                   ${config.microphone.voiceActivation ? 'checked' : ''}>
+                            Voice Activation Detection
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label for="voiceActivationThreshold">Voice Activation Threshold</label>
+                        <input type="range" id="voiceActivationThreshold" name="voiceActivationThreshold"
+                               min="0.01" max="1.0" step="0.01" value="${config.microphone.voiceActivationThreshold}">
+                        <span class="setting-value">${config.microphone.voiceActivationThreshold}</span>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <h4>🗣️ Speech-to-Text Settings</h4>
+                    <div class="form-group">
+                        <label for="sttEnabled">Enable STT</label>
+                        <select id="sttEnabled" name="sttEnabled">
+                            <option value="true" ${config.stt.enabled ? 'selected' : ''}>Enabled</option>
+                            <option value="false" ${!config.stt.enabled ? 'selected' : ''}>Disabled</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="sttLanguage">Language</label>
+                        <select id="sttLanguage" name="sttLanguage">
+                            <option value="en" ${config.stt.language === 'en' ? 'selected' : ''}>English</option>
+                            <option value="es" ${config.stt.language === 'es' ? 'selected' : ''}>Spanish</option>
+                            <option value="fr" ${config.stt.language === 'fr' ? 'selected' : ''}>French</option>
+                            <option value="de" ${config.stt.language === 'de' ? 'selected' : ''}>German</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="sttConfidenceThreshold">Confidence Threshold</label>
+                        <input type="range" id="sttConfidenceThreshold" name="sttConfidenceThreshold"
+                               min="0.1" max="1.0" step="0.1" value="${config.stt.confidenceThreshold}">
+                        <span class="setting-value">${config.stt.confidenceThreshold}</span>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <h4>🦴 Jaw Animation Settings</h4>
+                    <div class="form-group">
+                        <label for="jawAnimationEnabled">Enable Jaw Animation</label>
+                        <select id="jawAnimationEnabled" name="jawAnimationEnabled">
+                            <option value="true" ${config.jawAnimation.enabled ? 'selected' : ''}>Enabled</option>
+                            <option value="false" ${!config.jawAnimation.enabled ? 'selected' : ''}>Disabled</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="jawAnimationSensitivity">Animation Sensitivity</label>
+                        <input type="range" id="jawAnimationSensitivity" name="jawAnimationSensitivity"
+                               min="0.1" max="5.0" step="0.1" value="${config.jawAnimation.sensitivity}">
+                        <span class="setting-value">${config.jawAnimation.sensitivity}</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="jawAttackTime">Attack Time (seconds)</label>
+                        <input type="range" id="jawAttackTime" name="jawAttackTime"
+                               min="0.01" max="1.0" step="0.01" value="${config.jawAnimation.attackTime}">
+                        <span class="setting-value">${config.jawAnimation.attackTime}</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="jawReleaseTime">Release Time (seconds)</label>
+                        <input type="range" id="jawReleaseTime" name="jawReleaseTime"
+                               min="0.01" max="1.0" step="0.01" value="${config.jawAnimation.releaseTime}">
+                        <span class="setting-value">${config.jawAnimation.releaseTime}</span>
+                    </div>
+                </div>
+
+                <div class="config-actions">
+                    <button type="button" class="action-btn primary" onclick="saveAudioConfig()">
+                        <i class="fas fa-save"></i> Save Audio Config
+                    </button>
+                    <button type="button" class="action-btn secondary" onclick="testAudioConfig()">
+                        <i class="fas fa-test-tube"></i> Test Configuration
+                    </button>
+                    <button type="button" class="action-btn secondary" onclick="resetAudioConfig()">
+                        <i class="fas fa-undo"></i> Reset to Defaults
+                    </button>
+                </div>
+            `;
+
+            // Add event listeners for range inputs
+            container.querySelectorAll('input[type="range"]').forEach(input => {
+                input.addEventListener('input', function(e) {
+                    e.target.nextElementSibling.textContent = e.target.value;
+                });
+            });
+        }
+
+        // Render audio configuration error
+        function renderAudioConfigError(message) {
+            const container = document.getElementById('audioSettings');
+            container.innerHTML = `
+                <div class="config-error">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    ${message}
+                    <button type="button" onclick="location.reload()">Retry</button>
+                </div>
+            `;
+        }
+
+        // Save audio configuration
+        async function saveAudioConfig() {
+            const characterId = <%= character && character.id ? character.id : 'null' %>;
+            if (!characterId) return;
+
+            try {
+                const config = {
+                    microphone: {
+                        enabled: document.getElementById('microphoneEnabled').value === 'true',
+                        sensitivity: parseFloat(document.getElementById('microphoneSensitivity').value),
+                        voiceActivation: document.getElementById('voiceActivation').checked,
+                        voiceActivationThreshold: parseFloat(document.getElementById('voiceActivationThreshold').value)
+                    },
+                    stt: {
+                        enabled: document.getElementById('sttEnabled').value === 'true',
+                        language: document.getElementById('sttLanguage').value,
+                        confidenceThreshold: parseFloat(document.getElementById('sttConfidenceThreshold').value)
+                    },
+                    jawAnimation: {
+                        enabled: document.getElementById('jawAnimationEnabled').value === 'true',
+                        sensitivity: parseFloat(document.getElementById('jawAnimationSensitivity').value),
+                        attackTime: parseFloat(document.getElementById('jawAttackTime').value),
+                        releaseTime: parseFloat(document.getElementById('jawReleaseTime').value)
+                    }
+                };
+
+                const response = await fetch(`/api/character-audio-config/${characterId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(config)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage('Audio configuration saved successfully!', 'success');
+                } else {
+                    showMessage('Failed to save audio configuration: ' + result.error, 'error');
+                }
+            } catch (error) {
+                console.error('Error saving audio config:', error);
+                showMessage('Error saving audio configuration', 'error');
+            }
+        }
+
+        // Test audio configuration
+        async function testAudioConfig() {
+            const characterId = <%= character && character.id ? character.id : 'null' %>;
+            if (!characterId) return;
+
+            try {
+                const response = await fetch(`/api/character-audio-config/${characterId}/test`);
+                const result = await response.json();
+
+                if (result.success) {
+                    const testResults = result.data.testResults;
+                    let message = 'Audio Configuration Test Results:\\n';
+                    message += `- Configuration exists: ${testResults.configExists ? '✓' : '✗'}\\n`;
+                    message += `- Microphone enabled: ${testResults.microphoneEnabled ? '✓' : '✗'}\\n`;
+                    message += `- STT enabled: ${testResults.sttEnabled ? '✓' : '✗'}\\n`;
+                    message += `- Jaw animation enabled: ${testResults.jawAnimationEnabled ? '✓' : '✗'}\\n`;
+                    message += `- Optimized settings generated: ${testResults.optimizedSettingsGenerated ? '✓' : '✗'}`;
+
+                    alert(message);
+                } else {
+                    showMessage('Failed to test audio configuration: ' + result.error, 'error');
+                }
+            } catch (error) {
+                console.error('Error testing audio config:', error);
+                showMessage('Error testing audio configuration', 'error');
+            }
+        }
+
+        // Reset audio configuration to defaults
+        async function resetAudioConfig() {
+            const characterId = <%= character && character.id ? character.id : 'null' %>;
+            if (!characterId) return;
+
+            if (!confirm('Are you sure you want to reset the audio configuration to defaults? This will overwrite all current settings.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/character-audio-config/${characterId}/reset`, {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    renderAudioConfigForm(result.data);
+                    showMessage('Audio configuration reset to defaults', 'success');
+                } else {
+                    showMessage('Failed to reset audio configuration: ' + result.error, 'error');
+                }
+            } catch (error) {
+                console.error('Error resetting audio config:', error);
+                showMessage('Error resetting audio configuration', 'error');
+            }
+        }
+
+        // Show message to user
+        function showMessage(message, type = 'info') {
+            // Create or update message display
+            let messageDiv = document.querySelector('.form-message');
+            if (!messageDiv) {
+                messageDiv = document.createElement('div');
+                messageDiv.className = 'form-message';
+                document.querySelector('.audio-config-container').appendChild(messageDiv);
+            }
+
+            messageDiv.className = `form-message form-message-${type}`;
+            messageDiv.innerHTML = `
+                <i class="fas fa-${type === 'error' ? 'exclamation-triangle' : type === 'success' ? 'check-circle' : 'info-circle'}"></i>
+                ${message}
+            `;
+
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                if (messageDiv.parentNode) {
+                    messageDiv.parentNode.removeChild(messageDiv);
+                }
+            }, 5000);
+        }
     </script>
     <script src="/js/video-configuration.js"></script>
 </body>

@@ -46,10 +46,40 @@ class EnhancedMicrophoneComponent {
         
         this.init();
     }
-    
+
+    checkMicrophoneSupport() {
+        // Check if we're in a secure context (HTTPS or localhost)
+        if (!window.isSecureContext) {
+            console.warn('Microphone access requires a secure context (HTTPS)');
+            return false;
+        }
+
+        // Check if navigator.mediaDevices exists
+        if (!navigator.mediaDevices) {
+            console.warn('MediaDevices API not supported');
+            return false;
+        }
+
+        // Check if getUserMedia exists
+        if (!navigator.mediaDevices.getUserMedia) {
+            console.warn('getUserMedia not supported');
+            return false;
+        }
+
+        return true;
+    }
+
     async init() {
         try {
             await this.createUI();
+
+            // Check microphone support before proceeding
+            if (!this.checkMicrophoneSupport()) {
+                this.updateStatus('Microphone not supported', 'error');
+                this.showMicrophoneHelpMessage();
+                return;
+            }
+
             await this.setupAudioContext();
             await this.connectWebSockets();
             this.isInitialized = true;
@@ -570,6 +600,12 @@ class EnhancedMicrophoneComponent {
 
     async startRecording() {
         try {
+            // Check if microphone access is available
+            if (!this.checkMicrophoneSupport()) {
+                this.handleError('Microphone access is not available. Please ensure you are using HTTPS and have a compatible browser.');
+                return;
+            }
+
             // Request microphone lock from enhanced audio stream
             if (this.enhancedAudioWebSocket && this.enhancedAudioWebSocket.readyState === WebSocket.OPEN) {
                 this.enhancedAudioWebSocket.send(JSON.stringify({
@@ -638,6 +674,14 @@ class EnhancedMicrophoneComponent {
         if (this.mediaRecorder && this.isRecording) {
             this.mediaRecorder.stop();
             this.isRecording = false;
+
+            // Release microphone lock
+            if (this.enhancedAudioWebSocket && this.enhancedAudioWebSocket.readyState === WebSocket.OPEN) {
+                this.enhancedAudioWebSocket.send(JSON.stringify({
+                    type: 'releaseMic',
+                    timestamp: Date.now()
+                }));
+            }
 
             // Stop audio visualization
             this.stopAudioVisualization();
@@ -709,55 +753,80 @@ class EnhancedMicrophoneComponent {
         });
     }
 
-    sendAudioToWebSockets(audioData) {
-        // Send to STT WebSocket
-        if (this.sttWebSocket && this.sttWebSocket.readyState === WebSocket.OPEN) {
+    sendAudioToEnhancedStream(audioData) {
+        // Send to Enhanced Audio Stream WebSocket for simultaneous STT and jaw animation
+        if (this.enhancedAudioWebSocket && this.enhancedAudioWebSocket.readyState === WebSocket.OPEN) {
             const reader = new FileReader();
             reader.onload = () => {
                 const base64Data = reader.result.split(',')[1];
-                this.sttWebSocket.send(JSON.stringify({
-                    type: 'audio_data',
+                this.enhancedAudioWebSocket.send(JSON.stringify({
+                    type: 'audioData',
                     data: base64Data,
-                    sample_rate: this.audioSettings.sampleRate,
+                    sampleRate: this.audioSettings.sampleRate,
                     format: 'webm',
-                    character_id: this.characterId,
-                    timestamp: Date.now()
-                }));
-            };
-            reader.readAsDataURL(audioData);
-        }
-
-        // Send to Audio WebSocket for jaw animation
-        if (this.audioWebSocket && this.audioWebSocket.readyState === WebSocket.OPEN) {
-            const reader = new FileReader();
-            reader.onload = () => {
-                const base64Data = reader.result.split(',')[1];
-                this.audioWebSocket.send(JSON.stringify({
-                    type: 'audio_stream',
-                    data: base64Data,
-                    sample_rate: this.audioSettings.sampleRate,
-                    character_id: this.characterId,
-                    timestamp: Date.now()
+                    characterId: this.characterId,
+                    timestamp: Date.now(),
+                    metadata: {
+                        sensitivity: this.audioSettings.sensitivity,
+                        echoCancellation: this.audioSettings.echoCancellation,
+                        noiseSuppression: this.audioSettings.noiseSuppression,
+                        autoGainControl: this.audioSettings.autoGainControl
+                    }
                 }));
             };
             reader.readAsDataURL(audioData);
         }
     }
 
-    handleSTTMessage(message) {
+    handleEnhancedAudioMessage(message) {
         switch (message.type) {
-            case 'transcription':
-                this.displayTranscription(message.text, message.confidence);
-                if (this.onTranscription) {
-                    this.onTranscription(message.text, message.confidence);
+            case 'welcome':
+                console.log('Enhanced Audio Stream connected with capabilities:', message.capabilities);
+                break;
+            case 'micRequestGranted':
+                console.log('Microphone access granted');
+                this.updateStatus('Microphone ready', 'ready');
+                break;
+            case 'micRequestDenied':
+                this.handleError('Microphone access denied: ' + message.reason);
+                break;
+            case 'micReleased':
+                console.log('Microphone released');
+                break;
+            case 'microphoneStatus':
+                console.log('Microphone status:', message.locked ? 'locked' : 'available');
+                break;
+            case 'sttSubscribed':
+                console.log('Subscribed to STT updates');
+                break;
+            case 'jawAnimationSubscribed':
+                console.log('Subscribed to jaw animation updates');
+                break;
+            case 'stt_audio_data':
+                // Handle STT transcription results
+                if (message.transcription) {
+                    this.displayTranscription(message.transcription.text, message.transcription.confidence);
+                    if (this.onTranscription) {
+                        this.onTranscription(message.transcription.text, message.transcription.confidence);
+                    }
                 }
                 break;
-            case 'error':
-                this.handleError('STT Error: ' + message.error);
+            case 'jaw_audio_data':
+                // Handle jaw animation feedback
+                console.log('Jaw animation data processed');
+                break;
+            case 'audioDataAck':
+                // Audio data acknowledgment
+                console.debug('Audio data acknowledged, queue size:', message.queueSize);
                 break;
             case 'status':
-                console.log('STT Status:', message.status);
+                console.log('Enhanced Audio Stream status:', message);
                 break;
+            case 'error':
+                this.handleError('Enhanced Audio Stream Error: ' + message.message);
+                break;
+            default:
+                console.log('Unknown enhanced audio message type:', message.type);
         }
     }
 
@@ -889,6 +958,10 @@ class EnhancedMicrophoneComponent {
             }
 
             // Test microphone access
+            if (!this.checkMicrophoneSupport()) {
+                throw new Error('Microphone access not supported. Please use HTTPS or a compatible browser.');
+            }
+
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 stream.getTracks().forEach(track => track.stop());
@@ -914,6 +987,39 @@ class EnhancedMicrophoneComponent {
         if (this.onError) {
             this.onError(message);
         }
+    }
+
+    showMicrophoneHelpMessage() {
+        const helpMessage = `
+            <div style="text-align: center; padding: 20px;">
+                <h3 style="color: #ff6666; margin-bottom: 15px;">
+                    <i class="fas fa-exclamation-triangle"></i> Microphone Access Not Available
+                </h3>
+                <p style="margin-bottom: 15px;">
+                    This feature requires HTTPS or a compatible browser.
+                </p>
+                <div style="margin: 20px 0;">
+                    <a href="/microphone-help.html" target="_blank"
+                       style="background: #ff0000; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                        <i class="fas fa-question-circle"></i> Get Help
+                    </a>
+                </div>
+                <p style="font-size: 0.9em; color: #cccccc;">
+                    Current connection: <strong>${window.location.protocol.toUpperCase()}</strong><br>
+                    Required: <strong>HTTPS</strong>
+                </p>
+            </div>
+        `;
+
+        // Replace the microphone controls with help message
+        const controlsDiv = this.container.querySelector('.mic-controls');
+        if (controlsDiv) {
+            controlsDiv.innerHTML = helpMessage;
+        }
+
+        // Disable all interactive elements
+        const buttons = this.container.querySelectorAll('button');
+        buttons.forEach(btn => btn.disabled = true);
     }
 
     showMessage(message, type = 'info') {
@@ -1009,11 +1115,15 @@ class EnhancedMicrophoneComponent {
         }
 
         // Close WebSocket connections
-        if (this.sttWebSocket) {
-            this.sttWebSocket.close();
-        }
-        if (this.audioWebSocket) {
-            this.audioWebSocket.close();
+        if (this.enhancedAudioWebSocket) {
+            // Release microphone before closing
+            if (this.enhancedAudioWebSocket.readyState === WebSocket.OPEN) {
+                this.enhancedAudioWebSocket.send(JSON.stringify({
+                    type: 'releaseMic',
+                    timestamp: Date.now()
+                }));
+            }
+            this.enhancedAudioWebSocket.close();
         }
 
         // Clean up audio context

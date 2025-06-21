@@ -59,13 +59,13 @@ async function saveConfig(filePath, config) {
     }
 }
 
-// Dashboard route
-router.get('/', async (req, res) => {
+// Dashboard route (both root and /dashboard)
+const dashboardHandler = async (req, res) => {
     try {
         // Get system status
         const status = await getSystemStatus();
         const metrics = await getPerformanceMetrics();
-        
+
         res.render('ai-config/dashboard', {
             title: 'AI Management Dashboard',
             status,
@@ -81,7 +81,10 @@ router.get('/', async (req, res) => {
             error: error.message
         });
     }
-});
+};
+
+router.get('/', dashboardHandler);
+router.get('/dashboard', dashboardHandler);
 
 // STT Configuration routes
 router.get('/stt', async (req, res) => {
