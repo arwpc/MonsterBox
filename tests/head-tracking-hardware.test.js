@@ -7,7 +7,7 @@ describe('Head Tracking Hardware Integration', function() {
     this.timeout(60000); // 60 second timeout for hardware tests
     
     let testWebSocket;
-    const HEAD_TRACKING_PORT = 8776;
+    const HEAD_TRACKING_PORT = 8778;
     const TEST_CHARACTER_ID = '4'; // Skulltalker character
     
     before(async function() {

@@ -34,11 +34,12 @@ Successfully rebuilt and integrated the Speech-to-Text (STT) and Microphone syst
   - Event-driven architecture for speech recognition results
 
 ### 5. Audio Stream Integration
-- **MicrophoneAudioStreamService** (`services/microphoneAudioStreamService.js`)
+- **AudioStreamService** (`services/audioStreamService.js`)
   - Real-time audio monitoring and streaming
   - WebSocket server for audio stream clients (port 8777)
   - Audio level calculation and monitoring
   - Character-based audio streaming
+  - Handles multiple audio sources (microphones, files, TTS, etc.)
 
 ### 6. Configuration System
 - **MicrophoneConfigurationService** (`services/microphoneConfigurationService.js`)

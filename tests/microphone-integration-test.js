@@ -9,7 +9,7 @@ const MicrophoneService = require('../services/microphoneService');
 const CharacterMicrophoneService = require('../services/characterMicrophoneService');
 const MicrophoneConfigurationService = require('../services/microphoneConfigurationService');
 const MicrophoneSTTIntegrationService = require('../services/microphoneSTTIntegrationService');
-const MicrophoneAudioStreamService = require('../services/microphoneAudioStreamService');
+const AudioStreamService = require('../services/audioStreamService');
 
 class MicrophoneIntegrationTest {
     constructor() {
@@ -17,7 +17,7 @@ class MicrophoneIntegrationTest {
         this.characterMicrophoneService = new CharacterMicrophoneService();
         this.configurationService = new MicrophoneConfigurationService();
         this.sttIntegrationService = new MicrophoneSTTIntegrationService();
-        this.audioStreamService = new MicrophoneAudioStreamService();
+        this.audioStreamService = new AudioStreamService();
         
         this.testResults = {
             microphoneService: { status: 'pending', tests: [] },

@@ -4,7 +4,7 @@ const logger = require('../scripts/logger');
 const CharacterMicrophoneService = require('./characterMicrophoneService');
 const MicrophoneManagerService = require('./microphoneManagerService');
 
-class MicrophoneAudioStreamService extends EventEmitter {
+class AudioStreamService extends EventEmitter {
     constructor(sharedMicrophoneManager = null) {
         super();
         this.characterMicrophoneService = new CharacterMicrophoneService();
@@ -35,7 +35,7 @@ class MicrophoneAudioStreamService extends EventEmitter {
      */
     async initialize() {
         try {
-            logger.info('🎤🔊 Initializing Microphone Audio Stream Service...');
+            logger.info('🔊 Initializing Audio Stream Service...');
 
             // Initialize microphone manager if not already initialized
             if (!this.microphoneManager.isInitialized) {
@@ -78,11 +78,11 @@ class MicrophoneAudioStreamService extends EventEmitter {
             await this.startAudioStreamServer();
 
             this.isInitialized = true;
-            logger.info('✅ Microphone Audio Stream Service initialized');
+            logger.info('✅ Audio Stream Service initialized');
             return true;
 
         } catch (error) {
-            logger.error('❌ Failed to initialize Microphone Audio Stream Service:', error);
+            logger.error('❌ Failed to initialize Audio Stream Service:', error);
             return false;
         }
     }
@@ -518,4 +518,4 @@ class MicrophoneAudioStreamService extends EventEmitter {
     }
 }
 
-module.exports = MicrophoneAudioStreamService;
+module.exports = AudioStreamService;

@@ -678,7 +678,7 @@
         function connectWebSocket() {
             if (ws && ws.readyState === WebSocket.OPEN) return;
 
-            ws = new WebSocket('ws://localhost:8776');
+            ws = new WebSocket('ws://localhost:8778');
 
             ws.onopen = function () {
                 console.log('Connected to head tracking service');

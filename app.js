@@ -677,10 +677,10 @@ async function initializeMicrophoneManager() {
             logger.info('🎤🗣️ STT Integration Service initialized');
 
             // Initialize Audio Stream Service with shared microphone manager
-            const MicrophoneAudioStreamService = require('./services/microphoneAudioStreamService');
-            const audioStreamService = new MicrophoneAudioStreamService(microphoneManagerService);
+            const AudioStreamService = require('./services/audioStreamService');
+            const audioStreamService = new AudioStreamService(microphoneManagerService);
             await audioStreamService.initialize();
-            logger.info('🎤🔊 Audio Stream Service initialized');
+            logger.info('🔊 Audio Stream Service initialized');
 
             logger.info('🎤✅ Complete microphone system initialized with separated architecture');
         } else {

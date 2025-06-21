@@ -20,27 +20,24 @@ function initializeWebSocketConnection() {
     }
 
     try {
-        headTrackingWS = new WebSocket('ws://localhost:8776');
+        headTrackingWS = new WebSocket('ws://localhost:8778');
 
         headTrackingWS.on('open', () => {
             logger.info('🎯 Connected to head tracking WebSocket service');
         });
 
         headTrackingWS.on('error', (error) => {
-            logger.error('Head tracking WebSocket error:', error);
+            logger.debug('Head tracking WebSocket connection failed - service not available');
             headTrackingWS = null;
         });
 
         headTrackingWS.on('close', () => {
-            logger.info('Head tracking WebSocket connection closed');
+            logger.debug('Head tracking WebSocket connection closed');
             headTrackingWS = null;
-
-            // Reconnect after 5 seconds
-            setTimeout(initializeWebSocketConnection, 5000);
         });
 
     } catch (error) {
-        logger.error('Failed to connect to head tracking service:', error);
+        logger.debug('Failed to connect to head tracking service:', error.message);
         headTrackingWS = null;
     }
 }
@@ -99,15 +96,14 @@ async function loadHeadTrackingData() {
     }
 }
 
-// Initialize WebSocket connection on startup
-initializeWebSocketConnection();
+// Note: WebSocket connection is initialized lazily when first API call is made
 
 // GET /api/hardware/head-tracking/status - Get service status
 router.get('/status', async (req, res) => {
     try {
         const serviceStatus = {
             service_available: headTrackingWS && headTrackingWS.readyState === WebSocket.OPEN,
-            service_url: 'ws://localhost:8776',
+            service_url: 'ws://localhost:8778',
             last_check: new Date().toISOString()
         };
 

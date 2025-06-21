@@ -294,7 +294,7 @@ class HeadTracker:
 class HeadTrackingWebSocketService(BaseHardwareService):
     """WebSocket service for head tracking with OpenCV integration"""
 
-    def __init__(self, port: int = 8776, host: str = "0.0.0.0"):
+    def __init__(self, port: int = 8778, host: str = "0.0.0.0"):
         super().__init__("head_tracking_service", "head_tracking", port, host)
         
         # Tracking configurations per character

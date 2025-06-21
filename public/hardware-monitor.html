@@ -906,8 +906,8 @@
                     }
 
                     // Connect directly to Python head tracking service
-                    const wsUrl = `ws://${window.location.hostname}:8776`;
-                    this.log(`Attempting to connect to head tracking service at ${wsUrl}...`, 'info');
+                    const wsUrl = `ws://${window.location.hostname}:8778`;
+                    this.log(`Attempting to connect to head tracking service at ${wsUrl}...`, 'debug');
                     this.headTrackingWs = new WebSocket(wsUrl);
 
                     this.headTrackingWs.onopen = () => {
@@ -928,16 +928,16 @@
 
                     this.headTrackingWs.onclose = (event) => {
                         this.updateConnectionStatus('headTrackingService', false);
-                        this.log(`Disconnected from head tracking service (code: ${event.code})`, 'warning');
+                        this.log(`Disconnected from head tracking service (code: ${event.code})`, 'debug');
                     };
 
                     this.headTrackingWs.onerror = (error) => {
                         this.updateConnectionStatus('headTrackingService', false);
-                        this.log('Head tracking service connection error', 'error');
+                        this.log('Head tracking service not available', 'debug');
                     };
                 } catch (error) {
                     this.updateConnectionStatus('headTrackingService', false);
-                    this.log('Failed to connect to head tracking service: ' + error.message, 'error');
+                    this.log('Head tracking service not available: ' + error.message, 'debug');
                 }
             }
 
@@ -1216,7 +1216,7 @@
                     }
                     if (this.connectionStates.headTrackingService === 'disconnected' &&
                         (!this.headTrackingWs || this.headTrackingWs.readyState === WebSocket.CLOSED)) {
-                        this.log('Attempting to reconnect to head tracking service...', 'info');
+                        this.log('Attempting to reconnect to head tracking service...', 'debug');
                         this.connectHeadTrackingService();
                     }
                     if (this.connectionStates.registry === 'disconnected' &&

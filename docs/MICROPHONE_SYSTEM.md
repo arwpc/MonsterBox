@@ -11,7 +11,7 @@ The MonsterBox Microphone Management System provides comprehensive, professional
 1. **MicrophoneManagerService** - Central coordinator for all microphone operations
 2. **MicrophoneService** - Hardware abstraction and configuration management
 3. **MicrophoneSTTIntegrationService** - Speech-to-Text consumer service
-4. **MicrophoneAudioStreamService** - Audio streaming consumer service
+4. **AudioStreamService** - Audio streaming consumer service (handles multiple audio sources)
 5. **CharacterMicrophoneService** - Character-microphone associations
 
 ### Service Separation

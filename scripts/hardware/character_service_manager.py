@@ -63,7 +63,7 @@ class CharacterServiceManager:
             "webcam": ServiceConfig("webcam", WebcamWebSocketService, 8774),
             "microphone": ServiceConfig("microphone", MicrophoneWebSocketService, 8776),
             "actuator": ServiceConfig("actuator", ActuatorWebSocketService, 8775),
-            "head_tracking": ServiceConfig("head_tracking", HeadTrackingWebSocketService, 8777),
+            "head_tracking": ServiceConfig("head_tracking", HeadTrackingWebSocketService, 8778),
         }
         
     async def initialize(self):

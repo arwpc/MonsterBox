@@ -25,7 +25,7 @@ this.microphoneWS = new WebSocket('ws://127.0.0.1:8776');
 **Files Modified**:
 - `app.js` - Pass shared instance to services
 - `services/microphoneSTTIntegrationService.js` - Accept shared manager
-- `services/microphoneAudioStreamService.js` - Accept shared manager
+- `services/audioStreamService.js` - Accept shared manager (renamed from microphoneAudioStreamService.js)
 
 ### 3. Missing API Endpoint ✅ FIXED
 **Problem**: Missing `/parts/api/parts` endpoint needed by microphone test interface.
