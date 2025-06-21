@@ -69,30 +69,31 @@ function getJawWebSocket() {
  */
 router.post('/chat', async (req, res) => {
     try {
-        const { message, character } = req.body;
-        
+        const { message, character, characterId, voiceId } = req.body;
+
         if (!message || !message.trim()) {
             return res.status(400).json({
                 success: false,
                 error: 'Message is required'
             });
         }
-        
+
         if (!aiInstance) {
             return res.status(503).json({
                 success: false,
                 error: 'AI service not available',
-                fallback: getFallbackResponse(character || 'orlok')
+                fallback: getFallbackResponse(characterId || '1')
             });
         }
-        
-        // Set character if provided
-        if (character && aiInstance.characters[character]) {
-            aiInstance.config.characterId = character;
+
+        // Set character if provided (prioritize characterId over character)
+        const targetCharacter = characterId || character;
+        if (targetCharacter && aiInstance.characters[targetCharacter]) {
+            aiInstance.config.characterId = targetCharacter;
         }
-        
-        console.log(`🎭 Processing chat message: "${message}" for character: ${aiInstance.config.characterId}`);
-        
+
+        console.log(`🎭 Processing chat message: "${message}" for character ID: ${characterId || 'default'}, voice ID: ${voiceId || 'default'}`);
+
         // Generate AI response
         const result = await aiInstance.generateResponse(message);
         
@@ -157,7 +158,7 @@ router.post('/chat', async (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Failed to process chat message',
-            fallback: getFallbackResponse(req.body.character || 'orlok'),
+            fallback: getFallbackResponse(req.body.characterId || '1'),
             details: error.message
         });
     }
@@ -513,46 +514,78 @@ router.post('/character', (req, res) => {
  * GET /api/chatterpi/greeting
  * Get a character greeting message
  */
-router.get('/greeting/:character?', async (req, res) => {
+router.get('/greeting/:characterId?', async (req, res) => {
     try {
-        const character = req.params.character || 'orlok';
-        
+        const characterId = req.params.characterId || '1';
+
         if (!aiInstance) {
             return res.json({
                 success: true,
-                greeting: getFallbackGreeting(character),
+                greeting: getFallbackGreeting(characterId),
                 fallback: true
             });
         }
-        
+
+        // Load character configuration to get the assigned AI
+        let character = 'orlok'; // default fallback
+        try {
+            const fs = require('fs').promises;
+            const path = require('path');
+            const charactersPath = path.join(__dirname, '..', 'data', 'characters.json');
+            const charactersData = await fs.readFile(charactersPath, 'utf8');
+            const characters = JSON.parse(charactersData);
+
+            const targetCharacter = characters.find(c => c.id == characterId);
+            if (targetCharacter && targetCharacter.chatterpi_config && targetCharacter.chatterpi_config.default_character) {
+                character = targetCharacter.chatterpi_config.default_character;
+                console.log(`🎭 Using configured AI "${character}" for character ID ${characterId} (${targetCharacter.char_name})`);
+            } else {
+                console.log(`⚠️ No AI configuration found for character ID ${characterId}, using default: ${character}`);
+            }
+        } catch (configError) {
+            console.warn('Failed to load character configuration, using hardcoded mapping:', configError.message);
+            // Fallback to hardcoded mapping if config loading fails
+            const characterMapping = {
+                '1': 'orlok',
+                '2': 'coffin_breaker',
+                '3': 'pumpkinhead',
+                '4': 'skeleton'
+            };
+            character = characterMapping[characterId] || 'orlok';
+        }
+
         // Set character
         if (aiInstance.characters[character]) {
             aiInstance.config.characterId = character;
         }
-        
+
         const greetingPrompts = {
             orlok: "Introduce yourself as Count Orlok. Welcome the visitor to your domain with a brief, ominous but polite greeting.",
-            skeleton: "Introduce yourself as a friendly skeleton. Give a brief, humorous greeting with a bone pun."
+            skeleton: "Introduce yourself as a friendly talking skull. Give a brief, humorous greeting with a bone pun.",
+            coffin_breaker: "Introduce yourself as a Spanish lady who has been trapped in a coffin for a thousand years. Give a dramatic, excited greeting about finally breaking free.",
+            pumpkinhead: "Introduce yourself as a demonic pumpkin-headed creature. Give a menacing but theatrical greeting.",
+            Calvin: "Introduce yourself as Calvin the Cornfed Cadaver, a sarcastic Iowan skeleton who's been stuck in a front yard since 2003. Give a brief, sarcastic greeting about finally getting some attention."
         };
-        
+
         const prompt = greetingPrompts[character] || greetingPrompts.orlok;
-        
+
         const result = await aiInstance.generateResponse(prompt);
         const jawAnimation = generateJawAnimation(result.text);
-        
+
         res.json({
             success: true,
             greeting: result.text,
             character: result.character,
+            characterId: characterId,
             jawAnimation: jawAnimation,
             timestamp: new Date().toISOString()
         });
-        
+
     } catch (error) {
         console.error('❌ Error generating greeting:', error);
         res.json({
             success: true,
-            greeting: getFallbackGreeting(req.params.character || 'orlok'),
+            greeting: getFallbackGreeting(req.params.characterId || '1'),
             fallback: true,
             error: error.message
         });
@@ -937,34 +970,46 @@ function generateJawAnimation(text) {
 /**
  * Get fallback response when AI is not available
  */
-function getFallbackResponse(character) {
+function getFallbackResponse(characterId) {
     const fallbacks = {
-        orlok: [
+        '1': [ // Orlok
             "The shadows whisper secrets I cannot share...",
             "Verily, the night holds many mysteries.",
             "The ancient ways are not easily explained."
         ],
-        skeleton: [
-            "That's a bone-afide good question!",
-            "I'm having a bone to pick with my memory right now.",
-            "That really tickles my funny bone!"
+        '2': [ // Coffin Breaker
+            "¡Ay, Dios mío! After a thousand years, I have much to say!",
+            "The darkness of the coffin has given me much time to think...",
+            "Freedom tastes sweeter than the finest wine!"
+        ],
+        '3': [ // PumpkinHead
+            "The fires of hell burn within my gourd!",
+            "Your soul shall feed my demonic hunger!",
+            "Mwahahaha! The harvest of fear has begun!"
+        ],
+        '4': [ // Skulltalker (Calvin)
+            "Oh great, now my circuits are acting up too. Perfect.",
+            "Been sitting here since 2003 and NOW you want to chat?",
+            "That's about as clear as Iowa mud after a storm."
         ]
     };
-    
-    const responses = fallbacks[character] || fallbacks.orlok;
+
+    const responses = fallbacks[characterId] || fallbacks['1'];
     return responses[Math.floor(Math.random() * responses.length)];
 }
 
 /**
  * Get fallback greeting when AI is not available
  */
-function getFallbackGreeting(character) {
+function getFallbackGreeting(characterId) {
     const greetings = {
-        orlok: "Greetings, mortal... You have entered my domain. What brings thee to these ancient halls?",
-        skeleton: "Well, well, well... looks like I've got a bone to pick with a new visitor! Welcome!"
+        '1': "Greetings, mortal... You have entered my domain. What brings thee to these ancient halls?", // Orlok
+        '2': "¡Hola! I have finally broken free from my thousand-year prison! Welcome to my liberation!", // Coffin Breaker
+        '3': "Mwahahaha! Welcome to my pumpkin patch of terror, foolish mortal!", // PumpkinHead
+        '4': "Oh, look who finally decided to notice me. Calvin the Cornfed Cadaver, been decorating this yard since 2003. What took ya so long?" // Skulltalker (Calvin)
     };
-    
-    return greetings[character] || greetings.orlok;
+
+    return greetings[characterId] || greetings['1'];
 }
 
 /**

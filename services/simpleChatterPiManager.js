@@ -39,12 +39,11 @@ class SimpleChatterPiManager {
         try {
             logger.info('🚀 Starting ChatterPi jaw animation service...');
 
-            // Temporarily disable jaw server startup to prevent connection errors
-            logger.info('⚠️ Jaw server startup disabled to prevent connection errors');
-            logger.info('✅ To enable jaw animation, manually start the jaw server or use the ChatterPi interface');
+            // Start the jaw WebSocket server
+            await this.startJawWebSocketServer();
 
             this.isInitialized = true;
-            logger.info('✅ ChatterPi services initialized successfully (jaw server disabled)');
+            logger.info('✅ ChatterPi services initialized successfully');
             return true;
             
         } catch (error) {
@@ -52,7 +51,35 @@ class SimpleChatterPiManager {
             return false;
         }
     }
-    
+
+    /**
+     * Start jaw WebSocket server and connect to it
+     */
+    async startJawWebSocketServer() {
+        try {
+            logger.info('🚀 Starting jaw WebSocket server...');
+
+            // Start the jaw server process
+            const serverStarted = await this.startJawServer();
+            if (!serverStarted) {
+                throw new Error('Failed to start jaw server');
+            }
+
+            // Wait a bit for server to fully initialize
+            await this.delay(3000);
+
+            // Connect to the WebSocket
+            await this.connectJawWebSocket();
+
+            logger.info('✅ Jaw WebSocket server started and connected');
+            return true;
+
+        } catch (error) {
+            logger.error('❌ Failed to start jaw WebSocket server:', error);
+            return false;
+        }
+    }
+
     /**
      * Start the GPIO jaw server
      */

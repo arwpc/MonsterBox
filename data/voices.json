@@ -1287,12 +1287,12 @@
     },
     {
       "characterId": 4,
-      "speaker_id": "f2e99f98-c1ce-11ef-a3dd-00163e022d5e",
+      "speaker_id": "f0ac8c43-7a0f-11ee-a861-00163e2ac61b",
       "settings": {
-        "pitch": 4,
-        "speed": 0.7,
-        "volume": 13,
-        "emotion": "Angry",
+        "pitch": 0,
+        "speed": 1,
+        "volume": 0,
+        "emotion": "Neutral",
         "sampleRate": 44100,
         "bitRate": 128,
         "outputFormat": "wav",
@@ -1307,12 +1307,12 @@
         "tags": [],
         "notes": "",
         "created": "2025-05-13T00:35:07.630Z",
-        "lastModified": "2025-06-21T15:47:42.477Z",
+        "lastModified": "2025-06-21T23:41:23.383Z",
         "migratedFrom": "Replica",
         "migrationDate": "2025-06-14T20:10:52.736Z",
         "originalSpeakerId": "55a0aad5-a739-402f-9cec-36b01ff81a41",
-        "voiceName": "Daria-Funny Scary Witch",
-        "voiceGender": "female",
+        "voiceName": "Zombie",
+        "voiceGender": "male",
         "voiceLanguage": "English(US),Chinese(Mandarin),Spanish(Mexico),Japanese(Japan),Portuguese(Portugal),French(France),Russian(Russia),Korean(Korea),Malay,Danish(Denmark),Finnish(Finland),Turkish(Turkey),Slovak(Slovakia),Hindi(India),Swedish(Sweden),Italian(Italy),Polish(Poland),Czech(Czech),Dutch(Belgium),German(Germany),Filipino(Philippines),Indonesian(Indonesia),Croatian(Croatia),Arabic(Egyptian),Romanian(Romania),Bulgarian(Bulgaria),Greek(Greece),Tamil(India),Ukrainian(Ukraine),Vietnamese(Vietnam),Norwegian(Norway),Hungarian(Hungary),Portuguese(Brazil),Arabic(Saudi Arabia),Spanish(Spain),English(UK)"
       },
       "history": [
@@ -1717,6 +1717,230 @@
             "speed": 0.7,
             "volume": 13,
             "emotion": "Angry",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-06-21T23:17:13.527Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 4,
+            "speed": 0.7,
+            "volume": 13,
+            "emotion": "Angry",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-06-21T23:20:06.096Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 4,
+            "speed": 0.7,
+            "volume": 13,
+            "emotion": "Angry",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-06-21T23:21:10.911Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 4,
+            "speed": 0.7,
+            "volume": 13,
+            "emotion": "Angry",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-06-21T23:28:26.137Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 4,
+            "speed": 0.7,
+            "volume": 13,
+            "emotion": "Angry",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-06-21T23:28:44.982Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 4,
+            "speed": 0.7,
+            "volume": 13,
+            "emotion": "Angry",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-06-21T23:29:11.586Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 4,
+            "speed": 0.7,
+            "volume": 13,
+            "emotion": "Angry",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-06-21T23:31:13.948Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 4,
+            "speed": 0.7,
+            "volume": 13,
+            "emotion": "Angry",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-06-21T23:39:19.047Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 4,
+            "speed": 0.7,
+            "volume": 13,
+            "emotion": "Angry",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-06-21T23:40:33.706Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Neutral",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-06-21T23:40:33.763Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Neutral",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-06-21T23:40:39.360Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Neutral",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-06-21T23:40:39.373Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Neutral",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-06-21T23:41:04.799Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Neutral",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-06-21T23:41:23.383Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Neutral",
             "sampleRate": 44100,
             "bitRate": 128,
             "outputFormat": "wav",

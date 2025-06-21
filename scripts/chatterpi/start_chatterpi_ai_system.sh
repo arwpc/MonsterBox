@@ -72,11 +72,12 @@ cleanup() {
 trap cleanup SIGINT SIGTERM
 
 echo "🦴 Starting Jaw WebSocket Server on port 8765..."
-python3 scripts/chatterpi/jaw_websocket_server.py --host 0.0.0.0 --port 8765 &
+python3 scripts/chatterpi/gpio_jaw_server_robust.py --host 0.0.0.0 --port 8765 &
 JAW_PID=$!
 
-# Wait a moment for jaw server to start
-sleep 2
+# Wait longer for jaw server to fully initialize
+echo "⏳ Waiting for jaw server to initialize..."
+sleep 5
 
 echo "🧠 Starting AI WebSocket Bridge on port 8766..."
 python3 scripts/chatterpi/ai_websocket_bridge.py --host 0.0.0.0 --port 8766 &

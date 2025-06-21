@@ -233,7 +233,7 @@
     "id": 21,
     "name": "ChatterPi AI System",
     "type": "chatterpi-system",
-    "characterId": null,
+    "characterId": 4,
     "pin": null,
     "usePCA9685": false,
     "channel": null,

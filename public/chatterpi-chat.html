@@ -407,9 +407,7 @@
             <div class="control-group">
                 <label>Character Voice</label>
                 <select id="voiceSelect" class="control-select">
-                    <option value="orlok">Count Orlok (Deep)</option>
-                    <option value="robot">RoboChat (Robotic)</option>
-                    <option value="pirate">Captain Blackbeard (Gruff)</option>
+                    <option value="">Loading characters...</option>
                 </select>
             </div>
             <div class="control-group">
@@ -594,6 +592,10 @@
                 this.isJawAvailable = false;
                 this.isAudioAnimationActive = false;
 
+                // Get character ID from URL parameters
+                const urlParams = new URLSearchParams(window.location.search);
+                this.characterId = urlParams.get('characterId') || '1';
+
                 // Configuration
                 this.selectedServo = 18;
                 this.selectedVoice = 'orlok';
@@ -602,11 +604,13 @@
                 this.speechSynthesis = window.speechSynthesis;
                 this.voices = [];
                 this.availableTTSVoices = [];
+                this.characterVoiceConfig = null;
 
                 // Initialize
                 this.initializeElements();
                 this.setupEventListeners();
                 this.initializeAudio();
+                this.loadCharacterConfiguration();
                 this.checkServices();
                 this.updateWelcomeTime();
                 this.loadCharacterGreeting();
@@ -668,8 +672,15 @@
                 });
 
                 this.voiceSelect.addEventListener('change', (e) => {
-                    this.selectedVoice = e.target.value;
-                    console.log(`Voice changed to ${this.selectedVoice}`);
+                    const newCharacterId = e.target.value;
+                    if (newCharacterId && newCharacterId !== this.characterId) {
+                        console.log(`🔄 Switching to character ID: ${newCharacterId}`);
+
+                        // Update URL and reload page with new character
+                        const url = new URL(window.location);
+                        url.searchParams.set('characterId', newCharacterId);
+                        window.location.href = url.toString();
+                    }
                 });
 
                 this.ttsProviderSelect.addEventListener('change', (e) => {
@@ -779,6 +790,96 @@
                 }
             }
 
+            async loadCharacterConfiguration() {
+                try {
+                    console.log(`🎭 Loading configuration for character ID: ${this.characterId}`);
+
+                    // Load character voice configuration
+                    const voiceResponse = await fetch(`/api/voice/settings/${this.characterId}`);
+                    if (voiceResponse.ok) {
+                        this.characterVoiceConfig = await voiceResponse.json();
+                        console.log('✅ Character voice configuration loaded:', this.characterVoiceConfig);
+
+                        // Update the voice selection in the UI
+                        if (this.characterVoiceConfig && this.characterVoiceConfig.speaker_id) {
+                            this.selectedVoiceId = this.characterVoiceConfig.speaker_id;
+                            console.log(`🎤 Using TopMediai voice ID: ${this.selectedVoiceId}`);
+                        }
+                    } else {
+                        console.warn('⚠️ Could not load character voice configuration');
+                    }
+
+                    // Load character details and populate voice dropdown
+                    await this.loadCharacterVoices();
+
+                } catch (error) {
+                    console.error('❌ Error loading character configuration:', error);
+                }
+            }
+
+            async loadCharacterVoices() {
+                try {
+                    // Load all characters
+                    const characterResponse = await fetch(`/api/characters`);
+                    if (!characterResponse.ok) {
+                        throw new Error('Failed to load characters');
+                    }
+
+                    const characters = await characterResponse.json();
+                    console.log('✅ Characters data loaded:', characters);
+
+                    // Update current character name in header
+                    const currentCharacter = characters.find(c => c.id == this.characterId);
+                    if (currentCharacter && currentCharacter.name) {
+                        document.querySelector('.chat-header h1').textContent = `🎭 ${currentCharacter.name}`;
+                    }
+
+                    // Load voice configurations for all characters
+                    const voiceSelect = document.getElementById('voiceSelect');
+                    voiceSelect.innerHTML = ''; // Clear existing options
+
+                    for (const character of characters) {
+                        try {
+                            const voiceResponse = await fetch(`/api/voice/settings/${character.id}`);
+                            let voiceName = 'No Voice Configured';
+                            let isCurrentCharacter = character.id == this.characterId;
+
+                            if (voiceResponse.ok) {
+                                const voiceConfig = await voiceResponse.json();
+                                if (voiceConfig && voiceConfig.metadata && voiceConfig.metadata.voiceName) {
+                                    voiceName = voiceConfig.metadata.voiceName;
+                                }
+                            }
+
+                            const option = document.createElement('option');
+                            option.value = character.id;
+                            option.textContent = `${character.name} (${voiceName})`;
+                            option.selected = isCurrentCharacter;
+                            voiceSelect.appendChild(option);
+
+                        } catch (error) {
+                            console.warn(`⚠️ Could not load voice for character ${character.id}:`, error);
+
+                            // Add option even if voice loading failed
+                            const option = document.createElement('option');
+                            option.value = character.id;
+                            option.textContent = `${character.name} (No Voice)`;
+                            option.selected = character.id == this.characterId;
+                            voiceSelect.appendChild(option);
+                        }
+                    }
+
+                    console.log('✅ Character voice dropdown populated');
+
+                } catch (error) {
+                    console.error('❌ Error loading character voices:', error);
+
+                    // Fallback: show current character only
+                    const voiceSelect = document.getElementById('voiceSelect');
+                    voiceSelect.innerHTML = `<option value="${this.characterId}">Character ${this.characterId}</option>`;
+                }
+            }
+
             initializeAudio() {
                 // Wait for voices to load
                 if (this.speechSynthesis.getVoices().length === 0) {
@@ -851,6 +952,74 @@
                 this.speechSynthesis.speak(utterance);
             }
 
+            async speakWithTopMediai(text) {
+                if (!text || !this.selectedVoiceId) {
+                    console.warn('⚠️ Cannot speak: missing text or voice ID');
+                    return;
+                }
+
+                try {
+                    console.log(`🎤 Generating TopMediai speech for character ${this.characterId}`);
+
+                    const voiceSettings = this.characterVoiceConfig?.settings || {};
+
+                    const response = await fetch('/api/voice/generate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            text: text,
+                            speaker_id: this.selectedVoiceId,
+                            characterId: this.characterId,
+                            options: {
+                                emotion: voiceSettings.emotion || 'Neutral',
+                                speed: voiceSettings.speed || 1.0,
+                                pitch: voiceSettings.pitch || 0,
+                                volume: voiceSettings.volume || 0
+                            }
+                        })
+                    });
+
+                    if (response.ok) {
+                        const result = await response.json();
+
+                        if (result.success && result.url) {
+                            // Use the returned audio file URL
+                            const audio = new Audio(result.url);
+
+                            // Start jaw animation when audio starts
+                            audio.addEventListener('play', () => {
+                                if (this.isJawAvailable) {
+                                    this.sendJawCommand({ type: 'start_animation' });
+                                }
+                            });
+
+                            // Stop jaw animation when audio ends
+                            audio.addEventListener('ended', () => {
+                                if (this.isJawAvailable) {
+                                    this.sendJawCommand({ type: 'stop_animation' });
+                                }
+                            });
+
+                            audio.volume = this.audioVolume;
+                            await audio.play();
+
+                            console.log('✅ TopMediai speech played successfully');
+                        } else {
+                            throw new Error(`TTS generation failed: ${result.error || 'Unknown error'}`);
+                        }
+                    } else {
+                        throw new Error(`TTS request failed: ${response.status}`);
+                    }
+
+                } catch (error) {
+                    console.error('❌ Error with TopMediai TTS:', error);
+                    // Fallback to browser speech synthesis
+                    this.speakText(text, this.selectedVoice);
+                }
+            }
+
             testAudio() {
                 const testMessages = {
                     'orlok': "Greetings, mortal... I am Count Orlok, ancient dweller of the shadows...",
@@ -859,7 +1028,13 @@
                 };
 
                 const message = testMessages[this.selectedVoice] || testMessages['orlok'];
-                this.speakText(message, this.selectedVoice);
+
+                // Use TopMediai if available, otherwise fallback to browser TTS
+                if (this.selectedVoiceId && this.characterVoiceConfig) {
+                    this.speakWithTopMediai(message);
+                } else {
+                    this.speakText(message, this.selectedVoice);
+                }
             }
 
             adjustTextareaHeight() {
@@ -887,9 +1062,10 @@
 
                 // Check if jaw animation is available (ChatterPi system)
                 try {
-                    const response = await fetch(`${this.apiBaseUrl}/jaw/status`);
+                    const response = await fetch(`${this.apiBaseUrl}/chatterpi/jaw/status`);
                     if (response.ok) {
-                        this.isJawAvailable = true;
+                        const data = await response.json();
+                        this.isJawAvailable = data.success && data.connected;
                         console.log('✅ ChatterPi jaw animation service is available');
                     }
                 } catch (error) {
@@ -905,13 +1081,15 @@
                 if (!this.isAIAvailable) return;
 
                 try {
-                    console.log(`🎭 Loading greeting for character: ${this.selectedVoice}`);
-                    const response = await fetch(`${this.apiBaseUrl}/greeting/${this.selectedVoice}`);
+                    console.log(`🎭 Loading greeting for character ID: ${this.characterId}`);
+                    const response = await fetch(`${this.apiBaseUrl}/greeting/${this.characterId}`);
                     const data = await response.json();
 
                     if (data.success && data.greeting) {
                         this.addMessage(data.greeting, 'bot');
-                        this.speakText(data.greeting, this.selectedVoice);
+
+                        // Use TopMediai TTS with character's voice
+                        await this.speakWithTopMediai(data.greeting);
 
                         // Animate jaw if available
                         if (data.jawAnimation && this.isJawAvailable) {
@@ -930,7 +1108,7 @@
                 }
 
                 try {
-                    console.log(`🤖 Sending chat message: "${message}"`);
+                    console.log(`🤖 Sending chat message: "${message}" for character ID: ${this.characterId}`);
 
                     const response = await fetch(`${this.apiBaseUrl}/chat`, {
                         method: 'POST',
@@ -939,7 +1117,9 @@
                         },
                         body: JSON.stringify({
                             message: message,
-                            character: this.selectedVoice
+                            character: this.selectedVoice,
+                            characterId: this.characterId,
+                            voiceId: this.selectedVoiceId
                         })
                     });
 
@@ -948,7 +1128,9 @@
                     if (data.success && data.data && data.data.aiResponse) {
                         const aiText = data.data.aiResponse.text;
                         this.addMessage(aiText, 'bot');
-                        this.speakText(aiText, this.selectedVoice);
+
+                        // Use TopMediai TTS with character's voice configuration
+                        await this.speakWithTopMediai(aiText);
 
                         // Animate jaw if available
                         if (data.data.jawAnimation && this.isJawAvailable) {
@@ -957,7 +1139,7 @@
                     } else if (data.fallback) {
                         // Use fallback response
                         this.addMessage(data.fallback, 'bot');
-                        this.speakText(data.fallback, this.selectedVoice);
+                        await this.speakWithTopMediai(data.fallback);
                     } else {
                         throw new Error(data.error || 'Unknown error');
                     }
