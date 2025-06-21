@@ -21,7 +21,7 @@ async function getServoName(servoType) {
 }
 
 async function getPartDetails(part) {
-    switch(part.type) {
+    switch (part.type) {
         case 'motor':
         case 'linear-actuator':
             return `Dir Pin: ${part.directionPin}, PWM Pin: ${part.pwmPin}`;
@@ -37,6 +37,8 @@ async function getPartDetails(part) {
             }
         case 'sensor':
             return `Type: ${part.sensorType}, GPIO Pin: ${part.gpioPin}, Active: ${part.active ? 'Yes' : 'No'}`;
+        case 'head-tracking':
+            return `Webcam: ${part.webcam_device}, Servo: ${part.servo_id || 'Not assigned'}, Enabled: ${part.enabled ? 'Yes' : 'No'}`;
         default:
             return '';
     }
@@ -98,10 +100,10 @@ router.get('/new/:type', async (req, res) => {
         const character = await characterService.getCharacterById(req.characterId);
         const characters = await characterService.getAllCharacters();
         const part = { type, characterId: req.characterId };
-        
-        const renderData = { 
-            title: `Add ${type.charAt(0).toUpperCase() + type.slice(1)}`, 
-            action: `/parts/${type}`, 
+
+        const renderData = {
+            title: `Add ${type.charAt(0).toUpperCase() + type.slice(1)}`,
+            action: `/parts/${type}`,
             part,
             character,
             characters
@@ -129,7 +131,7 @@ router.get('/:id/edit', async (req, res) => {
             logger.warn(`Invalid part ID (not a number): ${req.params.id}`);
             return res.status(404).send('Part not found');
         }
-        
+
         const part = await partService.getPartById(id);
         if (!part) {
             logger.warn(`Part not found with ID: ${id}`);
@@ -219,19 +221,19 @@ router.post('/:id/delete', async (req, res) => {
         logger.info(`Request params: ${JSON.stringify(req.params)}`);
         logger.info(`Request query: ${JSON.stringify(req.query)}`);
         logger.info(`Request body: ${JSON.stringify(req.body)}`);
-        
+
         // Log summary before deletion (reduced verbosity)
         const allParts = await partService.getAllParts();
         logger.info(`Parts before deletion: ${allParts.length} total`);
         logger.debug(`All parts before deletion: ${JSON.stringify(allParts)}`);
-        
+
         // Check if the part exists before attempting to delete
         const partToDelete = allParts.find(part => part.id === id);
         if (!partToDelete) {
             logger.warn(`Part with ID ${id} not found before deletion attempt`);
             return res.status(404).json({ error: 'Part not found' });
         }
-        
+
         logger.info(`Part to be deleted: ${JSON.stringify(partToDelete)}`);
 
         try {
@@ -324,7 +326,7 @@ router.get('/sensor/test', (req, res) => {
 
 const executePythonScript = (req, res) => {
     const { script, args } = req.body;
-    
+
     if (!script || !Array.isArray(args)) {
         logger.error('Invalid request to execute Python script');
         return res.status(400).json({ success: false, error: 'Invalid request parameters' });
@@ -382,8 +384,8 @@ const executePythonScript = (req, res) => {
                 res.json(result);
             } catch (error) {
                 logger.error(`Error parsing Python script output: ${error}`);
-                res.status(500).json({ 
-                    success: false, 
+                res.status(500).json({
+                    success: false,
                     error: 'Failed to parse script result',
                     stdout: stdoutData,
                     stderr: stderrData

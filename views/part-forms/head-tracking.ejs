@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/parts.css">
+    <style>
+        .head-tracking-form {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .form-section {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+        
+        .form-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        
+        .webcam-preview {
+            width: 100%;
+            max-width: 400px;
+            height: 300px;
+            background: #000;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 14px;
+        }
+        
+        .tracking-controls {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-active { background-color: #28a745; }
+        .status-inactive { background-color: #dc3545; }
+        .status-warning { background-color: #ffc107; }
+        
+        .servo-test-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        
+        .angle-slider {
+            flex: 1;
+            margin: 0 10px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1><%= title %></h1>
+        <nav>
+            <a href="/parts" class="nav-link">← Back to Parts</a>
+        </nav>
+    </header>
+
+    <main class="head-tracking-form">
+        <form action="<%= action %>?returnTo=/parts?characterId=<%= character ? character.id : (part ? part.characterId : '') %>" method="POST" id="headTrackingForm">
+            <input type="hidden" name="type" value="head-tracking">
+            <% if (part && part.id) { %>
+                <input type="hidden" name="id" value="<%= part.id %>">
+            <% } %>
+            
+            <!-- Basic Configuration -->
+            <div class="form-section">
+                <h3>🎯 Basic Configuration</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="name">Part Name:</label>
+                        <input type="text" id="name" name="name" value="<%= part ? part.name : 'Head Tracking System' %>" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="characterId">Character:</label>
+                        <select id="characterId" name="characterId" required>
+                            <% characters.forEach(function(char) { %>
+                                <option value="<%= char.id %>" <%= (part && part.characterId === char.id) ? 'selected' : '' %>>
+                                    <%= char.char_name %>
+                                </option>
+                            <% }); %>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="enabled">
+                            <input type="checkbox" id="enabled" name="enabled" <%= (part && part.enabled) ? 'checked' : '' %>>
+                            Enable Head Tracking
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Webcam Configuration -->
+            <div class="form-section">
+                <h3>📹 Webcam Configuration</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="webcam_device">Webcam Device:</label>
+                        <select id="webcam_device" name="webcam_device">
+                            <option value="/dev/video0">/dev/video0</option>
+                            <option value="/dev/video1">/dev/video1</option>
+                            <option value="/dev/video2">/dev/video2</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="webcam_width">Width:</label>
+                        <input type="number" id="webcam_width" name="webcam_width" value="<%= (part && part.webcam_width) ? part.webcam_width : 640 %>" min="320" max="1920">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="webcam_height">Height:</label>
+                        <input type="number" id="webcam_height" name="webcam_height" value="<%= (part && part.webcam_height) ? part.webcam_height : 480 %>" min="240" max="1080">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="webcam_fps">FPS:</label>
+                        <input type="number" id="webcam_fps" name="webcam_fps" value="<%= (part && part.webcam_fps) ? part.webcam_fps : 15 %>" min="5" max="30">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Live Preview:</label>
+                    <div class="webcam-preview" id="webcamPreview">
+                        <span>Click "Start Preview" to view webcam feed</span>
+                    </div>
+                    <div class="tracking-controls">
+                        <button type="button" id="startPreview" class="button">Start Preview</button>
+                        <button type="button" id="stopPreview" class="button secondary-btn">Stop Preview</button>
+                        <span id="previewStatus">
+                            <span class="status-indicator status-inactive"></span>
+                            Preview Inactive
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Motion Detection Parameters -->
+            <div class="form-section">
+                <h3>🔍 Motion Detection</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="motion_threshold">Motion Threshold:</label>
+                        <input type="range" id="motion_threshold" name="motion_threshold" 
+                               value="<%= (part && part.motion_threshold) ? part.motion_threshold : 25 %>" 
+                               min="10" max="100" oninput="updateRangeValue(this, 'motion_threshold_value')">
+                        <span id="motion_threshold_value"><%= (part && part.motion_threshold) ? part.motion_threshold : 25 %></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="min_contour_area">Min Object Size:</label>
+                        <input type="range" id="min_contour_area" name="min_contour_area" 
+                               value="<%= (part && part.min_contour_area) ? part.min_contour_area : 500 %>" 
+                               min="100" max="5000" step="100" oninput="updateRangeValue(this, 'min_contour_area_value')">
+                        <span id="min_contour_area_value"><%= (part && part.min_contour_area) ? part.min_contour_area : 500 %></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="max_contour_area">Max Object Size:</label>
+                        <input type="range" id="max_contour_area" name="max_contour_area" 
+                               value="<%= (part && part.max_contour_area) ? part.max_contour_area : 50000 %>" 
+                               min="5000" max="100000" step="1000" oninput="updateRangeValue(this, 'max_contour_area_value')">
+                        <span id="max_contour_area_value"><%= (part && part.max_contour_area) ? part.max_contour_area : 50000 %></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="background_learning_rate">Background Learning Rate:</label>
+                        <input type="range" id="background_learning_rate" name="background_learning_rate" 
+                               value="<%= (part && part.background_learning_rate) ? part.background_learning_rate : 0.01 %>" 
+                               min="0.001" max="0.1" step="0.001" oninput="updateRangeValue(this, 'background_learning_rate_value')">
+                        <span id="background_learning_rate_value"><%= (part && part.background_learning_rate) ? part.background_learning_rate : 0.01 %></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tracking Parameters -->
+            <div class="form-section">
+                <h3>🎯 Tracking Parameters</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="tracking_smoothing">Smoothing:</label>
+                        <input type="range" id="tracking_smoothing" name="tracking_smoothing" 
+                               value="<%= (part && part.tracking_smoothing) ? part.tracking_smoothing : 0.3 %>" 
+                               min="0.1" max="1.0" step="0.1" oninput="updateRangeValue(this, 'tracking_smoothing_value')">
+                        <span id="tracking_smoothing_value"><%= (part && part.tracking_smoothing) ? part.tracking_smoothing : 0.3 %></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tracking_deadzone">Deadzone (%):</label>
+                        <input type="range" id="tracking_deadzone" name="tracking_deadzone" 
+                               value="<%= (part && part.tracking_deadzone) ? part.tracking_deadzone : 5.0 %>" 
+                               min="1.0" max="20.0" step="0.5" oninput="updateRangeValue(this, 'tracking_deadzone_value')">
+                        <span id="tracking_deadzone_value"><%= (part && part.tracking_deadzone) ? part.tracking_deadzone : 5.0 %></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tracking_sensitivity">Sensitivity:</label>
+                        <input type="range" id="tracking_sensitivity" name="tracking_sensitivity" 
+                               value="<%= (part && part.tracking_sensitivity) ? part.tracking_sensitivity : 1.0 %>" 
+                               min="0.1" max="3.0" step="0.1" oninput="updateRangeValue(this, 'tracking_sensitivity_value')">
+                        <span id="tracking_sensitivity_value"><%= (part && part.tracking_sensitivity) ? part.tracking_sensitivity : 1.0 %></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Servo Configuration -->
+            <div class="form-section">
+                <h3>🦷 Servo Configuration</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="servo_id">Servo Part:</label>
+                        <select id="servo_id" name="servo_id">
+                            <option value="">Select Servo...</option>
+                            <!-- Servo options will be populated by JavaScript -->
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="servo_min_angle">Min Angle:</label>
+                        <input type="number" id="servo_min_angle" name="servo_min_angle" 
+                               value="<%= (part && part.servo_min_angle) ? part.servo_min_angle : 0 %>" 
+                               min="0" max="180" step="1">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="servo_max_angle">Max Angle:</label>
+                        <input type="number" id="servo_max_angle" name="servo_max_angle" 
+                               value="<%= (part && part.servo_max_angle) ? part.servo_max_angle : 180 %>" 
+                               min="0" max="180" step="1">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="servo_center_angle">Center Angle:</label>
+                        <input type="number" id="servo_center_angle" name="servo_center_angle" 
+                               value="<%= (part && part.servo_center_angle) ? part.servo_center_angle : 90 %>" 
+                               min="0" max="180" step="1">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="servo_speed">Speed:</label>
+                        <input type="range" id="servo_speed" name="servo_speed" 
+                               value="<%= (part && part.servo_speed) ? part.servo_speed : 0.5 %>" 
+                               min="0.1" max="2.0" step="0.1" oninput="updateRangeValue(this, 'servo_speed_value')">
+                        <span id="servo_speed_value"><%= (part && part.servo_speed) ? part.servo_speed : 0.5 %></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="servo_reverse">
+                            <input type="checkbox" id="servo_reverse" name="servo_reverse" <%= (part && part.servo_reverse) ? 'checked' : '' %>>
+                            Reverse Direction
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Servo Test:</label>
+                    <div class="servo-test-controls">
+                        <span>0°</span>
+                        <input type="range" id="testAngle" class="angle-slider" min="0" max="180" value="90">
+                        <span>180°</span>
+                        <button type="button" id="testServo" class="button">Test Servo</button>
+                        <span id="testAngleValue">90°</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="button">Save Head Tracking Configuration</button>
+                <button type="button" id="startTracking" class="button success-btn">Start Tracking</button>
+                <button type="button" id="stopTracking" class="button danger-btn">Stop Tracking</button>
+                <a href="/parts?characterId=<%= character ? character.id : (part ? part.characterId : '') %>" class="button secondary-btn">Cancel</a>
+            </div>
+        </form>
+    </main>
+
+    <script>
+        // Range value updater
+        function updateRangeValue(slider, valueId) {
+            document.getElementById(valueId).textContent = slider.value;
+        }
+
+        // Test angle updater
+        document.getElementById('testAngle').addEventListener('input', function() {
+            document.getElementById('testAngleValue').textContent = this.value + '°';
+        });
+
+        // Load servo options based on selected character
+        function loadServoOptions() {
+            const characterId = document.getElementById('characterId').value;
+            if (!characterId) return;
+
+            fetch(`/api/characters/${characterId}/parts?type=servo`)
+                .then(response => response.json())
+                .then(data => {
+                    const servoSelect = document.getElementById('servo_id');
+                    servoSelect.innerHTML = '<option value="">Select Servo...</option>';
+                    
+                    if (data.success && data.parts) {
+                        data.parts.forEach(servo => {
+                            const option = document.createElement('option');
+                            option.value = servo.id;
+                            option.textContent = servo.name;
+                            servoSelect.appendChild(option);
+                        });
+                    }
+                })
+                .catch(error => console.error('Error loading servos:', error));
+        }
+
+        // Initialize servo options
+        document.getElementById('characterId').addEventListener('change', loadServoOptions);
+        loadServoOptions();
+
+        // WebSocket connection for real-time features
+        let ws = null;
+        let previewActive = false;
+
+        function connectWebSocket() {
+            if (ws && ws.readyState === WebSocket.OPEN) return;
+
+            ws = new WebSocket('ws://localhost:8776');
+            
+            ws.onopen = function() {
+                console.log('Connected to head tracking service');
+            };
+            
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                handleWebSocketMessage(data);
+            };
+            
+            ws.onclose = function() {
+                console.log('Disconnected from head tracking service');
+                setTimeout(connectWebSocket, 5000); // Reconnect after 5 seconds
+            };
+        }
+
+        function handleWebSocketMessage(data) {
+            switch(data.type) {
+                case 'tracking_status_update':
+                    updateTrackingStatus(data);
+                    break;
+                case 'servo_test_result':
+                    updateServoTestResult(data);
+                    break;
+            }
+        }
+
+        function updateTrackingStatus(data) {
+            const status = data.status;
+            const statusElement = document.getElementById('previewStatus');
+            
+            if (status.active) {
+                statusElement.innerHTML = '<span class="status-indicator status-active"></span>Tracking Active';
+            } else {
+                statusElement.innerHTML = '<span class="status-indicator status-inactive"></span>Tracking Inactive';
+            }
+        }
+
+        function updateServoTestResult(data) {
+            if (data.success) {
+                console.log(`Servo test successful: ${data.angle}°`);
+            } else {
+                console.error('Servo test failed');
+            }
+        }
+
+        // Event listeners
+        document.getElementById('startPreview').addEventListener('click', function() {
+            if (!previewActive) {
+                // Start webcam preview
+                previewActive = true;
+                document.getElementById('previewStatus').innerHTML = 
+                    '<span class="status-indicator status-active"></span>Preview Active';
+            }
+        });
+
+        document.getElementById('stopPreview').addEventListener('click', function() {
+            if (previewActive) {
+                // Stop webcam preview
+                previewActive = false;
+                document.getElementById('previewStatus').innerHTML = 
+                    '<span class="status-indicator status-inactive"></span>Preview Inactive';
+            }
+        });
+
+        document.getElementById('testServo').addEventListener('click', function() {
+            const characterId = document.getElementById('characterId').value;
+            const servoId = document.getElementById('servo_id').value;
+            const angle = document.getElementById('testAngle').value;
+            
+            if (!characterId || !servoId) {
+                alert('Please select a character and servo first');
+                return;
+            }
+            
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'test_servo',
+                    character_id: characterId,
+                    servo_id: servoId,
+                    angle: parseFloat(angle)
+                }));
+            }
+        });
+
+        document.getElementById('startTracking').addEventListener('click', function() {
+            const characterId = document.getElementById('characterId').value;
+            
+            if (!characterId) {
+                alert('Please select a character first');
+                return;
+            }
+            
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'start_tracking',
+                    character_id: characterId
+                }));
+            }
+        });
+
+        document.getElementById('stopTracking').addEventListener('click', function() {
+            const characterId = document.getElementById('characterId').value;
+            
+            if (!characterId) {
+                alert('Please select a character first');
+                return;
+            }
+            
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'stop_tracking',
+                    character_id: characterId
+                }));
+            }
+        });
+
+        // Initialize WebSocket connection
+        connectWebSocket();
+    </script>
+</body>
+</html>

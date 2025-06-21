@@ -45,43 +45,17 @@ router.post('/start/:characterId', async (req, res) => {
             });
         }
 
-        // Start motion tracking process
-        const scriptPath = path.join(__dirname, '../../scripts/motion_tracker.py');
-        const sensitivity = character.animatronic.motion_tracking.sensitivity || 50;
-        const deviceId = 0; // Default camera device
-
-        const trackerProcess = spawn('python3', [
-            scriptPath,
-            '--device', deviceId.toString(),
-            '--sensitivity', sensitivity.toString(),
-            '--duration', '3600' // Run for 1 hour
-        ]);
-
-        // Store process info
-        activeTrackers.set(characterId, {
-            process: trackerProcess,
-            startTime: new Date(),
-            characterId: characterId
-        });
-
-        // Handle process events
-        trackerProcess.on('error', (error) => {
-            logger.error(`Motion tracker error for character ${characterId}:`, error);
-            activeTrackers.delete(characterId);
-        });
-
-        trackerProcess.on('exit', (code) => {
-            logger.info(`Motion tracker exited for character ${characterId} with code ${code}`);
-            activeTrackers.delete(characterId);
-        });
-
-        logger.info(`Motion tracking started for character ${characterId}`);
-
-        res.json({
-            success: true,
-            message: 'Motion tracking started',
-            characterId: characterId,
-            sensitivity: sensitivity
+        // Motion tracking is now handled by the WebSocket head tracking service
+        // This endpoint is deprecated - use the new head tracking API instead
+        return res.status(410).json({
+            success: false,
+            message: 'Motion tracking endpoint deprecated. Use /api/hardware/head-tracking/start instead.',
+            migration_info: {
+                new_endpoint: '/api/hardware/head-tracking/start',
+                websocket_service: 'ws://localhost:8776',
+                documentation: '/hardware-monitor.html',
+                character_id: characterId
+            }
         });
 
     } catch (error) {

@@ -1,13 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title %></title>
+    <title>
+        <%= title %>
+    </title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
     <link rel="stylesheet" href="/css/style.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
+
 <body>
     <header>
         <h1 class="landing-title">🔧 Hardware Parts Management</h1>
@@ -16,7 +20,8 @@
     <main>
         <div class="info-section">
             <h3>🦾 Hardware Parts Overview</h3>
-            <p>Manage all physical hardware components independently of characters. Configure GPIO pins, calibration settings, and safety limits. Parts can then be assigned to characters in the Characters menu.</p>
+            <p>Manage all physical hardware components independently of characters. Configure GPIO pins, calibration
+                settings, and safety limits. Parts can then be assigned to characters in the Characters menu.</p>
         </div>
 
         <div class="button-group">
@@ -27,6 +32,7 @@
             <a href="/parts/servo/new" class="button">🦷 Add Servo</a>
             <a href="/parts/new/sensor" class="button">📡 Add Sensor</a>
             <a href="/parts/webcam/new" class="button">📹 Add Webcam</a>
+            <a href="/parts/head-tracking/new" class="button">🎯 Add Head Tracking</a>
             <a href="/hardware-monitor.html" class="button secondary-btn">📊 Hardware Monitor</a>
         </div>
 
@@ -53,86 +59,98 @@
         </div>
 
         <div id="partsContainer">
-            <% if (parts.length === 0) { %>
+            <% if (parts.length===0) { %>
                 <div class="empty-state">
                     <h3>🔧 No Hardware Parts Found</h3>
                     <p>Start by adding your first hardware component using the buttons above.</p>
                 </div>
-            <% } else { %>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Type</th>
-                                <th>GPIO/Config</th>
-                                <th>Status</th>
-                                <th>Assigned Characters</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <% parts.forEach(function(part) { %>
+                <% } else { %>
+                    <div class="table-container">
+                        <table>
+                            <thead>
                                 <tr>
-                                    <td>
-                                        <strong><%= part.name %></strong>
-                                        <% if (part.description) { %>
-                                            <br><small><%= part.description %></small>
-                                        <% } %>
-                                    </td>
-                                    <td>
-                                        <span class="part-type-badge <%= part.type %>">
-                                            <%= part.type === 'linear-actuator' ? '🦴' :
-                                                part.type === 'servo' ? '🦷' :
-                                                part.type === 'motor' ? '🔄' :
-                                                part.type === 'light' ? '💡' :
-                                                part.type === 'led' ? '🔆' :
-                                                part.type === 'sensor' ? '📡' :
-                                                part.type === 'webcam' ? '📹' : '🔧' %>
-                                            <%= part.type %>
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <% if (part.pin !== undefined) { %>
-                                            <code>GPIO <%= part.pin %></code>
-                                        <% } %>
-                                        <% if (part.details) { %>
-                                            <br><small><%= part.details %></small>
-                                        <% } %>
-                                    </td>
-                                    <td>
-                                        <span class="status-indicator status-unknown" id="status-<%= part.id %>">
-                                            ⚪ Unknown
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div class="assigned-characters" id="assigned-<%= part.id %>">
-                                            <small>Loading...</small>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="button-group">
-                                            <% if (part.type === 'linear-actuator') { %>
-                                                <a href="/parts/linear-actuator/<%= part.id %>/edit" class="button small-btn">✏️ Edit</a>
-                                            <% } else if (part.type === 'servo') { %>
-                                                <a href="/parts/servo/<%= part.id %>/edit" class="button small-btn">✏️ Edit</a>
-                                            <% } else if (part.type === 'light') { %>
-                                                <a href="/parts/light/<%= part.id %>/edit" class="button small-btn">✏️ Edit</a>
-                                            <% } else if (part.type === 'webcam') { %>
-                                                <a href="/parts/webcam/<%= part.id %>/edit" class="button small-btn">✏️ Edit</a>
-                                            <% } else { %>
-                                                <a href="/parts/<%= part.id %>/edit" class="button small-btn">✏️ Edit</a>
-                                            <% } %>
-                                            <button onclick="testPart('<%= part.id %>')" class="button small-btn test-btn">🧪 Test</button>
-                                            <button class="button small-btn delete-btn delete-part" data-id="<%= part.id %>">🗑️ Delete</button>
-                                        </div>
-                                    </td>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>GPIO/Config</th>
+                                    <th>Status</th>
+                                    <th>Assigned Characters</th>
+                                    <th>Actions</th>
                                 </tr>
-                            <% }); %>
-                        </tbody>
-                    </table>
-                </div>
-            <% } %>
+                            </thead>
+                            <tbody>
+                                <% parts.forEach(function(part) { %>
+                                    <tr>
+                                        <td>
+                                            <strong>
+                                                <%= part.name %>
+                                            </strong>
+                                            <% if (part.description) { %>
+                                                <br><small>
+                                                    <%= part.description %>
+                                                </small>
+                                                <% } %>
+                                        </td>
+                                        <td>
+                                            <span class="part-type-badge <%= part.type %>">
+                                                <%= part.type==='linear-actuator' ? '🦴' : part.type==='servo' ? '🦷' :
+                                                    part.type==='motor' ? '🔄' : part.type==='light' ? '💡' :
+                                                    part.type==='led' ? '🔆' : part.type==='sensor' ? '📡' :
+                                                    part.type==='webcam' ? '📹' : '🔧' %>
+                                                    <%= part.type %>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <% if (part.pin !==undefined) { %>
+                                                <code>GPIO <%= part.pin %></code>
+                                                <% } %>
+                                                    <% if (part.details) { %>
+                                                        <br><small>
+                                                            <%= part.details %>
+                                                        </small>
+                                                        <% } %>
+                                        </td>
+                                        <td>
+                                            <span class="status-indicator status-unknown" id="status-<%= part.id %>">
+                                                ⚪ Unknown
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="assigned-characters" id="assigned-<%= part.id %>">
+                                                <small>Loading...</small>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="button-group">
+                                                <% if (part.type==='linear-actuator' ) { %>
+                                                    <a href="/parts/linear-actuator/<%= part.id %>/edit"
+                                                        class="button small-btn">✏️ Edit</a>
+                                                    <% } else if (part.type==='servo' ) { %>
+                                                        <a href="/parts/servo/<%= part.id %>/edit"
+                                                            class="button small-btn">✏️ Edit</a>
+                                                        <% } else if (part.type==='light' ) { %>
+                                                            <a href="/parts/light/<%= part.id %>/edit"
+                                                                class="button small-btn">✏️ Edit</a>
+                                                            <% } else if (part.type==='webcam' ) { %>
+                                                                <a href="/parts/webcam/<%= part.id %>/edit"
+                                                                    class="button small-btn">✏️ Edit</a>
+                                                                <% } else { %>
+                                                                    <a href="/parts/<%= part.id %>/edit"
+                                                                        class="button small-btn">✏️ Edit</a>
+                                                                    <% } %>
+                                                                        <button onclick="testPart('<%= part.id %>')"
+                                                                            class="button small-btn test-btn">🧪
+                                                                            Test</button>
+                                                                        <button
+                                                                            class="button small-btn delete-btn delete-part"
+                                                                            data-id="<%= part.id %>">🗑️ Delete</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                    <% } %>
         </div>
 
         <div class="button-group">
@@ -268,21 +286,21 @@
     </style>
 
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             // Initialize WebSocket connections for service status
             initializeServiceStatus();
 
             // Load character assignments for each part
             loadCharacterAssignments();
 
-            $('.delete-part').on('click', function() {
+            $('.delete-part').on('click', function () {
                 const id = $(this).data('id');
                 if (confirm('Are you sure you want to delete this hardware part? This will remove it from all character assignments.')) {
                     $.post('/parts/' + id + '/delete')
-                        .done(function() {
+                        .done(function () {
                             location.reload();
                         })
-                        .fail(function(xhr, status, error) {
+                        .fail(function (xhr, status, error) {
                             console.error('Error details:', xhr.responseText);
                             alert('Error deleting part: ' + xhr.status + ' ' + xhr.statusText);
                         });
@@ -308,16 +326,16 @@
             const ws = new WebSocket(`ws://localhost:${service.port}`);
             const indicator = document.getElementById(`${service.id}Indicator`);
 
-            ws.onopen = function() {
+            ws.onopen = function () {
                 indicator.textContent = '🟢';
                 ws.close();
             };
 
-            ws.onerror = function() {
+            ws.onerror = function () {
                 indicator.textContent = '🔴';
             };
 
-            ws.onclose = function() {
+            ws.onclose = function () {
                 if (indicator.textContent !== '🟢') {
                     indicator.textContent = '🔴';
                 }
@@ -327,15 +345,15 @@
         function loadCharacterAssignments() {
             // Load character assignments for each part
             $.get('/api/characters')
-                .done(function(characters) {
+                .done(function (characters) {
                     // For each part, check which characters use it
                     <% if (parts.length > 0) { %>
-                        <% parts.forEach(function(part) { %>
-                            loadPartAssignments('<%= part.id %>', characters);
+                        <% parts.forEach(function (part) { %>
+                    loadPartAssignments('<%= part.id %>', characters);
                         <% }); %>
                     <% } %>
                 })
-                .fail(function() {
+                .fail(function () {
                     console.error('Failed to load character assignments');
                 });
         }
@@ -351,7 +369,7 @@
         function testPart(partId) {
             // Test hardware part functionality
             $.post(`/parts/${partId}/test`)
-                .done(function(response) {
+                .done(function (response) {
                     if (response.success) {
                         const statusElement = document.getElementById(`status-${partId}`);
                         if (statusElement) {
@@ -363,10 +381,11 @@
                         alert('❌ Hardware test failed: ' + response.error);
                     }
                 })
-                .fail(function(xhr) {
+                .fail(function (xhr) {
                     alert('❌ Test error: ' + xhr.responseText);
                 });
         }
     </script>
 </body>
+
 </html>

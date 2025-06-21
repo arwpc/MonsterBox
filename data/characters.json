@@ -20,7 +20,9 @@
         "systemd-resolved",
         "bluetooth",
         "gpio-control",
-        "servo-control"
+        "servo-control",
+        "camera",
+        "head-tracking"
       ],
       "log_types": [
         "system",

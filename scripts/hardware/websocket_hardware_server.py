@@ -77,8 +77,8 @@ class WebSocketHardwareServer:
             self.is_running = True
             logger.info(f"✅ WebSocket Hardware Server running on ws://{self.host}:{self.port}")
             
-            # Start with default character (Orlok - ID 4)
-            await self.character_manager.start_character_services(4)
+            # Start with default character (Orlok - ID 1)
+            await self.character_manager.start_character_services(1)
             
             await self.server.wait_closed()
             

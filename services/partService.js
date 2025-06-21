@@ -3,17 +3,44 @@ const path = require('path');
 const logger = require('../scripts/logger');
 
 const dataPath = path.join(__dirname, '../data/parts.json');
+const headTrackingDataPath = path.join(__dirname, '../data/head_tracking.json');
 
 const getAllParts = async () => {
     try {
-        const data = await fs.readFile(dataPath, 'utf8');
-        logger.debug('Raw parts data:', data);
-        return JSON.parse(data);
-    } catch (error) {
-        if (error.code === 'ENOENT') {
-            logger.info('Parts file not found, returning empty array');
-            return [];
+        // Load regular parts
+        let parts = [];
+        try {
+            const data = await fs.readFile(dataPath, 'utf8');
+            logger.debug('Raw parts data:', data);
+            parts = JSON.parse(data);
+        } catch (error) {
+            if (error.code === 'ENOENT') {
+                logger.info('Parts file not found, starting with empty array');
+                parts = [];
+            } else {
+                throw error;
+            }
         }
+
+        // Load head tracking configurations
+        try {
+            const headTrackingData = await fs.readFile(headTrackingDataPath, 'utf8');
+            const headTrackingParts = JSON.parse(headTrackingData);
+            logger.debug('Head tracking parts data:', headTrackingParts);
+
+            // Add head tracking parts to the main parts array
+            parts = parts.concat(headTrackingParts);
+        } catch (error) {
+            if (error.code === 'ENOENT') {
+                logger.info('Head tracking file not found, no head tracking parts to load');
+            } else {
+                logger.warn('Error loading head tracking parts:', error);
+            }
+        }
+
+        return parts;
+    } catch (error) {
+        logger.error('Error in getAllParts:', error);
         throw error;
     }
 };
@@ -76,9 +103,9 @@ const updatePart = async (id, partData) => {
         logger.warn(`Part not found with id: ${id}`);
         return null;
     }
-    parts[index] = { 
-        ...parts[index], 
-        ...partData, 
+    parts[index] = {
+        ...parts[index],
+        ...partData,
         id: parsedId,
         characterId: parseInt(partData.characterId, 10)
     };

@@ -35,10 +35,10 @@ function loadCharacterData() {
     try {
         const charactersData = fs.readFileSync('./data/characters.json', 'utf8');
         const partsData = fs.readFileSync('./data/parts.json', 'utf8');
-        
+
         const characters = JSON.parse(charactersData);
         const parts = JSON.parse(partsData);
-        
+
         return { characters, parts };
     } catch (error) {
         log(`Error loading data: ${error.message}`, 'error');
@@ -143,17 +143,11 @@ function startWebcamStream(characterId, webcam) {
     log(`Starting webcam stream for character ${characterId}`);
 
     try {
-        const scriptPath = path.join(__dirname, 'scripts', 'webcam_persistent_stream.py');
+        // Webcam streaming is now handled by the WebSocket webcam service
+        log(`Webcam streaming migrated to WebSocket service on port 8774`, 'info');
 
-        const streamProcess = spawn('python3', [
-            scriptPath,
-            '--device-id', webcam.devicePath.replace('/dev/video', ''),
-            '--width', webcam.width.toString(),
-            '--height', webcam.height.toString(),
-            '--fps', webcam.fps.toString(),
-            '--quality', '85',
-            '--persistent'
-        ]);
+        // This functionality is deprecated - use the WebSocket webcam service instead
+        throw new Error('Webcam streaming migrated to WebSocket service. Use ws://localhost:8774 instead.');
 
         log(`Stream process started for character ${characterId}`);
 
@@ -192,8 +186,8 @@ app.get('/health', (req, res) => {
 
 // Test endpoint
 app.get('/test', (req, res) => {
-    res.json({ 
-        status: 'OK', 
+    res.json({
+        status: 'OK',
         message: 'MonsterBox Webcam Server',
         activeStreams: activeStreams.size,
         timestamp: new Date().toISOString()
@@ -203,22 +197,22 @@ app.get('/test', (req, res) => {
 // Webcam detection
 app.get('/api/webcam/detect', async (req, res) => {
     log('Webcam detection requested');
-    
+
     try {
         const scriptPath = path.join(__dirname, 'scripts', 'webcam_detect.py');
         const detectProcess = spawn('python3', [scriptPath]);
-        
+
         let output = '';
         let error = '';
-        
+
         detectProcess.stdout.on('data', (data) => {
             output += data.toString();
         });
-        
+
         detectProcess.stderr.on('data', (data) => {
             error += data.toString();
         });
-        
+
         detectProcess.on('close', (code) => {
             if (code === 0) {
                 try {
@@ -237,7 +231,7 @@ app.get('/api/webcam/detect', async (req, res) => {
                 res.json({ success: false, error: error || 'Detection failed' });
             }
         });
-        
+
     } catch (error) {
         log(`Webcam detection error: ${error.message}`, 'error');
         res.status(500).json({ success: false, error: error.message });
@@ -248,17 +242,17 @@ app.get('/api/webcam/detect', async (req, res) => {
 app.get('/api/streaming/status/:characterId', (req, res) => {
     const characterId = req.params.characterId;
     const webcam = getWebcamForCharacter(characterId);
-    
+
     if (!webcam) {
         return res.json({
             success: false,
             error: 'No webcam configured for this character'
         });
     }
-    
+
     const streamInfo = activeStreams.get(characterId);
     const isActive = streamInfo && streamInfo.process && !streamInfo.process.killed;
-    
+
     res.json({
         success: true,
         characterId: parseInt(characterId),
@@ -315,19 +309,19 @@ app.post('/api/streaming/start/:characterId', async (req, res) => {
 app.get('/api/streaming/stream/:characterId', (req, res) => {
     const characterId = req.params.characterId;
     const webcam = getWebcamForCharacter(characterId);
-    
+
     if (!webcam) {
         return res.status(404).send('No webcam configured for this character');
     }
-    
+
     log(`New stream client for character ${characterId}`);
-    
+
     // Set MJPEG headers
     res.setHeader('Content-Type', 'multipart/x-mixed-replace; boundary=frame');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('Access-Control-Allow-Origin', '*');
-    
+
     // Start stream if not already active
     let streamInfo = activeStreams.get(characterId);
     if (!streamInfo || !streamInfo.process || streamInfo.process.killed) {
@@ -337,16 +331,16 @@ app.get('/api/streaming/stream/:characterId', (req, res) => {
         }
         streamInfo = activeStreams.get(characterId);
     }
-    
+
     // Add client to stream clients
     if (!streamClients.has(characterId)) {
         streamClients.set(characterId, new Set());
     }
     streamClients.get(characterId).add(res);
-    
+
     // Pipe stream data to client
     streamInfo.process.stdout.pipe(res, { end: false });
-    
+
     // Handle client disconnect
     res.on('close', () => {
         log(`Stream client disconnected for character ${characterId}`);
@@ -369,12 +363,12 @@ app.get('/api/streaming/stream/:characterId', (req, res) => {
 // Main interface
 app.get('/', (req, res) => {
     const { characters } = loadCharacterData();
-    
+
     const characterOptions = characters
         .filter(c => getWebcamForCharacter(c.id))
         .map(c => `<option value="${c.id}">${c.char_name}</option>`)
         .join('');
-    
+
     res.send(`
 <!DOCTYPE html>
 <html>
@@ -514,7 +508,7 @@ server.listen(port, () => {
 // Cleanup on exit
 process.on('SIGINT', () => {
     log('Shutting down server...');
-    
+
     // Kill all active streams
     for (const [characterId, streamInfo] of activeStreams) {
         if (streamInfo.process && !streamInfo.process.killed) {
@@ -522,7 +516,7 @@ process.on('SIGINT', () => {
             streamInfo.process.kill();
         }
     }
-    
+
     process.exit(0);
 });
 

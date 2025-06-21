@@ -21,6 +21,7 @@ from light_websocket_service import LightWebSocketService
 from actuator_websocket_service import ActuatorWebSocketService
 from sensor_websocket_service import SensorWebSocketService
 from webcam_websocket_service import WebcamWebSocketService
+from head_tracking_websocket_service import HeadTrackingWebSocketService
 from service_registry import ServiceRegistry
 
 # Configure logging
@@ -60,6 +61,7 @@ class CharacterServiceManager:
             "sensor": ServiceConfig("sensor", SensorWebSocketService, 8773),
             "webcam": ServiceConfig("webcam", WebcamWebSocketService, 8774),
             "actuator": ServiceConfig("actuator", ActuatorWebSocketService, 8775),
+            "head_tracking": ServiceConfig("head_tracking", HeadTrackingWebSocketService, 8776),
         }
         
     async def initialize(self):
@@ -149,6 +151,8 @@ class CharacterServiceManager:
                         requirements["actuator"] = {"enabled": True}
                     if any("sensor" in s for s in services):
                         requirements["sensor"] = {"enabled": True}
+                    if "head-tracking" in services:
+                        requirements["head_tracking"] = {"enabled": True}
 
                     return requirements
 
