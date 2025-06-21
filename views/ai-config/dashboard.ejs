@@ -298,6 +298,29 @@
                     <div class="status-indicator <%= status && status.tts && status.tts.online ? 'status-online' : 'status-offline' %>"></div>
                     <span><%= status && status.tts ? (status.tts.online ? 'Online' : 'Offline') : 'Unknown' %></span>
                 </div>
+                <div class="system-details">
+                    <p><strong>Provider:</strong> TopMediaAI</p>
+                    <p><strong>Available Voices:</strong> <%= status && status.tts ? status.tts.voiceCount || 'Loading...' : 'Unknown' %></p>
+                    <p><strong>Configured Characters:</strong> <%= status && status.tts ? status.tts.configuredCharacters || 0 : 0 %></p>
+                    <p><strong>Status:</strong> <%= status && status.tts ? status.tts.status || 'Unknown' : 'Not initialized' %></p>
+                </div>
+                <div class="system-actions">
+                    <a href="/ai-management/tts" class="button primary-btn">
+                        <i class="fas fa-cog"></i> Configure
+                    </a>
+                    <button class="button secondary-btn" onclick="testTTS()">
+                        <i class="fas fa-test-tube"></i> Test
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enhanced Microphone Control Section -->
+        <div class="section-container">
+            <h3>🎤 Live Microphone Control</h3>
+            <p>Real-time microphone input with STT integration and jaw animation control for all characters</p>
+            <div id="enhancedMicrophoneContainer"></div>
+        </div>
 
         <!-- Performance Metrics -->
         <% if (metrics) { %>
@@ -592,21 +615,27 @@
             color: #cccccc;
         }
     </style>
+
+    <!-- Include Enhanced Microphone Component -->
+    <script src="/js/EnhancedMicrophoneComponent.js"></script>
+    <script>
+        // Initialize Enhanced Microphone Component
+        document.addEventListener('DOMContentLoaded', function() {
+            const microphoneComponent = new EnhancedMicrophoneComponent({
+                containerId: 'enhancedMicrophoneContainer',
+                characterId: null, // Global microphone for all characters
+                onTranscription: function(text, confidence) {
+                    console.log('Transcription received:', text, 'Confidence:', confidence);
+                    // You can add custom handling here
+                },
+                onError: function(error) {
+                    console.error('Microphone error:', error);
+                },
+                onStatusChange: function(status, message) {
+                    console.log('Microphone status:', status, message);
+                }
+            });
+        });
+    </script>
 </body>
 </html>
-                <div class="system-details">
-                    <p><strong>Provider:</strong> TopMediaAI</p>
-                    <p><strong>Available Voices:</strong> <%= status && status.tts ? status.tts.voiceCount || 'Loading...' : 'Unknown' %></p>
-                    <p><strong>Configured Characters:</strong> <%= status && status.tts ? status.tts.configuredCharacters || 0 : 0 %></p>
-                    <p><strong>Status:</strong> <%= status && status.tts ? status.tts.status || 'Unknown' : 'Not initialized' %></p>
-                </div>
-                <div class="system-actions">
-                    <a href="/ai-management/tts" class="button primary-btn">
-                        <i class="fas fa-cog"></i> Configure
-                    </a>
-                    <button class="button secondary-btn" onclick="testTTS()">
-                        <i class="fas fa-test-tube"></i> Test
-                    </button>
-                </div>
-            </div>
-        </div>

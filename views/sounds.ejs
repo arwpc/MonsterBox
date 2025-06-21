@@ -12,22 +12,8 @@
     
     <div id="sound-list">
         <div class="button-group">
-    <a href="/sounds/new" class="button primary-btn">Add New Sound</a>
-    <a href="/api/voice/configure?characterId=<%- characters[0].id %>" id="configureVoiceBtn" class="button primary-btn">Configure Voice</a>
-    <button id="cleanupBtn" class="button primary-btn">Cleanup Unused Files</button>
-<!-- Modal for cleanup confirmation -->
-<div id="cleanupModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); z-index:1000; align-items:center; justify-content:center;">
-  <div style="background:#000; color:#00ff00; padding:24px; border-radius:8px; max-width:500px; margin:auto; border:2px solid #00ff00;">
-    <h3 style="color:#00ff00;">Confirm Cleanup</h3>
-    <p style="color:#00ff00;">The following sound files are not referenced in any character configuration:</p>
-    <div id="cleanupFileList" style="max-height:200px; overflow:auto; border:1px solid #00ff00; margin-bottom:16px; padding:8px; color:#00ff00;"></div>
-    <div id="cleanupFileStats" style="margin-bottom:12px; color:#00ff00;"></div>
-    <div id="cleanupModalError" style="margin-bottom:12px; color:#ff4444;"></div>
-    <button id="confirmCleanupBtn" class="button primary-btn">Delete Files</button>
-    <button id="cancelCleanupBtn" class="button primary-btn" style="background-color:#550000; margin-left:8px;">Cancel</button>
-  </div>
-</div>
-</div>
+            <a href="/sounds/new" class="button primary-btn">Add New Sound</a>
+        </div>
         
         <div id="character-filter">
             <label for="character-select">Filter by Character:</label>
@@ -90,111 +76,7 @@
     <div id="errorInfo" style="color: red;"></div>
 
     <script>
-        // Cleanup button logic with analysis and confirmation
-        document.addEventListener('DOMContentLoaded', function() {
-            const cleanupBtn = document.getElementById('cleanupBtn');
-            const cleanupModal = document.getElementById('cleanupModal');
-            const cleanupFileList = document.getElementById('cleanupFileList');
-            const cleanupFileStats = document.getElementById('cleanupFileStats');
-            const cleanupModalError = document.getElementById('cleanupModalError');
-            const confirmCleanupBtn = document.getElementById('confirmCleanupBtn');
-            const cancelCleanupBtn = document.getElementById('cancelCleanupBtn');
-            let filesToDelete = [];
-            
-            if (cleanupBtn) {
-                cleanupBtn.addEventListener('click', async function() {
-                    // Reset state
-                    cleanupBtn.disabled = true;
-                    cleanupBtn.textContent = 'Analyzing...';
-                    document.getElementById('soundInfo').textContent = '';
-                    document.getElementById('errorInfo').textContent = '';
-                    cleanupModalError.textContent = '';
-                    
-                    try {
-                        // Show cleanup confirmation modal
-                        cleanupFileList.innerHTML = '<div>Sound files will be analyzed and unused files will be deleted</div>';
-                        cleanupFileStats.innerHTML = 'Click "Delete Files" to remove any unused sound files';
-                        cleanupModalError.textContent = '';
-                        cleanupModal.style.display = 'flex';
-                    } catch (err) {
-                        console.error('Cleanup preparation error:', err);
-                        document.getElementById('errorInfo').textContent = 'Error preparing for cleanup: ' + err.message;
-                        cleanupBtn.disabled = false;
-                        cleanupBtn.textContent = 'Cleanup Unused Files';
-                    }
-                    
-                    cleanupBtn.disabled = false;
-                    cleanupBtn.textContent = 'Cleanup Unused Files';
-                });
-            }
-            
-            if (cancelCleanupBtn) {
-                cancelCleanupBtn.addEventListener('click', function() {
-                    cleanupModal.style.display = 'none';
-                });
-            }
-            
-            if (confirmCleanupBtn) {
-                confirmCleanupBtn.addEventListener('click', async function() {
-                    confirmCleanupBtn.disabled = true;
-                    cancelCleanupBtn.disabled = true;
-                    confirmCleanupBtn.textContent = 'Deleting...';
-                    cleanupModalError.textContent = '';
-                    
-                    try {
-                        // Just run the freaking cleanup script directly
-                        const response = await axios.post('/cleanup/run');
-                        
-                        if (!response.data.success) {
-                            throw new Error(response.data.error || 'Cleanup failed');
-                        }
-                        
-                        // Close the modal and show result
-                        cleanupModal.style.display = 'none';
-                        
-                        // Show success message
-                        const message = response.data.message || 'Cleanup completed';
-                        let displayMessage = message;
-                        
-                        // Display missing files information if available
-                        if (response.data.missingFiles && response.data.missingFiles.length > 0) {
-                            const missingFilesList = response.data.missingFiles.map(f => 
-                                `ID: ${f.id}, Name: ${f.name}, Missing file: ${f.filename}`
-                            ).join('<br>');
-                            displayMessage += '<br><br><strong>Files missing from disk:</strong><br>' + missingFilesList;
-                        }
-                        
-                        document.getElementById('soundInfo').innerHTML = displayMessage;
-                        document.getElementById('errorInfo').textContent = '';
-                        
-                        // Refresh the page after a short delay
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 2000); // 2-second delay to show the message
-                    } catch (error) {
-                        console.error('Cleanup error:', error);
-                        let errorMessage = 'Cleanup failed: ';
-                        
-                        if (error.response && error.response.data && error.response.data.details) {
-                            errorMessage += error.response.data.details;
-                        } else if (error.response && error.response.data && error.response.data.error) {
-                            errorMessage += error.response.data.error;
-                        } else if (error.message) {
-                            errorMessage += error.message;
-                        } else {
-                            errorMessage += 'Unknown error occurred';
-                        }
-                        
-                        cleanupModalError.textContent = errorMessage;
-                    } finally {
-                        // Always re-enable buttons
-                        confirmCleanupBtn.disabled = false;
-                        cancelCleanupBtn.disabled = false;
-                        confirmCleanupBtn.textContent = 'Delete Files';
-                    }
-                });
-            }
-        });
+
 
         // Get the character ID from URL query parameter
         const urlParams = new URLSearchParams(window.location.search);
@@ -207,12 +89,6 @@
         function filterSounds() {
             const selectedCharacter = document.getElementById('character-select').value;
             const rows = document.querySelectorAll('#sound-table-body tr');
-            const configureVoiceBtn = document.getElementById('configureVoiceBtn');
-
-            // Update Configure Voice button URL with selected character
-            if (selectedCharacter !== 'all' && selectedCharacter !== 'unassigned') {
-                configureVoiceBtn.href = `/api/voice/configure?characterId=${selectedCharacter}`;
-            }
 
             rows.forEach(row => {
                 const characterIds = JSON.parse(row.dataset.characters);

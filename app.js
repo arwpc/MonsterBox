@@ -13,7 +13,7 @@ process.env.NODE_NO_WARNINGS = '1';
 
 let express, path, http, logger, app, server, port, audioStream, soundController, fs, os, session;
 let videoStream; // <-- Add videoStream variable
-let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, webcamRoutes, voiceRoutes, cleanupRoutes, healthRoutes, authRoutes, sshRoutes, jawAnimationRoutes, aiConfigRoutes;
+let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, webcamRoutes, voiceRoutes, cleanupRoutes, healthRoutes, authRoutes, sshRoutes, jawAnimationRoutes, aiConfigRoutes, configRoutes;
 let characterService;
 let authMiddleware, rbacMiddleware;
 let jawAnimationSystem;
@@ -68,6 +68,7 @@ try {
     voiceRoutes = require('./routes/voiceRoutes');
     cleanupRoutes = require('./routes/cleanup');
     healthRoutes = require('./routes/healthRoutes');
+    configRoutes = require('./routes/configRoutes');
 
     // Import authentication routes
     authRoutes = require('./routes/auth/authRoutes');
@@ -306,6 +307,7 @@ app.get('/test/video-configuration', (req, res) => {
 
 app.use('/cleanup', cleanupRoutes);
 app.use('/health', healthRoutes);
+app.use('/configuration', configRoutes);
 
 // Audio cleanup API endpoints
 app.get('/api/audio-cleanup/stats',
@@ -520,6 +522,10 @@ function startServer() {
 
         // Start the audio stream WebSocket server
         audioStream.startStream(server);
+
+        // Start the enhanced audio stream WebSocket server
+        const enhancedAudioStream = require('./scripts/enhanced-audio-stream');
+        enhancedAudioStream.startStream(server);
 
         // Start the video stream WebSocket server
         videoStream.startStream(server); // <-- Call startStream for video

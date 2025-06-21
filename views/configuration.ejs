@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%- title %></title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        .config-container {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .config-section {
+            background: var(--background-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .config-section h2 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .info-item {
+            background: rgba(0, 255, 0, 0.1);
+            padding: 10px;
+            border-radius: 4px;
+            border-left: 3px solid var(--primary-color);
+        }
+
+        .info-label {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .info-value {
+            color: var(--text-color);
+            margin-top: 5px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .drive-info {
+            margin-bottom: 10px;
+            padding: 10px;
+            background: rgba(0, 255, 0, 0.05);
+            border-radius: 4px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #333;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff00, #ffff00, #ff0000);
+            transition: width 0.3s ease;
+        }
+
+        .cleanup-section {
+            border: 2px solid var(--primary-color);
+            background: rgba(0, 255, 0, 0.05);
+        }
+
+        .cleanup-section h2 {
+            color: #ff6b6b;
+        }
+
+        .warning-text {
+            color: #ff6b6b;
+            font-style: italic;
+            margin-bottom: 15px;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: var(--background-color);
+            color: var(--primary-color);
+            padding: 24px;
+            border-radius: 8px;
+            max-width: 500px;
+            margin: auto;
+            border: 2px solid var(--primary-color);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal h3 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .file-list {
+            max-height: 200px;
+            overflow: auto;
+            border: 1px solid var(--primary-color);
+            margin-bottom: 16px;
+            padding: 8px;
+            color: var(--text-color);
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .error-message {
+            color: #ff4444;
+            margin-bottom: 12px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1 class="landing-title"><%- title %></h1>
+    </header>
+
+    <main class="config-container">
+        <!-- Navigation -->
+        <div class="button-group" style="margin-bottom: 20px;">
+            <a href="/" class="button secondary-btn">
+                <i class="fas fa-home"></i> Back to Main Menu
+            </a>
+        </div>
+
+        <!-- System Information -->
+        <div class="config-section">
+            <h2><i class="fas fa-info-circle"></i> System Information</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Platform</div>
+                    <div class="info-value"><%- systemInfo.platform %> (<%- systemInfo.arch %>)</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Hostname</div>
+                    <div class="info-value"><%- systemInfo.hostname %></div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">IP Address</div>
+                    <div class="info-value"><%- ipAddress %></div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">CPU Cores</div>
+                    <div class="info-value"><%- systemInfo.cpus %></div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Total Memory</div>
+                    <div class="info-value"><%- systemInfo.totalMem %></div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Free Memory</div>
+                    <div class="info-value"><%- systemInfo.freeMem %></div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Uptime</div>
+                    <div class="info-value"><%- systemInfo.uptime %></div>
+                </div>
+                <% if (wifiSignal !== 'N/A') { %>
+                <div class="info-item">
+                    <div class="info-label">WiFi Signal</div>
+                    <div class="info-value"><%- wifiSignal %></div>
+                </div>
+                <% } %>
+                <% if (power !== 'N/A') { %>
+                <div class="info-item">
+                    <div class="info-label">Power Supply</div>
+                    <div class="info-value"><%- power %></div>
+                </div>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- Storage Information -->
+        <div class="config-section">
+            <h2><i class="fas fa-hdd"></i> Storage Information</h2>
+            <% driveInfo.forEach(function(drive) { %>
+                <% if (drive.error) { %>
+                    <div class="error-message"><%- drive.error %></div>
+                <% } else { %>
+                    <div class="drive-info">
+                        <div class="info-label"><%- drive.filesystem %></div>
+                        <div class="info-value">
+                            <%- drive.used %> used of <%- drive.size %> (<%- drive.available %> available)
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: <%- drive.capacity %>%"></div>
+                        </div>
+                        <div style="font-size: 0.9em; color: #ccc; margin-top: 5px;">
+                            <%- drive.capacity %>% used
+                        </div>
+                    </div>
+                <% } %>
+            <% }); %>
+        </div>
+
+        <!-- System Maintenance -->
+        <div class="config-section cleanup-section">
+            <h2><i class="fas fa-tools"></i> System Maintenance</h2>
+            <p class="warning-text">
+                <i class="fas fa-exclamation-triangle"></i>
+                Use these tools carefully. Some actions cannot be undone.
+            </p>
+            
+            <div class="action-buttons">
+                <button id="cleanupBtn" class="button primary-btn">
+                    <i class="fas fa-broom"></i> Cleanup Unused Sound Files
+                </button>
+                <button id="rebootBtn" class="button" style="background-color: #ff6b6b;">
+                    <i class="fas fa-power-off"></i> Reboot System
+                </button>
+            </div>
+        </div>
+
+        <!-- Cleanup Modal -->
+        <div id="cleanupModal" class="modal">
+            <div class="modal-content">
+                <h3>Confirm Cleanup</h3>
+                <p>The following sound files are not referenced in any character configuration:</p>
+                <div id="cleanupFileList" class="file-list">
+                    Sound files will be analyzed and unused files will be deleted
+                </div>
+                <div id="cleanupFileStats" style="margin-bottom: 12px; color: var(--text-color);">
+                    Click "Delete Files" to remove any unused sound files
+                </div>
+                <div id="cleanupModalError" class="error-message"></div>
+                <div class="action-buttons">
+                    <button id="confirmCleanupBtn" class="button primary-btn">Delete Files</button>
+                    <button id="cancelCleanupBtn" class="button secondary-btn">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Messages -->
+        <div id="statusMessage" style="display: none; margin-top: 20px;"></div>
+        <div id="errorMessage" style="display: none; margin-top: 20px; color: #ff4444;"></div>
+    </main>
+
+    <script src="/scripts/configuration.js"></script>
+</body>
+</html>

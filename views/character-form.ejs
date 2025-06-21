@@ -27,6 +27,66 @@
         .custom-file-upload:hover {
             background-color: #cc0000;
         }
+
+        /* Audio Configuration Styles */
+        .audio-config-container {
+            background: #000800;
+            border: 1px solid #00ff00;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+
+        .audio-settings {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .audio-settings .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .audio-settings .form-group label {
+            color: #00ff00;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .audio-settings input[type="range"] {
+            background: #001100;
+            border: 1px solid #00ff00;
+            border-radius: 4px;
+        }
+
+        .setting-value {
+            color: #00ff00;
+            font-weight: bold;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .microphone-test-section {
+            border-top: 1px solid #00ff00;
+            padding-top: 20px;
+            margin-top: 20px;
+        }
+
+        .microphone-test-section h4 {
+            color: #00ff00;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .audio-settings {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="/js/shared-streaming-service.js"></script>
@@ -251,6 +311,51 @@
                         </div>
                     </div>
 
+                    <!-- Audio Configuration Section -->
+                    <% if (character && character.id) { %>
+                    <div class="form-section">
+                        <h3>🎤 Audio Configuration</h3>
+                        <div class="audio-config-container">
+                            <div class="audio-settings">
+                                <div class="form-group">
+                                    <label for="microphoneEnabled">Enable Microphone</label>
+                                    <select id="microphoneEnabled" name="microphoneEnabled">
+                                        <option value="true" <%= character.audioConfig && character.audioConfig.microphoneEnabled ? 'selected' : '' %>>Enabled</option>
+                                        <option value="false" <%= character.audioConfig && !character.audioConfig.microphoneEnabled ? 'selected' : '' %>>Disabled</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="microphoneSensitivity">Microphone Sensitivity</label>
+                                    <input type="range" id="microphoneSensitivity" name="microphoneSensitivity"
+                                           min="0.1" max="2.0" step="0.1"
+                                           value="<%= character.audioConfig && character.audioConfig.microphoneSensitivity ? character.audioConfig.microphoneSensitivity : '1.0' %>">
+                                    <span class="setting-value"><%= character.audioConfig && character.audioConfig.microphoneSensitivity ? character.audioConfig.microphoneSensitivity : '1.0' %></span>
+                                </div>
+                                <div class="form-group">
+                                    <label>
+                                        <input type="checkbox" id="voiceActivation" name="voiceActivation"
+                                               <%= character.audioConfig && character.audioConfig.voiceActivation ? 'checked' : '' %>>
+                                        Voice Activation Detection
+                                    </label>
+                                </div>
+                                <div class="form-group">
+                                    <label>
+                                        <input type="checkbox" id="jawAnimationEnabled" name="jawAnimationEnabled"
+                                               <%= character.audioConfig && character.audioConfig.jawAnimationEnabled !== false ? 'checked' : '' %>>
+                                        Enable Jaw Animation
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Live Microphone Test -->
+                            <div class="microphone-test-section">
+                                <h4>🎤 Live Microphone Test</h4>
+                                <div id="characterMicrophoneContainer"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <% } %>
+
                     <div class="button-group">
                         <button type="submit" class="button primary-btn">Save Character</button>
                         <a href="/characters" class="button secondary-btn">Cancel</a>
@@ -259,6 +364,9 @@
             </div>
         </form>
     </main>
+
+    <!-- Include Enhanced Microphone Component -->
+    <script src="/js/EnhancedMicrophoneComponent.js"></script>
 
     <script>
         // Add preview functionality for image upload
@@ -702,6 +810,33 @@
                 closeModal();
             }
         }
+
+        // Initialize Enhanced Microphone Component for character-specific testing
+        document.addEventListener('DOMContentLoaded', function() {
+            const micContainer = document.getElementById('characterMicrophoneContainer');
+            if (micContainer) {
+                const characterId = <%= character && character.id ? character.id : 'null' %>;
+                const microphoneComponent = new EnhancedMicrophoneComponent({
+                    containerId: 'characterMicrophoneContainer',
+                    characterId: characterId,
+                    onTranscription: function(text, confidence) {
+                        console.log('Character microphone transcription:', text, 'Confidence:', confidence);
+                        // Update form or show feedback
+                    },
+                    onError: function(error) {
+                        console.error('Character microphone error:', error);
+                    },
+                    onStatusChange: function(status, message) {
+                        console.log('Character microphone status:', status, message);
+                    }
+                });
+            }
+        });
+
+        // Update sensitivity display
+        document.getElementById('microphoneSensitivity').addEventListener('input', function(e) {
+            e.target.nextElementSibling.textContent = e.target.value;
+        });
     </script>
     <script src="/js/video-configuration.js"></script>
 </body>

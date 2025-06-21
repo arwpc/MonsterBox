@@ -1287,12 +1287,12 @@
     },
     {
       "characterId": 4,
-      "speaker_id": "72dd057e-c1ce-11ef-a432-00163e0649ac",
+      "speaker_id": "f2e99f98-c1ce-11ef-a3dd-00163e022d5e",
       "settings": {
-        "pitch": 8,
-        "speed": 0.9,
-        "volume": 3,
-        "emotion": "Excited",
+        "pitch": 4,
+        "speed": 0.7,
+        "volume": 13,
+        "emotion": "Angry",
         "sampleRate": 44100,
         "bitRate": 128,
         "outputFormat": "wav",
@@ -1307,11 +1307,11 @@
         "tags": [],
         "notes": "",
         "created": "2025-05-13T00:35:07.630Z",
-        "lastModified": "2025-06-20T21:35:24.292Z",
+        "lastModified": "2025-06-21T15:47:42.477Z",
         "migratedFrom": "Replica",
         "migrationDate": "2025-06-14T20:10:52.736Z",
         "originalSpeakerId": "55a0aad5-a739-402f-9cec-36b01ff81a41",
-        "voiceName": "Mia(Female)",
+        "voiceName": "Daria-Funny Scary Witch",
         "voiceGender": "female",
         "voiceLanguage": "English(US),Chinese(Mandarin),Spanish(Mexico),Japanese(Japan),Portuguese(Portugal),French(France),Russian(Russia),Korean(Korea),Malay,Danish(Denmark),Finnish(Finland),Turkish(Turkey),Slovak(Slovakia),Hindi(India),Swedish(Sweden),Italian(Italy),Polish(Poland),Czech(Czech),Dutch(Belgium),German(Germany),Filipino(Philippines),Indonesian(Indonesia),Croatian(Croatia),Arabic(Egyptian),Romanian(Romania),Bulgarian(Bulgaria),Greek(Greece),Tamil(India),Ukrainian(Ukraine),Vietnamese(Vietnam),Norwegian(Norway),Hungarian(Hungary),Portuguese(Brazil),Arabic(Saudi Arabia),Spanish(Spain),English(UK)"
       },
@@ -1653,6 +1653,70 @@
             "speed": 0.9,
             "volume": 3,
             "emotion": "Excited",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-06-21T15:47:38.435Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 4,
+            "speed": 0.7,
+            "volume": 13,
+            "emotion": "Angry",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-06-21T15:47:38.447Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 4,
+            "speed": 0.7,
+            "volume": 13,
+            "emotion": "Angry",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-06-21T15:47:42.463Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 4,
+            "speed": 0.7,
+            "volume": 13,
+            "emotion": "Angry",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-06-21T15:47:42.477Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 4,
+            "speed": 0.7,
+            "volume": 13,
+            "emotion": "Angry",
             "sampleRate": 44100,
             "bitRate": 128,
             "outputFormat": "wav",

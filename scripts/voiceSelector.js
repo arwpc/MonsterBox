@@ -73,21 +73,8 @@ class VoiceSelector {
         });
 
         this.wavesurfer.on('error', error => {
-            console.error('WaveSurfer error:', error);
-            console.error('Error details:', {
-                message: error.message,
-                stack: error.stack,
-                type: error.type
-            });
+            console.error('WaveSurfer error:', error.message);
             this.showError('Error loading audio preview: ' + error.message);
-        });
-
-        this.wavesurfer.on('loading', (percent) => {
-            console.log('WaveSurfer loading:', percent + '%');
-        });
-
-        this.wavesurfer.on('ready', () => {
-            console.log('WaveSurfer ready - audio loaded successfully');
         });
     }
 
@@ -187,11 +174,10 @@ class VoiceSelector {
                         if (voiceSettings && voiceSettings.speaker_id) {
                             // Find voice by speaker_id (which is uuid for TopMediai)
                             this.selectedVoice = this.voices.find(v => v.uuid === voiceSettings.speaker_id || v.speaker_id === voiceSettings.speaker_id);
-                            console.log('Pre-selected voice from settings:', this.selectedVoice?.name);
                         }
                     }
                 } catch (settingsError) {
-                    console.warn('Could not load current voice settings:', settingsError);
+                    // Silently handle missing voice settings - this is normal for new characters
                 }
             }
             
@@ -363,18 +349,18 @@ class VoiceSelector {
             if (data.url) {
                 // Convert relative URL to absolute URL
                 const absoluteUrl = new URL(data.url, window.location.origin).href;
-                console.log('Loading audio from URL:', absoluteUrl);
-                console.log('Audio data received:', data);
+
+                // Remove any existing ready listeners to prevent multiple bindings
+                this.wavesurfer.un('ready');
 
                 this.wavesurfer.load(absoluteUrl);
                 this.wavesurfer.on('ready', () => {
-                    console.log('Audio ready, starting playback');
+                    // Automatically start playback when audio is ready
                     this.wavesurfer.play();
                     this.isPlaying = true;
                     document.querySelector('#saveToLibrary').disabled = false;
                 });
             } else {
-                console.error('No audio URL received in response:', data);
                 this.showError('No audio URL received from server');
             }
             
@@ -465,12 +451,7 @@ class VoiceSelector {
                     throw new Error('No valid speaker ID found for this voice');
                 }
 
-                console.log('Saving voice configuration:', {
-                    characterId: this.characterId,
-                    voiceId: speakerId,
-                    voiceName: this.selectedVoice.name,
-                    settings
-                });
+
 
                 const response = await fetch('/api/voice/settings', {
                     method: 'POST',
@@ -490,7 +471,6 @@ class VoiceSelector {
                 }
 
                 const result = await response.json();
-                console.log('Voice configuration saved successfully:', result);
 
                 this.addToRecentlyUsed(this.selectedVoice);
                 // Store the current voice assignment
@@ -510,7 +490,6 @@ class VoiceSelector {
 
     async loadVoiceSettings() {
         if (!this.characterId) {
-            console.log('No character ID available for loading voice settings');
             return;
         }
 
