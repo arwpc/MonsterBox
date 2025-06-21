@@ -1,0 +1,229 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Import Google Fonts for MonsterBox themes */
+@import url('https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&family=Creepster&display=swap');
+
+/* Custom MonsterBox Component Classes */
+@layer components {
+  /* Navigation Components */
+  .nav-button-monsterbox {
+    @apply inline-block px-4 py-3 m-2 border border-primary bg-base-100 text-primary rounded-lg cursor-pointer no-underline transition-all duration-300 hover:bg-primary hover:text-primary-content hover:shadow-glow-md hover:-translate-y-1;
+  }
+
+  .nav-button-chatterpi {
+    @apply nav-button-monsterbox bg-gradient-to-br from-purple-900 to-purple-700 border-secondary text-secondary font-bold relative overflow-hidden hover:from-purple-800 hover:to-purple-600 hover:shadow-neon-purple hover:text-white;
+  }
+
+  .nav-button-ai {
+    @apply nav-button-monsterbox bg-gradient-to-br from-blue-900 to-blue-700 border-accent text-accent hover:from-blue-800 hover:to-blue-600 hover:shadow-neon-blue;
+  }
+
+  /* Form Components */
+  .form-input-monsterbox {
+    @apply w-full px-3 py-2 bg-base-200 border border-primary text-base-content rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent;
+  }
+
+  .form-select-monsterbox {
+    @apply form-input-monsterbox cursor-pointer;
+  }
+
+  .form-textarea-monsterbox {
+    @apply form-input-monsterbox resize-vertical min-h-[100px];
+  }
+
+  /* Button Components */
+  .btn-monsterbox {
+    @apply px-4 py-2 bg-primary text-primary-content border border-primary rounded-md cursor-pointer transition-all duration-300 hover:bg-green-600 hover:shadow-glow-md disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary-monsterbox {
+    @apply btn-monsterbox bg-secondary text-secondary-content border-secondary hover:bg-purple-600;
+  }
+
+  .btn-accent-monsterbox {
+    @apply btn-monsterbox bg-accent text-accent-content border-accent hover:bg-cyan-600;
+  }
+
+  .btn-danger-monsterbox {
+    @apply btn-monsterbox bg-error text-error-content border-error hover:bg-red-600;
+  }
+
+  /* Card Components */
+  .card-monsterbox {
+    @apply bg-base-200 border border-primary rounded-lg p-6 shadow-lg hover:shadow-glow-sm transition-all duration-300;
+  }
+
+  .card-header-monsterbox {
+    @apply text-xl font-bold text-primary mb-4 border-b border-primary pb-2;
+  }
+
+  /* Modal Components */
+  .modal-monsterbox {
+    @apply fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50;
+  }
+
+  .modal-content-monsterbox {
+    @apply bg-base-100 border border-primary rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto;
+  }
+
+  /* Table Components */
+  .table-monsterbox {
+    @apply w-full border-collapse border border-primary;
+  }
+
+  .table-monsterbox th {
+    @apply bg-primary text-primary-content px-4 py-2 border border-primary font-bold text-left;
+  }
+
+  .table-monsterbox td {
+    @apply px-4 py-2 border border-primary text-base-content;
+  }
+
+  .table-monsterbox tr:nth-child(even) {
+    @apply bg-base-200;
+  }
+
+  .table-monsterbox tr:hover {
+    @apply bg-base-300;
+  }
+
+  /* Status Components */
+  .status-success {
+    @apply bg-success text-success-content px-3 py-1 rounded-full text-sm font-medium;
+  }
+
+  .status-warning {
+    @apply bg-warning text-warning-content px-3 py-1 rounded-full text-sm font-medium;
+  }
+
+  .status-error {
+    @apply bg-error text-error-content px-3 py-1 rounded-full text-sm font-medium;
+  }
+
+  .status-info {
+    @apply bg-info text-info-content px-3 py-1 rounded-full text-sm font-medium;
+  }
+
+  /* Loading Components */
+  .loading-spinner {
+    @apply animate-spin rounded-full h-8 w-8 border-b-2 border-primary;
+  }
+
+  /* Glow Effects */
+  .glow-text {
+    @apply text-shadow-glow animate-glow;
+  }
+
+  .glow-border {
+    @apply border-2 border-primary shadow-glow-md;
+  }
+
+  /* Terminal Effects */
+  .terminal-text {
+    @apply font-terminal text-primary;
+  }
+
+  .retro-text {
+    @apply font-retro text-primary;
+  }
+
+  .creepster-text {
+    @apply font-creepster text-primary;
+  }
+
+  /* Responsive Navigation */
+  .nav-mobile {
+    @apply lg:hidden;
+  }
+
+  .nav-desktop {
+    @apply hidden lg:flex;
+  }
+
+  /* Utility Classes for MonsterBox */
+  .text-shadow-glow {
+    text-shadow: 0 0 10px currentColor;
+  }
+
+  .bg-terminal {
+    @apply bg-terminal-bg text-terminal-text;
+  }
+
+  .border-glow {
+    box-shadow: 0 0 10px currentColor;
+  }
+
+  /* Animation Classes */
+  .flicker {
+    @apply animate-flicker;
+  }
+
+  .pulse-glow {
+    @apply animate-pulse-slow;
+  }
+
+  /* Layout Components */
+  .container-monsterbox {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .grid-monsterbox {
+    @apply grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3;
+  }
+
+  .flex-center {
+    @apply flex items-center justify-center;
+  }
+
+  .flex-between {
+    @apply flex items-center justify-between;
+  }
+}
+
+/* Custom Utilities */
+@layer utilities {
+  .text-glow {
+    text-shadow: 0 0 10px currentColor;
+  }
+
+  .text-glow-sm {
+    text-shadow: 0 0 5px currentColor;
+  }
+
+  .text-glow-lg {
+    text-shadow: 0 0 15px currentColor;
+  }
+
+  .bg-gradient-terminal {
+    background: linear-gradient(135deg, #000000 0%, #001100 50%, #000000 100%);
+  }
+
+  .bg-gradient-neon {
+    background: linear-gradient(135deg, #004400 0%, #00ff00 50%, #004400 100%);
+  }
+
+  /* Scrollbar Styling */
+  .scrollbar-monsterbox {
+    scrollbar-width: thin;
+    scrollbar-color: #00ff00 #000000;
+  }
+
+  .scrollbar-monsterbox::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .scrollbar-monsterbox::-webkit-scrollbar-track {
+    background: #000000;
+  }
+
+  .scrollbar-monsterbox::-webkit-scrollbar-thumb {
+    background: #00ff00;
+    border-radius: 4px;
+  }
+
+  .scrollbar-monsterbox::-webkit-scrollbar-thumb:hover {
+    background: #00cc00;
+  }
+}

@@ -1,0 +1,319 @@
+<%# 
+  MonsterBox UI Component Library - Specialized Components
+  Hardware-specific and MonsterBox-themed components
+%>
+
+<%# Character Selector Component %>
+<%# Usage: <%- include('components/monsterbox-components', { component: 'characterSelector', characters: [...], selectedId: 1 }) %>
+<% if (typeof component !== 'undefined' && component === 'characterSelector') { %>
+<div class="form-control w-full">
+  <label class="label">
+    <span class="label-text text-base-content">🎭 Select Character:</span>
+  </label>
+  <select 
+    id="character-select" 
+    class="select select-bordered select-primary w-full"
+    onchange="updateCharacter(this.value)"
+  >
+    <option value="" disabled <%= !selectedId ? 'selected' : '' %>>Choose a character...</option>
+    <% if (typeof characters !== 'undefined' && Array.isArray(characters)) { %>
+      <% characters.forEach(function(character) { %>
+      <option value="<%= character.id %>" <%= selectedId == character.id ? 'selected' : '' %>>
+        🎭 <%= character.char_name || character.name %>
+      </option>
+      <% }); %>
+    <% } %>
+  </select>
+</div>
+<% } %>
+
+<%# Hardware Part Card Component %>
+<%# Usage: <%- include('components/monsterbox-components', { component: 'partCard', part: {...} }) %>
+<% if (typeof component !== 'undefined' && component === 'partCard') { %>
+<div class="card-monsterbox">
+  <div class="card-body">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="card-title text-primary">
+        <%= 
+          part.type === 'linear-actuator' ? '🦴' : 
+          part.type === 'servo' ? '🦷' :
+          part.type === 'motor' ? '🔄' : 
+          part.type === 'light' ? '💡' :
+          part.type === 'led' ? '🔆' : 
+          part.type === 'sensor' ? '📡' :
+          part.type === 'webcam' ? '📹' : 
+          part.type === 'microphone' ? '🎤' : '🔧'
+        %> 
+        <%= part.name %>
+      </h3>
+      <div class="badge <%= part.status === 'online' ? 'badge-success' : part.status === 'offline' ? 'badge-error' : 'badge-warning' %>">
+        <%= part.status === 'online' ? '🟢 Online' : part.status === 'offline' ? '🔴 Offline' : '⚪ Unknown' %>
+      </div>
+    </div>
+    
+    <% if (part.description) { %>
+    <p class="text-base-content/70 text-sm mb-4"><%= part.description %></p>
+    <% } %>
+    
+    <div class="grid grid-cols-2 gap-2 text-sm mb-4">
+      <div class="flex justify-between">
+        <span class="text-base-content/70">Type:</span>
+        <span class="text-primary font-mono"><%= part.type %></span>
+      </div>
+      <% if (part.pin !== undefined) { %>
+      <div class="flex justify-between">
+        <span class="text-base-content/70">GPIO:</span>
+        <span class="text-primary font-mono"><%= part.pin %></span>
+      </div>
+      <% } %>
+      <% if (part.characterId) { %>
+      <div class="flex justify-between">
+        <span class="text-base-content/70">Character:</span>
+        <span class="text-primary font-mono"><%= part.characterName || part.characterId %></span>
+      </div>
+      <% } %>
+    </div>
+    
+    <div class="card-actions justify-end">
+      <button class="btn btn-sm btn-primary" onclick="testPart('<%= part.id %>')">
+        🧪 Test
+      </button>
+      <a href="/parts/<%= part.type %>/<%= part.id %>/edit" class="btn btn-sm btn-secondary">
+        ✏️ Edit
+      </a>
+      <button class="btn btn-sm btn-error" onclick="deletePart('<%= part.id %>')">
+        🗑️ Delete
+      </button>
+    </div>
+  </div>
+</div>
+<% } %>
+
+<%# Service Status Grid Component %>
+<%# Usage: <%- include('components/monsterbox-components', { component: 'serviceGrid', services: [...] }) %>
+<% if (typeof component !== 'undefined' && component === 'serviceGrid') { %>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+  <% if (typeof services !== 'undefined' && Array.isArray(services)) { %>
+    <% services.forEach(function(service) { %>
+    <div class="card-monsterbox">
+      <div class="card-body text-center">
+        <div class="text-2xl mb-2">
+          <%= service.status === 'online' ? '🟢' : service.status === 'offline' ? '🔴' : '⚪' %>
+        </div>
+        <h3 class="text-sm font-bold text-primary mb-1">
+          <%= service.name %>
+        </h3>
+        <p class="text-xs text-base-content/70">
+          Port <%= service.port %>
+        </p>
+        <% if (service.details) { %>
+        <p class="text-xs text-base-content/50 mt-1">
+          <%= service.details %>
+        </p>
+        <% } %>
+      </div>
+    </div>
+    <% }); %>
+  <% } %>
+</div>
+<% } %>
+
+<%# AI Character Assignment Component %>
+<%# Usage: <%- include('components/monsterbox-components', { component: 'aiAssignment', character: {...}, aiInstances: [...] }) %>
+<% if (typeof component !== 'undefined' && component === 'aiAssignment') { %>
+<div class="card-monsterbox">
+  <div class="card-header-monsterbox">
+    <h3 class="text-lg font-bold text-primary">🧠 AI Assignment</h3>
+  </div>
+  <div class="card-body">
+    <% if (character.chatterpi_config && character.chatterpi_config.ai_characters && character.chatterpi_config.ai_characters.length > 0) { %>
+    <div class="mb-4">
+      <label class="label">
+        <span class="label-text text-base-content">Assigned AI Characters:</span>
+      </label>
+      <div class="flex flex-wrap gap-2 mb-2">
+        <% character.chatterpi_config.ai_characters.forEach(function(aiId) { %>
+        <div class="badge badge-primary">
+          🧠 <%= aiId === 'orlok' ? 'Count Orlok' : aiId === 'robochat' ? 'RoboChat' : aiId === 'blackbeard' ? 'Blackbeard' : aiId.charAt(0).toUpperCase() + aiId.slice(1) %>
+        </div>
+        <% }); %>
+      </div>
+      <p class="text-sm text-base-content/70">
+        Default: <span class="text-primary font-mono">
+          <%= character.chatterpi_config.default_character === 'orlok' ? 'Count Orlok' : character.chatterpi_config.default_character === 'robochat' ? 'RoboChat' : character.chatterpi_config.default_character === 'blackbeard' ? 'Blackbeard' : character.chatterpi_config.default_character || 'None' %>
+        </span>
+      </p>
+    </div>
+    <div class="card-actions justify-end">
+      <a href="/characters/<%= character.id %>/ai" class="btn btn-sm btn-primary">
+        🔄 Change AI
+      </a>
+      <button class="btn btn-sm btn-error" onclick="removeAI('<%= character.id %>')">
+        ❌ Remove AI
+      </button>
+    </div>
+    <% } else { %>
+    <div class="text-center py-6">
+      <div class="text-4xl mb-2">🤖</div>
+      <p class="text-base-content/70 mb-4">No AI assigned to this character</p>
+      <a href="/characters/<%= character.id %>/ai" class="btn-monsterbox">
+        🧠 Assign AI
+      </a>
+    </div>
+    <% } %>
+  </div>
+</div>
+<% } %>
+
+<%# Sound Assignment Component %>
+<%# Usage: <%- include('components/monsterbox-components', { component: 'soundAssignment', character: {...}, sounds: [...] }) %>
+<% if (typeof component !== 'undefined' && component === 'soundAssignment') { %>
+<div class="card-monsterbox">
+  <div class="card-header-monsterbox">
+    <h3 class="text-lg font-bold text-primary">🔊 Sound Assignment</h3>
+  </div>
+  <div class="card-body">
+    <% 
+    let assignedSounds = [];
+    if (sounds && Array.isArray(sounds)) {
+      sounds.forEach(function(sound) {
+        if (sound.characterIds && sound.characterIds.includes(character.id)) {
+          assignedSounds.push(sound);
+        } else if (character.sounds && character.sounds.includes(sound.id)) {
+          assignedSounds.push(sound);
+        }
+      });
+    }
+    %>
+    
+    <% if (assignedSounds.length > 0) { %>
+    <div class="mb-4">
+      <label class="label">
+        <span class="label-text text-base-content">Assigned Sounds:</span>
+      </label>
+      <div class="space-y-2">
+        <% assignedSounds.forEach(function(sound) { %>
+        <div class="flex items-center justify-between p-2 bg-base-200 rounded">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">🔊</span>
+            <div>
+              <p class="text-sm font-medium text-primary"><%= sound.name %></p>
+              <p class="text-xs text-base-content/70"><%= sound.filename %></p>
+            </div>
+          </div>
+          <div class="flex gap-1">
+            <button class="btn btn-xs btn-primary" onclick="playSound('<%= sound.id %>')">
+              ▶️ Play
+            </button>
+            <button class="btn btn-xs btn-error" onclick="unassignSound('<%= character.id %>', '<%= sound.id %>')">
+              ❌
+            </button>
+          </div>
+        </div>
+        <% }); %>
+      </div>
+    </div>
+    <div class="card-actions justify-end">
+      <a href="/sounds?characterId=<%= character.id %>" class="btn btn-sm btn-primary">
+        🔄 Manage Sounds
+      </a>
+    </div>
+    <% } else { %>
+    <div class="text-center py-6">
+      <div class="text-4xl mb-2">🔇</div>
+      <p class="text-base-content/70 mb-4">No sounds assigned to this character</p>
+      <a href="/sounds?characterId=<%= character.id %>" class="btn-monsterbox">
+        🔊 Assign Sounds
+      </a>
+    </div>
+    <% } %>
+  </div>
+</div>
+<% } %>
+
+<%# Hardware Control Panel Component %>
+<%# Usage: <%- include('components/monsterbox-components', { component: 'controlPanel', part: {...} }) %>
+<% if (typeof component !== 'undefined' && component === 'controlPanel') { %>
+<div class="card-monsterbox">
+  <div class="card-header-monsterbox">
+    <h3 class="text-lg font-bold text-primary">
+      🎮 <%= part.name %> Control Panel
+    </h3>
+  </div>
+  <div class="card-body">
+    <% if (part.type === 'motor') { %>
+    <!-- Motor Controls -->
+    <div class="space-y-4">
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text text-base-content">Direction:</span>
+        </label>
+        <div class="join">
+          <input class="join-item btn" type="radio" name="motor-direction-<%= part.id %>" aria-label="Forward" value="forward" checked>
+          <input class="join-item btn" type="radio" name="motor-direction-<%= part.id %>" aria-label="Backward" value="backward">
+        </div>
+      </div>
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text text-base-content">Speed:</span>
+          <span class="label-text-alt text-primary font-mono" id="motor-speed-<%= part.id %>-value">50</span>
+        </label>
+        <input type="range" class="range range-primary" min="0" max="100" value="50" id="motor-speed-<%= part.id %>" oninput="document.getElementById('motor-speed-<%= part.id %>-value').textContent = this.value">
+      </div>
+      <div class="card-actions justify-center">
+        <button class="btn btn-primary" onclick="controlMotor('<%= part.id %>')">
+          ▶️ Run Motor
+        </button>
+        <button class="btn btn-error" onclick="stopMotor('<%= part.id %>')">
+          ⏹️ Stop
+        </button>
+      </div>
+    </div>
+    <% } else if (part.type === 'servo') { %>
+    <!-- Servo Controls -->
+    <div class="space-y-4">
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text text-base-content">Position (degrees):</span>
+          <span class="label-text-alt text-primary font-mono" id="servo-pos-<%= part.id %>-value">90</span>
+        </label>
+        <input type="range" class="range range-primary" min="0" max="180" value="90" id="servo-pos-<%= part.id %>" oninput="document.getElementById('servo-pos-<%= part.id %>-value').textContent = this.value">
+      </div>
+      <div class="card-actions justify-center">
+        <button class="btn btn-primary" onclick="moveServo('<%= part.id %>')">
+          🦷 Move Servo
+        </button>
+        <button class="btn btn-secondary" onclick="calibrateServo('<%= part.id %>')">
+          📐 Calibrate
+        </button>
+      </div>
+    </div>
+    <% } else if (part.type === 'led') { %>
+    <!-- LED Controls -->
+    <div class="space-y-4">
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text text-base-content">Color:</span>
+        </label>
+        <input type="color" class="input input-bordered w-full h-12" id="led-color-<%= part.id %>" value="#00ff00">
+      </div>
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text text-base-content">Brightness:</span>
+          <span class="label-text-alt text-primary font-mono" id="led-brightness-<%= part.id %>-value">255</span>
+        </label>
+        <input type="range" class="range range-primary" min="0" max="255" value="255" id="led-brightness-<%= part.id %>" oninput="document.getElementById('led-brightness-<%= part.id %>-value').textContent = this.value">
+      </div>
+      <div class="card-actions justify-center">
+        <button class="btn btn-primary" onclick="controlLED('<%= part.id %>')">
+          🔆 Set LED
+        </button>
+        <button class="btn btn-error" onclick="turnOffLED('<%= part.id %>')">
+          ⚫ Turn Off
+        </button>
+      </div>
+    </div>
+    <% } %>
+  </div>
+</div>
+<% } %>

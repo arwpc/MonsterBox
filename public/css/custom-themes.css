@@ -1,0 +1,258 @@
+/* MonsterBox Custom Theme Enhancements */
+
+/* Theme-specific overrides and enhancements */
+[data-theme="monsterbox"] {
+  /* Enhanced terminal styling */
+  --terminal-glow: 0 0 10px #00ff00;
+  --terminal-text-shadow: 0 0 5px #00ff00;
+  
+  /* Custom scrollbar for terminal theme */
+  scrollbar-color: #00ff00 #000000;
+}
+
+[data-theme="monsterbox"] *::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+[data-theme="monsterbox"] *::-webkit-scrollbar-track {
+  background: #000000;
+  border-radius: 4px;
+}
+
+[data-theme="monsterbox"] *::-webkit-scrollbar-thumb {
+  background: #00ff00;
+  border-radius: 4px;
+  box-shadow: 0 0 5px #00ff00;
+}
+
+[data-theme="monsterbox"] *::-webkit-scrollbar-thumb:hover {
+  background: #00cc00;
+  box-shadow: 0 0 8px #00ff00;
+}
+
+[data-theme="monsterbox-halloween"] {
+  /* Halloween theme enhancements */
+  --halloween-glow: 0 0 10px #ff8000;
+  --halloween-text-shadow: 0 0 5px #ff8000;
+  
+  scrollbar-color: #ff8000 #0f0f0f;
+}
+
+[data-theme="monsterbox-halloween"] *::-webkit-scrollbar-thumb {
+  background: #ff8000;
+  box-shadow: 0 0 5px #ff8000;
+}
+
+[data-theme="monsterbox-halloween"] *::-webkit-scrollbar-thumb:hover {
+  background: #cc6600;
+  box-shadow: 0 0 8px #ff8000;
+}
+
+[data-theme="monsterbox-retro"] {
+  /* Retro theme enhancements */
+  --retro-glow: 0 0 10px #00ff00;
+  --retro-text-shadow: 0 0 5px #00ff00;
+  
+  scrollbar-color: #00ff00 #001100;
+}
+
+[data-theme="monsterbox-retro"] *::-webkit-scrollbar-thumb {
+  background: #00ff00;
+  box-shadow: 0 0 5px #00ff00;
+}
+
+/* Global MonsterBox Enhancements */
+
+/* Improved focus states for accessibility */
+.focus-visible:focus {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+  box-shadow: 0 0 10px currentColor;
+}
+
+/* Enhanced button hover effects */
+.btn:hover {
+  transform: translateY(-1px);
+  transition: all 0.2s ease-in-out;
+}
+
+/* Card hover effects */
+.card:hover {
+  transform: translateY(-2px);
+  transition: all 0.3s ease-in-out;
+}
+
+/* Navigation enhancements */
+.navbar {
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid currentColor;
+}
+
+/* Modal enhancements */
+.modal-backdrop {
+  backdrop-filter: blur(5px);
+}
+
+/* Form enhancements */
+.form-control:focus-within {
+  box-shadow: 0 0 10px currentColor;
+}
+
+/* Table enhancements */
+.table tr:hover {
+  box-shadow: inset 0 0 10px rgba(0, 255, 0, 0.1);
+}
+
+/* Loading animations */
+@keyframes terminal-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.terminal-cursor::after {
+  content: '█';
+  animation: terminal-blink 1s infinite;
+}
+
+/* Neon glow animations */
+@keyframes neon-pulse {
+  0%, 100% {
+    text-shadow: 0 0 5px currentColor, 0 0 10px currentColor, 0 0 15px currentColor;
+  }
+  50% {
+    text-shadow: 0 0 2px currentColor, 0 0 5px currentColor, 0 0 8px currentColor;
+  }
+}
+
+.neon-pulse {
+  animation: neon-pulse 2s ease-in-out infinite;
+}
+
+/* Glitch effect for special elements */
+@keyframes glitch {
+  0% { transform: translate(0); }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(-2px, -2px); }
+  60% { transform: translate(2px, 2px); }
+  80% { transform: translate(2px, -2px); }
+  100% { transform: translate(0); }
+}
+
+.glitch:hover {
+  animation: glitch 0.3s ease-in-out;
+}
+
+/* Scanline effect for terminal aesthetic */
+.scanlines::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    transparent 50%,
+    rgba(0, 255, 0, 0.03) 50%
+  );
+  background-size: 100% 4px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* CRT monitor effect */
+.crt-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.crt-effect::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 0%,
+    transparent 70%,
+    rgba(0, 0, 0, 0.2) 100%
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Responsive design enhancements */
+@media (max-width: 768px) {
+  .nav-button-monsterbox {
+    width: 100%;
+    max-width: 300px;
+    margin: 0.5rem auto;
+    display: block;
+  }
+  
+  .card-monsterbox {
+    margin: 1rem 0;
+  }
+  
+  .modal-content-monsterbox {
+    margin: 1rem;
+    max-height: calc(100vh - 2rem);
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .card-monsterbox {
+    border: 1px solid #000;
+    box-shadow: none;
+  }
+  
+  .btn-monsterbox {
+    border: 1px solid #000;
+    background: white;
+    color: black;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .card-monsterbox {
+    border-width: 2px;
+  }
+  
+  .btn-monsterbox {
+    border-width: 2px;
+  }
+  
+  .form-input-monsterbox {
+    border-width: 2px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .animate-glow,
+  .animate-flicker,
+  .animate-pulse-slow,
+  .neon-pulse {
+    animation: none;
+  }
+  
+  .btn:hover,
+  .card:hover {
+    transform: none;
+  }
+}
+
+/* Dark mode enhancements */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+  }
+}
