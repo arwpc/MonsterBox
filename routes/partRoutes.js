@@ -408,6 +408,72 @@ const executePythonScript = (req, res) => {
 
 router.post('/execute-python-script', executePythonScript);
 
+// GET /microphone/devices - Discover available microphone devices
+router.get('/microphone/devices', async (req, res) => {
+    try {
+        logger.info('Discovering available microphone devices');
+
+        const { spawn } = require('child_process');
+        const scriptPath = path.join(__dirname, '..', 'scripts', 'microphone_test.py');
+
+        const pythonProcess = spawn('python3', [scriptPath, 'discover'], {
+            stdio: ['pipe', 'pipe', 'pipe']
+        });
+
+        let stdout = '';
+        let stderr = '';
+
+        pythonProcess.stdout.on('data', (data) => {
+            stdout += data.toString();
+        });
+
+        pythonProcess.stderr.on('data', (data) => {
+            stderr += data.toString();
+        });
+
+        pythonProcess.on('close', (code) => {
+            if (code === 0) {
+                try {
+                    const result = JSON.parse(stdout);
+                    logger.info(`Discovered ${result.microphones ? result.microphones.length : 0} microphone devices`);
+                    res.json(result);
+                } catch (parseError) {
+                    logger.error('Error parsing microphone discovery result:', parseError);
+                    res.status(500).json({
+                        success: false,
+                        error: 'Failed to parse microphone discovery result',
+                        microphones: []
+                    });
+                }
+            } else {
+                logger.error(`Microphone discovery failed with code ${code}: ${stderr}`);
+                res.status(500).json({
+                    success: false,
+                    error: `Microphone discovery failed: ${stderr}`,
+                    microphones: []
+                });
+            }
+        });
+
+        pythonProcess.on('error', (error) => {
+            logger.error('Error executing microphone discovery:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to execute microphone discovery script',
+                microphones: []
+            });
+        });
+
+    } catch (error) {
+        logger.error('Error in microphone device discovery:', error);
+        res.status(500).json({
+            success: false,
+            error: 'An error occurred while discovering microphone devices',
+            microphones: []
+        });
+    }
+});
+
 // POST /parts/:id/test - Test hardware part
 router.post('/:id/test', async (req, res) => {
     try {
