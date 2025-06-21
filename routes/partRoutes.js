@@ -237,6 +237,11 @@ router.post('/:id/delete', async (req, res) => {
         logger.info(`Part to be deleted: ${JSON.stringify(partToDelete)}`);
 
         try {
+            // Special cleanup for microphones
+            if (partToDelete.type === 'microphone') {
+                await performMicrophoneCleanup(id);
+            }
+
             await partService.deletePart(id);
             logger.info(`Part with ID ${id} deleted successfully`);
 
@@ -558,6 +563,278 @@ router.post('/microphone/:id/update', async (req, res) => {
         res.status(500).send('An error occurred while updating the microphone');
     }
 });
+
+// Microphone monitoring and management routes
+router.get('/microphone/monitor', async (req, res) => {
+    try {
+        const character = await characterService.getCharacterById(req.characterId);
+        const microphones = await partService.getAllParts();
+        const microphoneParts = microphones.filter(part => part.type === 'microphone');
+
+        res.render('microphone-monitor', {
+            title: 'Microphone Monitor',
+            character,
+            microphones: microphoneParts
+        });
+    } catch (error) {
+        logger.error('Error rendering microphone monitor:', error);
+        res.status(500).send('An error occurred while loading the microphone monitor');
+    }
+});
+
+router.get('/microphone/test', async (req, res) => {
+    try {
+        const character = await characterService.getCharacterById(req.characterId);
+        const microphones = await partService.getAllParts();
+        const microphoneParts = microphones.filter(part => part.type === 'microphone');
+
+        res.render('microphone-test', {
+            title: 'Microphone Testing Suite',
+            character,
+            microphones: microphoneParts
+        });
+    } catch (error) {
+        logger.error('Error rendering microphone test:', error);
+        res.status(500).send('An error occurred while loading the microphone test suite');
+    }
+});
+
+router.get('/api/microphone/status', async (req, res) => {
+    try {
+        const MicrophoneService = require('../services/microphoneService');
+        const microphoneService = new MicrophoneService();
+
+        const statuses = microphoneService.getAllMicrophoneStatuses();
+        res.json(statuses);
+    } catch (error) {
+        logger.error('Error getting microphone statuses:', error);
+        res.status(500).json({ error: 'Failed to get microphone statuses' });
+    }
+});
+
+router.post('/api/microphone/:id/preset', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const { presetName } = req.body;
+
+        if (isNaN(id)) {
+            return res.status(400).json({ error: 'Invalid microphone ID' });
+        }
+
+        if (!presetName) {
+            return res.status(400).json({ error: 'Preset name is required' });
+        }
+
+        const MicrophoneService = require('../services/microphoneService');
+        const microphoneService = new MicrophoneService();
+
+        const updatedMicrophone = await microphoneService.applyConfigPreset(id, presetName);
+
+        if (!updatedMicrophone) {
+            return res.status(404).json({ error: 'Microphone not found' });
+        }
+
+        res.json({ success: true, microphone: updatedMicrophone });
+    } catch (error) {
+        logger.error('Error applying microphone preset:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+router.get('/api/microphone/presets', async (req, res) => {
+    try {
+        const MicrophoneService = require('../services/microphoneService');
+        const microphoneService = new MicrophoneService();
+
+        const presets = microphoneService.getConfigPresets();
+        res.json(presets);
+    } catch (error) {
+        logger.error('Error getting microphone presets:', error);
+        res.status(500).json({ error: 'Failed to get microphone presets' });
+    }
+});
+
+router.post('/api/microphone/bulk', async (req, res) => {
+    try {
+        const { microphoneIds, operation, operationData } = req.body;
+
+        if (!Array.isArray(microphoneIds) || microphoneIds.length === 0) {
+            return res.status(400).json({ error: 'Microphone IDs array is required' });
+        }
+
+        if (!operation) {
+            return res.status(400).json({ error: 'Operation is required' });
+        }
+
+        const MicrophoneService = require('../services/microphoneService');
+        const microphoneService = new MicrophoneService();
+
+        const results = await microphoneService.bulkOperation(microphoneIds, operation, operationData);
+        res.json(results);
+    } catch (error) {
+        logger.error('Error performing bulk microphone operation:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Advanced microphone management routes
+router.get('/api/microphone/:id/assignments', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            return res.status(400).json({ error: 'Invalid microphone ID' });
+        }
+
+        const MicrophoneManagerService = require('../services/microphoneManagerService');
+        const microphoneManager = new MicrophoneManagerService();
+
+        const assignments = await microphoneManager.getMicrophoneAssignments(id);
+        res.json(assignments);
+    } catch (error) {
+        logger.error('Error getting microphone assignments:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+router.post('/api/microphone/:id/assign-service', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const { serviceId, serviceConfig } = req.body;
+
+        if (isNaN(id)) {
+            return res.status(400).json({ error: 'Invalid microphone ID' });
+        }
+
+        if (!serviceId) {
+            return res.status(400).json({ error: 'Service ID is required' });
+        }
+
+        const MicrophoneManagerService = require('../services/microphoneManagerService');
+        const microphoneManager = new MicrophoneManagerService();
+
+        const result = await microphoneManager.assignServiceToMicrophone(id, serviceId, serviceConfig);
+        res.json({ success: result });
+    } catch (error) {
+        logger.error('Error assigning service to microphone:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+router.delete('/api/microphone/:id/unassign-service/:serviceId', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const serviceId = req.params.serviceId;
+
+        if (isNaN(id)) {
+            return res.status(400).json({ error: 'Invalid microphone ID' });
+        }
+
+        const MicrophoneManagerService = require('../services/microphoneManagerService');
+        const microphoneManager = new MicrophoneManagerService();
+
+        const result = await microphoneManager.unassignServiceFromMicrophone(id, serviceId);
+        res.json({ success: result });
+    } catch (error) {
+        logger.error('Error unassigning service from microphone:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+router.get('/api/microphone/:id/real-time-data', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            return res.status(400).json({ error: 'Invalid microphone ID' });
+        }
+
+        const MicrophoneService = require('../services/microphoneService');
+        const microphoneService = new MicrophoneService();
+
+        const realTimeData = microphoneService.getMicrophoneStatus(id);
+        res.json(realTimeData || { status: 'inactive', level: 0 });
+    } catch (error) {
+        logger.error('Error getting real-time microphone data:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+router.post('/api/microphone/:id/calibrate', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const { calibrationType, duration } = req.body;
+
+        if (isNaN(id)) {
+            return res.status(400).json({ error: 'Invalid microphone ID' });
+        }
+
+        const MicrophoneService = require('../services/microphoneService');
+        const microphoneService = new MicrophoneService();
+
+        const calibrationResult = await microphoneService.calibrateMicrophone(id, calibrationType, duration);
+        res.json(calibrationResult);
+    } catch (error) {
+        logger.error('Error calibrating microphone:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+router.get('/api/microphone/analytics', async (req, res) => {
+    try {
+        const { timeRange, microphoneIds } = req.query;
+
+        const MicrophoneService = require('../services/microphoneService');
+        const microphoneService = new MicrophoneService();
+
+        const analytics = await microphoneService.getMicrophoneAnalytics(timeRange, microphoneIds);
+        res.json(analytics);
+    } catch (error) {
+        logger.error('Error getting microphone analytics:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Add missing parts API endpoint
+router.get('/api/parts', async (req, res) => {
+    try {
+        const parts = await partService.getAllParts();
+        res.json(parts);
+    } catch (error) {
+        logger.error('Error getting all parts:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
+ * Perform cleanup operations when deleting a microphone
+ * @param {number} microphoneId - ID of the microphone being deleted
+ */
+async function performMicrophoneCleanup(microphoneId) {
+    try {
+        logger.info(`🎤 Performing microphone cleanup for ID: ${microphoneId}`);
+
+        // Import services for cleanup
+        const CharacterMicrophoneService = require('../services/characterMicrophoneService');
+        const characterMicrophoneService = new CharacterMicrophoneService();
+
+        // Remove character associations
+        const associations = await characterMicrophoneService.loadAssociations();
+        const microphoneAssociations = associations.filter(assoc => assoc.microphoneId === microphoneId);
+
+        for (const association of microphoneAssociations) {
+            logger.info(`🔗 Removing microphone association for character ${association.characterId}`);
+            await characterMicrophoneService.removeMicrophone(association.characterId);
+        }
+
+        // TODO: Stop any active microphone services/streams
+        // This would involve communicating with the microphone WebSocket service
+        // to stop any active recording or streaming for this microphone
+
+        logger.info(`✅ Microphone cleanup completed for ID: ${microphoneId}`);
+    } catch (error) {
+        logger.error(`❌ Error during microphone cleanup for ID ${microphoneId}:`, error);
+        // Don't throw error to prevent deletion failure
+    }
+}
 
 module.exports = {
     router: router,

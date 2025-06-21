@@ -1,7 +1,7 @@
 const EventEmitter = require('events');
-const WebSocket = require('ws');
 const logger = require('../scripts/logger');
 const CharacterMicrophoneService = require('./characterMicrophoneService');
+const MicrophoneManagerService = require('./microphoneManagerService');
 
 // Import OpenAI STT integration
 let OpenAISTTIntegration;
@@ -12,13 +12,14 @@ try {
 }
 
 class MicrophoneSTTIntegrationService extends EventEmitter {
-    constructor() {
+    constructor(sharedMicrophoneManager = null) {
         super();
         this.characterMicrophoneService = new CharacterMicrophoneService();
+        this.microphoneManager = sharedMicrophoneManager || new MicrophoneManagerService();
         this.sttIntegration = null;
-        this.microphoneConnections = new Map(); // characterId -> WebSocket connection
+        this.activeCharacterSessions = new Map(); // characterId -> microphoneId
         this.isInitialized = false;
-        
+
         // STT configuration
         this.sttConfig = {
             language: 'en',
@@ -27,6 +28,9 @@ class MicrophoneSTTIntegrationService extends EventEmitter {
             fallbackToSystem: true,
             realTimeProcessing: true
         };
+
+        // Consumer ID for microphone manager
+        this.consumerId = 'stt_integration_service';
     }
 
     /**
@@ -36,19 +40,52 @@ class MicrophoneSTTIntegrationService extends EventEmitter {
         try {
             logger.info('🎤🗣️ Initializing Microphone-STT Integration Service...');
 
+            // Initialize microphone manager if not already initialized
+            if (!this.microphoneManager.isInitialized) {
+                const managerInitialized = await this.microphoneManager.initialize();
+                if (!managerInitialized) {
+                    throw new Error('Failed to initialize microphone manager');
+                }
+            }
+
+            // Register as consumer with microphone manager
+            const consumerRegistered = this.microphoneManager.registerConsumer(this.consumerId, {
+                type: 'stt',
+                description: 'Speech-to-Text Integration Service',
+                priority: 'high',
+                audioFormat: 'pcm',
+                sampleRate: 16000,
+                channels: 1
+            });
+
+            if (!consumerRegistered) {
+                throw new Error('Failed to register with microphone manager');
+            }
+
+            // Set up microphone manager event handlers
+            this.microphoneManager.on('audio_data', (data) => {
+                if (data.consumerId === this.consumerId) {
+                    this.processAudioData(data);
+                }
+            });
+
+            this.microphoneManager.on('status_update', (data) => {
+                this.handleMicrophoneStatusUpdate(data);
+            });
+
             // Initialize STT integration if available
             if (OpenAISTTIntegration) {
                 this.sttIntegration = new OpenAISTTIntegration(this.sttConfig);
-                
+
                 // Set up STT event handlers
                 this.sttIntegration.on('speech_recognized', (result) => {
                     this.handleSpeechRecognized(result);
                 });
-                
+
                 this.sttIntegration.on('error', (error) => {
                     this.handleSTTError(error);
                 });
-                
+
                 const initialized = await this.sttIntegration.initialize();
                 if (initialized) {
                     logger.info('✅ STT integration initialized');
@@ -58,9 +95,6 @@ class MicrophoneSTTIntegrationService extends EventEmitter {
             } else {
                 logger.warn('⚠️ OpenAI STT integration not available');
             }
-
-            // Connect to microphone hardware service
-            await this.connectToMicrophoneService();
 
             this.isInitialized = true;
             logger.info('✅ Microphone-STT Integration Service initialized');
@@ -73,100 +107,39 @@ class MicrophoneSTTIntegrationService extends EventEmitter {
     }
 
     /**
-     * Connect to the microphone hardware service
+     * Handle microphone status updates from manager
      */
-    async connectToMicrophoneService() {
-        try {
-            // Connect to microphone WebSocket service
-            const microphoneWS = new WebSocket('ws://localhost:8776');
-            
-            microphoneWS.on('open', () => {
-                logger.info('🎤 Connected to Microphone WebSocket Service');
-                
-                // Send initialization message
-                microphoneWS.send(JSON.stringify({
-                    type: 'register_stt_client',
-                    client_id: 'stt_integration_service'
-                }));
-            });
-
-            microphoneWS.on('message', (data) => {
-                try {
-                    const message = JSON.parse(data.toString());
-                    this.handleMicrophoneMessage(message);
-                } catch (error) {
-                    logger.error('Error parsing microphone message:', error);
-                }
-            });
-
-            microphoneWS.on('error', (error) => {
-                logger.error('Microphone WebSocket error:', error);
-            });
-
-            microphoneWS.on('close', () => {
-                logger.warn('🎤 Disconnected from Microphone WebSocket Service');
-                // Attempt to reconnect after delay
-                setTimeout(() => this.connectToMicrophoneService(), 5000);
-            });
-
-            this.microphoneWS = microphoneWS;
-
-        } catch (error) {
-            logger.error('Failed to connect to microphone service:', error);
-        }
+    handleMicrophoneStatusUpdate(data) {
+        logger.debug('Microphone status update:', data);
+        this.emit('microphone_status_update', data);
     }
 
     /**
-     * Handle messages from microphone service
+     * Process audio data from microphone manager
      */
-    handleMicrophoneMessage(message) {
-        try {
-            switch (message.type) {
-                case 'microphone_audio_data':
-                    this.processAudioData(message);
-                    break;
-                    
-                case 'microphone_status_update':
-                    this.handleMicrophoneStatusUpdate(message);
-                    break;
-                    
-                case 'microphones_discovered':
-                    this.handleMicrophonesDiscovered(message);
-                    break;
-                    
-                default:
-                    logger.debug('Unknown microphone message type:', message.type);
-            }
-        } catch (error) {
-            logger.error('Error handling microphone message:', error);
-        }
-    }
-
-    /**
-     * Process audio data from microphone
-     */
-    async processAudioData(message) {
+    async processAudioData(data) {
         try {
             if (!this.sttIntegration) {
                 return; // STT not available
             }
 
-            const { microphone_id, audio_data, timestamp } = message;
-            
+            const { microphoneId, audioData, timestamp, metadata } = data;
+
             // Get character associated with this microphone
-            const character = await this.getCharacterByMicrophoneId(microphone_id);
+            const character = await this.getCharacterByMicrophoneId(microphoneId);
             if (!character) {
                 return; // No character associated
             }
 
             // Convert audio data to buffer format expected by STT
-            const audioBuffer = Buffer.from(audio_data);
-            
+            const audioBuffer = Buffer.from(audioData);
+
             // Send audio to STT integration
             await this.sttIntegration.processAudioChunk(audioBuffer, {
                 characterId: character.id,
-                microphoneId: microphone_id,
-                timestamp: timestamp
+                microphoneId: microphoneId,
+                timestamp: timestamp,
+                metadata: metadata
             });
 
         } catch (error) {
@@ -204,30 +177,15 @@ class MicrophoneSTTIntegrationService extends EventEmitter {
         this.emit('stt_error', error);
     }
 
-    /**
-     * Handle microphone status updates
-     */
-    handleMicrophoneStatusUpdate(message) {
-        logger.debug('Microphone status update:', message);
-        this.emit('microphone_status_update', message);
-    }
 
-    /**
-     * Handle discovered microphones
-     */
-    handleMicrophonesDiscovered(message) {
-        logger.info(`🎤 Discovered ${message.microphones.length} microphones`);
-        this.emit('microphones_discovered', message.microphones);
-    }
 
     /**
      * Get character associated with microphone ID
      */
     async getCharacterByMicrophoneId(microphoneId) {
         try {
-            // Extract numeric ID from microphone_id (e.g., "microphone_1" -> 1)
-            const numericId = parseInt(microphoneId.replace('microphone_', '')) || 1;
-            return await this.characterMicrophoneService.getCharacterByMicrophone(numericId);
+            // microphoneId is already numeric from the manager
+            return await this.characterMicrophoneService.getCharacterByMicrophone(microphoneId);
         } catch (error) {
             logger.error('Error getting character by microphone ID:', error);
             return null;
@@ -245,18 +203,23 @@ class MicrophoneSTTIntegrationService extends EventEmitter {
                 throw new Error(`No microphone assigned to character ${characterId}`);
             }
 
-            // Start microphone recording via WebSocket
-            if (this.microphoneWS && this.microphoneWS.readyState === WebSocket.OPEN) {
-                this.microphoneWS.send(JSON.stringify({
-                    type: 'start_microphone',
-                    microphone_id: `microphone_${microphone.id}`,
-                    config: microphone.config
-                }));
-                
-                logger.info(`🎤 Started STT for character ${characterId} with microphone ${microphone.id}`);
+            // Start microphone session via manager
+            const sessionStarted = await this.microphoneManager.startMicrophoneSession(
+                this.consumerId,
+                microphone.id,
+                {
+                    ...microphone.config,
+                    characterId: characterId,
+                    purpose: 'stt'
+                }
+            );
+
+            if (sessionStarted) {
+                this.activeCharacterSessions.set(characterId, microphone.id);
+                logger.info(`🎤🗣️ Started STT for character ${characterId} with microphone ${microphone.id}`);
                 return true;
             } else {
-                throw new Error('Microphone service not connected');
+                throw new Error('Failed to start microphone session');
             }
 
         } catch (error) {
@@ -270,23 +233,24 @@ class MicrophoneSTTIntegrationService extends EventEmitter {
      */
     async stopSTTForCharacter(characterId) {
         try {
-            // Get microphone assigned to character
-            const microphone = await this.characterMicrophoneService.getMicrophoneByCharacter(characterId);
-            if (!microphone) {
-                throw new Error(`No microphone assigned to character ${characterId}`);
+            const microphoneId = this.activeCharacterSessions.get(characterId);
+            if (!microphoneId) {
+                logger.warn(`No active STT session for character ${characterId}`);
+                return true; // Already stopped
             }
 
-            // Stop microphone recording via WebSocket
-            if (this.microphoneWS && this.microphoneWS.readyState === WebSocket.OPEN) {
-                this.microphoneWS.send(JSON.stringify({
-                    type: 'stop_microphone',
-                    microphone_id: `microphone_${microphone.id}`
-                }));
-                
-                logger.info(`🎤 Stopped STT for character ${characterId}`);
+            // Stop microphone session via manager
+            const sessionStopped = await this.microphoneManager.stopMicrophoneSession(
+                this.consumerId,
+                microphoneId
+            );
+
+            if (sessionStopped) {
+                this.activeCharacterSessions.delete(characterId);
+                logger.info(`🎤🛑 Stopped STT for character ${characterId}`);
                 return true;
             } else {
-                throw new Error('Microphone service not connected');
+                throw new Error('Failed to stop microphone session');
             }
 
         } catch (error) {
@@ -311,9 +275,11 @@ class MicrophoneSTTIntegrationService extends EventEmitter {
         return {
             initialized: this.isInitialized,
             sttAvailable: !!this.sttIntegration,
-            microphoneServiceConnected: this.microphoneWS && this.microphoneWS.readyState === WebSocket.OPEN,
-            activeConnections: this.microphoneConnections.size,
-            config: this.sttConfig
+            microphoneManagerConnected: this.microphoneManager.getStatus().hardwareConnected,
+            activeCharacterSessions: this.activeCharacterSessions.size,
+            activeSessions: Object.fromEntries(this.activeCharacterSessions),
+            config: this.sttConfig,
+            managerStatus: this.microphoneManager.getStatus()
         };
     }
 
@@ -338,11 +304,16 @@ class MicrophoneSTTIntegrationService extends EventEmitter {
         try {
             logger.info('🛑 Shutting down Microphone-STT Integration Service...');
 
-            // Close microphone WebSocket connection
-            if (this.microphoneWS) {
-                this.microphoneWS.close();
-                this.microphoneWS = null;
+            // Stop all active character sessions
+            for (const [characterId, microphoneId] of this.activeCharacterSessions) {
+                await this.stopSTTForCharacter(characterId);
             }
+
+            // Unregister from microphone manager
+            this.microphoneManager.unregisterConsumer(this.consumerId);
+
+            // Shutdown microphone manager
+            await this.microphoneManager.shutdown();
 
             // Cleanup STT integration
             if (this.sttIntegration) {

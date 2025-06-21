@@ -122,9 +122,55 @@
         <div class="form-actions">
             <button type="submit" class="button primary-btn">💾 Save Microphone</button>
             <button type="button" id="testMicrophoneButton" class="button test-btn">🧪 Test Microphone</button>
+            <button type="button" id="startMonitoringButton" class="button">👁️ Start Monitoring</button>
+            <button type="button" id="applyPresetButton" class="button">⚙️ Apply Preset</button>
             <a href="/parts?characterId=<%= character.id %>" class="button secondary-btn">↩️ Back to Parts</a>
         </div>
     </form>
+
+    <div id="realTimeControls" class="real-time-section">
+        <h3>🎛️ Real-Time Controls</h3>
+
+        <div class="control-row">
+            <div class="control-group">
+                <label for="realtimeSensitivity">Live Sensitivity:</label>
+                <input type="range" id="realtimeSensitivity" min="0.1" max="3.0" step="0.1" value="<%= part.sensitivity || 1.0 %>">
+                <span id="realtimeSensitivityValue"><%= part.sensitivity || 1.0 %></span>
+            </div>
+
+            <div class="control-group">
+                <label for="realtimeThreshold">Live Threshold:</label>
+                <input type="range" id="realtimeThreshold" min="0.01" max="1.0" step="0.01" value="<%= part.voiceActivationThreshold || 0.1 %>">
+                <span id="realtimeThresholdValue"><%= part.voiceActivationThreshold || 0.1 %></span>
+            </div>
+        </div>
+
+        <div class="audio-visualization">
+            <div class="audio-level-container">
+                <div class="audio-level-label">Live Audio Level</div>
+                <div class="audio-level-bar">
+                    <div class="audio-level-fill" id="liveAudioLevel"></div>
+                </div>
+                <div class="audio-level-value" id="liveAudioValue">0%</div>
+            </div>
+
+            <div class="frequency-visualization">
+                <canvas id="frequencyCanvas" width="400" height="100"></canvas>
+            </div>
+        </div>
+
+        <div class="preset-controls">
+            <label for="presetSelect">Configuration Presets:</label>
+            <select id="presetSelect">
+                <option value="">Select a preset...</option>
+                <option value="speech-recognition">Speech Recognition</option>
+                <option value="high-quality-recording">High Quality Recording</option>
+                <option value="noise-reduction">Noise Reduction</option>
+                <option value="low-latency">Low Latency</option>
+            </select>
+            <button type="button" id="loadPresetButton" class="button small-btn">Load Preset</button>
+        </div>
+    </div>
 
     <div id="testArea" class="test-section" style="display: none;">
         <h3>🧪 Test Results</h3>
@@ -225,15 +271,135 @@
             overflow-y: auto;
         }
 
-        #sensitivityValue, #thresholdValue {
+        #sensitivityValue, #thresholdValue, #realtimeSensitivityValue, #realtimeThresholdValue {
             color: #00ff00;
             font-weight: bold;
             min-width: 40px;
             display: inline-block;
         }
+
+        .real-time-section {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .real-time-section h3 {
+            color: #00ffff;
+            margin-bottom: 15px;
+            border-bottom: 1px solid rgba(0, 255, 255, 0.3);
+            padding-bottom: 10px;
+        }
+
+        .control-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .control-group {
+            flex: 1;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #00ffff;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .control-group input[type="range"] {
+            width: 70%;
+            margin-right: 10px;
+        }
+
+        .audio-visualization {
+            margin-bottom: 20px;
+        }
+
+        .audio-level-container {
+            margin-bottom: 15px;
+        }
+
+        .audio-level-label {
+            color: #00ffff;
+            font-size: 14px;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .audio-level-bar {
+            width: 100%;
+            height: 25px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(0, 255, 255, 0.5);
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .audio-level-fill {
+            height: 100%;
+            background: linear-gradient(to right, #00ff00, #ffff00, #ff8800, #ff0000);
+            width: 0%;
+            transition: width 0.1s ease;
+            border-radius: 10px;
+        }
+
+        .audio-level-value {
+            text-align: center;
+            color: #00ffff;
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .frequency-visualization {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .frequency-visualization canvas {
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 4px;
+        }
+
+        .preset-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .preset-controls label {
+            color: #00ffff;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .preset-controls select {
+            flex: 1;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 255, 255, 0.5);
+            border-radius: 4px;
+            color: #ffffff;
+        }
     </style>
 
     <script>
+        let monitoringActive = false;
+        let audioContext;
+        let analyser;
+        let frequencyCanvas;
+        let frequencyCtx;
+        let animationFrame;
+
         // Update sensitivity value display
         const sensitivitySlider = document.getElementById('sensitivity');
         const sensitivityValue = document.getElementById('sensitivityValue');
@@ -260,6 +426,33 @@
                 thresholdDiv.style.display = this.checked ? 'block' : 'none';
             });
         }
+
+        // Real-time controls
+        const realtimeSensitivitySlider = document.getElementById('realtimeSensitivity');
+        const realtimeSensitivityValue = document.getElementById('realtimeSensitivityValue');
+        if (realtimeSensitivitySlider && realtimeSensitivityValue) {
+            realtimeSensitivitySlider.addEventListener('input', function() {
+                realtimeSensitivityValue.textContent = this.value;
+                updateRealtimeSettings();
+            });
+        }
+
+        const realtimeThresholdSlider = document.getElementById('realtimeThreshold');
+        const realtimeThresholdValue = document.getElementById('realtimeThresholdValue');
+        if (realtimeThresholdSlider && realtimeThresholdValue) {
+            realtimeThresholdSlider.addEventListener('input', function() {
+                realtimeThresholdValue.textContent = this.value;
+                updateRealtimeSettings();
+            });
+        }
+
+        // Initialize frequency visualization
+        document.addEventListener('DOMContentLoaded', function() {
+            frequencyCanvas = document.getElementById('frequencyCanvas');
+            if (frequencyCanvas) {
+                frequencyCtx = frequencyCanvas.getContext('2d');
+            }
+        });
 
         // Test microphone functionality
         document.getElementById('testMicrophoneButton').addEventListener('click', function() {
@@ -304,6 +497,237 @@
                 }
             });
         });
+
+        // Start monitoring button
+        document.getElementById('startMonitoringButton').addEventListener('click', function() {
+            if (!monitoringActive) {
+                startRealTimeMonitoring();
+            } else {
+                stopRealTimeMonitoring();
+            }
+        });
+
+        // Apply preset button
+        document.getElementById('applyPresetButton').addEventListener('click', function() {
+            const presetSelect = document.getElementById('presetSelect');
+            const presetName = presetSelect.value;
+            if (presetName) {
+                applyPreset(presetName);
+            } else {
+                alert('Please select a preset first');
+            }
+        });
+
+        // Load preset button
+        document.getElementById('loadPresetButton').addEventListener('click', function() {
+            const presetSelect = document.getElementById('presetSelect');
+            const presetName = presetSelect.value;
+            if (presetName) {
+                loadPresetToForm(presetName);
+            } else {
+                alert('Please select a preset first');
+            }
+        });
+
+        function startRealTimeMonitoring() {
+            navigator.mediaDevices.getUserMedia({
+                audio: {
+                    deviceId: document.getElementById('deviceId').value || 'default',
+                    sampleRate: parseInt(document.getElementById('sampleRate').value),
+                    channelCount: parseInt(document.getElementById('channels').value),
+                    echoCancellation: document.getElementById('echoCancellation').checked,
+                    noiseSuppression: document.getElementById('noiseSuppression').checked,
+                    autoGainControl: document.getElementById('autoGainControl').checked
+                }
+            })
+            .then(function(stream) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                const source = audioContext.createMediaStreamSource(stream);
+
+                analyser.fftSize = 256;
+                source.connect(analyser);
+
+                monitoringActive = true;
+                document.getElementById('startMonitoringButton').textContent = '⏹️ Stop Monitoring';
+
+                updateAudioVisualization();
+            })
+            .catch(function(error) {
+                console.error('Error accessing microphone:', error);
+                alert('Error accessing microphone: ' + error.message);
+            });
+        }
+
+        function stopRealTimeMonitoring() {
+            if (audioContext) {
+                audioContext.close();
+                audioContext = null;
+            }
+
+            if (animationFrame) {
+                cancelAnimationFrame(animationFrame);
+                animationFrame = null;
+            }
+
+            monitoringActive = false;
+            document.getElementById('startMonitoringButton').textContent = '👁️ Start Monitoring';
+
+            // Reset visualizations
+            document.getElementById('liveAudioLevel').style.width = '0%';
+            document.getElementById('liveAudioValue').textContent = '0%';
+
+            if (frequencyCtx) {
+                frequencyCtx.clearRect(0, 0, frequencyCanvas.width, frequencyCanvas.height);
+            }
+        }
+
+        function updateAudioVisualization() {
+            if (!monitoringActive || !analyser) return;
+
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            analyser.getByteFrequencyData(dataArray);
+
+            // Calculate audio level
+            let sum = 0;
+            for (let i = 0; i < bufferLength; i++) {
+                sum += dataArray[i];
+            }
+            const average = sum / bufferLength;
+            const percentage = Math.round((average / 255) * 100);
+
+            // Update audio level display
+            document.getElementById('liveAudioLevel').style.width = percentage + '%';
+            document.getElementById('liveAudioValue').textContent = percentage + '%';
+
+            // Update frequency visualization
+            if (frequencyCtx) {
+                frequencyCtx.clearRect(0, 0, frequencyCanvas.width, frequencyCanvas.height);
+
+                const barWidth = frequencyCanvas.width / bufferLength;
+                let x = 0;
+
+                for (let i = 0; i < bufferLength; i++) {
+                    const barHeight = (dataArray[i] / 255) * frequencyCanvas.height;
+
+                    const hue = (i / bufferLength) * 360;
+                    frequencyCtx.fillStyle = `hsl(${hue}, 100%, 50%)`;
+                    frequencyCtx.fillRect(x, frequencyCanvas.height - barHeight, barWidth, barHeight);
+
+                    x += barWidth;
+                }
+            }
+
+            animationFrame = requestAnimationFrame(updateAudioVisualization);
+        }
+
+        function updateRealtimeSettings() {
+            // This would send real-time updates to the microphone service
+            const settings = {
+                sensitivity: parseFloat(document.getElementById('realtimeSensitivity').value),
+                threshold: parseFloat(document.getElementById('realtimeThreshold').value)
+            };
+
+            console.log('Updated real-time settings:', settings);
+            // TODO: Send to microphone WebSocket service
+        }
+
+        function applyPreset(presetName) {
+            const microphoneId = document.querySelector('input[name="id"]')?.value;
+            if (!microphoneId) {
+                alert('Cannot apply preset: Microphone not saved yet');
+                return;
+            }
+
+            axios.post(`/parts/api/microphone/${microphoneId}/preset`, { presetName })
+                .then(function(response) {
+                    if (response.data.success) {
+                        alert(`Applied preset: ${presetName}`);
+                        // Reload the page to show updated configuration
+                        setTimeout(() => location.reload(), 1000);
+                    }
+                })
+                .catch(function(error) {
+                    console.error('Error applying preset:', error);
+                    alert(`Error applying preset: ${error.response?.data?.error || error.message}`);
+                });
+        }
+
+        function loadPresetToForm(presetName) {
+            // Load preset configurations into the form
+            const presets = {
+                'speech-recognition': {
+                    sampleRate: 16000,
+                    channels: 1,
+                    sensitivity: 1.2,
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true,
+                    voiceActivation: true,
+                    voiceActivationThreshold: 0.15
+                },
+                'high-quality-recording': {
+                    sampleRate: 44100,
+                    channels: 2,
+                    sensitivity: 1.0,
+                    echoCancellation: false,
+                    noiseSuppression: false,
+                    autoGainControl: false,
+                    voiceActivation: false,
+                    voiceActivationThreshold: 0.1
+                },
+                'noise-reduction': {
+                    sampleRate: 16000,
+                    channels: 1,
+                    sensitivity: 0.8,
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true,
+                    voiceActivation: true,
+                    voiceActivationThreshold: 0.2
+                },
+                'low-latency': {
+                    sampleRate: 16000,
+                    channels: 1,
+                    sensitivity: 1.0,
+                    echoCancellation: false,
+                    noiseSuppression: false,
+                    autoGainControl: false,
+                    voiceActivation: false,
+                    voiceActivationThreshold: 0.1
+                }
+            };
+
+            const preset = presets[presetName];
+            if (preset) {
+                // Update form fields
+                document.getElementById('sampleRate').value = preset.sampleRate;
+                document.getElementById('channels').value = preset.channels;
+                document.getElementById('sensitivity').value = preset.sensitivity;
+                document.getElementById('sensitivityValue').textContent = preset.sensitivity;
+                document.getElementById('echoCancellation').checked = preset.echoCancellation;
+                document.getElementById('noiseSuppression').checked = preset.noiseSuppression;
+                document.getElementById('autoGainControl').checked = preset.autoGainControl;
+                document.getElementById('voiceActivation').checked = preset.voiceActivation;
+                document.getElementById('voiceActivationThreshold').value = preset.voiceActivationThreshold;
+                document.getElementById('thresholdValue').textContent = preset.voiceActivationThreshold;
+
+                // Update real-time controls
+                document.getElementById('realtimeSensitivity').value = preset.sensitivity;
+                document.getElementById('realtimeSensitivityValue').textContent = preset.sensitivity;
+                document.getElementById('realtimeThreshold').value = preset.voiceActivationThreshold;
+                document.getElementById('realtimeThresholdValue').textContent = preset.voiceActivationThreshold;
+
+                // Toggle threshold visibility
+                const thresholdDiv = document.getElementById('voiceActivationThresholdDiv');
+                if (thresholdDiv) {
+                    thresholdDiv.style.display = preset.voiceActivation ? 'block' : 'none';
+                }
+
+                alert(`Loaded preset: ${presetName}`);
+            }
+        }
     </script>
 </body>
 </html>

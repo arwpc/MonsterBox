@@ -75,9 +75,21 @@ class MicrophoneWebSocketService(BaseHardwareService):
         self.audio_system = None
         if PYAUDIO_AVAILABLE:
             try:
-                self.audio_system = pyaudio.PyAudio()
+                # Suppress ALSA warnings during PyAudio initialization
+                import os
+                import sys
+
+                # Redirect stderr temporarily to suppress ALSA warnings
+                stderr_backup = sys.stderr
+                with open(os.devnull, 'w') as devnull:
+                    sys.stderr = devnull
+                    self.audio_system = pyaudio.PyAudio()
+                    sys.stderr = stderr_backup
+
                 logger.info("✅ PyAudio system initialized")
             except Exception as e:
+                # Restore stderr if there was an error
+                sys.stderr = stderr_backup
                 logger.error(f"Failed to initialize PyAudio: {e}")
                 self.audio_system = None
     

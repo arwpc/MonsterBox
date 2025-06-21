@@ -2,15 +2,16 @@ const EventEmitter = require('events');
 const WebSocket = require('ws');
 const logger = require('../scripts/logger');
 const CharacterMicrophoneService = require('./characterMicrophoneService');
+const MicrophoneManagerService = require('./microphoneManagerService');
 
 class MicrophoneAudioStreamService extends EventEmitter {
-    constructor() {
+    constructor(sharedMicrophoneManager = null) {
         super();
         this.characterMicrophoneService = new CharacterMicrophoneService();
-        this.microphoneWS = null;
+        this.microphoneManager = sharedMicrophoneManager || new MicrophoneManagerService();
         this.audioStreamClients = new Set(); // Connected audio stream clients
         this.isInitialized = false;
-        
+
         // Audio stream configuration
         this.streamConfig = {
             sampleRate: 16000,
@@ -20,9 +21,13 @@ class MicrophoneAudioStreamService extends EventEmitter {
             enableRecording: false,
             compressionLevel: 0.5
         };
-        
+
         // Audio monitoring state
         this.monitoringState = new Map(); // characterId -> monitoring info
+        this.activeStreamSessions = new Map(); // characterId -> microphoneId
+
+        // Consumer ID for microphone manager
+        this.consumerId = 'audio_stream_service';
     }
 
     /**
@@ -32,8 +37,42 @@ class MicrophoneAudioStreamService extends EventEmitter {
         try {
             logger.info('🎤🔊 Initializing Microphone Audio Stream Service...');
 
-            // Connect to microphone hardware service
-            await this.connectToMicrophoneService();
+            // Initialize microphone manager if not already initialized
+            if (!this.microphoneManager.isInitialized) {
+                const managerInitialized = await this.microphoneManager.initialize();
+                if (!managerInitialized) {
+                    throw new Error('Failed to initialize microphone manager');
+                }
+            }
+
+            // Register as consumer with microphone manager
+            const consumerRegistered = this.microphoneManager.registerConsumer(this.consumerId, {
+                type: 'audio_stream',
+                description: 'Audio Stream Service',
+                priority: 'medium',
+                audioFormat: 'pcm',
+                sampleRate: this.streamConfig.sampleRate,
+                channels: this.streamConfig.channels
+            });
+
+            if (!consumerRegistered) {
+                throw new Error('Failed to register with microphone manager');
+            }
+
+            // Set up microphone manager event handlers
+            this.microphoneManager.on('audio_data', (data) => {
+                if (data.consumerId === this.consumerId) {
+                    this.processAudioData(data);
+                }
+            });
+
+            this.microphoneManager.on('status_update', (data) => {
+                this.handleMicrophoneStatusUpdate(data);
+            });
+
+            this.microphoneManager.on('audio_levels', (data) => {
+                this.handleAudioLevels(data);
+            });
 
             // Start audio stream server
             await this.startAudioStreamServer();

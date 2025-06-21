@@ -21,6 +21,7 @@ let chatterPiServiceManager;
 let hardwareServiceManager;
 let serviceConnectionManager;
 let audioCleanupService;
+let microphoneManagerService;
 
 // Import error handling middleware
 const { errorHandler, notFoundHandler, asyncHandler } = require('./middleware/errorHandler');
@@ -540,6 +541,9 @@ async function startServer() {
         // Initialize Hardware WebSocket Services
         initializeHardwareServices();
 
+        // Initialize Microphone Manager Service
+        initializeMicrophoneManager();
+
         // Initialize Character Audio Config Service
         const characterAudioConfigService = require('./services/characterAudioConfigService');
         await characterAudioConfigService.initialize();
@@ -650,6 +654,41 @@ async function initializeHardwareServices() {
     }
 }
 
+// Initialize Microphone Manager Service
+async function initializeMicrophoneManager() {
+    try {
+        logger.info('🎤📋 Initializing Microphone Manager Service...');
+
+        const MicrophoneManagerService = require('./services/microphoneManagerService');
+        microphoneManagerService = new MicrophoneManagerService();
+
+        const success = await microphoneManagerService.initialize();
+
+        if (success) {
+            logger.info('✅ Microphone Manager Service initialized successfully');
+
+            // Initialize STT Integration Service with shared microphone manager
+            const MicrophoneSTTIntegrationService = require('./services/microphoneSTTIntegrationService');
+            const sttIntegrationService = new MicrophoneSTTIntegrationService(microphoneManagerService);
+            await sttIntegrationService.initialize();
+            logger.info('🎤🗣️ STT Integration Service initialized');
+
+            // Initialize Audio Stream Service with shared microphone manager
+            const MicrophoneAudioStreamService = require('./services/microphoneAudioStreamService');
+            const audioStreamService = new MicrophoneAudioStreamService(microphoneManagerService);
+            await audioStreamService.initialize();
+            logger.info('🎤🔊 Audio Stream Service initialized');
+
+            logger.info('🎤✅ Complete microphone system initialized with separated architecture');
+        } else {
+            logger.error('❌ Failed to initialize Microphone Manager Service');
+        }
+
+    } catch (error) {
+        logger.error('❌ Error initializing Microphone Manager Service:', error);
+    }
+}
+
 // Initialize the application
 async function initializeApp() {
     try {
@@ -721,6 +760,12 @@ async function gracefulShutdown(reason) {
         if (hardwareServiceManager) {
             await hardwareServiceManager.shutdown();
             logger.info('Hardware services stopped');
+        }
+
+        // Shutdown microphone manager service
+        if (microphoneManagerService) {
+            await microphoneManagerService.shutdown();
+            logger.info('Microphone manager service stopped');
         }
 
         // Stop audio cleanup service

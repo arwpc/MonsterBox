@@ -1,9 +1,11 @@
 const fs = require('fs').promises;
 const path = require('path');
+const EventEmitter = require('events');
 const logger = require('../scripts/logger');
 
-class MicrophoneService {
+class MicrophoneService extends EventEmitter {
     constructor() {
+        super();
         this.microphonesPath = path.join(__dirname, '../data/microphones.json');
         this.defaultConfig = {
             enabled: true,
@@ -17,6 +19,54 @@ class MicrophoneService {
             voiceActivationThreshold: 0.1,
             bufferSize: 1024,
             format: 'float32'
+        };
+
+        // Real-time monitoring state
+        this.activeMicrophones = new Map(); // microphoneId -> status info
+        this.monitoringClients = new Set(); // WebSocket clients for real-time updates
+
+        // Configuration presets
+        this.configPresets = {
+            'speech-recognition': {
+                sampleRate: 16000,
+                channels: 1,
+                sensitivity: 1.2,
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true,
+                voiceActivation: true,
+                voiceActivationThreshold: 0.15
+            },
+            'high-quality-recording': {
+                sampleRate: 44100,
+                channels: 2,
+                sensitivity: 1.0,
+                echoCancellation: false,
+                noiseSuppression: false,
+                autoGainControl: false,
+                voiceActivation: false,
+                voiceActivationThreshold: 0.1
+            },
+            'noise-reduction': {
+                sampleRate: 16000,
+                channels: 1,
+                sensitivity: 0.8,
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true,
+                voiceActivation: true,
+                voiceActivationThreshold: 0.2
+            },
+            'low-latency': {
+                sampleRate: 16000,
+                channels: 1,
+                sensitivity: 1.0,
+                echoCancellation: false,
+                noiseSuppression: false,
+                autoGainControl: false,
+                voiceActivation: false,
+                bufferSize: 512
+            }
         };
     }
 
@@ -266,6 +316,507 @@ class MicrophoneService {
             };
         } catch (error) {
             logger.error(`Error testing microphone ${id}:`, error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    /**
+     * Get configuration presets
+     * @returns {Object} Available configuration presets
+     */
+    getConfigPresets() {
+        return this.configPresets;
+    }
+
+    /**
+     * Apply configuration preset to microphone
+     * @param {number} id - Microphone ID
+     * @param {string} presetName - Name of the preset to apply
+     * @returns {Object|null} Updated microphone or null
+     */
+    async applyConfigPreset(id, presetName) {
+        try {
+            const preset = this.configPresets[presetName];
+            if (!preset) {
+                throw new Error(`Unknown preset: ${presetName}`);
+            }
+
+            const microphone = await this.getMicrophoneById(id);
+            if (!microphone) {
+                return null;
+            }
+
+            const updatedConfig = {
+                ...microphone.config,
+                ...preset
+            };
+
+            return await this.updateMicrophone(id, { config: updatedConfig });
+        } catch (error) {
+            logger.error(`Error applying preset ${presetName} to microphone ${id}:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Update microphone status
+     * @param {number} id - Microphone ID
+     * @param {string} status - New status
+     * @param {Object} additionalInfo - Additional status information
+     */
+    async updateMicrophoneStatus(id, status, additionalInfo = {}) {
+        try {
+            const statusInfo = {
+                status,
+                timestamp: new Date().toISOString(),
+                ...additionalInfo
+            };
+
+            this.activeMicrophones.set(id, statusInfo);
+
+            // Update microphone in database
+            await this.updateMicrophone(id, { status });
+
+            // Emit status update event
+            this.emit('statusUpdate', { microphoneId: id, ...statusInfo });
+
+            // Notify monitoring clients
+            this.notifyMonitoringClients('status_update', { microphoneId: id, ...statusInfo });
+
+            logger.debug(`Updated microphone ${id} status to: ${status}`);
+        } catch (error) {
+            logger.error(`Error updating microphone ${id} status:`, error);
+        }
+    }
+
+    /**
+     * Get real-time status of a microphone
+     * @param {number} id - Microphone ID
+     * @returns {Object|null} Status information
+     */
+    getMicrophoneStatus(id) {
+        return this.activeMicrophones.get(id) || null;
+    }
+
+    /**
+     * Get real-time status of all microphones
+     * @returns {Object} Map of microphone statuses
+     */
+    getAllMicrophoneStatuses() {
+        return Object.fromEntries(this.activeMicrophones);
+    }
+
+    /**
+     * Add monitoring client for real-time updates
+     * @param {WebSocket} client - WebSocket client
+     */
+    addMonitoringClient(client) {
+        this.monitoringClients.add(client);
+        logger.debug(`Added monitoring client. Total clients: ${this.monitoringClients.size}`);
+
+        // Send current status to new client
+        const statuses = this.getAllMicrophoneStatuses();
+        client.send(JSON.stringify({
+            type: 'initial_status',
+            data: statuses
+        }));
+    }
+
+    /**
+     * Remove monitoring client
+     * @param {WebSocket} client - WebSocket client
+     */
+    removeMonitoringClient(client) {
+        this.monitoringClients.delete(client);
+        logger.debug(`Removed monitoring client. Total clients: ${this.monitoringClients.size}`);
+    }
+
+    /**
+     * Notify all monitoring clients of updates
+     * @param {string} type - Message type
+     * @param {Object} data - Message data
+     */
+    notifyMonitoringClients(type, data) {
+        const message = JSON.stringify({ type, data });
+
+        for (const client of this.monitoringClients) {
+            try {
+                if (client.readyState === 1) { // WebSocket.OPEN
+                    client.send(message);
+                }
+            } catch (error) {
+                logger.error('Error sending message to monitoring client:', error);
+                this.monitoringClients.delete(client);
+            }
+        }
+    }
+
+    /**
+     * Bulk operations for multiple microphones
+     * @param {Array} microphoneIds - Array of microphone IDs
+     * @param {string} operation - Operation to perform ('start', 'stop', 'delete', 'update')
+     * @param {Object} operationData - Data for the operation
+     * @returns {Object} Results of bulk operation
+     */
+    async bulkOperation(microphoneIds, operation, operationData = {}) {
+        const results = {
+            success: [],
+            failed: [],
+            total: microphoneIds.length
+        };
+
+        for (const id of microphoneIds) {
+            try {
+                let result;
+                switch (operation) {
+                    case 'delete':
+                        result = await this.deleteMicrophone(id);
+                        break;
+                    case 'update':
+                        result = await this.updateMicrophone(id, operationData);
+                        break;
+                    case 'start':
+                        await this.updateMicrophoneStatus(id, 'active', operationData);
+                        result = true;
+                        break;
+                    case 'stop':
+                        await this.updateMicrophoneStatus(id, 'inactive', operationData);
+                        result = true;
+                        break;
+                    default:
+                        throw new Error(`Unknown operation: ${operation}`);
+                }
+
+                if (result) {
+                    results.success.push(id);
+                } else {
+                    results.failed.push({ id, error: 'Operation returned false' });
+                }
+            } catch (error) {
+                results.failed.push({ id, error: error.message });
+                logger.error(`Bulk operation ${operation} failed for microphone ${id}:`, error);
+            }
+        }
+
+        logger.info(`Bulk operation ${operation} completed: ${results.success.length}/${results.total} successful`);
+        return results;
+    }
+
+    /**
+     * Calibrate microphone
+     * @param {number} id - Microphone ID
+     * @param {string} calibrationType - Type of calibration ('sensitivity', 'noise_floor', 'frequency_response')
+     * @param {number} duration - Calibration duration in seconds
+     * @returns {Object} Calibration result
+     */
+    async calibrateMicrophone(id, calibrationType = 'sensitivity', duration = 10) {
+        try {
+            const microphone = await this.getMicrophoneById(id);
+            if (!microphone) {
+                return {
+                    success: false,
+                    error: 'Microphone not found'
+                };
+            }
+
+            logger.info(`🎤🔧 Starting ${calibrationType} calibration for microphone ${id}`);
+
+            // Simulate calibration process
+            const calibrationData = {
+                type: calibrationType,
+                duration: duration,
+                startTime: new Date().toISOString(),
+                status: 'in_progress'
+            };
+
+            // Update microphone status
+            await this.updateMicrophoneStatus(id, 'calibrating', calibrationData);
+
+            // Simulate calibration delay
+            await new Promise(resolve => setTimeout(resolve, duration * 1000));
+
+            // Generate calibration results based on type
+            let calibrationResults;
+            switch (calibrationType) {
+                case 'sensitivity':
+                    calibrationResults = {
+                        optimalSensitivity: 1.2,
+                        currentSensitivity: microphone.config.sensitivity,
+                        recommendedAdjustment: 0.2,
+                        noiseFloor: -45,
+                        dynamicRange: 85
+                    };
+                    break;
+                case 'noise_floor':
+                    calibrationResults = {
+                        noiseFloor: -42,
+                        ambientNoise: -38,
+                        recommendedThreshold: 0.15,
+                        qualityScore: 8.5
+                    };
+                    break;
+                case 'frequency_response':
+                    calibrationResults = {
+                        frequencyResponse: [
+                            { frequency: 100, amplitude: -3 },
+                            { frequency: 1000, amplitude: 0 },
+                            { frequency: 5000, amplitude: -1 },
+                            { frequency: 10000, amplitude: -5 }
+                        ],
+                        flatnessScore: 7.8,
+                        recommendedEQ: { low: 0, mid: 0, high: 2 }
+                    };
+                    break;
+                default:
+                    throw new Error(`Unknown calibration type: ${calibrationType}`);
+            }
+
+            const finalResult = {
+                success: true,
+                calibrationType,
+                duration,
+                completedAt: new Date().toISOString(),
+                results: calibrationResults,
+                recommendations: this.generateCalibrationRecommendations(calibrationType, calibrationResults)
+            };
+
+            // Update microphone status back to available
+            await this.updateMicrophoneStatus(id, 'available', {
+                lastCalibration: finalResult
+            });
+
+            logger.info(`✅ Calibration completed for microphone ${id}`);
+            return finalResult;
+
+        } catch (error) {
+            logger.error(`Error calibrating microphone ${id}:`, error);
+            await this.updateMicrophoneStatus(id, 'available');
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    /**
+     * Generate calibration recommendations
+     * @param {string} calibrationType - Type of calibration
+     * @param {Object} results - Calibration results
+     * @returns {Array} Array of recommendations
+     */
+    generateCalibrationRecommendations(calibrationType, results) {
+        const recommendations = [];
+
+        switch (calibrationType) {
+            case 'sensitivity':
+                if (Math.abs(results.recommendedAdjustment) > 0.1) {
+                    recommendations.push({
+                        type: 'adjustment',
+                        message: `Adjust sensitivity by ${results.recommendedAdjustment > 0 ? '+' : ''}${results.recommendedAdjustment}`,
+                        priority: 'medium'
+                    });
+                }
+                if (results.noiseFloor > -40) {
+                    recommendations.push({
+                        type: 'environment',
+                        message: 'Consider reducing ambient noise in the environment',
+                        priority: 'high'
+                    });
+                }
+                break;
+            case 'noise_floor':
+                if (results.qualityScore < 7) {
+                    recommendations.push({
+                        type: 'quality',
+                        message: 'Audio quality is below optimal. Check microphone placement and environment',
+                        priority: 'high'
+                    });
+                }
+                break;
+            case 'frequency_response':
+                if (results.flatnessScore < 8) {
+                    recommendations.push({
+                        type: 'eq',
+                        message: 'Apply recommended EQ settings to improve frequency response',
+                        priority: 'medium'
+                    });
+                }
+                break;
+        }
+
+        return recommendations;
+    }
+
+    /**
+     * Get microphone analytics
+     * @param {string} timeRange - Time range for analytics ('1h', '24h', '7d', '30d')
+     * @param {Array} microphoneIds - Optional array of microphone IDs to filter
+     * @returns {Object} Analytics data
+     */
+    async getMicrophoneAnalytics(timeRange = '24h', microphoneIds = null) {
+        try {
+            const microphones = await this.getAllMicrophones();
+            const filteredMicrophones = microphoneIds
+                ? microphones.filter(mic => microphoneIds.includes(mic.id))
+                : microphones;
+
+            // Generate mock analytics data
+            const analytics = {
+                timeRange,
+                generatedAt: new Date().toISOString(),
+                summary: {
+                    totalMicrophones: filteredMicrophones.length,
+                    activeMicrophones: filteredMicrophones.filter(mic => mic.status === 'active').length,
+                    averageUsage: 65.4,
+                    totalRecordingTime: 1247, // minutes
+                    qualityScore: 8.2
+                },
+                usage: {
+                    byHour: Array.from({ length: 24 }, (_, i) => ({
+                        hour: i,
+                        usage: Math.random() * 100,
+                        activeCount: Math.floor(Math.random() * filteredMicrophones.length)
+                    })),
+                    byMicrophone: filteredMicrophones.map(mic => ({
+                        id: mic.id,
+                        name: mic.name,
+                        usage: Math.random() * 100,
+                        recordingTime: Math.floor(Math.random() * 300),
+                        qualityScore: 7 + Math.random() * 3
+                    }))
+                },
+                performance: {
+                    averageLatency: 12.5,
+                    dropoutRate: 0.02,
+                    errorRate: 0.001,
+                    peakConcurrentUsers: Math.floor(Math.random() * 10) + 1
+                },
+                issues: [
+                    {
+                        microphoneId: filteredMicrophones[0]?.id,
+                        type: 'quality',
+                        message: 'Intermittent audio quality issues detected',
+                        severity: 'medium',
+                        timestamp: new Date(Date.now() - 3600000).toISOString()
+                    }
+                ].filter(issue => issue.microphoneId) // Remove if no microphones
+            };
+
+            return analytics;
+
+        } catch (error) {
+            logger.error('Error generating microphone analytics:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get microphone health status
+     * @param {number} id - Microphone ID
+     * @returns {Object} Health status
+     */
+    async getMicrophoneHealth(id) {
+        try {
+            const microphone = await this.getMicrophoneById(id);
+            if (!microphone) {
+                return null;
+            }
+
+            const status = this.getMicrophoneStatus(id);
+
+            // Generate health metrics
+            const health = {
+                overall: 'good', // good, fair, poor
+                score: 85, // 0-100
+                metrics: {
+                    connectivity: { status: 'good', score: 95 },
+                    audioQuality: { status: 'good', score: 88 },
+                    latency: { status: 'good', score: 92 },
+                    stability: { status: 'fair', score: 78 }
+                },
+                recommendations: [
+                    'Consider updating microphone drivers',
+                    'Check for environmental noise sources'
+                ],
+                lastChecked: new Date().toISOString()
+            };
+
+            // Adjust based on current status
+            if (status?.status === 'error') {
+                health.overall = 'poor';
+                health.score = 25;
+                health.metrics.connectivity.status = 'poor';
+                health.metrics.connectivity.score = 10;
+            }
+
+            return health;
+
+        } catch (error) {
+            logger.error(`Error getting microphone health for ${id}:`, error);
+            return null;
+        }
+    }
+
+    /**
+     * Export microphone configuration
+     * @param {number} id - Microphone ID
+     * @returns {Object} Exportable configuration
+     */
+    async exportMicrophoneConfig(id) {
+        try {
+            const microphone = await this.getMicrophoneById(id);
+            if (!microphone) {
+                return null;
+            }
+
+            return {
+                version: '1.0',
+                exportedAt: new Date().toISOString(),
+                microphone: {
+                    name: microphone.name,
+                    deviceId: microphone.deviceId,
+                    type: microphone.type,
+                    config: microphone.config,
+                    capabilities: microphone.capabilities
+                }
+            };
+
+        } catch (error) {
+            logger.error(`Error exporting microphone config for ${id}:`, error);
+            return null;
+        }
+    }
+
+    /**
+     * Import microphone configuration
+     * @param {Object} configData - Configuration data to import
+     * @returns {Object} Import result
+     */
+    async importMicrophoneConfig(configData) {
+        try {
+            if (!configData.microphone) {
+                throw new Error('Invalid configuration data');
+            }
+
+            const microphoneData = {
+                ...configData.microphone,
+                name: `${configData.microphone.name} (Imported)`,
+                created: new Date().toISOString()
+            };
+
+            const newMicrophone = await this.createMicrophone(microphoneData);
+
+            return {
+                success: true,
+                microphone: newMicrophone,
+                message: 'Configuration imported successfully'
+            };
+
+        } catch (error) {
+            logger.error('Error importing microphone config:', error);
             return {
                 success: false,
                 error: error.message

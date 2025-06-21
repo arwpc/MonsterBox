@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>🎤 <%= title %></h1>
+    
+    <div class="monitor-header">
+        <div class="status-summary">
+            <div class="status-card">
+                <h3>Total Microphones</h3>
+                <span id="totalCount"><%= microphones.length %></span>
+            </div>
+            <div class="status-card">
+                <h3>Active</h3>
+                <span id="activeCount">0</span>
+            </div>
+            <div class="status-card">
+                <h3>Available</h3>
+                <span id="availableCount">0</span>
+            </div>
+            <div class="status-card">
+                <h3>Recording</h3>
+                <span id="recordingCount">0</span>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <button id="refreshBtn" class="button">🔄 Refresh</button>
+            <button id="bulkStartBtn" class="button">▶️ Start Selected</button>
+            <button id="bulkStopBtn" class="button">⏹️ Stop Selected</button>
+            <button id="presetBtn" class="button">⚙️ Apply Preset</button>
+        </div>
+    </div>
+
+    <div class="microphone-grid">
+        <% microphones.forEach(function(microphone) { %>
+            <div class="microphone-card" data-id="<%= microphone.id %>">
+                <div class="microphone-header">
+                    <input type="checkbox" class="microphone-select" value="<%= microphone.id %>">
+                    <h3><%= microphone.name %></h3>
+                    <span class="status-indicator" id="status-<%= microphone.id %>">⚪ Unknown</span>
+                </div>
+                
+                <div class="microphone-info">
+                    <div class="info-row">
+                        <span class="label">Device:</span>
+                        <span class="value"><%= microphone.deviceId || 'default' %></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Sample Rate:</span>
+                        <span class="value"><%= microphone.sampleRate || 16000 %> Hz</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Channels:</span>
+                        <span class="value"><%= microphone.channels || 1 %></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Sensitivity:</span>
+                        <span class="value"><%= microphone.sensitivity || 1.0 %></span>
+                    </div>
+                </div>
+
+                <div class="audio-level-container">
+                    <div class="audio-level-label">Audio Level</div>
+                    <div class="audio-level-bar">
+                        <div class="audio-level-fill" id="level-<%= microphone.id %>"></div>
+                    </div>
+                    <div class="audio-level-value" id="level-value-<%= microphone.id %>">0%</div>
+                </div>
+
+                <div class="microphone-controls">
+                    <button class="button small-btn test-btn" onclick="testMicrophone(<%= microphone.id %>)">🧪 Test</button>
+                    <button class="button small-btn" onclick="startMonitoring(<%= microphone.id %>)">👁️ Monitor</button>
+                    <button class="button small-btn" onclick="editMicrophone(<%= microphone.id %>)">✏️ Edit</button>
+                    <select class="preset-select" data-id="<%= microphone.id %>">
+                        <option value="">Select Preset...</option>
+                        <option value="speech-recognition">Speech Recognition</option>
+                        <option value="high-quality-recording">High Quality</option>
+                        <option value="noise-reduction">Noise Reduction</option>
+                        <option value="low-latency">Low Latency</option>
+                    </select>
+                </div>
+
+                <div class="test-results" id="test-<%= microphone.id %>" style="display: none;">
+                    <div class="test-status"></div>
+                    <pre class="test-output"></pre>
+                </div>
+            </div>
+        <% }); %>
+    </div>
+
+    <div class="real-time-charts">
+        <div class="chart-container">
+            <h3>Audio Levels Overview</h3>
+            <canvas id="audioLevelsChart"></canvas>
+        </div>
+        <div class="chart-container">
+            <h3>Microphone Activity</h3>
+            <canvas id="activityChart"></canvas>
+        </div>
+    </div>
+
+    <style>
+        .monitor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            border-radius: 8px;
+        }
+
+        .status-summary {
+            display: flex;
+            gap: 20px;
+        }
+
+        .status-card {
+            text-align: center;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            border-radius: 8px;
+            min-width: 100px;
+        }
+
+        .status-card h3 {
+            margin: 0 0 10px 0;
+            color: #00ff00;
+            font-size: 14px;
+        }
+
+        .status-card span {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        .control-panel {
+            display: flex;
+            gap: 10px;
+        }
+
+        .microphone-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .microphone-card {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            transition: border-color 0.3s ease;
+        }
+
+        .microphone-card:hover {
+            border-color: rgba(0, 255, 0, 0.6);
+        }
+
+        .microphone-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(0, 255, 0, 0.3);
+        }
+
+        .microphone-header h3 {
+            flex: 1;
+            margin: 0;
+            color: #00ff00;
+        }
+
+        .microphone-select {
+            width: auto;
+        }
+
+        .status-indicator {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .microphone-info {
+            margin-bottom: 15px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .info-row .label {
+            color: #888;
+            font-size: 12px;
+        }
+
+        .info-row .value {
+            color: #ffffff;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .audio-level-container {
+            margin-bottom: 15px;
+        }
+
+        .audio-level-label {
+            color: #00ff00;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .audio-level-bar {
+            width: 100%;
+            height: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .audio-level-fill {
+            height: 100%;
+            background: linear-gradient(to right, #00ff00, #ffff00, #ff0000);
+            width: 0%;
+            transition: width 0.1s ease;
+        }
+
+        .audio-level-value {
+            text-align: center;
+            color: #ffffff;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .microphone-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+
+        .preset-select {
+            flex: 1;
+            min-width: 150px;
+            padding: 4px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 255, 0, 0.5);
+            border-radius: 4px;
+            color: #ffffff;
+            font-size: 12px;
+        }
+
+        .test-results {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 100, 255, 0.3);
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        .test-status {
+            margin-bottom: 10px;
+            padding: 5px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .test-output {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            padding: 10px;
+            color: #ffffff;
+            font-family: monospace;
+            font-size: 11px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .real-time-charts {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .chart-container {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .chart-container h3 {
+            color: #00ff00;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .chart-container canvas {
+            max-height: 300px;
+        }
+    </style>
+
+    <script>
+        let audioLevelsChart;
+        let activityChart;
+        let monitoringInterval;
+        let websocket;
+
+        $(document).ready(function() {
+            initializeCharts();
+            initializeWebSocket();
+            loadMicrophoneStatuses();
+            
+            // Set up periodic updates
+            monitoringInterval = setInterval(updateMicrophoneStatuses, 2000);
+            
+            // Event handlers
+            $('#refreshBtn').click(function() {
+                location.reload();
+            });
+            
+            $('#bulkStartBtn').click(function() {
+                performBulkOperation('start');
+            });
+            
+            $('#bulkStopBtn').click(function() {
+                performBulkOperation('stop');
+            });
+            
+            $('#presetBtn').click(function() {
+                applyPresetToSelected();
+            });
+            
+            // Preset selection handlers
+            $('.preset-select').change(function() {
+                const microphoneId = $(this).data('id');
+                const presetName = $(this).val();
+                if (presetName) {
+                    applyPreset(microphoneId, presetName);
+                }
+            });
+        });
+
+        function initializeCharts() {
+            // Audio Levels Chart
+            const audioCtx = document.getElementById('audioLevelsChart').getContext('2d');
+            audioLevelsChart = new Chart(audioCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Audio Level (%)',
+                        data: [],
+                        backgroundColor: 'rgba(0, 255, 0, 0.6)',
+                        borderColor: 'rgba(0, 255, 0, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+
+            // Activity Chart
+            const activityCtx = document.getElementById('activityChart').getContext('2d');
+            activityChart = new Chart(activityCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Active', 'Inactive', 'Recording', 'Error'],
+                    datasets: [{
+                        data: [0, 0, 0, 0],
+                        backgroundColor: [
+                            'rgba(0, 255, 0, 0.6)',
+                            'rgba(128, 128, 128, 0.6)',
+                            'rgba(255, 165, 0, 0.6)',
+                            'rgba(255, 0, 0, 0.6)'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true
+                }
+            });
+        }
+
+        function initializeWebSocket() {
+            // WebSocket connection for real-time updates
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws/microphone-monitor`;
+
+            try {
+                websocket = new WebSocket(wsUrl);
+
+                websocket.onopen = function() {
+                    console.log('WebSocket connected for microphone monitoring');
+                };
+
+                websocket.onmessage = function(event) {
+                    const data = JSON.parse(event.data);
+                    handleWebSocketMessage(data);
+                };
+
+                websocket.onclose = function() {
+                    console.log('WebSocket disconnected, attempting to reconnect...');
+                    setTimeout(initializeWebSocket, 5000);
+                };
+
+                websocket.onerror = function(error) {
+                    console.error('WebSocket error:', error);
+                };
+            } catch (error) {
+                console.error('Failed to initialize WebSocket:', error);
+            }
+        }
+
+        function handleWebSocketMessage(data) {
+            switch (data.type) {
+                case 'status_update':
+                    updateMicrophoneStatus(data.data.microphoneId, data.data);
+                    break;
+                case 'audio_level':
+                    updateAudioLevel(data.data.microphoneId, data.data.level);
+                    break;
+                case 'initial_status':
+                    updateAllStatuses(data.data);
+                    break;
+            }
+        }
+
+        function loadMicrophoneStatuses() {
+            axios.get('/parts/api/microphone/status')
+                .then(function(response) {
+                    updateAllStatuses(response.data);
+                })
+                .catch(function(error) {
+                    console.error('Error loading microphone statuses:', error);
+                });
+        }
+
+        function updateMicrophoneStatuses() {
+            loadMicrophoneStatuses();
+        }
+
+        function updateAllStatuses(statuses) {
+            let activeCount = 0;
+            let availableCount = 0;
+            let recordingCount = 0;
+
+            Object.keys(statuses).forEach(microphoneId => {
+                const status = statuses[microphoneId];
+                updateMicrophoneStatus(microphoneId, status);
+
+                switch (status.status) {
+                    case 'active':
+                        activeCount++;
+                        break;
+                    case 'available':
+                        availableCount++;
+                        break;
+                    case 'recording':
+                        recordingCount++;
+                        break;
+                }
+            });
+
+            $('#activeCount').text(activeCount);
+            $('#availableCount').text(availableCount);
+            $('#recordingCount').text(recordingCount);
+
+            updateActivityChart(activeCount, availableCount, recordingCount);
+        }
+
+        function updateMicrophoneStatus(microphoneId, statusData) {
+            const statusElement = $(`#status-${microphoneId}`);
+            const card = $(`.microphone-card[data-id="${microphoneId}"]`);
+
+            if (statusElement.length) {
+                let statusText = '⚪ Unknown';
+                let statusClass = 'status-unknown';
+
+                switch (statusData.status) {
+                    case 'active':
+                        statusText = '🟢 Active';
+                        statusClass = 'status-active';
+                        break;
+                    case 'recording':
+                        statusText = '🔴 Recording';
+                        statusClass = 'status-recording';
+                        break;
+                    case 'available':
+                        statusText = '🟡 Available';
+                        statusClass = 'status-available';
+                        break;
+                    case 'error':
+                        statusText = '🔴 Error';
+                        statusClass = 'status-error';
+                        break;
+                }
+
+                statusElement.text(statusText).removeClass().addClass(`status-indicator ${statusClass}`);
+                card.removeClass('status-active status-recording status-available status-error status-unknown')
+                    .addClass(statusClass);
+            }
+        }
+
+        function updateAudioLevel(microphoneId, level) {
+            const levelFill = $(`#level-${microphoneId}`);
+            const levelValue = $(`#level-value-${microphoneId}`);
+
+            if (levelFill.length) {
+                const percentage = Math.round(level * 100);
+                levelFill.css('width', `${percentage}%`);
+                levelValue.text(`${percentage}%`);
+            }
+
+            // Update chart
+            updateAudioLevelsChart();
+        }
+
+        function updateAudioLevelsChart() {
+            const labels = [];
+            const data = [];
+
+            $('.microphone-card').each(function() {
+                const microphoneId = $(this).data('id');
+                const name = $(this).find('h3').text();
+                const levelText = $(`#level-value-${microphoneId}`).text();
+                const level = parseInt(levelText.replace('%', '')) || 0;
+
+                labels.push(name);
+                data.push(level);
+            });
+
+            audioLevelsChart.data.labels = labels;
+            audioLevelsChart.data.datasets[0].data = data;
+            audioLevelsChart.update('none');
+        }
+
+        function updateActivityChart(active, available, recording) {
+            const total = active + available + recording;
+            const errorCount = $('.status-error').length;
+
+            activityChart.data.datasets[0].data = [active, available, recording, errorCount];
+            activityChart.update('none');
+        }
+
+        function testMicrophone(microphoneId) {
+            const testArea = $(`#test-${microphoneId}`);
+            const testStatus = testArea.find('.test-status');
+            const testOutput = testArea.find('.test-output');
+
+            testArea.show();
+            testStatus.text('Testing microphone...').css('background', 'rgba(255, 165, 0, 0.2)');
+            testOutput.text('');
+
+            axios.post(`/parts/${microphoneId}/test`)
+                .then(function(response) {
+                    if (response.data.success) {
+                        testStatus.text('✅ Microphone test successful!').css('background', 'rgba(0, 255, 0, 0.2)');
+                    } else {
+                        testStatus.text('❌ Microphone test failed').css('background', 'rgba(255, 0, 0, 0.2)');
+                    }
+                    testOutput.text(JSON.stringify(response.data, null, 2));
+                })
+                .catch(function(error) {
+                    testStatus.text('❌ Error testing microphone').css('background', 'rgba(255, 0, 0, 0.2)');
+                    testOutput.text(`Error: ${error.message}`);
+                });
+        }
+
+        function startMonitoring(microphoneId) {
+            // Start real-time monitoring for this microphone
+            console.log(`Starting monitoring for microphone ${microphoneId}`);
+            // This would connect to the microphone WebSocket service
+        }
+
+        function editMicrophone(microphoneId) {
+            window.location.href = `/parts/microphone/${microphoneId}/edit?characterId=<%= character.id %>`;
+        }
+
+        function applyPreset(microphoneId, presetName) {
+            axios.post(`/parts/api/microphone/${microphoneId}/preset`, { presetName })
+                .then(function(response) {
+                    if (response.data.success) {
+                        console.log(`Applied preset ${presetName} to microphone ${microphoneId}`);
+                        // Refresh the page to show updated configuration
+                        setTimeout(() => location.reload(), 1000);
+                    }
+                })
+                .catch(function(error) {
+                    console.error('Error applying preset:', error);
+                    alert(`Error applying preset: ${error.response?.data?.error || error.message}`);
+                });
+        }
+
+        function performBulkOperation(operation) {
+            const selectedIds = $('.microphone-select:checked').map(function() {
+                return parseInt($(this).val());
+            }).get();
+
+            if (selectedIds.length === 0) {
+                alert('Please select at least one microphone');
+                return;
+            }
+
+            axios.post('/parts/api/microphone/bulk', {
+                microphoneIds: selectedIds,
+                operation: operation
+            })
+                .then(function(response) {
+                    const results = response.data;
+                    console.log(`Bulk ${operation} completed:`, results);
+
+                    if (results.failed.length > 0) {
+                        alert(`Operation completed with ${results.failed.length} failures. Check console for details.`);
+                    }
+
+                    // Refresh statuses
+                    setTimeout(updateMicrophoneStatuses, 1000);
+                })
+                .catch(function(error) {
+                    console.error(`Error performing bulk ${operation}:`, error);
+                    alert(`Error: ${error.response?.data?.error || error.message}`);
+                });
+        }
+
+        function applyPresetToSelected() {
+            const selectedIds = $('.microphone-select:checked').map(function() {
+                return parseInt($(this).val());
+            }).get();
+
+            if (selectedIds.length === 0) {
+                alert('Please select at least one microphone');
+                return;
+            }
+
+            const presetName = prompt('Enter preset name (speech-recognition, high-quality-recording, noise-reduction, low-latency):');
+            if (!presetName) return;
+
+            selectedIds.forEach(id => {
+                applyPreset(id, presetName);
+            });
+        }
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function() {
+            if (monitoringInterval) {
+                clearInterval(monitoringInterval);
+            }
+            if (websocket) {
+                websocket.close();
+            }
+        });
+    </script>
+</body>
+</html>
