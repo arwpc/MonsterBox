@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1><%= title %></h1>
+    
+    <form action="<%= action %>?characterId=<%= character.id %>" method="POST">
+        <% if (part.id) { %>
+            <input type="hidden" name="id" value="<%= part.id %>">
+        <% } %>
+        <input type="hidden" name="characterId" value="<%= character.id %>">
+        <input type="hidden" name="type" value="microphone">
+        
+        <div class="form-section">
+            <h3>🎤 Basic Microphone Settings</h3>
+            
+            <div class="form-group">
+                <label for="name">Microphone Name:</label>
+                <input type="text" id="name" name="name" value="<%= part.name || '' %>" required>
+                <small>Give your microphone a descriptive name</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="description">Description:</label>
+                <textarea id="description" name="description" rows="3"><%= part.description || '' %></textarea>
+                <small>Optional description of the microphone</small>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>🔧 Hardware Configuration</h3>
+            
+            <div class="form-group">
+                <label for="deviceId">Device ID:</label>
+                <input type="text" id="deviceId" name="deviceId" value="<%= part.deviceId || 'default' %>" placeholder="default">
+                <small>Audio device identifier (e.g., 'default', '/dev/audio0', or device index)</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="sampleRate">Sample Rate (Hz):</label>
+                <select id="sampleRate" name="sampleRate">
+                    <option value="8000" <%= part.sampleRate === 8000 ? 'selected' : '' %>>8000 Hz</option>
+                    <option value="16000" <%= part.sampleRate === 16000 || !part.sampleRate ? 'selected' : '' %>>16000 Hz (Recommended)</option>
+                    <option value="22050" <%= part.sampleRate === 22050 ? 'selected' : '' %>>22050 Hz</option>
+                    <option value="44100" <%= part.sampleRate === 44100 ? 'selected' : '' %>>44100 Hz</option>
+                    <option value="48000" <%= part.sampleRate === 48000 ? 'selected' : '' %>>48000 Hz</option>
+                </select>
+                <small>Higher sample rates provide better quality but use more resources</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="channels">Audio Channels:</label>
+                <select id="channels" name="channels">
+                    <option value="1" <%= part.channels === 1 || !part.channels ? 'selected' : '' %>>1 (Mono) - Recommended</option>
+                    <option value="2" <%= part.channels === 2 ? 'selected' : '' %>>2 (Stereo)</option>
+                </select>
+                <small>Mono is recommended for speech recognition</small>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>🎚️ Audio Processing</h3>
+            
+            <div class="form-group">
+                <label for="sensitivity">Sensitivity:</label>
+                <input type="range" id="sensitivity" name="sensitivity" min="0.1" max="3.0" step="0.1" value="<%= part.sensitivity || 1.0 %>">
+                <span id="sensitivityValue"><%= part.sensitivity || 1.0 %></span>
+                <small>Microphone input sensitivity (0.1 - 3.0)</small>
+            </div>
+            
+            <div class="form-group checkbox-group">
+                <label>
+                    <input type="checkbox" id="echoCancellation" name="echoCancellation" <%= part.echoCancellation !== false ? 'checked' : '' %>>
+                    Echo Cancellation
+                </label>
+                <small>Reduces echo and feedback</small>
+            </div>
+            
+            <div class="form-group checkbox-group">
+                <label>
+                    <input type="checkbox" id="noiseSuppression" name="noiseSuppression" <%= part.noiseSuppression !== false ? 'checked' : '' %>>
+                    Noise Suppression
+                </label>
+                <small>Reduces background noise</small>
+            </div>
+            
+            <div class="form-group checkbox-group">
+                <label>
+                    <input type="checkbox" id="autoGainControl" name="autoGainControl" <%= part.autoGainControl !== false ? 'checked' : '' %>>
+                    Auto Gain Control
+                </label>
+                <small>Automatically adjusts microphone gain</small>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>🗣️ Voice Activation</h3>
+            
+            <div class="form-group checkbox-group">
+                <label>
+                    <input type="checkbox" id="voiceActivation" name="voiceActivation" <%= part.voiceActivation ? 'checked' : '' %>>
+                    Voice Activation Detection
+                </label>
+                <small>Only process audio when voice is detected</small>
+            </div>
+            
+            <div class="form-group" id="voiceActivationThresholdDiv" style="display: <%= part.voiceActivation ? 'block' : 'none' %>;">
+                <label for="voiceActivationThreshold">Voice Activation Threshold:</label>
+                <input type="range" id="voiceActivationThreshold" name="voiceActivationThreshold" min="0.01" max="1.0" step="0.01" value="<%= part.voiceActivationThreshold || 0.1 %>">
+                <span id="thresholdValue"><%= part.voiceActivationThreshold || 0.1 %></span>
+                <small>Threshold for voice activation (0.01 - 1.0)</small>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="button primary-btn">💾 Save Microphone</button>
+            <button type="button" id="testMicrophoneButton" class="button test-btn">🧪 Test Microphone</button>
+            <a href="/parts?characterId=<%= character.id %>" class="button secondary-btn">↩️ Back to Parts</a>
+        </div>
+    </form>
+
+    <div id="testArea" class="test-section" style="display: none;">
+        <h3>🧪 Test Results</h3>
+        <div id="testStatus" class="test-status">Ready to test</div>
+        <pre id="testOutput" class="test-output"></pre>
+    </div>
+
+    <style>
+        .form-section {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .form-section h3 {
+            color: #00ff00;
+            margin-bottom: 15px;
+            border-bottom: 1px solid rgba(0, 255, 0, 0.3);
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #00ff00;
+            font-weight: bold;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 255, 0, 0.5);
+            border-radius: 4px;
+            color: #ffffff;
+        }
+
+        .form-group input[type="range"] {
+            width: 70%;
+            margin-right: 10px;
+        }
+
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            margin-right: 10px;
+        }
+
+        .form-group small {
+            display: block;
+            color: #888;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        .test-section {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 100, 255, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .test-status {
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .test-output {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            padding: 10px;
+            color: #ffffff;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        #sensitivityValue, #thresholdValue {
+            color: #00ff00;
+            font-weight: bold;
+            min-width: 40px;
+            display: inline-block;
+        }
+    </style>
+
+    <script>
+        // Update sensitivity value display
+        const sensitivitySlider = document.getElementById('sensitivity');
+        const sensitivityValue = document.getElementById('sensitivityValue');
+        if (sensitivitySlider && sensitivityValue) {
+            sensitivitySlider.addEventListener('input', function() {
+                sensitivityValue.textContent = this.value;
+            });
+        }
+
+        // Update threshold value display
+        const thresholdSlider = document.getElementById('voiceActivationThreshold');
+        const thresholdValue = document.getElementById('thresholdValue');
+        if (thresholdSlider && thresholdValue) {
+            thresholdSlider.addEventListener('input', function() {
+                thresholdValue.textContent = this.value;
+            });
+        }
+
+        // Toggle voice activation threshold visibility
+        const voiceActivationCheckbox = document.getElementById('voiceActivation');
+        const thresholdDiv = document.getElementById('voiceActivationThresholdDiv');
+        if (voiceActivationCheckbox && thresholdDiv) {
+            voiceActivationCheckbox.addEventListener('change', function() {
+                thresholdDiv.style.display = this.checked ? 'block' : 'none';
+            });
+        }
+
+        // Test microphone functionality
+        document.getElementById('testMicrophoneButton').addEventListener('click', function() {
+            const testArea = document.getElementById('testArea');
+            const testStatus = document.getElementById('testStatus');
+            const testOutput = document.getElementById('testOutput');
+            
+            testArea.style.display = 'block';
+            testStatus.textContent = 'Testing microphone...';
+            testStatus.style.background = 'rgba(255, 165, 0, 0.2)';
+            testOutput.textContent = '';
+
+            const deviceId = document.getElementById('deviceId').value;
+            const sampleRate = document.getElementById('sampleRate').value;
+            const channels = document.getElementById('channels').value;
+
+            axios.post('/execute-python-script', {
+                script: 'microphone_test.py',
+                args: ['test', deviceId, sampleRate, channels, '5']
+            })
+            .then(function(response) {
+                console.log('Test response:', response.data);
+                if (response.data.success) {
+                    testStatus.textContent = '✅ Microphone test successful!';
+                    testStatus.style.background = 'rgba(0, 255, 0, 0.2)';
+                } else {
+                    testStatus.textContent = '❌ Microphone test failed';
+                    testStatus.style.background = 'rgba(255, 0, 0, 0.2)';
+                }
+                testOutput.textContent = JSON.stringify(response.data, null, 2);
+            })
+            .catch(function(error) {
+                console.error('Error testing microphone:', error);
+                testStatus.textContent = '❌ Error testing microphone';
+                testStatus.style.background = 'rgba(255, 0, 0, 0.2)';
+                if (error.response) {
+                    testOutput.textContent = `Status: ${error.response.status}\nData: ${JSON.stringify(error.response.data, null, 2)}`;
+                } else if (error.request) {
+                    testOutput.textContent = 'No response received from server';
+                } else {
+                    testOutput.textContent = `Error: ${error.message}`;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

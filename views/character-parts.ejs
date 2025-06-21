@@ -111,6 +111,8 @@
                                             Dir: <%= part.directionPin %>, PWM: <%= part.pwmPin %>
                                         <% } else if (part.type === 'webcam') { %>
                                             Device: <%= part.devicePath %>, Resolution: <%= part.resolution %>
+                                        <% } else if (part.type === 'microphone') { %>
+                                            Device: <%= part.deviceId || 'default' %>, Rate: <%= part.sampleRate || 16000 %>Hz, Channels: <%= part.channels || 1 %>
                                         <% } else { %>
                                             <span class="text-muted">Configuration varies</span>
                                         <% } %>

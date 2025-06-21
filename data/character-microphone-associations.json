@@ -1,0 +1,25 @@
+[
+  {
+    "id": 1,
+    "characterId": 1,
+    "microphoneId": 1,
+    "assignedAt": "2025-06-21T17:04:23.162Z",
+    "status": "removed",
+    "removedAt": "2025-06-21T17:19:29.446Z"
+  },
+  {
+    "id": 2,
+    "characterId": 1,
+    "microphoneId": 1,
+    "assignedAt": "2025-06-21T17:04:23.210Z",
+    "status": "removed",
+    "removedAt": "2025-06-21T17:19:29.446Z"
+  },
+  {
+    "id": 3,
+    "characterId": 1,
+    "microphoneId": 1,
+    "assignedAt": "2025-06-21T17:19:29.491Z",
+    "status": "active"
+  }
+]

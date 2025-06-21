@@ -88,6 +88,66 @@
                 <input type="number" id="dutyCycle" name="dutyCycle" value="<%= part.dutyCycle || '' %>" min="0" max="100">
             </div>
         </div>
+        <div id="microphoneInputs" style="display: none;">
+            <div>
+                <label for="deviceId">Device ID:</label>
+                <input type="text" id="deviceId" name="deviceId" value="<%= part.deviceId || 'default' %>" placeholder="default">
+                <small>Audio device identifier (e.g., 'default', '/dev/audio0', or device index)</small>
+            </div>
+            <div>
+                <label for="sampleRate">Sample Rate (Hz):</label>
+                <select id="sampleRate" name="sampleRate">
+                    <option value="8000" <%= part.sampleRate === 8000 ? 'selected' : '' %>>8000</option>
+                    <option value="16000" <%= part.sampleRate === 16000 || !part.sampleRate ? 'selected' : '' %>>16000</option>
+                    <option value="22050" <%= part.sampleRate === 22050 ? 'selected' : '' %>>22050</option>
+                    <option value="44100" <%= part.sampleRate === 44100 ? 'selected' : '' %>>44100</option>
+                    <option value="48000" <%= part.sampleRate === 48000 ? 'selected' : '' %>>48000</option>
+                </select>
+            </div>
+            <div>
+                <label for="channels">Channels:</label>
+                <select id="channels" name="channels">
+                    <option value="1" <%= part.channels === 1 || !part.channels ? 'selected' : '' %>>1 (Mono)</option>
+                    <option value="2" <%= part.channels === 2 ? 'selected' : '' %>>2 (Stereo)</option>
+                </select>
+            </div>
+            <div>
+                <label for="sensitivity">Sensitivity:</label>
+                <input type="range" id="sensitivity" name="sensitivity" min="0.1" max="3.0" step="0.1" value="<%= part.sensitivity || 1.0 %>">
+                <span id="sensitivityValue"><%= part.sensitivity || 1.0 %></span>
+                <small>Microphone input sensitivity (0.1 - 3.0)</small>
+            </div>
+            <div>
+                <label>
+                    <input type="checkbox" id="echoCancellation" name="echoCancellation" <%= part.echoCancellation !== false ? 'checked' : '' %>>
+                    Echo Cancellation
+                </label>
+            </div>
+            <div>
+                <label>
+                    <input type="checkbox" id="noiseSuppression" name="noiseSuppression" <%= part.noiseSuppression !== false ? 'checked' : '' %>>
+                    Noise Suppression
+                </label>
+            </div>
+            <div>
+                <label>
+                    <input type="checkbox" id="autoGainControl" name="autoGainControl" <%= part.autoGainControl !== false ? 'checked' : '' %>>
+                    Auto Gain Control
+                </label>
+            </div>
+            <div>
+                <label>
+                    <input type="checkbox" id="voiceActivation" name="voiceActivation" <%= part.voiceActivation ? 'checked' : '' %>>
+                    Voice Activation Detection
+                </label>
+            </div>
+            <div id="voiceActivationThresholdDiv" style="display: <%= part.voiceActivation ? 'block' : 'none' %>;">
+                <label for="voiceActivationThreshold">Voice Activation Threshold:</label>
+                <input type="range" id="voiceActivationThreshold" name="voiceActivationThreshold" min="0.01" max="1.0" step="0.01" value="<%= part.voiceActivationThreshold || 0.1 %>">
+                <span id="thresholdValue"><%= part.voiceActivationThreshold || 0.1 %></span>
+                <small>Threshold for voice activation (0.01 - 1.0)</small>
+            </div>
+        </div>
         <button type="submit">Save Part</button>
     </form>
     <button type="button" id="testPartButton" onclick="testPart()">Test Part</button>
@@ -109,10 +169,41 @@
             document.getElementById('sensorInputs').style.display = type === 'sensor' ? 'block' : 'none';
             document.getElementById('ledInputs').style.display = type === 'led' ? 'block' : 'none';
             document.getElementById('servoInputs').style.display = type === 'servo' ? 'block' : 'none';
+            document.getElementById('microphoneInputs').style.display = type === 'microphone' ? 'block' : 'none';
         }
 
         // Call toggleInputs on page load to set initial state
         toggleInputs();
+
+        // Microphone-specific JavaScript
+        document.addEventListener('DOMContentLoaded', function() {
+            // Update sensitivity value display
+            const sensitivitySlider = document.getElementById('sensitivity');
+            const sensitivityValue = document.getElementById('sensitivityValue');
+            if (sensitivitySlider && sensitivityValue) {
+                sensitivitySlider.addEventListener('input', function() {
+                    sensitivityValue.textContent = this.value;
+                });
+            }
+
+            // Update threshold value display
+            const thresholdSlider = document.getElementById('voiceActivationThreshold');
+            const thresholdValue = document.getElementById('thresholdValue');
+            if (thresholdSlider && thresholdValue) {
+                thresholdSlider.addEventListener('input', function() {
+                    thresholdValue.textContent = this.value;
+                });
+            }
+
+            // Toggle voice activation threshold visibility
+            const voiceActivationCheckbox = document.getElementById('voiceActivation');
+            const thresholdDiv = document.getElementById('voiceActivationThresholdDiv');
+            if (voiceActivationCheckbox && thresholdDiv) {
+                voiceActivationCheckbox.addEventListener('change', function() {
+                    thresholdDiv.style.display = this.checked ? 'block' : 'none';
+                });
+            }
+        });
 
         function testPart() {
             const type = document.getElementById('type').value;
@@ -145,6 +236,15 @@
                 case 'sensor':
                     script = 'sensor_control.py';
                     args = [document.getElementById('gpioPin').value, '5'];
+                    break;
+                case 'microphone':
+                    script = 'microphone_test.py';
+                    args = [
+                        document.getElementById('deviceId').value,
+                        document.getElementById('sampleRate').value,
+                        document.getElementById('channels').value,
+                        '5' // test duration in seconds
+                    ];
                     break;
                 default:
                     testStatus.textContent = 'Error: Unknown part type';

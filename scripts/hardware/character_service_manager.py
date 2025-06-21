@@ -21,6 +21,7 @@ from light_websocket_service import LightWebSocketService
 from actuator_websocket_service import ActuatorWebSocketService
 from sensor_websocket_service import SensorWebSocketService
 from webcam_websocket_service import WebcamWebSocketService
+from microphone_websocket_service import MicrophoneWebSocketService
 from service_registry import ServiceRegistry
 
 # Configure logging
@@ -59,6 +60,7 @@ class CharacterServiceManager:
             "light": ServiceConfig("light", LightWebSocketService, 8772),
             "sensor": ServiceConfig("sensor", SensorWebSocketService, 8773),
             "webcam": ServiceConfig("webcam", WebcamWebSocketService, 8774),
+            "microphone": ServiceConfig("microphone", MicrophoneWebSocketService, 8776),
             "actuator": ServiceConfig("actuator", ActuatorWebSocketService, 8775),
         }
         
@@ -145,6 +147,8 @@ class CharacterServiceManager:
                         requirements["light"] = {"enabled": True}
                     if "camera" in services:
                         requirements["webcam"] = {"enabled": True}
+                    if any("microphone" in s or "audio" in s or "stt" in s for s in services):
+                        requirements["microphone"] = {"enabled": True}
                     if "linear-actuator" in services:
                         requirements["actuator"] = {"enabled": True}
                     if any("sensor" in s for s in services):
@@ -158,6 +162,7 @@ class CharacterServiceManager:
             "light": {"enabled": True},
             "sensor": {"enabled": False},
             "webcam": {"enabled": False},
+            "microphone": {"enabled": False},
             "actuator": {"enabled": False}
         }
         

@@ -81,7 +81,9 @@
     "test:topmediai-tts": "cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js tests/topmediai-tts-integration.test.js",
     "test:openai-whisper": "cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js tests/openai-whisper-stt.test.js",
     "test:voice-chat-routes": "cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js tests/voice-chat-routes.test.js",
-    "test:voice-all": "cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js tests/voice-interaction-system.test.js tests/topmediai-tts-integration.test.js tests/openai-whisper-stt.test.js tests/voice-chat-routes.test.js"
+    "test:voice-all": "cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js tests/voice-interaction-system.test.js tests/topmediai-tts-integration.test.js tests/openai-whisper-stt.test.js tests/voice-chat-routes.test.js",
+    "test:microphone": "node tests/microphone-integration-test.js",
+    "test:microphone-stt": "node tests/microphone-integration-test.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.53.0",
