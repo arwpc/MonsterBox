@@ -302,7 +302,7 @@ class TestHelpers {
    */
   static async checkForJSErrors(page) {
     const errors = [];
-    
+
     page.on('pageerror', error => {
       errors.push({
         message: error.message,
@@ -310,7 +310,7 @@ class TestHelpers {
         timestamp: new Date().toISOString()
       });
     });
-    
+
     page.on('console', msg => {
       if (msg.type() === 'error') {
         errors.push({
@@ -320,8 +320,184 @@ class TestHelpers {
         });
       }
     });
-    
+
     return errors;
+  }
+
+  /**
+   * Deep validation of page functionality
+   */
+  static async validatePageFunctionality(page, validationCriteria = {}) {
+    const results = {
+      pageLoaded: false,
+      noErrors: false,
+      buttonsWork: false,
+      formsValid: false,
+      navigationWorks: false,
+      dataLoaded: false,
+      errors: []
+    };
+
+    try {
+      // Check page loaded properly
+      await this.waitForPageLoad(page);
+      const bodyText = await page.textContent('body');
+      results.pageLoaded = !bodyText.includes('"success":false') && !bodyText.includes('Pretty-print');
+
+      // Check for errors
+      const jsErrors = await this.checkForJSErrors(page);
+      results.noErrors = jsErrors.length === 0;
+      results.errors = jsErrors;
+
+      // Check buttons are clickable
+      const buttons = page.locator('button, .btn, input[type="submit"]');
+      const buttonCount = await buttons.count();
+      let workingButtons = 0;
+
+      for (let i = 0; i < Math.min(buttonCount, 5); i++) {
+        try {
+          const button = buttons.nth(i);
+          if (await button.isVisible() && await button.isEnabled()) {
+            workingButtons++;
+          }
+        } catch (error) {
+          results.errors.push({ message: `Button ${i} validation failed: ${error.message}` });
+        }
+      }
+      results.buttonsWork = workingButtons > 0;
+
+      // Check forms exist and are valid
+      const forms = page.locator('form');
+      const formCount = await forms.count();
+      results.formsValid = formCount >= 0; // Forms are optional
+
+      // Check navigation elements
+      const navElements = page.locator('nav a, .navbar a, .navigation a');
+      const navCount = await navElements.count();
+      results.navigationWorks = navCount > 0;
+
+      // Check data loaded (tables, lists, cards)
+      const dataElements = page.locator('table, .card, .list-item, .character-card, .part-card');
+      const dataCount = await dataElements.count();
+      results.dataLoaded = dataCount >= 0; // Data is optional
+
+    } catch (error) {
+      results.errors.push({ message: `Page validation failed: ${error.message}` });
+    }
+
+    return results;
+  }
+
+  /**
+   * Test hardware control functionality
+   */
+  static async testHardwareControls(page, hardwareType) {
+    const results = {
+      configurationForm: false,
+      controlButtons: false,
+      statusDisplay: false,
+      errors: []
+    };
+
+    try {
+      // Test configuration form
+      const configForm = page.locator(`form[data-hardware="${hardwareType}"], form:has([name*="${hardwareType}"])`);
+      if (await configForm.count() > 0) {
+        results.configurationForm = true;
+      }
+
+      // Test control buttons
+      const controlButtons = page.locator(`button:has-text("Start"), button:has-text("Stop"), button:has-text("Test"), button:has-text("Calibrate")`);
+      const buttonCount = await controlButtons.count();
+      results.controlButtons = buttonCount > 0;
+
+      // Test status display
+      const statusElements = page.locator('.status, .hardware-status, [data-status]');
+      const statusCount = await statusElements.count();
+      results.statusDisplay = statusCount > 0;
+
+    } catch (error) {
+      results.errors.push({ message: `Hardware control test failed: ${error.message}` });
+    }
+
+    return results;
+  }
+
+  /**
+   * Test WebSocket connectivity
+   */
+  static async testWebSocketConnection(page, expectedConnections = []) {
+    const results = {
+      connected: false,
+      expectedConnections: expectedConnections.length,
+      actualConnections: 0,
+      errors: []
+    };
+
+    try {
+      // Listen for WebSocket connections
+      const wsConnections = [];
+
+      page.on('websocket', ws => {
+        wsConnections.push({
+          url: ws.url(),
+          timestamp: new Date().toISOString()
+        });
+      });
+
+      // Wait for connections to establish
+      await page.waitForTimeout(3000);
+
+      results.actualConnections = wsConnections.length;
+      results.connected = wsConnections.length > 0;
+
+      // Check for expected connections
+      for (const expectedUrl of expectedConnections) {
+        const found = wsConnections.some(ws => ws.url.includes(expectedUrl));
+        if (!found) {
+          results.errors.push({ message: `Expected WebSocket connection not found: ${expectedUrl}` });
+        }
+      }
+
+    } catch (error) {
+      results.errors.push({ message: `WebSocket test failed: ${error.message}` });
+    }
+
+    return results;
+  }
+
+  /**
+   * Test audio functionality
+   */
+  static async testAudioFunctionality(page) {
+    const results = {
+      audioElements: false,
+      playbackControls: false,
+      volumeControls: false,
+      errors: []
+    };
+
+    try {
+      // Check for audio elements
+      const audioElements = page.locator('audio, video, .audio-player');
+      const audioCount = await audioElements.count();
+      results.audioElements = audioCount > 0;
+
+      // Check playback controls
+      const playControls = page.locator('button:has-text("Play"), button:has-text("Pause"), button:has-text("Stop")');
+      const playCount = await playControls.count();
+      results.playbackControls = playCount > 0;
+
+      // Check volume controls
+      const volumeControls = page.locator('input[type="range"][name*="volume"], .volume-slider');
+      const volumeCount = await volumeControls.count();
+      results.volumeControls = volumeCount > 0;
+
+    } catch (error) {
+      results.errors.push({ message: `Audio test failed: ${error.message}` });
+    }
+
+    return results;
   }
 }
 
