@@ -1,10 +1,9 @@
 {
   "defaultProvider": "openai",
   "defaultModel": "gpt-4",
-  "defaultTemperature": 0.8,
-  "defaultMaxTokens": 150,
-  "contextLength": 5,
-  "responseTimeout": 30000,
-  "created": "2025-06-19T00:00:00.000Z",
-  "lastModified": "2025-06-19T00:00:00.000Z"
+  "defaultTemperature": 0.7,
+  "defaultMaxTokens": 100,
+  "contextLength": 3,
+  "responseTimeout": 20000,
+  "testMode": true
 }

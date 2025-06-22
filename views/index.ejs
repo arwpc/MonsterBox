@@ -1,330 +1,130 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="monsterbox">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title || 'MonsterBox Control Panel' %></title>
 
-    <!-- Preload critical fonts -->
+    <!-- Google Fonts -->
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&family=Creepster&display=swap" as="style">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&family=Creepster&display=swap">
 
-    <!-- Tailwind CSS with DaisyUI -->
-    <link rel="stylesheet" href="/css/main.css?v=<%= Date.now() %>">
+    <!-- Original MonsterBox CSS -->
+    <link rel="stylesheet" href="/css/style.css">
 
-    <!-- Custom MonsterBox themes -->
-    <link rel="stylesheet" href="/css/custom-themes.css?v=<%= Date.now() %>">
-
-    <!-- Favicon and meta tags -->
+    <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <meta name="description" content="MonsterBox - Advanced Animatronic Control System">
-    <meta name="theme-color" content="#00ff00">
 </head>
 
-<body class="min-h-screen bg-base-100 text-base-content font-terminal scrollbar-monsterbox">
-    <!-- Skip to main content for accessibility -->
-    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 btn-monsterbox z-50">
-        Skip to main content
-    </a>
-
-    <!-- Navigation -->
-    <nav class="navbar bg-base-200 border-b border-primary shadow-lg sticky top-0 z-40">
-        <div class="container-monsterbox">
-            <div class="navbar-start">
-                <!-- Mobile menu button -->
-                <div class="dropdown lg:hidden">
-                    <label tabindex="0" class="btn btn-ghost btn-circle" aria-label="Open menu">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                        </svg>
-                    </label>
-                    <ul tabindex="0" class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-200 rounded-box w-52 border border-primary">
-                        <%- include('components/navigation-mobile') %>
-                    </ul>
-                </div>
-
-                <!-- Logo -->
-                <a href="/" class="btn btn-ghost text-xl font-creepster text-primary hover:text-primary-focus">
-                    🎭 MonsterBox™
-                </a>
-            </div>
-
-            <!-- Desktop navigation -->
-            <div class="navbar-center hidden lg:flex">
-                <ul class="menu menu-horizontal px-1">
-                    <%- include('components/navigation-desktop') %>
-                </ul>
-            </div>
-
-            <!-- User actions -->
-            <div class="navbar-end">
-                <!-- Theme selector -->
-                <div class="dropdown dropdown-end">
-                    <label tabindex="0" class="btn btn-ghost btn-circle" aria-label="Change theme">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                        </svg>
-                    </label>
-                    <ul tabindex="0" class="dropdown-content z-[1] p-2 shadow bg-base-200 rounded-box w-52 border border-primary">
-                        <li><a onclick="setTheme('monsterbox')" class="theme-option">🖥️ Terminal</a></li>
-                        <li><a onclick="setTheme('monsterbox-halloween')" class="theme-option">🎃 Halloween</a></li>
-                        <li><a onclick="setTheme('monsterbox-retro')" class="theme-option">👾 Retro</a></li>
-                        <li><a onclick="setTheme('dracula')" class="theme-option">🧛 Dracula</a></li>
-                        <li><a onclick="setTheme('dark')" class="theme-option">🌙 Dark</a></li>
-                        <li><a onclick="setTheme('light')" class="theme-option">☀️ Light</a></li>
-                    </ul>
-                </div>
-
-                <!-- Settings -->
-                <a href="/configuration" class="btn btn-ghost btn-circle" aria-label="Settings">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                    </svg>
-                </a>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Main content -->
-    <main id="main-content" class="flex-1 container-monsterbox py-8">
-        <!-- Breadcrumbs -->
-        <% if (typeof breadcrumbs !== 'undefined' && breadcrumbs.length > 0) { %>
-        <div class="breadcrumbs text-sm mb-6">
-            <ul>
-                <% breadcrumbs.forEach(function(crumb, index) { %>
-                <li>
-                    <% if (index === breadcrumbs.length - 1) { %>
-                        <span class="text-primary"><%= crumb.name %></span>
-                    <% } else { %>
-                        <a href="<%= crumb.url %>" class="hover:text-primary"><%= crumb.name %></a>
-                    <% } %>
-                </li>
-                <% }); %>
-            </ul>
-        </div>
-        <% } %>
-
-        <!-- Page title -->
-        <% if (typeof pageTitle !== 'undefined') { %>
-        <div class="mb-8">
-            <h1 class="text-4xl font-bold text-primary font-creepster mb-2 glow-text">
-                <%= pageTitle %>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1 class="landing-title" style="text-align: center; margin: 20px 0;">
+                🎭 MONSTERBOX
             </h1>
-            <% if (typeof pageDescription !== 'undefined') { %>
-            <p class="text-base-content/70 text-lg">
-                <%= pageDescription %>
+            <p style="text-align: center; margin-bottom: 30px;">
+                System - Choose a character and navigate to get started.
             </p>
-            <% } %>
+        </div>
+
+        <!-- Character Selection -->
+        <% if (characters && characters.length > 0) { %>
+        <div class="form-group">
+            <label for="character-select">Select Character:</label>
+            <select id="character-select" onchange="updateCharacter(this.value)">
+                <option value="">Choose a character...</option>
+                <% characters.forEach(function(character) { %>
+                <option value="<%= character.id %>"><%= character.char_name || character.name %></option>
+                <% }); %>
+            </select>
         </div>
         <% } %>
 
-<!-- Character Selection Section -->
-<%- include('components/character-selector', { characters: characters }) %>
+        <!-- Navigation Grid -->
+        <div class="nav-grid">
+            <!-- Character Management -->
+            <div class="nav-section">
+                <h3 class="font-creepster">🎭 Character Management</h3>
+                <p>Create, edit, and manage your animatronic characters.</p>
+                <div class="button-group">
+                    <a href="/characters" class="button">Manage Characters</a>
+                    <a href="/character-parts" class="button">Character Parts</a>
+                </div>
+            </div>
 
-<!-- Quick Actions Dashboard -->
-<div class="grid-monsterbox mb-8">
-    <!-- Character Management Card -->
-    <div class="card-monsterbox">
-        <div class="card-header-monsterbox">
-            <h3 class="text-xl font-bold text-primary flex items-center">
-                🎭 Character Management
-            </h3>
+            <!-- Hardware Control -->
+            <div class="nav-section">
+                <h3 class="font-creepster">🔧 Hardware Control</h3>
+                <p>Monitor and control your hardware components.</p>
+                <div class="button-group">
+                    <a href="/parts" class="button">Hardware Parts</a>
+                </div>
+            </div>
+
+            <!-- AI Systems -->
+            <div class="nav-section">
+                <h3 class="font-creepster">🧠 AI Systems</h3>
+                <p>Configure and manage AI-powered interactions.</p>
+                <div class="button-group">
+                    <a href="/ai-instances" class="button">AI Instances</a>
+                    <a href="/chatterpi-chat.html" class="button">ChatterPi AI</a>
+                    <a href="/ai-management" class="button">AI Management</a>
+                    <a href="/ai-config" class="button">AI Configuration</a>
+                </div>
+            </div>
+
+            <!-- Media & Content -->
+            <div class="nav-section">
+                <h3 class="font-creepster">🎬 Media & Content</h3>
+                <p>Manage sounds, videos, and scenes for your shows.</p>
+                <div class="button-group">
+                    <a href="/sounds" class="button">Sounds</a>
+                    <a href="/Camera" class="button">Video</a>
+                    <a href="/scenes" class="button">Scenes</a>
+                </div>
+            </div>
+
+            <!-- System Control -->
+            <div class="nav-section">
+                <h3 class="font-creepster">⚡ System Control</h3>
+                <p>Live performance control and system monitoring.</p>
+                <div class="button-group">
+                    <a href="/active-mode" class="button">Active Mode</a>
+                </div>
+            </div>
+
+            <!-- Configuration -->
+            <div class="nav-section">
+                <h3 class="font-creepster">⚙️ Configuration</h3>
+                <p>System settings and personalization options.</p>
+                <div class="button-group">
+                    <a href="/configuration" class="button">Configuration</a>
+                </div>
+            </div>
         </div>
-        <div class="card-body">
-            <p class="text-base-content/70 mb-4">Create, edit, and manage your animatronic characters.</p>
-            <div class="flex gap-2 flex-wrap">
-                <a href="/characters" class="btn-monsterbox btn-sm" data-character-link="/characters">
-                    Manage Characters
-                </a>
-                <a href="/character-parts" class="btn-secondary-monsterbox btn-sm" data-character-link="/character-parts">
-                    Character Parts
-                </a>
+
+        <!-- System Status -->
+        <div class="status-section">
+            <h3 class="font-creepster">📊 System Status</h3>
+            <div class="status-grid">
+                <div class="status-item">
+                    <strong>Characters:</strong> <%= characters ? characters.length : 0 %>
+                </div>
+                <div class="status-item">
+                    <strong>System:</strong> Online
+                </div>
+                <div class="status-item">
+                    <strong>Theme:</strong> MonsterBox
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Hardware Control Card -->
-    <div class="card-monsterbox">
-        <div class="card-header-monsterbox">
-            <h3 class="text-xl font-bold text-primary flex items-center">
-                🔧 Hardware Control
-            </h3>
-        </div>
-        <div class="card-body">
-            <p class="text-base-content/70 mb-4">Monitor and control your hardware components.</p>
-            <div class="flex gap-2 flex-wrap">
-                <a href="/parts" class="btn-monsterbox btn-sm">
-                    Hardware Parts
-                </a>
-                <a href="/hardware-monitor.html" class="btn-secondary-monsterbox btn-sm">
-                    Monitor
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <!-- AI Systems Card -->
-    <div class="card-monsterbox">
-        <div class="card-header-monsterbox">
-            <h3 class="text-xl font-bold text-primary flex items-center">
-                🧠 AI Systems
-            </h3>
-        </div>
-        <div class="card-body">
-            <p class="text-base-content/70 mb-4">Configure and manage AI-powered interactions.</p>
-            <div class="flex gap-2 flex-wrap">
-                <a href="/chatterpi-chat.html" class="btn-secondary-monsterbox btn-sm">
-                    ChatterPi AI
-                </a>
-                <a href="/ai-management" class="btn-accent-monsterbox btn-sm">
-                    AI Management
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Media & Content Card -->
-    <div class="card-monsterbox">
-        <div class="card-header-monsterbox">
-            <h3 class="text-xl font-bold text-primary flex items-center">
-                🎬 Media & Content
-            </h3>
-        </div>
-        <div class="card-body">
-            <p class="text-base-content/70 mb-4">Manage sounds, videos, and scenes for your shows.</p>
-            <div class="flex gap-2 flex-wrap">
-                <a href="/sounds" class="btn-monsterbox btn-sm">
-                    Sounds
-                </a>
-                <a href="/scenes" class="btn-secondary-monsterbox btn-sm">
-                    Scenes
-                </a>
-                <a href="/Camera" class="btn-accent-monsterbox btn-sm">
-                    Video
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <!-- System Control Card -->
-    <div class="card-monsterbox">
-        <div class="card-header-monsterbox">
-            <h3 class="text-xl font-bold text-warning flex items-center">
-                ⚡ System Control
-            </h3>
-        </div>
-        <div class="card-body">
-            <p class="text-base-content/70 mb-4">Live performance control and system monitoring.</p>
-            <div class="flex gap-2 flex-wrap">
-                <a href="/active-mode" class="btn btn-warning btn-sm">
-                    Active Mode
-                </a>
-                <a href="/log-collection/dashboard" class="btn-monsterbox btn-sm">
-                    Logs
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Configuration Card -->
-    <div class="card-monsterbox">
-        <div class="card-header-monsterbox">
-            <h3 class="text-xl font-bold text-primary flex items-center">
-                ⚙️ Configuration
-            </h3>
-        </div>
-        <div class="card-body">
-            <p class="text-base-content/70 mb-4">System settings and personalization options.</p>
-            <div class="flex gap-2 flex-wrap">
-                <a href="/configuration" class="btn-monsterbox btn-sm">
-                    Settings
-                </a>
-                <a href="/ai-config" class="btn-accent-monsterbox btn-sm">
-                    AI Config
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- System Status Overview -->
-<div class="card-monsterbox">
-    <div class="card-header-monsterbox">
-        <h3 class="text-xl font-bold text-primary flex items-center">
-            📊 System Status
-        </h3>
-    </div>
-    <div class="card-body">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="stat bg-base-200 rounded-lg p-4">
-                <div class="stat-title text-base-content/70">Characters</div>
-                <div class="stat-value text-primary"><%= characters ? characters.length : 0 %></div>
-                <div class="stat-desc text-base-content/50">Total configured</div>
-            </div>
-            <div class="stat bg-base-200 rounded-lg p-4">
-                <div class="stat-title text-base-content/70">System</div>
-                <div class="stat-value text-success">Online</div>
-                <div class="stat-desc text-base-content/50">All services running</div>
-            </div>
-            <div class="stat bg-base-200 rounded-lg p-4">
-                <div class="stat-title text-base-content/70">Theme</div>
-                <div class="stat-value text-secondary" id="current-theme">MonsterBox</div>
-                <div class="stat-desc text-base-content/50">Active theme</div>
-            </div>
-        </div>
-    </div>
-</div>
-
-    </main>
-
-    <!-- Footer -->
-    <footer class="footer footer-center p-10 bg-base-200 text-base-content border-t border-primary">
-        <div>
-            <div class="grid grid-flow-col gap-4">
-                <a href="https://github.com/arwpc/MonsterBox" target="_blank" class="btn btn-ghost btn-circle" aria-label="GitHub">
-                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-                    </svg>
-                </a>
-            </div>
-            <div>
-                <p class="font-bold text-primary font-creepster">MonsterBox™</p>
-                <p>An animatronic automation package by ARW Halloween 2024 2.0</p>
-            </div>
-        </div>
-    </footer>
-
-    <!-- Scripts -->
     <script>
-        // Theme management
-        function setTheme(theme) {
-            document.documentElement.setAttribute('data-theme', theme);
-            localStorage.setItem('monsterbox-theme', theme);
-
-            // Update theme display
-            const themeDisplay = document.getElementById('current-theme');
-            if (themeDisplay) {
-                const themeNames = {
-                    'monsterbox': 'Terminal',
-                    'monsterbox-halloween': 'Halloween',
-                    'monsterbox-retro': 'Retro',
-                    'dracula': 'Dracula',
-                    'dark': 'Dark',
-                    'light': 'Light'
-                };
-                themeDisplay.textContent = themeNames[theme] || theme;
-            }
-        }
-
-        // Load saved theme
-        const savedTheme = localStorage.getItem('monsterbox-theme') || 'monsterbox';
-        setTheme(savedTheme);
-
         // Character selection management
         function updateCharacter(characterId) {
             localStorage.setItem('selectedCharacter', characterId);
-            updateNavigation(characterId);
 
             fetch('/set-character', {
                 method: 'POST',
@@ -346,25 +146,10 @@
             });
         }
 
-        // Navigation updates based on character selection
-        function updateNavigation(characterId) {
-            // Update navigation links with character context
-            const navLinks = document.querySelectorAll('[data-character-link]');
-            navLinks.forEach(link => {
-                const baseUrl = link.getAttribute('data-character-link');
-                if (characterId) {
-                    link.href = `${baseUrl}?character=${characterId}`;
-                } else {
-                    link.href = baseUrl;
-                }
-            });
-        }
-
         // Initialize character selection on page load
         document.addEventListener('DOMContentLoaded', function() {
             const savedCharacter = localStorage.getItem('selectedCharacter');
             if (savedCharacter) {
-                updateNavigation(savedCharacter);
                 const characterSelect = document.getElementById('character-select');
                 if (characterSelect) {
                     characterSelect.value = savedCharacter;

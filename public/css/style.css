@@ -77,6 +77,19 @@ header {
     text-shadow: 0 0 10px #00ff00;
 }
 
+/* Font utility classes */
+.font-creepster {
+    font-family: 'Creepster', cursive;
+}
+
+.font-terminal {
+    font-family: 'VT323', 'Courier New', monospace;
+}
+
+.font-retro {
+    font-family: 'Press Start 2P', monospace;
+}
+
 main {
     text-align: center;
     margin-bottom: 20px;
@@ -649,6 +662,63 @@ tr:hover {
     color: #ff0000;
 }
 
+/* Navigation Grid Styles */
+.nav-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin: 30px 0;
+}
+
+.nav-section {
+    background-color: #111111;
+    border: 1px solid #00ff00;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+}
+
+.nav-section h3 {
+    color: #00ff00;
+    margin-bottom: 10px;
+    font-size: 1.2em;
+}
+
+.nav-section p {
+    color: #00ff00;
+    margin-bottom: 15px;
+    opacity: 0.8;
+}
+
+/* Status Section */
+.status-section {
+    background-color: #111111;
+    border: 1px solid #00ff00;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 30px 0;
+    text-align: center;
+}
+
+.status-section h3 {
+    color: #00ff00;
+    margin-bottom: 15px;
+}
+
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+}
+
+.status-item {
+    background-color: #222222;
+    border: 1px solid #00ff00;
+    border-radius: 4px;
+    padding: 10px;
+    color: #00ff00;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .character-form-container {
@@ -658,11 +728,11 @@ tr:hover {
     .form-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .button-group {
         flex-direction: column;
     }
-    
+
     .modal-content {
         width: 95%;
         margin: 10px auto;
@@ -671,6 +741,14 @@ tr:hover {
     .nav-button {
         width: 100%;
         max-width: 300px;
+    }
+
+    .nav-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .status-grid {
+        grid-template-columns: 1fr;
     }
 
     .form-group {

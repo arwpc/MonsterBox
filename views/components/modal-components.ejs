@@ -2,14 +2,14 @@
 
 <%# Modal Component %>
 <% if (typeof component !== 'undefined' && component === 'modal') { %>
-<div id="<%= id %>" class="modal">
-  <div class="modal-box <%= size === 'sm' ? 'max-w-sm' : size === 'lg' ? 'max-w-4xl' : size === 'xl' ? 'max-w-6xl' : 'max-w-2xl' %>">
+<div id="<%= id %>" class="modal-monsterbox">
+  <div class="modal-content-monsterbox <%= size === 'sm' ? 'max-w-sm' : size === 'lg' ? 'max-w-4xl' : size === 'xl' ? 'max-w-6xl' : 'max-w-2xl' %>">
     <% if (typeof title !== 'undefined') { %>
     <h3 class="font-bold text-lg text-primary mb-4">
       <%= icon || '' %> <%= title %>
     </h3>
     <% } %>
-    
+
     <div class="modal-content">
       <% if (typeof content !== 'undefined') { %>
       <%- content %>
@@ -17,12 +17,12 @@
       <p class="text-base-content">Modal content goes here...</p>
       <% } %>
     </div>
-    
-    <div class="modal-action">
+
+    <div class="flex gap-2 justify-end mt-4">
       <% if (typeof buttons !== 'undefined' && Array.isArray(buttons)) { %>
         <% buttons.forEach(function(button) { %>
-        <button 
-          class="btn <%= button.class || 'btn-primary' %>" 
+        <button
+          class="btn <%= button.class || 'btn-primary' %>"
           onclick="<%= button.onclick || 'closeModal(\'' + id + '\')' %>"
           <%= button.disabled ? 'disabled' : '' %>
         >
@@ -35,18 +35,18 @@
       <% } %>
     </div>
   </div>
-  <div class="modal-backdrop" onclick="closeModal('<%= id %>')"></div>
+  <div class="modal-backdrop" onclick="closeModal('<%= id %>')" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.75); z-index: 40;"></div>
 </div>
 <% } %>
 
 <%# Confirmation Modal Component %>
 <% if (typeof component !== 'undefined' && component === 'confirmModal') { %>
-<div id="<%= id %>" class="modal">
-  <div class="modal-box max-w-md">
+<div id="<%= id %>" class="modal-monsterbox">
+  <div class="modal-content-monsterbox max-w-md">
     <h3 class="font-bold text-lg text-warning mb-4">
       ⚠️ <%= title || 'Confirm Action' %>
     </h3>
-    
+
     <div class="modal-content">
       <p class="text-base-content mb-4">
         <%= message || 'Are you sure you want to proceed?' %>
@@ -60,10 +60,10 @@
       </div>
       <% } %>
     </div>
-    
-    <div class="modal-action">
-      <button 
-        class="btn btn-error" 
+
+    <div class="flex gap-2 justify-end mt-4">
+      <button
+        class="btn btn-error"
         onclick="<%= onConfirm %>; closeModal('<%= id %>')"
       >
         <%= confirmText || 'Confirm' %>
@@ -73,7 +73,7 @@
       </button>
     </div>
   </div>
-  <div class="modal-backdrop" onclick="closeModal('<%= id %>')"></div>
+  <div class="modal-backdrop" onclick="closeModal('<%= id %>')" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.75); z-index: 40;"></div>
 </div>
 <% } %>
 

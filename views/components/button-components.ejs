@@ -57,20 +57,22 @@
 <%# Icon Button Component %>
 <% if (typeof component !== 'undefined' && component === 'iconButton') { %>
 <% if (href) { %>
-<a 
-  href="<%= href %>" 
-  class="btn btn-circle btn-ghost <%= size === 'sm' ? 'btn-sm' : size === 'lg' ? 'btn-lg' : '' %> <%= disabled ? 'btn-disabled' : '' %>"
+<a
+  href="<%= href %>"
+  class="btn btn-circle <%= size === 'sm' ? 'btn-sm' : size === 'lg' ? 'btn-lg' : '' %> <%= disabled ? 'btn-disabled' : '' %>"
   <%= tooltip ? 'title="' + tooltip + '"' : '' %>
+  style="border-radius: 50%; background-color: transparent; border: 1px solid var(--primary);"
 >
   <%= icon %>
 </a>
 <% } else { %>
-<button 
-  class="btn btn-circle btn-ghost <%= size === 'sm' ? 'btn-sm' : size === 'lg' ? 'btn-lg' : '' %>" 
+<button
+  class="btn btn-circle <%= size === 'sm' ? 'btn-sm' : size === 'lg' ? 'btn-lg' : '' %>"
   <%= onclick ? 'onclick="' + onclick + '"' : '' %>
   <%= disabled ? 'disabled' : '' %>
   <%= tooltip ? 'title="' + tooltip + '"' : '' %>
   <%= type ? 'type="' + type + '"' : '' %>
+  style="border-radius: 50%; background-color: transparent; border: 1px solid var(--primary);"
 >
   <%= icon %>
 </button>
@@ -125,11 +127,11 @@
 
 <%# Tab Navigation Component %>
 <% if (typeof component !== 'undefined' && component === 'tabNav') { %>
-<div class="tabs tabs-boxed mb-8 bg-base-200 p-1">
+<div class="tabs tabs-boxed mb-4 bg-base-200 p-4">
   <% if (typeof tabs !== 'undefined' && Array.isArray(tabs)) { %>
     <% tabs.forEach(function(tab) { %>
-    <a 
-      class="tab <%= tab.active ? 'tab-active' : '' %>" 
+    <a
+      class="tab <%= tab.active ? 'tab-active' : '' %>"
       onclick="showTab('<%= tab.id %>')"
       data-tab="<%= tab.id %>"
     >
@@ -143,12 +145,12 @@
 <%# Action Menu Component %>
 <% if (typeof component !== 'undefined' && component === 'actionMenu') { %>
 <div class="dropdown dropdown-end">
-  <label tabindex="0" class="btn btn-circle btn-ghost btn-sm">
+  <label tabindex="0" class="btn btn-circle btn-sm" style="background-color: transparent; border: 1px solid var(--primary);">
     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
     </svg>
   </label>
-  <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-200 rounded-box w-52 border border-primary">
+  <ul tabindex="0" class="dropdown-content z-50 menu px-2 py-2 shadow-lg bg-base-200 rounded-box w-52" style="border: 1px solid var(--primary);">
     <% if (typeof items !== 'undefined' && Array.isArray(items)) { %>
       <% items.forEach(function(item) { %>
       <li>
@@ -170,12 +172,12 @@
 
 <%# Floating Action Button Component %>
 <% if (typeof component !== 'undefined' && component === 'fab') { %>
-<button 
-  class="btn btn-circle btn-primary fixed z-50 shadow-lg <%= 
-    position === 'bottom-left' ? 'bottom-6 left-6' : 
-    position === 'top-right' ? 'top-20 right-6' : 
-    position === 'top-left' ? 'top-20 left-6' : 
-    'bottom-6 right-6' 
+<button
+  class="btn btn-circle btn-primary fixed z-50 shadow-lg <%=
+    position === 'bottom-left' ? 'bottom-6 left-6' :
+    position === 'top-right' ? 'top-20 right-6' :
+    position === 'top-left' ? 'top-20 left-6' :
+    'bottom-6 right-6'
   %>"
   <%= onclick ? 'onclick="' + onclick + '"' : '' %>
   <%= tooltip ? 'title="' + tooltip + '"' : '' %>
@@ -191,11 +193,11 @@
     <span class="label-text text-base-content">
       <%= label %><%= required ? ' *' : '' %>
     </span>
-    <input 
-      type="checkbox" 
-      id="<%= id %>" 
-      name="<%= name || id %>" 
-      class="toggle toggle-primary" 
+    <input
+      type="checkbox"
+      id="<%= id %>"
+      name="<%= name || id %>"
+      class="toggle toggle-primary"
       <%= checked ? 'checked' : '' %>
       <%= disabled ? 'disabled' : '' %>
       <%= onchange ? 'onchange="' + onchange + '"' : '' %>
@@ -211,12 +213,12 @@
 
 <%# Badge Component %>
 <% if (typeof component !== 'undefined' && component === 'badge') { %>
-<div class="badge <%= 
-  type === 'success' ? 'badge-success' : 
-  type === 'error' ? 'badge-error' : 
-  type === 'warning' ? 'badge-warning' : 
-  type === 'info' ? 'badge-info' : 
-  'badge-primary' 
+<div class="badge <%=
+  type === 'success' ? 'badge-success' :
+  type === 'error' ? 'badge-error' :
+  type === 'warning' ? 'badge-warning' :
+  type === 'info' ? 'badge-info' :
+  'badge-primary'
 %> <%= size === 'sm' ? 'badge-sm' : size === 'lg' ? 'badge-lg' : '' %>">
   <%= icon || '' %> <%= text %>
 </div>

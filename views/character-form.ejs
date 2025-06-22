@@ -311,6 +311,26 @@
                                 </small>
                             </div>
 
+                            <div class="form-group">
+                                <label for="jaw_animation_enabled" title="Enable real-time jaw animation synchronized with audio">
+                                    <input type="checkbox" id="jaw_animation_enabled" name="jaw_animation_enabled"
+                                           <%= (character && character.jaw_animation_config && character.jaw_animation_config.enabled) ? 'checked' : '' %>>
+                                    🦴 Enable Jaw Animation
+                                </label>
+                                <small style="color: #888; display: block; margin-top: 5px;">
+                                    Real-time jaw movement synchronized with speech and audio playback
+                                </small>
+                                <% if (character && character.id && character.id !== 'new') { %>
+                                    <a href="/characters/<%= character.id %>/jaw-animation" class="button secondary-btn" style="margin-top: 10px; display: inline-block;">
+                                        🦴 Configure Jaw Animation
+                                    </a>
+                                <% } else { %>
+                                    <small style="color: #888; display: block; margin-top: 5px;">
+                                        Detailed configuration available after saving character
+                                    </small>
+                                <% } %>
+                            </div>
+
 
 
                             <!-- Animatronic Management Buttons -->

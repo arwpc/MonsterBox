@@ -13,7 +13,7 @@ process.env.NODE_NO_WARNINGS = '1';
 
 let express, path, http, logger, app, server, port, audioStream, soundController, fs, os, session;
 let videoStream; // <-- Add videoStream variable
-let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, webcamRoutes, voiceRoutes, cleanupRoutes, healthRoutes, authRoutes, sshRoutes, jawAnimationRoutes, aiConfigRoutes, configRoutes, headTrackingRoutes;
+let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, webcamRoutes, voiceRoutes, cleanupRoutes, healthRoutes, authRoutes, sshRoutes, jawAnimationRoutes, aiConfigRoutes, aiManagementRoutes, configRoutes, headTrackingRoutes;
 let characterService;
 let authMiddleware, rbacMiddleware;
 let jawAnimationSystem;
@@ -220,6 +220,11 @@ app.use(express.static(path.join(__dirname, 'public'), {
 
 // Add this line to serve files from the 'scripts' directory
 app.use('/scripts', express.static(path.join(__dirname, 'scripts')));
+
+// ChatterPi chat page route
+app.get('/chatterpi-chat', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'chatterpi-chat.html'));
+});
 
 // Use sceneRoutes before session middleware
 app.use('/scenes', sceneRoutes);

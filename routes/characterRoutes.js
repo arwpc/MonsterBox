@@ -23,20 +23,11 @@ router.get('/', async (req, res) => {
         const parts = await partService.getAllParts();
         const sounds = await soundService.getAllSounds();
 
-        res.render('layouts/main', {
+        res.render('characters', {
             title: 'Characters',
-            pageTitle: '🎭 Character Management',
-            pageDescription: 'Manage animatronic characters and their configurations. Assign hardware parts and AI instances to create complete character experiences.',
-            breadcrumbs: [
-                { name: 'Home', url: '/' },
-                { name: 'Characters' }
-            ],
-            body: await new Promise((resolve, reject) => {
-                res.app.render('characters', { characters, parts, sounds }, (err, html) => {
-                    if (err) reject(err);
-                    else resolve(html);
-                });
-            })
+            characters,
+            parts,
+            sounds
         });
     } catch (error) {
         logger.error('Error fetching characters:', error);
@@ -225,9 +216,29 @@ router.post('/', upload.single('character_image'), async (req, res) => {
 
         const character = await characterService.createCharacter(newCharacter);
 
-        const selectedPartIds = req.body.parts ? 
+        // Handle jaw animation configuration
+        if (req.body.jaw_animation_enabled === 'on') {
+            const jawAnimationConfig = {
+                enabled: true,
+                servo: {
+                    pin: 18,
+                    closedAngle: 50,
+                    openAngle: 30
+                },
+                audioAnalysis: {
+                    volumeThreshold: 0.01,
+                    smoothingFactor: 0.8,
+                    sensitivity: 1.0,
+                    responseCurve: 'linear'
+                },
+                preset: 'skeleton'
+            };
+            await characterService.updateCharacterJawAnimationConfig(character.id, jawAnimationConfig);
+        }
+
+        const selectedPartIds = req.body.parts ?
             (Array.isArray(req.body.parts) ? req.body.parts.map(Number) : [Number(req.body.parts)]) : [];
-        const selectedSoundIds = req.body.sounds ? 
+        const selectedSoundIds = req.body.sounds ?
             (Array.isArray(req.body.sounds) ? req.body.sounds.map(Number) : [Number(req.body.sounds)]) : [];
 
         await updatePartsAndSounds(character.id, selectedPartIds, selectedSoundIds);
@@ -319,9 +330,45 @@ router.post('/:id', upload.single('character_image'), async (req, res) => {
 
         await characterService.updateCharacter(id, updatedCharacter);
 
-        const selectedPartIds = req.body.parts ? 
+        // Handle jaw animation configuration
+        const currentCharacter = await characterService.getCharacterById(id);
+        const currentJawConfig = currentCharacter.jaw_animation_config || {};
+
+        if (req.body.jaw_animation_enabled === 'on') {
+            if (!currentJawConfig.enabled) {
+                // Enable jaw animation with default config
+                const jawAnimationConfig = {
+                    ...currentJawConfig,
+                    enabled: true,
+                    servo: currentJawConfig.servo || {
+                        pin: 18,
+                        closedAngle: 50,
+                        openAngle: 30
+                    },
+                    audioAnalysis: currentJawConfig.audioAnalysis || {
+                        volumeThreshold: 0.01,
+                        smoothingFactor: 0.8,
+                        sensitivity: 1.0,
+                        responseCurve: 'linear'
+                    },
+                    preset: currentJawConfig.preset || 'skeleton'
+                };
+                await characterService.updateCharacterJawAnimationConfig(id, jawAnimationConfig);
+            }
+        } else {
+            if (currentJawConfig.enabled) {
+                // Disable jaw animation but keep config
+                const jawAnimationConfig = {
+                    ...currentJawConfig,
+                    enabled: false
+                };
+                await characterService.updateCharacterJawAnimationConfig(id, jawAnimationConfig);
+            }
+        }
+
+        const selectedPartIds = req.body.parts ?
             (Array.isArray(req.body.parts) ? req.body.parts.map(Number) : [Number(req.body.parts)]) : [];
-        const selectedSoundIds = req.body.sounds ? 
+        const selectedSoundIds = req.body.sounds ?
             (Array.isArray(req.body.sounds) ? req.body.sounds.map(Number) : [Number(req.body.sounds)]) : [];
 
         await updatePartsAndSounds(id, selectedPartIds, selectedSoundIds);
@@ -870,6 +917,197 @@ router.post('/:id/ai/remove-all', async (req, res) => {
         res.json({ success: true, message: 'All AI assignments removed successfully' });
     } catch (error) {
         logger.error('Error removing all AI assignments from character:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Character Jaw Animation Configuration Routes
+
+// Get jaw animation configuration page
+router.get('/:id/jaw-animation', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.id);
+        const character = await characterService.getCharacterById(characterId);
+        if (!character) {
+            return res.status(404).send('Character not found');
+        }
+
+        // Get jaw animation configuration
+        const jawAnimationConfig = await characterService.getCharacterJawAnimationConfig(characterId);
+
+        // Get available servos for this character
+        const availableServos = await partService.getAvailableServosForJawAnimation(characterId);
+
+        // Get available sounds for testing
+        const sounds = await soundService.getAllSounds();
+
+        res.render('layouts/main', {
+            title: `${character.char_name} - Jaw Animation Configuration`,
+            pageTitle: `🦴 Jaw Animation - ${character.char_name}`,
+            pageDescription: 'Configure jaw animation settings including servo control, audio processing, and calibration for real-time speech-synchronized jaw movement.',
+            breadcrumbs: [
+                { name: 'Home', url: '/' },
+                { name: 'Characters', url: '/characters' },
+                { name: character.char_name, url: `/characters/${characterId}/edit` },
+                { name: 'Jaw Animation' }
+            ],
+            body: await new Promise((resolve, reject) => {
+                res.app.render('character-jaw-animation', {
+                    character,
+                    jawAnimationConfig: jawAnimationConfig || {},
+                    availableServos,
+                    sounds: sounds.slice(0, 20) // Limit for performance
+                }, (err, html) => {
+                    if (err) reject(err);
+                    else resolve(html);
+                });
+            })
+        });
+    } catch (error) {
+        logger.error('Error fetching jaw animation configuration:', error);
+        res.status(500).send('An error occurred while fetching jaw animation configuration');
+    }
+});
+
+// Get jaw animation configuration API
+router.get('/:id/jaw-animation/api', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.id);
+        const character = await characterService.getCharacterById(characterId);
+        if (!character) {
+            return res.status(404).json({ success: false, error: 'Character not found' });
+        }
+
+        const jawAnimationConfig = await characterService.getCharacterJawAnimationConfig(characterId);
+
+        res.json({
+            success: true,
+            character: character.char_name,
+            characterId: characterId,
+            config: jawAnimationConfig
+        });
+    } catch (error) {
+        logger.error('Error getting jaw animation configuration:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Update jaw animation configuration
+router.post('/:id/jaw-animation', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.id);
+        const character = await characterService.getCharacterById(characterId);
+        if (!character) {
+            return res.status(404).json({ success: false, error: 'Character not found' });
+        }
+
+        const jawAnimationConfig = req.body;
+
+        // Update the configuration
+        await characterService.updateCharacterJawAnimationConfig(characterId, jawAnimationConfig);
+
+        logger.info(`✅ Updated jaw animation configuration for character ${characterId}`);
+
+        // Return JSON for AJAX requests, redirect for form submissions
+        if (req.headers['content-type'] && req.headers['content-type'].includes('application/json')) {
+            res.json({
+                success: true,
+                message: 'Jaw animation configuration updated successfully',
+                characterId: characterId
+            });
+        } else {
+            res.redirect(`/characters/${characterId}/jaw-animation?success=1`);
+        }
+    } catch (error) {
+        logger.error('Error updating jaw animation configuration:', error);
+
+        if (req.headers['content-type'] && req.headers['content-type'].includes('application/json')) {
+            res.status(500).json({ success: false, error: error.message });
+        } else {
+            res.redirect(`/characters/${characterId}/jaw-animation?error=${encodeURIComponent(error.message)}`);
+        }
+    }
+});
+
+// Apply jaw animation preset
+router.post('/:id/jaw-animation/preset/:presetName', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.id);
+        const presetName = req.params.presetName;
+
+        const character = await characterService.getCharacterById(characterId);
+        if (!character) {
+            return res.status(404).json({ success: false, error: 'Character not found' });
+        }
+
+        // Get current config or create default
+        let jawAnimationConfig = await characterService.getCharacterJawAnimationConfig(characterId) || {};
+
+        // Apply preset
+        const presets = {
+            skeleton: {
+                minPosition: 0,
+                maxPosition: 180,
+                sensitivity: 1.5,
+                volumeThreshold: 0.02,
+                responseCurve: 'exponential'
+            },
+            bear: {
+                minPosition: 10,
+                maxPosition: 170,
+                sensitivity: 1.2,
+                volumeThreshold: 0.015,
+                responseCurve: 'linear'
+            },
+            fish: {
+                minPosition: 20,
+                maxPosition: 160,
+                sensitivity: 2.0,
+                volumeThreshold: 0.01,
+                responseCurve: 'logarithmic'
+            },
+            demon: {
+                minPosition: 0,
+                maxPosition: 180,
+                sensitivity: 1.8,
+                volumeThreshold: 0.025,
+                responseCurve: 'exponential'
+            }
+        };
+
+        const preset = presets[presetName];
+        if (!preset) {
+            return res.status(400).json({ success: false, error: 'Invalid preset name' });
+        }
+
+        // Update configuration with preset values
+        jawAnimationConfig.preset = presetName;
+        jawAnimationConfig.servo = {
+            ...jawAnimationConfig.servo,
+            minPosition: preset.minPosition,
+            maxPosition: preset.maxPosition
+        };
+        jawAnimationConfig.audioAnalysis = {
+            ...jawAnimationConfig.audioAnalysis,
+            sensitivity: preset.sensitivity,
+            volumeThreshold: preset.volumeThreshold,
+            responseCurve: preset.responseCurve
+        };
+
+        await characterService.updateCharacterJawAnimationConfig(characterId, jawAnimationConfig);
+
+        logger.info(`✅ Applied jaw animation preset '${presetName}' to character ${characterId}`);
+        res.json({
+            success: true,
+            message: `Preset '${presetName}' applied successfully`,
+            preset: presetName,
+            config: jawAnimationConfig
+        });
+    } catch (error) {
+        logger.error('Error applying jaw animation preset:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });

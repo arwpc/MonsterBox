@@ -73,6 +73,33 @@ const getPartsByCharacter = async (characterId) => {
     return parts.filter(part => part.characterId === parseInt(characterId, 10));
 };
 
+const getServosByCharacter = async (characterId) => {
+    logger.debug('Getting servos for character ID:', characterId);
+    const parts = await getAllParts();
+    return parts.filter(part =>
+        part.type === 'servo' &&
+        part.characterId === parseInt(characterId, 10)
+    );
+};
+
+const getAvailableServosForJawAnimation = async (characterId) => {
+    logger.debug('Getting available servos for jaw animation for character ID:', characterId);
+    const servos = await getServosByCharacter(characterId);
+
+    // Filter servos that are suitable for jaw animation
+    // Prioritize servos with 'jaw' in the name, but include all servos
+    const jawServos = servos.filter(servo =>
+        servo.name && servo.name.toLowerCase().includes('jaw')
+    );
+
+    const otherServos = servos.filter(servo =>
+        !servo.name || !servo.name.toLowerCase().includes('jaw')
+    );
+
+    // Return jaw servos first, then other servos
+    return [...jawServos, ...otherServos];
+};
+
 const createPart = async (partData) => {
     logger.info('Creating new part with data:', partData);
     const parts = await getAllParts();
@@ -143,6 +170,8 @@ module.exports = {
     getAllParts,
     getPartById,
     getPartsByCharacter,
+    getServosByCharacter,
+    getAvailableServosForJawAnimation,
     createPart,
     updatePart,
     deletePart

@@ -204,6 +204,63 @@
         "Calvin"
       ],
       "default_character": "Calvin"
+    },
+    "jaw_animation_config": {
+      "enabled": true,
+      "servo": {
+        "pin": 18,
+        "channel": null,
+        "closedAngle": 50,
+        "openAngle": 30,
+        "minPosition": 0,
+        "maxPosition": 180,
+        "stepThreshold": 0.5
+      },
+      "audioAnalysis": {
+        "volumeThreshold": 0.02,
+        "smoothingFactor": 0.8,
+        "attackTime": 0.05,
+        "releaseTime": 0.15,
+        "sensitivity": 1.5,
+        "responseCurve": "exponential"
+      },
+      "calibration": {
+        "isCalibrated": false,
+        "calibratedClosedAngle": null,
+        "calibratedOpenAngle": null,
+        "calibrationDate": null
+      },
+      "preset": "skeleton",
+      "presets": {
+        "skeleton": {
+          "minPosition": 0,
+          "maxPosition": 180,
+          "sensitivity": 1.5,
+          "volumeThreshold": 0.02,
+          "responseCurve": "exponential"
+        },
+        "bear": {
+          "minPosition": 10,
+          "maxPosition": 170,
+          "sensitivity": 1.2,
+          "volumeThreshold": 0.015,
+          "responseCurve": "linear"
+        },
+        "fish": {
+          "minPosition": 20,
+          "maxPosition": 160,
+          "sensitivity": 2,
+          "volumeThreshold": 0.01,
+          "responseCurve": "logarithmic"
+        },
+        "demon": {
+          "minPosition": 0,
+          "maxPosition": 180,
+          "sensitivity": 1.8,
+          "volumeThreshold": 0.025,
+          "responseCurve": "exponential"
+        }
+      }
     }
   }
 ]

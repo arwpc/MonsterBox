@@ -1,10 +1,9 @@
 {
-  "defaultSpeed": 1.0,
+  "defaultSpeed": 1,
   "defaultPitch": 0,
   "defaultVolume": 0,
   "audioFormat": "mp3",
-  "sampleRate": "44100",
-  "timeout": 30000,
-  "created": "2025-06-19T00:00:00.000Z",
-  "lastModified": "2025-06-19T00:00:00.000Z"
+  "sampleRate": "22050",
+  "timeout": 20000,
+  "testMode": true
 }
