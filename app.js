@@ -564,6 +564,9 @@ async function startServer() {
         // Initialize Hardware WebSocket Services
         initializeHardwareServices();
 
+        // Start Microphone WebSocket Services first
+        await startMicrophoneWebSocketServices();
+
         // Initialize Microphone Manager Service
         initializeMicrophoneManager();
 
@@ -677,6 +680,32 @@ async function initializeHardwareServices() {
     }
 }
 
+// Start Microphone WebSocket Services
+async function startMicrophoneWebSocketServices() {
+    try {
+        logger.info('🎤🚀 Starting Microphone WebSocket Services...');
+
+        const MicrophoneServicesStarter = require('./scripts/start-microphone-services');
+        const starter = new MicrophoneServicesStarter();
+
+        const results = await starter.startAllServices();
+
+        const successCount = results.filter(r => r.started).length;
+        if (successCount === results.length) {
+            logger.info('✅ All microphone WebSocket services started successfully');
+        } else {
+            logger.warn(`⚠️ ${successCount}/${results.length} microphone services started`);
+        }
+
+        // Store starter for later use
+        global.microphoneServicesStarter = starter;
+
+    } catch (error) {
+        logger.error('❌ Error starting microphone WebSocket services:', error);
+        // Don't exit - continue with limited functionality
+    }
+}
+
 // Initialize Microphone Manager Service
 async function initializeMicrophoneManager() {
     try {
@@ -783,6 +812,12 @@ async function gracefulShutdown(reason) {
         if (hardwareServiceManager) {
             await hardwareServiceManager.shutdown();
             logger.info('Hardware services stopped');
+        }
+
+        // Shutdown microphone WebSocket services
+        if (global.microphoneServicesStarter) {
+            await global.microphoneServicesStarter.stopAllServices();
+            logger.info('Microphone WebSocket services stopped');
         }
 
         // Shutdown microphone manager service

@@ -642,39 +642,39 @@ router.post('/microphone/:id/update', async (req, res) => {
     }
 });
 
-// Microphone monitoring and management routes
-router.get('/microphone/monitor', async (req, res) => {
+// Dedicated Microphone Parts Management Page
+router.get('/microphone/management', async (req, res) => {
     try {
         const character = await characterService.getCharacterById(req.characterId);
+        const characters = await characterService.getAllCharacters();
         const microphones = await partService.getAllParts();
         const microphoneParts = microphones.filter(part => part.type === 'microphone');
 
-        res.render('microphone-monitor', {
-            title: 'Microphone Monitor',
+        // Get microphone service status
+        const MicrophoneService = require('../services/microphoneService');
+        const microphoneService = new MicrophoneService();
+        const serviceStatus = await microphoneService.getServiceStatus();
+
+        res.render('microphone-management', {
+            title: 'Microphone Parts Management',
             character,
-            microphones: microphoneParts
+            characters,
+            microphones: microphoneParts,
+            serviceStatus
         });
     } catch (error) {
-        logger.error('Error rendering microphone monitor:', error);
-        res.status(500).send('An error occurred while loading the microphone monitor');
+        logger.error('Error rendering microphone management:', error);
+        res.status(500).send('An error occurred while loading the microphone management page');
     }
 });
 
-router.get('/microphone/test', async (req, res) => {
-    try {
-        const character = await characterService.getCharacterById(req.characterId);
-        const microphones = await partService.getAllParts();
-        const microphoneParts = microphones.filter(part => part.type === 'microphone');
+// Legacy routes for backward compatibility
+router.get('/microphone/monitor', async (req, res) => {
+    res.redirect('/parts/microphone/management');
+});
 
-        res.render('microphone-test', {
-            title: 'Microphone Testing Suite',
-            character,
-            microphones: microphoneParts
-        });
-    } catch (error) {
-        logger.error('Error rendering microphone test:', error);
-        res.status(500).send('An error occurred while loading the microphone test suite');
-    }
+router.get('/microphone/test', async (req, res) => {
+    res.redirect('/parts/microphone/management');
 });
 
 router.get('/api/microphone/status', async (req, res) => {
@@ -879,6 +879,254 @@ router.get('/api/parts', async (req, res) => {
     } catch (error) {
         logger.error('Error getting all parts:', error);
         res.status(500).json({ error: error.message });
+    }
+});
+
+// Service management API endpoints
+router.post('/api/services/restart', async (req, res) => {
+    try {
+        const { serviceType, port } = req.body;
+
+        if (!serviceType || !port) {
+            return res.status(400).json({ error: 'Service type and port are required' });
+        }
+
+        let result = false;
+
+        // Use microphone services starter for microphone services
+        if (global.microphoneServicesStarter && (serviceType === 'microphone' || serviceType === 'audioStream')) {
+            const serviceMap = {
+                'microphone': 'microphoneService',
+                'audioStream': 'audioStreamService'
+            };
+
+            const serviceId = serviceMap[serviceType];
+            if (serviceId) {
+                result = await global.microphoneServicesStarter.restartService(serviceId);
+            }
+        } else {
+            // Fallback to general service manager
+            const ServiceManager = require('../services/serviceManager');
+            const serviceManager = new ServiceManager();
+            result = await serviceManager.restartService(serviceType, port);
+        }
+
+        res.json({ success: result });
+    } catch (error) {
+        logger.error('Error restarting service:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+router.get('/api/services/status', async (req, res) => {
+    try {
+        let status = {};
+
+        // Get microphone services status
+        if (global.microphoneServicesStarter) {
+            const microphoneStatus = await global.microphoneServicesStarter.getServicesStatus();
+            status = { ...status, ...microphoneStatus };
+        }
+
+        // Get other services status
+        const ServiceManager = require('../services/serviceManager');
+        const serviceManager = new ServiceManager();
+        const otherStatus = await serviceManager.getServicesStatus();
+
+        // Merge statuses, prioritizing microphone services starter
+        status = { ...otherStatus, ...status };
+
+        res.json(status);
+    } catch (error) {
+        logger.error('Error getting services status:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Enhanced microphone API endpoints
+router.get('/api/microphone/:id/status', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            return res.status(400).json({ error: 'Invalid microphone ID' });
+        }
+
+        const MicrophoneService = require('../services/microphoneService');
+        const microphoneService = new MicrophoneService();
+
+        const status = await microphoneService.getMicrophoneStatus(id);
+        res.json(status || { status: 'inactive', level: 0 });
+    } catch (error) {
+        logger.error('Error getting microphone status:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+router.post('/api/microphone/:id/test', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const { testType, duration } = req.body;
+
+        if (isNaN(id)) {
+            return res.status(400).json({ error: 'Invalid microphone ID' });
+        }
+
+        const MicrophoneService = require('../services/microphoneService');
+        const microphoneService = new MicrophoneService();
+
+        const testResult = await microphoneService.testMicrophone(id, testType, duration);
+        res.json(testResult);
+    } catch (error) {
+        logger.error('Error testing microphone:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+router.post('/api/microphone/:id/start-monitoring', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            return res.status(400).json({ error: 'Invalid microphone ID' });
+        }
+
+        const MicrophoneService = require('../services/microphoneService');
+        const microphoneService = new MicrophoneService();
+
+        const result = await microphoneService.startMonitoring(id);
+        res.json({ success: result });
+    } catch (error) {
+        logger.error('Error starting microphone monitoring:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+router.post('/api/microphone/:id/stop-monitoring', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            return res.status(400).json({ error: 'Invalid microphone ID' });
+        }
+
+        const MicrophoneService = require('../services/microphoneService');
+        const microphoneService = new MicrophoneService();
+
+        const result = await microphoneService.stopMonitoring(id);
+        res.json({ success: result });
+    } catch (error) {
+        logger.error('Error stopping microphone monitoring:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+router.get('/api/microphone/devices', async (req, res) => {
+    try {
+        const MicrophoneService = require('../services/microphoneService');
+        const microphoneService = new MicrophoneService();
+
+        const devices = await microphoneService.discoverDevices();
+        res.json(devices);
+    } catch (error) {
+        logger.error('Error discovering microphone devices:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Health check endpoint for microphone services
+router.get('/api/microphone/health', async (req, res) => {
+    try {
+        const healthData = {
+            timestamp: new Date().toISOString(),
+            services: {},
+            overall: 'healthy'
+        };
+
+        // Check microphone services starter
+        if (global.microphoneServicesStarter) {
+            const servicesStatus = await global.microphoneServicesStarter.getServicesStatus();
+            healthData.services = servicesStatus;
+
+            // Determine overall health
+            const allRunning = Object.values(servicesStatus).every(service => service.running);
+            healthData.overall = allRunning ? 'healthy' : 'degraded';
+        } else {
+            healthData.overall = 'error';
+            healthData.error = 'Microphone services starter not initialized';
+        }
+
+        // Check microphone manager service
+        if (global.microphoneManagerService) {
+            healthData.microphoneManager = {
+                initialized: true,
+                activeMicrophones: global.microphoneManagerService.getActiveMicrophonesCount?.() || 0
+            };
+        } else {
+            healthData.microphoneManager = {
+                initialized: false
+            };
+        }
+
+        res.json(healthData);
+    } catch (error) {
+        logger.error('Error getting microphone health status:', error);
+        res.status(500).json({
+            error: error.message,
+            overall: 'error',
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+
+// Auto-restart services endpoint
+router.post('/api/microphone/auto-restart', async (req, res) => {
+    try {
+        if (!global.microphoneServicesStarter) {
+            return res.status(500).json({
+                success: false,
+                error: 'Microphone services starter not available'
+            });
+        }
+
+        logger.info('🔄 Auto-restarting microphone services...');
+
+        // Get current status
+        const currentStatus = await global.microphoneServicesStarter.getServicesStatus();
+        const failedServices = Object.entries(currentStatus)
+            .filter(([_, service]) => !service.running)
+            .map(([serviceId, _]) => serviceId);
+
+        if (failedServices.length === 0) {
+            return res.json({
+                success: true,
+                message: 'All services are already running',
+                restarted: []
+            });
+        }
+
+        // Restart failed services
+        const restartResults = [];
+        for (const serviceId of failedServices) {
+            try {
+                const restarted = await global.microphoneServicesStarter.restartService(serviceId);
+                restartResults.push({ serviceId, success: restarted });
+            } catch (error) {
+                restartResults.push({ serviceId, success: false, error: error.message });
+            }
+        }
+
+        const successCount = restartResults.filter(r => r.success).length;
+
+        res.json({
+            success: successCount > 0,
+            message: `Restarted ${successCount}/${failedServices.length} services`,
+            restarted: restartResults
+        });
+
+    } catch (error) {
+        logger.error('Error auto-restarting microphone services:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
     }
 });
 

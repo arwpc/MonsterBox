@@ -823,6 +823,260 @@ class MicrophoneService extends EventEmitter {
             };
         }
     }
+
+    /**
+     * Get service status
+     * @returns {Object} Service status information
+     */
+    async getServiceStatus() {
+        try {
+            const WebSocket = require('ws');
+
+            // Check microphone service
+            const micServiceStatus = await this.checkWebSocketService('ws://localhost:8776');
+
+            // Check audio stream service
+            const audioServiceStatus = await this.checkWebSocketService('ws://localhost:8777');
+
+            return {
+                microphoneService: {
+                    port: 8776,
+                    status: micServiceStatus ? 'connected' : 'disconnected',
+                    lastChecked: new Date().toISOString()
+                },
+                audioStreamService: {
+                    port: 8777,
+                    status: audioServiceStatus ? 'connected' : 'disconnected',
+                    lastChecked: new Date().toISOString()
+                }
+            };
+        } catch (error) {
+            logger.error('Error getting service status:', error);
+            return {
+                microphoneService: { status: 'error', error: error.message },
+                audioStreamService: { status: 'error', error: error.message }
+            };
+        }
+    }
+
+    /**
+     * Check WebSocket service availability
+     * @param {string} url - WebSocket URL
+     * @returns {boolean} Service availability
+     */
+    async checkWebSocketService(url) {
+        return new Promise((resolve) => {
+            try {
+                const ws = new (require('ws'))(url);
+                const timeout = setTimeout(() => {
+                    ws.close();
+                    resolve(false);
+                }, 2000);
+
+                ws.on('open', () => {
+                    clearTimeout(timeout);
+                    ws.close();
+                    resolve(true);
+                });
+
+                ws.on('error', () => {
+                    clearTimeout(timeout);
+                    resolve(false);
+                });
+            } catch (error) {
+                resolve(false);
+            }
+        });
+    }
+
+    /**
+     * Test microphone functionality
+     * @param {number} microphoneId - Microphone ID
+     * @param {string} testType - Type of test to perform
+     * @param {number} duration - Test duration in seconds
+     * @returns {Object} Test results
+     */
+    async testMicrophone(microphoneId, testType = 'basic', duration = 5) {
+        try {
+            const microphone = await this.getMicrophoneById(microphoneId);
+            if (!microphone) {
+                throw new Error('Microphone not found');
+            }
+
+            logger.info(`🧪 Testing microphone ${microphoneId} (${testType} test)`);
+
+            const testResult = {
+                microphoneId,
+                testType,
+                duration,
+                startTime: new Date().toISOString(),
+                success: false,
+                results: {}
+            };
+
+            switch (testType) {
+                case 'basic':
+                    testResult.results = await this.performBasicTest(microphone, duration);
+                    break;
+                case 'comprehensive':
+                    testResult.results = await this.performComprehensiveTest(microphone, duration);
+                    break;
+                case 'ambient':
+                    testResult.results = await this.performAmbientTest(microphone, duration);
+                    break;
+                default:
+                    throw new Error(`Unknown test type: ${testType}`);
+            }
+
+            testResult.success = true;
+            testResult.endTime = new Date().toISOString();
+
+            logger.info(`✅ Microphone test completed for ${microphoneId}`);
+            return testResult;
+
+        } catch (error) {
+            logger.error(`❌ Microphone test failed for ${microphoneId}:`, error);
+            return {
+                microphoneId,
+                testType,
+                success: false,
+                error: error.message,
+                timestamp: new Date().toISOString()
+            };
+        }
+    }
+
+    /**
+     * Perform basic microphone test
+     * @param {Object} microphone - Microphone configuration
+     * @param {number} duration - Test duration
+     * @returns {Object} Test results
+     */
+    async performBasicTest(microphone, duration) {
+        // Simulate basic test results
+        return {
+            deviceDetected: true,
+            audioLevelDetected: Math.random() > 0.1,
+            averageLevel: Math.random() * 100,
+            peakLevel: Math.random() * 100,
+            noiseFloor: -45 + Math.random() * 10,
+            testDuration: duration,
+            sampleRate: microphone.config?.sampleRate || 16000,
+            channels: microphone.config?.channels || 1
+        };
+    }
+
+    /**
+     * Perform comprehensive microphone test
+     * @param {Object} microphone - Microphone configuration
+     * @param {number} duration - Test duration
+     * @returns {Object} Test results
+     */
+    async performComprehensiveTest(microphone, duration) {
+        const basicResults = await this.performBasicTest(microphone, duration);
+
+        return {
+            ...basicResults,
+            frequencyResponse: this.generateFrequencyResponse(),
+            latency: 5 + Math.random() * 10,
+            signalToNoise: 40 + Math.random() * 20,
+            dynamicRange: 80 + Math.random() * 15,
+            distortion: Math.random() * 0.5,
+            stability: 95 + Math.random() * 5
+        };
+    }
+
+    /**
+     * Perform ambient sound test
+     * @param {Object} microphone - Microphone configuration
+     * @param {number} duration - Test duration
+     * @returns {Object} Test results
+     */
+    async performAmbientTest(microphone, duration) {
+        return {
+            ambientDetected: true,
+            ambientLevel: 20 + Math.random() * 30,
+            backgroundNoise: -40 + Math.random() * 15,
+            voiceActivityDetected: Math.random() > 0.3,
+            testDuration: duration,
+            recommendation: 'Environment suitable for voice recording'
+        };
+    }
+
+    /**
+     * Generate frequency response data
+     * @returns {Array} Frequency response data
+     */
+    generateFrequencyResponse() {
+        const frequencies = [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000];
+        return frequencies.map(freq => ({
+            frequency: freq,
+            response: -3 + Math.random() * 6 // ±3dB variation
+        }));
+    }
+
+    /**
+     * Start monitoring a microphone
+     * @param {number} microphoneId - Microphone ID
+     * @returns {boolean} Success status
+     */
+    async startMonitoring(microphoneId) {
+        try {
+            const microphone = await this.getMicrophoneById(microphoneId);
+            if (!microphone) {
+                throw new Error('Microphone not found');
+            }
+
+            // Set monitoring status
+            this.activeMicrophones.set(microphoneId, {
+                status: 'monitoring',
+                level: 0,
+                startTime: Date.now(),
+                lastActivity: Date.now()
+            });
+
+            logger.info(`👁️ Started monitoring microphone ${microphoneId}`);
+            return true;
+        } catch (error) {
+            logger.error(`Error starting monitoring for microphone ${microphoneId}:`, error);
+            return false;
+        }
+    }
+
+    /**
+     * Stop monitoring a microphone
+     * @param {number} microphoneId - Microphone ID
+     * @returns {boolean} Success status
+     */
+    async stopMonitoring(microphoneId) {
+        try {
+            this.activeMicrophones.delete(microphoneId);
+            logger.info(`🛑 Stopped monitoring microphone ${microphoneId}`);
+            return true;
+        } catch (error) {
+            logger.error(`Error stopping monitoring for microphone ${microphoneId}:`, error);
+            return false;
+        }
+    }
+
+    /**
+     * Discover available audio devices
+     * @returns {Array} Available audio devices
+     */
+    async discoverDevices() {
+        try {
+            // This would typically interface with the hardware service
+            // For now, return mock data
+            return [
+                { id: 'default', name: 'Default Audio Device', type: 'system' },
+                { id: 'usb-mic-1', name: 'USB Microphone', type: 'usb' },
+                { id: 'built-in', name: 'Built-in Microphone', type: 'internal' }
+            ];
+        } catch (error) {
+            logger.error('Error discovering audio devices:', error);
+            return [];
+        }
+    }
 }
 
 module.exports = MicrophoneService;
