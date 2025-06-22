@@ -22,7 +22,22 @@ router.get('/', async (req, res) => {
         const characters = await characterService.getAllCharacters();
         const parts = await partService.getAllParts();
         const sounds = await soundService.getAllSounds();
-        res.render('characters', { title: 'Characters', characters, parts, sounds });
+
+        res.render('layouts/main', {
+            title: 'Characters',
+            pageTitle: '🎭 Character Management',
+            pageDescription: 'Manage animatronic characters and their configurations. Assign hardware parts and AI instances to create complete character experiences.',
+            breadcrumbs: [
+                { name: 'Home', url: '/' },
+                { name: 'Characters' }
+            ],
+            body: await new Promise((resolve, reject) => {
+                res.app.render('characters', { characters, parts, sounds }, (err, html) => {
+                    if (err) reject(err);
+                    else resolve(html);
+                });
+            })
+        });
     } catch (error) {
         logger.error('Error fetching characters:', error);
         res.status(500).send('An error occurred while fetching characters');

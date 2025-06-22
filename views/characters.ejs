@@ -1,394 +1,533 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title %></title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
-    <link rel="stylesheet" href="/css/style.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-</head>
-<body>
-    <header>
-        <h1 class="landing-title">🎭 <%= title %></h1>
-    </header>
+<%- include('components/button-components', {
+    component: 'buttonGroup',
+    alignment: 'start',
+    buttons: [
+        { text: 'Add New Character', icon: '🎭', href: '/characters/new', class: 'btn-monsterbox' },
+        { text: 'Manage AI Instances', icon: '🧠', href: '/ai-instances', class: 'btn-secondary-monsterbox' },
+        { text: 'Manage Hardware Parts', icon: '🔧', href: '/parts', class: 'btn-secondary-monsterbox' },
+        { text: 'Back to Main Menu', icon: '🏠', href: '/', class: 'btn btn-outline' }
+    ]
+}) %>
 
-    <main>
-        <div class="info-section">
-            <h3>🎭 Character Management</h3>
-            <p>Manage animatronic characters and their configurations. Assign hardware parts and AI instances to create complete character experiences.</p>
-        </div>
+<% if (characters.length === 0) { %>
+<!-- Empty State -->
+<div class="card-monsterbox text-center py-12">
+    <div class="card-body">
+        <div class="text-6xl mb-4">🎭</div>
+        <h3 class="text-2xl font-bold text-primary mb-4">No Characters Found</h3>
+        <p class="text-base-content/70 mb-6">Start by creating your first animatronic character to begin building your MonsterBox experience.</p>
+        <a href="/characters/new" class="btn-monsterbox">
+            🎭 Add New Character
+        </a>
+    </div>
+</div>
+<% } else { %>
 
-        <div class="button-group">
-            <a href="/characters/new" class="button primary-btn">🎭 Add New Character</a>
-            <a href="/ai-instances" class="button">🧠 Manage AI Instances</a>
-            <a href="/parts" class="button">🔧 Manage Hardware Parts</a>
-            <a href="/" class="button secondary-btn">Back to Main Menu</a>
-        </div>
+<!-- Desktop Table View -->
+<div class="hidden lg:block">
+<%- include('components/table-components', {
+    component: 'dataTable',
+    actions: false,
+    headers: [
+        'Image',
+        'Name',
+        'Description',
+        'Hardware Parts',
+        'AI Instances',
+        'Sounds',
+        'Actions'
+    ],
+    rows: characters.map(function(character) {
+        // Process parts assignment
+        let displayParts = [];
+        parts.forEach(function(part) {
+            if (part.characterId === character.id) {
+                displayParts.push(part);
+            }
+        });
+        if (character.parts && character.parts.length > 0) {
+            parts.forEach(function(part) {
+                if (character.parts.includes(part.id) && !displayParts.find(p => p.id === part.id)) {
+                    displayParts.push(part);
+                }
+            });
+        }
 
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Image</th>
-                        <th>Name</th>
-                        <th>Description</th>
-                        <th>Hardware Parts</th>
-                        <th>AI Instances</th>
-                        <th>Sounds</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <% for(let character of characters) { %>
-                        <tr>
-                            <td>
-                                <% if (character.image) { %>
-                                    <img src="/images/characters/<%= character.image %>" alt="<%= character.char_name %>" style="max-width: 100px;">
-                                <% } else { %>
-                                    No Image
-                                <% } %>
-                            </td>
-                            <td><%= character.char_name %></td>
-                            <td><%= character.char_description %></td>
-                            <td>
-                                <div class="parts-assignment">
-                                    <%
-                                    let displayParts = [];
-                                    // Check parts with characterId
-                                    parts.forEach(function(part) {
-                                        if (part.characterId === character.id) {
-                                            displayParts.push(part);
-                                        }
-                                    });
-                                    // Check character's parts array
-                                    if (character.parts && character.parts.length > 0) {
-                                        parts.forEach(function(part) {
-                                            if (character.parts.includes(part.id) && !displayParts.find(p => p.id === part.id)) {
-                                                displayParts.push(part);
-                                            }
-                                        });
-                                    }
-                                    if (displayParts.length > 0) {
-                                        displayParts.forEach(function(part) {
-                                    %>
-                                        <span class="part-tag"><%= part.name %></span>
-                                    <% });
-                                    } else { %>
-                                        <small style="color: #888;">No parts assigned</small>
-                                    <% } %>
-                                    <br>
-                                    <a href="/characters/<%= character.id %>/parts" class="button small-btn">🔧 Manage Parts</a>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="ai-assignment">
-                                    <% if (character.chatterpi_config && character.chatterpi_config.ai_characters && character.chatterpi_config.ai_characters.length > 0) { %>
-                                        <% character.chatterpi_config.ai_characters.forEach(function(aiId) { %>
-                                            <span class="ai-tag">
-                                                <%= aiId === 'orlok' ? 'Count Orlok' :
-                                                    aiId === 'robochat' ? 'RoboChat' :
-                                                    aiId === 'blackbeard' ? 'Blackbeard' :
-                                                    aiId.charAt(0).toUpperCase() + aiId.slice(1) %>
-                                            </span>
-                                        <% }); %>
-                                        <br>
-                                        <small>Default: <%=
-                                            character.chatterpi_config.default_character === 'orlok' ? 'Count Orlok' :
-                                            character.chatterpi_config.default_character === 'robochat' ? 'RoboChat' :
-                                            character.chatterpi_config.default_character === 'blackbeard' ? 'Blackbeard' :
-                                            character.chatterpi_config.default_character || 'None'
-                                        %></small>
-                                        <br>
-                                        <a href="/characters/<%= character.id %>/ai" class="button small-btn">🔄 Change AI</a>
-                                        <button onclick="removeAI(<%= character.id %>)" class="button small-btn danger-btn">❌ Remove AI</button>
-                                    <% } else { %>
-                                        <small style="color: #888;">No AI Assigned</small>
-                                        <br>
-                                        <a href="/characters/<%= character.id %>/ai" class="button small-btn">🧠 Assign AI</a>
-                                    <% } %>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="sounds-assignment">
-                                    <%
-                                    let displaySounds = [];
-                                    // Check sounds with characterIds array
-                                    sounds.forEach(function(sound) {
-                                        if (sound.characterIds && sound.characterIds.includes(character.id)) {
-                                            displaySounds.push(sound);
-                                        }
-                                    });
-                                    // Check character's sounds array
-                                    if (character.sounds && character.sounds.length > 0) {
-                                        sounds.forEach(function(sound) {
-                                            if (character.sounds.includes(sound.id) && !displaySounds.find(s => s.id === sound.id)) {
-                                                displaySounds.push(sound);
-                                            }
-                                        });
-                                    }
-                                    if (displaySounds.length > 0) {
-                                        displaySounds.forEach(function(sound) {
-                                    %>
-                                        <span class="sound-tag"><%= sound.name %></span>
-                                    <% });
-                                    } else { %>
-                                        <small style="color: #888;">No sounds assigned</small>
-                                    <% } %>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="button-group">
-                                    <a href="/characters/<%= character.id %>/edit" class="button">✏️ Edit</a>
-                                    <button onclick="deleteCharacter(<%= character.id %>)" class="button danger-btn">🗑️ Delete</button>
-                                </div>
-                            </td>
-                        </tr>
+        // Process sounds assignment
+        let displaySounds = [];
+        sounds.forEach(function(sound) {
+            if (sound.characterIds && sound.characterIds.includes(character.id)) {
+                displaySounds.push(sound);
+            }
+        });
+        if (character.sounds && character.sounds.length > 0) {
+            sounds.forEach(function(sound) {
+                if (character.sounds.includes(sound.id) && !displaySounds.find(s => s.id === sound.id)) {
+                    displaySounds.push(sound);
+                }
+            });
+        }
+
+        return [
+            // Image
+            character.image ?
+                '<img src="/images/characters/' + character.image + '" alt="' + character.char_name + '" class="w-20 h-20 object-cover rounded-lg">' :
+                '<div class="w-20 h-20 bg-base-200 rounded-lg flex items-center justify-center text-base-content/50">🎭</div>',
+            // Name
+            '<span class="font-bold text-primary">' + character.char_name + '</span>',
+            // Description
+            '<span class="text-base-content/70">' + (character.char_description || 'No description') + '</span>',
+            // Hardware Parts
+            '<div class="space-y-1">' +
+                (displayParts.length > 0 ?
+                    displayParts.map(part => '<span class="badge badge-success badge-sm">' + part.name + '</span>').join(' ') :
+                    '<span class="text-base-content/50 text-sm">No parts assigned</span>'
+                ) +
+                '<br><a href="/characters/' + character.id + '/parts" class="btn btn-xs btn-primary mt-1">🔧 Manage Parts</a>' +
+            '</div>',
+            // AI Instances
+            '<div class="space-y-1">' +
+                (character.chatterpi_config && character.chatterpi_config.ai_characters && character.chatterpi_config.ai_characters.length > 0 ?
+                    character.chatterpi_config.ai_characters.map(aiId =>
+                        '<span class="badge badge-info badge-sm">🧠 ' +
+                        (aiId === 'orlok' ? 'Count Orlok' : aiId === 'robochat' ? 'RoboChat' : aiId === 'blackbeard' ? 'Blackbeard' : aiId.charAt(0).toUpperCase() + aiId.slice(1)) +
+                        '</span>'
+                    ).join(' ') +
+                    '<br><small class="text-base-content/50">Default: ' +
+                    (character.chatterpi_config.default_character === 'orlok' ? 'Count Orlok' : character.chatterpi_config.default_character === 'robochat' ? 'RoboChat' : character.chatterpi_config.default_character === 'blackbeard' ? 'Blackbeard' : character.chatterpi_config.default_character || 'None') +
+                    '</small><br>' +
+                    '<a href="/characters/' + character.id + '/ai" class="btn btn-xs btn-primary mt-1">🔄 Change AI</a> ' +
+                    '<button onclick="removeAI(' + character.id + ')" class="btn btn-xs btn-error mt-1">❌ Remove AI</button>' :
+                    '<span class="text-base-content/50 text-sm">No AI assigned</span><br>' +
+                    '<a href="/characters/' + character.id + '/ai" class="btn btn-xs btn-primary mt-1">🧠 Assign AI</a>'
+                ) +
+            '</div>',
+            // Sounds
+            '<div class="space-y-1">' +
+                (displaySounds.length > 0 ?
+                    displaySounds.map(sound => '<span class="badge badge-warning badge-sm">🔊 ' + sound.name + '</span>').join(' ') :
+                    '<span class="text-base-content/50 text-sm">No sounds assigned</span>'
+                ) +
+            '</div>',
+            // Actions
+            '<div class="flex gap-1">' +
+                '<a href="/characters/' + character.id + '/edit" class="btn btn-sm btn-primary">✏️ Edit</a>' +
+                '<button onclick="deleteCharacter(' + character.id + ')" class="btn btn-sm btn-error">🗑️ Delete</button>' +
+            '</div>'
+        ];
+    })
+}) %>
+</div>
+
+<!-- Mobile Card View -->
+<div class="lg:hidden grid grid-cols-1 gap-4">
+    <% characters.forEach(function(character) { %>
+    <div class="card-monsterbox">
+        <div class="card-body">
+            <div class="flex items-start gap-4 mb-4">
+                <% if (character.image) { %>
+                <img src="/images/characters/<%= character.image %>" alt="<%= character.char_name %>" class="w-16 h-16 object-cover rounded-lg">
+                <% } else { %>
+                <div class="w-16 h-16 bg-base-200 rounded-lg flex items-center justify-center text-base-content/50">🎭</div>
+                <% } %>
+                <div class="flex-1">
+                    <h3 class="card-title text-primary text-lg"><%= character.char_name %></h3>
+                    <p class="text-base-content/70 text-sm"><%= character.char_description || 'No description' %></p>
+                </div>
+            </div>
+
+            <!-- Character Details -->
+            <div class="space-y-3 mb-4">
+                <!-- Hardware Parts -->
+                <div>
+                    <h4 class="text-sm font-semibold text-base-content mb-1">🔧 Hardware Parts:</h4>
+                    <%
+                    let displayParts = [];
+                    parts.forEach(function(part) {
+                        if (part.characterId === character.id) {
+                            displayParts.push(part);
+                        }
+                    });
+                    if (character.parts && character.parts.length > 0) {
+                        parts.forEach(function(part) {
+                            if (character.parts.includes(part.id) && !displayParts.find(p => p.id === part.id)) {
+                                displayParts.push(part);
+                            }
+                        });
+                    }
+                    %>
+                    <% if (displayParts.length > 0) { %>
+                        <div class="flex flex-wrap gap-1 mb-2">
+                            <% displayParts.forEach(function(part) { %>
+                            <span class="badge badge-success badge-sm"><%= part.name %></span>
+                            <% }); %>
+                        </div>
+                    <% } else { %>
+                        <p class="text-base-content/50 text-sm">No parts assigned</p>
                     <% } %>
-                </tbody>
-            </table>
+                    <a href="/characters/<%= character.id %>/parts" class="btn btn-xs btn-primary">🔧 Manage Parts</a>
+                </div>
+
+                <!-- AI Instances -->
+                <div>
+                    <h4 class="text-sm font-semibold text-base-content mb-1">🧠 AI Instances:</h4>
+                    <% if (character.chatterpi_config && character.chatterpi_config.ai_characters && character.chatterpi_config.ai_characters.length > 0) { %>
+                        <div class="flex flex-wrap gap-1 mb-2">
+                            <% character.chatterpi_config.ai_characters.forEach(function(aiId) { %>
+                            <span class="badge badge-info badge-sm">
+                                🧠 <%= aiId === 'orlok' ? 'Count Orlok' : aiId === 'robochat' ? 'RoboChat' : aiId === 'blackbeard' ? 'Blackbeard' : aiId.charAt(0).toUpperCase() + aiId.slice(1) %>
+                            </span>
+                            <% }); %>
+                        </div>
+                        <p class="text-xs text-base-content/50 mb-2">
+                            Default: <%= character.chatterpi_config.default_character === 'orlok' ? 'Count Orlok' : character.chatterpi_config.default_character === 'robochat' ? 'RoboChat' : character.chatterpi_config.default_character === 'blackbeard' ? 'Blackbeard' : character.chatterpi_config.default_character || 'None' %>
+                        </p>
+                        <div class="flex gap-1">
+                            <a href="/characters/<%= character.id %>/ai" class="btn btn-xs btn-primary">🔄 Change AI</a>
+                            <button onclick="removeAI(<%= character.id %>)" class="btn btn-xs btn-error">❌ Remove AI</button>
+                        </div>
+                    <% } else { %>
+                        <p class="text-base-content/50 text-sm mb-2">No AI assigned</p>
+                        <a href="/characters/<%= character.id %>/ai" class="btn btn-xs btn-primary">🧠 Assign AI</a>
+                    <% } %>
+                </div>
+
+                <!-- Sounds -->
+                <div>
+                    <h4 class="text-sm font-semibold text-base-content mb-1">🔊 Sounds:</h4>
+                    <%
+                    let displaySounds = [];
+                    sounds.forEach(function(sound) {
+                        if (sound.characterIds && sound.characterIds.includes(character.id)) {
+                            displaySounds.push(sound);
+                        }
+                    });
+                    if (character.sounds && character.sounds.length > 0) {
+                        sounds.forEach(function(sound) {
+                            if (character.sounds.includes(sound.id) && !displaySounds.find(s => s.id === sound.id)) {
+                                displaySounds.push(sound);
+                            }
+                        });
+                    }
+                    %>
+                    <% if (displaySounds.length > 0) { %>
+                        <div class="flex flex-wrap gap-1">
+                            <% displaySounds.forEach(function(sound) { %>
+                            <span class="badge badge-warning badge-sm">🔊 <%= sound.name %></span>
+                            <% }); %>
+                        </div>
+                    <% } else { %>
+                        <p class="text-base-content/50 text-sm">No sounds assigned</p>
+                    <% } %>
+                </div>
+            </div>
+
+            <!-- Card Actions -->
+            <div class="card-actions justify-end">
+                <a href="/characters/<%= character.id %>/edit" class="btn btn-sm btn-primary">✏️ Edit</a>
+                <button onclick="deleteCharacter(<%= character.id %>)" class="btn btn-sm btn-error">🗑️ Delete</button>
+            </div>
         </div>
+    </div>
+    <% }); %>
+</div>
+
+<% } %>
+
+<!-- Confirmation Modal -->
+<%- include('components/modal-components', {
+    component: 'confirmModal',
+    id: 'deleteModal',
+    title: 'Delete Character',
+    message: 'Are you sure you want to delete this character? This action cannot be undone.',
+    details: 'This will remove all character data, part assignments, and AI configurations.',
+    onConfirm: 'confirmDelete()',
+    confirmText: 'Delete Character',
+    cancelText: 'Cancel'
+}) %>
+
+<!-- Result Modal -->
+<%- include('components/modal-components', {
+    component: 'modal',
+    id: 'resultModal',
+    title: 'Operation Result',
+    size: 'md'
+}) %>
+
+<!-- Additional Scripts for Character Management -->
+<script>
+    // Global variables for modal management
+    let currentDeleteId = null;
+
+    // Modal management functions
+    function showModal(id) {
+        document.getElementById(id).classList.add('modal-open');
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('modal-open');
+        if (id === 'deleteModal') {
+            currentDeleteId = null;
+        }
+    }
+
+    // Show result modal with content
+    function showResultModal(title, content) {
+        document.getElementById('resultModal').querySelector('h3').textContent = title;
+        document.getElementById('resultModal').querySelector('.modal-content').innerHTML = content;
+        showModal('resultModal');
+    }
+
+
+    // Remove AI function
+    function removeAI(characterId) {
+        // Get character name for confirmation
+        const characterName = getCharacterName(characterId);
+
+        if (confirm(`Are you sure you want to remove all AI assignments from "${characterName}"?`)) {
+            showLoading();
+            showResultModal('Removing AI...', '<div class="flex-center py-4"><div class="loading-spinner"></div><p class="mt-2">Please wait while AI assignments are being removed...</p></div>');
+
+            fetch(`/characters/${characterId}/ai/remove-all`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.success) {
+                    showResultModal('AI Removed', `
+                        <div class="alert alert-success">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span>All AI assignments have been removed from "${characterName}".</span>
+                        </div>
+                    `);
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                } else {
+                    showResultModal('Remove AI Failed', `
+                        <div class="alert alert-error">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span>Failed to remove AI from "${characterName}": ${data.error}</span>
+                        </div>
+                    `);
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('Error details:', error);
+                showResultModal('Remove AI Failed', `
+                    <div class="alert alert-error">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span>Failed to remove AI from "${characterName}": ${error.message}</span>
+                    </div>
+                `);
+            });
+        }
+    }
+
+    // Delete character function
+    function deleteCharacter(id) {
+        currentDeleteId = id;
+        const characterName = getCharacterName(id);
+
+        // Update modal content with character name
+        const modal = document.getElementById('deleteModal');
+        modal.querySelector('p').textContent = `Are you sure you want to delete "${characterName}"? This action cannot be undone.`;
+
+        showModal('deleteModal');
+    }
+
+    // Confirm delete function
+    function confirmDelete() {
+        if (!currentDeleteId) return;
+
+        const characterName = getCharacterName(currentDeleteId);
+        showLoading();
+        showResultModal('Deleting Character...', '<div class="flex-center py-4"><div class="loading-spinner"></div><p class="mt-2">Please wait while the character is being deleted...</p></div>');
+
+        fetch('/characters/' + currentDeleteId + '/delete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            if (data.success !== false) {
+                showResultModal('Character Deleted', `
+                    <div class="alert alert-success">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span>"${characterName}" has been successfully deleted.</span>
+                    </div>
+                `);
+                setTimeout(() => {
+                    location.reload();
+                }, 2000);
+            } else {
+                showResultModal('Delete Failed', `
+                    <div class="alert alert-error">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span>Failed to delete "${characterName}": ${data.error}</span>
+                    </div>
+                `);
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error details:', error);
+            showResultModal('Delete Failed', `
+                <div class="alert alert-error">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span>Failed to delete "${characterName}": ${error.message}</span>
+                </div>
+            `);
+        });
+    }
+
+    // Helper function to get character name by ID
+    function getCharacterName(id) {
+        // Try to find character name in the DOM
+        const button = document.querySelector(`button[onclick*="deleteCharacter(${id})"], button[onclick*="removeAI(${id})"]`);
+        if (button) {
+            const row = button.closest('tr');
+            if (row) {
+                const nameCell = row.querySelector('td:nth-child(2)');
+                if (nameCell) return nameCell.textContent.trim();
+            }
+
+            const card = button.closest('.card-monsterbox');
+            if (card) {
+                const title = card.querySelector('.card-title');
+                if (title) return title.textContent.trim();
+            }
+        }
+        return 'Unknown Character';
+    }
+
+    // Close modal when clicking outside of it
+    window.onclick = function(event) {
+        if (event.target.classList.contains('modal')) {
+            const modalId = event.target.id;
+            closeModal(modalId);
+        }
+    }
+</script>
+
     </main>
 
-    <!-- Modal for displaying results -->
-    <div id="resultModal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal()">&times;</span>
-            <h2 id="modalTitle">Result</h2>
-            <div id="modalBody"></div>
+    <!-- Footer -->
+    <footer class="footer footer-center p-10 bg-base-200 text-base-content border-t border-primary">
+        <div>
+            <div class="grid grid-flow-col gap-4">
+                <a href="https://github.com/arwpc/MonsterBox" target="_blank" class="btn btn-ghost btn-circle" aria-label="GitHub">
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                    </svg>
+                </a>
+            </div>
+            <div>
+                <p class="font-bold text-primary font-creepster">MonsterBox™</p>
+                <p>An animatronic automation package by ARW Halloween 2024 2.0</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Loading overlay -->
+    <div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-75 flex-center z-50 hidden">
+        <div class="text-center">
+            <div class="loading-spinner mx-auto mb-4"></div>
+            <p class="text-primary font-terminal">Loading...</p>
         </div>
     </div>
 
-    <style>
-        .modal {
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.8);
-        }
-
-        .modal-content {
-            background-color: #000;
-            border: 2px solid #00ff00;
-            margin: 5% auto;
-            padding: 20px;
-            width: 80%;
-            max-width: 800px;
-            border-radius: 5px;
-            color: #00ff00;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        .close {
-            color: #ff0000;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .close:hover {
-            color: #ff6666;
-        }
-
-        .small-btn {
-            padding: 2px 6px;
-            font-size: 12px;
-            margin: 1px;
-            min-width: 25px;
-        }
-
-        .small-btn.disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            background-color: #333;
-            color: #666;
-        }
-
-        .animatronic-status {
-            font-size: 12px;
-        }
-
-        .animatronic-controls {
-            display: flex;
-            gap: 2px;
-            flex-wrap: wrap;
-        }
-
-        .test-result {
-            margin: 10px 0;
-            padding: 10px;
-            border: 1px solid #333;
-            border-radius: 3px;
-        }
-
-        .test-passed {
-            border-color: #00ff00;
-            background-color: rgba(0, 255, 0, 0.1);
-        }
-
-        .test-failed {
-            border-color: #ff0000;
-            background-color: rgba(255, 0, 0, 0.1);
-        }
-
-        .log-section {
-            margin: 10px 0;
-            padding: 10px;
-            border: 1px solid #333;
-            border-radius: 3px;
-            background-color: rgba(0, 0, 0, 0.3);
-        }
-
-        .log-content {
-            font-family: monospace;
-            font-size: 11px;
-            white-space: pre-wrap;
-            max-height: 200px;
-            overflow-y: auto;
-            background-color: #111;
-            padding: 5px;
-            border: 1px solid #333;
-        }
-
-        .info-section {
-            background: rgba(0, 255, 0, 0.1);
-            border: 1px solid #00ff00;
-            border-radius: 5px;
-            padding: 15px;
-            margin: 20px 0;
-        }
-
-        .info-section h3 {
-            color: #00ff00;
-            margin-bottom: 10px;
-        }
-
-        .parts-assignment, .ai-assignment, .sounds-assignment {
-            font-size: 12px;
-        }
-
-        .part-tag, .ai-tag, .sound-tag {
-            display: inline-block;
-            padding: 2px 6px;
-            margin: 1px;
-            border-radius: 8px;
-            font-size: 10px;
-            font-weight: bold;
-        }
-
-        .part-tag {
-            background: rgba(76, 175, 80, 0.2);
-            color: #4CAF50;
-            border: 1px solid #4CAF50;
-        }
-
-        .ai-tag {
-            background: rgba(33, 150, 243, 0.2);
-            color: #2196F3;
-            border: 1px solid #2196F3;
-        }
-
-        .sound-tag {
-            background: rgba(255, 152, 0, 0.2);
-            color: #ff9800;
-            border: 1px solid #ff9800;
-        }
-    </style>
-
+    <!-- Scripts -->
     <script>
+        // Theme management
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('monsterbox-theme', theme);
+        }
 
+        // Load saved theme
+        const savedTheme = localStorage.getItem('monsterbox-theme') || 'monsterbox';
+        setTheme(savedTheme);
 
-        function removeAI(characterId) {
-            // Get character name for confirmation
-            const button = document.querySelector(`button[onclick="removeAI(${characterId})"]`);
-            const characterRow = button.closest('tr');
-            const characterName = characterRow.querySelector('td:nth-child(2)').textContent.trim();
+        // Character selection management
+        function updateCharacter(characterId) {
+            localStorage.setItem('selectedCharacter', characterId);
+            updateNavigation(characterId);
 
-            if (confirm(`Are you sure you want to remove all AI assignments from "${characterName}"?`)) {
-                showModal('Removing AI...', '<p>Please wait while AI assignments are being removed...</p>');
+            fetch('/set-character', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ characterId: characterId }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Character updated successfully');
+                } else {
+                    console.error('Failed to update character');
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
 
-                fetch(`/characters/${characterId}/ai/remove-all`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        showModal('AI Removed', `<p style="color: #00ff00;">✅ All AI assignments have been removed from "${characterName}".</p>`);
-                        setTimeout(() => {
-                            location.reload();
-                        }, 2000);
-                    } else {
-                        showModal('Remove AI Failed', `<p style="color: #ff0000;">❌ Failed to remove AI from "${characterName}": ${data.error}</p>`);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error details:', error);
-                    showModal('Remove AI Failed', `<p style="color: #ff0000;">❌ Failed to remove AI from "${characterName}": ${error.message}</p>`);
-                });
+        // Navigation updates based on character selection
+        function updateNavigation(characterId) {
+            // Update navigation links with character context
+            const navLinks = document.querySelectorAll('[data-character-link]');
+            navLinks.forEach(link => {
+                const baseUrl = link.getAttribute('data-character-link');
+                if (characterId) {
+                    link.href = `${baseUrl}?character=${characterId}`;
+                } else {
+                    link.href = baseUrl;
+                }
+            });
+        }
+
+        // Loading overlay management
+        function showLoading() {
+            document.getElementById('loading-overlay').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading-overlay').classList.add('hidden');
+        }
+
+        // Initialize character selection on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedCharacter = localStorage.getItem('selectedCharacter');
+            if (savedCharacter) {
+                updateNavigation(savedCharacter);
+                const characterSelect = document.getElementById('character-select');
+                if (characterSelect) {
+                    characterSelect.value = savedCharacter;
+                }
             }
-        }
-
-        function deleteCharacter(id) {
-            // Get character name for confirmation
-            const button = document.querySelector(`button[onclick="deleteCharacter(${id})"]`);
-            const characterRow = button.closest('tr');
-            const characterName = characterRow.querySelector('td:nth-child(2)').textContent.trim();
-
-            if (confirm(`Are you sure you want to delete "${characterName}"? This action cannot be undone.`)) {
-                // Show loading state
-                showModal('Deleting Character...', '<p>Please wait while the character is being deleted...</p>');
-
-                fetch('/characters/' + id + '/delete', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success !== false) {
-                        showModal('Character Deleted', `<p style="color: #00ff00;">✅ "${characterName}" has been successfully deleted.</p>`);
-                        setTimeout(() => {
-                            location.reload();
-                        }, 2000);
-                    } else {
-                        showModal('Delete Failed', `<p style="color: #ff0000;">❌ Failed to delete "${characterName}": ${data.error}</p>`);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error details:', error);
-                    showModal('Delete Failed', `<p style="color: #ff0000;">❌ Failed to delete "${characterName}": ${error.message}</p>`);
-                });
-            }
-        }
-
-        function closeModal() {
-            document.getElementById('resultModal').style.display = 'none';
-        }
-
-        function showModal(title, content) {
-            document.getElementById('modalTitle').textContent = title;
-            document.getElementById('modalBody').innerHTML = content;
-            document.getElementById('resultModal').style.display = 'block';
-        }
-
-
-
-        // Close modal when clicking outside of it
-        window.onclick = function(event) {
-            const modal = document.getElementById('resultModal');
-            if (event.target == modal) {
-                closeModal();
-            }
-        }
+        });
     </script>
 </body>
 </html>

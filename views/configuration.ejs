@@ -1,275 +1,1296 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="monsterbox">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%- title %></title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link rel="stylesheet" href="/css/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <style>
-        .config-container {
-            padding: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .config-section {
-            background: var(--background-color);
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-        }
-
-        .config-section h2 {
-            color: var(--primary-color);
-            margin-bottom: 15px;
-            border-bottom: 2px solid var(--primary-color);
-            padding-bottom: 10px;
-        }
-
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .info-item {
-            background: rgba(0, 255, 0, 0.1);
-            padding: 10px;
-            border-radius: 4px;
-            border-left: 3px solid var(--primary-color);
-        }
-
-        .info-label {
-            font-weight: bold;
-            color: var(--primary-color);
-        }
-
-        .info-value {
-            color: var(--text-color);
-            margin-top: 5px;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-top: 20px;
-        }
-
-        .drive-info {
-            margin-bottom: 10px;
-            padding: 10px;
-            background: rgba(0, 255, 0, 0.05);
-            border-radius: 4px;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 20px;
-            background: #333;
-            border-radius: 10px;
-            overflow: hidden;
-            margin-top: 5px;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #00ff00, #ffff00, #ff0000);
-            transition: width 0.3s ease;
-        }
-
-        .cleanup-section {
-            border: 2px solid var(--primary-color);
-            background: rgba(0, 255, 0, 0.05);
-        }
-
-        .cleanup-section h2 {
-            color: #ff6b6b;
-        }
-
-        .warning-text {
-            color: #ff6b6b;
-            font-style: italic;
-            margin-bottom: 15px;
-        }
-
-        /* Modal styles */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal-content {
-            background: var(--background-color);
-            color: var(--primary-color);
-            padding: 24px;
-            border-radius: 8px;
-            max-width: 500px;
-            margin: auto;
-            border: 2px solid var(--primary-color);
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        .modal h3 {
-            color: var(--primary-color);
-            margin-bottom: 15px;
-        }
-
-        .file-list {
-            max-height: 200px;
-            overflow: auto;
-            border: 1px solid var(--primary-color);
-            margin-bottom: 16px;
-            padding: 8px;
-            color: var(--text-color);
-            background: rgba(0, 0, 0, 0.3);
-        }
-
-        .error-message {
-            color: #ff4444;
-            margin-bottom: 12px;
-        }
-    </style>
+    <title><%= title || 'MonsterBox Configuration' %></title>
+    
+    <!-- Preload critical fonts -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&family=Creepster&display=swap" as="style">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&family=Creepster&display=swap">
+    
+    <!-- Tailwind CSS with DaisyUI -->
+    <link rel="stylesheet" href="/css/main.css?v=<%= Date.now() %>">
+    
+    <!-- Custom MonsterBox themes -->
+    <link rel="stylesheet" href="/css/custom-themes.css?v=<%= Date.now() %>">
+    
+    <!-- Favicon and meta tags -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <meta name="description" content="MonsterBox - System Configuration">
+    <meta name="theme-color" content="#00ff00">
 </head>
-<body>
-    <header>
-        <h1 class="landing-title"><%- title %></h1>
-    </header>
 
-    <main class="config-container">
-        <!-- Navigation -->
-        <div class="button-group" style="margin-bottom: 20px;">
-            <a href="/" class="button secondary-btn">
-                <i class="fas fa-home"></i> Back to Main Menu
-            </a>
+<body class="min-h-screen bg-base-100 text-base-content font-terminal scrollbar-monsterbox">
+    <!-- Skip to main content for accessibility -->
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 btn-monsterbox z-50">
+        Skip to main content
+    </a>
+
+    <!-- Navigation -->
+    <nav class="navbar bg-base-200 border-b border-primary shadow-lg sticky top-0 z-40">
+        <div class="container-monsterbox">
+            <div class="navbar-start">
+                <!-- Mobile menu button -->
+                <div class="dropdown lg:hidden">
+                    <label tabindex="0" class="btn btn-ghost btn-circle" aria-label="Open menu">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </label>
+                    <ul tabindex="0" class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-200 rounded-box w-52 border border-primary">
+                        <%- include('components/navigation-mobile') %>
+                    </ul>
+                </div>
+                
+                <!-- Logo -->
+                <a href="/" class="btn btn-ghost text-xl font-creepster text-primary hover:text-green-600">
+                    🎭 MonsterBox™
+                </a>
+            </div>
+            
+            <!-- Desktop navigation -->
+            <div class="navbar-center hidden lg:flex">
+                <ul class="menu menu-horizontal px-1">
+                    <%- include('components/navigation-desktop') %>
+                </ul>
+            </div>
+            
+            <!-- User actions -->
+            <div class="navbar-end">
+                <!-- Theme selector -->
+                <div class="dropdown dropdown-end">
+                    <label tabindex="0" class="btn btn-ghost btn-circle" aria-label="Change theme">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                        </svg>
+                    </label>
+                    <ul tabindex="0" class="dropdown-content z-[1] p-2 shadow bg-base-200 rounded-box w-52 border border-primary">
+                        <li><a onclick="setTheme('monsterbox')" class="theme-option">🖥️ Terminal</a></li>
+                        <li><a onclick="setTheme('monsterbox-halloween')" class="theme-option">🎃 Halloween</a></li>
+                        <li><a onclick="setTheme('monsterbox-retro')" class="theme-option">👾 Retro</a></li>
+                        <li><a onclick="setTheme('dracula')" class="theme-option">🧛 Dracula</a></li>
+                        <li><a onclick="setTheme('dark')" class="theme-option">🌙 Dark</a></li>
+                        <li><a onclick="setTheme('light')" class="theme-option">☀️ Light</a></li>
+                    </ul>
+                </div>
+                
+                <!-- Home button -->
+                <a href="/" class="btn btn-ghost btn-circle" aria-label="Home">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main content -->
+    <main id="main-content" class="flex-1 container-monsterbox py-8">
+        <!-- Breadcrumbs -->
+        <% if (typeof breadcrumbs !== 'undefined' && breadcrumbs.length > 0) { %>
+        <div class="breadcrumbs text-sm mb-6">
+            <ul>
+                <% breadcrumbs.forEach(function(crumb, index) { %>
+                <li>
+                    <% if (index === breadcrumbs.length - 1) { %>
+                        <span class="text-primary"><%= crumb.name %></span>
+                    <% } else { %>
+                        <a href="<%= crumb.url %>" class="hover:text-primary"><%= crumb.name %></a>
+                    <% } %>
+                </li>
+                <% }); %>
+            </ul>
+        </div>
+        <% } %>
+
+        <!-- Page title -->
+        <% if (typeof pageTitle !== 'undefined') { %>
+        <div class="mb-8">
+            <h1 class="text-4xl font-bold text-primary font-creepster mb-2 glow-text">
+                <%= pageTitle %>
+            </h1>
+            <% if (typeof pageDescription !== 'undefined') { %>
+            <p class="text-base-content/70 text-lg">
+                <%= pageDescription %>
+            </p>
+            <% } %>
+        </div>
+        <% } %>
+
+        <!-- Configuration Tabs -->
+        <div class="tabs tabs-boxed mb-8 bg-base-200 p-1">
+            <a class="tab tab-active" onclick="showTab('ui-settings')">🎨 UI Settings</a>
+            <a class="tab" onclick="showTab('system-info')">📊 System Info</a>
+            <a class="tab" onclick="showTab('storage-info')">💾 Storage</a>
+            <a class="tab" onclick="showTab('hardware-monitor')">📊 Hardware Monitor</a>
+            <a class="tab" onclick="showTab('system-maintenance')">🧹 System Maintenance</a>
+            <a class="tab" onclick="showTab('log-collection')">📈 Log Collection</a>
         </div>
 
-        <!-- System Information -->
-        <div class="config-section">
-            <h2><i class="fas fa-info-circle"></i> System Information</h2>
-            <div class="info-grid">
-                <div class="info-item">
-                    <div class="info-label">Platform</div>
-                    <div class="info-value"><%- systemInfo.platform %> (<%- systemInfo.arch %>)</div>
+        <!-- UI Settings Tab -->
+        <div id="ui-settings" class="tab-content">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Theme Configuration -->
+                <div class="card-monsterbox">
+                    <div class="card-header-monsterbox">
+                        <h3 class="text-xl font-bold text-primary flex items-center">
+                            🎨 Theme Settings
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-control w-full">
+                            <label class="label">
+                                <span class="label-text text-base-content">Choose Theme:</span>
+                            </label>
+                            <select id="theme-selector" class="select select-bordered select-primary w-full" onchange="previewTheme(this.value)">
+                                <% if (typeof availableThemes !== 'undefined') { %>
+                                    <% availableThemes.forEach(function(theme) { %>
+                                        <option value="<%= theme.id %>" <%= userSettings && userSettings.theme === theme.id ? 'selected' : '' %>>
+                                            <%= theme.name %>
+                                        </option>
+                                    <% }); %>
+                                <% } %>
+                            </select>
+                            <label class="label">
+                                <span class="label-text-alt text-base-content/70">Changes are previewed in real-time</span>
+                            </label>
+                        </div>
+
+                        <div class="form-control w-full mt-4">
+                            <label class="label">
+                                <span class="label-text text-base-content">Font Family:</span>
+                            </label>
+                            <select id="font-selector" class="select select-bordered select-primary w-full" onchange="previewFont(this.value)">
+                                <% if (typeof availableFonts !== 'undefined') { %>
+                                    <% availableFonts.forEach(function(font) { %>
+                                        <option value="<%= font.id %>" <%= userSettings && userSettings.fontFamily === font.id ? 'selected' : '' %>>
+                                            <%= font.name %>
+                                        </option>
+                                    <% }); %>
+                                <% } %>
+                            </select>
+                        </div>
+
+                        <div class="form-control w-full mt-4">
+                            <label class="label">
+                                <span class="label-text text-base-content">Font Size:</span>
+                            </label>
+                            <div class="join">
+                                <input class="join-item btn" type="radio" name="font-size" aria-label="Small" value="small" <%= userSettings && userSettings.fontSize === 'small' ? 'checked' : '' %> onchange="previewFontSize(this.value)">
+                                <input class="join-item btn" type="radio" name="font-size" aria-label="Medium" value="medium" <%= !userSettings || userSettings.fontSize === 'medium' ? 'checked' : '' %> onchange="previewFontSize(this.value)">
+                                <input class="join-item btn" type="radio" name="font-size" aria-label="Large" value="large" <%= userSettings && userSettings.fontSize === 'large' ? 'checked' : '' %> onchange="previewFontSize(this.value)">
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="info-item">
-                    <div class="info-label">Hostname</div>
-                    <div class="info-value"><%- systemInfo.hostname %></div>
+
+                <!-- Live Preview -->
+                <div class="card-monsterbox">
+                    <div class="card-header-monsterbox">
+                        <h3 class="text-xl font-bold text-primary flex items-center">
+                            👁️ Live Preview
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="preview-area" class="p-4 border border-primary rounded-lg bg-base-200">
+                            <h4 class="text-lg font-bold text-primary mb-2">Sample Content</h4>
+                            <p class="text-base-content mb-4">This is how your MonsterBox interface will look with the selected theme and font settings.</p>
+                            <div class="flex gap-2">
+                                <button class="btn-monsterbox btn-sm">Primary Button</button>
+                                <button class="btn-secondary-monsterbox btn-sm">Secondary Button</button>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 flex gap-2">
+                            <button class="btn-monsterbox" onclick="saveSettings()">
+                                💾 Save Settings
+                            </button>
+                            <button class="btn btn-outline btn-warning" onclick="resetSettings()">
+                                🔄 Reset to Defaults
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <div class="info-item">
-                    <div class="info-label">IP Address</div>
-                    <div class="info-value"><%- ipAddress %></div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">CPU Cores</div>
-                    <div class="info-value"><%- systemInfo.cpus %></div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Total Memory</div>
-                    <div class="info-value"><%- systemInfo.totalMem %></div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Free Memory</div>
-                    <div class="info-value"><%- systemInfo.freeMem %></div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Uptime</div>
-                    <div class="info-value"><%- systemInfo.uptime %></div>
-                </div>
-                <% if (wifiSignal !== 'N/A') { %>
-                <div class="info-item">
-                    <div class="info-label">WiFi Signal</div>
-                    <div class="info-value"><%- wifiSignal %></div>
-                </div>
-                <% } %>
-                <% if (power !== 'N/A') { %>
-                <div class="info-item">
-                    <div class="info-label">Power Supply</div>
-                    <div class="info-value"><%- power %></div>
-                </div>
-                <% } %>
             </div>
         </div>
 
-        <!-- Storage Information -->
-        <div class="config-section">
-            <h2><i class="fas fa-hdd"></i> Storage Information</h2>
-            <% driveInfo.forEach(function(drive) { %>
-                <% if (drive.error) { %>
-                    <div class="error-message"><%- drive.error %></div>
-                <% } else { %>
-                    <div class="drive-info">
-                        <div class="info-label"><%- drive.filesystem %></div>
-                        <div class="info-value">
-                            <%- drive.used %> used of <%- drive.size %> (<%- drive.available %> available)
+        <!-- System Information Tab -->
+        <div id="system-info" class="tab-content hidden">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <% if (typeof systemInfo !== 'undefined') { %>
+                    <div class="card-monsterbox">
+                        <div class="card-header-monsterbox">
+                            <h3 class="text-lg font-bold text-primary">🖥️ System</h3>
                         </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: <%- drive.capacity %>%"></div>
+                        <div class="card-body">
+                            <div class="space-y-2">
+                                <div class="flex justify-between">
+                                    <span class="text-base-content/70">Hostname:</span>
+                                    <span class="text-primary font-mono"><%= systemInfo.hostname %></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-base-content/70">Platform:</span>
+                                    <span class="text-primary font-mono"><%= systemInfo.platform %></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-base-content/70">Architecture:</span>
+                                    <span class="text-primary font-mono"><%= systemInfo.arch %></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-base-content/70">Uptime:</span>
+                                    <span class="text-primary font-mono"><%= systemInfo.uptime %></span>
+                                </div>
+                            </div>
                         </div>
-                        <div style="font-size: 0.9em; color: #ccc; margin-top: 5px;">
-                            <%- drive.capacity %>% used
+                    </div>
+
+                    <div class="card-monsterbox">
+                        <div class="card-header-monsterbox">
+                            <h3 class="text-lg font-bold text-primary">🧠 CPU & Memory</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="space-y-2">
+                                <div class="flex justify-between">
+                                    <span class="text-base-content/70">CPU Model:</span>
+                                    <span class="text-primary font-mono text-sm"><%= systemInfo.cpuModel %></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-base-content/70">CPU Cores:</span>
+                                    <span class="text-primary font-mono"><%= systemInfo.cpuCores %></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-base-content/70">Total Memory:</span>
+                                    <span class="text-primary font-mono"><%= systemInfo.totalMemory %></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-base-content/70">Free Memory:</span>
+                                    <span class="text-success font-mono"><%= systemInfo.freeMemory %></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-base-content/70">Load Average:</span>
+                                    <span class="text-warning font-mono"><%= systemInfo.loadAverage %></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-monsterbox">
+                        <div class="card-header-monsterbox">
+                            <h3 class="text-lg font-bold text-primary">🌐 Network & Power</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="space-y-2">
+                                <div class="flex justify-between">
+                                    <span class="text-base-content/70">IP Address:</span>
+                                    <span class="text-primary font-mono"><%= ipAddress %></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-base-content/70">WiFi Signal:</span>
+                                    <span class="text-info font-mono"><%= wifiSignal %></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-base-content/70">Power Status:</span>
+                                    <span class="text-success font-mono"><%= power %></span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 <% } %>
-            <% }); %>
-        </div>
-
-        <!-- System Maintenance -->
-        <div class="config-section cleanup-section">
-            <h2><i class="fas fa-tools"></i> System Maintenance</h2>
-            <p class="warning-text">
-                <i class="fas fa-exclamation-triangle"></i>
-                Use these tools carefully. Some actions cannot be undone.
-            </p>
-            
-            <div class="action-buttons">
-                <button id="cleanupBtn" class="button primary-btn">
-                    <i class="fas fa-broom"></i> Cleanup Unused Sound Files
-                </button>
-                <button id="rebootBtn" class="button" style="background-color: #ff6b6b;">
-                    <i class="fas fa-power-off"></i> Reboot System
-                </button>
             </div>
         </div>
 
-        <!-- Cleanup Modal -->
-        <div id="cleanupModal" class="modal">
-            <div class="modal-content">
-                <h3>Confirm Cleanup</h3>
-                <p>The following sound files are not referenced in any character configuration:</p>
-                <div id="cleanupFileList" class="file-list">
-                    Sound files will be analyzed and unused files will be deleted
+        <!-- Storage Information Tab -->
+        <div id="storage-info" class="tab-content hidden">
+            <% if (typeof driveInfo !== 'undefined' && driveInfo.length > 0) { %>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <% driveInfo.forEach(function(drive) { %>
+                        <div class="card-monsterbox">
+                            <div class="card-header-monsterbox">
+                                <h3 class="text-lg font-bold text-primary flex items-center">
+                                    💾 <%= drive.filesystem %>
+                                </h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="space-y-3">
+                                    <div class="flex justify-between">
+                                        <span class="text-base-content/70">Size:</span>
+                                        <span class="text-primary font-mono"><%= drive.size %></span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-base-content/70">Used:</span>
+                                        <span class="text-warning font-mono"><%= drive.used %></span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-base-content/70">Available:</span>
+                                        <span class="text-success font-mono"><%= drive.available %></span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-base-content/70">Mount Point:</span>
+                                        <span class="text-info font-mono"><%= drive.mount %></span>
+                                    </div>
+
+                                    <!-- Usage Progress Bar -->
+                                    <div class="w-full">
+                                        <div class="flex justify-between text-sm mb-1">
+                                            <span class="text-base-content/70">Usage</span>
+                                            <span class="text-primary font-mono"><%= drive.capacity %></span>
+                                        </div>
+                                        <div class="w-full bg-base-300 rounded-full h-2.5">
+                                            <div class="bg-primary h-2.5 rounded-full shadow-glow-sm" style="width: <%= drive.capacity %>"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <% }); %>
                 </div>
-                <div id="cleanupFileStats" style="margin-bottom: 12px; color: var(--text-color);">
-                    Click "Delete Files" to remove any unused sound files
+            <% } else { %>
+                <div class="alert alert-info">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span>Storage information is not available at this time.</span>
                 </div>
-                <div id="cleanupModalError" class="error-message"></div>
-                <div class="action-buttons">
-                    <button id="confirmCleanupBtn" class="button primary-btn">Delete Files</button>
-                    <button id="cancelCleanupBtn" class="button secondary-btn">Cancel</button>
+            <% } %>
+        </div>
+
+        <!-- Hardware Monitor Tab -->
+        <div id="hardware-monitor" class="tab-content hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Service Status -->
+                <div class="card-monsterbox">
+                    <div class="card-header-monsterbox">
+                        <h3 class="text-xl font-bold text-primary flex items-center">
+                            📡 Service Status
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center">
+                                <span class="text-base-content/70">Main Server:</span>
+                                <div class="badge badge-success" id="main-status">Connected</div>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-base-content/70">Motor Service:</span>
+                                <div class="badge badge-warning" id="motor-status">Checking...</div>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-base-content/70">Light Service:</span>
+                                <div class="badge badge-warning" id="light-status">Checking...</div>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-base-content/70">Sensor Service:</span>
+                                <div class="badge badge-warning" id="sensor-status">Checking...</div>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-base-content/70">Registry Service:</span>
+                                <div class="badge badge-warning" id="registry-status">Checking...</div>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <button class="btn-monsterbox btn-sm" onclick="refreshServiceStatus()">
+                                🔄 Refresh Status
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hardware Controls -->
+                <div class="card-monsterbox">
+                    <div class="card-header-monsterbox">
+                        <h3 class="text-xl font-bold text-primary flex items-center">
+                            🔧 Hardware Controls
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="space-y-4">
+                            <!-- Motor Control -->
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text text-base-content">Motor Control:</span>
+                                </label>
+                                <div class="join">
+                                    <input type="number" id="motor-pin" placeholder="Pin" class="input input-bordered input-sm join-item w-20" value="18">
+                                    <select id="motor-direction" class="select select-bordered select-sm join-item">
+                                        <option value="forward">Forward</option>
+                                        <option value="backward">Backward</option>
+                                    </select>
+                                    <input type="number" id="motor-speed" placeholder="Speed" class="input input-bordered input-sm join-item w-20" value="50" min="0" max="100">
+                                    <button class="btn btn-primary btn-sm join-item" onclick="controlMotor()">Run</button>
+                                </div>
+                            </div>
+
+                            <!-- LED Control -->
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text text-base-content">LED Control:</span>
+                                </label>
+                                <div class="join">
+                                    <input type="number" id="led-pin" placeholder="Pin" class="input input-bordered input-sm join-item w-20" value="21">
+                                    <input type="color" id="led-color" class="input input-bordered input-sm join-item w-16" value="#00ff00">
+                                    <input type="range" id="led-brightness" class="range range-primary range-sm join-item" min="0" max="255" value="255">
+                                    <button class="btn btn-primary btn-sm join-item" onclick="controlLED()">Set</button>
+                                </div>
+                            </div>
+
+                            <!-- Sensor Reading -->
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text text-base-content">Sensor Reading:</span>
+                                </label>
+                                <div class="join">
+                                    <input type="number" id="sensor-pin" placeholder="Pin" class="input input-bordered input-sm join-item w-20" value="24">
+                                    <select id="sensor-type" class="select select-bordered select-sm join-item">
+                                        <option value="digital">Digital</option>
+                                        <option value="analog">Analog</option>
+                                        <option value="pir">PIR Motion</option>
+                                    </select>
+                                    <button class="btn btn-primary btn-sm join-item" onclick="readSensor()">Read</button>
+                                </div>
+                                <div id="sensor-value" class="text-primary font-mono mt-2"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Real-time Monitoring -->
+                <div class="card-monsterbox lg:col-span-2">
+                    <div class="card-header-monsterbox">
+                        <h3 class="text-xl font-bold text-primary flex items-center">
+                            📈 Real-time Monitoring
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div class="stat bg-base-200 rounded-lg p-4">
+                                <div class="stat-title text-base-content/70">CPU Usage</div>
+                                <div class="stat-value text-primary" id="cpu-usage">--</div>
+                                <div class="stat-desc text-base-content/50">Percentage</div>
+                            </div>
+                            <div class="stat bg-base-200 rounded-lg p-4">
+                                <div class="stat-title text-base-content/70">Memory Usage</div>
+                                <div class="stat-value text-warning" id="memory-usage">--</div>
+                                <div class="stat-desc text-base-content/50">MB Used</div>
+                            </div>
+                            <div class="stat bg-base-200 rounded-lg p-4">
+                                <div class="stat-title text-base-content/70">Temperature</div>
+                                <div class="stat-value text-error" id="cpu-temp">--</div>
+                                <div class="stat-desc text-base-content/50">°C</div>
+                            </div>
+                        </div>
+
+                        <!-- Activity Log -->
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text text-base-content">Activity Log:</span>
+                            </label>
+                            <textarea id="hardware-log" class="textarea textarea-bordered h-32 font-mono text-sm" readonly></textarea>
+                        </div>
+
+                        <div class="mt-4 flex gap-2">
+                            <button class="btn-monsterbox btn-sm" onclick="startMonitoring()">
+                                ▶️ Start Monitoring
+                            </button>
+                            <button class="btn btn-outline btn-warning btn-sm" onclick="stopMonitoring()">
+                                ⏹️ Stop Monitoring
+                            </button>
+                            <button class="btn btn-outline btn-sm" onclick="clearLog()">
+                                🗑️ Clear Log
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Status Messages -->
-        <div id="statusMessage" style="display: none; margin-top: 20px;"></div>
-        <div id="errorMessage" style="display: none; margin-top: 20px; color: #ff4444;"></div>
+        <!-- System Maintenance Tab -->
+        <div id="system-maintenance" class="tab-content hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Cleanup Operations -->
+                <div class="card-monsterbox">
+                    <div class="card-header-monsterbox">
+                        <h3 class="text-xl font-bold text-primary flex items-center">
+                            🧹 Cleanup Operations
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="space-y-4">
+                            <div class="alert alert-info">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <span>Cleanup operations help maintain system performance by removing unused files.</span>
+                            </div>
+
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text text-base-content">Sound Files Cleanup:</span>
+                                </label>
+                                <div class="space-y-2">
+                                    <button class="btn-monsterbox w-full" onclick="analyzeSoundFiles()">
+                                        🔍 Analyze Unused Sound Files
+                                    </button>
+                                    <button class="btn btn-warning w-full" onclick="cleanupSoundFiles()" disabled id="cleanup-btn">
+                                        🗑️ Delete Unused Sound Files
+                                    </button>
+                                </div>
+                                <div id="cleanup-results" class="mt-4 hidden">
+                                    <div class="alert alert-warning">
+                                        <span id="cleanup-message">Analysis results will appear here</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Operations -->
+                <div class="card-monsterbox">
+                    <div class="card-header-monsterbox">
+                        <h3 class="text-xl font-bold text-primary flex items-center">
+                            🔄 System Operations
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="space-y-4">
+                            <div class="alert alert-warning">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                </svg>
+                                <span>System operations will affect all running services.</span>
+                            </div>
+
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text text-base-content">System Reboot:</span>
+                                </label>
+                                <button class="btn btn-error w-full" onclick="confirmReboot()">
+                                    🔄 Reboot System
+                                </button>
+                            </div>
+
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text text-base-content">Service Management:</span>
+                                </label>
+                                <div class="space-y-2">
+                                    <button class="btn btn-outline w-full" onclick="restartServices()">
+                                        🔄 Restart All Services
+                                    </button>
+                                    <button class="btn btn-outline w-full" onclick="checkSystemHealth()">
+                                        🏥 System Health Check
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Log Collection Tab -->
+        <div id="log-collection" class="tab-content hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Log Stream Controls -->
+                <div class="card-monsterbox">
+                    <div class="card-header-monsterbox">
+                        <h3 class="text-xl font-bold text-primary flex items-center">
+                            📈 Log Stream Controls
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="space-y-4">
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text text-base-content">Log Level Filter:</span>
+                                </label>
+                                <select id="log-level" class="select select-bordered select-primary w-full">
+                                    <option value="all">All Levels</option>
+                                    <option value="error">Error Only</option>
+                                    <option value="warning">Warning & Above</option>
+                                    <option value="info">Info & Above</option>
+                                    <option value="debug">Debug & Above</option>
+                                </select>
+                            </div>
+
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text text-base-content">Service Filter:</span>
+                                </label>
+                                <select id="service-filter" class="select select-bordered select-primary w-full">
+                                    <option value="all">All Services</option>
+                                    <option value="main">Main Server</option>
+                                    <option value="motor">Motor Service</option>
+                                    <option value="light">Light Service</option>
+                                    <option value="sensor">Sensor Service</option>
+                                    <option value="ai">AI Service</option>
+                                </select>
+                            </div>
+
+                            <div class="flex gap-2">
+                                <button class="btn-monsterbox flex-1" onclick="startLogStream()">
+                                    ▶️ Start Stream
+                                </button>
+                                <button class="btn btn-outline btn-warning flex-1" onclick="pauseLogStream()">
+                                    ⏸️ Pause
+                                </button>
+                            </div>
+
+                            <div class="flex gap-2">
+                                <button class="btn btn-outline flex-1" onclick="clearLogStream()">
+                                    🗑️ Clear
+                                </button>
+                                <button class="btn btn-outline flex-1" onclick="exportLogs()">
+                                    💾 Export
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Device Management -->
+                <div class="card-monsterbox">
+                    <div class="card-header-monsterbox">
+                        <h3 class="text-xl font-bold text-primary flex items-center">
+                            📱 Device Management
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="space-y-4">
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text text-base-content">Add Device:</span>
+                                </label>
+                                <div class="join">
+                                    <input type="text" id="device-ip" placeholder="IP Address" class="input input-bordered join-item flex-1">
+                                    <button class="btn btn-primary join-item" onclick="addDevice()">Add</button>
+                                </div>
+                            </div>
+
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text text-base-content">Scan Network:</span>
+                                </label>
+                                <button class="btn-monsterbox w-full" onclick="scanDevices()">
+                                    🔍 Scan for Devices
+                                </button>
+                            </div>
+
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text text-base-content">Connected Devices:</span>
+                                </label>
+                                <div id="device-list" class="space-y-2">
+                                    <div class="alert alert-info">
+                                        <span>No devices configured</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Log Display -->
+                <div class="card-monsterbox lg:col-span-2">
+                    <div class="card-header-monsterbox">
+                        <h3 class="text-xl font-bold text-primary flex items-center">
+                            📜 Live Log Stream
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-control">
+                            <textarea id="log-stream" class="textarea textarea-bordered h-64 font-mono text-sm" readonly placeholder="Log entries will appear here when streaming is started..."></textarea>
+                        </div>
+
+                        <div class="mt-4 flex justify-between items-center">
+                            <div class="text-sm text-base-content/70">
+                                <span id="log-count">0</span> entries |
+                                <span id="log-status">Stopped</span>
+                            </div>
+                            <div class="form-control">
+                                <label class="cursor-pointer label">
+                                    <span class="label-text mr-2">Auto-scroll</span>
+                                    <input type="checkbox" id="auto-scroll" class="checkbox checkbox-primary" checked>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </main>
 
-    <script src="/scripts/configuration.js"></script>
+    <!-- Footer -->
+    <footer class="footer footer-center p-10 bg-base-200 text-base-content border-t border-primary">
+        <div>
+            <div class="grid grid-flow-col gap-4">
+                <a href="https://github.com/arwpc/MonsterBox" target="_blank" class="btn btn-ghost btn-circle" aria-label="GitHub">
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                    </svg>
+                </a>
+            </div>
+            <div>
+                <p class="font-bold text-primary font-creepster">MonsterBox™</p>
+                <p>System Configuration & Settings</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        // Current settings state
+        let currentSettings = {
+            theme: '<%= userSettings ? userSettings.theme : "monsterbox" %>',
+            fontSize: '<%= userSettings ? userSettings.fontSize : "medium" %>',
+            fontFamily: '<%= userSettings ? userSettings.fontFamily : "terminal" %>',
+            accentColor: '<%= userSettings ? userSettings.accentColor : "neon-green" %>',
+            navigationStyle: '<%= userSettings ? userSettings.navigationStyle : "sidebar" %>',
+            animationLevel: '<%= userSettings ? userSettings.animationLevel : "subtle" %>'
+        };
+
+        // Tab management
+        function showTab(tabId) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.add('hidden');
+            });
+
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('tab-active');
+            });
+
+            // Show selected tab content
+            document.getElementById(tabId).classList.remove('hidden');
+
+            // Add active class to clicked tab
+            event.target.classList.add('tab-active');
+        }
+
+        // Theme management
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('monsterbox-theme', theme);
+        }
+
+        function previewTheme(theme) {
+            setTheme(theme);
+            currentSettings.theme = theme;
+        }
+
+        function previewFont(fontFamily) {
+            const fontClasses = {
+                'terminal': 'font-terminal',
+                'retro': 'font-retro',
+                'creepster': 'font-creepster',
+                'mono': 'font-mono'
+            };
+
+            // Remove all font classes from body
+            document.body.classList.remove('font-terminal', 'font-retro', 'font-creepster', 'font-mono');
+
+            // Add selected font class
+            if (fontClasses[fontFamily]) {
+                document.body.classList.add(fontClasses[fontFamily]);
+            }
+
+            currentSettings.fontFamily = fontFamily;
+        }
+
+        function previewFontSize(fontSize) {
+            const sizeClasses = {
+                'small': 'text-sm',
+                'medium': 'text-base',
+                'large': 'text-lg'
+            };
+
+            // Remove all size classes from body
+            document.body.classList.remove('text-sm', 'text-base', 'text-lg');
+
+            // Add selected size class
+            if (sizeClasses[fontSize]) {
+                document.body.classList.add(sizeClasses[fontSize]);
+            }
+
+            currentSettings.fontSize = fontSize;
+        }
+
+        // Settings management
+        async function saveSettings() {
+            try {
+                const response = await fetch('/configuration/api/settings', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ settings: currentSettings }),
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Show success message
+                    showAlert('success', 'Settings saved successfully!');
+
+                    // Update localStorage
+                    localStorage.setItem('monsterbox-theme', currentSettings.theme);
+                } else {
+                    showAlert('error', 'Failed to save settings: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error saving settings:', error);
+                showAlert('error', 'Failed to save settings. Please try again.');
+            }
+        }
+
+        async function resetSettings() {
+            if (confirm('Are you sure you want to reset all settings to defaults?')) {
+                try {
+                    const response = await fetch('/configuration/api/settings/reset', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        // Update current settings
+                        currentSettings = result.settings;
+
+                        // Apply default theme
+                        setTheme(currentSettings.theme);
+
+                        // Reset form values
+                        document.getElementById('theme-selector').value = currentSettings.theme;
+                        document.getElementById('font-selector').value = currentSettings.fontFamily;
+                        document.querySelector(`input[name="font-size"][value="${currentSettings.fontSize}"]`).checked = true;
+
+                        // Apply font settings
+                        previewFont(currentSettings.fontFamily);
+                        previewFontSize(currentSettings.fontSize);
+
+                        showAlert('success', 'Settings reset to defaults!');
+                    } else {
+                        showAlert('error', 'Failed to reset settings: ' + result.error);
+                    }
+                } catch (error) {
+                    console.error('Error resetting settings:', error);
+                    showAlert('error', 'Failed to reset settings. Please try again.');
+                }
+            }
+        }
+
+        // Alert system
+        function showAlert(type, message) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} fixed top-4 right-4 w-auto max-w-md z-50 shadow-lg`;
+            alertDiv.innerHTML = `
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    ${type === 'success' ?
+                        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>' :
+                        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>'
+                    }
+                </svg>
+                <span>${message}</span>
+            `;
+
+            document.body.appendChild(alertDiv);
+
+            // Remove alert after 3 seconds
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 3000);
+        }
+
+        // Hardware Monitor Functions
+        let monitoringInterval = null;
+        let hardwareWs = null;
+
+        function refreshServiceStatus() {
+            // Check service status via API calls
+            fetch('/api/hardware/status')
+                .then(response => response.json())
+                .then(data => {
+                    updateServiceStatus(data);
+                })
+                .catch(error => {
+                    console.error('Error checking service status:', error);
+                    logHardwareActivity('Error checking service status: ' + error.message);
+                });
+        }
+
+        function updateServiceStatus(statusData) {
+            const services = ['main', 'motor', 'light', 'sensor', 'registry'];
+            services.forEach(service => {
+                const element = document.getElementById(`${service}-status`);
+                if (element && statusData[service]) {
+                    element.className = `badge badge-${statusData[service].connected ? 'success' : 'error'}`;
+                    element.textContent = statusData[service].connected ? 'Connected' : 'Disconnected';
+                }
+            });
+        }
+
+        function controlMotor() {
+            const pin = document.getElementById('motor-pin').value;
+            const direction = document.getElementById('motor-direction').value;
+            const speed = document.getElementById('motor-speed').value;
+
+            fetch('/api/hardware/motor', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pin: parseInt(pin), direction, speed: parseInt(speed) })
+            })
+            .then(response => response.json())
+            .then(data => {
+                logHardwareActivity(`Motor control: Pin ${pin}, ${direction}, Speed ${speed}% - ${data.success ? 'Success' : 'Failed'}`);
+            })
+            .catch(error => {
+                logHardwareActivity(`Motor control error: ${error.message}`);
+            });
+        }
+
+        function controlLED() {
+            const pin = document.getElementById('led-pin').value;
+            const color = document.getElementById('led-color').value;
+            const brightness = document.getElementById('led-brightness').value;
+
+            fetch('/api/hardware/led', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pin: parseInt(pin), color, brightness: parseInt(brightness) })
+            })
+            .then(response => response.json())
+            .then(data => {
+                logHardwareActivity(`LED control: Pin ${pin}, Color ${color}, Brightness ${brightness} - ${data.success ? 'Success' : 'Failed'}`);
+            })
+            .catch(error => {
+                logHardwareActivity(`LED control error: ${error.message}`);
+            });
+        }
+
+        function readSensor() {
+            const pin = document.getElementById('sensor-pin').value;
+            const type = document.getElementById('sensor-type').value;
+
+            fetch('/api/hardware/sensor', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pin: parseInt(pin), type })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const valueElement = document.getElementById('sensor-value');
+                if (data.success) {
+                    valueElement.textContent = `Value: ${data.value}`;
+                    logHardwareActivity(`Sensor reading: Pin ${pin} (${type}) = ${data.value}`);
+                } else {
+                    valueElement.textContent = 'Error reading sensor';
+                    logHardwareActivity(`Sensor reading error: Pin ${pin} (${type}) - ${data.error}`);
+                }
+            })
+            .catch(error => {
+                logHardwareActivity(`Sensor reading error: ${error.message}`);
+            });
+        }
+
+        function startMonitoring() {
+            if (monitoringInterval) return;
+
+            monitoringInterval = setInterval(() => {
+                // Update system stats
+                fetch('/api/hardware/stats')
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('cpu-usage').textContent = data.cpu + '%';
+                        document.getElementById('memory-usage').textContent = data.memory + ' MB';
+                        document.getElementById('cpu-temp').textContent = data.temperature + '°C';
+                    })
+                    .catch(error => {
+                        logHardwareActivity(`Monitoring error: ${error.message}`);
+                    });
+            }, 2000);
+
+            logHardwareActivity('Hardware monitoring started');
+        }
+
+        function stopMonitoring() {
+            if (monitoringInterval) {
+                clearInterval(monitoringInterval);
+                monitoringInterval = null;
+                logHardwareActivity('Hardware monitoring stopped');
+            }
+        }
+
+        function logHardwareActivity(message) {
+            const logArea = document.getElementById('hardware-log');
+            const timestamp = new Date().toLocaleTimeString();
+            logArea.value += `[${timestamp}] ${message}\n`;
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('hardware-log').value = '';
+        }
+
+        // System Maintenance Functions
+        function analyzeSoundFiles() {
+            fetch('/sounds/simple-cleanup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultsDiv = document.getElementById('cleanup-results');
+                const messageSpan = document.getElementById('cleanup-message');
+                const cleanupBtn = document.getElementById('cleanup-btn');
+
+                resultsDiv.classList.remove('hidden');
+
+                if (data.unusedFilesCount > 0) {
+                    messageSpan.textContent = `Found ${data.unusedFilesCount} unused sound files that can be deleted.`;
+                    cleanupBtn.disabled = false;
+                    cleanupBtn.textContent = `🗑️ Delete ${data.unusedFilesCount} Unused Files`;
+                } else {
+                    messageSpan.textContent = 'No unused sound files found. Your system is clean!';
+                    cleanupBtn.disabled = true;
+                }
+            })
+            .catch(error => {
+                showAlert('error', 'Failed to analyze sound files: ' + error.message);
+            });
+        }
+
+        function cleanupSoundFiles() {
+            if (confirm('Are you sure you want to delete unused sound files? This action cannot be undone.')) {
+                fetch('/sounds/simple-cleanup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ delete: true })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const messageSpan = document.getElementById('cleanup-message');
+                    const cleanupBtn = document.getElementById('cleanup-btn');
+
+                    if (data.deletedCount > 0) {
+                        messageSpan.textContent = `Successfully deleted ${data.deletedCount} unused sound files.`;
+                        showAlert('success', `Deleted ${data.deletedCount} unused sound files`);
+                    } else {
+                        messageSpan.textContent = 'No files were deleted.';
+                    }
+
+                    cleanupBtn.disabled = true;
+                    cleanupBtn.textContent = '🗑️ Delete Unused Sound Files';
+                })
+                .catch(error => {
+                    showAlert('error', 'Failed to cleanup sound files: ' + error.message);
+                });
+            }
+        }
+
+        function confirmReboot() {
+            if (confirm('Are you sure you want to reboot the system? This will disconnect all users and stop all running processes.')) {
+                fetch('/api/system/reboot', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    showAlert('warning', 'System reboot initiated. The system will be unavailable for a few minutes.');
+                })
+                .catch(error => {
+                    showAlert('error', 'Failed to initiate reboot: ' + error.message);
+                });
+            }
+        }
+
+        function restartServices() {
+            fetch('/api/system/restart-services', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                showAlert('success', 'All services restarted successfully');
+                refreshServiceStatus();
+            })
+            .catch(error => {
+                showAlert('error', 'Failed to restart services: ' + error.message);
+            });
+        }
+
+        function checkSystemHealth() {
+            fetch('/api/system/health-check')
+                .then(response => response.json())
+                .then(data => {
+                    const issues = data.issues || [];
+                    if (issues.length === 0) {
+                        showAlert('success', 'System health check passed - no issues found');
+                    } else {
+                        showAlert('warning', `Health check found ${issues.length} issues: ${issues.join(', ')}`);
+                    }
+                })
+                .catch(error => {
+                    showAlert('error', 'Failed to perform health check: ' + error.message);
+                });
+        }
+
+        // Log Collection Functions
+        let logStreamWs = null;
+        let logCount = 0;
+
+        function startLogStream() {
+            const level = document.getElementById('log-level').value;
+            const service = document.getElementById('service-filter').value;
+
+            // Close existing connection
+            if (logStreamWs) {
+                logStreamWs.close();
+            }
+
+            // Start new WebSocket connection for log streaming
+            const wsUrl = `ws://${window.location.host}/ws/logs?level=${level}&service=${service}`;
+            logStreamWs = new WebSocket(wsUrl);
+
+            logStreamWs.onopen = function() {
+                document.getElementById('log-status').textContent = 'Streaming';
+                showAlert('success', 'Log stream started');
+            };
+
+            logStreamWs.onmessage = function(event) {
+                const logArea = document.getElementById('log-stream');
+                const autoScroll = document.getElementById('auto-scroll').checked;
+
+                logArea.value += event.data + '\n';
+                logCount++;
+                document.getElementById('log-count').textContent = logCount;
+
+                if (autoScroll) {
+                    logArea.scrollTop = logArea.scrollHeight;
+                }
+            };
+
+            logStreamWs.onclose = function() {
+                document.getElementById('log-status').textContent = 'Stopped';
+            };
+
+            logStreamWs.onerror = function(error) {
+                showAlert('error', 'Log stream error: ' + error.message);
+            };
+        }
+
+        function pauseLogStream() {
+            if (logStreamWs) {
+                logStreamWs.close();
+                logStreamWs = null;
+                document.getElementById('log-status').textContent = 'Paused';
+            }
+        }
+
+        function clearLogStream() {
+            document.getElementById('log-stream').value = '';
+            logCount = 0;
+            document.getElementById('log-count').textContent = '0';
+        }
+
+        function exportLogs() {
+            const logContent = document.getElementById('log-stream').value;
+            const blob = new Blob([logContent], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `monsterbox-logs-${new Date().toISOString().slice(0, 19)}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        function addDevice() {
+            const ip = document.getElementById('device-ip').value;
+            if (!ip) return;
+
+            fetch('/configuration/api/devices', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ip })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('success', `Device ${ip} added successfully`);
+                    document.getElementById('device-ip').value = '';
+                    loadDeviceList();
+                } else {
+                    showAlert('error', 'Failed to add device: ' + data.error);
+                }
+            })
+            .catch(error => {
+                showAlert('error', 'Failed to add device: ' + error.message);
+            });
+        }
+
+        function scanDevices() {
+            showAlert('info', 'Scanning network for devices...');
+
+            fetch('/configuration/api/devices/scan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.devices && data.devices.length > 0) {
+                    showAlert('success', `Found ${data.devices.length} devices`);
+                    loadDeviceList();
+                } else {
+                    showAlert('info', 'No new devices found');
+                }
+            })
+            .catch(error => {
+                showAlert('error', 'Failed to scan devices: ' + error.message);
+            });
+        }
+
+        function loadDeviceList() {
+            fetch('/configuration/api/devices')
+                .then(response => response.json())
+                .then(data => {
+                    const deviceList = document.getElementById('device-list');
+                    if (data.devices && data.devices.length > 0) {
+                        deviceList.innerHTML = data.devices.map(device => `
+                            <div class="flex justify-between items-center p-2 bg-base-200 rounded">
+                                <span class="font-mono">${device.ip}</span>
+                                <div class="badge badge-${device.status === 'online' ? 'success' : 'error'}">${device.status}</div>
+                            </div>
+                        `).join('');
+                    } else {
+                        deviceList.innerHTML = '<div class="alert alert-info"><span>No devices configured</span></div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Failed to load device list:', error);
+                });
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load saved theme
+            const savedTheme = localStorage.getItem('monsterbox-theme') || currentSettings.theme;
+            setTheme(savedTheme);
+
+            // Apply current font settings
+            previewFont(currentSettings.fontFamily);
+            previewFontSize(currentSettings.fontSize);
+
+            // Initialize hardware monitoring
+            refreshServiceStatus();
+            loadDeviceList();
+        });
+    </script>
 </body>
 </html>

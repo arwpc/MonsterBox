@@ -283,6 +283,7 @@ app.use('/api/chatterpi', require('./routes/chatterpiRoutes'));
 app.use('/api/hardware', require('./routes/api/hardwareApiRoutes').router);
 app.use('/api/hardware/head-tracking', require('./routes/api/headTrackingApiRoutes'));
 app.use('/api/character-audio-config', require('./routes/api/characterAudioConfigRoutes'));
+app.use('/api/system', require('./routes/api/systemApiRoutes'));
 
 // Simple characters API endpoint for hardware monitor (cached)
 app.get('/api/characters',
@@ -469,11 +470,25 @@ app.get('/api/schema', asyncHandler(async (req, res) => {
     }
 }));
 
+// Redirect old static HTML pages to new EJS-based Configuration system
+app.get('/hardware-monitor.html', (req, res) => {
+    res.redirect('/configuration#hardware-monitor');
+});
+
+app.get('/log-collection/dashboard', (req, res) => {
+    res.redirect('/configuration#log-collection');
+});
+
 // Root route - must be before error handling middleware
 app.get('/', asyncHandler(async (req, res) => {
     const characters = await characterService.getAllCharacters();
     res.render('index', {
         title: 'MonsterBox Control Panel',
+        pageTitle: 'Welcome to MonsterBox',
+        pageDescription: 'Advanced Animatronic Control System - Choose a character and navigate to get started.',
+        breadcrumbs: [
+            { name: 'Home', url: '/' }
+        ],
         characters: characters
     });
 }));

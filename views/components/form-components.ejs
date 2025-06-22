@@ -1,0 +1,258 @@
+<%# 
+  MonsterBox UI Component Library - Form Components
+  Reusable Tailwind CSS + DaisyUI form elements
+%>
+
+<%# Text Input Component %>
+<%# Usage: <%- include('components/form-components', { component: 'textInput', id: 'name', label: 'Name', value: '', placeholder: 'Enter name', required: true }) %>
+<% if (typeof component !== 'undefined' && component === 'textInput') { %>
+<div class="form-control w-full">
+  <label class="label" for="<%= id %>">
+    <span class="label-text text-base-content">
+      <%= label %><%= required ? ' *' : '' %>
+    </span>
+  </label>
+  <input 
+    type="<%= type || 'text' %>" 
+    id="<%= id %>" 
+    name="<%= name || id %>" 
+    class="input input-bordered input-primary w-full <%= error ? 'input-error' : '' %>" 
+    value="<%= value || '' %>" 
+    placeholder="<%= placeholder || '' %>"
+    <%= required ? 'required' : '' %>
+    <%= disabled ? 'disabled' : '' %>
+  >
+  <% if (typeof helpText !== 'undefined') { %>
+  <label class="label">
+    <span class="label-text-alt text-base-content/70"><%= helpText %></span>
+  </label>
+  <% } %>
+  <% if (typeof error !== 'undefined' && error) { %>
+  <label class="label">
+    <span class="label-text-alt text-error"><%= error %></span>
+  </label>
+  <% } %>
+</div>
+<% } %>
+
+<%# Textarea Component %>
+<%# Usage: <%- include('components/form-components', { component: 'textarea', id: 'description', label: 'Description', value: '', rows: 4 }) %>
+<% if (typeof component !== 'undefined' && component === 'textarea') { %>
+<div class="form-control w-full">
+  <label class="label" for="<%= id %>">
+    <span class="label-text text-base-content">
+      <%= label %><%= required ? ' *' : '' %>
+    </span>
+  </label>
+  <textarea 
+    id="<%= id %>" 
+    name="<%= name || id %>" 
+    class="textarea textarea-bordered textarea-primary w-full <%= error ? 'textarea-error' : '' %>" 
+    rows="<%= rows || 4 %>"
+    placeholder="<%= placeholder || '' %>"
+    <%= required ? 'required' : '' %>
+    <%= disabled ? 'disabled' : '' %>
+  ><%= value || '' %></textarea>
+  <% if (typeof helpText !== 'undefined') { %>
+  <label class="label">
+    <span class="label-text-alt text-base-content/70"><%= helpText %></span>
+  </label>
+  <% } %>
+  <% if (typeof error !== 'undefined' && error) { %>
+  <label class="label">
+    <span class="label-text-alt text-error"><%= error %></span>
+  </label>
+  <% } %>
+</div>
+<% } %>
+
+<%# Select Component %>
+<%# Usage: <%- include('components/form-components', { component: 'select', id: 'type', label: 'Type', options: [{value: 'motor', text: 'Motor'}, {value: 'servo', text: 'Servo'}], value: 'motor' }) %>
+<% if (typeof component !== 'undefined' && component === 'select') { %>
+<div class="form-control w-full">
+  <label class="label" for="<%= id %>">
+    <span class="label-text text-base-content">
+      <%= label %><%= required ? ' *' : '' %>
+    </span>
+  </label>
+  <select 
+    id="<%= id %>" 
+    name="<%= name || id %>" 
+    class="select select-bordered select-primary w-full <%= error ? 'select-error' : '' %>"
+    <%= required ? 'required' : '' %>
+    <%= disabled ? 'disabled' : '' %>
+  >
+    <% if (typeof placeholder !== 'undefined') { %>
+    <option value="" disabled <%= !value ? 'selected' : '' %>><%= placeholder %></option>
+    <% } %>
+    <% if (typeof options !== 'undefined' && Array.isArray(options)) { %>
+      <% options.forEach(function(option) { %>
+      <option value="<%= option.value %>" <%= value === option.value ? 'selected' : '' %>>
+        <%= option.text || option.label || option.value %>
+      </option>
+      <% }); %>
+    <% } %>
+  </select>
+  <% if (typeof helpText !== 'undefined') { %>
+  <label class="label">
+    <span class="label-text-alt text-base-content/70"><%= helpText %></span>
+  </label>
+  <% } %>
+  <% if (typeof error !== 'undefined' && error) { %>
+  <label class="label">
+    <span class="label-text-alt text-error"><%= error %></span>
+  </label>
+  <% } %>
+</div>
+<% } %>
+
+<%# Number Input Component %>
+<%# Usage: <%- include('components/form-components', { component: 'numberInput', id: 'pin', label: 'GPIO Pin', value: 18, min: 0, max: 40 }) %>
+<% if (typeof component !== 'undefined' && component === 'numberInput') { %>
+<div class="form-control w-full">
+  <label class="label" for="<%= id %>">
+    <span class="label-text text-base-content">
+      <%= label %><%= required ? ' *' : '' %>
+    </span>
+  </label>
+  <input 
+    type="number" 
+    id="<%= id %>" 
+    name="<%= name || id %>" 
+    class="input input-bordered input-primary w-full <%= error ? 'input-error' : '' %>" 
+    value="<%= value || '' %>" 
+    placeholder="<%= placeholder || '' %>"
+    <%= typeof min !== 'undefined' ? 'min="' + min + '"' : '' %>
+    <%= typeof max !== 'undefined' ? 'max="' + max + '"' : '' %>
+    <%= typeof step !== 'undefined' ? 'step="' + step + '"' : '' %>
+    <%= required ? 'required' : '' %>
+    <%= disabled ? 'disabled' : '' %>
+  >
+  <% if (typeof helpText !== 'undefined') { %>
+  <label class="label">
+    <span class="label-text-alt text-base-content/70"><%= helpText %></span>
+  </label>
+  <% } %>
+  <% if (typeof error !== 'undefined' && error) { %>
+  <label class="label">
+    <span class="label-text-alt text-error"><%= error %></span>
+  </label>
+  <% } %>
+</div>
+<% } %>
+
+<%# Checkbox Component %>
+<%# Usage: <%- include('components/form-components', { component: 'checkbox', id: 'enabled', label: 'Enable Feature', checked: true }) %>
+<% if (typeof component !== 'undefined' && component === 'checkbox') { %>
+<div class="form-control">
+  <label class="label cursor-pointer justify-start gap-3">
+    <input 
+      type="checkbox" 
+      id="<%= id %>" 
+      name="<%= name || id %>" 
+      class="checkbox checkbox-primary" 
+      <%= checked ? 'checked' : '' %>
+      <%= disabled ? 'disabled' : '' %>
+    >
+    <span class="label-text text-base-content">
+      <%= label %><%= required ? ' *' : '' %>
+    </span>
+  </label>
+  <% if (typeof helpText !== 'undefined') { %>
+  <label class="label">
+    <span class="label-text-alt text-base-content/70 ml-8"><%= helpText %></span>
+  </label>
+  <% } %>
+</div>
+<% } %>
+
+<%# Radio Group Component %>
+<%# Usage: <%- include('components/form-components', { component: 'radioGroup', name: 'size', label: 'Size', options: [{value: 'small', text: 'Small'}, {value: 'large', text: 'Large'}], value: 'small' }) %>
+<% if (typeof component !== 'undefined' && component === 'radioGroup') { %>
+<div class="form-control w-full">
+  <label class="label">
+    <span class="label-text text-base-content">
+      <%= label %><%= required ? ' *' : '' %>
+    </span>
+  </label>
+  <div class="flex flex-wrap gap-4">
+    <% if (typeof options !== 'undefined' && Array.isArray(options)) { %>
+      <% options.forEach(function(option, index) { %>
+      <label class="label cursor-pointer justify-start gap-2">
+        <input 
+          type="radio" 
+          name="<%= name %>" 
+          value="<%= option.value %>"
+          class="radio radio-primary" 
+          <%= value === option.value ? 'checked' : '' %>
+          <%= disabled ? 'disabled' : '' %>
+        >
+        <span class="label-text text-base-content"><%= option.text || option.label || option.value %></span>
+      </label>
+      <% }); %>
+    <% } %>
+  </div>
+  <% if (typeof helpText !== 'undefined') { %>
+  <label class="label">
+    <span class="label-text-alt text-base-content/70"><%= helpText %></span>
+  </label>
+  <% } %>
+</div>
+<% } %>
+
+<%# Range Slider Component %>
+<%# Usage: <%- include('components/form-components', { component: 'range', id: 'speed', label: 'Speed', value: 50, min: 0, max: 100, step: 1 }) %>
+<% if (typeof component !== 'undefined' && component === 'range') { %>
+<div class="form-control w-full">
+  <label class="label" for="<%= id %>">
+    <span class="label-text text-base-content">
+      <%= label %><%= required ? ' *' : '' %>
+    </span>
+    <span class="label-text-alt text-primary font-mono" id="<%= id %>-value"><%= value || min || 0 %></span>
+  </label>
+  <input 
+    type="range" 
+    id="<%= id %>" 
+    name="<%= name || id %>" 
+    class="range range-primary" 
+    value="<%= value || min || 0 %>" 
+    min="<%= min || 0 %>"
+    max="<%= max || 100 %>"
+    step="<%= step || 1 %>"
+    <%= disabled ? 'disabled' : '' %>
+    oninput="document.getElementById('<%= id %>-value').textContent = this.value"
+  >
+  <% if (typeof helpText !== 'undefined') { %>
+  <label class="label">
+    <span class="label-text-alt text-base-content/70"><%= helpText %></span>
+  </label>
+  <% } %>
+</div>
+<% } %>
+
+<%# File Upload Component %>
+<%# Usage: <%- include('components/form-components', { component: 'fileUpload', id: 'image', label: 'Upload Image', accept: 'image/*' }) %>
+<% if (typeof component !== 'undefined' && component === 'fileUpload') { %>
+<div class="form-control w-full">
+  <label class="label" for="<%= id %>">
+    <span class="label-text text-base-content">
+      <%= label %><%= required ? ' *' : '' %>
+    </span>
+  </label>
+  <input 
+    type="file" 
+    id="<%= id %>" 
+    name="<%= name || id %>" 
+    class="file-input file-input-bordered file-input-primary w-full" 
+    <%= typeof accept !== 'undefined' ? 'accept="' + accept + '"' : '' %>
+    <%= multiple ? 'multiple' : '' %>
+    <%= required ? 'required' : '' %>
+    <%= disabled ? 'disabled' : '' %>
+  >
+  <% if (typeof helpText !== 'undefined') { %>
+  <label class="label">
+    <span class="label-text-alt text-base-content/70"><%= helpText %></span>
+  </label>
+  <% } %>
+</div>
+<% } %>
