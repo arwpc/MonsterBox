@@ -3,7 +3,9 @@
     "id": 1,
     "char_name": "Orlok",
     "char_description": "A mysterious nobleman and vampire who lives alone in his ruined castle, who wants to acquire a new property in Germany. He was once a Solomonar who was cursed by the Devil to become a vampire.",
-    "parts": [],
+    "parts": [
+      22
+    ],
     "sounds": [],
     "ai_instances": [],
     "image": "ab623d74c6acf98fb72071d0e176479a",
