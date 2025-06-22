@@ -14,7 +14,8 @@ class TopMediaiAPI {
         this.baseURL = 'https://api.topmediai.com/v1';
         this.requestCount = 0;
         this.lastRequestTime = Date.now();
-        this.rateLimitPerMinute = 100; // Adjust based on TopMediai's limits
+        this.rateLimitPerMinute = 50; // Reduced to be more conservative
+        this.rateLimitResetTime = null;
 
         // Standard audio format settings
         this.audioSettings = {
@@ -54,19 +55,37 @@ class TopMediaiAPI {
         const now = Date.now();
         const timeWindow = 60 * 1000;
 
+        // Reset counter if window has passed
         if (now - this.lastRequestTime > timeWindow) {
             this.requestCount = 0;
             this.lastRequestTime = now;
+            this.rateLimitResetTime = null;
         }
 
         if (this.requestCount >= this.rateLimitPerMinute) {
             const waitTime = timeWindow - (now - this.lastRequestTime);
+            this.rateLimitResetTime = now + waitTime;
+
             logger.warn(`⏳ Rate limit reached (${this.requestCount}/${this.rateLimitPerMinute}), waiting ${Math.ceil(waitTime/1000)}s`);
             throw new Error(`Too many API requests from this IP, please try again later. Wait ${Math.ceil(waitTime/1000)} seconds.`);
         }
 
         this.requestCount++;
         logger.debug(`API request ${this.requestCount}/${this.rateLimitPerMinute} in current window`);
+    }
+
+    getRateLimitStatus() {
+        const now = Date.now();
+        const timeWindow = 60 * 1000;
+        const windowRemaining = timeWindow - (now - this.lastRequestTime);
+
+        return {
+            requestCount: this.requestCount,
+            maxRequests: this.rateLimitPerMinute,
+            windowRemainingMs: Math.max(0, windowRemaining),
+            rateLimited: this.requestCount >= this.rateLimitPerMinute,
+            resetTime: this.rateLimitResetTime
+        };
     }
 
     async retryWithBackoff(operation, maxRetries = 3) {

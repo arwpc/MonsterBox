@@ -1008,10 +1008,29 @@
                             await audio.play();
 
                             console.log('✅ TopMediai speech played successfully');
+                        } else if (result.error === 'rate_limited') {
+                            // Handle rate limiting gracefully
+                            console.warn('⚠️ TopMediai rate limited, using browser TTS fallback');
+                            this.updateJawStatus(`❌ ${result.message}`);
+
+                            // Show user-friendly message
+                            this.addMessage('🔄 Voice service temporarily limited. Using backup voice...', 'system');
+
+                            // Fallback to browser speech synthesis
+                            this.speakText(text, this.selectedVoice);
+                            return;
                         } else {
                             throw new Error(`TTS generation failed: ${result.error || 'Unknown error'}`);
                         }
                     } else {
+                        const errorData = await response.json().catch(() => ({}));
+                        if (errorData.error === 'rate_limited') {
+                            console.warn('⚠️ TopMediai rate limited, using browser TTS fallback');
+                            this.updateJawStatus(`❌ ${errorData.message || 'Rate limited'}`);
+                            this.addMessage('🔄 Voice service temporarily limited. Using backup voice...', 'system');
+                            this.speakText(text, this.selectedVoice);
+                            return;
+                        }
                         throw new Error(`TTS request failed: ${response.status}`);
                     }
 

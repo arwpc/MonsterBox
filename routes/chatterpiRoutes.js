@@ -284,6 +284,32 @@ router.get('/voices', async (req, res) => {
 });
 
 /**
+ * GET /api/chatterpi/rate-limit-status
+ * Get current rate limit status
+ */
+router.get('/rate-limit-status', (req, res) => {
+    try {
+        const TopMediaiAPI = require('../scripts/topMediaiAPI');
+        const topMediaiAPI = new TopMediaiAPI();
+        const status = topMediaiAPI.getRateLimitStatus();
+
+        res.json({
+            success: true,
+            rateLimitStatus: status,
+            timestamp: new Date().toISOString()
+        });
+
+    } catch (error) {
+        console.error('❌ Error getting rate limit status:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get rate limit status',
+            details: error.message
+        });
+    }
+});
+
+/**
  * POST /api/chatterpi/jaw/move
  * Move jaw to specific angle
  */
