@@ -189,11 +189,32 @@ router.post('/speak', async (req, res) => {
 
         console.log(`🎤 TTS request: "${text}" for character: ${character || 'orlok'}`);
 
-        const result = await ttsAnimation.speakWithAnimation(
-            text,
-            character || 'orlok',
-            voiceConfig || {}
-        );
+        let result;
+        try {
+            result = await ttsAnimation.speakWithAnimation(
+                text,
+                character || 'orlok',
+                voiceConfig || {}
+            );
+        } catch (error) {
+            // Check if it's a rate limiting error
+            if (error.message.includes('Too many API requests') ||
+                error.message.includes('rate limit') ||
+                error.message.includes('429')) {
+                console.warn('⚠️ TopMediai rate limited');
+
+                return res.json({
+                    success: false,
+                    error: 'rate_limited',
+                    message: 'Too many API requests from this IP, please try again later.',
+                    text: text,
+                    character: character || 'orlok',
+                    fallback: 'browser_speech',
+                    retryAfter: 60 // seconds
+                });
+            }
+            throw error; // Re-throw other errors
+        }
 
         if (result.success) {
             res.json({
@@ -424,6 +445,8 @@ router.get('/jaw/status', async (req, res) => {
         });
     }
 });
+
+
 
 /**
  * GET /api/chatterpi/characters
@@ -1049,6 +1072,51 @@ router.get('/system/status', (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Failed to get system status',
+            details: error.message
+        });
+    }
+});
+
+/**
+ * POST /api/chatterpi/jaw/volume
+ * Send real-time volume data for jaw animation
+ */
+router.post('/jaw/volume', async (req, res) => {
+    try {
+        const { volume, timestamp } = req.body;
+
+        if (volume === undefined || volume === null) {
+            return res.status(400).json({
+                success: false,
+                error: 'Volume data is required'
+            });
+        }
+
+        const jawWebSocket = getJawWebSocket();
+        if (!jawWebSocket || jawWebSocket.readyState !== WebSocket.OPEN) {
+            return res.status(503).json({
+                success: false,
+                error: 'Jaw animation system not available'
+            });
+        }
+
+        // Send volume data to ChatterPi jaw animation system
+        jawWebSocket.send(JSON.stringify({
+            type: 'volume_data',
+            volume: parseFloat(volume),
+            timestamp: timestamp || Date.now()
+        }));
+
+        res.json({
+            success: true,
+            message: 'Volume data sent'
+        });
+
+    } catch (error) {
+        console.error('❌ Error sending volume data:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to send volume data',
             details: error.message
         });
     }

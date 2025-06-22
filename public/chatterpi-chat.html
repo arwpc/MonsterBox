@@ -992,6 +992,7 @@
                             audio.addEventListener('play', () => {
                                 if (this.isJawAvailable) {
                                     this.sendJawCommand({ type: 'start_animation' });
+                                    this.startAudioAnalysis(audio);
                                 }
                             });
 
@@ -999,6 +1000,7 @@
                             audio.addEventListener('ended', () => {
                                 if (this.isJawAvailable) {
                                     this.sendJawCommand({ type: 'stop_animation' });
+                                    this.stopAudioAnalysis();
                                 }
                             });
 
@@ -1062,7 +1064,7 @@
 
                 // Check if jaw animation is available (ChatterPi system)
                 try {
-                    const response = await fetch(`${this.apiBaseUrl}/chatterpi/jaw/status`);
+                    const response = await fetch(`${this.apiBaseUrl}/jaw/status`);
                     if (response.ok) {
                         const data = await response.json();
                         this.isJawAvailable = data.success && data.connected;
@@ -1284,6 +1286,106 @@
                         this.jawPosition.textContent = `${jawStatus.current_position.toFixed(1)}°`;
                     }
                     this.jawStatusText.textContent = jawStatus.is_moving ? 'Moving' : 'Ready';
+                }
+            }
+
+            // Audio analysis for real-time jaw animation
+            startAudioAnalysis(audioElement) {
+                if (!this.isJawAvailable || this.audioAnalysisActive) {
+                    return;
+                }
+
+                try {
+                    // Create audio context and analyzer
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    this.audioSource = this.audioContext.createMediaElementSource(audioElement);
+                    this.audioAnalyzer = this.audioContext.createAnalyser();
+
+                    // Configure analyzer
+                    this.audioAnalyzer.fftSize = 256;
+                    this.audioAnalyzer.smoothingTimeConstant = 0.8;
+
+                    // Connect audio nodes (maintain audio playback)
+                    this.audioSource.connect(this.audioAnalyzer);
+                    this.audioSource.connect(this.audioContext.destination);
+
+                    // Start analysis loop
+                    this.audioAnalysisActive = true;
+                    this.analyzeAudioLoop();
+
+                    console.log('🎤 Started real-time audio analysis for jaw animation');
+                } catch (error) {
+                    console.error('❌ Failed to start audio analysis:', error);
+                    this.updateJawStatus('❌ Audio analysis failed');
+                }
+            }
+
+            stopAudioAnalysis() {
+                if (!this.audioAnalysisActive) {
+                    return;
+                }
+
+                this.audioAnalysisActive = false;
+
+                if (this.audioContext) {
+                    this.audioContext.close();
+                    this.audioContext = null;
+                }
+
+                this.audioSource = null;
+                this.audioAnalyzer = null;
+
+                console.log('🛑 Stopped audio analysis');
+            }
+
+            analyzeAudioLoop() {
+                if (!this.audioAnalysisActive || !this.audioAnalyzer) {
+                    return;
+                }
+
+                // Get frequency data
+                const bufferLength = this.audioAnalyzer.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+                this.audioAnalyzer.getByteFrequencyData(dataArray);
+
+                // Calculate RMS amplitude (volume)
+                let sum = 0;
+                for (let i = 0; i < bufferLength; i++) {
+                    sum += dataArray[i] * dataArray[i];
+                }
+                const rms = Math.sqrt(sum / bufferLength);
+                const normalizedVolume = rms / 255.0; // Normalize to 0-1
+
+                // Send volume data to ChatterPi system
+                this.sendVolumeData(normalizedVolume);
+
+                // Continue analysis loop
+                requestAnimationFrame(() => this.analyzeAudioLoop());
+            }
+
+            async sendVolumeData(volume) {
+                if (!this.isJawAvailable) {
+                    return;
+                }
+
+                try {
+                    // Send volume data to ChatterPi for jaw animation
+                    await fetch(`${this.apiBaseUrl}/jaw/volume`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            volume: volume,
+                            timestamp: Date.now()
+                        })
+                    });
+                } catch (error) {
+                    // Don't log every error to avoid spam
+                    if (Date.now() - (this.lastVolumeError || 0) > 5000) {
+                        console.warn('⚠️ Failed to send volume data:', error);
+                        this.lastVolumeError = Date.now();
+                    }
                 }
             }
 

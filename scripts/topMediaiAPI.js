@@ -53,17 +53,20 @@ class TopMediaiAPI {
     async checkRateLimit() {
         const now = Date.now();
         const timeWindow = 60 * 1000;
-        
+
         if (now - this.lastRequestTime > timeWindow) {
             this.requestCount = 0;
             this.lastRequestTime = now;
         }
 
         if (this.requestCount >= this.rateLimitPerMinute) {
-            throw new Error('Rate limit exceeded. Please try again later.');
+            const waitTime = timeWindow - (now - this.lastRequestTime);
+            logger.warn(`⏳ Rate limit reached (${this.requestCount}/${this.rateLimitPerMinute}), waiting ${Math.ceil(waitTime/1000)}s`);
+            throw new Error(`Too many API requests from this IP, please try again later. Wait ${Math.ceil(waitTime/1000)} seconds.`);
         }
 
         this.requestCount++;
+        logger.debug(`API request ${this.requestCount}/${this.rateLimitPerMinute} in current window`);
     }
 
     async retryWithBackoff(operation, maxRetries = 3) {
@@ -72,14 +75,25 @@ class TopMediaiAPI {
                 return await operation();
             } catch (error) {
                 if (i === maxRetries - 1) throw error;
-                
-                const isRetryable = error.response?.status >= 500 || 
+
+                // Check for rate limiting errors
+                const isRateLimited = error.response?.status === 429 ||
+                                    error.message?.toLowerCase().includes('rate limit') ||
+                                    error.message?.toLowerCase().includes('too many requests');
+
+                const isRetryable = error.response?.status >= 500 ||
                                   error.code === 'ECONNABORTED' ||
-                                  error.code === 'ETIMEDOUT';
-                
+                                  error.code === 'ETIMEDOUT' ||
+                                  isRateLimited;
+
                 if (!isRetryable) throw error;
 
-                const delay = Math.min(1000 * Math.pow(2, i), 5000);
+                // Use longer delay for rate limiting
+                const delay = isRateLimited ?
+                    Math.min(5000 * Math.pow(2, i), 60000) : // 5s to 60s for rate limits
+                    Math.min(1000 * Math.pow(2, i), 5000);   // 1s to 5s for other errors
+
+                logger.warn(`Retrying after ${delay}ms due to: ${error.message}`);
                 await new Promise(resolve => setTimeout(resolve, delay));
             }
         }

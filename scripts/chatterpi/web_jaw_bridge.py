@@ -106,7 +106,7 @@ class ChatterPiWebBridge:
     async def handle_message(self, websocket, data: Dict[str, Any]):
         """Handle incoming WebSocket messages"""
         message_type = data.get("type")
-        
+
         if message_type == "jaw_move":
             await self.handle_jaw_move(websocket, data)
         elif message_type == "start_animation":
@@ -119,6 +119,8 @@ class ChatterPiWebBridge:
             await self.handle_configure_servo(websocket, data)
         elif message_type == "subscribe":
             await self.handle_subscribe(websocket, data)
+        elif message_type == "volume_data":
+            await self.handle_volume_data(websocket, data)
         else:
             await websocket.send(json.dumps({
                 "type": "error",
@@ -245,7 +247,7 @@ class ChatterPiWebBridge:
                 "success": True,
                 "message": "Audio animation stopped"
             }))
-            
+
         except Exception as e:
             logger.error(f"Error stopping animation: {e}")
             await websocket.send(json.dumps({
@@ -253,6 +255,40 @@ class ChatterPiWebBridge:
                 "success": False,
                 "error": str(e)
             }))
+
+    async def handle_volume_data(self, websocket, data: Dict[str, Any]):
+        """Handle real-time volume data for jaw animation"""
+        try:
+            volume = data.get("volume", 0.0)
+            timestamp = data.get("timestamp", int(time.time() * 1000))
+
+            # Only process volume data if animation is active
+            if not self.animation_active:
+                return
+
+            # Convert volume to jaw angle using the audio animator
+            if self.audio_animator:
+                # Manually set the volume for the audio animator
+                self.audio_animator.current_volume = volume
+                self.audio_animator.smoothed_volume = (
+                    self.audio_animator.smoothing_factor * self.audio_animator.smoothed_volume +
+                    (1 - self.audio_animator.smoothing_factor) * volume
+                )
+
+                # Calculate jaw angle based on volume
+                jaw_angle = self.audio_animator._volume_to_jaw_angle(self.audio_animator.smoothed_volume)
+
+                # Only move if there's significant change (reduce jitter)
+                angle_diff = abs(jaw_angle - self.audio_animator.last_jaw_angle)
+                if angle_diff > 1.0:
+                    self.audio_animator.jaw_control.move_to_angle(jaw_angle, 0.05, "linear")
+                    self.audio_animator.last_jaw_angle = jaw_angle
+
+                    # Update stats
+                    self.stats["volume_updates"] += 1
+
+        except Exception as e:
+            logger.error(f"Error processing volume data: {e}")
     
     async def handle_get_status(self, websocket, data: Dict[str, Any]):
         """Handle status request"""
