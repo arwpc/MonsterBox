@@ -106,21 +106,77 @@ class HeadTracker:
         self.thread = None
         self.last_servo_angle = config.servo_center_angle
         self.frame_times = []
-        
+
+    def load_character_part_config(self, character_id: str) -> Optional[Dict[str, Any]]:
+        """Load head tracking part configuration for a character"""
+        try:
+            # Load parts.json
+            parts_path = os.path.join(os.path.dirname(__file__), '../../data/parts.json')
+            with open(parts_path, 'r') as f:
+                parts = json.load(f)
+
+            # Find head tracking part for this character
+            for part in parts:
+                if (part.get('characterId') == int(character_id) and
+                    part.get('type') == 'head-tracking'):
+                    logger.info(f"✅ Found head tracking part configuration for character {character_id}")
+                    return part
+
+            logger.info(f"ℹ️ No head tracking part found for character {character_id}")
+            return None
+
+        except Exception as e:
+            logger.error(f"Error loading character part config: {e}")
+            return None
+
+    def _parse_device_id(self, device_path: str) -> Optional[int]:
+        """Parse device ID from device path with error handling"""
+        try:
+            if device_path.startswith('/dev/video'):
+                return int(device_path.replace('/dev/video', ''))
+            elif device_path.isdigit():
+                return int(device_path)
+            else:
+                logger.error(f"Invalid device path format: {device_path}")
+                return None
+        except (ValueError, AttributeError) as e:
+            logger.error(f"Error parsing device ID from {device_path}: {e}")
+            return None
+
     def initialize(self) -> bool:
         """Initialize camera and background subtractor"""
         try:
-            # Initialize camera
-            device_id = int(self.config.webcam_device.replace('/dev/video', ''))
-            self.cap = cv2.VideoCapture(device_id, cv2.CAP_V4L2)
+            # Initialize camera with robust device detection
+            device_id = self._parse_device_id(self.config.webcam_device)
+            if device_id is None:
+                logger.error(f"Invalid webcam device format: {self.config.webcam_device}")
+                return False
 
-            if not self.cap.isOpened():
-                logger.error(f"Failed to open camera {self.config.webcam_device}")
+            # Try multiple backends for better compatibility
+            backends = [cv2.CAP_V4L2, cv2.CAP_ANY]
+            self.cap = None
+
+            for backend in backends:
+                try:
+                    self.cap = cv2.VideoCapture(device_id, backend)
+                    if self.cap.isOpened():
+                        logger.info(f"✅ Camera opened with backend: {backend}")
+                        break
+                    else:
+                        self.cap.release()
+                        self.cap = None
+                except Exception as e:
+                    logger.debug(f"Backend {backend} failed: {e}")
+                    continue
+
+            if not self.cap or not self.cap.isOpened():
+                logger.error(f"Failed to open camera {self.config.webcam_device} with any backend")
                 if mcp_logger:
                     mcp_logger.log_error("camera_init_failed", {
                         "webcam_device": self.config.webcam_device,
                         "device_id": device_id,
-                        "error": "Camera failed to open"
+                        "error": "Camera failed to open with any backend",
+                        "backends_tried": backends
                     })
                 return False
 
@@ -184,15 +240,26 @@ class HeadTracker:
         logger.info("⏹️ Head tracking stopped")
     
     def _tracking_loop(self):
-        """Main tracking loop"""
+        """Main tracking loop with robust error handling"""
         self.status.active = True
         frame_count = 0
-        
+        consecutive_failures = 0
+        max_consecutive_failures = 10
+
         while self.running:
             try:
                 ret, frame = self.cap.read()
                 if not ret:
+                    consecutive_failures += 1
+                    if consecutive_failures >= max_consecutive_failures:
+                        logger.error("Too many consecutive frame read failures, stopping tracking")
+                        self.status.error_message = "Camera read failures"
+                        break
+                    time.sleep(0.1)  # Brief pause before retry
                     continue
+
+                # Reset failure counter on successful read
+                consecutive_failures = 0
                 
                 frame_start = time.time()
                 
@@ -372,12 +439,38 @@ class HeadTrackingWebSocketService(BaseHardwareService):
                 })
             return False
 
+    async def send_error(self, websocket, message: str):
+        """Send error message to client"""
+        try:
+            error_response = {
+                "type": "error",
+                "message": message,
+                "timestamp": time.time()
+            }
+            await websocket.send(json.dumps(error_response))
+        except Exception as e:
+            logger.error(f"Failed to send error message: {e}")
+
+    async def handle_ping(self, websocket, data: Dict[str, Any]):
+        """Handle ping messages"""
+        try:
+            pong_response = {
+                "type": "pong",
+                "timestamp": data.get("timestamp", time.time())
+            }
+            await websocket.send(json.dumps(pong_response))
+        except Exception as e:
+            logger.error(f"Error handling ping: {e}")
+            await self.send_error(websocket, f"Failed to handle ping: {str(e)}")
+
     async def handle_message(self, websocket, message_data: Dict[str, Any]):
         """Handle incoming WebSocket messages"""
         try:
             message_type = message_data.get("type")
 
-            if message_type == "start_tracking":
+            if message_type == "ping":
+                await self.handle_ping(websocket, message_data)
+            elif message_type == "start_tracking":
                 await self.handle_start_tracking(websocket, message_data)
             elif message_type == "stop_tracking":
                 await self.handle_stop_tracking(websocket, message_data)
@@ -398,6 +491,18 @@ class HeadTrackingWebSocketService(BaseHardwareService):
             logger.error(f"Error handling message: {e}")
             await self.send_error(websocket, f"Message handling error: {str(e)}")
 
+    async def handle_ping(self, websocket, data: Dict[str, Any]):
+        """Handle ping messages"""
+        try:
+            pong_response = {
+                "type": "pong",
+                "timestamp": data.get("timestamp", time.time())
+            }
+            await websocket.send(json.dumps(pong_response))
+        except Exception as e:
+            logger.error(f"Error handling ping: {e}")
+            await self.send_error(websocket, f"Failed to handle ping: {str(e)}")
+
     async def handle_start_tracking(self, websocket, data: Dict[str, Any]):
         """Start head tracking for a character"""
         try:
@@ -408,7 +513,27 @@ class HeadTrackingWebSocketService(BaseHardwareService):
 
             # Get or create tracking configuration
             if character_id not in self.tracking_configs:
-                self.tracking_configs[character_id] = TrackingConfig()
+                # Try to load configuration from character part
+                part_config = self.load_character_part_config(character_id)
+                if part_config and part_config.get('config'):
+                    # Create config from part data
+                    config_data = part_config['config']
+                    self.tracking_configs[character_id] = TrackingConfig(
+                        webcam_device=config_data.get('webcam_device', '/dev/video0'),
+                        servo_center_angle=config_data.get('servo_center_angle', 90.0),
+                        servo_min_angle=config_data.get('servo_left_limit', 30.0),
+                        servo_max_angle=config_data.get('servo_right_limit', 150.0),
+                        tracking_sensitivity=config_data.get('tracking_sensitivity', 1.0),
+                        motion_threshold=config_data.get('motion_threshold', 25),
+                        tracking_smoothing=config_data.get('tracking_smoothing', 0.3),
+                        tracking_deadzone=config_data.get('tracking_deadzone', 5.0),
+                        servo_id=str(part_config.get('servo_id', ''))
+                    )
+                    logger.info(f"✅ Loaded head tracking configuration from part for character {character_id}")
+                else:
+                    # Use default configuration
+                    self.tracking_configs[character_id] = TrackingConfig()
+                    logger.info(f"ℹ️ Using default head tracking configuration for character {character_id}")
 
             config = self.tracking_configs[character_id]
 

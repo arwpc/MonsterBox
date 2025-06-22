@@ -281,7 +281,8 @@
                 <div id="headTrackingServiceInfo">
                     <p>Status: <span id="headTrackingServiceStatusText">Offline</span></p>
                     <p>Active Trackers: <span id="activeTrackerCount">0</span></p>
-                    <p>Port: 8776</p>
+                    <p>Target Detected: <span id="targetDetected">No</span></p>
+                    <p>Port: 8778</p>
                 </div>
             </div>
 
@@ -1139,6 +1140,13 @@
                     }
 
                     statusText.innerHTML = statusHtml;
+
+                    // Update the status card target detection indicator
+                    const targetDetectedElement = document.getElementById('targetDetected');
+                    if (targetDetectedElement) {
+                        targetDetectedElement.textContent = status.target_detected ? 'Yes' : 'No';
+                        targetDetectedElement.style.color = status.target_detected ? '#4CAF50' : '#f44336';
+                    }
                 }
             }
 

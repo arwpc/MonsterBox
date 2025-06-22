@@ -4,7 +4,7 @@
   "description": "A refactored scene builder application for managing scenes and steps.",
   "main": "app.js",
   "scripts": {
-    "start": "npm run build:css && node --no-deprecation app.js",
+    "start": "(npm run build:css || echo 'CSS build skipped - using existing CSS') && node --no-deprecation app.js",
     "cleanup": "node cleanup-gpio.js",
     "dev": "npm run build:css && nodemon --trace-deprecation --trace-warnings app.js",
     "build:css": "npx tailwindcss -i ./public/css/input.css -o ./public/css/main.css --watch=false",

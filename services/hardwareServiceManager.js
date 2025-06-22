@@ -28,7 +28,8 @@ class HardwareServiceManager {
             light: { port: 8772, status: 'offline' },
             sensor: { port: 8773, status: 'offline' },
             webcam: { port: 8774, status: 'offline' },
-            actuator: { port: 8775, status: 'offline' }
+            actuator: { port: 8775, status: 'offline' },
+            head_tracking: { port: 8778, status: 'offline' }
         };
     }
 
@@ -106,6 +107,9 @@ class HardwareServiceManager {
                         }
                         if (output.includes('actuator_service WebSocket Server running')) {
                             this.updateServiceStatus('actuator', 'online');
+                        }
+                        if (output.includes('head_tracking_service WebSocket Server running')) {
+                            this.updateServiceStatus('head_tracking', 'online');
                         }
                     }
                 });
@@ -279,6 +283,10 @@ class HardwareServiceManager {
             // Check actuator service
             const isActuatorHealthy = await this.checkServiceHealth('localhost', 8775);
             this.updateServiceStatus('actuator', isActuatorHealthy ? 'online' : 'offline');
+
+            // Check head tracking service
+            const isHeadTrackingHealthy = await this.checkServiceHealth('localhost', 8778);
+            this.updateServiceStatus('head_tracking', isHeadTrackingHealthy ? 'online' : 'offline');
 
         } catch (error) {
             logger.debug('Health check error (this is normal):', error.message);

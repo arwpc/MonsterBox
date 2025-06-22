@@ -286,5 +286,38 @@
       "description": "ChatterPi AI system automatically detects and uses existing jaw servo configurations"
     },
     "createdAt": "2025-06-14T21:00:00.000Z"
+  },
+  {
+    "id": 22,
+    "name": "Orlok Head Tracking System",
+    "type": "head-tracking",
+    "characterId": 1,
+    "webcam_device": "/dev/video0",
+    "servo_id": 11,
+    "servo_center_angle": 90,
+    "servo_left_limit": 30,
+    "servo_right_limit": 150,
+    "tracking_sensitivity": 1.0,
+    "motion_threshold": 25,
+    "tracking_smoothing": 0.3,
+    "tracking_deadzone": 5,
+    "status": "inactive",
+    "config": {
+      "webcam_device": "/dev/video0",
+      "servo_center_angle": 90,
+      "servo_left_limit": 30,
+      "servo_right_limit": 150,
+      "tracking_sensitivity": 1.0,
+      "motion_threshold": 25,
+      "tracking_smoothing": 0.3,
+      "tracking_deadzone": 5,
+      "background_subtraction_history": 500,
+      "background_subtraction_threshold": 16,
+      "min_contour_area": 500,
+      "max_contour_area": 50000,
+      "target_lost_timeout": 3.0,
+      "servo_update_rate": 10
+    },
+    "createdAt": "2025-06-22T12:00:00.000Z"
   }
 ]
