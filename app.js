@@ -125,9 +125,9 @@ app.use(helmet({
 app.use((req, res, next) => {
     res.setHeader('Content-Security-Policy',
         "default-src 'self'; " +
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-        "font-src 'self' https://fonts.gstatic.com; " +
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://code.jquery.com; " +
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; " +
+        "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; " +
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://code.jquery.com https://cdn.jsdelivr.net; " +
         "img-src 'self' data: blob:; " +
         "connect-src 'self' ws: wss:; " +
         "media-src 'self' blob:; " +

@@ -6,6 +6,9 @@ const { defineConfig, devices } = require('@playwright/test');
  */
 module.exports = defineConfig({
   testDir: './tests',
+  /* Only run Playwright spec files, exclude Mocha test files */
+  testMatch: ['**/*.spec.js'],
+  testIgnore: ['**/*.test.js'],
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */

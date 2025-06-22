@@ -45,7 +45,8 @@ class TestHelpers {
    * Wait for and click an element safely
    */
   static async safeClick(page, selector, options = {}) {
-    const element = page.locator(selector);
+    // Handle both string selectors and Playwright locator objects
+    const element = typeof selector === 'string' ? page.locator(selector) : selector;
     await expect(element).toBeVisible({ timeout: 10000 });
     await expect(element).toBeEnabled({ timeout: 5000 });
     await element.click(options);
@@ -56,12 +57,13 @@ class TestHelpers {
    * Fill form field safely with validation
    */
   static async safeFill(page, selector, value, options = {}) {
-    const element = page.locator(selector);
+    // Handle both string selectors and Playwright locator objects
+    const element = typeof selector === 'string' ? page.locator(selector) : selector;
     await expect(element).toBeVisible({ timeout: 5000 });
     await expect(element).toBeEnabled({ timeout: 5000 });
     await element.clear();
     await element.fill(value, options);
-    
+
     // Verify the value was set correctly
     const actualValue = await element.inputValue();
     expect(actualValue).toBe(value);
@@ -142,13 +144,17 @@ class TestHelpers {
    * Clear all form fields
    */
   static async clearForm(page, formSelector) {
-    const inputs = page.locator(`${formSelector} input, ${formSelector} textarea, ${formSelector} select`);
+    const inputs = page.locator(`${formSelector} input:not([type="hidden"]), ${formSelector} textarea, ${formSelector} select`);
     const count = await inputs.count();
-    
+
     for (let i = 0; i < count; i++) {
       const input = inputs.nth(i);
+      const isVisible = await input.isVisible();
+
+      if (!isVisible) continue; // Skip hidden inputs
+
       const tagName = await input.evaluate(el => el.tagName.toLowerCase());
-      
+
       if (tagName === 'input' || tagName === 'textarea') {
         await input.clear();
       } else if (tagName === 'select') {
@@ -161,7 +167,8 @@ class TestHelpers {
    * Test file upload functionality
    */
   static async testFileUpload(page, fileInputSelector, testFile) {
-    const fileInput = page.locator(fileInputSelector);
+    // Handle both string selectors and Playwright locator objects
+    const fileInput = typeof fileInputSelector === 'string' ? page.locator(fileInputSelector) : fileInputSelector;
     await expect(fileInput).toBeVisible({ timeout: 5000 });
     
     // Create a test file if path provided

@@ -301,9 +301,16 @@ test.describe('Integration Deep Functionality Tests', () => {
     }
 
     await TestHelpers.takeScreenshot(page, testInfo, 'error_recovery_testing');
-  }
+  });
 
-  async testFormValidationErrors(page) {
+  test('Form Validation Error Handling', async ({ page }, testInfo) => {
+    TestHelpers.logStep('Testing form validation error handling');
+
+    await testFormValidationErrors(page);
+    await TestHelpers.takeScreenshot(page, testInfo, 'form_validation_errors');
+  });
+
+  async function testFormValidationErrors(page) {
     // Test invalid character creation
     await homePage.navigateToCharacters();
     
@@ -324,7 +331,14 @@ test.describe('Integration Deep Functionality Tests', () => {
     }
   }
 
-  async testNetworkErrorRecovery(page) {
+  test('Network Error Recovery', async ({ page }, testInfo) => {
+    TestHelpers.logStep('Testing network error recovery');
+
+    await testNetworkErrorRecovery(page);
+    await TestHelpers.takeScreenshot(page, testInfo, 'network_error_recovery');
+  });
+
+  async function testNetworkErrorRecovery(page) {
     // Simulate network issues by rapid navigation
     const pages = ['/', '/characters', '/parts', '/sounds'];
     
@@ -339,7 +353,14 @@ test.describe('Integration Deep Functionality Tests', () => {
     expect(validation.pageLoaded).toBe(true);
   }
 
-  async testLargeFileHandling(page) {
+  test('Large File Handling', async ({ page }, testInfo) => {
+    TestHelpers.logStep('Testing large file handling');
+
+    await testLargeFileHandling(page);
+    await TestHelpers.takeScreenshot(page, testInfo, 'large_file_handling');
+  });
+
+  async function testLargeFileHandling(page) {
     await homePage.navigateToSounds();
     
     // Try to upload large file
@@ -353,7 +374,14 @@ test.describe('Integration Deep Functionality Tests', () => {
     }
   }
 
-  async testRapidNavigation(page) {
+  test('Rapid Navigation Stress Test', async ({ page }, testInfo) => {
+    TestHelpers.logStep('Testing rapid navigation stress scenarios');
+
+    await testRapidNavigation(page);
+    await TestHelpers.takeScreenshot(page, testInfo, 'rapid_navigation');
+  });
+
+  async function testRapidNavigation(page) {
     const navigationSequence = [
       () => homePage.navigateToCharacters(),
       () => homePage.navigateToHardwareParts(),
@@ -370,7 +398,7 @@ test.describe('Integration Deep Functionality Tests', () => {
     // Verify final state
     const validation = await homePage.validatePageLoad();
     expect(validation.pageLoaded).toBe(true);
-  });
+  }
 
   test('Performance Under Load - Concurrent Operations', async ({ page }, testInfo) => {
     TestHelpers.logStep('Testing performance under load with concurrent operations');
@@ -409,9 +437,9 @@ test.describe('Integration Deep Functionality Tests', () => {
     }
 
     await TestHelpers.takeScreenshot(page, testInfo, 'performance_under_load');
-  }
+  });
 
-  async testCharacterCreationLoad(page, scenario) {
+  async function testCharacterCreationLoad(page, scenario) {
     await homePage.navigateToCharacters();
     
     // Rapid character creation
@@ -430,7 +458,7 @@ test.describe('Integration Deep Functionality Tests', () => {
     }
   }
 
-  async testHardwareControlStress(page, scenario) {
+  async function testHardwareControlStress(page, scenario) {
     await homePage.navigateToHardwareParts();
     
     // Rapid hardware control operations
@@ -450,7 +478,7 @@ test.describe('Integration Deep Functionality Tests', () => {
     }
   }
 
-  async testAudioPlaybackLoad(page, scenario) {
+  async function testAudioPlaybackLoad(page, scenario) {
     await homePage.navigateToSounds();
     
     // Rapid audio operations
@@ -473,7 +501,7 @@ test.describe('Integration Deep Functionality Tests', () => {
         }
       }
     }
-  });
+  }
 
   test('Real-time Coordination Between Components', async ({ page }, testInfo) => {
     TestHelpers.logStep('Testing real-time coordination between components');

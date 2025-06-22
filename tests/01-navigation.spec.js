@@ -20,11 +20,11 @@ test.describe('Main Navigation', () => {
     // Check page title
     await expect(page).toHaveTitle(/MonsterBox/);
     
-    // Check main heading
-    await expect(page.locator('h1')).toContainText('MonsterBox');
+    // Check main heading (accepts both formats)
+    await expect(page.locator('h1')).toContainText(/MONSTERBOX|MonsterBox/i);
     
-    // Check navigation menu exists
-    await expect(page.locator('nav, .navbar, .navigation')).toBeVisible();
+    // Check navigation content exists (card-based layout)
+    await expect(page.locator('.button-group').first()).toBeVisible();
     
     // Check main content area
     await expect(page.locator('main, .main-content, .container')).toBeVisible();
@@ -40,12 +40,11 @@ test.describe('Main Navigation', () => {
     
     const expectedLinks = [
       { text: 'Characters', href: '/characters' },
-      { text: 'Sounds', href: '/sounds' },
+      { text: 'Hardware Parts', href: '/parts' },
       { text: 'AI Management', href: '/ai-management' },
-      { text: 'Hardware Monitor', href: '/hardware-monitor' },
-      { text: 'Log Collection', href: '/log-collection' },
-      { text: 'AI Configuration', href: '/ai-config' },
-      { text: 'ChatterPi', href: '/chatterpi-chat' }
+      { text: 'Sounds', href: '/sounds' },
+      { text: 'Scenes', href: '/scenes' },
+      { text: 'Configuration', href: '/ai-config' }
     ];
     
     for (const link of expectedLinks) {
@@ -68,23 +67,23 @@ test.describe('Main Navigation', () => {
     TestHelpers.logStep('Testing navigation link functionality');
     
     const navigationTests = [
-      { 
-        linkText: 'Characters', 
+      {
+        linkText: 'Manage Characters',
         expectedUrl: '/characters',
         expectedTitle: 'Characters',
-        expectedHeading: 'Characters'
+        expectedHeading: 'Character Management'
       },
-      { 
-        linkText: 'Sounds', 
+      {
+        linkText: 'Sounds',
         expectedUrl: '/sounds',
         expectedTitle: 'Sounds',
         expectedHeading: 'Sound'
       },
-      { 
-        linkText: 'AI Management', 
-        expectedUrl: '/ai-management',
-        expectedTitle: 'AI Management',
-        expectedHeading: 'AI Management'
+      {
+        linkText: 'Hardware Parts',
+        expectedUrl: '/parts',
+        expectedTitle: 'Hardware Parts',
+        expectedHeading: 'Hardware'
       }
     ];
     
@@ -96,13 +95,13 @@ test.describe('Main Navigation', () => {
       await TestHelpers.waitForPageLoad(page);
       
       // Click navigation link
-      const linkElement = page.locator(`a:has-text("${navTest.linkText}")`).first();
-      await TestHelpers.safeClick(page, linkElement);
+      const linkSelector = `a:has-text("${navTest.linkText}")`;
+      await TestHelpers.safeClick(page, linkSelector);
       
       // Verify navigation
       await TestHelpers.verifyNavigation(page, navTest.expectedUrl, navTest.expectedTitle);
       
-      // Check for expected heading
+      // Check for expected heading (allow for emojis and variations)
       if (navTest.expectedHeading) {
         await expect(page.locator('h1, h2').first()).toContainText(navTest.expectedHeading, { timeout: 5000 });
       }

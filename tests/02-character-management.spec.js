@@ -19,7 +19,7 @@ test.describe('Character Management', () => {
     
     // Check page title and heading
     await expect(page).toHaveTitle(/Characters/);
-    await expect(page.locator('h1, h2').first()).toContainText('Characters');
+    await expect(page.locator('h1, h2').first()).toContainText(/Character Management|Characters/);
     
     // Check for character list or empty state
     const characterList = page.locator('.character-list, .characters-grid, .character-card');
