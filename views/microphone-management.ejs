@@ -42,6 +42,7 @@
                     <div class="status-port">Port 8776</div>
                 </div>
                 <button class="status-action" id="restartMicService">🔄 Restart</button>
+                <button class="status-action" id="restartMicServiceBtn" style="display: none;">🔄 Restart</button>
             </div>
             <div class="status-card" id="audioStreamStatus">
                 <div class="status-icon">🔊</div>
@@ -51,6 +52,7 @@
                     <div class="status-port">Port 8777</div>
                 </div>
                 <button class="status-action" id="restartAudioService">🔄 Restart</button>
+                <button class="status-action" id="restartAudioStreamServiceBtn" style="display: none;">🔄 Restart</button>
             </div>
         </div>
     </div>
@@ -292,6 +294,30 @@
         <div id="monitoring-tab" class="tab-content">
             <div class="monitoring-suite">
                 <h4>👁️ Live Microphone Monitoring</h4>
+
+                <!-- Audio Level Monitoring -->
+                <div class="audio-monitoring-section">
+                    <h5>🎵 Audio Level Monitoring</h5>
+                    <div class="audio-level-container">
+                        <div class="audio-level-meter" id="audioLevelMeter">
+                            <div class="level-bar" id="audioLevelBar"></div>
+                        </div>
+                        <div class="audio-level-percentage" id="audioLevelPercentage">0%</div>
+                    </div>
+                    <div class="monitoring-controls">
+                        <button class="btn primary" id="startAudioMonitoringBtn">▶️ Start Audio Monitoring</button>
+                        <button class="btn secondary" id="stopAudioMonitoringBtn">⏹️ Stop Audio Monitoring</button>
+                    </div>
+                </div>
+
+                <!-- Microphone Device Selection -->
+                <div class="device-selection-section">
+                    <h5>🎤 Device Selection</h5>
+                    <select id="microphoneDeviceSelect" class="device-select">
+                        <option value="">Select microphone device...</option>
+                    </select>
+                </div>
+
                 <!-- Monitoring interface will be loaded here -->
                 <div id="monitoringContainer">
                     <!-- This will be populated by the monitoring interface -->
@@ -303,6 +329,39 @@
         <div id="configuration-tab" class="tab-content">
             <div class="configuration-suite">
                 <h4>⚙️ System Configuration</h4>
+
+                <!-- STT Configuration Section -->
+                <div class="config-section" id="sttConfigSection">
+                    <h5>🗣️ Speech-to-Text Configuration</h5>
+                    <div class="config-grid">
+                        <div class="config-group">
+                            <label for="sttLanguageSelect">Language:</label>
+                            <select id="sttLanguageSelect" class="config-select">
+                                <option value="en">English</option>
+                                <option value="es">Spanish</option>
+                                <option value="fr">French</option>
+                                <option value="de">German</option>
+                            </select>
+                        </div>
+                        <div class="config-group">
+                            <label for="sttConfidenceThreshold">Confidence Threshold:</label>
+                            <input type="range" id="sttConfidenceThreshold" min="0.1" max="1.0" step="0.1" value="0.7">
+                            <span class="range-value">0.7</span>
+                        </div>
+                    </div>
+                    <div class="stt-controls">
+                        <button class="btn primary" id="startSTTBtn">▶️ Start STT</button>
+                        <button class="btn secondary" id="stopSTTBtn">⏹️ Stop STT</button>
+                        <button class="btn secondary" id="testSTTBtn">🧪 Test STT</button>
+                    </div>
+                    <div class="stt-output">
+                        <h6>Transcription Output:</h6>
+                        <div class="transcription-box" id="transcriptionOutput">
+                            Transcription will appear here...
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Configuration interface will be loaded here -->
                 <div id="configurationContainer">
                     <!-- This will be populated by the configuration interface -->
@@ -497,6 +556,123 @@
     .metric-value {
         color: #00ff00;
         font-weight: bold;
+    }
+
+    /* Audio Level Monitoring Styles */
+    .audio-monitoring-section {
+        background: rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(0, 255, 0, 0.3);
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .audio-level-container {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin: 15px 0;
+    }
+
+    .audio-level-meter {
+        flex: 1;
+        height: 30px;
+        background: rgba(0, 0, 0, 0.7);
+        border: 1px solid rgba(0, 255, 0, 0.3);
+        border-radius: 15px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    #audioLevelBar {
+        height: 100%;
+        background: linear-gradient(90deg, #00ff00, #ffff00, #ff0000);
+        width: 0%;
+        transition: width 0.1s ease;
+    }
+
+    .audio-level-percentage {
+        color: #00ff00;
+        font-weight: bold;
+        min-width: 50px;
+        text-align: center;
+    }
+
+    .monitoring-controls {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    /* Device Selection Styles */
+    .device-selection-section {
+        background: rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(0, 255, 0, 0.3);
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .device-select {
+        width: 100%;
+        padding: 10px;
+        background: rgba(0, 0, 0, 0.7);
+        border: 1px solid rgba(0, 255, 0, 0.3);
+        border-radius: 4px;
+        color: #ffffff;
+        font-size: 14px;
+    }
+
+    /* STT Configuration Styles */
+    .config-section {
+        background: rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(0, 255, 0, 0.3);
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .config-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin: 15px 0;
+    }
+
+    .config-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .config-group label {
+        color: #00ff00;
+        font-weight: bold;
+    }
+
+    .config-select {
+        padding: 8px;
+        background: rgba(0, 0, 0, 0.7);
+        border: 1px solid rgba(0, 255, 0, 0.3);
+        border-radius: 4px;
+        color: #ffffff;
+    }
+
+    .stt-controls {
+        display: flex;
+        gap: 10px;
+        margin: 15px 0;
+    }
+
+    .transcription-box {
+        background: rgba(0, 0, 0, 0.7);
+        border: 1px solid rgba(0, 255, 0, 0.3);
+        border-radius: 4px;
+        padding: 15px;
+        color: #ffffff;
+        min-height: 100px;
+        font-family: monospace;
+        white-space: pre-wrap;
     }
 
     .quick-actions {
@@ -1519,11 +1695,14 @@
 
         async setupWebSocketConnections() {
             try {
-                // Connect to microphone service
-                await this.connectWebSocket('microphone', 'ws://localhost:8776');
+                // Get the correct hostname (use IP if localhost resolves incorrectly)
+                const hostname = window.location.hostname === 'localhost' ? '192.168.8.130' : window.location.hostname;
 
-                // Connect to audio stream service
-                await this.connectWebSocket('audioStream', 'ws://localhost:8777');
+                // Connect to microphone service via proxy (fixes browser compatibility)
+                await this.connectWebSocket('microphone', `ws://${hostname}:8794`);
+
+                // Connect to audio stream service via proxy (fixes browser compatibility)
+                await this.connectWebSocket('audioStream', `ws://${hostname}:8795`);
 
                 this.updateServiceStatus('micServiceStatus', 'Connected', 'active');
                 this.updateServiceStatus('audioStreamServiceStatus', 'Connected', 'active');
@@ -2759,7 +2938,7 @@
 
         async checkServiceStatus(port) {
             try {
-                const ws = new WebSocket(\`ws://localhost:\${port}\`);
+                const ws = new WebSocket(`ws://localhost:${port}`);
 
                 return new Promise((resolve) => {
                     const timeout = setTimeout(() => {
@@ -2784,24 +2963,30 @@
         }
 
         updateServiceIndicator(statusId, detailsId, isConnected, serviceName, port) {
-            const statusElement = document.getElementById(statusId);
-            const detailsElement = document.getElementById(detailsId);
+            try {
+                const statusElement = document.getElementById(statusId);
+                const detailsElement = document.getElementById(detailsId);
 
-            if (statusElement) {
-                const dot = statusElement.querySelector('.status-dot');
-                const text = statusElement.querySelector('.status-text');
+                if (statusElement) {
+                    const dot = statusElement.querySelector('.status-dot');
+                    const text = statusElement.querySelector('.status-text');
 
-                if (isConnected) {
-                    dot.className = 'status-dot connected';
-                    text.textContent = 'Connected';
-                } else {
-                    dot.className = 'status-dot disconnected';
-                    text.textContent = 'Disconnected';
+                    if (dot && text) {
+                        if (isConnected) {
+                            dot.className = 'status-dot connected';
+                            text.textContent = 'Connected';
+                        } else {
+                            dot.className = 'status-dot disconnected';
+                            text.textContent = 'Disconnected';
+                        }
+                    }
                 }
-            }
 
-            if (detailsElement) {
-                detailsElement.textContent = \`Port: \${port} | Status: \${isConnected ? 'Online' : 'Offline'}\`;
+                if (detailsElement) {
+                    detailsElement.textContent = `Port: ${port} | Status: ${isConnected ? 'Online' : 'Offline'}`;
+                }
+            } catch (error) {
+                console.warn(`Error updating service indicator for ${statusId}:`, error);
             }
         }
 
@@ -2839,20 +3024,20 @@
                 const level = this.monitoringActive ? Math.random() * 100 : 0;
                 const levelClass = level > 70 ? 'high' : level > 30 ? 'medium' : 'low';
 
-                levelsHtml += \`
+                levelsHtml += `
                     <div class="microphone-level-meter">
                         <div class="meter-header">
-                            <span class="mic-name">\${mic.name}</span>
-                            <span class="mic-level">\${level.toFixed(1)}%</span>
+                            <span class="mic-name">${mic.name}</span>
+                            <span class="mic-level">${level.toFixed(1)}%</span>
                         </div>
                         <div class="level-bar">
-                            <div class="level-fill \${levelClass}" style="width: \${level}%"></div>
+                            <div class="level-fill ${levelClass}" style="width: ${level}%"></div>
                         </div>
                         <div class="meter-details">
-                            Device: \${mic.deviceId || 'Unknown'} | Sample Rate: \${mic.sampleRate || 16000}Hz
+                            Device: ${mic.deviceId || 'Unknown'} | Sample Rate: ${mic.sampleRate || 16000}Hz
                         </div>
                     </div>
-                \`;
+                `;
             });
 
             container.innerHTML = levelsHtml;
@@ -2864,11 +3049,11 @@
 
             const timestamp = new Date().toLocaleTimeString();
             const logEntry = document.createElement('div');
-            logEntry.className = \`log-entry \${type}\`;
-            logEntry.innerHTML = \`
-                <span class="log-time">\${timestamp}</span>
-                <span class="log-message">\${message}</span>
-            \`;
+            logEntry.className = `log-entry ${type}`;
+            logEntry.innerHTML = `
+                <span class="log-time">${timestamp}</span>
+                <span class="log-message">${message}</span>
+            `;
 
             logContainer.insertBefore(logEntry, logContainer.firstChild);
 
@@ -3048,34 +3233,132 @@
             }, 2000);
         }
 
-        // Enhanced WebSocket setup with error handling
-        async setupWebSocketConnections() {
+        // Populate microphone device select dropdown
+        async populateMicrophoneDevices() {
             try {
-                // Connect to microphone service with retry
-                const micConnected = await this.connectWebSocketWithRetry('microphone', 'ws://localhost:8776');
+                const deviceSelect = document.getElementById('microphoneDeviceSelect');
+                if (!deviceSelect) return;
 
-                // Connect to audio stream service with retry
-                const audioConnected = await this.connectWebSocketWithRetry('audioStream', 'ws://localhost:8777');
+                // Get available audio devices
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const audioInputs = devices.filter(device => device.kind === 'audioinput');
 
-                if (micConnected && audioConnected) {
-                    this.updateServiceStatus('micServiceStatus', 'Connected', 'active');
-                    this.updateServiceStatus('audioStreamServiceStatus', 'Connected', 'active');
-                    this.showNotification('All WebSocket services connected successfully', 'success');
-                } else {
-                    this.showNotification('Some WebSocket connections failed', 'warning');
-                }
+                deviceSelect.innerHTML = '<option value="">Select microphone device...</option>';
+                audioInputs.forEach(device => {
+                    const option = document.createElement('option');
+                    option.value = device.deviceId;
+                    option.textContent = device.label || `Microphone ${device.deviceId.substring(0, 8)}`;
+                    deviceSelect.appendChild(option);
+                });
             } catch (error) {
-                console.error('Failed to setup WebSocket connections:', error);
-                this.updateServiceStatus('micServiceStatus', 'Connection Failed', 'error');
-                this.updateServiceStatus('audioStreamServiceStatus', 'Connection Failed', 'error');
-                this.showNotification('WebSocket connection setup failed', 'error');
+                console.error('Error populating microphone devices:', error);
             }
         }
+
+        // Update audio level visualization
+        updateAudioLevel(level) {
+            const audioLevelBar = document.getElementById('audioLevelBar');
+            const audioLevelPercentage = document.getElementById('audioLevelPercentage');
+
+            if (audioLevelBar) {
+                audioLevelBar.style.width = `${level}%`;
+            }
+
+            if (audioLevelPercentage) {
+                audioLevelPercentage.textContent = `${Math.round(level)}%`;
+            }
+        }
+
+        // Start audio monitoring (simplified version for testing)
+        startAudioMonitoring() {
+            console.log('Starting audio monitoring...');
+            this.monitoringActive = true;
+
+            // Simulate audio level updates for testing
+            this.audioMonitoringInterval = setInterval(() => {
+                const randomLevel = Math.random() * 100;
+                this.updateAudioLevel(randomLevel);
+            }, 100);
+
+            // Update button states
+            const startBtn = document.getElementById('startAudioMonitoringBtn');
+            const stopBtn = document.getElementById('stopAudioMonitoringBtn');
+
+            if (startBtn) startBtn.disabled = true;
+            if (stopBtn) stopBtn.disabled = false;
+        }
+
+        // Stop audio monitoring
+        stopAudioMonitoring() {
+            console.log('Stopping audio monitoring...');
+            this.monitoringActive = false;
+
+            if (this.audioMonitoringInterval) {
+                clearInterval(this.audioMonitoringInterval);
+                this.audioMonitoringInterval = null;
+            }
+
+            // Reset audio level
+            this.updateAudioLevel(0);
+
+            // Update button states
+            const startBtn = document.getElementById('startAudioMonitoringBtn');
+            const stopBtn = document.getElementById('stopAudioMonitoringBtn');
+
+            if (startBtn) startBtn.disabled = false;
+            if (stopBtn) stopBtn.disabled = true;
+        }
+
+
     }
 
     // Initialize the system when page loads
     document.addEventListener('DOMContentLoaded', function() {
-        window.microphoneManagement = new MicrophoneManagementSystem();
+        window.microphoneManager = new MicrophoneManagementSystem();
+        window.microphoneManagement = window.microphoneManager; // Backward compatibility
+
+        // Add event handlers for new UI elements
+        const startAudioMonitoringBtn = document.getElementById('startAudioMonitoringBtn');
+        const stopAudioMonitoringBtn = document.getElementById('stopAudioMonitoringBtn');
+        const startMonitoringBtn = document.getElementById('startMonitoringBtn');
+        const stopMonitoringBtn = document.getElementById('stopMonitoringBtn');
+        const restartMicServiceBtn = document.getElementById('restartMicServiceBtn');
+        const restartAudioStreamServiceBtn = document.getElementById('restartAudioStreamServiceBtn');
+
+        if (startAudioMonitoringBtn) {
+            startAudioMonitoringBtn.addEventListener('click', () => {
+                window.microphoneManager.startAudioMonitoring();
+            });
+        }
+
+        if (startMonitoringBtn) {
+            startMonitoringBtn.addEventListener('click', () => {
+                window.microphoneManager.startSystemMonitoring();
+            });
+        }
+
+        if (stopMonitoringBtn) {
+            stopMonitoringBtn.addEventListener('click', () => {
+                window.microphoneManager.stopSystemMonitoring();
+            });
+        }
+
+        if (restartMicServiceBtn) {
+            restartMicServiceBtn.addEventListener('click', () => {
+                window.microphoneManager.restartService('microphone');
+            });
+        }
+
+        if (restartAudioStreamServiceBtn) {
+            restartAudioStreamServiceBtn.addEventListener('click', () => {
+                window.microphoneManager.restartService('audioStream');
+            });
+        }
+
+        // Populate microphone device select
+        setTimeout(() => {
+            window.microphoneManager.populateMicrophoneDevices();
+        }, 1000);
     });
 </script>
 

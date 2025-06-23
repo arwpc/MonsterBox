@@ -31,11 +31,79 @@ class MicrophoneServicesStarter {
     }
 
     /**
+     * Cleanup processes using microphone service ports
+     */
+    async cleanupMicrophonePorts() {
+        logger.info('🧹 Cleaning up microphone service ports...');
+
+        const ports = Object.values(this.serviceDefinitions).map(config => config.port);
+
+        for (const port of ports) {
+            try {
+                await this.killProcessesOnPort(port);
+            } catch (error) {
+                logger.warn(`Warning cleaning up port ${port}:`, error.message);
+            }
+        }
+
+        // Wait a moment for cleanup to complete
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        logger.info('✅ Port cleanup completed');
+    }
+
+    /**
+     * Kill processes using a specific port
+     */
+    async killProcessesOnPort(port) {
+        const { spawn } = require('child_process');
+
+        return new Promise((resolve) => {
+            // Use lsof to find processes using the port
+            const lsofProcess = spawn('lsof', ['-ti', `:${port}`], {
+                stdio: ['pipe', 'pipe', 'pipe']
+            });
+
+            let pids = '';
+            lsofProcess.stdout.on('data', (data) => {
+                pids += data.toString();
+            });
+
+            lsofProcess.on('close', (code) => {
+                if (code === 0 && pids.trim()) {
+                    const pidList = pids.trim().split('\n').filter(pid => pid.trim());
+                    logger.info(`Found ${pidList.length} processes using port ${port}`);
+
+                    for (const pid of pidList) {
+                        try {
+                            process.kill(parseInt(pid), 'SIGTERM');
+                            logger.info(`Killed process ${pid} using port ${port}`);
+                        } catch (e) {
+                            // Process might already be dead
+                            logger.debug(`Process ${pid} already terminated`);
+                        }
+                    }
+                } else {
+                    logger.debug(`No processes found using port ${port}`);
+                }
+                resolve();
+            });
+
+            lsofProcess.on('error', () => {
+                logger.debug(`lsof command failed for port ${port} (command might not be available)`);
+                resolve(); // lsof might not be available
+            });
+        });
+    }
+
+    /**
      * Start all microphone services
      */
     async startAllServices() {
         logger.info('🚀 Starting microphone services...');
-        
+
+        // First, cleanup any existing processes on our ports
+        await this.cleanupMicrophonePorts();
+
         const results = [];
         for (const [serviceId, config] of Object.entries(this.serviceDefinitions)) {
             try {

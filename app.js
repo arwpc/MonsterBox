@@ -118,7 +118,8 @@ const rateLimit = require('express-rate-limit');
 // Configure Helmet for security headers (disable CSP to set manually)
 app.use(helmet({
     contentSecurityPolicy: false, // Disable to set manually
-    crossOriginEmbedderPolicy: false // Required for WebRTC
+    crossOriginEmbedderPolicy: false, // Required for WebRTC
+    crossOriginOpenerPolicy: false // Disable COOP to avoid untrustworthy origin warnings
 }));
 
 // Set Content Security Policy manually to avoid formatting issues
@@ -289,6 +290,7 @@ app.use('/api/hardware', require('./routes/api/hardwareApiRoutes').router);
 app.use('/api/hardware/head-tracking', require('./routes/api/headTrackingApiRoutes'));
 app.use('/api/character-audio-config', require('./routes/api/characterAudioConfigRoutes'));
 app.use('/api/system', require('./routes/api/systemApiRoutes'));
+app.use('/api/service-management', require('./routes/serviceManagementRoutes'));
 
 // Services restart API endpoint (for microphone management page)
 app.post('/api/services/restart', asyncHandler(async (req, res) => {
@@ -593,30 +595,18 @@ async function startServer() {
         console.log(`Local IP address: ${localIp}, system name ${hostname}`);
         logger.info('Server started successfully');
 
-        // Start the audio stream WebSocket server
+        // Initialize the new centralized service management system
+        await initializeServiceManagement();
+
+        // Start the audio stream WebSocket server (legacy support)
         audioStream.startStream(server);
 
-        // Start the enhanced audio stream WebSocket server
+        // Start the enhanced audio stream WebSocket server (legacy support)
         const enhancedAudioStream = require('./scripts/enhanced-audio-stream');
         enhancedAudioStream.startStream(server);
 
-        // Start the video stream WebSocket server
-        videoStream.startStream(server); // <-- Call startStream for video
-
-        // Initialize jaw animation system
-        initializeJawAnimationSystem(server);
-
-        // Initialize ChatterPi services with real-time optimizations
-        initializeChatterPiServices();
-
-        // Initialize Hardware WebSocket Services
-        initializeHardwareServices();
-
-        // Start Microphone WebSocket Services first
-        await startMicrophoneWebSocketServices();
-
-        // Initialize Microphone Manager Service
-        initializeMicrophoneManager();
+        // Start the video stream WebSocket server (legacy support)
+        videoStream.startStream(server);
 
         // Initialize Character Audio Config Service
         const characterAudioConfigService = require('./services/characterAudioConfigService');
@@ -648,6 +638,80 @@ async function startServer() {
                 throw error;
         }
     });
+}
+
+// Initialize centralized service management system
+async function initializeServiceManagement() {
+    try {
+        logger.info('🚀 Initializing centralized service management system...');
+
+        // Initialize the MonsterBox Service Integration
+        const { getInstance: getServiceIntegration } = require('./services/monsterBoxServiceIntegration');
+        const serviceIntegration = getServiceIntegration({
+            autoStartServices: true,
+            enableHealthMonitoring: true,
+            enableLegacySupport: true
+        });
+
+        const result = await serviceIntegration.initialize();
+
+        if (result.success) {
+            logger.info('✅ Centralized service management initialized successfully');
+
+            // Store service integration globally for access by routes
+            global.serviceIntegration = serviceIntegration;
+
+            // Log startup results
+            if (result.startupResults) {
+                const { total } = result.startupResults;
+                logger.info(`📊 Service startup summary: ${total.started} started, ${total.failed} failed`);
+            }
+
+            // Perform initial health check
+            setTimeout(async () => {
+                const healthStatus = await serviceIntegration.performHealthCheck();
+                if (healthStatus.overall !== 'healthy') {
+                    logger.warn(`⚠️ Initial health check shows system is ${healthStatus.overall}`);
+                }
+            }, 5000);
+
+        } else {
+            logger.error('❌ Failed to initialize centralized service management');
+            // Fall back to legacy initialization
+            await initializeLegacyServices();
+        }
+
+    } catch (error) {
+        logger.error('❌ Error initializing centralized service management:', error);
+        // Fall back to legacy initialization
+        await initializeLegacyServices();
+    }
+}
+
+// Legacy service initialization (fallback)
+async function initializeLegacyServices() {
+    logger.info('🔄 Falling back to legacy service initialization...');
+
+    try {
+        // Initialize jaw animation system
+        await initializeJawAnimationSystem(server);
+
+        // Initialize ChatterPi services with real-time optimizations
+        await initializeChatterPiServices();
+
+        // Initialize Hardware WebSocket Services
+        await initializeHardwareServices();
+
+        // Start Microphone WebSocket Services first
+        await startMicrophoneWebSocketServices();
+
+        // Initialize Microphone Manager Service
+        await initializeMicrophoneManager();
+
+        logger.info('✅ Legacy service initialization completed');
+    } catch (error) {
+        logger.error('❌ Error in legacy service initialization:', error);
+    }
 }
 
 // Initialize jaw animation system
@@ -833,29 +897,11 @@ process.on('unhandledRejection', (reason, promise) => {
     gracefulShutdown('Unhandled Rejection');
 });
 
-// Graceful shutdown function
-async function gracefulShutdown(reason) {
-    logger.info(`Initiating graceful shutdown. Reason: ${reason}`);
+// Legacy service shutdown (fallback)
+async function shutdownLegacyServices() {
+    logger.info('🔄 Shutting down legacy services...');
 
     try {
-        // Use graceful shutdown for sound controller
-        await soundController.gracefulShutdown();
-        logger.info('Sound controller shutdown completed');
-    } catch (error) {
-        logger.error('Error during sound controller shutdown:', error);
-    }
-
-    try {
-        // Shutdown cache manager
-        cacheManager.shutdown();
-        logger.info('Cache manager stopped');
-
-        // Shutdown connection manager
-        if (serviceConnectionManager) {
-            await serviceConnectionManager.shutdown();
-            logger.info('Service connections closed');
-        }
-
         // Shutdown hardware services
         if (hardwareServiceManager) {
             await hardwareServiceManager.shutdown();
@@ -872,6 +918,44 @@ async function gracefulShutdown(reason) {
         if (microphoneManagerService) {
             await microphoneManagerService.shutdown();
             logger.info('Microphone manager service stopped');
+        }
+
+        logger.info('✅ Legacy service shutdown completed');
+    } catch (error) {
+        logger.error('❌ Error in legacy service shutdown:', error);
+    }
+}
+
+// Graceful shutdown function
+async function gracefulShutdown(reason) {
+    logger.info(`Initiating graceful shutdown. Reason: ${reason}`);
+
+    try {
+        // Use graceful shutdown for sound controller
+        await soundController.gracefulShutdown();
+        logger.info('Sound controller shutdown completed');
+    } catch (error) {
+        logger.error('Error during sound controller shutdown:', error);
+    }
+
+    try {
+        // Shutdown centralized service management first
+        if (global.serviceIntegration) {
+            await global.serviceIntegration.shutdown();
+            logger.info('Centralized service management stopped');
+        } else {
+            // Legacy shutdown
+            await shutdownLegacyServices();
+        }
+
+        // Shutdown cache manager
+        cacheManager.shutdown();
+        logger.info('Cache manager stopped');
+
+        // Shutdown connection manager
+        if (serviceConnectionManager) {
+            await serviceConnectionManager.shutdown();
+            logger.info('Service connections closed');
         }
 
         // Stop audio cleanup service
