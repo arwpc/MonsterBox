@@ -193,6 +193,8 @@ router.post('/:type', checkCharacterSelected, async (req, res) => {
             logger.info(`Created linear actuator: ${JSON.stringify(newPart)}`);
         } else if (type === 'sensor') {
             logger.info(`Created sensor: ${JSON.stringify(newPart)}`);
+        } else if (type === 'motion-sensor') {
+            logger.info(`Created motion sensor: ${JSON.stringify(newPart)}`);
         } else if (type === 'webcam') {
             logger.info(`Created webcam: ${JSON.stringify(newPart)}`);
         } else if (type === 'microphone') {
@@ -714,6 +716,173 @@ router.get('/microphone/management', async (req, res) => {
 // Legacy routes for backward compatibility
 router.get('/microphone/monitor', async (req, res) => {
     res.redirect('/parts/microphone/management');
+});
+
+// Motion Sensor routes
+router.get('/motion-sensor/new', async (req, res) => {
+    try {
+        const character = await characterService.getCharacterById(req.characterId);
+        const characters = await characterService.getAllCharacters();
+        const part = { type: 'motion-sensor', characterId: req.characterId };
+        res.render('part-forms/motion-sensor', {
+            title: 'Add Motion Sensor',
+            action: `/parts/motion-sensor`,
+            part,
+            character,
+            characters
+        });
+    } catch (error) {
+        logger.error('Error rendering motion sensor form:', error);
+        res.status(500).send('An error occurred while loading the form');
+    }
+});
+
+router.get('/motion-sensor/:id/edit', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            logger.warn(`Invalid part ID (not a number): ${req.params.id}`);
+            return res.status(404).send('Part not found');
+        }
+        const part = await partService.getPartById(id);
+        if (!part) {
+            logger.warn(`Part not found with id: ${id}`);
+            return res.status(404).send('Part not found');
+        }
+        const character = await characterService.getCharacterById(req.characterId);
+        const characters = await characterService.getAllCharacters();
+        res.render('part-forms/motion-sensor', {
+            title: 'Edit Motion Sensor',
+            action: `/parts/motion-sensor/${id}/update`,
+            part,
+            character,
+            characters
+        });
+    } catch (error) {
+        logger.error('Error fetching motion sensor for editing:', error);
+        res.status(500).send('An error occurred while fetching the motion sensor');
+    }
+});
+
+router.post('/motion-sensor', checkCharacterSelected, async (req, res) => {
+    try {
+        const partData = req.body;
+        partData.type = 'motion-sensor';
+        partData.characterId = req.characterId;
+
+        // Convert string values to appropriate types
+        if (partData.gpioPin) partData.gpioPin = parseInt(partData.gpioPin);
+        if (partData.sensitivity) partData.sensitivity = parseFloat(partData.sensitivity);
+        if (partData.detectionRange) partData.detectionRange = parseFloat(partData.detectionRange);
+        if (partData.triggerDelay) partData.triggerDelay = parseInt(partData.triggerDelay);
+
+        // Convert checkbox values to booleans
+        partData.active = partData.active === 'on';
+        partData.invertSignal = partData.invertSignal === 'on';
+        partData.enableLogging = partData.enableLogging === 'on';
+
+        logger.info(`Creating motion sensor with data: ${JSON.stringify(partData)}`);
+        const newPart = await partService.createPart(partData);
+        logger.info(`Created motion sensor: ${JSON.stringify(newPart)}`);
+        res.redirect(`/parts?characterId=${req.characterId}`);
+    } catch (error) {
+        logger.error('Error creating motion sensor:', error);
+        res.status(500).send('An error occurred while creating the motion sensor');
+    }
+});
+
+router.post('/motion-sensor/:id/update', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            logger.warn(`Invalid part ID (not a number): ${req.params.id}`);
+            return res.status(404).send('Part not found');
+        }
+
+        const partData = req.body;
+        partData.characterId = req.characterId;
+
+        // Convert string values to appropriate types
+        if (partData.gpioPin) partData.gpioPin = parseInt(partData.gpioPin);
+        if (partData.sensitivity) partData.sensitivity = parseFloat(partData.sensitivity);
+        if (partData.detectionRange) partData.detectionRange = parseFloat(partData.detectionRange);
+        if (partData.triggerDelay) partData.triggerDelay = parseInt(partData.triggerDelay);
+
+        // Convert checkbox values to booleans
+        partData.active = partData.active === 'on';
+        partData.invertSignal = partData.invertSignal === 'on';
+        partData.enableLogging = partData.enableLogging === 'on';
+
+        const updatedPart = await partService.updatePart(id, partData);
+        logger.info(`Updated motion sensor: ${JSON.stringify(updatedPart)}`);
+        res.redirect(`/parts?characterId=${req.characterId}`);
+    } catch (error) {
+        logger.error('Error updating motion sensor:', error);
+        res.status(500).send('An error occurred while updating the motion sensor');
+    }
+});
+
+// Motion Sensor Control Routes
+router.get('/motion-sensor/control', (req, res) => {
+    const { id, gpioPin, action } = req.query;
+
+    if (action === 'start') {
+        res.writeHead(200, {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive'
+        });
+
+        const scriptPath = path.join(__dirname, '..', 'scripts', 'test_sensor.py');
+        const process = spawn('python3', [scriptPath, gpioPin]);
+
+        process.stdout.on('data', (data) => {
+            const output = data.toString().trim();
+            logger.debug(`Motion sensor script output: ${output}`);
+            res.write(`data: ${output}\n\n`);
+        });
+
+        process.stderr.on('data', (data) => {
+            const error = data.toString().trim();
+            logger.error(`Motion sensor script error: ${error}`);
+            res.write(`data: ${JSON.stringify({ error: error })}\n\n`);
+        });
+
+        process.on('close', (code) => {
+            logger.debug(`Motion sensor script exited with code ${code}`);
+            res.write(`data: ${JSON.stringify({ status: 'Motion sensor monitoring stopped' })}\n\n`);
+            res.end();
+        });
+
+        req.on('close', () => {
+            process.kill();
+        });
+    } else {
+        res.status(400).json({ error: 'Invalid action' });
+    }
+});
+
+router.post('/motion-sensor/control', async (req, res) => {
+    const { id, gpioPin, action } = req.body;
+    logger.debug(`Received POST /motion-sensor/control request: ${JSON.stringify(req.body)}`);
+
+    if (action === 'stop') {
+        try {
+            if (!id) {
+                logger.warn('Received stop request with missing or invalid motion sensor ID');
+                return res.status(400).json({ success: false, error: 'Missing or invalid motion sensor ID' });
+            }
+
+            logger.info(`Received stop request for motion sensor monitoring. ID: ${id}, GPIO Pin: ${gpioPin}`);
+
+            res.json({ success: true, message: 'Stop request received for motion sensor monitoring' });
+        } catch (error) {
+            logger.error('Error handling motion sensor stop request:', error);
+            res.status(500).json({ success: false, error: 'Failed to process stop request: ' + error.message });
+        }
+    } else {
+        res.status(400).json({ error: 'Invalid action' });
+    }
 });
 
 router.get('/microphone/test', async (req, res) => {

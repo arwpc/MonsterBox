@@ -31,17 +31,20 @@
             <a href="/parts/new/led" class="button">🔆 Add LED</a>
             <a href="/parts/servo/new" class="button">🦷 Add Servo</a>
             <a href="/parts/new/sensor" class="button">📡 Add Sensor</a>
+            <a href="/parts/new/motion-sensor" class="button">🔍 Add Motion Sensor</a>
             <a href="/parts/webcam/new" class="button">📹 Add Webcam</a>
             <a href="/parts/head-tracking/new" class="button">🎯 Add Head Tracking</a>
             <a href="/parts/new/microphone" class="button">🎤 Add Microphone</a>
             <% if (character && character.id) { %>
-                <a href="/parts/microphone/monitor?characterId=<%= character.id %>" class="button secondary-btn">🎤📊 Microphone Monitor</a>
-                <a href="/parts/microphone/test?characterId=<%= character.id %>" class="button secondary-btn">🎤🧪 Microphone Test</a>
-            <% } else { %>
-                <a href="/parts/microphone/monitor" class="button secondary-btn">🎤📊 Microphone Monitor</a>
-                <a href="/parts/microphone/test" class="button secondary-btn">🎤🧪 Microphone Test</a>
-            <% } %>
-            <a href="/hardware-monitor.html" class="button secondary-btn">📊 Hardware Monitor</a>
+                <a href="/parts/microphone/monitor?characterId=<%= character.id %>" class="button secondary-btn">🎤📊
+                    Microphone Monitor</a>
+                <a href="/parts/microphone/test?characterId=<%= character.id %>" class="button secondary-btn">🎤🧪
+                    Microphone Test</a>
+                <% } else { %>
+                    <a href="/parts/microphone/monitor" class="button secondary-btn">🎤📊 Microphone Monitor</a>
+                    <a href="/parts/microphone/test" class="button secondary-btn">🎤🧪 Microphone Test</a>
+                    <% } %>
+                        <a href="/hardware-monitor.html" class="button secondary-btn">📊 Hardware Monitor</a>
         </div>
 
         <div class="hardware-status">
@@ -103,8 +106,8 @@
                                                 <%= part.type==='linear-actuator' ? '🦴' : part.type==='servo' ? '🦷' :
                                                     part.type==='motor' ? '🔄' : part.type==='light' ? '💡' :
                                                     part.type==='led' ? '🔆' : part.type==='sensor' ? '📡' :
-                                                    part.type==='webcam' ? '📹' : part.type==='microphone' ? '🎤' : '🔧'
-                                                    %>
+                                                    part.type==='motion-sensor' ? '🔍' : part.type==='webcam' ? '📹' :
+                                                    part.type==='microphone' ? '🎤' : '🔧' %>
                                                     <%= part.type %>
                                             </span>
                                         </td>
@@ -145,17 +148,21 @@
                                                                 <% } else if (part.type==='microphone' ) { %>
                                                                     <a href="/parts/microphone/<%= part.id %>/edit"
                                                                         class="button small-btn">✏️ Edit</a>
-                                                                    <% } else { %>
-                                                                        <a href="/parts/<%= part.id %>/edit"
+                                                                    <% } else if (part.type==='motion-sensor' ) { %>
+                                                                        <a href="/parts/motion-sensor/<%= part.id %>/edit"
                                                                             class="button small-btn">✏️ Edit</a>
-                                                                        <% } %>
-                                                                            <button onclick="testPart('<%= part.id %>')"
-                                                                                class="button small-btn test-btn">🧪
-                                                                                Test</button>
-                                                                            <button
-                                                                                class="button small-btn delete-btn delete-part"
-                                                                                data-id="<%= part.id %>">🗑️
-                                                                                Delete</button>
+                                                                        <% } else { %>
+                                                                            <a href="/parts/<%= part.id %>/edit"
+                                                                                class="button small-btn">✏️ Edit</a>
+                                                                            <% } %>
+                                                                                <button
+                                                                                    onclick="testPart('<%= part.id %>')"
+                                                                                    class="button small-btn test-btn">🧪
+                                                                                    Test</button>
+                                                                                <button
+                                                                                    class="button small-btn delete-btn delete-part"
+                                                                                    data-id="<%= part.id %>">🗑️
+                                                                                    Delete</button>
                                             </div>
                                         </td>
                                     </tr>

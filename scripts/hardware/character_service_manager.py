@@ -20,6 +20,7 @@ from motor_websocket_service import MotorWebSocketService
 from light_websocket_service import LightWebSocketService
 from actuator_websocket_service import ActuatorWebSocketService
 from sensor_websocket_service import SensorWebSocketService
+from motion_sensor_websocket_service import MotionSensorWebSocketService
 from webcam_websocket_service import WebcamWebSocketService
 from head_tracking_websocket_service import HeadTrackingWebSocketService
 from microphone_websocket_service import MicrophoneWebSocketService
@@ -63,6 +64,7 @@ class CharacterServiceManager:
             "webcam": ServiceConfig("webcam", WebcamWebSocketService, 8774),
             "microphone": ServiceConfig("microphone", MicrophoneWebSocketService, 8776),
             "actuator": ServiceConfig("actuator", ActuatorWebSocketService, 8775),
+            "motion_sensor": ServiceConfig("motion_sensor", MotionSensorWebSocketService, 8777),
             "head_tracking": ServiceConfig("head_tracking", HeadTrackingWebSocketService, 8778),
         }
         

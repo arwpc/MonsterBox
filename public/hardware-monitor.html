@@ -267,6 +267,17 @@
             </div>
 
             <div class="status-card">
+                <h3><span class="status-indicator status-offline" id="motionSensorServiceStatus"></span> Motion Sensor
+                    Service</h3>
+                <div id="motionSensorServiceInfo">
+                    <p>Status: <span id="motionSensorServiceStatusText">Offline</span></p>
+                    <p>Active Sensors: <span id="activeMotionSensorCount">0</span></p>
+                    <p>Motion Detected: <span id="motionDetected">No</span></p>
+                    <p>Port: 8777</p>
+                </div>
+            </div>
+
+            <div class="status-card">
                 <h3><span class="status-indicator status-offline" id="webcamServiceStatus"></span> Webcam Service</h3>
                 <div id="webcamServiceInfo">
                     <p>Status: <span id="webcamServiceStatusText">Offline</span></p>
@@ -397,6 +408,29 @@
                 <button onclick="readSensor()">Read Sensor</button>
                 <button onclick="startSensorMonitoring()">Start Monitoring</button>
                 <button onclick="stopSensorMonitoring()" class="btn-danger">Stop Monitoring</button>
+            </div>
+        </div>
+
+        <div class="controls">
+            <h3>🔍 Motion Sensor Control</h3>
+            <div class="control-group">
+                <input type="number" id="motionSensorPin" placeholder="Pin" value="26" min="0" max="27">
+                <input type="number" id="motionSensitivity" placeholder="Sensitivity (s)" value="0.1" min="0.05" max="5"
+                    step="0.05">
+                <input type="number" id="motionDuration" placeholder="Duration (s)" value="0" min="0" max="3600">
+                <button onclick="startMotionSensorMonitoring()">Start Motion Monitoring</button>
+                <button onclick="stopMotionSensorMonitoring()" class="btn-danger">Stop Motion Monitoring</button>
+            </div>
+            <div class="control-group">
+                <button onclick="testMotionSensor()">Test Motion Sensor</button>
+                <button onclick="configureMotionSensor()" class="btn-warning">Configure Motion Sensor</button>
+                <div id="motionSensorStatus" style="display: none; margin-top: 10px;">
+                    <h4>Motion Detection Status:</h4>
+                    <div id="motionStatusText"
+                        style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 5px; font-family: monospace; font-size: 12px;">
+                        No motion detected
+                    </div>
+                </div>
             </div>
         </div>
 

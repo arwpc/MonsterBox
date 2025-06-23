@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= title %>
+    </title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        .motion-detected {
+            color: #ff0000;
+            text-shadow: 0 0 5px #ff0000;
+            font-family: 'Creepster', cursive;
+            font-size: 1.2em;
+            animation: pulse 1s infinite;
+        }
+
+        .no-motion {
+            color: #00ff00;
+            text-shadow: 0 0 5px #00ff00;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .sensor-status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .status-monitoring {
+            background-color: rgba(255, 255, 0, 0.2);
+            border: 2px solid #ffff00;
+        }
+
+        .status-stopped {
+            background-color: rgba(128, 128, 128, 0.2);
+            border: 2px solid #808080;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1 class="landing-title">
+            <%= title %>
+        </h1>
+    </header>
+
+    <main>
+        <form action="<%= action %>" method="POST">
+            <input type="hidden" name="type" value="motion-sensor">
+            <% if (part.id) { %>
+                <input type="hidden" name="id" value="<%= part.id %>">
+                <% } %>
+
+                    <div class="form-group">
+                        <label for="name">Motion Sensor Name:</label>
+                        <input type="text" id="name" name="name" value="<%= part.name || '' %>" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="characterId">Character:</label>
+                        <select id="characterId" name="characterId" required>
+                            <% characters.forEach(function(character) { %>
+                                <option value="<%= character.id %>" <%=(part.characterId===character.id) ? 'selected'
+                                    : '' %>>
+                                    <%= character.char_name %>
+                                </option>
+                                <% }); %>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="gpioPin">GPIO Pin:</label>
+                        <input type="number" id="gpioPin" name="gpioPin" value="<%= part.gpioPin || 26 %>" min="0"
+                            max="27" required>
+                        <small>GPIO pin for PIR motion sensor (0-27)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sensitivity">Sensitivity (seconds):</label>
+                        <input type="number" id="sensitivity" name="sensitivity" value="<%= part.sensitivity || 0.1 %>"
+                            min="0.05" max="5" step="0.05">
+                        <small>Time between sensor readings (0.05-5.0 seconds)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="detectionRange">Detection Range (meters):</label>
+                        <input type="number" id="detectionRange" name="detectionRange"
+                            value="<%= part.detectionRange || 7 %>" min="1" max="12" step="0.5">
+                        <small>Typical PIR sensor range (1-12 meters)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="triggerDelay">Trigger Delay (ms):</label>
+                        <input type="number" id="triggerDelay" name="triggerDelay"
+                            value="<%= part.triggerDelay || 500 %>" min="0" max="5000" step="100">
+                        <small>Delay before triggering motion detection (0-5000ms)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="checkbox-label" for="active">
+                            <input type="checkbox" id="active" name="active" <%=part.active ? 'checked' : '' %>>
+                            Active
+                        </label>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="checkbox-label" for="invertSignal">
+                            <input type="checkbox" id="invertSignal" name="invertSignal" <%=part.invertSignal
+                                ? 'checked' : '' %>>
+                            Invert Signal (for active-low sensors)
+                        </label>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="checkbox-label" for="enableLogging">
+                            <input type="checkbox" id="enableLogging" name="enableLogging" <%=part.enableLogging
+                                ? 'checked' : '' %>>
+                            Enable Motion Logging
+                        </label>
+                    </div>
+
+                    <div class="button-group">
+                        <button type="submit" class="button primary-btn">Save Motion Sensor</button>
+                    </div>
+        </form>
+
+        <div id="motionSensorControl" class="config-section">
+            <h2>Motion Sensor Control</h2>
+            <div id="sensorStatus" class="sensor-status status-stopped">
+                <p id="statusText">Motion sensor status: Not active</p>
+            </div>
+
+            <div class="button-group">
+                <button id="sensorStart" class="button">Start Monitoring</button>
+                <button id="sensorStop" class="button" disabled>Stop Monitoring</button>
+                <button id="sensorTest" class="button">Test Sensor</button>
+            </div>
+
+            <div id="motionResults" class="info-list"></div>
+            <div id="motionLog" class="info-list" style="max-height: 200px; overflow-y: auto;"></div>
+        </div>
+
+        <div class="button-group">
+            <a href="/parts?characterId=<%= character.id %>" class="button secondary-btn">Back to Parts</a>
+        </div>
+    </main>
+
+    <script>
+        let eventSource;
+        let motionLog = [];
+
+        function updateSensorStatus(status, isMotion = false) {
+            const statusText = document.getElementById('statusText');
+            const sensorStatus = document.getElementById('sensorStatus');
+
+            statusText.textContent = 'Motion sensor status: ' + status;
+
+            // Update status styling
+            sensorStatus.className = 'sensor-status';
+            if (status.includes('monitoring') || status.includes('Monitoring')) {
+                sensorStatus.classList.add('status-monitoring');
+            } else {
+                sensorStatus.classList.add('status-stopped');
+            }
+
+            // Update motion detection styling
+            if (isMotion) {
+                statusText.classList.add('motion-detected');
+                statusText.classList.remove('no-motion');
+            } else if (status.includes('No Motion')) {
+                statusText.classList.add('no-motion');
+                statusText.classList.remove('motion-detected');
+            } else {
+                statusText.classList.remove('motion-detected', 'no-motion');
+            }
+        }
+
+        function addToMotionLog(message, timestamp = null) {
+            const logEntry = {
+                message: message,
+                timestamp: timestamp || new Date().toLocaleTimeString()
+            };
+
+            motionLog.unshift(logEntry);
+            if (motionLog.length > 50) {
+                motionLog = motionLog.slice(0, 50); // Keep last 50 entries
+            }
+
+            updateMotionLogDisplay();
+        }
+
+        function updateMotionLogDisplay() {
+            const logDiv = document.getElementById('motionLog');
+            logDiv.innerHTML = '<h3>Motion Detection Log:</h3>' +
+                motionLog.map(entry =>
+                    `<div class="log-entry">[${entry.timestamp}] ${entry.message}</div>`
+                ).join('');
+        }
+
+        function startMotionSensor() {
+            const gpioPin = document.getElementById('gpioPin').value;
+            const sensitivity = document.getElementById('sensitivity').value;
+
+            if (!gpioPin) {
+                alert('Please set a GPIO pin first');
+                return;
+            }
+
+            eventSource = new EventSource(`/parts/motion-sensor/control?id=<%= part.id || '' %>&gpioPin=${gpioPin}&action=start`);
+
+            eventSource.onmessage = function (event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.status) {
+                        const isMotion = data.status === 'Motion Detected';
+                        updateSensorStatus(data.status, isMotion);
+                        addToMotionLog(data.status);
+
+                        document.getElementById('motionResults').innerHTML =
+                            `<div class="${isMotion ? 'motion-detected' : 'no-motion'}">${data.status}</div>`;
+                    } else if (data.error) {
+                        console.error('Motion sensor error:', data.error);
+                        updateSensorStatus('Error: ' + data.error);
+                        addToMotionLog('Error: ' + data.error);
+                        document.getElementById('motionResults').innerHTML =
+                            `<div class="error-message">Motion sensor error: ${data.error}</div>`;
+                        stopMotionSensor();
+                    }
+                } catch (error) {
+                    console.error('Error parsing motion sensor data:', error);
+                    addToMotionLog('Error parsing sensor data');
+                }
+            };
+
+            eventSource.onerror = function (event) {
+                console.error('Motion sensor EventSource failed:', event);
+                updateSensorStatus('Error: EventSource failed');
+                addToMotionLog('EventSource connection failed');
+                document.getElementById('motionResults').innerHTML =
+                    '<div class="error-message">Motion sensor connection failed</div>';
+                stopMotionSensor();
+            };
+
+            updateSensorStatus('Starting monitoring...');
+            addToMotionLog('Motion sensor monitoring started');
+            document.getElementById('sensorStart').disabled = true;
+            document.getElementById('sensorStop').disabled = false;
+        }
+
+        function stopMotionSensor() {
+            if (eventSource) {
+                eventSource.close();
+            }
+
+            const sensorId = '<%= part.id || "" %>';
+            const gpioPin = document.getElementById('gpioPin').value;
+
+            if (!sensorId) {
+                console.error('Cannot stop motion sensor: Invalid sensor ID');
+                updateSensorStatus('Error: Invalid sensor ID');
+                addToMotionLog('Error: Invalid sensor ID');
+                document.getElementById('sensorStart').disabled = false;
+                document.getElementById('sensorStop').disabled = true;
+                return;
+            }
+
+            axios.post('/parts/motion-sensor/control', {
+                id: sensorId,
+                gpioPin: gpioPin,
+                action: 'stop'
+            })
+                .then(function (response) {
+                    console.log('Motion sensor stop response:', response.data);
+                    updateSensorStatus('Motion sensor stopped');
+                    addToMotionLog('Motion sensor monitoring stopped');
+                    document.getElementById('motionResults').innerHTML =
+                        '<div>Motion sensor stopped successfully</div>';
+                })
+                .catch(function (error) {
+                    console.error('Error stopping motion sensor:', error);
+                    let errorMessage = 'Failed to stop motion sensor';
+                    if (error.response && error.response.data && error.response.data.error) {
+                        errorMessage += ': ' + error.response.data.error;
+                    } else if (error.message) {
+                        errorMessage += ': ' + error.message;
+                    }
+                    updateSensorStatus('Error stopping motion sensor');
+                    addToMotionLog(errorMessage);
+                    document.getElementById('motionResults').innerHTML =
+                        `<div class="error-message">${errorMessage}</div>`;
+                })
+                .finally(function () {
+                    document.getElementById('sensorStart').disabled = false;
+                    document.getElementById('sensorStop').disabled = true;
+                });
+        }
+
+        function testMotionSensor() {
+            const gpioPin = document.getElementById('gpioPin').value;
+
+            if (!gpioPin) {
+                alert('Please set a GPIO pin first');
+                return;
+            }
+
+            updateSensorStatus('Testing motion sensor...');
+            addToMotionLog('Starting motion sensor test');
+
+            // Disable test button during test
+            document.getElementById('sensorTest').disabled = true;
+
+            // Use the existing sensor test endpoint
+            const testEventSource = new EventSource(`/parts/sensor/control?gpioPin=${gpioPin}&action=start`);
+
+            let testTimeout = setTimeout(() => {
+                testEventSource.close();
+                updateSensorStatus('Test completed');
+                addToMotionLog('Motion sensor test completed (timeout)');
+                document.getElementById('sensorTest').disabled = false;
+            }, 5000); // 5 second test
+
+            testEventSource.onmessage = function (event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.status) {
+                        const isMotion = data.status === 'Motion Detected';
+                        updateSensorStatus('Test: ' + data.status, isMotion);
+                        addToMotionLog('Test: ' + data.status);
+
+                        document.getElementById('motionResults').innerHTML =
+                            `<div class="${isMotion ? 'motion-detected' : 'no-motion'}">Test Result: ${data.status}</div>`;
+                    }
+                } catch (error) {
+                    console.error('Error parsing test data:', error);
+                    addToMotionLog('Test error: Failed to parse data');
+                }
+            };
+
+            testEventSource.onerror = function (event) {
+                clearTimeout(testTimeout);
+                testEventSource.close();
+                updateSensorStatus('Test failed');
+                addToMotionLog('Motion sensor test failed');
+                document.getElementById('sensorTest').disabled = false;
+            };
+        }
+
+        // Event listeners
+        document.getElementById('sensorStart').addEventListener('click', startMotionSensor);
+        document.getElementById('sensorStop').addEventListener('click', stopMotionSensor);
+        document.getElementById('sensorTest').addEventListener('click', testMotionSensor);
+
+        // Disable motion sensor control buttons if GPIO pin is not set (for new sensors)
+        function updateSensorControlButtonState() {
+            const gpioPin = document.getElementById('gpioPin').value;
+            const hasPin = gpioPin && gpioPin.trim() !== '';
+
+            document.getElementById('sensorStart').disabled = !hasPin;
+            document.getElementById('sensorTest').disabled = !hasPin;
+        }
+
+        document.getElementById('gpioPin').addEventListener('input', updateSensorControlButtonState);
+
+        // Form validation
+        document.querySelector('form').addEventListener('submit', function (e) {
+            const gpioPin = parseInt(document.getElementById('gpioPin').value);
+            const sensitivity = parseFloat(document.getElementById('sensitivity').value);
+            const detectionRange = parseFloat(document.getElementById('detectionRange').value);
+            const triggerDelay = parseInt(document.getElementById('triggerDelay').value);
+
+            if (isNaN(gpioPin) || gpioPin < 0 || gpioPin > 27) {
+                alert('GPIO pin must be between 0 and 27');
+                e.preventDefault();
+                return;
+            }
+
+            if (isNaN(sensitivity) || sensitivity < 0.05 || sensitivity > 5) {
+                alert('Sensitivity must be between 0.05 and 5.0 seconds');
+                e.preventDefault();
+                return;
+            }
+
+            if (isNaN(detectionRange) || detectionRange < 1 || detectionRange > 12) {
+                alert('Detection range must be between 1 and 12 meters');
+                e.preventDefault();
+                return;
+            }
+
+            if (isNaN(triggerDelay) || triggerDelay < 0 || triggerDelay > 5000) {
+                alert('Trigger delay must be between 0 and 5000 milliseconds');
+                e.preventDefault();
+                return;
+            }
+        });
+
+        // Initial state
+        updateSensorControlButtonState();
+        updateMotionLogDisplay();
+    </script>
+</body>
+
+</html>

@@ -20,7 +20,7 @@ class TestDataFactory {
       sounds: [],
       aiInstance: null
     };
-    
+
     return { ...defaults, ...overrides };
   }
 
@@ -97,6 +97,15 @@ class TestDataFactory {
         strokeLength: 100,
         speed: 50,
         position: 0
+      },
+      'motion-sensor': {
+        gpioPin: 26,
+        sensitivity: 0.1,
+        detectionRange: 7,
+        triggerDelay: 500,
+        active: true,
+        invertSignal: false,
+        enableLogging: true
       }
     };
 
