@@ -264,5 +264,53 @@
         }
       }
     }
+  },
+  {
+    "id": 5,
+    "char_name": "Test Character 1750704145907",
+    "char_description": "A test character created by automated testing",
+    "parts": [],
+    "sounds": [],
+    "image": null,
+    "animatronic": {
+      "enabled": false,
+      "status": "virtual",
+      "character_type": "Virtual Character",
+      "description": "Software-only character",
+      "rpi_config": null,
+      "services": [
+        "monsterbox"
+      ],
+      "log_types": [
+        "system",
+        "application"
+      ],
+      "hardware_monitoring": false,
+      "animatronic_parts": []
+    }
+  },
+  {
+    "id": 6,
+    "char_name": "Test Character 1750705258098",
+    "char_description": "A test character created by automated testing",
+    "parts": [],
+    "sounds": [],
+    "image": null,
+    "animatronic": {
+      "enabled": false,
+      "status": "virtual",
+      "character_type": "Virtual Character",
+      "description": "Software-only character",
+      "rpi_config": null,
+      "services": [
+        "monsterbox"
+      ],
+      "log_types": [
+        "system",
+        "application"
+      ],
+      "hardware_monitoring": false,
+      "animatronic_parts": []
+    }
   }
 ]

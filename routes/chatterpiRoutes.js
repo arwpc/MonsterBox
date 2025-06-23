@@ -16,37 +16,42 @@ let aiInstance = null;
 let chatterPiServiceManager = null;
 let ttsAnimation = null;
 
-try {
-    aiInstance = new ChatterPiAI({
-        characterId: 'orlok',
-        maxTokens: 150,
-        temperature: 0.7
-    });
-    console.log('✅ ChatterPi AI integration initialized');
+// Skip initialization in test mode
+if (process.env.NODE_ENV !== 'test') {
+    try {
+        aiInstance = new ChatterPiAI({
+            characterId: 'orlok',
+            maxTokens: 150,
+            temperature: 0.7
+        });
+        console.log('✅ ChatterPi AI integration initialized');
 
-    // Initialize TTS Animation Integration
-    const TTSAnimationIntegration = require('../scripts/chatterpi/tts_animation_integration');
-    ttsAnimation = new TTSAnimationIntegration({
-        topmediaiApiKey: process.env.TOPMEDIAI_API_KEY,
-        streamingEnabled: false,  // Disabled to prevent connection errors
-        realtimeAnimation: false
-    });
+        // Initialize TTS Animation Integration
+        const TTSAnimationIntegration = require('../scripts/chatterpi/tts_animation_integration');
+        ttsAnimation = new TTSAnimationIntegration({
+            topmediaiApiKey: process.env.TOPMEDIAI_API_KEY,
+            streamingEnabled: false,  // Disabled to prevent connection errors
+            realtimeAnimation: false
+        });
 
-    // Initialize TTS integration
-    ttsAnimation.initialize().then(success => {
-        if (success) {
-            console.log('✅ TTS Animation Integration initialized');
-        } else {
-            console.warn('⚠️ TTS Animation Integration failed to initialize');
-        }
-    });
+        // Initialize TTS integration
+        ttsAnimation.initialize().then(success => {
+            if (success) {
+                console.log('✅ TTS Animation Integration initialized');
+            } else {
+                console.warn('⚠️ TTS Animation Integration failed to initialize');
+            }
+        });
 
-    // Initialize the consolidated service manager
-    const ChatterPiServiceManager = require('../services/chatterPiServiceManager');
-    chatterPiServiceManager = new ChatterPiServiceManager();
+        // Initialize the consolidated service manager
+        const ChatterPiServiceManager = require('../services/chatterPiServiceManager');
+        chatterPiServiceManager = new ChatterPiServiceManager();
 
-} catch (error) {
-    console.error('❌ Failed to initialize ChatterPi AI:', error.message);
+    } catch (error) {
+        console.error('❌ Failed to initialize ChatterPi AI:', error.message);
+    }
+} else {
+    console.log('🧪 Skipping ChatterPi initialization in test mode');
 }
 
 // Service manager integration

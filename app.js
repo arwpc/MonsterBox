@@ -91,17 +91,21 @@ try {
     // Import services
     characterService = require('./services/characterService');
 
-    // Initialize audio cleanup service
-    const AudioCleanupService = require('./services/audioCleanupService');
-    audioCleanupService = new AudioCleanupService({
-        maxFileAge: 24 * 60 * 60 * 1000, // 24 hours
-        cleanupInterval: 2 * 60 * 60 * 1000, // 2 hours
-        preserveRecentFiles: 30 * 60 * 1000 // 30 minutes
-    });
+    // Initialize audio cleanup service only if not in test mode
+    if (process.env.NODE_ENV !== 'test') {
+        const AudioCleanupService = require('./services/audioCleanupService');
+        audioCleanupService = new AudioCleanupService({
+            maxFileAge: 24 * 60 * 60 * 1000, // 24 hours
+            cleanupInterval: 2 * 60 * 60 * 1000, // 2 hours
+            preserveRecentFiles: 30 * 60 * 1000 // 30 minutes
+        });
+    }
 
-    // Import jaw animation system
-    const JawAnimationSystem = require('./scripts/jaw-animation/jawAnimationSystem');
-    jawAnimationSystem = new JawAnimationSystem();
+    // Import jaw animation system only if not in test mode
+    if (process.env.NODE_ENV !== 'test') {
+        const JawAnimationSystem = require('./scripts/jaw-animation/jawAnimationSystem');
+        jawAnimationSystem = new JawAnimationSystem();
+    }
 } catch (err) {
     try {
         require('./scripts/logger').error('Fatal error during app initialization:', err);
@@ -856,6 +860,12 @@ async function initializeMicrophoneManager() {
 // Initialize the application
 async function initializeApp() {
     try {
+        // Skip most initialization in test mode
+        if (process.env.NODE_ENV === 'test') {
+            logger.info('Running in test mode - skipping service initialization');
+            return;
+        }
+
         // Initialize connection manager first
         serviceConnectionManager = new ServiceConnectionManager({
             maxConnections: 100,
@@ -866,13 +876,13 @@ async function initializeApp() {
         });
 
         // Initialize the sound controller
-        await soundController.startSoundPlayer();
-        logger.info('Sound player initialized successfully');
-
-        // Start the server only if not in test environment
-        if (process.env.NODE_ENV !== 'test') {
-            startServer();
+        if (soundController) {
+            await soundController.startSoundPlayer();
+            logger.info('Sound player initialized successfully');
         }
+
+        // Start the server
+        startServer();
     } catch (error) {
         logger.error('Error during initialization:', error);
         process.exit(1);
@@ -983,4 +993,10 @@ async function gracefulShutdown(reason) {
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
+// Make server instance available for cleanup
+app.set('server', server);
+
+// Export app with cleanup functions for testing
 module.exports = app;
+module.exports.gracefulShutdown = gracefulShutdown;
+module.exports.server = server;
