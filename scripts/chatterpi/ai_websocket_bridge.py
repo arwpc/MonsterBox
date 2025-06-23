@@ -244,23 +244,23 @@ class AIWebSocketBridge:
         try:
             # Path to AI integration script
             ai_script_path = os.path.join(os.path.dirname(__file__), 'ai_integration.js')
-            
+
             if not os.path.exists(ai_script_path):
                 logger.warning("AI integration script not found")
                 return None
-            
+
             # Call the AI integration script
             result = subprocess.run([
-                'node', ai_script_path, 
+                'node', ai_script_path,
                 '--character', character,
                 '--message', message
             ], capture_output=True, text=True, timeout=30)
-            
+
             if result.returncode == 0:
                 # Parse the output to extract the AI response
                 output = result.stdout.strip()
                 logger.info(f"AI script output: {output}")
-                
+
                 # Extract response from output (assuming JSON format)
                 try:
                     response_data = json.loads(output)
@@ -271,7 +271,7 @@ class AIWebSocketBridge:
             else:
                 logger.error(f"AI script error: {result.stderr}")
                 return None
-                
+
         except subprocess.TimeoutExpired:
             logger.error("AI integration script timed out")
             return None
@@ -279,7 +279,73 @@ class AIWebSocketBridge:
             logger.error(f"Error calling AI integration: {e}")
             return None
 
-    async def handle_client(self, websocket, path):
+    async def send_error(self, websocket, error_message: str):
+        """Send standardized error message to client"""
+        await websocket.send(json.dumps({
+            "type": "error",
+            "message": error_message,
+            "timestamp": time.time()
+        }))
+
+    def validate_message(self, data: Dict[str, Any]) -> tuple[bool, str]:
+        """Validate incoming WebSocket message"""
+        # Check if data is a dictionary
+        if not isinstance(data, dict):
+            return False, "Message must be a JSON object"
+
+        # Check for required 'type' field
+        if "type" not in data:
+            return False, "Message must include 'type' field"
+
+        message_type = data.get("type")
+
+        # Validate message type
+        valid_types = ["chat", "set_character", "get_status", "ping"]
+        if message_type not in valid_types:
+            return False, f"Invalid message type. Allowed types: {', '.join(valid_types)}"
+
+        # Type-specific validation
+        if message_type == "chat":
+            message = data.get("message", "")
+            if not isinstance(message, str):
+                return False, "Chat message must be a string"
+            if len(message.strip()) == 0:
+                return False, "Chat message cannot be empty"
+            if len(message) > 1000:  # Reasonable limit
+                return False, "Chat message too long (max 1000 characters)"
+
+            # Basic content filtering
+            if self._contains_suspicious_content(message):
+                return False, "Message contains potentially harmful content"
+
+        elif message_type == "set_character":
+            character = data.get("character")
+            if not isinstance(character, str):
+                return False, "Character must be a string"
+            if character not in self.characters:
+                return False, f"Unknown character. Available: {', '.join(self.characters.keys())}"
+
+        return True, ""
+
+    def _contains_suspicious_content(self, text: str) -> bool:
+        """Basic content filtering for suspicious patterns"""
+        suspicious_patterns = [
+            r'<script[^>]*>',  # Script tags
+            r'javascript:',     # JavaScript URLs
+            r'data:text/html',  # Data URLs
+            r'vbscript:',      # VBScript
+            r'onload=',        # Event handlers
+            r'onerror=',
+            r'onclick=',
+        ]
+
+        text_lower = text.lower()
+        for pattern in suspicious_patterns:
+            if re.search(pattern, text_lower):
+                return True
+        return False
+
+    async def handle_client(self, websocket, _path):
         """Handle WebSocket client connections"""
         logger.info(f"🔌 Client connected from {websocket.remote_address}")
         self.connected_clients.add(websocket)
@@ -296,18 +362,19 @@ class AIWebSocketBridge:
             async for message in websocket:
                 try:
                     data = json.loads(message)
+
+                    # Validate message
+                    is_valid, error_msg = self.validate_message(data)
+                    if not is_valid:
+                        await self.send_error(websocket, error_msg)
+                        continue
+
                     await self.handle_message(websocket, data)
                 except json.JSONDecodeError:
-                    await websocket.send(json.dumps({
-                        "type": "error",
-                        "message": "Invalid JSON"
-                    }))
+                    await self.send_error(websocket, "Invalid JSON")
                 except Exception as e:
                     logger.error(f"Error handling message: {e}")
-                    await websocket.send(json.dumps({
-                        "type": "error",
-                        "message": str(e)
-                    }))
+                    await self.send_error(websocket, str(e))
 
         except websockets.exceptions.ConnectionClosed:
             logger.info("Client disconnected")
@@ -327,10 +394,7 @@ class AIWebSocketBridge:
         elif message_type == "get_status":
             await self.handle_get_status(websocket, data)
         else:
-            await websocket.send(json.dumps({
-                "type": "error",
-                "message": f"Unknown message type: {message_type}"
-            }))
+            await self.send_error(websocket, f"Unknown message type: {message_type}")
 
     async def handle_chat_message(self, websocket, data: Dict[str, Any]):
         """Handle chat messages and generate AI responses"""
@@ -339,10 +403,7 @@ class AIWebSocketBridge:
             character = data.get("character", self.current_character)
 
             if not user_message:
-                await websocket.send(json.dumps({
-                    "type": "error",
-                    "message": "Empty message"
-                }))
+                await self.send_error(websocket, "Empty message")
                 return
 
             logger.info(f"Processing chat message: {user_message} (character: {character})")
@@ -370,10 +431,7 @@ class AIWebSocketBridge:
 
         except Exception as e:
             logger.error(f"Error handling chat message: {e}")
-            await websocket.send(json.dumps({
-                "type": "error",
-                "message": f"Error processing message: {str(e)}"
-            }))
+            await self.send_error(websocket, f"Error processing message: {str(e)}")
 
     async def handle_set_character(self, websocket, data: Dict[str, Any]):
         """Handle character selection"""
@@ -388,18 +446,12 @@ class AIWebSocketBridge:
                 }))
                 logger.info(f"Character set to: {character}")
             else:
-                await websocket.send(json.dumps({
-                    "type": "error",
-                    "message": f"Unknown character: {character}"
-                }))
+                await self.send_error(websocket, f"Unknown character: {character}")
         except Exception as e:
             logger.error(f"Error setting character: {e}")
-            await websocket.send(json.dumps({
-                "type": "error",
-                "message": str(e)
-            }))
+            await self.send_error(websocket, str(e))
 
-    async def handle_get_status(self, websocket, data: Dict[str, Any]):
+    async def handle_get_status(self, websocket, _data: Dict[str, Any]):
         """Handle status requests"""
         try:
             status = {
@@ -413,10 +465,7 @@ class AIWebSocketBridge:
             await websocket.send(json.dumps(status))
         except Exception as e:
             logger.error(f"Error getting status: {e}")
-            await websocket.send(json.dumps({
-                "type": "error",
-                "message": str(e)
-            }))
+            await self.send_error(websocket, str(e))
 
     async def start_server(self):
         """Start the AI WebSocket bridge server"""
@@ -455,13 +504,32 @@ class AIWebSocketBridge:
         finally:
             self.cleanup()
 
-    def cleanup(self):
+    async def cleanup(self):
         """Cleanup resources"""
         logger.info("🧹 Cleaning up AI WebSocket Bridge")
         self.is_running = False
 
+        # Properly close jaw WebSocket connection
         if self.jaw_websocket:
-            asyncio.create_task(self.jaw_websocket.close())
+            try:
+                if not self.jaw_websocket.closed:
+                    await self.jaw_websocket.close()
+                    logger.info("✅ Jaw WebSocket connection closed")
+            except Exception as e:
+                logger.error(f"Error closing jaw WebSocket: {e}")
+            finally:
+                self.jaw_websocket = None
+
+        # Close all client connections
+        if self.connected_clients:
+            logger.info(f"Closing {len(self.connected_clients)} client connections")
+            for client in list(self.connected_clients):
+                try:
+                    if not client.closed:
+                        await client.close()
+                except Exception as e:
+                    logger.error(f"Error closing client connection: {e}")
+            self.connected_clients.clear()
 
         logger.info("✅ Cleanup completed")
 

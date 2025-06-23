@@ -260,7 +260,14 @@
                 this.speechEnabled = true;
                 this.volume = 0.7;
                 this.isProcessing = false;
-                
+
+                // Reconnection management
+                this.reconnectAttempts = 0;
+                this.maxReconnectAttempts = 10;
+                this.baseReconnectDelay = 1000; // 1 second
+                this.maxReconnectDelay = 30000; // 30 seconds
+                this.reconnectTimeout = null;
+
                 this.initializeElements();
                 this.setupEventListeners();
                 this.connectToAI();
@@ -311,40 +318,70 @@
             }
             
             connectToAI() {
+                // Clear any existing reconnection timeout
+                if (this.reconnectTimeout) {
+                    clearTimeout(this.reconnectTimeout);
+                    this.reconnectTimeout = null;
+                }
+
                 const wsUrl = `ws://${window.location.hostname}:8766`;
-                console.log('Connecting to AI WebSocket:', wsUrl);
-                
+                console.log(`Connecting to AI WebSocket (attempt ${this.reconnectAttempts + 1}):`, wsUrl);
+
                 try {
                     this.websocket = new WebSocket(wsUrl);
-                    
+
                     this.websocket.onopen = () => {
                         console.log('Connected to AI WebSocket');
                         this.isConnected = true;
+                        this.reconnectAttempts = 0; // Reset on successful connection
                         this.updateConnectionStatus('Connected', 'connected');
                     };
-                    
+
                     this.websocket.onmessage = (event) => {
                         this.handleMessage(JSON.parse(event.data));
                     };
-                    
-                    this.websocket.onclose = () => {
-                        console.log('AI WebSocket connection closed');
+
+                    this.websocket.onclose = (event) => {
+                        console.log('AI WebSocket connection closed', event.code, event.reason);
                         this.isConnected = false;
                         this.updateConnectionStatus('Disconnected', 'disconnected');
-                        
-                        // Attempt to reconnect after 5 seconds
-                        setTimeout(() => this.connectToAI(), 5000);
+
+                        // Only attempt reconnection if we haven't exceeded max attempts
+                        if (this.reconnectAttempts < this.maxReconnectAttempts) {
+                            this.scheduleReconnect();
+                        } else {
+                            console.warn('Max reconnection attempts reached');
+                            this.updateConnectionStatus('Connection Failed - Max Retries Exceeded', 'disconnected');
+                        }
                     };
-                    
+
                     this.websocket.onerror = (error) => {
                         console.error('AI WebSocket error:', error);
                         this.updateConnectionStatus('Connection Error', 'disconnected');
                     };
-                    
+
                 } catch (error) {
                     console.error('Failed to create WebSocket connection:', error);
                     this.updateConnectionStatus('Connection Failed', 'disconnected');
+                    this.scheduleReconnect();
                 }
+            }
+
+            scheduleReconnect() {
+                this.reconnectAttempts++;
+
+                // Calculate exponential backoff delay
+                const delay = Math.min(
+                    this.baseReconnectDelay * Math.pow(2, this.reconnectAttempts - 1),
+                    this.maxReconnectDelay
+                );
+
+                console.log(`Scheduling reconnection attempt ${this.reconnectAttempts} in ${delay}ms`);
+                this.updateConnectionStatus(`Reconnecting in ${Math.ceil(delay/1000)}s...`, 'disconnected');
+
+                this.reconnectTimeout = setTimeout(() => {
+                    this.connectToAI();
+                }, delay);
             }
 
             handleMessage(data) {
@@ -410,7 +447,7 @@
             }
 
             sendMessage() {
-                if (!this.isConnected || this.isProcessing) {
+                if (!this.isConnected || this.isProcessing || !this.isWebSocketReady()) {
                     return;
                 }
 
@@ -422,12 +459,18 @@
                 // Add user message to chat
                 this.addMessage(message, 'user');
 
-                // Send to AI
-                this.websocket.send(JSON.stringify({
-                    type: 'chat',
-                    message: message,
-                    character: this.currentCharacter
-                }));
+                // Send to AI with error handling
+                try {
+                    this.websocket.send(JSON.stringify({
+                        type: 'chat',
+                        message: message,
+                        character: this.currentCharacter
+                    }));
+                } catch (error) {
+                    console.error('Failed to send message:', error);
+                    this.showError('Failed to send message. Please check your connection.');
+                    return;
+                }
 
                 // Clear input and show processing
                 this.chatInput.value = '';
@@ -436,14 +479,24 @@
             }
 
             selectCharacter(character) {
-                if (this.isConnected && character !== this.currentCharacter) {
-                    this.websocket.send(JSON.stringify({
-                        type: 'set_character',
-                        character: character
-                    }));
+                if (this.isConnected && this.isWebSocketReady() && character !== this.currentCharacter) {
+                    try {
+                        this.websocket.send(JSON.stringify({
+                            type: 'set_character',
+                            character: character
+                        }));
+                    } catch (error) {
+                        console.error('Failed to set character:', error);
+                        this.showError('Failed to change character. Please check your connection.');
+                    }
                 }
                 this.currentCharacter = character;
                 this.updateCharacterButtons();
+            }
+
+            isWebSocketReady() {
+                return this.websocket &&
+                       this.websocket.readyState === WebSocket.OPEN;
             }
 
             addMessage(text, sender, character = null) {
