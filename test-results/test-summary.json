@@ -1,0 +1,22 @@
+{
+  "timestamp": "2025-06-23T22:29:41.342Z",
+  "testRun": {
+    "completed": true,
+    "duration": "Unknown",
+    "totalTests": 0,
+    "passed": 0,
+    "failed": 0,
+    "skipped": 0
+  },
+  "environment": {
+    "nodeVersion": "v23.11.1",
+    "platform": "linux",
+    "arch": "arm64"
+  },
+  "artifacts": {
+    "screenshots": 0,
+    "videos": 0,
+    "traces": 0,
+    "htmlReport": false
+  }
+}
