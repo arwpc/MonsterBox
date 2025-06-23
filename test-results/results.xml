@@ -1,6 +1,6 @@
-<testsuites id="" name="" tests="1" failures="0" skipped="0" errors="0" time="18.365779000000003">
-<testsuite name="microphone-management-comprehensive.spec.js" timestamp="2025-06-23T17:28:17.077Z" hostname="chromium" tests="1" failures="0" skipped="0" time="5.988" errors="0">
-<testcase name="Microphone Parts Management System › should test STT configuration interface" classname="microphone-management-comprehensive.spec.js" time="5.988">
+<testsuites id="" name="" tests="1" failures="0" skipped="0" errors="0" time="11.762441999999998">
+<testsuite name="microphone-management-comprehensive.spec.js" timestamp="2025-06-23T17:44:00.151Z" hostname="chromium" tests="1" failures="0" skipped="0" time="5.913" errors="0">
+<testcase name="Microphone Parts Management System › should test STT configuration interface" classname="microphone-management-comprehensive.spec.js" time="5.913">
 <system-out>
 <![CDATA[WebSocket closed: ws://localhost:8776/
 WebSocket closed: ws://localhost:8776/

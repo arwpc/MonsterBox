@@ -1658,6 +1658,9 @@
                 this.ambientTest();
             });
 
+            // STT Configuration event handlers
+            this.setupSTTEventHandlers();
+
             // Microphone card actions
             this.setupMicrophoneCardHandlers();
         }
@@ -1691,6 +1694,66 @@
                     this.updateBulkOperationsUI();
                 }
             });
+        }
+
+        setupSTTEventHandlers() {
+            // STT Control buttons
+            const startSTTBtn = document.getElementById('startSTTBtn');
+            const stopSTTBtn = document.getElementById('stopSTTBtn');
+            const testSTTBtn = document.getElementById('testSTTBtn');
+
+            // STT Configuration controls
+            const sttLanguageSelect = document.getElementById('sttLanguageSelect');
+            const sttConfidenceThreshold = document.getElementById('sttConfidenceThreshold');
+
+            // Initialize STT state
+            this.sttActive = false;
+            this.sttStream = null;
+            this.sttMediaRecorder = null;
+            this.sttConfig = {
+                language: 'en',
+                confidenceThreshold: 0.7,
+                chunkDuration: 2000
+            };
+
+            if (startSTTBtn) {
+                startSTTBtn.addEventListener('click', () => {
+                    this.startSTT();
+                });
+            }
+
+            if (stopSTTBtn) {
+                stopSTTBtn.addEventListener('click', () => {
+                    this.stopSTT();
+                });
+            }
+
+            if (testSTTBtn) {
+                testSTTBtn.addEventListener('click', () => {
+                    this.testSTT();
+                });
+            }
+
+            if (sttLanguageSelect) {
+                sttLanguageSelect.addEventListener('change', (e) => {
+                    this.sttConfig.language = e.target.value;
+                    this.updateSTTConfiguration();
+                });
+            }
+
+            if (sttConfidenceThreshold) {
+                sttConfidenceThreshold.addEventListener('input', (e) => {
+                    this.sttConfig.confidenceThreshold = parseFloat(e.target.value);
+                    const rangeValue = e.target.parentElement.querySelector('.range-value');
+                    if (rangeValue) {
+                        rangeValue.textContent = e.target.value;
+                    }
+                    this.updateSTTConfiguration();
+                });
+            }
+
+            // Set initial button states
+            this.updateSTTButtonStates(false);
         }
 
         async setupWebSocketConnections() {
@@ -3307,6 +3370,270 @@
 
             if (startBtn) startBtn.disabled = false;
             if (stopBtn) stopBtn.disabled = true;
+        }
+
+        // STT Methods
+        async startSTT() {
+            try {
+                if (this.sttActive) {
+                    this.showNotification('STT is already active', 'warning');
+                    return;
+                }
+
+                this.showNotification('Starting Speech-to-Text...', 'info');
+                this.updateTranscriptionOutput('🎤 Listening for speech...');
+
+                // Get user media for audio capture
+                this.sttStream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true,
+                        sampleRate: 16000
+                    }
+                });
+
+                // Set up MediaRecorder for audio chunks
+                this.sttMediaRecorder = new MediaRecorder(this.sttStream, {
+                    mimeType: 'audio/webm;codecs=opus'
+                });
+
+                this.sttAudioChunks = [];
+
+                this.sttMediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        this.sttAudioChunks.push(event.data);
+                    }
+                };
+
+                this.sttMediaRecorder.onstop = () => {
+                    this.processSTTAudio();
+                };
+
+                // Start recording in chunks
+                this.sttMediaRecorder.start(this.sttConfig.chunkDuration);
+                this.sttActive = true;
+
+                // Update UI
+                this.updateSTTButtonStates(true);
+                this.showNotification('STT started successfully', 'success');
+
+                // Auto-restart recording for continuous STT
+                this.sttInterval = setInterval(() => {
+                    if (this.sttActive && this.sttMediaRecorder && this.sttMediaRecorder.state === 'recording') {
+                        this.sttMediaRecorder.stop();
+                        setTimeout(() => {
+                            if (this.sttActive) {
+                                this.sttMediaRecorder.start(this.sttConfig.chunkDuration);
+                            }
+                        }, 100);
+                    }
+                }, this.sttConfig.chunkDuration);
+
+            } catch (error) {
+                console.error('Error starting STT:', error);
+                this.showNotification('Failed to start STT: ' + error.message, 'error');
+                this.stopSTT();
+            }
+        }
+
+        stopSTT() {
+            try {
+                this.sttActive = false;
+
+                if (this.sttInterval) {
+                    clearInterval(this.sttInterval);
+                    this.sttInterval = null;
+                }
+
+                if (this.sttMediaRecorder && this.sttMediaRecorder.state !== 'inactive') {
+                    this.sttMediaRecorder.stop();
+                }
+
+                if (this.sttStream) {
+                    this.sttStream.getTracks().forEach(track => track.stop());
+                    this.sttStream = null;
+                }
+
+                // Update UI
+                this.updateSTTButtonStates(false);
+                this.updateTranscriptionOutput('STT stopped.');
+                this.showNotification('STT stopped', 'info');
+
+            } catch (error) {
+                console.error('Error stopping STT:', error);
+                this.showNotification('Error stopping STT: ' + error.message, 'error');
+            }
+        }
+
+        async testSTT() {
+            try {
+                this.showNotification('Testing STT functionality...', 'info');
+                this.updateTranscriptionOutput('🧪 Testing STT - Please speak now...');
+
+                // Start a short STT session for testing
+                const testStream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true,
+                        sampleRate: 16000
+                    }
+                });
+
+                const testRecorder = new MediaRecorder(testStream, {
+                    mimeType: 'audio/webm;codecs=opus'
+                });
+
+                const testChunks = [];
+
+                testRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        testChunks.push(event.data);
+                    }
+                };
+
+                testRecorder.onstop = async () => {
+                    try {
+                        const audioBlob = new Blob(testChunks, { type: 'audio/webm;codecs=opus' });
+                        await this.sendAudioToSTT(audioBlob, true);
+                    } catch (error) {
+                        console.error('Error processing test audio:', error);
+                        this.updateTranscriptionOutput('❌ STT test failed: ' + error.message);
+                    }
+
+                    // Clean up test stream
+                    testStream.getTracks().forEach(track => track.stop());
+                };
+
+                // Record for 3 seconds
+                testRecorder.start();
+                setTimeout(() => {
+                    testRecorder.stop();
+                }, 3000);
+
+            } catch (error) {
+                console.error('Error testing STT:', error);
+                this.showNotification('STT test failed: ' + error.message, 'error');
+                this.updateTranscriptionOutput('❌ STT test failed: ' + error.message);
+            }
+        }
+
+        async processSTTAudio() {
+            if (this.sttAudioChunks.length === 0) return;
+
+            try {
+                const audioBlob = new Blob(this.sttAudioChunks, { type: 'audio/webm;codecs=opus' });
+                this.sttAudioChunks = []; // Clear chunks
+
+                await this.sendAudioToSTT(audioBlob, false);
+
+            } catch (error) {
+                console.error('Error processing STT audio:', error);
+                this.updateTranscriptionOutput('❌ Error processing audio: ' + error.message);
+            }
+        }
+
+        async sendAudioToSTT(audioBlob, isTest = false) {
+            try {
+                const formData = new FormData();
+                formData.append('audio', audioBlob, 'audio.webm');
+                formData.append('language', this.sttConfig.language);
+                formData.append('confidenceThreshold', this.sttConfig.confidenceThreshold);
+                formData.append('isTest', isTest);
+
+                const response = await fetch('/ai-management/api/stt/transcribe', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`STT API error: ${response.status} ${response.statusText}`);
+                }
+
+                const result = await response.json();
+
+                if (result.success && result.text) {
+                    const timestamp = new Date().toLocaleTimeString();
+                    const transcriptionText = isTest
+                        ? `✅ STT Test Result (${timestamp}): "${result.text}"`
+                        : `[${timestamp}] ${result.text}`;
+
+                    this.updateTranscriptionOutput(transcriptionText);
+
+                    if (isTest) {
+                        this.showNotification('STT test completed successfully', 'success');
+                    }
+                } else {
+                    const errorMsg = result.error || 'No transcription result';
+                    this.updateTranscriptionOutput(isTest ? `❌ STT test failed: ${errorMsg}` : `❌ ${errorMsg}`);
+
+                    if (isTest) {
+                        this.showNotification('STT test failed: ' + errorMsg, 'error');
+                    }
+                }
+
+            } catch (error) {
+                console.error('Error sending audio to STT:', error);
+                const errorMsg = `❌ STT Error: ${error.message}`;
+                this.updateTranscriptionOutput(errorMsg);
+
+                if (isTest) {
+                    this.showNotification('STT test failed: ' + error.message, 'error');
+                }
+            }
+        }
+
+        updateTranscriptionOutput(text) {
+            const outputElement = document.getElementById('transcriptionOutput');
+            if (outputElement) {
+                if (text.startsWith('🎤') || text.startsWith('🧪') || text.startsWith('❌') || text.startsWith('✅')) {
+                    // Status messages replace content
+                    outputElement.textContent = text;
+                } else {
+                    // Transcription results append to content
+                    if (outputElement.textContent === 'Transcription will appear here...' ||
+                        outputElement.textContent.startsWith('🎤') ||
+                        outputElement.textContent.startsWith('🧪') ||
+                        outputElement.textContent === 'STT stopped.') {
+                        outputElement.textContent = text;
+                    } else {
+                        outputElement.textContent += '\n' + text;
+                    }
+                }
+
+                // Auto-scroll to bottom
+                outputElement.scrollTop = outputElement.scrollHeight;
+            }
+        }
+
+        updateSTTButtonStates(isActive) {
+            const startBtn = document.getElementById('startSTTBtn');
+            const stopBtn = document.getElementById('stopSTTBtn');
+            const testBtn = document.getElementById('testSTTBtn');
+
+            if (startBtn) {
+                startBtn.disabled = isActive;
+                startBtn.textContent = isActive ? '🔴 Recording...' : '▶️ Start STT';
+            }
+
+            if (stopBtn) {
+                stopBtn.disabled = !isActive;
+            }
+
+            if (testBtn) {
+                testBtn.disabled = isActive;
+            }
+        }
+
+        updateSTTConfiguration() {
+            // Update configuration display if needed
+            console.log('STT Configuration updated:', this.sttConfig);
+
+            // Send configuration update to backend if STT is active
+            if (this.sttActive) {
+                this.showNotification('Configuration will apply to next STT session', 'info');
+            }
         }
 
 

@@ -272,24 +272,82 @@ router.post('/api/stt/transcribe', upload.single('audio'), async (req, res) => {
         if (!req.file) {
             return res.status(400).json({ success: false, error: 'No audio file provided' });
         }
-        
+
+        if (!process.env.OPENAI_API_KEY) {
+            await fs.unlink(req.file.path);
+            return res.status(400).json({
+                success: false,
+                error: 'OpenAI API key not configured'
+            });
+        }
+
         const startTime = Date.now();
-        
-        // Here you would integrate with the actual OpenAI Whisper STT
-        // For now, return a mock response
-        const responseTime = Date.now() - startTime;
-        
-        // Clean up uploaded file
-        await fs.unlink(req.file.path);
-        
-        res.json({
-            success: true,
-            text: 'This is a mock transcription result. Integrate with OpenAI Whisper for real transcription.',
-            confidence: 0.95,
-            provider: 'OpenAI Whisper (Mock)',
-            responseTime
-        });
+        const language = req.body.language || 'en';
+        const isTest = req.body.isTest === 'true';
+
+        try {
+            // Import OpenAI
+            const OpenAI = require('openai');
+            const openai = new OpenAI({
+                apiKey: process.env.OPENAI_API_KEY
+            });
+
+            // Create file stream for OpenAI API
+            const fileStream = require('fs').createReadStream(req.file.path);
+
+            // Call OpenAI Whisper API
+            const transcription = await openai.audio.transcriptions.create({
+                file: fileStream,
+                model: 'whisper-1',
+                language: language === 'auto' ? undefined : language,
+                response_format: 'json'
+            });
+
+            const responseTime = Date.now() - startTime;
+
+            // Clean up uploaded file
+            await fs.unlink(req.file.path);
+
+            res.json({
+                success: true,
+                text: transcription.text || '',
+                confidence: 1.0, // Whisper doesn't provide confidence scores
+                provider: 'OpenAI Whisper',
+                responseTime,
+                isTest,
+                metadata: {
+                    model: 'whisper-1',
+                    language: language,
+                    timestamp: new Date().toISOString()
+                }
+            });
+
+        } catch (apiError) {
+            console.error('OpenAI Whisper API error:', apiError);
+
+            // Clean up uploaded file
+            await fs.unlink(req.file.path);
+
+            res.json({
+                success: false,
+                error: `STT processing failed: ${apiError.message}`,
+                provider: 'OpenAI Whisper',
+                responseTime: Date.now() - startTime
+            });
+        }
+
     } catch (error) {
+        console.error('STT transcribe error:', error);
+
+        // Clean up uploaded file if it exists
+        if (req.file && req.file.path) {
+            try {
+                await fs.unlink(req.file.path);
+            } catch (cleanupError) {
+                console.error('Error cleaning up file:', cleanupError);
+            }
+        }
+
         res.status(500).json({ success: false, error: error.message });
     }
 });

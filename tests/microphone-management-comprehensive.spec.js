@@ -191,6 +191,49 @@ test.describe('Microphone Parts Management System', () => {
         await expect(page.locator('#sttConfidenceThreshold')).toBeVisible();
         await expect(page.locator('#startSTTBtn')).toBeVisible();
         await expect(page.locator('#stopSTTBtn')).toBeVisible();
+        await expect(page.locator('#testSTTBtn')).toBeVisible();
+        await expect(page.locator('#transcriptionOutput')).toBeVisible();
+    });
+
+    test('should test STT button functionality', async () => {
+        await page.goto(`${BASE_URL}/parts/microphone/management`);
+        await page.waitForLoadState('networkidle');
+        await page.waitForTimeout(3000);
+
+        // Navigate to the Configuration tab
+        await page.click('button[data-tab="configuration"]');
+        await page.waitForTimeout(1000);
+
+        // Test STT configuration changes
+        const languageSelect = page.locator('#sttLanguageSelect');
+        await languageSelect.selectOption('es');
+        await page.waitForTimeout(500);
+
+        const confidenceSlider = page.locator('#sttConfidenceThreshold');
+        await confidenceSlider.fill('0.8');
+        await page.waitForTimeout(500);
+
+        // Check if range value updates
+        const rangeValue = page.locator('#sttConfidenceThreshold').locator('..').locator('.range-value');
+        await expect(rangeValue).toContainText('0.8');
+
+        // Test STT buttons (note: actual audio testing requires user interaction)
+        const startBtn = page.locator('#startSTTBtn');
+        const stopBtn = page.locator('#stopSTTBtn');
+        const testBtn = page.locator('#testSTTBtn');
+
+        // Initially, start and test buttons should be enabled, stop should be disabled
+        await expect(startBtn).toBeEnabled();
+        await expect(testBtn).toBeEnabled();
+        await expect(stopBtn).toBeDisabled();
+
+        // Test button click (will fail due to no microphone permission in headless mode, but tests the handler)
+        await startBtn.click();
+        await page.waitForTimeout(2000);
+
+        // Check for error notification or permission request
+        const transcriptionOutput = page.locator('#transcriptionOutput');
+        await expect(transcriptionOutput).toBeVisible();
     });
 
     test('should validate microphone device selection', async () => {
