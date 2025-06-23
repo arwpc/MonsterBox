@@ -273,6 +273,49 @@ router.post('/:id/delete', async (req, res) => {
     }
 });
 
+// DELETE route for API compatibility (used by tests and API clients)
+router.delete('/:id', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        logger.info(`Attempting to delete part with ID: ${id} via DELETE method`);
+
+        // Log summary before deletion (reduced verbosity)
+        const allParts = await partService.getAllParts();
+        logger.info(`Parts before deletion: ${allParts.length} total`);
+
+        // Check if the part exists before attempting to delete
+        const partToDelete = allParts.find(part => part.id === id);
+        if (!partToDelete) {
+            logger.warn(`Part with ID ${id} not found before deletion attempt`);
+            return res.status(404).json({ error: 'Part not found' });
+        }
+
+        logger.info(`Part to be deleted: ${JSON.stringify(partToDelete)}`);
+
+        try {
+            // Special cleanup for microphones
+            if (partToDelete.type === 'microphone') {
+                await performMicrophoneCleanup(id);
+            }
+
+            await partService.deletePart(id);
+            logger.info(`Part with ID ${id} deleted successfully`);
+
+            // Log summary after deletion (reduced verbosity)
+            const allPartsAfter = await partService.getAllParts();
+            logger.info(`Parts remaining after deletion: ${allPartsAfter.length} total`);
+
+            res.status(200).json({ message: 'Part deleted successfully' });
+        } catch (deleteError) {
+            logger.error(`Error in partService.deletePart: ${deleteError}`);
+            res.status(500).json({ error: 'An error occurred while deleting the part' });
+        }
+    } catch (error) {
+        logger.error(`Error in DELETE route: ${error}`);
+        res.status(500).json({ error: 'An unexpected error occurred' });
+    }
+});
+
 router.get('/sensor/test', (req, res) => {
     const { gpioPin, timeout } = req.query;
 
@@ -1123,6 +1166,63 @@ router.post('/api/microphone/auto-restart', async (req, res) => {
 
     } catch (error) {
         logger.error('Error auto-restarting microphone services:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// General services restart endpoint (for microphone management page)
+router.post('/api/services/restart', async (req, res) => {
+    try {
+        const { serviceType, port } = req.body;
+
+        if (!serviceType) {
+            return res.status(400).json({
+                success: false,
+                error: 'Service type is required'
+            });
+        }
+
+        logger.info(`🔄 Restarting ${serviceType} service on port ${port}`);
+
+        let result = false;
+
+        // Use microphone services starter for microphone services
+        if (global.microphoneServicesStarter && (serviceType === 'microphone' || serviceType === 'audioStream')) {
+            const serviceMap = {
+                'microphone': 'microphoneService',
+                'audioStream': 'audioStreamService'
+            };
+
+            const serviceId = serviceMap[serviceType];
+            if (serviceId) {
+                result = await global.microphoneServicesStarter.restartService(serviceId);
+            }
+        } else {
+            // Fallback to general service manager
+            const ServiceManager = require('../services/serviceManager');
+            const serviceManager = new ServiceManager();
+            result = await serviceManager.restartService(serviceType, port);
+        }
+
+        if (result) {
+            logger.info(`✅ ${serviceType} service restarted successfully`);
+            res.json({
+                success: true,
+                message: `${serviceType} service restarted successfully`
+            });
+        } else {
+            logger.error(`❌ Failed to restart ${serviceType} service`);
+            res.status(500).json({
+                success: false,
+                error: `Failed to restart ${serviceType} service`
+            });
+        }
+
+    } catch (error) {
+        logger.error('Error restarting service:', error);
         res.status(500).json({
             success: false,
             error: error.message

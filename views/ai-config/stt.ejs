@@ -217,6 +217,307 @@
             margin: 20px 0;
             color: #66ff66;
         }
+
+        /* Audio Level Indicator Styles */
+        .audio-level-section {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(0, 255, 0, 0.05);
+            border: 1px solid rgba(0, 255, 0, 0.2);
+            border-radius: 8px;
+        }
+
+        .audio-level-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .audio-level-meter {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 6px;
+        }
+
+        .audio-level-bar {
+            flex: 1;
+            height: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid rgba(0, 255, 0, 0.3);
+        }
+
+        .audio-level-bar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: var(--level, 0%);
+            background: linear-gradient(90deg,
+                #00ff00 0%,
+                #88ff00 30%,
+                #ffff00 60%,
+                #ff8800 80%,
+                #ff0000 100%);
+            border-radius: 10px;
+            transition: width 0.1s ease-out;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+        }
+
+        .audio-level-bar.low::before {
+            background: linear-gradient(90deg, #00ff00, #88ff00);
+        }
+
+        .audio-level-bar.medium::before {
+            background: linear-gradient(90deg, #88ff00, #ffff00);
+        }
+
+        .audio-level-bar.high::before {
+            background: linear-gradient(90deg, #ffff00, #ff0000);
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
+        }
+
+        .audio-level-text {
+            min-width: 50px;
+            text-align: center;
+            color: #00ff00;
+            font-family: monospace;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .audio-level-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn-small {
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-small:hover {
+            background: rgba(0, 255, 0, 0.2);
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+        }
+
+        .btn-small:active {
+            background: rgba(0, 255, 0, 0.3);
+        }
+
+        .btn-small.active {
+            background: #00ff00;
+            color: #000000;
+        }
+
+        /* Enhanced existing audio level bar in testing section */
+        .audio-controls .audio-level-bar {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+        }
+
+        /* UI Layout Improvements */
+        .quick-actions {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(0, 255, 0, 0.05);
+            border: 1px solid rgba(0, 255, 0, 0.2);
+            border-radius: 8px;
+            flex-wrap: wrap;
+        }
+
+        .prominent-section {
+            border: 2px solid #00ff00;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+            position: relative;
+        }
+
+        .prominent-section::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #00ff00, #88ff00, #00ff00);
+            border-radius: 10px;
+            z-index: -1;
+            opacity: 0.3;
+        }
+
+        .config-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .config-status, .test-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .config-indicator, .test-indicator {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            color: #00ff00;
+        }
+
+        .config-tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(0, 255, 0, 0.2);
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: #888;
+            padding: 12px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .tab-btn:hover {
+            color: #00ff00;
+            background: rgba(0, 255, 0, 0.05);
+        }
+
+        .tab-btn.active {
+            color: #00ff00;
+            border-bottom-color: #00ff00;
+            background: rgba(0, 255, 0, 0.1);
+        }
+
+        .config-tab {
+            display: none;
+        }
+
+        .config-tab.active {
+            display: block;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .slider-container input[type="range"] {
+            flex: 1;
+        }
+
+        .slider-value {
+            min-width: 40px;
+            text-align: center;
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            border-radius: 4px;
+            padding: 4px 8px;
+            color: #00ff00;
+            font-family: monospace;
+            font-weight: bold;
+        }
+
+        .form-group label {
+            font-weight: bold;
+            color: #00ff00;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .form-help {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 30px;
+        }
+
+        .button {
+            padding: 12px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            border: none;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .primary-btn {
+            background: #00ff00;
+            color: #000000;
+            font-weight: bold;
+        }
+
+        .primary-btn:hover {
+            background: #88ff00;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+        }
+
+        .secondary-btn {
+            background: rgba(0, 255, 0, 0.1);
+            color: #00ff00;
+            border: 1px solid rgba(0, 255, 0, 0.3);
+        }
+
+        .secondary-btn:hover {
+            background: rgba(0, 255, 0, 0.2);
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+        }
+
+        /* Responsive improvements */
+        @media (max-width: 768px) {
+            .quick-actions {
+                flex-direction: column;
+            }
+
+            .config-tabs {
+                flex-direction: column;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .slider-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
     </style>
 </head>
 <body>
@@ -235,9 +536,22 @@
             <p>Configure Speech-to-Text settings for converting spoken audio into text streams for AI processing</p>
         </div>
 
+        <!-- Quick Actions Bar -->
+        <div class="quick-actions">
+            <button type="button" class="button primary-btn" onclick="testConnection()">
+                <i class="fas fa-test-tube"></i> Test Connection
+            </button>
+            <button type="button" class="button secondary-btn" onclick="toggleRecording()">
+                <i class="fas fa-microphone"></i> Quick Test Recording
+            </button>
+            <button type="button" class="button secondary-btn" onclick="document.getElementById('sttConfigForm').scrollIntoView({behavior: 'smooth'})">
+                <i class="fas fa-cog"></i> Configuration Settings
+            </button>
+        </div>
+
         <!-- Status Display -->
         <div class="status-display">
-            <h3>📊 Current Status</h3>
+            <h3>📊 System Status</h3>
             <div class="status-item">
                 <span>OpenAI API Connection</span>
                 <div style="display: flex; align-items: center;">
@@ -259,82 +573,120 @@
                     <div class="status-indicator status-online" id="audioIndicator"></div>
                 </div>
             </div>
+
+            <!-- Real-time Audio Level Indicator -->
+            <div class="status-item audio-level-section" id="audioLevelSection" style="display: none;">
+                <span>🎤 Audio Level</span>
+                <div class="audio-level-container">
+                    <div class="audio-level-meter">
+                        <div class="audio-level-bar" id="audioLevelBar"></div>
+                        <div class="audio-level-text" id="audioLevelText">0%</div>
+                    </div>
+                    <div class="audio-level-controls">
+                        <button class="btn-small" id="toggleAudioMonitor" onclick="toggleAudioMonitoring()">
+                            📊 Start Monitoring
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Configuration Form -->
-        <form id="sttConfigForm" class="config-section">
+        <form id="sttConfigForm" class="config-section prominent-section">
             <div class="config-header">
                 <i class="fas fa-cog config-icon"></i>
-                <h3>Configuration Settings</h3>
+                <h3>⚙️ Configuration Settings</h3>
+                <div class="config-status">
+                    <span class="config-indicator" id="configStatus">Not Configured</span>
+                </div>
             </div>
 
-            <div class="form-grid">
-                <div class="form-group">
-                    <label for="apiKey">OpenAI API Key</label>
-                    <input type="password" id="apiKey" name="apiKey" value="<%= config && config.apiKey ? '••••••••••••' : '' %>" placeholder="sk-...">
-                    <div class="form-help">Your OpenAI API key for Whisper access</div>
-                </div>
+            <div class="config-tabs">
+                <button type="button" class="tab-btn active" onclick="switchConfigTab('basic')">
+                    🔧 Basic Settings
+                </button>
+                <button type="button" class="tab-btn" onclick="switchConfigTab('advanced')">
+                    ⚡ Advanced Settings
+                </button>
+            </div>
 
-                <div class="form-group">
-                    <label for="model">Whisper Model</label>
-                    <select id="model" name="model">
-                        <option value="whisper-1" <%= config && config.model === 'whisper-1' ? 'selected' : '' %>>whisper-1 (Recommended)</option>
-                    </select>
-                    <div class="form-help">OpenAI Whisper model version</div>
-                </div>
+            <!-- Basic Settings Tab -->
+            <div id="basicSettings" class="config-tab active">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="apiKey">🔑 OpenAI API Key</label>
+                        <input type="password" id="apiKey" name="apiKey" value="<%= config && config.apiKey ? '••••••••••••' : '' %>" placeholder="sk-...">
+                        <div class="form-help">Your OpenAI API key for Whisper access</div>
+                    </div>
 
-                <div class="form-group">
-                    <label for="language">Language</label>
-                    <select id="language" name="language">
-                        <option value="auto" <%= config && config.language === 'auto' ? 'selected' : '' %>>Auto-detect</option>
-                        <option value="en" <%= config && config.language === 'en' ? 'selected' : '' %>>English</option>
-                        <option value="es" <%= config && config.language === 'es' ? 'selected' : '' %>>Spanish</option>
-                        <option value="fr" <%= config && config.language === 'fr' ? 'selected' : '' %>>French</option>
-                        <option value="de" <%= config && config.language === 'de' ? 'selected' : '' %>>German</option>
-                        <option value="it" <%= config && config.language === 'it' ? 'selected' : '' %>>Italian</option>
-                        <option value="pt" <%= config && config.language === 'pt' ? 'selected' : '' %>>Portuguese</option>
-                        <option value="ru" <%= config && config.language === 'ru' ? 'selected' : '' %>>Russian</option>
-                        <option value="ja" <%= config && config.language === 'ja' ? 'selected' : '' %>>Japanese</option>
-                        <option value="ko" <%= config && config.language === 'ko' ? 'selected' : '' %>>Korean</option>
-                        <option value="zh" <%= config && config.language === 'zh' ? 'selected' : '' %>>Chinese</option>
-                    </select>
-                    <div class="form-help">Primary language for speech recognition</div>
-                </div>
+                    <div class="form-group">
+                        <label for="model">🤖 Whisper Model</label>
+                        <select id="model" name="model">
+                            <option value="whisper-1" <%= config && config.model === 'whisper-1' ? 'selected' : '' %>>whisper-1 (Recommended)</option>
+                        </select>
+                        <div class="form-help">OpenAI Whisper model version</div>
+                    </div>
 
-                <div class="form-group">
-                    <label for="confidenceThreshold">Confidence Threshold</label>
-                    <input type="range" id="confidenceThreshold" name="confidenceThreshold" 
-                           min="0.1" max="1.0" step="0.1" 
-                           value="<%= config && config.confidenceThreshold ? config.confidenceThreshold : '0.7' %>"
-                           oninput="updateConfidenceDisplay(this.value)">
-                    <div class="form-help">
-                        Minimum confidence level: <span id="confidenceValue"><%= config && config.confidenceThreshold ? config.confidenceThreshold : '0.7' %></span>
+                    <div class="form-group">
+                        <label for="language">🌍 Language</label>
+                        <select id="language" name="language">
+                            <option value="auto" <%= config && config.language === 'auto' ? 'selected' : '' %>>Auto-detect (Recommended)</option>
+                            <option value="en" <%= config && config.language === 'en' ? 'selected' : '' %>>English</option>
+                            <option value="es" <%= config && config.language === 'es' ? 'selected' : '' %>>Spanish</option>
+                            <option value="fr" <%= config && config.language === 'fr' ? 'selected' : '' %>>French</option>
+                            <option value="de" <%= config && config.language === 'de' ? 'selected' : '' %>>German</option>
+                            <option value="it" <%= config && config.language === 'it' ? 'selected' : '' %>>Italian</option>
+                            <option value="pt" <%= config && config.language === 'pt' ? 'selected' : '' %>>Portuguese</option>
+                            <option value="ru" <%= config && config.language === 'ru' ? 'selected' : '' %>>Russian</option>
+                            <option value="ja" <%= config && config.language === 'ja' ? 'selected' : '' %>>Japanese</option>
+                            <option value="ko" <%= config && config.language === 'ko' ? 'selected' : '' %>>Korean</option>
+                            <option value="zh" <%= config && config.language === 'zh' ? 'selected' : '' %>>Chinese</option>
+                        </select>
+                        <div class="form-help">Primary language for speech recognition</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confidenceThreshold">🎯 Confidence Threshold</label>
+                        <div class="slider-container">
+                            <input type="range" id="confidenceThreshold" name="confidenceThreshold"
+                                   min="0.1" max="1.0" step="0.1"
+                                   value="<%= config && config.confidenceThreshold ? config.confidenceThreshold : '0.7' %>"
+                                   oninput="updateConfidenceDisplay(this.value)">
+                            <div class="slider-value" id="confidenceValue"><%= config && config.confidenceThreshold ? config.confidenceThreshold : '0.7' %></div>
+                        </div>
+                        <div class="form-help">Minimum confidence level for accepting transcriptions</div>
                     </div>
                 </div>
+            </div>
 
-                <div class="form-group">
-                    <label for="chunkDuration">Audio Chunk Duration (ms)</label>
-                    <input type="number" id="chunkDuration" name="chunkDuration" 
-                           min="1000" max="10000" step="500"
-                           value="<%= config && config.chunkDuration ? config.chunkDuration : '2000' %>">
-                    <div class="form-help">Length of audio chunks for processing</div>
-                </div>
+            <!-- Advanced Settings Tab -->
+            <div id="advancedSettings" class="config-tab">
+                <div class="form-grid">
 
-                <div class="form-group">
-                    <label for="timeout">Request Timeout (ms)</label>
-                    <input type="number" id="timeout" name="timeout" 
-                           min="5000" max="60000" step="1000"
-                           value="<%= config && config.timeout ? config.timeout : '30000' %>">
-                    <div class="form-help">Maximum time to wait for API response</div>
-                </div>
+                    <div class="form-group">
+                        <label for="chunkDuration">⏱️ Audio Chunk Duration (ms)</label>
+                        <input type="number" id="chunkDuration" name="chunkDuration"
+                               min="1000" max="10000" step="500"
+                               value="<%= config && config.chunkDuration ? config.chunkDuration : '2000' %>">
+                        <div class="form-help">Length of audio chunks for processing (1000-10000ms)</div>
+                    </div>
 
-                <div class="form-group">
-                    <label for="fallbackToSystem">Enable System Fallback</label>
-                    <select id="fallbackToSystem" name="fallbackToSystem">
-                        <option value="true" <%= config && config.fallbackToSystem ? 'selected' : '' %>>Enabled</option>
-                        <option value="false" <%= config && !config.fallbackToSystem ? 'selected' : '' %>>Disabled</option>
-                    </select>
-                    <div class="form-help">Use system STT if OpenAI fails</div>
+                    <div class="form-group">
+                        <label for="timeout">⏰ Request Timeout (ms)</label>
+                        <input type="number" id="timeout" name="timeout"
+                               min="5000" max="60000" step="1000"
+                               value="<%= config && config.timeout ? config.timeout : '30000' %>">
+                        <div class="form-help">Maximum time to wait for API response (5000-60000ms)</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="fallbackToSystem">🔄 System Fallback</label>
+                        <select id="fallbackToSystem" name="fallbackToSystem">
+                            <option value="true" <%= config && config.fallbackToSystem ? 'selected' : '' %>>Enabled</option>
+                            <option value="false" <%= config && !config.fallbackToSystem ? 'selected' : '' %>>Disabled</option>
+                        </select>
+                        <div class="form-help">Use system STT if OpenAI fails</div>
+                    </div>
                 </div>
             </div>
 
@@ -345,6 +697,9 @@
                 <button type="button" class="button secondary-btn" onclick="testConnection()">
                     <i class="fas fa-test-tube"></i> Test Connection
                 </button>
+                <button type="button" class="button secondary-btn" onclick="document.getElementById('testSection').scrollIntoView({behavior: 'smooth'})">
+                    <i class="fas fa-microphone"></i> Go to Testing
+                </button>
                 <a href="/ai-management" class="button secondary-btn">
                     <i class="fas fa-arrow-left"></i> Back to Dashboard
                 </a>
@@ -352,10 +707,13 @@
         </form>
 
         <!-- Live Testing Section -->
-        <div class="test-section">
+        <div id="testSection" class="test-section prominent-section">
             <div class="config-header">
                 <i class="fas fa-microphone-alt config-icon"></i>
-                <h3>Live STT Testing</h3>
+                <h3>🎤 Live STT Testing</h3>
+                <div class="test-status">
+                    <span class="test-indicator" id="testStatus">Ready to Test</span>
+                </div>
             </div>
 
             <div class="audio-controls">
@@ -419,6 +777,24 @@
             document.getElementById('confidenceValue').textContent = value;
         }
 
+        function switchConfigTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.config-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Remove active class from all tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName + 'Settings').classList.add('active');
+
+            // Activate corresponding button
+            event.target.classList.add('active');
+        }
+
         async function checkStatus() {
             try {
                 // Check API status
@@ -431,13 +807,7 @@
                 );
 
                 // Check microphone access
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    updateStatusIndicator('micStatus', 'micIndicator', 'Available', 'online');
-                    stream.getTracks().forEach(track => track.stop());
-                } catch (error) {
-                    updateStatusIndicator('micStatus', 'micIndicator', 'Not Available', 'offline');
-                }
+                await checkMicrophoneAccess();
             } catch (error) {
                 console.error('Status check failed:', error);
                 updateStatusIndicator('apiStatus', 'apiIndicator', 'Error', 'offline');
@@ -448,6 +818,154 @@
             document.getElementById(statusId).textContent = text;
             const indicator = document.getElementById(indicatorId);
             indicator.className = `status-indicator status-${status}`;
+        }
+
+        async function checkMicrophoneAccess() {
+            try {
+                // First check if we're in a secure context
+                if (!window.isSecureContext) {
+                    updateStatusIndicator('micStatus', 'micIndicator', 'Requires HTTPS', 'offline');
+                    showMicrophoneHelp('This feature requires HTTPS or localhost access for security reasons.');
+                    return;
+                }
+
+                // Check if MediaDevices API is available
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    updateStatusIndicator('micStatus', 'micIndicator', 'Not Supported', 'offline');
+                    showMicrophoneHelp('Your browser does not support microphone access.');
+                    return;
+                }
+
+                // Check current permission status
+                if (navigator.permissions) {
+                    try {
+                        const permission = await navigator.permissions.query({ name: 'microphone' });
+
+                        if (permission.state === 'denied') {
+                            updateStatusIndicator('micStatus', 'micIndicator', 'Permission Denied', 'offline');
+                            showMicrophoneHelp('Microphone access has been denied. Please enable it in your browser settings.');
+                            return;
+                        } else if (permission.state === 'granted') {
+                            // Permission already granted, test access
+                            await testMicrophoneAccess();
+                            return;
+                        }
+                        // If permission.state === 'prompt', continue to request access
+                    } catch (permError) {
+                        console.log('Permission API not fully supported, proceeding with getUserMedia test');
+                    }
+                }
+
+                // Show permission request button instead of automatically requesting
+                updateStatusIndicator('micStatus', 'micIndicator', 'Click to Enable', 'warning');
+                showMicrophonePermissionButton();
+
+            } catch (error) {
+                console.error('Error checking microphone access:', error);
+                updateStatusIndicator('micStatus', 'micIndicator', 'Error', 'offline');
+                showMicrophoneHelp('Error checking microphone access: ' + error.message);
+            }
+        }
+
+        async function testMicrophoneAccess() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    }
+                });
+
+                updateStatusIndicator('micStatus', 'micIndicator', 'Available', 'online');
+                stream.getTracks().forEach(track => track.stop());
+                hideMicrophoneHelp();
+
+                // Show audio level section when microphone is available
+                document.getElementById('audioLevelSection').style.display = 'block';
+
+            } catch (error) {
+                console.error('Microphone access test failed:', error);
+
+                if (error.name === 'NotAllowedError') {
+                    updateStatusIndicator('micStatus', 'micIndicator', 'Permission Denied', 'offline');
+                    showMicrophoneHelp('Microphone access was denied. Please click the microphone icon in your browser\'s address bar to enable access.');
+                } else if (error.name === 'NotFoundError') {
+                    updateStatusIndicator('micStatus', 'micIndicator', 'No Device Found', 'offline');
+                    showMicrophoneHelp('No microphone device was found. Please connect a microphone and try again.');
+                } else {
+                    updateStatusIndicator('micStatus', 'micIndicator', 'Access Failed', 'offline');
+                    showMicrophoneHelp('Failed to access microphone: ' + error.message);
+                }
+            }
+        }
+
+        function showMicrophonePermissionButton() {
+            const micStatusElement = document.getElementById('micStatus');
+            const originalText = micStatusElement.textContent;
+
+            micStatusElement.innerHTML = `
+                <span style="margin-right: 10px;">${originalText}</span>
+                <button onclick="requestMicrophonePermission()"
+                        style="background: #00ff00; color: #000; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                    🎤 Enable Microphone
+                </button>
+            `;
+        }
+
+        async function requestMicrophonePermission() {
+            try {
+                updateStatusIndicator('micStatus', 'micIndicator', 'Requesting Permission...', 'warning');
+                await testMicrophoneAccess();
+            } catch (error) {
+                console.error('Error requesting microphone permission:', error);
+            }
+        }
+
+        function showMicrophoneHelp(message) {
+            let helpDiv = document.getElementById('microphoneHelp');
+            if (!helpDiv) {
+                helpDiv = document.createElement('div');
+                helpDiv.id = 'microphoneHelp';
+                helpDiv.style.cssText = `
+                    background: #330000;
+                    border: 1px solid #ff6666;
+                    border-radius: 8px;
+                    padding: 15px;
+                    margin: 15px 0;
+                    color: #ff9999;
+                `;
+
+                const statusSection = document.querySelector('.config-section');
+                statusSection.appendChild(helpDiv);
+            }
+
+            helpDiv.innerHTML = `
+                <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                    <i class="fas fa-exclamation-triangle" style="margin-right: 10px; color: #ff6666;"></i>
+                    <strong>Microphone Access Issue</strong>
+                </div>
+                <p style="margin: 0 0 15px 0;">${message}</p>
+                <div style="font-size: 0.9em;">
+                    <strong>Current connection:</strong> ${window.location.protocol.toUpperCase()}<br>
+                    ${!window.isSecureContext ? '<strong style="color: #ff6666;">⚠️ HTTPS required for microphone access</strong>' : ''}
+                </div>
+                ${!window.isSecureContext ? `
+                    <div style="margin-top: 15px;">
+                        <a href="${window.location.href.replace('http:', 'https:')}"
+                           style="background: #00ff00; color: #000; padding: 8px 15px; text-decoration: none; border-radius: 4px; display: inline-block;">
+                            🔒 Try HTTPS Version
+                        </a>
+                    </div>
+                ` : ''}
+            `;
+        }
+
+        function hideMicrophoneHelp() {
+            const helpDiv = document.getElementById('microphoneHelp');
+            if (helpDiv) {
+                helpDiv.remove();
+            }
         }
 
         async function saveConfiguration() {
@@ -487,9 +1005,14 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    showMessage(`Connection test successful! Response time: ${data.responseTime}ms`, 'success');
+                    showMessage(`API connection test successful! Response time: ${data.responseTime}ms`, 'success');
+
+                    // Also test microphone access
+                    showMessage('Testing microphone access...', 'info');
+                    await testMicrophoneAccess();
+                    showMessage('Complete connection test successful!', 'success');
                 } else {
-                    showMessage(`Connection test failed: ${data.error}`, 'error');
+                    showMessage(`API connection test failed: ${data.error}`, 'error');
                 }
             } catch (error) {
                 showMessage(`Connection test error: ${error.message}`, 'error');
@@ -506,6 +1029,17 @@
 
         async function startRecording() {
             try {
+                // Check microphone access first
+                if (!window.isSecureContext) {
+                    showMessage('Recording requires HTTPS or localhost access', 'error');
+                    return;
+                }
+
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    showMessage('Your browser does not support microphone access', 'error');
+                    return;
+                }
+
                 const stream = await navigator.mediaDevices.getUserMedia({
                     audio: {
                         echoCancellation: true,
@@ -546,7 +1080,22 @@
                 document.getElementById('recordingStatus').textContent = 'Recording... Click to stop';
 
             } catch (error) {
-                showMessage(`Failed to start recording: ${error.message}`, 'error');
+                console.error('Recording start error:', error);
+
+                if (error.name === 'NotAllowedError') {
+                    showMessage('Microphone access was denied. Please enable microphone permissions and try again.', 'error');
+                    updateStatusIndicator('micStatus', 'micIndicator', 'Permission Denied', 'offline');
+                    showMicrophoneHelp('Microphone access was denied. Please click the microphone icon in your browser\'s address bar to enable access.');
+                } else if (error.name === 'NotFoundError') {
+                    showMessage('No microphone device found. Please connect a microphone and try again.', 'error');
+                    updateStatusIndicator('micStatus', 'micIndicator', 'No Device Found', 'offline');
+                } else if (error.name === 'NotReadableError') {
+                    showMessage('Microphone is already in use by another application.', 'error');
+                    updateStatusIndicator('micStatus', 'micIndicator', 'Device Busy', 'offline');
+                } else {
+                    showMessage(`Failed to start recording: ${error.message}`, 'error');
+                    updateStatusIndicator('micStatus', 'micIndicator', 'Access Failed', 'offline');
+                }
             }
         }
 
@@ -671,6 +1220,163 @@
                 }
             }, 5000);
         }
+
+        // Audio Level Monitoring Functions
+        let audioMonitoringActive = false;
+        let audioMonitoringStream = null;
+        let audioMonitoringContext = null;
+        let audioMonitoringAnalyser = null;
+        let audioMonitoringAnimationId = null;
+
+        async function toggleAudioMonitoring() {
+            if (audioMonitoringActive) {
+                stopAudioMonitoring();
+            } else {
+                await startAudioMonitoring();
+            }
+        }
+
+        async function startAudioMonitoring() {
+            try {
+                // Check microphone access first
+                if (!window.isSecureContext) {
+                    showMessage('Audio monitoring requires HTTPS or localhost access', 'error');
+                    return;
+                }
+
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    showMessage('Your browser does not support microphone access', 'error');
+                    return;
+                }
+
+                // Get microphone stream
+                audioMonitoringStream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    }
+                });
+
+                // Set up audio context for level monitoring
+                audioMonitoringContext = new (window.AudioContext || window.webkitAudioContext)();
+                audioMonitoringAnalyser = audioMonitoringContext.createAnalyser();
+                const microphone = audioMonitoringContext.createMediaStreamSource(audioMonitoringStream);
+                microphone.connect(audioMonitoringAnalyser);
+                audioMonitoringAnalyser.fftSize = 256;
+
+                // Show the audio level section
+                document.getElementById('audioLevelSection').style.display = 'block';
+
+                // Update button
+                const button = document.getElementById('toggleAudioMonitor');
+                button.textContent = '⏹️ Stop Monitoring';
+                button.classList.add('active');
+
+                audioMonitoringActive = true;
+
+                // Start monitoring loop
+                monitorAudioLevelRealtime();
+
+                showMessage('Audio level monitoring started', 'success');
+
+            } catch (error) {
+                console.error('Audio monitoring start error:', error);
+
+                if (error.name === 'NotAllowedError') {
+                    showMessage('Microphone access was denied. Please enable microphone permissions.', 'error');
+                } else if (error.name === 'NotFoundError') {
+                    showMessage('No microphone device found. Please connect a microphone.', 'error');
+                } else {
+                    showMessage(`Failed to start audio monitoring: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        function stopAudioMonitoring() {
+            audioMonitoringActive = false;
+
+            // Stop animation loop
+            if (audioMonitoringAnimationId) {
+                cancelAnimationFrame(audioMonitoringAnimationId);
+                audioMonitoringAnimationId = null;
+            }
+
+            // Close audio context
+            if (audioMonitoringContext) {
+                audioMonitoringContext.close();
+                audioMonitoringContext = null;
+            }
+
+            // Stop stream
+            if (audioMonitoringStream) {
+                audioMonitoringStream.getTracks().forEach(track => track.stop());
+                audioMonitoringStream = null;
+            }
+
+            // Reset UI
+            const levelBar = document.getElementById('audioLevelBar');
+            const levelText = document.getElementById('audioLevelText');
+            const button = document.getElementById('toggleAudioMonitor');
+
+            if (levelBar) {
+                levelBar.style.setProperty('--level', '0%');
+                levelBar.className = 'audio-level-bar';
+            }
+            if (levelText) levelText.textContent = '0%';
+            if (button) {
+                button.textContent = '📊 Start Monitoring';
+                button.classList.remove('active');
+            }
+
+            showMessage('Audio level monitoring stopped', 'info');
+        }
+
+        function monitorAudioLevelRealtime() {
+            if (!audioMonitoringActive || !audioMonitoringAnalyser) return;
+
+            const bufferLength = audioMonitoringAnalyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            function updateLevel() {
+                if (!audioMonitoringActive) return;
+
+                audioMonitoringAnalyser.getByteFrequencyData(dataArray);
+
+                // Calculate RMS level
+                let sum = 0;
+                for (let i = 0; i < bufferLength; i++) {
+                    sum += dataArray[i] * dataArray[i];
+                }
+                const rms = Math.sqrt(sum / bufferLength);
+                const percentage = Math.min((rms / 255) * 100, 100);
+
+                // Update visual indicator
+                const levelBar = document.getElementById('audioLevelBar');
+                const levelText = document.getElementById('audioLevelText');
+
+                if (levelBar && levelText) {
+                    levelBar.style.setProperty('--level', percentage + '%');
+                    levelText.textContent = Math.round(percentage) + '%';
+
+                    // Update color class based on level
+                    levelBar.className = 'audio-level-bar';
+                    if (percentage > 70) {
+                        levelBar.classList.add('high');
+                    } else if (percentage > 30) {
+                        levelBar.classList.add('medium');
+                    } else {
+                        levelBar.classList.add('low');
+                    }
+                }
+
+                audioMonitoringAnimationId = requestAnimationFrame(updateLevel);
+            }
+
+            updateLevel();
+        }
+
+
     </script>
 </body>
 </html>

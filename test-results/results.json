@@ -173,17 +173,17 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 8677,
+                      "duration": 11312,
                       "errors": [],
                       "stdout": [
                         {
-                          "text": "[2025-06-22T21:54:49.746Z] 🧪 🎤 Setting up Microphone Management test \n"
+                          "text": "[2025-06-23T04:36:38.384Z] 🧪 🎤 Setting up Microphone Management test \n"
                         },
                         {
-                          "text": "[2025-06-22T21:54:54.368Z] 🧪 🧪 Testing page load and structure \n"
+                          "text": "[2025-06-23T04:36:43.303Z] 🧪 🧪 Testing page load and structure \n"
                         },
                         {
-                          "text": "[2025-06-22T21:54:54.708Z] 🧪 ✅ Page structure validation passed \n"
+                          "text": "[2025-06-23T04:36:44.089Z] 🧪 ✅ Page structure validation passed \n"
                         },
                         {
                           "text": "📸 Screenshot saved: test-results/screenshots/Page_loads_without_errors_and_has_proper_structure_microphone_management_loaded.png\n"
@@ -191,7 +191,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-06-22T21:54:48.150Z",
+                      "startTime": "2025-06-23T04:36:37.037Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -220,20 +220,20 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 19483,
+                      "duration": 14511,
                       "errors": [],
                       "stdout": [
                         {
-                          "text": "[2025-06-22T21:54:58.108Z] 🧪 🎤 Setting up Microphone Management test \n"
+                          "text": "[2025-06-23T04:36:49.390Z] 🧪 🎤 Setting up Microphone Management test \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:07.897Z] 🧪 🧪 Testing service status panel \n"
+                          "text": "[2025-06-23T04:36:54.074Z] 🧪 🧪 Testing service status panel \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:09.824Z] 🧪 ✅ Restart Microphone Service button works \n"
+                          "text": "[2025-06-23T04:36:56.104Z] 🧪 ✅ Restart Microphone Service button works \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:11.725Z] 🧪 ✅ Restart Audio Service button works \n"
+                          "text": "[2025-06-23T04:36:59.008Z] 🧪 ✅ Restart Audio Service button works \n"
                         },
                         {
                           "text": "📸 Screenshot saved: test-results/screenshots/Service_status_panel_and_restart_buttons_work_service_status_tested.png\n"
@@ -241,7 +241,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-06-22T21:54:57.824Z",
+                      "startTime": "2025-06-23T04:36:49.158Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -270,44 +270,44 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 17993,
+                      "duration": 17388,
                       "errors": [],
                       "stdout": [
                         {
-                          "text": "[2025-06-22T21:55:17.730Z] 🧪 🎤 Setting up Microphone Management test \n"
+                          "text": "[2025-06-23T04:37:04.176Z] 🧪 🎤 Setting up Microphone Management test \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:22.934Z] 🧪 🧪 Testing management tabs \n"
+                          "text": "[2025-06-23T04:37:09.017Z] 🧪 🧪 Testing management tabs \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:22.934Z] 🧪 Testing Overview Tab... \n"
+                          "text": "[2025-06-23T04:37:09.018Z] 🧪 Testing Overview Tab... \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:24.747Z] 🧪 ✅ Overview Tab works correctly \n"
+                          "text": "[2025-06-23T04:37:10.853Z] 🧪 ✅ Overview Tab works correctly \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:24.748Z] 🧪 Testing CRUD Tab... \n"
+                          "text": "[2025-06-23T04:37:10.854Z] 🧪 Testing CRUD Tab... \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:26.728Z] 🧪 ✅ CRUD Tab works correctly \n"
+                          "text": "[2025-06-23T04:37:12.820Z] 🧪 ✅ CRUD Tab works correctly \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:26.730Z] 🧪 Testing Testing Tab... \n"
+                          "text": "[2025-06-23T04:37:12.825Z] 🧪 Testing Testing Tab... \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:29.111Z] 🧪 ✅ Testing Tab works correctly \n"
+                          "text": "[2025-06-23T04:37:15.317Z] 🧪 ✅ Testing Tab works correctly \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:29.114Z] 🧪 Testing Monitoring Tab... \n"
+                          "text": "[2025-06-23T04:37:15.317Z] 🧪 Testing Monitoring Tab... \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:31.586Z] 🧪 ✅ Monitoring Tab works correctly \n"
+                          "text": "[2025-06-23T04:37:17.491Z] 🧪 ✅ Monitoring Tab works correctly \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:31.587Z] 🧪 Testing Configuration Tab... \n"
+                          "text": "[2025-06-23T04:37:17.492Z] 🧪 Testing Configuration Tab... \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:33.725Z] 🧪 ✅ Configuration Tab works correctly \n"
+                          "text": "[2025-06-23T04:37:19.544Z] 🧪 ✅ Configuration Tab works correctly \n"
                         },
                         {
                           "text": "📸 Screenshot saved: test-results/screenshots/All_management_tabs_work_correctly_tabs_tested.png\n"
@@ -315,7 +315,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-06-22T21:55:17.359Z",
+                      "startTime": "2025-06-23T04:37:03.742Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -344,26 +344,26 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 18455,
+                      "duration": 18791,
                       "errors": [],
                       "stdout": [
                         {
-                          "text": "[2025-06-22T21:55:35.669Z] 🧪 🎤 Setting up Microphone Management test \n"
+                          "text": "[2025-06-23T04:37:21.377Z] 🧪 🎤 Setting up Microphone Management test \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:40.105Z] 🧪 🧪 Testing overview tab quick actions \n"
+                          "text": "[2025-06-23T04:37:25.870Z] 🧪 🧪 Testing overview tab quick actions \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:44.303Z] 🧪 ✅ Create New Microphone button works \n"
+                          "text": "[2025-06-23T04:37:30.389Z] 🧪 ✅ Create New Microphone button works \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:47.098Z] 🧪 ✅ Detect Devices button works \n"
+                          "text": "[2025-06-23T04:37:33.159Z] 🧪 ✅ Detect Devices button works \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:49.923Z] 🧪 ✅ Test All Microphones button works \n"
+                          "text": "[2025-06-23T04:37:35.934Z] 🧪 ✅ Test All Microphones button works \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:52.306Z] 🧪 ✅ Export Configuration button works \n"
+                          "text": "[2025-06-23T04:37:38.394Z] 🧪 ✅ Export Configuration button works \n"
                         },
                         {
                           "text": "📸 Screenshot saved: test-results/screenshots/Overview_tab_quick_action_buttons_work_quick_actions_tested.png\n"
@@ -371,7 +371,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-06-22T21:55:35.393Z",
+                      "startTime": "2025-06-23T04:37:21.210Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -400,41 +400,41 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 16849,
+                      "duration": 16163,
                       "errors": [],
                       "stdout": [
                         {
-                          "text": "[2025-06-22T21:55:54.041Z] 🧪 🎤 Setting up Microphone Management test \n"
+                          "text": "[2025-06-23T04:37:40.191Z] 🧪 🎤 Setting up Microphone Management test \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:58.605Z] 🧪 🧪 Testing CRUD tab functionality \n"
+                          "text": "[2025-06-23T04:37:44.359Z] 🧪 🧪 Testing CRUD tab functionality \n"
                         },
                         {
-                          "text": "[2025-06-22T21:56:05.835Z] 🧪 ✅ Create microphone form appears \n"
+                          "text": "[2025-06-23T04:37:51.445Z] 🧪 ✅ Create microphone form appears \n"
                         },
                         {
-                          "text": "[2025-06-22T21:56:08.380Z] 🧪 ✅ Select All button works correctly \n"
+                          "text": "[2025-06-23T04:37:53.807Z] 🧪 ✅ Select All button works correctly \n"
                         },
                         {
-                          "text": "[2025-06-22T21:56:09.629Z] 🧪 ✅ Select None button works correctly \n"
+                          "text": "[2025-06-23T04:37:55.006Z] 🧪 ✅ Select None button works correctly \n"
                         },
                         {
-                          "text": "[2025-06-22T21:56:09.680Z] 🧪 Bulk Delete disabled state: true (expected) \n"
+                          "text": "[2025-06-23T04:37:55.055Z] 🧪 Bulk Delete disabled state: true (expected) \n"
                         },
                         {
-                          "text": "[2025-06-22T21:56:09.681Z] 🧪 ✅ Bulk Delete button works correctly \n"
+                          "text": "[2025-06-23T04:37:55.056Z] 🧪 ✅ Bulk Delete button works correctly \n"
                         },
                         {
-                          "text": "[2025-06-22T21:56:09.724Z] 🧪 Bulk Test disabled state: true (expected) \n"
+                          "text": "[2025-06-23T04:37:55.088Z] 🧪 Bulk Test disabled state: true (expected) \n"
                         },
                         {
-                          "text": "[2025-06-22T21:56:09.724Z] 🧪 ✅ Bulk Test button works correctly \n"
+                          "text": "[2025-06-23T04:37:55.089Z] 🧪 ✅ Bulk Test button works correctly \n"
                         },
                         {
-                          "text": "[2025-06-22T21:56:09.764Z] 🧪 Bulk Export disabled state: true (expected) \n"
+                          "text": "[2025-06-23T04:37:55.122Z] 🧪 Bulk Export disabled state: true (expected) \n"
                         },
                         {
-                          "text": "[2025-06-22T21:56:09.764Z] 🧪 ✅ Bulk Export button works correctly \n"
+                          "text": "[2025-06-23T04:37:55.123Z] 🧪 ✅ Bulk Export button works correctly \n"
                         },
                         {
                           "text": "📸 Screenshot saved: test-results/screenshots/CRUD_tab_functionality_works_crud_tab_tested.png\n"
@@ -472,7 +472,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-06-22T21:55:53.882Z",
+                      "startTime": "2025-06-23T04:37:40.027Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -501,38 +501,38 @@
                       "workerIndex": 1,
                       "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 14779,
+                      "duration": 11422,
                       "errors": [],
                       "stdout": [
                         {
-                          "text": "[2025-06-22T21:54:49.359Z] 🧪 🎤 Setting up Microphone Management test \n"
+                          "text": "[2025-06-23T04:36:38.237Z] 🧪 🎤 Setting up Microphone Management test \n"
                         },
                         {
-                          "text": "[2025-06-22T21:54:59.569Z] 🧪 🧪 Testing testing tab controls \n"
+                          "text": "[2025-06-23T04:36:42.953Z] 🧪 🧪 Testing testing tab controls \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:01.693Z] 🧪 Start Comprehensive Test disabled state: true \n"
+                          "text": "[2025-06-23T04:36:45.203Z] 🧪 Start Comprehensive Test disabled state: true \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:01.694Z] 🧪 ✅ Start Comprehensive Test button exists and behaves correctly \n"
+                          "text": "[2025-06-23T04:36:45.208Z] 🧪 ✅ Start Comprehensive Test button exists and behaves correctly \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:01.809Z] 🧪 Stop Test disabled state: true \n"
+                          "text": "[2025-06-23T04:36:45.487Z] 🧪 Stop Test disabled state: true \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:01.809Z] 🧪 ✅ Stop Test button exists and behaves correctly \n"
+                          "text": "[2025-06-23T04:36:45.488Z] 🧪 ✅ Stop Test button exists and behaves correctly \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:01.865Z] 🧪 Quick Test disabled state: true \n"
+                          "text": "[2025-06-23T04:36:46.306Z] 🧪 Quick Test disabled state: true \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:01.865Z] 🧪 ✅ Quick Test button exists and behaves correctly \n"
+                          "text": "[2025-06-23T04:36:46.311Z] 🧪 ✅ Quick Test button exists and behaves correctly \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:01.929Z] 🧪 Ambient Test disabled state: true \n"
+                          "text": "[2025-06-23T04:36:46.854Z] 🧪 Ambient Test disabled state: true \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:01.931Z] 🧪 ✅ Ambient Test button exists and behaves correctly \n"
+                          "text": "[2025-06-23T04:36:46.855Z] 🧪 ✅ Ambient Test button exists and behaves correctly \n"
                         },
                         {
                           "text": "📸 Screenshot saved: test-results/screenshots/Testing_tab_controls_work_testing_tab_tested.png\n"
@@ -540,7 +540,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-06-22T21:54:47.929Z",
+                      "startTime": "2025-06-23T04:36:37.045Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -569,23 +569,23 @@
                       "workerIndex": 1,
                       "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 15797,
+                      "duration": 15999,
                       "errors": [],
                       "stdout": [
                         {
-                          "text": "[2025-06-22T21:55:03.667Z] 🧪 🎤 Setting up Microphone Management test \n"
+                          "text": "[2025-06-23T04:36:49.522Z] 🧪 🎤 Setting up Microphone Management test \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:08.307Z] 🧪 🧪 Testing search and filter functionality \n"
+                          "text": "[2025-06-23T04:36:54.212Z] 🧪 🧪 Testing search and filter functionality \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:11.805Z] 🧪 ✅ Search input works \n"
+                          "text": "[2025-06-23T04:36:57.450Z] 🧪 ✅ Search input works \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:13.208Z] 🧪 ✅ Filter dropdown works \n"
+                          "text": "[2025-06-23T04:36:58.958Z] 🧪 ✅ Filter dropdown works \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:15.955Z] 🧪 ✅ Refresh button works \n"
+                          "text": "[2025-06-23T04:37:01.300Z] 🧪 ✅ Refresh button works \n"
                         },
                         {
                           "text": "📸 Screenshot saved: test-results/screenshots/Search_and_filter_functionality_works_search_filter_tested.png\n"
@@ -593,7 +593,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-06-22T21:55:03.468Z",
+                      "startTime": "2025-06-23T04:36:49.248Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -622,23 +622,23 @@
                       "workerIndex": 1,
                       "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 14259,
+                      "duration": 13748,
                       "errors": [],
                       "stdout": [
                         {
-                          "text": "[2025-06-22T21:55:19.615Z] 🧪 🎤 Setting up Microphone Management test \n"
+                          "text": "[2025-06-23T04:37:05.632Z] 🧪 🎤 Setting up Microphone Management test \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:24.416Z] 🧪 🧪 Testing microphone card actions \n"
+                          "text": "[2025-06-23T04:37:10.135Z] 🧪 🧪 Testing microphone card actions \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:26.278Z] 🧪 Found 2 microphone cards \n"
+                          "text": "[2025-06-23T04:37:11.914Z] 🧪 Found 5 microphone cards \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:28.236Z] 🧪 ✅ Card Test Button works \n"
+                          "text": "[2025-06-23T04:37:13.950Z] 🧪 ✅ Card Test Button works \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:31.178Z] 🧪 ✅ Card Edit Button works \n"
+                          "text": "[2025-06-23T04:37:16.994Z] 🧪 ✅ Card Edit Button works \n"
                         },
                         {
                           "text": "📸 Screenshot saved: test-results/screenshots/Microphone_card_actions_work_microphone_cards_tested.png\n"
@@ -646,7 +646,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-06-22T21:55:19.303Z",
+                      "startTime": "2025-06-23T04:37:05.284Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -675,17 +675,17 @@
                       "workerIndex": 1,
                       "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 11645,
+                      "duration": 11128,
                       "errors": [],
                       "stdout": [
                         {
-                          "text": "[2025-06-22T21:55:33.814Z] 🧪 🎤 Setting up Microphone Management test \n"
+                          "text": "[2025-06-23T04:37:19.222Z] 🧪 🎤 Setting up Microphone Management test \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:38.571Z] 🧪 🧪 Testing JavaScript initialization \n"
+                          "text": "[2025-06-23T04:37:23.970Z] 🧪 🧪 Testing JavaScript initialization \n"
                         },
                         {
-                          "text": "[2025-06-22T21:55:40.608Z] 🧪 ⚠️ JavaScript errors found: 2 \n"
+                          "text": "[2025-06-23T04:37:26.001Z] 🧪 ⚠️ JavaScript errors found: 2 \n"
                         },
                         {
                           "text": "📸 Screenshot saved: test-results/screenshots/JavaScript_functionality_initializes_correctly_javascript_tested.png\n"
@@ -729,7 +729,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-06-22T21:55:33.627Z",
+                      "startTime": "2025-06-23T04:37:19.085Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -749,8 +749,8 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2025-06-22T21:54:41.947Z",
-    "duration": 89049.234,
+    "startTime": "2025-06-23T04:36:24.040Z",
+    "duration": 92433.496,
     "expected": 9,
     "skipped": 0,
     "unexpected": 0,

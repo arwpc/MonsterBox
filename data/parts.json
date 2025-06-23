@@ -347,7 +347,7 @@
     "characterId": 1
   },
   {
-    "id": 25,
+    "id": 26,
     "name": "Test Microphone",
     "deviceId": "test-device",
     "sampleRate": 16000,
@@ -360,7 +360,20 @@
     "characterId": 1
   },
   {
-    "id": 26,
+    "id": 27,
+    "name": "Test Microphone",
+    "deviceId": "test-device",
+    "sampleRate": 16000,
+    "channels": 1,
+    "sensitivity": 1,
+    "echoCancellation": true,
+    "noiseSuppression": true,
+    "autoGainControl": true,
+    "type": "microphone",
+    "characterId": 1
+  },
+  {
+    "id": 28,
     "name": "Test Microphone",
     "deviceId": "test-device",
     "sampleRate": 16000,

@@ -290,6 +290,54 @@ app.use('/api/hardware/head-tracking', require('./routes/api/headTrackingApiRout
 app.use('/api/character-audio-config', require('./routes/api/characterAudioConfigRoutes'));
 app.use('/api/system', require('./routes/api/systemApiRoutes'));
 
+// Services restart API endpoint (for microphone management page)
+app.post('/api/services/restart', asyncHandler(async (req, res) => {
+    const { serviceType, port } = req.body;
+
+    if (!serviceType) {
+        return res.status(400).json({
+            success: false,
+            error: 'Service type is required'
+        });
+    }
+
+    logger.info(`🔄 Restarting ${serviceType} service on port ${port}`);
+
+    let result = false;
+
+    // Use microphone services starter for microphone services
+    if (global.microphoneServicesStarter && (serviceType === 'microphone' || serviceType === 'audioStream')) {
+        const serviceMap = {
+            'microphone': 'microphoneService',
+            'audioStream': 'audioStreamService'
+        };
+
+        const serviceId = serviceMap[serviceType];
+        if (serviceId) {
+            result = await global.microphoneServicesStarter.restartService(serviceId);
+        }
+    } else {
+        // Fallback to general service manager
+        const ServiceManager = require('./services/serviceManager');
+        const serviceManager = new ServiceManager();
+        result = await serviceManager.restartService(serviceType, port);
+    }
+
+    if (result) {
+        logger.info(`✅ ${serviceType} service restarted successfully`);
+        res.json({
+            success: true,
+            message: `${serviceType} service restarted successfully`
+        });
+    } else {
+        logger.error(`❌ Failed to restart ${serviceType} service`);
+        res.status(500).json({
+            success: false,
+            error: `Failed to restart ${serviceType} service`
+        });
+    }
+}));
+
 // Simple characters API endpoint for hardware monitor (cached)
 app.get('/api/characters',
     cache({ ttl: 600000 }), // Cache for 10 minutes

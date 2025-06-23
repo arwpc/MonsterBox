@@ -67,27 +67,27 @@ class MicrophoneServicesStarter {
             logger.info(`🚀 Starting ${config.name}...`);
 
             const scriptPath = path.join(process.cwd(), config.script);
-            let process;
+            let childProcess;
 
             if (config.type === 'python') {
-                process = spawn('python3', [scriptPath, ...config.args], {
+                childProcess = spawn('python3', [scriptPath, ...config.args], {
                     detached: true,
                     stdio: ['ignore', 'pipe', 'pipe']
                 });
             } else if (config.type === 'node') {
-                process = spawn('node', [scriptPath, ...config.args], {
+                childProcess = spawn('node', [scriptPath, ...config.args], {
                     detached: true,
                     stdio: ['ignore', 'pipe', 'pipe']
                 });
             }
 
-            if (process) {
+            if (childProcess) {
                 // Handle process output
-                process.stdout.on('data', (data) => {
+                childProcess.stdout.on('data', (data) => {
                     logger.info(`${config.name}: ${data.toString().trim()}`);
                 });
 
-                process.stderr.on('data', (data) => {
+                childProcess.stderr.on('data', (data) => {
                     const message = data.toString().trim();
                     // Filter out common non-error messages
                     if (!this.isIgnorableMessage(message)) {
@@ -95,27 +95,27 @@ class MicrophoneServicesStarter {
                     }
                 });
 
-                process.on('error', (error) => {
+                childProcess.on('error', (error) => {
                     logger.error(`${config.name} process error:`, error);
                 });
 
-                process.on('exit', (code, signal) => {
+                childProcess.on('exit', (code, signal) => {
                     if (code !== 0) {
                         logger.error(`${config.name} exited with code ${code}, signal ${signal}`);
                     }
                     this.services.delete(serviceId);
                 });
 
-                process.unref(); // Allow parent to exit independently
+                childProcess.unref(); // Allow parent to exit independently
                 this.services.set(serviceId, {
-                    process: process,
+                    process: childProcess,
                     config: config,
                     startTime: Date.now()
                 });
 
                 // Wait for service to start
                 await this.waitForService(config.port, 15000);
-                
+
                 logger.info(`✅ ${config.name} started successfully on port ${config.port}`);
                 return true;
             }
