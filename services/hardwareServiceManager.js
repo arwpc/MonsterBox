@@ -9,11 +9,13 @@ const logger = require('../scripts/logger');
 
 const WebSocket = require('ws');
 const FallbackHardwareServer = require('./fallbackHardwareServer');
+const HardwareWebSocketProxy = require('../scripts/hardware/websocket_proxy');
 
 class HardwareServiceManager {
     constructor() {
         this.hardwareProcess = null;
         this.fallbackServer = null;
+        this.webSocketProxy = null;
         this.isRunning = false;
 
         this.usingFallback = false;
@@ -44,6 +46,9 @@ class HardwareServiceManager {
                 logger.warn('⚠️ Python services failed, starting fallback Node.js services...');
                 await this.startFallbackServices();
             }
+
+            // Start WebSocket proxy for browser compatibility
+            await this.startWebSocketProxy();
 
             // Start health monitoring
             this.startHealthMonitoring();
@@ -191,6 +196,26 @@ class HardwareServiceManager {
                 });
             });
         } catch (error) {
+            return false;
+        }
+    }
+
+    async startWebSocketProxy() {
+        try {
+            logger.info('🌐 Starting Hardware WebSocket Proxy for browser compatibility...');
+
+            this.webSocketProxy = new HardwareWebSocketProxy();
+            const success = await this.webSocketProxy.start();
+
+            if (success) {
+                logger.info('✅ Hardware WebSocket Proxy started successfully');
+                return true;
+            } else {
+                logger.warn('⚠️ Failed to start WebSocket proxy - browser connections may not work');
+                return false;
+            }
+        } catch (error) {
+            logger.error('❌ Error starting WebSocket proxy:', error);
             return false;
         }
     }
@@ -355,7 +380,11 @@ class HardwareServiceManager {
                 clearInterval(this.healthCheckInterval);
             }
 
-
+            // Stop WebSocket proxy if running
+            if (this.webSocketProxy) {
+                await this.webSocketProxy.stop();
+                this.webSocketProxy = null;
+            }
 
             // Stop fallback server if running
             if (this.fallbackServer) {

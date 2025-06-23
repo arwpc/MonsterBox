@@ -44,8 +44,13 @@ def print_service_info():
 🦾 Main Hardware Server: ws://0.0.0.0:8780
 🔄 Motor Service:        ws://0.0.0.0:8771
 💡 Light Service:        ws://0.0.0.0:8772
+🔍 Sensor Service:       ws://0.0.0.0:8773
 📹 Webcam Service:       ws://0.0.0.0:8774
-🎯 Head Tracking:        ws://0.0.0.0:8776
+🔧 Actuator Service:     ws://0.0.0.0:8775
+🎯 Head Tracking:        ws://0.0.0.0:8778
+
+🎤 Microphone Service:   ws://0.0.0.0:8776 (Managed separately)
+🔊 Audio Stream Service: ws://0.0.0.0:8777 (Managed separately)
 
 🎭 Character-based service loading enabled
 📋 Using configuration from: data/characters.json

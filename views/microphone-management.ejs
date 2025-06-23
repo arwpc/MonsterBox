@@ -1519,11 +1519,11 @@
 
         async setupWebSocketConnections() {
             try {
-                // Connect to microphone service
-                await this.connectWebSocket('microphone', 'ws://localhost:8776');
+                // Connect to microphone service via proxy (fixes browser compatibility)
+                await this.connectWebSocket('microphone', `ws://${window.location.hostname}:8794`);
 
-                // Connect to audio stream service
-                await this.connectWebSocket('audioStream', 'ws://localhost:8777');
+                // Connect to audio stream service via proxy (fixes browser compatibility)
+                await this.connectWebSocket('audioStream', `ws://${window.location.hostname}:8795`);
 
                 this.updateServiceStatus('micServiceStatus', 'Connected', 'active');
                 this.updateServiceStatus('audioStreamServiceStatus', 'Connected', 'active');
@@ -2759,7 +2759,7 @@
 
         async checkServiceStatus(port) {
             try {
-                const ws = new WebSocket(\`ws://localhost:\${port}\`);
+                const ws = new WebSocket(`ws://localhost:${port}`);
 
                 return new Promise((resolve) => {
                     const timeout = setTimeout(() => {
@@ -2801,7 +2801,7 @@
             }
 
             if (detailsElement) {
-                detailsElement.textContent = \`Port: \${port} | Status: \${isConnected ? 'Online' : 'Offline'}\`;
+                detailsElement.textContent = `Port: ${port} | Status: ${isConnected ? 'Online' : 'Offline'}`;
             }
         }
 
@@ -2839,20 +2839,20 @@
                 const level = this.monitoringActive ? Math.random() * 100 : 0;
                 const levelClass = level > 70 ? 'high' : level > 30 ? 'medium' : 'low';
 
-                levelsHtml += \`
+                levelsHtml += `
                     <div class="microphone-level-meter">
                         <div class="meter-header">
-                            <span class="mic-name">\${mic.name}</span>
-                            <span class="mic-level">\${level.toFixed(1)}%</span>
+                            <span class="mic-name">${mic.name}</span>
+                            <span class="mic-level">${level.toFixed(1)}%</span>
                         </div>
                         <div class="level-bar">
-                            <div class="level-fill \${levelClass}" style="width: \${level}%"></div>
+                            <div class="level-fill ${levelClass}" style="width: ${level}%"></div>
                         </div>
                         <div class="meter-details">
-                            Device: \${mic.deviceId || 'Unknown'} | Sample Rate: \${mic.sampleRate || 16000}Hz
+                            Device: ${mic.deviceId || 'Unknown'} | Sample Rate: ${mic.sampleRate || 16000}Hz
                         </div>
                     </div>
-                \`;
+                `;
             });
 
             container.innerHTML = levelsHtml;
@@ -2864,11 +2864,11 @@
 
             const timestamp = new Date().toLocaleTimeString();
             const logEntry = document.createElement('div');
-            logEntry.className = \`log-entry \${type}\`;
-            logEntry.innerHTML = \`
-                <span class="log-time">\${timestamp}</span>
-                <span class="log-message">\${message}</span>
-            \`;
+            logEntry.className = `log-entry ${type}`;
+            logEntry.innerHTML = `
+                <span class="log-time">${timestamp}</span>
+                <span class="log-message">${message}</span>
+            `;
 
             logContainer.insertBefore(logEntry, logContainer.firstChild);
 
@@ -3051,11 +3051,11 @@
         // Enhanced WebSocket setup with error handling
         async setupWebSocketConnections() {
             try {
-                // Connect to microphone service with retry
-                const micConnected = await this.connectWebSocketWithRetry('microphone', 'ws://localhost:8776');
+                // Connect to microphone service with retry via proxy (fixes browser compatibility)
+                const micConnected = await this.connectWebSocketWithRetry('microphone', 'ws://192.168.8.130:8794');
 
-                // Connect to audio stream service with retry
-                const audioConnected = await this.connectWebSocketWithRetry('audioStream', 'ws://localhost:8777');
+                // Connect to audio stream service with retry via proxy (fixes browser compatibility)
+                const audioConnected = await this.connectWebSocketWithRetry('audioStream', 'ws://192.168.8.130:8795');
 
                 if (micConnected && audioConnected) {
                     this.updateServiceStatus('micServiceStatus', 'Connected', 'active');

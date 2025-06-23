@@ -15,13 +15,17 @@ class HardwareWebSocketProxy {
             main: { port: 8780, proxy: null },
             registry: { port: 8770, proxy: null },
             motor: { port: 8771, proxy: null },
-            light: { port: 8772, proxy: null }
+            light: { port: 8772, proxy: null },
+            microphone: { port: 8776, proxy: null },
+            audioStream: { port: 8777, proxy: null }
         };
         this.proxyPorts = {
             main: 8790,
             registry: 8791,
             motor: 8792,
-            light: 8793
+            light: 8793,
+            microphone: 8794,
+            audioStream: 8795
         };
     }
 

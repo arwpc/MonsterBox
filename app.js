@@ -118,7 +118,8 @@ const rateLimit = require('express-rate-limit');
 // Configure Helmet for security headers (disable CSP to set manually)
 app.use(helmet({
     contentSecurityPolicy: false, // Disable to set manually
-    crossOriginEmbedderPolicy: false // Required for WebRTC
+    crossOriginEmbedderPolicy: false, // Required for WebRTC
+    crossOriginOpenerPolicy: false // Disable COOP to avoid untrustworthy origin warnings
 }));
 
 // Set Content Security Policy manually to avoid formatting issues
