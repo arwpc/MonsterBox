@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-06-22T18:16:13.882Z",
+  "timestamp": "2025-06-22T21:56:10.985Z",
   "testRun": {
     "completed": true,
     "duration": "Unknown",
@@ -14,7 +14,7 @@
     "arch": "arm64"
   },
   "artifacts": {
-    "screenshots": 2,
+    "screenshots": 9,
     "videos": 0,
     "traces": 0,
     "htmlReport": false

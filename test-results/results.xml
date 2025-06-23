@@ -1,0 +1,142 @@
+<testsuites id="" name="" tests="9" failures="0" skipped="0" errors="0" time="89.049234">
+<testsuite name="09-microphone-management-comprehensive.spec.js" timestamp="2025-06-22T21:54:43.347Z" hostname="chromium" tests="9" failures="0" skipped="0" time="137.937" errors="0">
+<testcase name="Microphone Management Page - Comprehensive Testing › Page loads without errors and has proper structure" classname="09-microphone-management-comprehensive.spec.js" time="8.677">
+<system-out>
+<![CDATA[[2025-06-22T21:54:49.746Z] 🧪 🎤 Setting up Microphone Management test 
+[2025-06-22T21:54:54.368Z] 🧪 🧪 Testing page load and structure 
+[2025-06-22T21:54:54.708Z] 🧪 ✅ Page structure validation passed 
+📸 Screenshot saved: test-results/screenshots/Page_loads_without_errors_and_has_proper_structure_microphone_management_loaded.png
+]]>
+</system-out>
+</testcase>
+<testcase name="Microphone Management Page - Comprehensive Testing › Service status panel and restart buttons work" classname="09-microphone-management-comprehensive.spec.js" time="19.483">
+<system-out>
+<![CDATA[[2025-06-22T21:54:58.108Z] 🧪 🎤 Setting up Microphone Management test 
+[2025-06-22T21:55:07.897Z] 🧪 🧪 Testing service status panel 
+[2025-06-22T21:55:09.824Z] 🧪 ✅ Restart Microphone Service button works 
+[2025-06-22T21:55:11.725Z] 🧪 ✅ Restart Audio Service button works 
+📸 Screenshot saved: test-results/screenshots/Service_status_panel_and_restart_buttons_work_service_status_tested.png
+]]>
+</system-out>
+</testcase>
+<testcase name="Microphone Management Page - Comprehensive Testing › All management tabs work correctly" classname="09-microphone-management-comprehensive.spec.js" time="17.993">
+<system-out>
+<![CDATA[[2025-06-22T21:55:17.730Z] 🧪 🎤 Setting up Microphone Management test 
+[2025-06-22T21:55:22.934Z] 🧪 🧪 Testing management tabs 
+[2025-06-22T21:55:22.934Z] 🧪 Testing Overview Tab... 
+[2025-06-22T21:55:24.747Z] 🧪 ✅ Overview Tab works correctly 
+[2025-06-22T21:55:24.748Z] 🧪 Testing CRUD Tab... 
+[2025-06-22T21:55:26.728Z] 🧪 ✅ CRUD Tab works correctly 
+[2025-06-22T21:55:26.730Z] 🧪 Testing Testing Tab... 
+[2025-06-22T21:55:29.111Z] 🧪 ✅ Testing Tab works correctly 
+[2025-06-22T21:55:29.114Z] 🧪 Testing Monitoring Tab... 
+[2025-06-22T21:55:31.586Z] 🧪 ✅ Monitoring Tab works correctly 
+[2025-06-22T21:55:31.587Z] 🧪 Testing Configuration Tab... 
+[2025-06-22T21:55:33.725Z] 🧪 ✅ Configuration Tab works correctly 
+📸 Screenshot saved: test-results/screenshots/All_management_tabs_work_correctly_tabs_tested.png
+]]>
+</system-out>
+</testcase>
+<testcase name="Microphone Management Page - Comprehensive Testing › Overview tab quick action buttons work" classname="09-microphone-management-comprehensive.spec.js" time="18.455">
+<system-out>
+<![CDATA[[2025-06-22T21:55:35.669Z] 🧪 🎤 Setting up Microphone Management test 
+[2025-06-22T21:55:40.105Z] 🧪 🧪 Testing overview tab quick actions 
+[2025-06-22T21:55:44.303Z] 🧪 ✅ Create New Microphone button works 
+[2025-06-22T21:55:47.098Z] 🧪 ✅ Detect Devices button works 
+[2025-06-22T21:55:49.923Z] 🧪 ✅ Test All Microphones button works 
+[2025-06-22T21:55:52.306Z] 🧪 ✅ Export Configuration button works 
+📸 Screenshot saved: test-results/screenshots/Overview_tab_quick_action_buttons_work_quick_actions_tested.png
+]]>
+</system-out>
+</testcase>
+<testcase name="Microphone Management Page - Comprehensive Testing › CRUD tab functionality works" classname="09-microphone-management-comprehensive.spec.js" time="16.849">
+<system-out>
+<![CDATA[[2025-06-22T21:55:54.041Z] 🧪 🎤 Setting up Microphone Management test 
+[2025-06-22T21:55:58.605Z] 🧪 🧪 Testing CRUD tab functionality 
+[2025-06-22T21:56:05.835Z] 🧪 ✅ Create microphone form appears 
+[2025-06-22T21:56:08.380Z] 🧪 ✅ Select All button works correctly 
+[2025-06-22T21:56:09.629Z] 🧪 ✅ Select None button works correctly 
+[2025-06-22T21:56:09.680Z] 🧪 Bulk Delete disabled state: true (expected) 
+[2025-06-22T21:56:09.681Z] 🧪 ✅ Bulk Delete button works correctly 
+[2025-06-22T21:56:09.724Z] 🧪 Bulk Test disabled state: true (expected) 
+[2025-06-22T21:56:09.724Z] 🧪 ✅ Bulk Test button works correctly 
+[2025-06-22T21:56:09.764Z] 🧪 Bulk Export disabled state: true (expected) 
+[2025-06-22T21:56:09.764Z] 🧪 ✅ Bulk Export button works correctly 
+📸 Screenshot saved: test-results/screenshots/CRUD_tab_functionality_works_crud_tab_tested.png
+
+📊 Microphone Management Test Results:
+✅ Buttons Working: 9
+❌ Buttons Failed: 0
+✅ Tabs Working: 5
+❌ Tabs Failed: 0
+✅ Forms Working: 1
+❌ Forms Failed: 0
+✅ Services Working: 2
+❌ Services Failed: 0
+🚨 Total Errors: 0
+]]>
+</system-out>
+</testcase>
+<testcase name="Microphone Management Page - Comprehensive Testing › Testing tab controls work" classname="09-microphone-management-comprehensive.spec.js" time="14.779">
+<system-out>
+<![CDATA[[2025-06-22T21:54:49.359Z] 🧪 🎤 Setting up Microphone Management test 
+[2025-06-22T21:54:59.569Z] 🧪 🧪 Testing testing tab controls 
+[2025-06-22T21:55:01.693Z] 🧪 Start Comprehensive Test disabled state: true 
+[2025-06-22T21:55:01.694Z] 🧪 ✅ Start Comprehensive Test button exists and behaves correctly 
+[2025-06-22T21:55:01.809Z] 🧪 Stop Test disabled state: true 
+[2025-06-22T21:55:01.809Z] 🧪 ✅ Stop Test button exists and behaves correctly 
+[2025-06-22T21:55:01.865Z] 🧪 Quick Test disabled state: true 
+[2025-06-22T21:55:01.865Z] 🧪 ✅ Quick Test button exists and behaves correctly 
+[2025-06-22T21:55:01.929Z] 🧪 Ambient Test disabled state: true 
+[2025-06-22T21:55:01.931Z] 🧪 ✅ Ambient Test button exists and behaves correctly 
+📸 Screenshot saved: test-results/screenshots/Testing_tab_controls_work_testing_tab_tested.png
+]]>
+</system-out>
+</testcase>
+<testcase name="Microphone Management Page - Comprehensive Testing › Search and filter functionality works" classname="09-microphone-management-comprehensive.spec.js" time="15.797">
+<system-out>
+<![CDATA[[2025-06-22T21:55:03.667Z] 🧪 🎤 Setting up Microphone Management test 
+[2025-06-22T21:55:08.307Z] 🧪 🧪 Testing search and filter functionality 
+[2025-06-22T21:55:11.805Z] 🧪 ✅ Search input works 
+[2025-06-22T21:55:13.208Z] 🧪 ✅ Filter dropdown works 
+[2025-06-22T21:55:15.955Z] 🧪 ✅ Refresh button works 
+📸 Screenshot saved: test-results/screenshots/Search_and_filter_functionality_works_search_filter_tested.png
+]]>
+</system-out>
+</testcase>
+<testcase name="Microphone Management Page - Comprehensive Testing › Microphone card actions work" classname="09-microphone-management-comprehensive.spec.js" time="14.259">
+<system-out>
+<![CDATA[[2025-06-22T21:55:19.615Z] 🧪 🎤 Setting up Microphone Management test 
+[2025-06-22T21:55:24.416Z] 🧪 🧪 Testing microphone card actions 
+[2025-06-22T21:55:26.278Z] 🧪 Found 2 microphone cards 
+[2025-06-22T21:55:28.236Z] 🧪 ✅ Card Test Button works 
+[2025-06-22T21:55:31.178Z] 🧪 ✅ Card Edit Button works 
+📸 Screenshot saved: test-results/screenshots/Microphone_card_actions_work_microphone_cards_tested.png
+]]>
+</system-out>
+</testcase>
+<testcase name="Microphone Management Page - Comprehensive Testing › JavaScript functionality initializes correctly" classname="09-microphone-management-comprehensive.spec.js" time="11.645">
+<system-out>
+<![CDATA[[2025-06-22T21:55:33.814Z] 🧪 🎤 Setting up Microphone Management test 
+[2025-06-22T21:55:38.571Z] 🧪 🧪 Testing JavaScript initialization 
+[2025-06-22T21:55:40.608Z] 🧪 ⚠️ JavaScript errors found: 2 
+📸 Screenshot saved: test-results/screenshots/JavaScript_functionality_initializes_correctly_javascript_tested.png
+
+📊 Microphone Management Test Results:
+✅ Buttons Working: 10
+❌ Buttons Failed: 0
+✅ Tabs Working: 0
+❌ Tabs Failed: 0
+✅ Forms Working: 0
+❌ Forms Failed: 0
+✅ Services Working: 0
+❌ Services Failed: 0
+🚨 Total Errors: 1
+
+🚨 Errors encountered:
+  - JavaScript errors: WebSocket connection to 'ws://localhost:8776/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED, WebSocket error for microphone: Event
+]]>
+</system-out>
+</testcase>
+</testsuite>
+</testsuites>
