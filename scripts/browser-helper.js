@@ -21,7 +21,7 @@ class BrowserHelper {
         return 'skulltalker';
     }
     
-    getUrl(path = '', port = 3000) {
+    getUrl(path = '', port = 80) {
         // Ensure path starts with /
         if (path && !path.startsWith('/')) {
             path = '/' + path;

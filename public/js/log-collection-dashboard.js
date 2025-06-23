@@ -85,9 +85,11 @@ class LogCollectionDashboard {
 
     connectWebSocket() {
         try {
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${protocol}//${window.location.hostname}:8781`;
-            
+            // Use protocol utils for automatic HTTPS/WSS detection
+            const wsUrl = window.protocolUtils ?
+                window.protocolUtils.getWebSocketUrl(8781) :
+                `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.hostname}:8781`;
+
             this.ws = new WebSocket(wsUrl);
             
             this.ws.onopen = () => {

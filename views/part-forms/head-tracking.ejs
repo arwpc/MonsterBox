@@ -9,6 +9,7 @@
     </title>
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/parts.css">
+    <%- include('../partials/protocol-utils') %>
     <style>
         .head-tracking-form {
             max-width: 800px;
@@ -678,7 +679,12 @@
         function connectWebSocket() {
             if (ws && ws.readyState === WebSocket.OPEN) return;
 
-            ws = new WebSocket('ws://localhost:8778');
+            // Use protocol utils for automatic HTTPS/WSS detection if available
+            const wsUrl = window.protocolUtils ?
+                window.protocolUtils.getWebSocketUrl(8778) :
+                'ws://localhost:8778';
+
+            ws = new WebSocket(wsUrl);
 
             ws.onopen = function () {
                 console.log('Connected to head tracking service');

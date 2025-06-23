@@ -16,6 +16,7 @@ import os
 from typing import Dict, Any, Optional, List
 import subprocess
 import re
+from ssl_config import get_ssl_config, create_secure_websocket_server, start_websocket_servers
 
 # Configure logging
 logging.basicConfig(
@@ -146,12 +147,34 @@ class AIWebSocketBridge:
         return self.detected_jaw_servos[0] if self.detected_jaw_servos else None
 
     async def connect_to_jaw_server(self):
-        """Connect to the jaw WebSocket server"""
+        """Connect to the jaw WebSocket server (try WSS first, then WS)"""
+        ssl_config = get_ssl_config()
+
+        # Try secure connection first if SSL is available
+        if ssl_config.is_ssl_enabled():
+            try:
+                wss_port = ssl_config.get_wss_port(self.jaw_port)
+                jaw_url = f"wss://{self.jaw_host}:{wss_port}"
+                logger.info(f"Attempting secure connection to jaw server at {jaw_url}")
+
+                # Create SSL context for client connection
+                import ssl
+                ssl_context = ssl.create_default_context()
+                ssl_context.check_hostname = False
+                ssl_context.verify_mode = ssl.CERT_NONE
+
+                self.jaw_websocket = await websockets.connect(jaw_url, ssl=ssl_context)
+                logger.info("✅ Connected to jaw server via WSS")
+                return True
+            except Exception as e:
+                logger.warning(f"⚠️ Failed to connect via WSS: {e}")
+
+        # Fallback to regular WebSocket connection
         try:
             jaw_url = f"ws://{self.jaw_host}:{self.jaw_port}"
             logger.info(f"Connecting to jaw server at {jaw_url}")
             self.jaw_websocket = await websockets.connect(jaw_url)
-            logger.info("✅ Connected to jaw server")
+            logger.info("✅ Connected to jaw server via WS")
             return True
         except Exception as e:
             logger.error(f"❌ Failed to connect to jaw server: {e}")
@@ -468,8 +491,11 @@ class AIWebSocketBridge:
             await self.send_error(websocket, str(e))
 
     async def start_server(self):
-        """Start the AI WebSocket bridge server"""
+        """Start the AI WebSocket bridge server with optional SSL support"""
         logger.info(f"🚀 Starting AI WebSocket Bridge on {self.host}:{self.port}")
+
+        # Get SSL configuration
+        ssl_config = get_ssl_config()
 
         # Detect available jaw servos
         jaw_servos = self.detect_jaw_servos()
@@ -484,19 +510,25 @@ class AIWebSocketBridge:
         await self.connect_to_jaw_server()
 
         try:
-            server = await websockets.serve(
+            # Create server configuration with SSL support
+            server_config = create_secure_websocket_server(
                 self.handle_client,
                 self.host,
-                self.port,
-                ping_interval=30,
-                ping_timeout=10
+                self.port
             )
+
+            # Start servers
+            servers = await start_websocket_servers(server_config)
 
             self.is_running = True
             logger.info(f"✅ AI WebSocket Bridge running on ws://{self.host}:{self.port}")
+            if server_config['ssl_enabled']:
+                logger.info(f"🔐 Secure AI WebSocket Bridge running on wss://{self.host}:{server_config['wss_port']}")
             logger.info(f"🦴 Jaw server connection: {'✅ Connected' if self.jaw_websocket else '❌ Disconnected'}")
+            logger.info(f"🔒 SSL Available: {ssl_config.is_ssl_enabled()}")
 
-            await server.wait_closed()
+            # Wait for all servers to close
+            await asyncio.gather(*[server.wait_closed() for server in servers])
 
         except Exception as e:
             logger.error(f"❌ Server error: {e}")

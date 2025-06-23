@@ -251,6 +251,7 @@
         </div>
     </div>
 
+    <script src="/js/protocol-utils.js"></script>
     <script>
         class ChatterPiAI {
             constructor() {
@@ -317,25 +318,26 @@
                 this.updateVolumeDisplay();
             }
             
-            connectToAI() {
+            async connectToAI() {
                 // Clear any existing reconnection timeout
                 if (this.reconnectTimeout) {
                     clearTimeout(this.reconnectTimeout);
                     this.reconnectTimeout = null;
                 }
 
-                const wsUrl = `ws://${window.location.hostname}:8766`;
+                // Use protocol utils for automatic HTTPS/WSS detection
+                const wsUrl = window.protocolUtils.getWebSocketUrl(8766);
                 console.log(`Connecting to AI WebSocket (attempt ${this.reconnectAttempts + 1}):`, wsUrl);
 
                 try {
-                    this.websocket = new WebSocket(wsUrl);
+                    // Try to connect with automatic fallback
+                    const result = await window.protocolUtils.testWebSocketConnection(8766, null, '', 5000);
+                    this.websocket = result.websocket;
 
-                    this.websocket.onopen = () => {
-                        console.log('Connected to AI WebSocket');
-                        this.isConnected = true;
-                        this.reconnectAttempts = 0; // Reset on successful connection
-                        this.updateConnectionStatus('Connected', 'connected');
-                    };
+                    console.log(`✅ Connected to AI WebSocket: ${result.url}`);
+                    this.isConnected = true;
+                    this.reconnectAttempts = 0; // Reset on successful connection
+                    this.updateConnectionStatus('Connected', 'connected');
 
                     this.websocket.onmessage = (event) => {
                         this.handleMessage(JSON.parse(event.data));

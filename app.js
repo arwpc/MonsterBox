@@ -11,7 +11,7 @@ process.env.NODE_NO_WARNINGS = '1';
 
 // File: app.js
 
-let express, path, http, logger, app, server, port, audioStream, soundController, fs, os, session;
+let express, path, http, https, logger, app, server, httpsServer, port, audioStream, soundController, fs, os, session;
 let videoStream; // <-- Add videoStream variable
 let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, webcamRoutes, voiceRoutes, cleanupRoutes, healthRoutes, authRoutes, sshRoutes, jawAnimationRoutes, aiConfigRoutes, aiManagementRoutes, configRoutes, headTrackingRoutes;
 let characterService;
@@ -36,18 +36,46 @@ try {
     express = require('express');
     path = require('path');
     http = require('http');
+    https = require('https');
     logger = require('./scripts/logger');
+    fs = require('fs');
     app = express();
+
+    // Try to load SSL certificates
+    try {
+        const sslConfigPath = '/etc/ssl/monsterbox/ssl-config.json';
+
+        if (fs.existsSync(sslConfigPath)) {
+            const sslConfigData = fs.readFileSync(sslConfigPath, 'utf8');
+            sslConfig = JSON.parse(sslConfigData);
+
+            // Load SSL certificates
+            const privateKey = fs.readFileSync(sslConfig.certificates.key, 'utf8');
+            const certificate = fs.readFileSync(sslConfig.certificates.cert, 'utf8');
+
+            const credentials = {
+                key: privateKey,
+                cert: certificate
+            };
+
+            // Create HTTPS server
+            httpsServer = https.createServer(credentials, app);
+            logger.info('🔐 SSL certificates loaded successfully');
+        }
+    } catch (sslError) {
+        logger.warn('⚠️ SSL certificates not available, running HTTP only:', sslError.message);
+    }
+
+    // Create HTTP server (always available)
     server = http.createServer(app);
 
     // Ensure JSON and URL-encoded body parsing is enabled before routes
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
-    port = process.env.PORT || 3000;
+    port = process.env.PORT || 80;
     audioStream = require('./scripts/audio');
     videoStream = require('./scripts/video'); // <-- Require video.js
     soundController = require('./controllers/soundController');
-    fs = require('fs');
     os = require('os');
     session = require('express-session');
 
@@ -239,7 +267,11 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'fallback-secret-key-change-in-production',
     resave: false,
     saveUninitialized: true,
-    cookie: { secure: false } // set to true if using https
+    cookie: {
+        secure: httpsServer ? true : false, // Enable secure cookies if HTTPS is available
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
 }));
 
 // JWT session integration middleware
@@ -591,26 +623,56 @@ function getLocalIpAddress() {
 
 // Wrap server startup in a function
 async function startServer() {
+    // Start HTTP server
     server.listen(port, async () => {
         const localIp = getLocalIpAddress();
         const hostname = os.hostname();
+
         // Keep these console.log calls for IP and host information
-        console.log(`MonsterBox server running at http://localhost:${port}`);
+        console.log(`MonsterBox HTTP server running at http://localhost:${port}`);
         console.log(`Local IP address: ${localIp}, system name ${hostname}`);
-        logger.info('Server started successfully');
+
+        // Start HTTPS server if SSL is configured
+        if (httpsServer && sslConfig) {
+            const httpsPort = sslConfig.https.port || 8080;
+            httpsServer.listen(httpsPort, () => {
+                console.log(`MonsterBox HTTPS server running at https://localhost:${httpsPort}`);
+                console.log(`HTTPS access: https://${hostname}:${httpsPort}`);
+                console.log(`HTTPS IP access: https://${localIp}:${httpsPort}`);
+                logger.info(`HTTPS server started on port ${httpsPort}`);
+            });
+
+            httpsServer.on('error', (error) => {
+                logger.error('HTTPS server error:', error);
+                if (error.code === 'EADDRINUSE') {
+                    logger.error(`HTTPS port ${httpsPort} is already in use`);
+                }
+            });
+        }
+
+        logger.info('HTTP server started successfully');
 
         // Initialize the new centralized service management system
         await initializeServiceManagement();
 
         // Start the audio stream WebSocket server (legacy support)
         audioStream.startStream(server);
+        if (httpsServer) {
+            audioStream.startStream(httpsServer);
+        }
 
         // Start the enhanced audio stream WebSocket server (legacy support)
         const enhancedAudioStream = require('./scripts/enhanced-audio-stream');
         enhancedAudioStream.startStream(server);
+        if (httpsServer) {
+            enhancedAudioStream.startStream(httpsServer);
+        }
 
         // Start the video stream WebSocket server (legacy support)
         videoStream.startStream(server);
+        if (httpsServer) {
+            videoStream.startStream(httpsServer);
+        }
 
         // Initialize Character Audio Config Service
         const characterAudioConfigService = require('./services/characterAudioConfigService');
@@ -698,7 +760,7 @@ async function initializeLegacyServices() {
 
     try {
         // Initialize jaw animation system
-        await initializeJawAnimationSystem(server);
+        await initializeJawAnimationSystem(server, httpsServer);
 
         // Initialize ChatterPi services with real-time optimizations
         await initializeChatterPiServices();
@@ -719,9 +781,14 @@ async function initializeLegacyServices() {
 }
 
 // Initialize jaw animation system
-async function initializeJawAnimationSystem(server) {
+async function initializeJawAnimationSystem(httpServer, httpsServer = null) {
     try {
-        await jawAnimationSystem.initialize(server);
+        await jawAnimationSystem.initialize(httpServer);
+
+        // Initialize with HTTPS server if available
+        if (httpsServer) {
+            await jawAnimationSystem.initialize(httpsServer);
+        }
 
         // Set the jaw animation system instance in the routes
         const jawAnimationRoutesModule = require('./routes/jawAnimationRoutes');
@@ -977,12 +1044,35 @@ async function gracefulShutdown(reason) {
         logger.error('Error stopping services during shutdown:', error);
     }
 
+    // Close both HTTP and HTTPS servers
+    let serversToClose = 1;
+    let serversClosed = 0;
+
+    if (httpsServer) {
+        serversToClose = 2;
+    }
+
+    const onServerClosed = () => {
+        serversClosed++;
+        if (serversClosed === serversToClose) {
+            logger.info('All servers closed');
+            process.exit(0);
+        }
+    };
+
     server.close(() => {
         logger.info('HTTP server closed');
-        process.exit(0);
+        onServerClosed();
     });
 
-    // If server hasn't finished in 10 seconds, shut down forcefully
+    if (httpsServer) {
+        httpsServer.close(() => {
+            logger.info('HTTPS server closed');
+            onServerClosed();
+        });
+    }
+
+    // If servers haven't finished in 10 seconds, shut down forcefully
     setTimeout(() => {
         logger.error('Could not close connections in time, forcefully shutting down');
         process.exit(1);
@@ -993,10 +1083,12 @@ async function gracefulShutdown(reason) {
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
-// Make server instance available for cleanup
+// Make server instances available for cleanup
 app.set('server', server);
+app.set('httpsServer', httpsServer);
 
 // Export app with cleanup functions for testing
 module.exports = app;
 module.exports.gracefulShutdown = gracefulShutdown;
 module.exports.server = server;
+module.exports.httpsServer = httpsServer;

@@ -44,7 +44,7 @@ class ChatterPiHTTPHandler(http.server.SimpleHTTPRequestHandler):
 class ChatterPiChatServer:
     """HTTP server for ChatterPi chat interface"""
     
-    def __init__(self, host="0.0.0.0", port=8080):
+    def __init__(self, host="0.0.0.0", port=8090):
         self.host = host
         self.port = port
         self.httpd = None
@@ -108,7 +108,7 @@ def main():
     
     parser = argparse.ArgumentParser(description="ChatterPi Chat Server")
     parser.add_argument("--host", default="0.0.0.0", help="Server host")
-    parser.add_argument("--port", type=int, default=8080, help="Server port")
+    parser.add_argument("--port", type=int, default=8090, help="Server port")
     
     args = parser.parse_args()
     

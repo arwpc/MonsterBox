@@ -140,9 +140,11 @@ class StreamClient extends EventEmitter {
             img.style.height = '100%';
             img.style.objectFit = 'contain';
             
-            // Set up stream URL with cache busting
-            const streamUrl = `/api/streaming/stream/${this.characterId}?t=${Date.now()}`;
-            
+            // Set up stream URL with cache busting and protocol detection
+            const streamUrl = window.protocolUtils ?
+                window.protocolUtils.getStreamingUrl(this.characterId, 'mjpeg') :
+                `/api/streaming/stream/${this.characterId}?t=${Date.now()}`;
+
             img.onload = () => {
                 // Replace video element content with image
                 this.videoElement.style.display = 'none';

@@ -542,8 +542,10 @@ class EnhancedMicrophoneComponent {
 
     async connectWebSockets() {
         try {
-            // Connect to Enhanced Audio Stream WebSocket
-            const enhancedAudioUrl = `ws://${window.location.hostname}:${window.location.port}/enhanced-audiostream`;
+            // Connect to Enhanced Audio Stream WebSocket using protocol utils
+            const enhancedAudioUrl = window.protocolUtils ?
+                window.protocolUtils.getPageWebSocketUrl('/enhanced-audiostream') :
+                `ws://${window.location.hostname}:${window.location.port}/enhanced-audiostream`;
             this.enhancedAudioWebSocket = new WebSocket(enhancedAudioUrl);
 
             this.enhancedAudioWebSocket.onopen = () => {

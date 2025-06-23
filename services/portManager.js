@@ -23,7 +23,7 @@ class PortManager extends EventEmitter {
         this.config = {
             // Port ranges for different service types
             ranges: {
-                main: { start: 3000, end: 3099 },           // Main application ports
+                main: { start: 80, end: 81 },           // Main application ports
                 websocket: { start: 8000, end: 8199 },      // Direct WebSocket services
                 proxy: { start: 8200, end: 8399 },          // Browser proxy services
                 hardware: { start: 8400, end: 8599 },       // Hardware-specific services

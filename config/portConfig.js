@@ -15,7 +15,7 @@ const portConfig = {
     environments: {
         development: {
             ranges: {
-                main: { start: 3000, end: 3099 },
+                main: { start: 80, end: 81 },
                 websocket: { start: 8000, end: 8199 },
                 proxy: { start: 8200, end: 8399 },
                 hardware: { start: 8400, end: 8599 },
@@ -33,7 +33,7 @@ const portConfig = {
         
         production: {
             ranges: {
-                main: { start: 3000, end: 3099 },
+                main: { start: 80, end: 81 },
                 websocket: { start: 8000, end: 8299 },
                 proxy: { start: 8300, end: 8599 },
                 hardware: { start: 8600, end: 8799 },

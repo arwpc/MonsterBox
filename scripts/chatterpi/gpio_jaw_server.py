@@ -11,6 +11,7 @@ import logging
 import time
 import threading
 from typing import Dict, Any
+from ssl_config import get_ssl_config, create_secure_websocket_server, start_websocket_servers
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -368,29 +369,38 @@ class GPIOJawWebSocketServer:
                 del self.clients[client_id]
     
     async def start_server(self):
-        """Start the WebSocket server"""
+        """Start the WebSocket server with optional SSL support"""
         # Initialize jaw control
         if not self.jaw_control.initialize():
             logger.error("Failed to initialize jaw control")
             return
-        
+
         logger.info(f"🚀 Starting GPIO Jaw WebSocket Server on {self.host}:{self.port}")
-        
+
+        # Get SSL configuration
+        ssl_config = get_ssl_config()
+
         try:
-            server = await websockets.serve(
+            # Create server configuration with SSL support
+            server_config = create_secure_websocket_server(
                 self.handle_client,
                 self.host,
-                self.port,
-                ping_interval=30,
-                ping_timeout=10
+                self.port
             )
-            
+
+            # Start servers
+            servers = await start_websocket_servers(server_config)
+
             logger.info(f"✅ GPIO Jaw WebSocket Server running on ws://{self.host}:{self.port}")
+            if server_config['ssl_enabled']:
+                logger.info(f"🔐 Secure GPIO Jaw WebSocket Server running on wss://{self.host}:{server_config['wss_port']}")
             logger.info(f"🦴 Servo control on GPIO pin {self.servo_pin}")
             logger.info(f"🔧 GPIO Available: {GPIO_AVAILABLE}")
-            
-            await server.wait_closed()
-            
+            logger.info(f"🔒 SSL Available: {ssl_config.is_ssl_enabled()}")
+
+            # Wait for all servers to close
+            await asyncio.gather(*[server.wait_closed() for server in servers])
+
         finally:
             self.jaw_control.cleanup()
 

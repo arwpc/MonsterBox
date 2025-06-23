@@ -6,14 +6,45 @@
 
 const express = require('express');
 const http = require('http');
+const https = require('https');
 const path = require('path');
 const { spawn } = require('child_process');
 const fs = require('fs');
 
 // Initialize Express app
 const app = express();
+
+// SSL Certificate configuration
+let sslConfig = null;
+let httpsServer = null;
+
+// Try to load SSL certificates
+try {
+    const sslConfigPath = '/etc/ssl/monsterbox/ssl-config.json';
+    if (fs.existsSync(sslConfigPath)) {
+        const sslConfigData = fs.readFileSync(sslConfigPath, 'utf8');
+        sslConfig = JSON.parse(sslConfigData);
+
+        // Load SSL certificates
+        const privateKey = fs.readFileSync(sslConfig.certificates.key, 'utf8');
+        const certificate = fs.readFileSync(sslConfig.certificates.cert, 'utf8');
+
+        const credentials = {
+            key: privateKey,
+            cert: certificate
+        };
+
+        // Create HTTPS server
+        httpsServer = https.createServer(credentials, app);
+        log('🔐 SSL certificates loaded successfully for webcam server');
+    }
+} catch (sslError) {
+    log(`⚠️ SSL certificates not available for webcam server, running HTTP only: ${sslError.message}`, 'warn');
+}
+
+// Create HTTP server (always available)
 const server = http.createServer(app);
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 80;
 
 // Middleware
 app.use(express.json());
@@ -434,10 +465,15 @@ app.get('/', (req, res) => {
             const streamImg = document.getElementById('stream');
             const placeholder = document.getElementById('streamPlaceholder');
             
-            streamImg.src = '/api/streaming/stream/' + characterId + '?' + new Date().getTime();
+            // Use protocol-aware URL for streaming
+            const streamUrl = window.protocolUtils ?
+                window.protocolUtils.getStreamingUrl(characterId, 'mjpeg') :
+                '/api/streaming/stream/' + characterId + '?' + new Date().getTime();
+
+            streamImg.src = streamUrl;
             streamImg.style.display = 'block';
             placeholder.style.display = 'none';
-            
+
             showStatus('Stream loaded for character ' + characterId, 'success');
         }
         
@@ -497,17 +533,35 @@ app.get('/', (req, res) => {
     `);
 });
 
-// Start server
+// Start servers
 server.listen(port, () => {
-    log(`🎭 MonsterBox Webcam Server started on port ${port}`);
+    log(`🎭 MonsterBox Webcam HTTP Server started on port ${port}`);
     log(`📱 Web interface: http://localhost:${port}/`);
     log(`🎥 Stream API: http://localhost:${port}/api/streaming/stream/{characterId}`);
     log(`📊 Status API: http://localhost:${port}/api/streaming/status/{characterId}`);
+
+    // Start HTTPS server if SSL is configured
+    if (httpsServer && sslConfig) {
+        const httpsPort = sslConfig.https.port || 8080;
+        httpsServer.listen(httpsPort, () => {
+            log(`🔐 MonsterBox Webcam HTTPS Server started on port ${httpsPort}`);
+            log(`📱 Secure web interface: https://localhost:${httpsPort}/`);
+            log(`🎥 Secure stream API: https://localhost:${httpsPort}/api/streaming/stream/{characterId}`);
+            log(`📊 Secure status API: https://localhost:${httpsPort}/api/streaming/status/{characterId}`);
+        });
+
+        httpsServer.on('error', (error) => {
+            log(`HTTPS server error: ${error.message}`, 'error');
+            if (error.code === 'EADDRINUSE') {
+                log(`HTTPS port ${httpsPort} is already in use`, 'error');
+            }
+        });
+    }
 });
 
 // Cleanup on exit
-process.on('SIGINT', () => {
-    log('Shutting down server...');
+function gracefulShutdown(signal) {
+    log(`Received ${signal}, shutting down servers...`);
 
     // Kill all active streams
     for (const [characterId, streamInfo] of activeStreams) {
@@ -517,10 +571,40 @@ process.on('SIGINT', () => {
         }
     }
 
-    process.exit(0);
-});
+    // Close servers
+    let serversToClose = 1;
+    let serversClosed = 0;
 
-process.on('SIGTERM', () => {
-    log('Received SIGTERM, shutting down...');
-    process.exit(0);
-});
+    if (httpsServer) {
+        serversToClose = 2;
+    }
+
+    const onServerClosed = () => {
+        serversClosed++;
+        if (serversClosed === serversToClose) {
+            log('All webcam servers closed');
+            process.exit(0);
+        }
+    };
+
+    server.close(() => {
+        log('HTTP webcam server closed');
+        onServerClosed();
+    });
+
+    if (httpsServer) {
+        httpsServer.close(() => {
+            log('HTTPS webcam server closed');
+            onServerClosed();
+        });
+    }
+
+    // Force exit after 5 seconds
+    setTimeout(() => {
+        log('Force closing webcam servers');
+        process.exit(1);
+    }, 5000);
+}
+
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));

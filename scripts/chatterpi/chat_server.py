@@ -6,11 +6,13 @@ Simple HTTP server to serve the chat interface
 
 import http.server
 import socketserver
+import ssl
 import os
 import logging
 import threading
 import time
 from pathlib import Path
+from ssl_config import get_ssl_config
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -42,53 +44,93 @@ class ChatterPiHTTPHandler(http.server.SimpleHTTPRequestHandler):
         logger.info(f"{self.address_string()} - {format % args}")
 
 class ChatterPiChatServer:
-    """HTTP server for ChatterPi chat interface"""
-    
-    def __init__(self, host="0.0.0.0", port=8080):
+    """HTTP/HTTPS server for ChatterPi chat interface"""
+
+    def __init__(self, host="0.0.0.0", port=8090):
         self.host = host
         self.port = port
         self.httpd = None
+        self.https_server = None
         self.server_thread = None
+        self.https_thread = None
         self.is_running = False
-        
+        self.ssl_config = get_ssl_config()
+
         logger.info(f"ChatterPi Chat Server initialized on {host}:{port}")
+        if self.ssl_config.is_ssl_enabled():
+            logger.info("SSL support available for HTTPS server")
     
     def start(self):
-        """Start the HTTP server"""
+        """Start the HTTP and HTTPS servers"""
         try:
-            # Create server
+            # Create HTTP server
             self.httpd = socketserver.TCPServer((self.host, self.port), ChatterPiHTTPHandler)
             self.httpd.allow_reuse_address = True
-            
-            logger.info(f"🚀 Starting ChatterPi Chat Server on http://{self.host}:{self.port}")
+
+            logger.info(f"🚀 Starting ChatterPi Chat HTTP Server on http://{self.host}:{self.port}")
             logger.info(f"📱 Chat interface available at: http://192.168.8.130:{self.port}")
-            
-            self.is_running = True
-            
-            # Start server in a separate thread
+
+            # Start HTTP server in a separate thread
             self.server_thread = threading.Thread(target=self.httpd.serve_forever)
             self.server_thread.daemon = True
             self.server_thread.start()
-            
+
+            # Create HTTPS server if SSL is available
+            if self.ssl_config.is_ssl_enabled():
+                try:
+                    https_port = self.ssl_config.get_wss_port(self.port) if self.port != 8090 else 8493
+                    self.https_server = socketserver.TCPServer((self.host, https_port), ChatterPiHTTPHandler)
+                    self.https_server.allow_reuse_address = True
+
+                    # Wrap with SSL
+                    ssl_context = self.ssl_config.get_ssl_context()
+                    if ssl_context:
+                        self.https_server.socket = ssl_context.wrap_socket(
+                            self.https_server.socket,
+                            server_side=True
+                        )
+
+                        logger.info(f"🔐 Starting ChatterPi Chat HTTPS Server on https://{self.host}:{https_port}")
+                        logger.info(f"📱 Secure chat interface available at: https://192.168.8.130:{https_port}")
+
+                        # Start HTTPS server in a separate thread
+                        self.https_thread = threading.Thread(target=self.https_server.serve_forever)
+                        self.https_thread.daemon = True
+                        self.https_thread.start()
+
+                except Exception as e:
+                    logger.warning(f"⚠️ Failed to start HTTPS server: {e}")
+
+            self.is_running = True
             logger.info("✅ ChatterPi Chat Server started successfully")
             return True
-            
+
         except Exception as e:
             logger.error(f"❌ Failed to start server: {e}")
             return False
     
     def stop(self):
-        """Stop the HTTP server"""
+        """Stop the HTTP and HTTPS servers"""
+        logger.info("🛑 Stopping ChatterPi Chat Servers...")
+
+        # Stop HTTP server
         if self.httpd:
-            logger.info("🛑 Stopping ChatterPi Chat Server...")
             self.httpd.shutdown()
             self.httpd.server_close()
-            
+
             if self.server_thread:
                 self.server_thread.join(timeout=5)
-            
-            self.is_running = False
-            logger.info("✅ ChatterPi Chat Server stopped")
+
+        # Stop HTTPS server
+        if self.https_server:
+            self.https_server.shutdown()
+            self.https_server.server_close()
+
+            if self.https_thread:
+                self.https_thread.join(timeout=5)
+
+        self.is_running = False
+        logger.info("✅ ChatterPi Chat Servers stopped")
     
     def get_status(self):
         """Get server status"""
@@ -108,7 +150,7 @@ def main():
     
     parser = argparse.ArgumentParser(description="ChatterPi Chat Server")
     parser.add_argument("--host", default="0.0.0.0", help="Server host")
-    parser.add_argument("--port", type=int, default=8080, help="Server port")
+    parser.add_argument("--port", type=int, default=8090, help="Server port")
     
     args = parser.parse_args()
     
