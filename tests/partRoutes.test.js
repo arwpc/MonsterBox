@@ -5,13 +5,13 @@ const { chai, app, expect } = require('./setupTests');
 describe('Part Routes', () => {
     let originalPartsData;
     const partsPath = path.join(__dirname, '..', 'data', 'parts.json');
-    
-    before(async function() {
+
+    before(async function () {
         // Backup current parts data
         originalPartsData = await fs.readFile(partsPath, 'utf8');
     });
 
-    after(async function() {
+    after(async function () {
         // Restore original parts data
         await fs.writeFile(partsPath, originalPartsData);
     });
@@ -34,7 +34,7 @@ describe('Part Routes', () => {
 
             res.should.have.status(200);
             res.should.redirectTo(/\/parts\?characterId=1$/);
-            
+
             // Get the created motor ID from parts.json
             const partsData = await fs.readFile(partsPath, 'utf8');
             const parts = JSON.parse(partsData);
@@ -48,7 +48,7 @@ describe('Part Routes', () => {
             expect(createdMotorId).to.be.a('number');
             const res = await chai.request(app)
                 .get(`/parts/${createdMotorId}/edit`);
-            
+
             res.should.have.status(200);
             res.text.should.include('Test Motor');
         });
@@ -67,7 +67,7 @@ describe('Part Routes', () => {
 
             res.should.have.status(200);
             res.should.redirectTo(/\/parts\?characterId=1$/);
-            
+
             // Verify the update
             const partsData = await fs.readFile(partsPath, 'utf8');
             const parts = JSON.parse(partsData);
@@ -82,7 +82,7 @@ describe('Part Routes', () => {
 
             res.should.have.status(200);
             res.body.should.have.property('message').equal('Part deleted successfully');
-            
+
             // Verify deletion
             const partsData = await fs.readFile(partsPath, 'utf8');
             const parts = JSON.parse(partsData);
@@ -111,7 +111,7 @@ describe('Part Routes', () => {
 
             res.should.have.status(200);
             res.should.redirectTo(/\/parts\?characterId=1$/);
-            
+
             // Get the created actuator ID
             const partsData = await fs.readFile(partsPath, 'utf8');
             const parts = JSON.parse(partsData);
@@ -125,7 +125,7 @@ describe('Part Routes', () => {
             expect(createdActuatorId).to.be.a('number');
             const res = await chai.request(app)
                 .get(`/parts/${createdActuatorId}/edit`);
-            
+
             res.should.have.status(200);
             res.text.should.include('Test Actuator');
         });
@@ -144,7 +144,7 @@ describe('Part Routes', () => {
 
             res.should.have.status(200);
             res.should.redirectTo(/\/parts\?characterId=1$/);
-            
+
             // Verify the update
             const partsData = await fs.readFile(partsPath, 'utf8');
             const parts = JSON.parse(partsData);
@@ -159,7 +159,7 @@ describe('Part Routes', () => {
 
             res.should.have.status(200);
             res.body.should.have.property('message').equal('Part deleted successfully');
-            
+
             // Verify deletion
             const partsData = await fs.readFile(partsPath, 'utf8');
             const parts = JSON.parse(partsData);
@@ -185,7 +185,7 @@ describe('Part Routes', () => {
 
             res.should.have.status(200);
             res.should.redirectTo(/\/parts\?characterId=1$/);
-            
+
             // Get the created light ID
             const partsData = await fs.readFile(partsPath, 'utf8');
             const parts = JSON.parse(partsData);
@@ -199,7 +199,7 @@ describe('Part Routes', () => {
             expect(createdLightId).to.be.a('number');
             const res = await chai.request(app)
                 .get(`/parts/${createdLightId}/edit`);
-            
+
             res.should.have.status(200);
             res.text.should.include('Test Light');
         });
@@ -217,7 +217,7 @@ describe('Part Routes', () => {
 
             res.should.have.status(200);
             res.should.redirectTo(/\/parts\?characterId=1$/);
-            
+
             // Verify the update
             const partsData = await fs.readFile(partsPath, 'utf8');
             const parts = JSON.parse(partsData);
@@ -232,7 +232,7 @@ describe('Part Routes', () => {
 
             res.should.have.status(200);
             res.body.should.have.property('message').equal('Part deleted successfully');
-            
+
             // Verify deletion
             const partsData = await fs.readFile(partsPath, 'utf8');
             const parts = JSON.parse(partsData);
@@ -258,7 +258,7 @@ describe('Part Routes', () => {
 
             res.should.have.status(200);
             res.should.redirectTo(/\/parts\?characterId=1$/);
-            
+
             // Get the created LED ID
             const partsData = await fs.readFile(partsPath, 'utf8');
             const parts = JSON.parse(partsData);
@@ -272,7 +272,7 @@ describe('Part Routes', () => {
             expect(createdLedId).to.be.a('number');
             const res = await chai.request(app)
                 .get(`/parts/${createdLedId}/edit`);
-            
+
             res.should.have.status(200);
             res.text.should.include('Test LED');
         });
@@ -290,7 +290,7 @@ describe('Part Routes', () => {
 
             res.should.have.status(200);
             res.should.redirectTo(/\/parts\?characterId=1$/);
-            
+
             // Verify the update
             const partsData = await fs.readFile(partsPath, 'utf8');
             const parts = JSON.parse(partsData);
@@ -305,7 +305,7 @@ describe('Part Routes', () => {
 
             res.should.have.status(200);
             res.body.should.have.property('message').equal('Part deleted successfully');
-            
+
             // Verify deletion
             const partsData = await fs.readFile(partsPath, 'utf8');
             const parts = JSON.parse(partsData);
@@ -344,7 +344,7 @@ describe('Part Routes', () => {
 
             res.should.have.status(200);
             res.should.redirectTo(/\/parts\?characterId=1$/);
-            
+
             // Get the created servo ID
             const partsData = await fs.readFile(partsPath, 'utf8');
             const parts = JSON.parse(partsData);
@@ -358,7 +358,7 @@ describe('Part Routes', () => {
             expect(createdServoId).to.be.a('number');
             const res = await chai.request(app)
                 .get(`/parts/${createdServoId}/edit`);
-            
+
             res.should.have.status(200);
             res.text.should.include('Test Servo');
         });
@@ -377,7 +377,7 @@ describe('Part Routes', () => {
 
             res.should.have.status(200);
             res.should.redirectTo(/\/parts\?characterId=1$/);
-            
+
             // Verify the update
             const partsData = await fs.readFile(partsPath, 'utf8');
             const parts = JSON.parse(partsData);
@@ -392,7 +392,7 @@ describe('Part Routes', () => {
 
             res.should.have.status(200);
             res.body.should.have.property('message').equal('Part deleted successfully');
-            
+
             // Verify deletion
             const partsData = await fs.readFile(partsPath, 'utf8');
             const parts = JSON.parse(partsData);
@@ -420,7 +420,7 @@ describe('Part Routes', () => {
 
             res.should.have.status(200);
             res.should.redirectTo(/\/parts\?characterId=1$/);
-            
+
             // Get the created sensor ID
             const partsData = await fs.readFile(partsPath, 'utf8');
             const parts = JSON.parse(partsData);
@@ -434,7 +434,7 @@ describe('Part Routes', () => {
             expect(createdSensorId).to.be.a('number');
             const res = await chai.request(app)
                 .get(`/parts/${createdSensorId}/edit`);
-            
+
             res.should.have.status(200);
             res.text.should.include('Test Sensor');
         });
@@ -453,7 +453,7 @@ describe('Part Routes', () => {
 
             res.should.have.status(200);
             res.should.redirectTo(/\/parts\?characterId=1$/);
-            
+
             // Verify the update
             const partsData = await fs.readFile(partsPath, 'utf8');
             const parts = JSON.parse(partsData);
@@ -468,12 +468,166 @@ describe('Part Routes', () => {
 
             res.should.have.status(200);
             res.body.should.have.property('message').equal('Part deleted successfully');
-            
+
             // Verify deletion
             const partsData = await fs.readFile(partsPath, 'utf8');
             const parts = JSON.parse(partsData);
             const deletedSensor = parts.find(p => p.id === createdSensorId);
             expect(deletedSensor).to.be.undefined;
+        });
+    });
+
+    describe('Motion Sensor Tests', () => {
+        let createdMotionSensorId;
+
+        it('should create a new motion sensor', async () => {
+            const motionSensorData = {
+                name: 'Test Motion Sensor',
+                type: 'motion-sensor',
+                characterId: 1,
+                gpioPin: 26,
+                sensitivity: 0.1,
+                detectionRange: 7,
+                triggerDelay: 500,
+                active: true,
+                invertSignal: false,
+                enableLogging: true
+            };
+
+            const res = await chai.request(app)
+                .post('/parts/motion-sensor')
+                .send(motionSensorData);
+
+            res.should.have.status(200);
+            res.should.redirectTo(/\/parts\?characterId=1$/);
+
+            // Get the created motion sensor ID
+            const partsData = await fs.readFile(partsPath, 'utf8');
+            const parts = JSON.parse(partsData);
+            const createdMotionSensor = parts.find(p => p.name === 'Test Motion Sensor');
+            expect(createdMotionSensor).to.exist;
+            createdMotionSensorId = createdMotionSensor.id;
+            expect(createdMotionSensorId).to.be.a('number');
+
+            // Verify motion sensor specific properties
+            expect(createdMotionSensor.type).to.equal('motion-sensor');
+            expect(createdMotionSensor.gpioPin).to.equal(26);
+            expect(createdMotionSensor.sensitivity).to.equal(0.1);
+            expect(createdMotionSensor.detectionRange).to.equal(7);
+            expect(createdMotionSensor.triggerDelay).to.equal(500);
+            expect(createdMotionSensor.active).to.equal(true);
+            expect(createdMotionSensor.invertSignal).to.equal(false);
+            expect(createdMotionSensor.enableLogging).to.equal(true);
+        });
+
+        it('should get the created motion sensor', async () => {
+            expect(createdMotionSensorId).to.be.a('number');
+            const res = await chai.request(app)
+                .get(`/parts/motion-sensor/${createdMotionSensorId}/edit`);
+
+            res.should.have.status(200);
+            res.text.should.include('Test Motion Sensor');
+            res.text.should.include('motion-sensor');
+        });
+
+        it('should update the motion sensor', async () => {
+            expect(createdMotionSensorId).to.be.a('number');
+            const updateData = {
+                name: 'Updated Test Motion Sensor',
+                gpioPin: 27,
+                sensitivity: 0.2,
+                detectionRange: 10,
+                triggerDelay: 1000,
+                active: false,
+                invertSignal: true,
+                enableLogging: false
+            };
+
+            const res = await chai.request(app)
+                .post(`/parts/motion-sensor/${createdMotionSensorId}/update`)
+                .send(updateData);
+
+            res.should.have.status(200);
+            res.should.redirectTo(/\/parts\?characterId=1$/);
+
+            // Verify the update
+            const partsData = await fs.readFile(partsPath, 'utf8');
+            const parts = JSON.parse(partsData);
+            const updatedMotionSensor = parts.find(p => p.id === createdMotionSensorId);
+            expect(updatedMotionSensor.name).to.equal('Updated Test Motion Sensor');
+            expect(updatedMotionSensor.gpioPin).to.equal(27);
+            expect(updatedMotionSensor.sensitivity).to.equal(0.2);
+            expect(updatedMotionSensor.detectionRange).to.equal(10);
+            expect(updatedMotionSensor.triggerDelay).to.equal(1000);
+            expect(updatedMotionSensor.active).to.equal(false);
+            expect(updatedMotionSensor.invertSignal).to.equal(true);
+            expect(updatedMotionSensor.enableLogging).to.equal(false);
+        });
+
+        it('should validate motion sensor form data', async () => {
+            // Test invalid GPIO pin
+            const invalidGpioPinData = {
+                name: 'Invalid GPIO Motion Sensor',
+                type: 'motion-sensor',
+                characterId: 1,
+                gpioPin: 50, // Invalid - should be 0-27
+                sensitivity: 0.1
+            };
+
+            const res1 = await chai.request(app)
+                .post('/parts/motion-sensor')
+                .send(invalidGpioPinData);
+
+            // Should still create but with validation warnings in logs
+            res1.should.have.status(200);
+
+            // Test invalid sensitivity
+            const invalidSensitivityData = {
+                name: 'Invalid Sensitivity Motion Sensor',
+                type: 'motion-sensor',
+                characterId: 1,
+                gpioPin: 26,
+                sensitivity: 10 // Invalid - should be 0.05-5.0
+            };
+
+            const res2 = await chai.request(app)
+                .post('/parts/motion-sensor')
+                .send(invalidSensitivityData);
+
+            // Should still create but with validation warnings in logs
+            res2.should.have.status(200);
+        });
+
+        it('should test motion sensor control endpoints', async () => {
+            expect(createdMotionSensorId).to.be.a('number');
+
+            // Test stop control endpoint
+            const stopRes = await chai.request(app)
+                .post('/parts/motion-sensor/control')
+                .send({
+                    id: createdMotionSensorId,
+                    gpioPin: 26,
+                    action: 'stop'
+                });
+
+            stopRes.should.have.status(200);
+            stopRes.body.should.have.property('success').equal(true);
+            stopRes.body.should.have.property('message').that.includes('Stop request received');
+        });
+
+        it('should delete the motion sensor', async () => {
+            expect(createdMotionSensorId).to.be.a('number');
+            const res = await chai.request(app)
+                .post(`/parts/${createdMotionSensorId}/delete`);
+
+            res.should.have.status(200);
+            res.body.should.have.property('message').equal('Part deleted successfully');
+
+            // Verify deletion
+            const partsData = await fs.readFile(partsPath, 'utf8');
+            const parts = JSON.parse(partsData);
+            const deletedMotionSensor = parts.find(p => p.id === createdMotionSensorId);
+            expect(deletedMotionSensor).to.be.undefined;
         });
     });
 });
