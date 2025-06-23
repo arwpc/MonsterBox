@@ -91,9 +91,9 @@
     "id": 8,
     "name": "Coffin Sensor",
     "type": "sensor",
-    "characterId": 2,
-    "gpioPin": 16,
-    "active": true,
+    "characterId": 1,
+    "gpioPin": "16",
+    "active": "on",
     "sensorType": "motion"
   },
   {
