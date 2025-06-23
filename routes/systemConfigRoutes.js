@@ -114,6 +114,16 @@ router.get('/', async (req, res) => {
     });
 });
 
+// Port Management Configuration Route
+router.get('/port-management', (req, res) => {
+    logger.info('Rendering port management configuration page');
+    res.render('system-config/port-management', {
+        title: 'Port Management System',
+        pageTitle: 'Port Management System',
+        pageDescription: 'Centralized management and monitoring of WebSocket services and port allocation'
+    });
+});
+
 // Servo Configuration Routes
 router.get('/servos', (req, res) => {
     const servoConfigs = getServoConfigs();
