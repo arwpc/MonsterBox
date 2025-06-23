@@ -1,0 +1,23 @@
+<testsuites id="" name="" tests="1" failures="0" skipped="0" errors="0" time="18.365779000000003">
+<testsuite name="microphone-management-comprehensive.spec.js" timestamp="2025-06-23T17:28:17.077Z" hostname="chromium" tests="1" failures="0" skipped="0" time="5.988" errors="0">
+<testcase name="Microphone Parts Management System › should test STT configuration interface" classname="microphone-management-comprehensive.spec.js" time="5.988">
+<system-out>
+<![CDATA[WebSocket closed: ws://localhost:8776/
+WebSocket closed: ws://localhost:8776/
+]]>
+</system-out>
+<system-err>
+<![CDATA[Browser Console Error: WebSocket connection to 'ws://192.168.8.130:8794/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+Browser Console Error: WebSocket error for microphone: Event
+Browser Console Error: Failed to setup WebSocket connections: Event
+Browser Console Error: WebSocket connection to 'ws://localhost:8777/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+Browser Console Error: WebSocket connection to 'ws://localhost:8777/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+Browser Console Error: Failed to load resource: the server responded with a status of 500 (Internal Server Error)
+Browser Console Error: Auto-restart failed: ye
+Browser Console Error: WebSocket connection to 'ws://192.168.8.130:8794/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+Browser Console Error: WebSocket error for microphone: Event
+]]>
+</system-err>
+</testcase>
+</testsuite>
+</testsuites>
