@@ -4191,6 +4191,76 @@
         "ipAddress": "::ffff:127.0.0.1",
         "timestamp": "2025-06-15T03:23:22.873Z"
       }
+    },
+    {
+      "timestamp": "2025-06-23T21:21:34.412Z",
+      "event": "AUTH_SUCCESS",
+      "data": {
+        "username": "admin",
+        "sessionId": "session_1750713694375_js0xpg9y0",
+        "ipAddress": "127.0.0.1",
+        "userAgent": "mocha-test"
+      }
+    },
+    {
+      "timestamp": "2025-06-23T21:21:34.880Z",
+      "event": "AUTH_FAILED",
+      "data": {
+        "username": "admin",
+        "reason": "Invalid password",
+        "ipAddress": "127.0.0.1",
+        "userAgent": "mocha-test"
+      }
+    },
+    {
+      "timestamp": "2025-06-23T21:21:35.326Z",
+      "event": "AUTH_SUCCESS",
+      "data": {
+        "username": "admin",
+        "sessionId": "session_1750713695313_bwdp40jjp",
+        "ipAddress": "127.0.0.1",
+        "userAgent": "mocha-test"
+      }
+    },
+    {
+      "timestamp": "2025-06-23T21:21:35.981Z",
+      "event": "AUTH_SUCCESS",
+      "data": {
+        "username": "admin",
+        "sessionId": "session_1750713695965_5grfm0wmn",
+        "ipAddress": "::ffff:127.0.0.1",
+        "timestamp": "2025-06-23T21:21:35.562Z"
+      }
+    },
+    {
+      "timestamp": "2025-06-23T21:21:49.322Z",
+      "event": "AUTH_FAILED",
+      "data": {
+        "username": "admin",
+        "reason": "Invalid password",
+        "ipAddress": "::ffff:127.0.0.1",
+        "timestamp": "2025-06-23T21:21:48.877Z"
+      }
+    },
+    {
+      "timestamp": "2025-06-23T21:21:49.729Z",
+      "event": "AUTH_FAILED",
+      "data": {
+        "username": "admin",
+        "reason": "Invalid password",
+        "ipAddress": "::ffff:127.0.0.1",
+        "timestamp": "2025-06-23T21:21:48.887Z"
+      }
+    },
+    {
+      "timestamp": "2025-06-23T21:21:50.219Z",
+      "event": "AUTH_SUCCESS",
+      "data": {
+        "username": "admin",
+        "sessionId": "session_1750713710204_mhntovyjm",
+        "ipAddress": "127.0.0.1",
+        "userAgent": "mocha-test"
+      }
     }
   ]
 }

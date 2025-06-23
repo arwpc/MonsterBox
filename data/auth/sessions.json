@@ -1162,6 +1162,41 @@
       "lastActivity": "2025-06-15T03:23:23.284Z",
       "ipAddress": "::ffff:127.0.0.1",
       "active": true
+    },
+    {
+      "sessionId": "session_1750713694375_js0xpg9y0",
+      "userId": "admin-001",
+      "createdAt": "2025-06-23T21:21:34.398Z",
+      "lastActivity": "2025-06-23T21:21:34.398Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1750713695313_bwdp40jjp",
+      "userId": "admin-001",
+      "createdAt": "2025-06-23T21:21:35.320Z",
+      "lastActivity": "2025-06-23T21:21:35.320Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1750713695965_5grfm0wmn",
+      "userId": "admin-001",
+      "createdAt": "2025-06-23T21:21:35.974Z",
+      "lastActivity": "2025-06-23T21:21:35.974Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1750713710204_mhntovyjm",
+      "userId": "admin-001",
+      "createdAt": "2025-06-23T21:21:50.211Z",
+      "lastActivity": "2025-06-23T21:21:50.211Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
     }
   ]
 }
