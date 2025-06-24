@@ -33,17 +33,23 @@
     "4": {
       "characterId": 4,
       "characterType": "skeleton",
+      "servoId": 23,
       "servoMapping": {
-        "minPosition": 45,
-        "maxPosition": 10,
+        "minPosition": 50,
+        "maxPosition": 30,
         "responseCurve": "exponential",
-        "sensitivity": 1.2,
+        "sensitivity": 1.5,
         "attackTime": 0.03,
-        "releaseTime": 0.1
+        "releaseTime": 0.1,
+        "smoothingFactor": 0.7,
+        "stepThreshold": 0.5,
+        "idleTimeout": 2
       },
       "audioAnalysis": {
-        "volumeThreshold": 0.005,
-        "smoothingFactor": 0.7
+        "volumeThreshold": 0.02,
+        "smoothingFactor": 0.8,
+        "attackTime": 0.05,
+        "releaseTime": 0.15
       }
     }
   }

@@ -477,7 +477,27 @@ router.get('/jaw/status', async (req, res) => {
     }
 });
 
-
+/**
+ * GET /chatterpi/test
+ * Render ChatterPi test page
+ */
+router.get('/test', (req, res) => {
+    try {
+        res.render('jaw-animation-test', {
+            title: 'ChatterPi Test - Unified Servo System',
+            characterId: 4,
+            servoId: '23',
+            pageTitle: 'ChatterPi Jaw Animation Test'
+        });
+    } catch (error) {
+        console.error('❌ Error rendering test page:', error);
+        res.status(500).render('error', {
+            title: 'Error',
+            message: 'Failed to load test page',
+            error: error
+        });
+    }
+});
 
 /**
  * GET /api/chatterpi/characters

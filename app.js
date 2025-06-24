@@ -303,6 +303,7 @@ app.use('/parts/sensor', sensorRoutes);
 app.use('/parts/linear-actuator', linearActuatorRoutes);
 app.use('/parts/webcam', webcamRoutes);
 app.use('/parts/head-tracking', headTrackingRoutes);
+app.use('/parts/microphone', partRoutes.router); // Microphone routes from partRoutes
 app.use('/parts', partRoutes.router);
 app.use('/characters',
     invalidateCache('GET:/api/characters:'), // Invalidate character cache on modifications

@@ -198,96 +198,6 @@
     "sensorType": "motion"
   },
   {
-    "id": 19,
-    "name": "Jaw Servo",
-    "type": "servo",
-    "characterId": 4,
-    "pin": 18,
-    "usePCA9685": false,
-    "channel": null,
-    "servoType": "Miuzei MG90S",
-    "minPulse": 500,
-    "maxPulse": 2400,
-    "defaultAngle": 90,
-    "mode": [
-      "Standard"
-    ],
-    "feedback": false,
-    "controlType": [
-      "PWM"
-    ],
-    "createdAt": "2025-06-07T23:00:00.000Z"
-  },
-  {
-    "id": 20,
-    "name": "SkulltalkerCam",
-    "type": "webcam",
-    "characterId": 4,
-    "deviceId": 0,
-    "devicePath": "/dev/video0",
-    "resolution": "1280x720",
-    "fps": 15,
-    "status": "active"
-  },
-  {
-    "id": 21,
-    "name": "ChatterPi AI System",
-    "type": "chatterpi-system",
-    "characterId": 4,
-    "pin": null,
-    "usePCA9685": false,
-    "channel": null,
-    "servoType": "Auto-Detect",
-    "minPulse": 500,
-    "maxPulse": 2400,
-    "defaultAngle": 50,
-    "mode": [
-      "Standard"
-    ],
-    "feedback": false,
-    "controlType": [
-      "PWM"
-    ],
-    "chatterpi_config": {
-      "closed_angle": 50,
-      "open_angle": 30,
-      "movement_curves": [
-        "linear",
-        "ease-in-out",
-        "ease-in",
-        "ease-out"
-      ],
-      "websocket_port": 8765,
-      "ai_bridge_port": 8766,
-      "jaw_animation_enabled": true,
-      "speech_sync": true,
-      "supported_characters": [
-        "orlok",
-        "robochat",
-        "blackbeard"
-      ],
-      "auto_detect_jaw_servos": true,
-      "compatible_servo_types": [
-        "MG90S",
-        "SG90",
-        "Miuzei MG90S",
-        "Standard Servo"
-      ],
-      "gpio_pins_available": [
-        18,
-        19,
-        20,
-        21,
-        22,
-        23,
-        24,
-        25
-      ],
-      "description": "ChatterPi AI system automatically detects and uses existing jaw servo configurations"
-    },
-    "createdAt": "2025-06-14T21:00:00.000Z"
-  },
-  {
     "id": 22,
     "name": "Orlok Head Tracking System",
     "type": "head-tracking",
@@ -322,17 +232,42 @@
   },
   {
     "id": 23,
+    "name": "Jaw Servo",
+    "type": "servo",
     "characterId": 4,
+    "pin": 18,
+    "usePCA9685": false,
+    "channel": null,
+    "servoType": "Miuzei MG90S",
+    "minPulse": 500,
+    "maxPulse": 2400,
+    "defaultAngle": 50,
+    "minAngle": 30,
+    "maxAngle": 50,
+    "mode": [
+      "Standard"
+    ],
+    "feedback": false,
+    "controlType": [
+      "PWM"
+    ],
+    "createdAt": "2025-06-24T01:27:31.334Z",
+    "description": "Jaw servo for ChatterPi animation - GPIO 18, 30°=open, 50°=closed"
+  },
+  {
+    "id": 24,
+    "name": "ChatterPi Microphone",
     "type": "microphone",
-    "name": "SkullMicrophone",
-    "description": "Mic for skulltalker",
+    "characterId": 4,
     "deviceId": "2",
     "sampleRate": "16000",
     "channels": "1",
-    "sensitivity": "1",
+    "sensitivity": "1.0",
     "echoCancellation": "on",
     "noiseSuppression": "on",
     "autoGainControl": "on",
-    "voiceActivationThreshold": "0.1"
+    "voiceActivationThreshold": "0.1",
+    "createdAt": "2025-06-24T01:27:31.334Z",
+    "description": "USB sound card microphone for ChatterPi STT and jaw animation"
   }
 ]

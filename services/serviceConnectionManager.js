@@ -21,23 +21,14 @@ class ServiceConnectionManager {
         });
 
         this.serviceDefinitions = {
-            // ChatterPi Services
-            jawAnimation: {
-                type: 'websocket',
-                url: 'ws://127.0.0.1:8765',
-                critical: false,
-                autoReconnect: true,
-                description: 'Jaw Animation WebSocket Server'
-            },
-            aibridge: {
-                type: 'websocket', 
-                url: 'ws://127.0.0.1:8766',
-                critical: false,
-                autoReconnect: true,
-                description: 'AI Bridge WebSocket Server'
-            },
-
             // Hardware Services
+            servoService: {
+                type: 'websocket',
+                url: 'ws://127.0.0.1:8772',
+                critical: true,
+                autoReconnect: true,
+                description: 'Unified Servo Control and Jaw Animation Service'
+            },
             hardwareRegistry: {
                 type: 'websocket',
                 url: 'ws://127.0.0.1:8770',
@@ -54,7 +45,7 @@ class ServiceConnectionManager {
             },
             lightService: {
                 type: 'websocket',
-                url: 'ws://127.0.0.1:8772',
+                url: 'ws://127.0.0.1:8773',
                 critical: false,
                 autoReconnect: true,
                 description: 'Light Control Service'
@@ -65,6 +56,23 @@ class ServiceConnectionManager {
                 critical: true,
                 autoReconnect: true,
                 description: 'Main Hardware Service'
+            },
+
+            // ChatterPi Services (legacy)
+            jawAnimation: {
+                type: 'websocket',
+                url: 'ws://127.0.0.1:8765',
+                critical: false,
+                autoReconnect: true,
+                description: 'Legacy Jaw Animation WebSocket Server',
+                deprecated: true
+            },
+            aibridge: {
+                type: 'websocket',
+                url: 'ws://127.0.0.1:8766',
+                critical: false,
+                autoReconnect: true,
+                description: 'AI Bridge WebSocket Server'
             }
         };
 

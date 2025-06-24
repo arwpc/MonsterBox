@@ -12,6 +12,15 @@ class ServiceManager {
     constructor() {
         this.services = new Map();
         this.serviceDefinitions = {
+            // Hardware Services
+            servoService: {
+                name: 'Unified Servo WebSocket Service',
+                port: 8772,
+                script: 'scripts/hardware/servo_websocket_service.py',
+                type: 'python',
+                critical: true,
+                description: 'Unified servo control and jaw animation service'
+            },
             microphone: {
                 name: 'Microphone WebSocket Service',
                 port: 8776,
@@ -26,12 +35,15 @@ class ServiceManager {
                 type: 'node',
                 critical: true
             },
+
+            // ChatterPi Services (legacy - will be replaced by unified services)
             jawAnimation: {
-                name: 'Jaw Animation Service',
+                name: 'Legacy Jaw Animation Service',
                 port: 8765,
                 script: 'scripts/chatterpi/jaw_websocket_server.py',
                 type: 'python',
-                critical: false
+                critical: false,
+                deprecated: true
             },
             aibridge: {
                 name: 'AI Bridge Service',
