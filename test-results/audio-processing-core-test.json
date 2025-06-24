@@ -1,0 +1,18 @@
+{
+  "timestamp": 1750721153.7980456,
+  "tests_passed": 7,
+  "total_tests": 10,
+  "success_rate": 70.0,
+  "results": {
+    "module_import": true,
+    "config_creation": true,
+    "processor_initialization": true,
+    "amplitude_analysis": true,
+    "smoothed_envelopes": true,
+    "vad_functionality": true,
+    "tunable_parameters": true,
+    "servo_integration": false,
+    "audio_file_processing": false,
+    "real_time_processing": false
+  }
+}

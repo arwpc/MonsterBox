@@ -1,0 +1,16 @@
+{
+  "timestamp": 1750721565.5279005,
+  "tests_passed": 5,
+  "total_tests": 8,
+  "success_rate": 62.5,
+  "results": {
+    "stt_service_availability": false,
+    "jaw_websocket_availability": true,
+    "simultaneous_operation": true,
+    "audio_processing_pipeline": true,
+    "stt_accuracy_test": false,
+    "jaw_movement_during_stt": true,
+    "performance_impact": true,
+    "error_handling": false
+  }
+}

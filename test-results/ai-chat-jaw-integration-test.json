@@ -1,0 +1,16 @@
+{
+  "timestamp": 1750721686.3199353,
+  "tests_passed": 1,
+  "total_tests": 8,
+  "success_rate": 12.5,
+  "results": {
+    "ai_chat_service_availability": false,
+    "jaw_websocket_availability": true,
+    "openai_connection": false,
+    "tts_jaw_integration": false,
+    "chat_response_jaw_movement": false,
+    "real_time_conversation": false,
+    "character_voice_consistency": false,
+    "complete_pipeline_test": false
+  }
+}
