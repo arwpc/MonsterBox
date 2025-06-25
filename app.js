@@ -438,6 +438,9 @@ app.post('/api/audio-cleanup/run',
 app.use('/log-collection', require('./routes/logCollectionRoutes'));
 app.use('/api/log-collection', require('./routes/logCollectionRoutes'));
 
+// Browser Error Reporting routes
+app.use('/api/logs', require('./routes/browserErrorRoutes'));
+
 // AI Configuration routes
 app.use('/ai-config', aiConfigRoutes);
 app.use('/ai-management', aiManagementRoutes);

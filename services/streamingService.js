@@ -613,8 +613,7 @@ class StreamingService extends EventEmitter {
                 // Clean up any existing camera processes first
                 await this.cleanupRemoteCameraProcesses(host, characterKey);
 
-                // Webcam streaming is now handled by the WebSocket webcam service
-                throw new Error('Webcam streaming migrated to WebSocket service. Use ws://localhost:8774 instead.');
+                // Continue with remote streaming setup
 
                 const remoteCommand = `python3 ${remoteScript} ${remoteArgs}`;
                 const fullCommand = sshCredentials.buildSSHCommand(characterKey, host, remoteCommand);

@@ -669,18 +669,32 @@ class WebcamService {
                             command = `v4l2-ctl -d ${devicePath} --set-ctrl=${controlName}=${value}`;
                         }
 
-                        const result = await sshAuthService.executeSSHCommand(host, user, command);
+                        // Use the same SSH authentication method as other methods
+                        const sshCommand = this.buildSSHCommand(character, command);
 
-                        if (result.success) {
+                        const result = await new Promise((resolve, reject) => {
+                            const { exec } = require('child_process');
+                            exec(sshCommand, { timeout: 10000 }, (error, stdout, stderr) => {
+                                if (error) {
+                                    reject(error);
+                                } else {
+                                    resolve({ stdout, stderr });
+                                }
+                            });
+                        });
+
+                        // Check if command was successful (no error and clean stderr)
+                        const success = !result.stderr || result.stderr.trim() === '';
+                        if (success) {
                             appliedControls.push({ control: controlName, value: value });
                             logger.info(`✅ Applied ${controlName}=${value} on remote camera`);
                         } else {
                             failedControls.push({
                                 control: controlName,
                                 value: value,
-                                error: result.stderr || result.error
+                                error: result.stderr
                             });
-                            logger.warn(`❌ Failed to apply ${controlName}=${value}: ${result.stderr || result.error}`);
+                            logger.warn(`❌ Failed to apply ${controlName}=${value}: ${result.stderr}`);
                         }
                     } catch (error) {
                         failedControls.push({

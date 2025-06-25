@@ -1,0 +1,33 @@
+[
+  {
+    "level": "info",
+    "message": "Starting test: Console Error Monitoring Validation",
+    "metadata": {
+      "testPhase": "start"
+    },
+    "timestamp": "2025-06-24T01:32:17.413Z",
+    "service": "webcam-e2e-test"
+  },
+  {
+    "level": "info",
+    "message": "Webcam operation: console_monitoring_test_start",
+    "metadata": {
+      "operation": "console_monitoring_test_start",
+      "data": {},
+      "component": "webcam"
+    },
+    "timestamp": "2025-06-24T01:32:17.423Z",
+    "service": "webcam-e2e-test"
+  },
+  {
+    "level": "info",
+    "message": "Test completed: Console Error Monitoring Validation",
+    "metadata": {
+      "testPhase": "end",
+      "result": "failed",
+      "duration": 23664
+    },
+    "timestamp": "2025-06-24T01:32:41.158Z",
+    "service": "webcam-e2e-test"
+  }
+]

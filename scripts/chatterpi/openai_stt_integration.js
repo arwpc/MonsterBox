@@ -232,22 +232,100 @@ class OpenAISTTIntegration extends EventEmitter {
      */
     async prepareAudioForWhisper(audioData) {
         try {
-            // Create a temporary WAV file for Whisper
             const tempDir = '/tmp';
             const timestamp = Date.now();
-            const tempFilePath = path.join(tempDir, `whisper_audio_${timestamp}.wav`);
 
-            // Write raw audio data to temporary file
-            // Note: This assumes the audio data is already in a compatible format
-            // In production, you might want to use a library like 'wav' to create proper WAV headers
-            await fs.writeFile(tempFilePath, audioData);
+            // First, save the raw audio data to determine its format
+            const rawTempFilePath = path.join(tempDir, `whisper_raw_${timestamp}.tmp`);
+            await fs.writeFile(rawTempFilePath, audioData);
 
-            return tempFilePath;
+            // Detect the actual audio format
+            let detectedFormat = 'webm'; // Default assumption based on browser MediaRecorder
+
+            // Try to detect format using file signature
+            const fileHeader = audioData.slice(0, 12);
+            if (fileHeader.includes(Buffer.from('webm'))) {
+                detectedFormat = 'webm';
+            } else if (fileHeader.includes(Buffer.from('RIFF'))) {
+                detectedFormat = 'wav';
+            } else if (fileHeader.includes(Buffer.from('fLaC'))) {
+                detectedFormat = 'flac';
+            }
+
+            // Create appropriate file path based on detected format
+            const inputFilePath = path.join(tempDir, `whisper_input_${timestamp}.${detectedFormat}`);
+            await fs.rename(rawTempFilePath, inputFilePath);
+
+            // If the format is already supported by Whisper, return as-is
+            const supportedFormats = ['flac', 'm4a', 'mp3', 'mp4', 'mpeg', 'mpga', 'oga', 'ogg', 'wav', 'webm'];
+            if (supportedFormats.includes(detectedFormat)) {
+                logger.info(`Audio format ${detectedFormat} is supported by Whisper, using directly`);
+                return inputFilePath;
+            }
+
+            // If format is not supported, convert to WAV using ffmpeg
+            logger.info(`Converting ${detectedFormat} to WAV for Whisper compatibility`);
+            const outputFilePath = path.join(tempDir, `whisper_converted_${timestamp}.wav`);
+
+            await this.convertAudioToWav(inputFilePath, outputFilePath);
+
+            // Clean up the input file
+            try {
+                await fs.unlink(inputFilePath);
+            } catch (cleanupError) {
+                logger.warn('Failed to clean up input audio file:', cleanupError.message);
+            }
+
+            return outputFilePath;
 
         } catch (error) {
             logger.error('Error preparing audio for Whisper:', error);
             throw error;
         }
+    }
+
+    /**
+     * Convert audio file to WAV format using ffmpeg
+     */
+    async convertAudioToWav(inputPath, outputPath) {
+        const { spawn } = require('child_process');
+
+        return new Promise((resolve, reject) => {
+            const ffmpeg = spawn('ffmpeg', [
+                '-y',                    // Overwrite output files
+                '-i', inputPath,         // Input file
+                '-acodec', 'pcm_s16le',  // PCM 16-bit little-endian
+                '-ar', '16000',          // Sample rate 16kHz (good for speech)
+                '-ac', '1',              // Mono channel
+                outputPath               // Output file
+            ]);
+
+            let ffmpegOutput = '';
+            let ffmpegError = '';
+
+            ffmpeg.stdout.on('data', (data) => {
+                ffmpegOutput += data.toString();
+            });
+
+            ffmpeg.stderr.on('data', (data) => {
+                ffmpegError += data.toString();
+            });
+
+            ffmpeg.on('close', (code) => {
+                if (code === 0) {
+                    logger.info('Audio conversion to WAV completed successfully');
+                    resolve();
+                } else {
+                    logger.error(`ffmpeg conversion failed with code ${code}: ${ffmpegError}`);
+                    reject(new Error(`Audio conversion failed: ${ffmpegError}`));
+                }
+            });
+
+            ffmpeg.on('error', (err) => {
+                logger.error('ffmpeg process error:', err);
+                reject(new Error(`ffmpeg process error: ${err.message}`));
+            });
+        });
     }
 
     /**
@@ -259,22 +337,32 @@ class OpenAISTTIntegration extends EventEmitter {
                 throw new Error('OpenAI client not initialized');
             }
 
-            logger.info('Processing audio with OpenAI Whisper...');
+            logger.info(`Processing audio file ${path.basename(audioFilePath)} with OpenAI Whisper...`);
+
+            // Determine file extension and content type
+            const fileExtension = path.extname(audioFilePath).toLowerCase();
+            let contentType = 'audio/wav'; // default
+            let filename = 'audio.wav'; // default
+
+            // Map file extensions to content types
+            const contentTypeMap = {
+                '.wav': 'audio/wav',
+                '.webm': 'audio/webm',
+                '.mp3': 'audio/mpeg',
+                '.m4a': 'audio/mp4',
+                '.flac': 'audio/flac',
+                '.ogg': 'audio/ogg'
+            };
+
+            if (contentTypeMap[fileExtension]) {
+                contentType = contentTypeMap[fileExtension];
+                filename = `audio${fileExtension}`;
+            }
+
+            logger.info(`Using content type: ${contentType} for file: ${filename}`);
 
             // Create a readable stream from the audio file
-            const audioStream = await fs.readFile(audioFilePath);
-
-            // Create form data for the Whisper API
-            const formData = new FormData();
-            formData.append('file', audioStream, {
-                filename: 'audio.wav',
-                contentType: 'audio/wav'
-            });
-            formData.append('model', options.model || this.config.model);
-
-            if (options.language && options.language !== 'auto') {
-                formData.append('language', options.language);
-            }
+            const audioStream = require('fs').createReadStream(audioFilePath);
 
             // Call OpenAI Whisper API
             const response = await this.openai.audio.transcriptions.create({
@@ -299,7 +387,9 @@ class OpenAISTTIntegration extends EventEmitter {
                 timestamp: new Date().toISOString(),
                 metadata: {
                     model: options.model || this.config.model,
-                    language: options.language
+                    language: options.language,
+                    originalFormat: fileExtension,
+                    contentType: contentType
                 }
             };
 

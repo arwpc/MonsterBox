@@ -1,0 +1,98 @@
+# Page snapshot
+
+```yaml
+- banner:
+  - heading "Create Webcam" [level=1]
+  - navigation:
+    - link "← Back to Parts":
+      - /url: /parts?characterId=1
+    - link "📝 Edit Character":
+      - /url: /characters/1/edit
+    - link "🏠 Home":
+      - /url: /
+- main:
+  - text: "Webcam Name:"
+  - textbox "Webcam Name:"
+  - text: "Character:"
+  - combobox "Character:":
+    - option "Orlok" [selected]
+    - option "Coffin Breaker"
+    - option "PumpkinHead"
+    - option "Skulltalker"
+    - option "Test Character 1750704145907"
+    - option "Test Character 1750705258098"
+  - heading "📹 Camera Detection" [level=3]
+  - text: "✅Found 1 camera(s) locally Camera Device:"
+  - combobox "Camera Device:":
+    - option "Select a camera device..." [selected]
+    - option "Camera 0 (640x480)"
+  - text: "Device Path:"
+  - textbox "Device Path:"
+  - text: Automatically set based on selected device
+  - heading "⚙️ Camera Settings" [level=3]
+  - text: "Resolution:"
+  - combobox "Resolution:":
+    - option "1920x1080 (Full HD)"
+    - option "1280x1024"
+    - option "1280x960"
+    - option "1280x720 (HD)"
+    - option "1024x768"
+    - option "800x600"
+    - option "848x480"
+    - option "640x480 (VGA)" [selected]
+    - option "640x400"
+    - option "352x288"
+    - option "320x240 (QVGA)"
+    - option "176x144"
+    - option "160x120"
+  - text: "Frame Rate (FPS):"
+  - combobox "Frame Rate (FPS):":
+    - option "15 FPS" [selected]
+    - option "30 FPS"
+    - option "60 FPS"
+  - text: "Status:"
+  - combobox "Status:":
+    - option "Active" [selected]
+    - option "Inactive"
+  - heading "🎛️ Camera Controls" [level=3]
+  - text: "Brightness:"
+  - slider "Brightness:": "0"
+  - text: "0 Contrast:"
+  - slider "Contrast:": "32"
+  - text: "32 Saturation:"
+  - slider "Saturation:": "64"
+  - text: "64 Hue:"
+  - slider "Hue:": "0"
+  - text: "0 Gamma:"
+  - slider "Gamma:": "100"
+  - text: "100 Gain:"
+  - slider "Gain:": "0"
+  - text: "0 Sharpness:"
+  - slider "Sharpness:": "10"
+  - text: "10 Backlight Compensation:"
+  - slider "Backlight Compensation:": "80"
+  - text: "80 White Balance Temperature:"
+  - slider "White Balance Temperature:": "4600"
+  - text: "4600 Exposure Time:"
+  - slider "Exposure Time:": "157"
+  - text: "157"
+  - checkbox "Auto White Balance" [checked]
+  - text: Auto White Balance
+  - checkbox "Dynamic Frame Rate"
+  - text: "Dynamic Frame Rate Auto Exposure:"
+  - combobox "Auto Exposure:":
+    - option "Manual Mode"
+    - option "Auto Mode"
+    - option "Shutter Priority Mode"
+    - option "Aperture Priority Mode" [selected]
+  - text: "Power Line Frequency:"
+  - combobox "Power Line Frequency:":
+    - option "Disabled"
+    - option "50 Hz" [selected]
+    - option "60 Hz"
+  - heading "📺 Preview & Streaming" [level=3]
+  - text: No preview available
+  - button "💾 Save Webcam"
+  - link "❌ Cancel":
+    - /url: /parts?characterId=1
+```

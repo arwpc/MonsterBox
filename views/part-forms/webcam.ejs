@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
     <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/console-error-monitor.js"></script>
+    <script src="/js/enhanced-webcam-component.js"></script>
     <style>
         .webcam-preview {
             width: 320px;
@@ -229,76 +231,76 @@
                 <div class="controls-grid">
                     <div class="form-group">
                         <label for="brightness">Brightness:</label>
-                        <input type="range" id="brightness" name="brightness" min="-64" max="64" value="0" step="1">
-                        <span class="range-value" id="brightnessValue">0</span>
+                        <input type="range" id="brightness" name="brightness" min="-64" max="64" value="<%= (part && part.cameraControls && part.cameraControls.brightness !== undefined) ? part.cameraControls.brightness : 0 %>" step="1">
+                        <span class="range-value" id="brightnessValue"><%= (part && part.cameraControls && part.cameraControls.brightness !== undefined) ? part.cameraControls.brightness : 0 %></span>
                     </div>
 
                     <div class="form-group">
                         <label for="contrast">Contrast:</label>
-                        <input type="range" id="contrast" name="contrast" min="0" max="64" value="32" step="1">
-                        <span class="range-value" id="contrastValue">32</span>
+                        <input type="range" id="contrast" name="contrast" min="0" max="64" value="<%= (part && part.cameraControls && part.cameraControls.contrast !== undefined) ? part.cameraControls.contrast : 32 %>" step="1">
+                        <span class="range-value" id="contrastValue"><%= (part && part.cameraControls && part.cameraControls.contrast !== undefined) ? part.cameraControls.contrast : 32 %></span>
                     </div>
 
                     <div class="form-group">
                         <label for="saturation">Saturation:</label>
-                        <input type="range" id="saturation" name="saturation" min="0" max="128" value="64" step="1">
-                        <span class="range-value" id="saturationValue">64</span>
+                        <input type="range" id="saturation" name="saturation" min="0" max="128" value="<%= (part && part.cameraControls && part.cameraControls.saturation !== undefined) ? part.cameraControls.saturation : 64 %>" step="1">
+                        <span class="range-value" id="saturationValue"><%= (part && part.cameraControls && part.cameraControls.saturation !== undefined) ? part.cameraControls.saturation : 64 %></span>
                     </div>
 
                     <div class="form-group">
                         <label for="hue">Hue:</label>
-                        <input type="range" id="hue" name="hue" min="-40" max="40" value="0" step="1">
-                        <span class="range-value" id="hueValue">0</span>
+                        <input type="range" id="hue" name="hue" min="-40" max="40" value="<%= (part && part.cameraControls && part.cameraControls.hue !== undefined) ? part.cameraControls.hue : 0 %>" step="1">
+                        <span class="range-value" id="hueValue"><%= (part && part.cameraControls && part.cameraControls.hue !== undefined) ? part.cameraControls.hue : 0 %></span>
                     </div>
 
                     <div class="form-group">
                         <label for="gamma">Gamma:</label>
-                        <input type="range" id="gamma" name="gamma" min="72" max="500" value="100" step="1">
-                        <span class="range-value" id="gammaValue">100</span>
+                        <input type="range" id="gamma" name="gamma" min="72" max="500" value="<%= (part && part.cameraControls && part.cameraControls.gamma !== undefined) ? part.cameraControls.gamma : 100 %>" step="1">
+                        <span class="range-value" id="gammaValue"><%= (part && part.cameraControls && part.cameraControls.gamma !== undefined) ? part.cameraControls.gamma : 100 %></span>
                     </div>
 
                     <div class="form-group">
                         <label for="gain">Gain:</label>
-                        <input type="range" id="gain" name="gain" min="0" max="100" value="0" step="1">
-                        <span class="range-value" id="gainValue">0</span>
+                        <input type="range" id="gain" name="gain" min="0" max="100" value="<%= (part && part.cameraControls && part.cameraControls.gain !== undefined) ? part.cameraControls.gain : 0 %>" step="1">
+                        <span class="range-value" id="gainValue"><%= (part && part.cameraControls && part.cameraControls.gain !== undefined) ? part.cameraControls.gain : 0 %></span>
                     </div>
 
                     <div class="form-group">
                         <label for="sharpness">Sharpness:</label>
-                        <input type="range" id="sharpness" name="sharpness" min="0" max="14" value="10" step="1">
-                        <span class="range-value" id="sharpnessValue">10</span>
+                        <input type="range" id="sharpness" name="sharpness" min="0" max="14" value="<%= (part && part.cameraControls && part.cameraControls.sharpness !== undefined) ? part.cameraControls.sharpness : 10 %>" step="1">
+                        <span class="range-value" id="sharpnessValue"><%= (part && part.cameraControls && part.cameraControls.sharpness !== undefined) ? part.cameraControls.sharpness : 10 %></span>
                     </div>
 
                     <div class="form-group">
                         <label for="backlight_compensation">Backlight Compensation:</label>
-                        <input type="range" id="backlight_compensation" name="backlight_compensation" min="0" max="160" value="80" step="1">
-                        <span class="range-value" id="backlight_compensationValue">80</span>
+                        <input type="range" id="backlight_compensation" name="backlight_compensation" min="0" max="160" value="<%= (part && part.cameraControls && part.cameraControls.backlight_compensation !== undefined) ? part.cameraControls.backlight_compensation : 80 %>" step="1">
+                        <span class="range-value" id="backlight_compensationValue"><%= (part && part.cameraControls && part.cameraControls.backlight_compensation !== undefined) ? part.cameraControls.backlight_compensation : 80 %></span>
                     </div>
 
                     <div class="form-group">
                         <label for="white_balance_temperature">White Balance Temperature:</label>
-                        <input type="range" id="white_balance_temperature" name="white_balance_temperature" min="2800" max="6500" value="4600" step="1">
-                        <span class="range-value" id="white_balance_temperatureValue">4600</span>
+                        <input type="range" id="white_balance_temperature" name="white_balance_temperature" min="2800" max="6500" value="<%= (part && part.cameraControls && part.cameraControls.white_balance_temperature !== undefined) ? part.cameraControls.white_balance_temperature : 4600 %>" step="1">
+                        <span class="range-value" id="white_balance_temperatureValue"><%= (part && part.cameraControls && part.cameraControls.white_balance_temperature !== undefined) ? part.cameraControls.white_balance_temperature : 4600 %></span>
                     </div>
 
                     <div class="form-group">
                         <label for="exposure_time_absolute">Exposure Time:</label>
-                        <input type="range" id="exposure_time_absolute" name="exposure_time_absolute" min="1" max="5000" value="157" step="1">
-                        <span class="range-value" id="exposure_time_absoluteValue">157</span>
+                        <input type="range" id="exposure_time_absolute" name="exposure_time_absolute" min="1" max="5000" value="<%= (part && part.cameraControls && part.cameraControls.exposure_time_absolute !== undefined) ? part.cameraControls.exposure_time_absolute : 157 %>" step="1">
+                        <span class="range-value" id="exposure_time_absoluteValue"><%= (part && part.cameraControls && part.cameraControls.exposure_time_absolute !== undefined) ? part.cameraControls.exposure_time_absolute : 157 %></span>
                     </div>
                 </div>
 
                 <div class="checkbox-controls">
                     <div class="form-group">
                         <label>
-                            <input type="checkbox" id="white_balance_automatic" name="white_balance_automatic" checked>
+                            <input type="checkbox" id="white_balance_automatic" name="white_balance_automatic" <%= (part && part.cameraControls && part.cameraControls.white_balance_automatic !== undefined) ? (part.cameraControls.white_balance_automatic ? 'checked' : '') : 'checked' %>>
                             Auto White Balance
                         </label>
                     </div>
 
                     <div class="form-group">
                         <label>
-                            <input type="checkbox" id="exposure_dynamic_framerate" name="exposure_dynamic_framerate">
+                            <input type="checkbox" id="exposure_dynamic_framerate" name="exposure_dynamic_framerate" <%= (part && part.cameraControls && part.cameraControls.exposure_dynamic_framerate) ? 'checked' : '' %>>
                             Dynamic Frame Rate
                         </label>
                     </div>
@@ -306,19 +308,19 @@
                     <div class="form-group">
                         <label for="auto_exposure">Auto Exposure:</label>
                         <select id="auto_exposure" name="auto_exposure">
-                            <option value="0">Manual Mode</option>
-                            <option value="1">Auto Mode</option>
-                            <option value="2">Shutter Priority Mode</option>
-                            <option value="3" selected>Aperture Priority Mode</option>
+                            <option value="0" <%= (part && part.cameraControls && part.cameraControls.auto_exposure === 0) ? 'selected' : '' %>>Manual Mode</option>
+                            <option value="1" <%= (part && part.cameraControls && part.cameraControls.auto_exposure === 1) ? 'selected' : '' %>>Auto Mode</option>
+                            <option value="2" <%= (part && part.cameraControls && part.cameraControls.auto_exposure === 2) ? 'selected' : '' %>>Shutter Priority Mode</option>
+                            <option value="3" <%= (part && part.cameraControls && part.cameraControls.auto_exposure === 3) || (!part || !part.cameraControls) ? 'selected' : '' %>>Aperture Priority Mode</option>
                         </select>
                     </div>
 
                     <div class="form-group">
                         <label for="power_line_frequency">Power Line Frequency:</label>
                         <select id="power_line_frequency" name="power_line_frequency">
-                            <option value="0">Disabled</option>
-                            <option value="1" selected>50 Hz</option>
-                            <option value="2">60 Hz</option>
+                            <option value="0" <%= (part && part.cameraControls && part.cameraControls.power_line_frequency === 0) ? 'selected' : '' %>>Disabled</option>
+                            <option value="1" <%= (part && part.cameraControls && part.cameraControls.power_line_frequency === 1) || (!part || !part.cameraControls) ? 'selected' : '' %>>50 Hz</option>
+                            <option value="2" <%= (part && part.cameraControls && part.cameraControls.power_line_frequency === 2) ? 'selected' : '' %>>60 Hz</option>
                         </select>
                     </div>
                 </div>
@@ -356,6 +358,49 @@
 
     <script>
         let testStream = null;
+        let webcamComponent = null;
+
+        // Initialize Enhanced Webcam Component
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const characterId = urlParams.get('characterId') || document.getElementById('characterId')?.value;
+
+            // Check if we should use the enhanced component (can be controlled via URL parameter)
+            const useEnhanced = urlParams.get('enhanced') === 'true' || window.location.hostname === 'localhost';
+
+            if (useEnhanced && window.EnhancedWebcamComponent) {
+                console.log('🚀 Initializing Enhanced Webcam Component');
+                webcamComponent = new EnhancedWebcamComponent({
+                    characterId: characterId,
+                    autoDetect: true,
+                    enableLogging: true,
+                    enableErrorReporting: true,
+                    timeout: 30000,
+                    retryAttempts: 3
+                });
+
+                // Hide legacy buttons if enhanced component is active
+                const legacyButtons = document.querySelectorAll('#refreshCamerasBtn, #testCameraBtn, #stopTestBtn, #startStreamBtn, #stopStreamBtn, #applyControlsBtn, #resetControlsBtn');
+                legacyButtons.forEach(btn => {
+                    if (btn) btn.style.display = 'none';
+                });
+
+                // Add enhanced component indicator
+                const status = document.getElementById('detectionStatus');
+                if (status) {
+                    status.innerHTML = '<div class="detection-status detection-info">🚀 Enhanced Webcam Component Active</div>';
+                }
+            } else {
+                console.log('📺 Using legacy webcam functionality');
+            }
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function() {
+            if (webcamComponent) {
+                webcamComponent.destroy();
+            }
+        });
 
         // Camera detection functionality
         async function detectCameras(isRefresh = false) {
@@ -473,6 +518,13 @@
                 }
             } catch (error) {
                 console.error('💥 Camera detection error:', error);
+                if (window.reportWebcamError) {
+                    window.reportWebcamError('camera_detection', error, {
+                        characterId,
+                        isRefresh,
+                        useRemote: true
+                    });
+                }
                 status.className = 'detection-status detection-error';
                 status.textContent = 'Error detecting cameras: ' + error.message;
             } finally {
@@ -644,6 +696,14 @@
 
                 testStream = img;
             } catch (error) {
+                if (window.reportWebcamError) {
+                    window.reportWebcamError('camera_test', error, {
+                        characterId,
+                        deviceId,
+                        resolution,
+                        fps
+                    });
+                }
                 preview.innerHTML = '<span style="color: #ff0000;">❌ Error: ' + error.message + '</span>';
                 testBtn.style.display = 'inline-block';
                 stopBtn.style.display = 'none';
@@ -713,6 +773,9 @@
                     alert('Failed to start stream: ' + data.error);
                 }
             } catch (error) {
+                if (window.reportWebcamError) {
+                    window.reportWebcamError('start_stream', error, { characterId });
+                }
                 alert('Error starting stream: ' + error.message);
             } finally {
                 startBtn.disabled = false;
@@ -958,6 +1021,13 @@
                         alert('❌ Failed to apply controls: ' + data.message);
                     }
                 } catch (error) {
+                    if (window.reportWebcamError) {
+                        window.reportWebcamError('apply_controls', error, {
+                            characterId,
+                            deviceId,
+                            controls
+                        });
+                    }
                     alert('❌ Error applying controls: ' + error.message);
                 } finally {
                     this.disabled = false;

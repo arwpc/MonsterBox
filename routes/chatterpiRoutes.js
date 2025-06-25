@@ -798,8 +798,21 @@ router.post('/voice-chat', async (req, res) => {
             // Create a temporary file for Whisper API
             const fs = require('fs').promises;
             const path = require('path');
-            const tempFile = path.join('/tmp', `whisper_${Date.now()}.wav`);
+
+            // Detect audio format from buffer header
+            let fileExtension = '.webm'; // Default for browser MediaRecorder
+            if (audioBuffer.includes(Buffer.from('RIFF'))) {
+                fileExtension = '.wav';
+            } else if (audioBuffer.includes(Buffer.from('fLaC'))) {
+                fileExtension = '.flac';
+            } else if (audioBuffer.includes(Buffer.from('webm'))) {
+                fileExtension = '.webm';
+            }
+
+            const tempFile = path.join('/tmp', `whisper_${Date.now()}${fileExtension}`);
             await fs.writeFile(tempFile, audioBuffer);
+
+            logger.info(`STT processing file with extension: ${fileExtension}`);
 
             // Call OpenAI Whisper API
             const transcription = await openai.audio.transcriptions.create({

@@ -15,9 +15,18 @@ const multer = require('multer');
 const characterService = require('../services/characterService');
 const voiceService = require('../services/voiceService');
 
-// Configure multer for file uploads
-const upload = multer({ 
-    dest: 'uploads/',
+// Configure multer for file uploads with proper file extension handling
+const upload = multer({
+    storage: multer.diskStorage({
+        destination: 'uploads/',
+        filename: (req, file, cb) => {
+            // Preserve original extension or default to .webm for browser audio
+            const ext = path.extname(file.originalname) || '.webm';
+            const timestamp = Date.now();
+            const randomSuffix = Math.round(Math.random() * 1E9);
+            cb(null, `audio_${timestamp}_${randomSuffix}${ext}`);
+        }
+    }),
     limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 });
 
@@ -291,6 +300,11 @@ router.post('/api/stt/transcribe', upload.single('audio'), async (req, res) => {
             const openai = new OpenAI({
                 apiKey: process.env.OPENAI_API_KEY
             });
+
+            // Log file information for debugging
+            const fileExtension = path.extname(req.file.path);
+            const fileName = path.basename(req.file.path);
+            console.log(`STT processing file: ${fileName}, extension: ${fileExtension}, original: ${req.file.originalname}`);
 
             // Create file stream for OpenAI API
             const fileStream = require('fs').createReadStream(req.file.path);
