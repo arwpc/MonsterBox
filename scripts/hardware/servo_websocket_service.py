@@ -81,7 +81,7 @@ class JawAnimationConfig:
 class ServoWebSocketService(BaseHardwareService):
     """Unified WebSocket service for servo control and jaw animation"""
 
-    def __init__(self, port: int = 8772, host: str = "0.0.0.0"):
+    def __init__(self, port: int = 8773, host: str = "0.0.0.0"):
         super().__init__("servo_service", "servo", port, host)
         
         # Servo management
@@ -802,18 +802,22 @@ async def main():
     import argparse
 
     parser = argparse.ArgumentParser(description='MonsterBox Servo WebSocket Service')
-    parser.add_argument('--port', type=int, default=8772, help='WebSocket port')
+    parser.add_argument('--port', type=int, default=8773, help='WebSocket port')
     parser.add_argument('--host', default='0.0.0.0', help='WebSocket host')
     parser.add_argument('--debug', action='store_true', help='Enable debug logging')
 
     args = parser.parse_args()
 
-    # Configure logging
-    log_level = logging.DEBUG if args.debug else logging.INFO
+    # Configure logging - REDUCED VERBOSITY FOR PRODUCTION
+    log_level = logging.DEBUG if args.debug else logging.WARNING  # Only show warnings and errors
     logging.basicConfig(
         level=log_level,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
+
+    # Suppress excessive logging from specific modules
+    logging.getLogger('websockets').setLevel(logging.ERROR)
+    logging.getLogger('asyncio').setLevel(logging.ERROR)
 
     # Create and start service
     service = ServoWebSocketService(port=args.port, host=args.host)

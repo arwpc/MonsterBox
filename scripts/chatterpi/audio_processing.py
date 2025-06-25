@@ -11,7 +11,10 @@ from typing import Optional, Dict, Any, Callable
 from dataclasses import dataclass
 from enum import Enum
 
+# Configure minimal logging for production
+logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.WARNING)  # Only show warnings and errors
 
 @dataclass
 class AudioConfig:

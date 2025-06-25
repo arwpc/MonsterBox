@@ -38,18 +38,20 @@
         "minPosition": 50,
         "maxPosition": 30,
         "responseCurve": "exponential",
-        "sensitivity": 1.5,
-        "attackTime": 0.03,
-        "releaseTime": 0.1,
-        "smoothingFactor": 0.7,
-        "stepThreshold": 0.5,
-        "idleTimeout": 2
+        "sensitivity": 2.0,
+        "attackTime": 0.05,
+        "releaseTime": 0.15,
+        "smoothingFactor": 0.6,
+        "stepThreshold": 1.0,
+        "idleTimeout": 0.5
       },
       "audioAnalysis": {
-        "volumeThreshold": 0.02,
-        "smoothingFactor": 0.8,
+        "volumeThreshold": 0.01,
+        "smoothingFactor": 0.7,
         "attackTime": 0.05,
-        "releaseTime": 0.15
+        "releaseTime": 0.15,
+        "silenceTimeout": 500,
+        "enableSilenceDetection": true
       }
     }
   }

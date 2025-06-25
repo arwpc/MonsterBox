@@ -9,6 +9,7 @@ const fs = require('fs').promises;
 const path = require('path');
 const WebSocket = require('ws');
 const logger = require('../logger');
+const { getJawAnimationClient } = require('../../services/unifiedJawAnimationClient');
 
 class TTSAnimationIntegration {
     constructor(options = {}) {
@@ -36,7 +37,7 @@ class TTSAnimationIntegration {
         
         // State management
         this.isInitialized = false;
-        this.animationBridge = null;
+        this.jawAnimationClient = getJawAnimationClient();
         this.currentSession = null;
         this.audioCache = new Map();
         
@@ -324,43 +325,40 @@ class TTSAnimationIntegration {
     }
     
     /**
-     * Stream audio to animation system for real-time jaw movement
+     * Stream audio to unified jaw animation service for real-time jaw movement
      */
     async streamAudioForAnimation(audioResult, metadata) {
-        if (!this.animationBridge || this.animationBridge.readyState !== WebSocket.OPEN) {
-            logger.warn('Animation bridge not available for audio streaming');
-            return false;
+        if (!this.jawAnimationClient.isConnected) {
+            logger.warn('Jaw animation client not connected - attempting to connect');
+            try {
+                await this.jawAnimationClient.connect();
+            } catch (error) {
+                logger.error('Failed to connect to jaw animation service:', error);
+                return false;
+            }
         }
-        
+
         try {
-            // Start audio session
-            this.animationBridge.send(JSON.stringify({
-                type: 'start_audio_session',
-                config: {
-                    animation_profile: 'enhanced_smoothing',
-                    jaw_closed_angle: 50.0,
-                    jaw_open_angle: 30.0
-                },
-                metadata
-            }));
-            
-            // Stream TTS audio data
-            this.animationBridge.send(JSON.stringify({
-                type: 'tts_audio',
-                audio_data: audioResult.audioData.toString('base64'),
-                source_type: 'buffer',
-                metadata: {
+            // Process TTS audio for jaw animation
+            const success = await this.jawAnimationClient.processTTSAudio(
+                audioResult.audioData,
+                {
                     provider: audioResult.provider,
                     format: audioResult.format,
                     character: metadata.character,
                     text: metadata.text,
                     voice_config: metadata.voiceConfig
                 }
-            }));
-            
-            logger.info('🎭 TTS audio streamed to animation system');
-            return true;
-            
+            );
+
+            if (success) {
+                logger.info('🎭 TTS audio processed by unified jaw animation service');
+            } else {
+                logger.warn('Failed to process TTS audio for jaw animation');
+            }
+
+            return success;
+
         } catch (error) {
             logger.error('Error streaming audio for animation:', error);
             return false;

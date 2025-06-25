@@ -1,6 +1,7 @@
 const voiceService = require('../services/voiceService');
 const soundService = require('../services/soundService');
 const logger = require('../scripts/logger');
+const { getJawAnimationClient } = require('../services/unifiedJawAnimationClient');
 const path = require('path');
 const fs = require('fs');
 const axios = require('axios');
@@ -210,6 +211,29 @@ exports.generateAndSaveForScene = async (req, res) => {
         logger.info(`Generating speech with speaker_id: ${voice.speaker_id}`);
         const result = await voiceService.generateSpeech(text, voice.speaker_id, voice.settings || {}, characterId);
         logger.info(`Speech generation result:`, result);
+
+        // Trigger jaw animation if audio data is available
+        if (result.audioData && result.audioData.length > 0) {
+            try {
+                const jawClient = getJawAnimationClient();
+                if (!jawClient.isConnected) {
+                    await jawClient.connect();
+                }
+
+                // Process audio for jaw animation
+                await jawClient.processTTSAudio(result.audioData, {
+                    characterId: characterId,
+                    text: text,
+                    voiceId: voice.speaker_id,
+                    format: result.format
+                });
+
+                logger.info('🦴 Jaw animation triggered for TTS audio');
+            } catch (animationError) {
+                logger.warn('Failed to trigger jaw animation:', animationError.message);
+                // Don't fail the entire request if animation fails
+            }
+        }
 
         // Create filename and path with correct extension
         const timestamp = Date.now();

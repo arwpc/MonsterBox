@@ -14,7 +14,10 @@ from jaw_control_system import JawControlSystem
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
+# Configure minimal logging for production
+logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.WARNING)  # Only show warnings and errors
 
 class AudioJawAnimator:
     """Real-time audio-driven jaw animation system"""

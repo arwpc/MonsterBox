@@ -24,7 +24,7 @@ class ServiceConnectionManager {
             // Hardware Services
             servoService: {
                 type: 'websocket',
-                url: 'ws://127.0.0.1:8772',
+                url: 'ws://127.0.0.1:8773',
                 critical: true,
                 autoReconnect: true,
                 description: 'Unified Servo Control and Jaw Animation Service'
@@ -45,7 +45,7 @@ class ServiceConnectionManager {
             },
             lightService: {
                 type: 'websocket',
-                url: 'ws://127.0.0.1:8773',
+                url: 'ws://127.0.0.1:8774',
                 critical: false,
                 autoReconnect: true,
                 description: 'Light Control Service'

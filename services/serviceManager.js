@@ -15,7 +15,7 @@ class ServiceManager {
             // Hardware Services
             servoService: {
                 name: 'Unified Servo WebSocket Service',
-                port: 8772,
+                port: 8773,
                 script: 'scripts/hardware/servo_websocket_service.py',
                 type: 'python',
                 critical: true,
@@ -36,14 +36,14 @@ class ServiceManager {
                 critical: true
             },
 
-            // ChatterPi Services (legacy - will be replaced by unified services)
-            jawAnimation: {
-                name: 'Legacy Jaw Animation Service',
+            // ChatterPi Services - UNIFIED SERVICE TO PREVENT GPIO CONFLICTS
+            unifiedJawAnimation: {
+                name: 'Unified Jaw Animation Service',
                 port: 8765,
-                script: 'scripts/chatterpi/jaw_websocket_server.py',
+                script: 'scripts/chatterpi/unified_jaw_animation_service.py',
                 type: 'python',
-                critical: false,
-                deprecated: true
+                critical: true,
+                description: 'Consolidated jaw animation with audio processing and servo control'
             },
             aibridge: {
                 name: 'AI Bridge Service',
