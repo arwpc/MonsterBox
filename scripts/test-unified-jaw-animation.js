@@ -12,7 +12,7 @@ const path = require('path');
 async function testJawAnimation() {
     console.log('🦴 Testing Unified Jaw Animation Service...');
     
-    const client = new UnifiedJawAnimationClient('ws://localhost:8765');
+    const client = new UnifiedJawAnimationClient('ws://127.0.0.1:8765');
     
     try {
         // Connect to service

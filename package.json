@@ -36,6 +36,7 @@
     "test:mcp-remote": "node scripts/test-mcp-remote-capabilities.js",
     "test:animatronic-ssh": "node scripts/test-animatronic-ssh.js",
     "test:jaw-animation": "node scripts/test-jaw-animation-puppeteer.js",
+    "test:chatterpi-jaw": "cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js test/chatterpi-jaw-animation.test.js --timeout 60000",
     "collect:github-logs": "node scripts/github-log-collector.js",
     "collect:rpi-logs": "node scripts/rpi-log-collector.js",
     "setup:rpi": "node scripts/setup-rpi-logging.js",

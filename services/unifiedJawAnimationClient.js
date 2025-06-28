@@ -8,7 +8,7 @@ const EventEmitter = require('events');
 const logger = require('../scripts/logger');
 
 class UnifiedJawAnimationClient extends EventEmitter {
-    constructor(url = 'ws://localhost:8765') {
+    constructor(url = 'ws://127.0.0.1:8765') {
         super();
         this.url = url;
         this.ws = null;

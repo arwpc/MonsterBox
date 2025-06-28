@@ -22,7 +22,7 @@
         "tags": [],
         "notes": "",
         "created": "2024-10-28T16:24:54.907Z",
-        "lastModified": "2025-06-24T01:10:53.624Z",
+        "lastModified": "2025-06-28T21:36:15.283Z",
         "migratedFrom": "Replica",
         "migrationDate": "2025-06-14T20:10:52.729Z",
         "originalSpeakerId": "b80ebe00-4738-4766-85b7-35c3096acb79",
@@ -750,6 +750,38 @@
             "languageCode": "en",
             "provider": "TopMediai"
           }
+        },
+        {
+          "timestamp": "2025-06-28T21:35:50.285Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": -13,
+            "speed": 0.6,
+            "volume": 14,
+            "emotion": "Angry",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-06-28T21:36:15.283Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": -13,
+            "speed": 0.6,
+            "volume": 14,
+            "emotion": "Angry",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
         }
       ]
     },
@@ -1339,7 +1371,7 @@
         "tags": [],
         "notes": "",
         "created": "2025-05-13T00:35:07.630Z",
-        "lastModified": "2025-06-24T21:20:58.618Z",
+        "lastModified": "2025-06-27T22:04:01.856Z",
         "migratedFrom": "Replica",
         "migrationDate": "2025-06-14T20:10:52.736Z",
         "originalSpeakerId": "55a0aad5-a739-402f-9cec-36b01ff81a41",
@@ -2175,6 +2207,38 @@
         },
         {
           "timestamp": "2025-06-24T21:20:58.618Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Neutral",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-06-27T22:03:23.810Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Neutral",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-06-27T22:04:01.856Z",
           "type": "settings_update",
           "settings": {
             "pitch": 0,
