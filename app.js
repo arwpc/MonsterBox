@@ -13,7 +13,7 @@ process.env.NODE_NO_WARNINGS = '1';
 
 let express, path, http, https, logger, app, server, httpsServer, port, audioStream, soundController, fs, os, session;
 let videoStream; // <-- Add videoStream variable
-let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, webcamRoutes, voiceRoutes, cleanupRoutes, healthRoutes, authRoutes, sshRoutes, jawAnimationRoutes, aiConfigRoutes, aiManagementRoutes, configRoutes, headTrackingRoutes;
+let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, webcamRoutes, voiceRoutes, cleanupRoutes, healthRoutes, authRoutes, sshRoutes, jawAnimationRoutes, aiConfigRoutes, aiManagementRoutes, configRoutes, headTrackingRoutes, chatterpiManagementRoutes;
 let characterService;
 let authMiddleware, rbacMiddleware;
 let jawAnimationSystem;
@@ -111,6 +111,9 @@ try {
     // Import jaw animation routes
     const jawAnimationRoutesModule = require('./routes/jawAnimationRoutes');
     jawAnimationRoutes = jawAnimationRoutesModule.router;
+
+    // Import ChatterPi management routes
+    chatterpiManagementRoutes = require('./routes/chatterpiManagementRoutes');
 
     // Import authentication middleware
     authMiddleware = require('./middleware/auth');
@@ -442,6 +445,9 @@ app.use('/api/log-collection', require('./routes/logCollectionRoutes'));
 // AI Configuration routes
 app.use('/ai-config', aiConfigRoutes);
 app.use('/ai-management', aiManagementRoutes);
+
+// ChatterPi Management routes
+app.use('/chatterpi', chatterpiManagementRoutes);
 
 // Connection monitoring endpoint
 app.get('/api/connections/status',

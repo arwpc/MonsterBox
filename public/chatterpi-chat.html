@@ -119,18 +119,38 @@
         }
 
         .advanced-controls {
-            display: none;
+            display: flex;
             flex-direction: column;
             gap: 10px;
-            background: rgba(255,255,255,0.05);
+            background: rgba(0,0,0,0.3);
             padding: 15px;
             border-radius: 8px;
             margin-top: 10px;
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid #00ff41;
+            color: #00ff41;
         }
 
         .advanced-controls.show {
             display: flex;
+        }
+
+        .advanced-controls label {
+            color: #00ff41;
+            font-weight: bold;
+        }
+
+        .advanced-controls input {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #00ff41;
+            color: #00ff41;
+            padding: 5px;
+            border-radius: 4px;
+        }
+
+        .advanced-controls input:focus {
+            outline: none;
+            border-color: #00ff88;
+            box-shadow: 0 0 5px rgba(0,255,65,0.3);
         }
 
         .config-section {
@@ -454,7 +474,6 @@
             </div>
             <div class="control-group">
                 <label>Advanced Audio Settings</label>
-                <button id="toggleAdvancedButton" class="toggle-button collapsed">Show Advanced Settings</button>
                 <div id="advancedControls" class="advanced-controls">
 
                     <!-- Quick Presets -->
@@ -639,7 +658,6 @@
                 this.volumeSlider = document.getElementById('volumeSlider');
 
                 // Advanced controls
-                this.toggleAdvancedButton = document.getElementById('toggleAdvancedButton');
                 this.advancedControls = document.getElementById('advancedControls');
                 this.smoothingAttack = document.getElementById('smoothingAttack');
                 this.smoothingRelease = document.getElementById('smoothingRelease');
@@ -738,10 +756,7 @@
                     console.log(`Setting open position to ${angle}°`);
                 });
 
-                // Advanced controls event listeners
-                this.toggleAdvancedButton.addEventListener('click', () => {
-                    this.toggleAdvancedControls();
-                });
+                // Advanced controls are now always visible
 
                 this.applyAdvancedButton.addEventListener('click', () => {
                     this.applyAdvancedSettings();
@@ -1655,19 +1670,7 @@
                 this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
             }
 
-            toggleAdvancedControls() {
-                const isVisible = this.advancedControls.classList.contains('show');
-
-                if (isVisible) {
-                    this.advancedControls.classList.remove('show');
-                    this.toggleAdvancedButton.textContent = 'Show Advanced Settings';
-                    this.toggleAdvancedButton.classList.add('collapsed');
-                } else {
-                    this.advancedControls.classList.add('show');
-                    this.toggleAdvancedButton.textContent = 'Hide Advanced Settings';
-                    this.toggleAdvancedButton.classList.remove('collapsed');
-                }
-            }
+            // Advanced controls are now always visible - no toggle needed
 
             applyAdvancedSettings() {
                 const config = {

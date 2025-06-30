@@ -14,6 +14,17 @@ class JawAnimationController {
     async getTestPage(req, res) {
         try {
             const characterId = req.query.characterId || '4';
+
+            // Auto-start animation for this character if not already running
+            if (!this.animationStatus.has(parseInt(characterId))) {
+                try {
+                    await this.autoStartAnimation(parseInt(characterId));
+                    logger.info(`Auto-started jaw animation for character ${characterId}`);
+                } catch (autoStartError) {
+                    logger.warn(`Failed to auto-start animation: ${autoStartError.message}`);
+                }
+            }
+
             res.render('jaw-animation-test', {
                 title: 'Jaw Animation Test',
                 characterId: characterId
@@ -21,6 +32,26 @@ class JawAnimationController {
         } catch (error) {
             console.error('Error loading jaw animation test page:', error);
             res.status(500).send('Error loading test page');
+        }
+    }
+
+    // Auto-start animation helper
+    async autoStartAnimation(characterId) {
+        try {
+            // Set animation status
+            this.animationStatus.set(characterId, {
+                active: true,
+                startTime: new Date(),
+                audioLevel: 0,
+                servoPosition: 90,
+                autoStarted: true
+            });
+
+            logger.info(`Auto-started jaw animation for character ${characterId}`);
+            return true;
+        } catch (error) {
+            logger.error(`Error auto-starting animation: ${error.message}`);
+            throw error;
         }
     }
 

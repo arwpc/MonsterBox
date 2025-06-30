@@ -14,8 +14,10 @@ class TopMediaiAPI {
         this.baseURL = 'https://api.topmediai.com/v1';
         this.requestCount = 0;
         this.lastRequestTime = Date.now();
-        this.rateLimitPerMinute = 50; // Reduced to be more conservative
+        this.rateLimitPerMinute = 5; // Much more conservative to avoid rate limiting
         this.rateLimitResetTime = null;
+        this.requestQueue = []; // Queue for managing requests
+        this.isProcessingQueue = false;
 
         // Standard audio format settings
         this.audioSettings = {
@@ -268,7 +270,7 @@ class TopMediaiAPI {
                 requestBody.volume = params.options.volume;
             }
 
-            logger.info(`Requesting speech generation for speaker: ${params.voiceId}`, {
+            logger.debug(`Requesting speech generation for speaker: ${params.voiceId}`, {
                 emotion: requestBody.emotion,
                 speed: requestBody.speed,
                 pitch: requestBody.pitch,
@@ -281,7 +283,7 @@ class TopMediaiAPI {
             let audioFormat = 'wav'; // TopMediai returns WAV files
 
             try {
-                logger.info('Making TopMediai TTS request with body:', JSON.stringify(requestBody, null, 2));
+                logger.debug('Making TopMediai TTS request with body:', JSON.stringify(requestBody, null, 2));
 
                 // Use official TopMediai API format - expect JSON response with audio URL
                 const response = await this.retryWithBackoff(async () => {
@@ -297,7 +299,7 @@ class TopMediaiAPI {
                 // TopMediai returns JSON with oss_url pointing to the actual audio file
                 if (response.data && response.data.status === 200 && response.data.data && response.data.data.oss_url) {
                     const audioUrl = response.data.data.oss_url;
-                    logger.info(`TopMediai returned audio URL: ${audioUrl}`);
+                    logger.debug(`TopMediai returned audio URL: ${audioUrl}`);
 
                     // Download the actual audio file
                     audioData = await this.downloadAudioFromUrl(audioUrl);
@@ -306,7 +308,7 @@ class TopMediaiAPI {
                     audioFormat = audioUrl.toLowerCase().includes('.mp3') ? 'mp3' : 'wav';
 
                     isRealAudio = true;
-                    logger.info(`✅ Successfully downloaded ${audioFormat.toUpperCase()} audio from TopMediai (${audioData.length} bytes)`);
+                    logger.debug(`✅ Successfully downloaded ${audioFormat.toUpperCase()} audio from TopMediai (${audioData.length} bytes)`);
                 } else {
                     throw new Error('TopMediai API returned unexpected response format');
                 }
@@ -353,7 +355,7 @@ class TopMediaiAPI {
             await this.validateTopMediaiAudio(audioData, audioFormat);
 
             await fs.writeFile(audioPath, audioData);
-            logger.info(`Saved ${isRealAudio ? 'real TopMediai' : 'fallback'} ${audioFormat.toUpperCase()} file to: ${audioPath} (${audioData.length} bytes)`);
+            logger.debug(`Saved ${isRealAudio ? 'real TopMediai' : 'fallback'} ${audioFormat.toUpperCase()} file to: ${audioPath} (${audioData.length} bytes)`);
 
             // Return the result with proper file paths
             const audioFilename = `${filename}.${audioFormat}`;

@@ -47,7 +47,8 @@ class VoiceService {
             },
             history: voice.history || []
         };
-        logger.info(`Normalized voice data: ${JSON.stringify(normalized)}`);
+        // Reduce logging verbosity - only log errors and warnings
+        logger.debug(`Normalized voice data for character ${voice.characterId}`);
         return normalized;
     }
 
@@ -88,7 +89,7 @@ class VoiceService {
                         lastModified: new Date().toISOString()
                     },
                     history: [
-                        ...(existing.history || []),
+                        ...(existing.history || []).slice(-10), // Keep only last 10 history entries to reduce spam
                         {
                             timestamp: new Date().toISOString(),
                             type: 'settings_update',
@@ -113,7 +114,7 @@ class VoiceService {
             }
 
             await fs.writeFile(this.voicesPath, JSON.stringify({ voices }, null, 2));
-            logger.info(`Voice settings saved for character ${voiceData.characterId}`);
+            logger.debug(`Voice settings saved for character ${voiceData.characterId}`);
             
             return existingIndex !== -1 ? voices[existingIndex] : voices[voices.length - 1];
         } catch (error) {
@@ -238,7 +239,7 @@ class VoiceService {
                 throw new Error('Character ID is required');
             }
 
-            logger.info(`Updating voice settings for character ${characterId}`);
+            logger.debug(`Updating voice settings for character ${characterId}`);
 
             // Get existing voice configuration
             let voice = await this.getVoiceByCharacterId(characterId);
@@ -279,7 +280,7 @@ class VoiceService {
             // Save the updated voice configuration
             const savedVoice = await this.saveVoice(voice);
 
-            logger.info(`Voice settings updated and saved for character ${characterId}`);
+            logger.debug(`Voice settings updated and saved for character ${characterId}`);
             return savedVoice;
 
         } catch (error) {

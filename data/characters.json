@@ -51,6 +51,15 @@
     "chatterpi_config": {
       "ai_characters": [],
       "default_character": null
+    },
+    "aiConfig": {
+      "provider": "openai",
+      "model": "gpt-4",
+      "temperature": 0.8,
+      "maxTokens": 150,
+      "systemPrompt": "",
+      "contextLength": 5,
+      "enabled": true
     }
   },
   {
@@ -263,6 +272,15 @@
           "responseCurve": "exponential"
         }
       }
+    },
+    "aiConfig": {
+      "provider": "openai",
+      "model": "gpt-4",
+      "temperature": 0.8,
+      "maxTokens": 150,
+      "systemPrompt": "",
+      "contextLength": 5,
+      "enabled": true
     }
   },
   {

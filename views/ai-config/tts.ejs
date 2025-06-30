@@ -567,6 +567,86 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        /* ChatterPi Integration Styles */
+        .integration-notice {
+            background: linear-gradient(135deg, #001100, #002200);
+            border: 1px solid #00ff00;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .notice-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .notice-content i {
+            color: #00ff00;
+            font-size: 1.2em;
+        }
+
+        .integration-link {
+            color: #ff6600;
+            text-decoration: none;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .integration-link:hover {
+            color: #ff8833;
+            text-decoration: underline;
+        }
+
+        .jaw-animation-integration {
+            background: #001100;
+            border: 1px solid #ff6600;
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 10px;
+        }
+
+        .integration-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+
+        .jaw-status {
+            margin-left: 8px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .jaw-status.connected {
+            background: #004400;
+            color: #00ff00;
+        }
+
+        .jaw-status.disconnected {
+            background: #440000;
+            color: #ff4444;
+        }
+
+        .jaw-status.checking {
+            background: #444400;
+            color: #ffff00;
+        }
+
+        .integration-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .integration-controls .button {
+            font-size: 0.8em;
+            padding: 6px 12px;
+        }
     </style>
 </head>
 <body>
@@ -583,6 +663,15 @@
         <div class="info-section">
             <h2>🎤 TopMediaAI TTS Configuration</h2>
             <p>Configure Text-to-Speech voices for each character using the comprehensive TopMediaAI voice catalog</p>
+            <div class="integration-notice">
+                <div class="notice-content">
+                    <i class="fas fa-info-circle"></i>
+                    <div>
+                        <strong>ChatterPi Integration:</strong> Voice settings automatically sync with jaw animation system for seamless character performance.
+                        <a href="/chatterpi" class="integration-link">🦴 Manage Jaw Animation</a>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Character Voice Assignments -->
@@ -667,6 +756,23 @@
                                         </small>
                                     </div>
                                 <% } %>
+
+                                <!-- ChatterPi Jaw Animation Integration -->
+                                <div class="jaw-animation-integration">
+                                    <div class="integration-header">
+                                        <i class="fas fa-robot" style="color: #ff6600; margin-right: 6px;"></i>
+                                        <strong>Jaw Animation:</strong>
+                                        <span class="jaw-status" id="jawStatus_<%= character.id %>">Checking...</span>
+                                    </div>
+                                    <div class="integration-controls">
+                                        <button class="button small-btn secondary-btn" onclick="testJawAnimation('<%= character.id %>')" title="Test jaw animation with this voice">
+                                            <i class="fas fa-play"></i> Test Animation
+                                        </button>
+                                        <button class="button small-btn primary-btn" onclick="configureJawAnimation('<%= character.id %>')" title="Configure jaw animation settings">
+                                            <i class="fas fa-cog"></i> Configure
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     <% }); %>
@@ -983,7 +1089,112 @@
                 // Auto-open voice configuration for the specified character
                 setTimeout(() => configureVoice(characterId), 1000);
             }
+
+            // Initialize jaw animation status for all characters
+            initializeJawAnimationStatus();
         });
+
+        // ChatterPi Jaw Animation Integration Functions
+        async function initializeJawAnimationStatus() {
+            try {
+                const response = await fetch('/chatterpi/api/status');
+                const result = await response.json();
+
+                const isConnected = result.success && result.status.servo.connected;
+
+                // Update all character jaw status displays
+                const statusElements = document.querySelectorAll('[id^="jawStatus_"]');
+                statusElements.forEach(element => {
+                    updateJawStatus(element, isConnected);
+                });
+            } catch (error) {
+                console.error('Failed to check jaw animation status:', error);
+                // Update all status displays to show error
+                const statusElements = document.querySelectorAll('[id^="jawStatus_"]');
+                statusElements.forEach(element => {
+                    element.textContent = 'Error';
+                    element.className = 'jaw-status disconnected';
+                });
+            }
+        }
+
+        function updateJawStatus(element, isConnected) {
+            if (isConnected) {
+                element.textContent = 'Connected';
+                element.className = 'jaw-status connected';
+            } else {
+                element.textContent = 'Disconnected';
+                element.className = 'jaw-status disconnected';
+            }
+        }
+
+        async function testJawAnimation(characterId) {
+            try {
+                showMessage('Testing jaw animation...', 'info');
+
+                const response = await fetch('/chatterpi/api/test/servo', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ characterId: parseInt(characterId) })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage('Jaw animation test completed successfully!', 'success');
+                } else {
+                    showMessage(`Jaw animation test failed: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                console.error('Jaw animation test error:', error);
+                showMessage(`Jaw animation test error: ${error.message}`, 'error');
+            }
+        }
+
+        function configureJawAnimation(characterId) {
+            // Open ChatterPi configuration page for this character
+            window.open(`/chatterpi?characterId=${characterId}`, '_blank');
+        }
+
+        async function syncVoiceWithChatterPi(characterId, voice, settings) {
+            try {
+                // Sync voice configuration with ChatterPi for jaw animation
+                const response = await fetch(`/chatterpi/api/character/${characterId}/config`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        config: {
+                            voice: {
+                                speaker_id: voice.uuid || voice.speaker_id,
+                                speed: settings.speed,
+                                pitch: settings.pitch,
+                                volume: settings.volume,
+                                emotion: settings.emotion,
+                                voiceName: voice.name,
+                                voiceGender: voice.gender,
+                                voiceLanguage: voice.language || voice.accent
+                            }
+                        }
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    console.log('✅ Voice settings synced with ChatterPi jaw animation');
+                    showMessage('Voice settings synced with jaw animation system', 'success');
+                } else {
+                    console.warn('⚠️ Failed to sync voice settings with ChatterPi:', result.error);
+                }
+            } catch (error) {
+                console.error('❌ Error syncing voice with ChatterPi:', error);
+                // Don't show error to user as this is a background sync
+            }
+        }
 
         // Global settings display updates
         function updateSpeedDisplay(value) {
@@ -1222,6 +1433,10 @@
 
                 if (data.success) {
                     showMessage('Voice assigned successfully!', 'success');
+
+                    // Sync voice settings with ChatterPi jaw animation
+                    await syncVoiceWithChatterPi(characterId, selectedVoice, settings);
+
                     closeCatalogModal();
                     // Update the voice preview without full page reload
                     updateVoicePreview(characterId, selectedVoice, settings);

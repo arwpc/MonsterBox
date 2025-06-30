@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="monsterbox">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title || 'ChatterPi Jaw Animation Management' %></title>
+    
+    <!-- Preload critical fonts -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&family=Creepster&display=swap" as="style">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&family=Creepster&display=swap">
+    
+    <!-- MonsterBox CSS -->
+    <link rel="stylesheet" href="/css/main.css?v=<%= Date.now() %>">
+    
+    <!-- Favicon and meta tags -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <meta name="description" content="ChatterPi - Jaw Animation Management">
+    <meta name="theme-color" content="#00ff00">
+</head>
+
+<body class="min-h-screen bg-base-100 text-base-content font-terminal">
+    <!-- Skip to main content for accessibility -->
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 button z-50">
+        Skip to main content
+    </a>
+
+    <!-- Navigation -->
+    <nav class="navbar bg-base-200 border-b border-primary shadow-lg sticky top-0 z-40">
+        <div class="container mx-auto px-4">
+            <div class="navbar-start">
+                <!-- Logo -->
+                <a href="/" class="button ghost text-xl font-creepster text-primary hover:text-green-600">
+                    🎭 MonsterBox™
+                </a>
+            </div>
+            
+            <!-- Navigation Links -->
+            <div class="navbar-center hidden lg:flex">
+                <ul class="menu menu-horizontal px-1">
+                    <li><a href="/characters" class="button ghost">🎭 Characters</a></li>
+                    <li><a href="/ai-management" class="button ghost">🤖 AI Management</a></li>
+                    <li><a href="/configuration" class="button ghost">⚙️ Configuration</a></li>
+                </ul>
+            </div>
+            
+            <!-- User actions -->
+            <div class="navbar-end">
+                <a href="/" class="button ghost" aria-label="Home">
+                    🏠 Home
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main content -->
+    <main id="main-content" class="flex-1 container mx-auto px-4 py-8">
+        <!-- Breadcrumbs -->
+        <% if (typeof breadcrumbs !== 'undefined' && breadcrumbs.length > 0) { %>
+        <div class="breadcrumbs text-sm mb-6">
+            <ul>
+                <% breadcrumbs.forEach(function(crumb, index) { %>
+                <li>
+                    <% if (index === breadcrumbs.length - 1) { %>
+                        <span class="text-primary"><%= crumb.name %></span>
+                    <% } else { %>
+                        <a href="<%= crumb.url %>" class="hover:text-primary"><%= crumb.name %></a>
+                    <% } %>
+                </li>
+                <% }); %>
+            </ul>
+        </div>
+        <% } %>
+
+        <!-- Page title -->
+        <div class="mb-8">
+            <h1 class="text-4xl font-bold text-primary font-creepster mb-2 glow-text">
+                🦴 <%= pageTitle %>
+            </h1>
+            <% if (typeof pageDescription !== 'undefined') { %>
+            <p class="text-base-content/70 text-lg">
+                <%= pageDescription %>
+            </p>
+            <% } %>
+        </div>
+
+        <!-- Connection Status -->
+        <div class="alert mb-6" id="connection-status">
+            <div class="flex items-center">
+                <div class="loading loading-spinner loading-sm mr-2" id="status-spinner"></div>
+                <span id="status-text">Checking connection...</span>
+            </div>
+        </div>
+
+        <!-- Main Control Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
+            
+            <!-- Character Selection -->
+            <div class="card bg-base-200 shadow-xl border border-primary">
+                <div class="card-header bg-base-300 border-b border-primary">
+                    <h3 class="text-xl font-bold text-primary flex items-center">
+                        🎭 Character Selection
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-control w-full">
+                        <label class="label">
+                            <span class="label-text text-base-content">Active Character:</span>
+                        </label>
+                        <select id="character-selector" class="select select-bordered select-primary w-full">
+                            <% if (typeof characters !== 'undefined') { %>
+                                <% characters.forEach(function(character) { %>
+                                    <option value="<%= character.id %>" <%= defaultCharacter && defaultCharacter.id === character.id ? 'selected' : '' %>>
+                                        <%= character.name %> (ID: <%= character.id %>)
+                                    </option>
+                                <% }); %>
+                            <% } %>
+                        </select>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <button class="button primary w-full" onclick="loadCharacterConfig()">
+                            📥 Load Character Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manual Servo Control -->
+            <div class="card bg-base-200 shadow-xl border border-primary">
+                <div class="card-header bg-base-300 border-b border-primary">
+                    <h3 class="text-xl font-bold text-primary flex items-center">
+                        🎛️ Manual Servo Control
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-control w-full mb-4">
+                        <label class="label">
+                            <span class="label-text text-base-content">Servo Position:</span>
+                            <span class="label-text-alt text-primary" id="servo-angle-display">50°</span>
+                        </label>
+                        <input type="range" id="servo-slider" min="0" max="180" value="50" 
+                               class="range range-primary" oninput="updateServoDisplay(this.value)">
+                        <div class="w-full flex justify-between text-xs px-2 text-base-content/70">
+                            <span>0°</span>
+                            <span>90°</span>
+                            <span>180°</span>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-2 mb-4">
+                        <button class="button secondary" onclick="moveToPosition(30)">
+                            📖 Open (30°)
+                        </button>
+                        <button class="button secondary" onclick="moveToPosition(50)">
+                            🤐 Closed (50°)
+                        </button>
+                    </div>
+                    
+                    <button class="button primary w-full" onclick="moveToSliderPosition()">
+                        ➡️ Move to Position
+                    </button>
+                </div>
+            </div>
+
+            <!-- Animation Control -->
+            <div class="card bg-base-200 shadow-xl border border-primary">
+                <div class="card-header bg-base-300 border-b border-primary">
+                    <h3 class="text-xl font-bold text-primary flex items-center">
+                        🎤 Animation Control
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-control w-full mb-4">
+                        <label class="label">
+                            <span class="label-text text-base-content">Audio Source:</span>
+                        </label>
+                        <select id="audio-source" class="select select-bordered select-primary w-full">
+                            <option value="microphone">🎤 Microphone</option>
+                            <option value="tts">🗣️ Text-to-Speech</option>
+                            <option value="files">📁 Audio Files</option>
+                            <option value="streams">📡 Audio Streams</option>
+                        </select>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-2">
+                        <button class="button success" id="start-animation" onclick="startAnimation()">
+                            ▶️ Start
+                        </button>
+                        <button class="button error" id="stop-animation" onclick="stopAnimation()" disabled>
+                            ⏹️ Stop
+                        </button>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <div class="text-sm text-base-content/70 mb-2">Animation Status:</div>
+                        <div class="badge badge-outline" id="animation-status">Stopped</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Real-time Monitoring -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            
+            <!-- Audio Visualization -->
+            <div class="card bg-base-200 shadow-xl border border-primary">
+                <div class="card-header bg-base-300 border-b border-primary">
+                    <h3 class="text-xl font-bold text-primary flex items-center">
+                        📊 Audio Visualization
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-base-content/70">Raw Audio Level</span>
+                                <span class="text-primary font-mono" id="audio-raw">0.00</span>
+                            </div>
+                            <div class="w-full bg-base-300 rounded-full h-2.5">
+                                <div class="bg-primary h-2.5 rounded-full transition-all duration-100" 
+                                     id="audio-raw-bar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-base-content/70">Smoothed Level</span>
+                                <span class="text-secondary font-mono" id="audio-smoothed">0.00</span>
+                            </div>
+                            <div class="w-full bg-base-300 rounded-full h-2.5">
+                                <div class="bg-secondary h-2.5 rounded-full transition-all duration-100" 
+                                     id="audio-smoothed-bar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-base-content/70">Voice Detection</span>
+                                <span class="text-accent font-mono" id="voice-detection">No Voice</span>
+                            </div>
+                            <div class="w-full bg-base-300 rounded-full h-2.5">
+                                <div class="bg-accent h-2.5 rounded-full transition-all duration-100" 
+                                     id="voice-detection-bar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Status -->
+            <div class="card bg-base-200 shadow-xl border border-primary">
+                <div class="card-header bg-base-300 border-b border-primary">
+                    <h3 class="text-xl font-bold text-primary flex items-center">
+                        📈 System Status
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span class="text-base-content/70">Servo Position:</span>
+                            <span class="text-primary font-mono" id="current-servo-position">50°</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-base-content/70">Update Rate:</span>
+                            <span class="text-success font-mono" id="update-rate">0 Hz</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-base-content/70">Latency:</span>
+                            <span class="text-warning font-mono" id="latency">-- ms</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-base-content/70">WebSocket:</span>
+                            <div class="badge badge-outline" id="websocket-status">Disconnected</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <button class="button secondary w-full" onclick="testServo()">
+                            🧪 Test Servo Movement
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Advanced Configuration -->
+        <div class="card bg-base-200 shadow-xl border border-primary mb-8">
+            <div class="card-header bg-base-300 border-b border-primary">
+                <h3 class="text-xl font-bold text-primary flex items-center">
+                    🎛️ Advanced Audio Response Tuning
+                    <button class="button ghost btn-sm ml-auto" onclick="showHelpModal()">
+                        ❓ Help
+                    </button>
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                    <!-- Response Speed (Attack) -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text text-base-content">Response Speed (Attack):</span>
+                            <span class="label-text-alt text-primary" id="attack-display">0.1s</span>
+                        </label>
+                        <input type="range" id="attack-slider" min="0.01" max="1.0" step="0.01" value="0.1"
+                               class="range range-primary" oninput="updateAttackDisplay(this.value)">
+                        <div class="w-full flex justify-between text-xs px-2 text-base-content/70">
+                            <span>0.01s</span>
+                            <span>0.5s</span>
+                            <span>1.0s</span>
+                        </div>
+                        <div class="text-xs text-base-content/50 mt-1">Recommended: 0.1s</div>
+                    </div>
+
+                    <!-- Decay Speed (Release) -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text text-base-content">Decay Speed (Release):</span>
+                            <span class="label-text-alt text-secondary" id="release-display">0.01s</span>
+                        </label>
+                        <input type="range" id="release-slider" min="0.01" max="1.0" step="0.01" value="0.01"
+                               class="range range-secondary" oninput="updateReleaseDisplay(this.value)">
+                        <div class="w-full flex justify-between text-xs px-2 text-base-content/70">
+                            <span>0.01s</span>
+                            <span>0.5s</span>
+                            <span>1.0s</span>
+                        </div>
+                        <div class="text-xs text-base-content/50 mt-1">Recommended: 0.01s</div>
+                    </div>
+
+                    <!-- Voice Sensitivity -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text text-base-content">Voice Sensitivity:</span>
+                            <span class="label-text-alt text-accent" id="sensitivity-display">0.005</span>
+                        </label>
+                        <input type="range" id="sensitivity-slider" min="0.001" max="0.1" step="0.001" value="0.005"
+                               class="range range-accent" oninput="updateSensitivityDisplay(this.value)">
+                        <div class="w-full flex justify-between text-xs px-2 text-base-content/70">
+                            <span>0.001</span>
+                            <span>0.05</span>
+                            <span>0.1</span>
+                        </div>
+                        <div class="text-xs text-base-content/50 mt-1">Recommended: 0.005</div>
+                    </div>
+                </div>
+
+                <!-- Quick Preset Buttons -->
+                <div class="divider text-base-content/70">Quick Presets</div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <button class="button secondary" onclick="applyPreset('smooth')">
+                        🌊 Smooth Animation
+                        <div class="text-xs opacity-70">Natural speech settings</div>
+                    </button>
+                    <button class="button secondary" onclick="applyPreset('responsive')">
+                        ⚡ Responsive Animation
+                        <div class="text-xs opacity-70">Quick reaction settings</div>
+                    </button>
+                    <button class="button secondary" onclick="applyPreset('debug')">
+                        🔧 Debug Mode
+                        <div class="text-xs opacity-70">Testing and troubleshooting</div>
+                    </button>
+                </div>
+
+                <!-- Configuration Actions -->
+                <div class="divider text-base-content/70">Configuration Management</div>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
+                    <button class="button primary" onclick="saveConfiguration()">
+                        💾 Save Config
+                    </button>
+                    <button class="button secondary" onclick="loadConfiguration()">
+                        📥 Load Config
+                    </button>
+                    <button class="button secondary" onclick="exportConfiguration()">
+                        📤 Export
+                    </button>
+                    <button class="button warning" onclick="resetConfiguration()">
+                        🔄 Reset Defaults
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Help Modal -->
+        <div id="helpModal" class="modal">
+            <div class="modal-box bg-base-200 border border-primary max-w-4xl">
+                <div class="modal-header border-b border-primary pb-4 mb-4">
+                    <h3 class="text-xl font-bold text-primary">🎛️ ChatterPi Configuration Help</h3>
+                    <button class="button ghost btn-sm float-right" onclick="closeHelpModal()">✕</button>
+                </div>
+
+                <div class="modal-body space-y-6">
+                    <div>
+                        <h4 class="text-lg font-bold text-secondary mb-2">🎤 Audio Response Parameters</h4>
+                        <div class="space-y-3 text-sm">
+                            <div>
+                                <strong class="text-primary">Response Speed (Attack):</strong>
+                                <p class="text-base-content/70">Controls how quickly the jaw opens when audio is detected. Lower values = faster response. Recommended: 0.1s for natural speech.</p>
+                            </div>
+                            <div>
+                                <strong class="text-secondary">Decay Speed (Release):</strong>
+                                <p class="text-base-content/70">Controls how quickly the jaw closes when audio stops. Lower values = faster closing. Recommended: 0.01s for crisp animation.</p>
+                            </div>
+                            <div>
+                                <strong class="text-accent">Voice Sensitivity:</strong>
+                                <p class="text-base-content/70">Sets the minimum audio level needed to trigger jaw movement. Lower values = more sensitive. Recommended: 0.005 for normal environments.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="text-lg font-bold text-secondary mb-2">🎛️ Quick Presets</h4>
+                        <div class="space-y-2 text-sm">
+                            <div><strong class="text-primary">Smooth Animation:</strong> Natural speech settings with balanced response and decay times.</div>
+                            <div><strong class="text-warning">Responsive Animation:</strong> Quick reaction settings for real-time interaction.</div>
+                            <div><strong class="text-info">Debug Mode:</strong> Slower, more visible movements for testing and troubleshooting.</div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="text-lg font-bold text-secondary mb-2">🔧 Hardware Information</h4>
+                        <div class="space-y-2 text-sm">
+                            <div><strong class="text-primary">GPIO Pin:</strong> 18 (ChatterPi jaw servo)</div>
+                            <div><strong class="text-secondary">Servo Range:</strong> 30° (open) to 50° (closed)</div>
+                            <div><strong class="text-accent">PWM Frequency:</strong> 50Hz hardware-timed control</div>
+                            <div><strong class="text-warning">WebSocket Port:</strong> 8773 (unified servo service)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-t border-primary pt-4 mt-4">
+                    <button class="button primary" onclick="closeHelpModal()">Got it!</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Real-time Feedback Overlay -->
+        <div id="feedbackOverlay" class="fixed bottom-4 left-4 z-40 space-y-2" style="display: none;">
+            <div class="alert alert-info shadow-lg max-w-sm">
+                <div>
+                    <span id="feedbackText">Configuration applied successfully</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Messages -->
+        <div id="messageContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer footer-center p-6 bg-base-200 text-base-content border-t border-primary">
+        <div>
+            <p class="font-bold text-primary font-creepster">ChatterPi™ Jaw Animation Management</p>
+            <p>Real-time servo control with advanced audio processing</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="/js/chatterpi-management.js"></script>
+</body>
+</html>
