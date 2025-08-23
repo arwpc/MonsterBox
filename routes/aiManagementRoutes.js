@@ -284,7 +284,16 @@ router.post('/api/stt/transcribe', upload.single('audio'), async (req, res) => {
         const startTime = Date.now();
         const language = req.body.language || 'en';
         const isTest = req.body.isTest === 'true';
-        let tempFilePath = null; // Track temp file for cleanup
+
+        // Determine the correct file extension based on MIME type (needed for cleanup)
+        let extension = '.webm'; // Default to webm
+        if (req.file.mimetype === 'audio/wav') {
+            extension = '.wav';
+        } else if (req.file.mimetype === 'audio/mpeg' || req.file.mimetype === 'audio/mp3') {
+            extension = '.mp3';
+        } else if (req.file.mimetype === 'audio/webm' || req.file.originalname.endsWith('.webm')) {
+            extension = '.webm';
+        }
 
         console.log(`🎤 STT Request - File: ${req.file.originalname}, Size: ${req.file.size}, MIME: ${req.file.mimetype}`);
 
@@ -295,37 +304,38 @@ router.post('/api/stt/transcribe', upload.single('audio'), async (req, res) => {
                 apiKey: process.env.OPENAI_API_KEY
             });
 
-            // Determine the correct file extension based on MIME type
-            let extension = '.webm'; // Default to webm
-            if (req.file.mimetype === 'audio/wav') {
-                extension = '.wav';
-            } else if (req.file.mimetype === 'audio/mpeg' || req.file.mimetype === 'audio/mp3') {
-                extension = '.mp3';
-            } else if (req.file.mimetype === 'audio/webm' || req.file.originalname.endsWith('.webm')) {
-                extension = '.webm';
-            }
-
             console.log(`🎤 Processing audio file - Original: ${req.file.originalname}, MIME: ${req.file.mimetype}, Extension: ${extension}`);
 
-            // Create a temporary file with the correct extension
-            tempFilePath = req.file.path + extension;
-            await fs.copyFile(req.file.path, tempFilePath);
+            // Determine filename for OpenAI based on extension
+            let filename = 'audio.webm';
+            if (extension === '.wav') filename = 'audio.wav';
+            else if (extension === '.mp3') filename = 'audio.mp3';
 
-            console.log(`🎤 Created temp file: ${tempFilePath}`);
+            console.log(`🎤 Processing audio file - Size: ${req.file.size}, Filename: ${filename}`);
+
+            // Create a proper file object using Node.js fs and the exact pattern from OpenAI docs
+            const path = require('path');
+
+            // Rename the file to have the correct extension for OpenAI to recognize
+            const tempPath = req.file.path + extension;
+            await fs.rename(req.file.path, tempPath);
+
+            console.log(`🎤 Using renamed file - Path: ${tempPath}, Size: ${req.file.size}`);
 
             // Call OpenAI Whisper API with the properly named file
             const transcription = await openai.audio.transcriptions.create({
-                file: require('fs').createReadStream(tempFilePath),
+                file: require('fs').createReadStream(tempPath),
                 model: 'whisper-1',
                 language: language === 'auto' ? undefined : language,
                 response_format: 'json'
             });
 
+            // Clean up the renamed file
+            await fs.unlink(tempPath);
+
             const responseTime = Date.now() - startTime;
 
-            // Clean up uploaded files
-            await fs.unlink(req.file.path);
-            await fs.unlink(tempFilePath);
+            // Original file was already renamed and cleaned up above
 
             res.json({
                 success: true,
@@ -344,14 +354,16 @@ router.post('/api/stt/transcribe', upload.single('audio'), async (req, res) => {
         } catch (apiError) {
             console.error('OpenAI Whisper API error:', apiError);
 
-            // Clean up uploaded files
-            await fs.unlink(req.file.path);
-            if (tempFilePath) {
-                try {
-                    await fs.unlink(tempFilePath);
-                } catch (cleanupError) {
-                    // Ignore cleanup errors for temp file
-                }
+            // Try to clean up both original and renamed files
+            try {
+                await fs.unlink(req.file.path);
+            } catch (e) {
+                // Original file might have been renamed already
+            }
+            try {
+                await fs.unlink(req.file.path + extension);
+            } catch (e) {
+                // Renamed file might not exist or already cleaned up
             }
 
             res.json({
@@ -374,14 +386,7 @@ router.post('/api/stt/transcribe', upload.single('audio'), async (req, res) => {
             }
         }
 
-        // Clean up temp file if it exists
-        if (tempFilePath) {
-            try {
-                await fs.unlink(tempFilePath);
-            } catch (cleanupError) {
-                // Ignore cleanup errors for temp file
-            }
-        }
+        // No temp files to clean up
 
         res.status(500).json({ success: false, error: error.message });
     }

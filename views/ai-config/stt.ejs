@@ -1217,8 +1217,10 @@
                 // Start level monitoring
                 monitorAudioLevel();
 
-                // Set up media recorder
-                mediaRecorder = new MediaRecorder(stream);
+                // Set up media recorder with WebM format
+                mediaRecorder = new MediaRecorder(stream, {
+                    mimeType: 'audio/webm;codecs=opus'
+                });
                 audioChunks = [];
 
                 mediaRecorder.ondataavailable = function(event) {
@@ -1306,9 +1308,9 @@
 
         async function processRecording() {
             try {
-                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
                 const formData = new FormData();
-                formData.append('audio', audioBlob, 'recording.wav');
+                formData.append('audio', audioBlob, 'recording.webm');
 
                 showMessage('Transcribing audio...', 'info');
 
@@ -1352,11 +1354,11 @@
 
         function downloadAudio() {
             if (audioChunks.length > 0) {
-                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
                 const url = URL.createObjectURL(audioBlob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `stt-test-${Date.now()}.wav`;
+                a.download = `stt-test-${Date.now()}.webm`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
