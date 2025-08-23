@@ -285,6 +285,8 @@ router.post('/api/stt/transcribe', upload.single('audio'), async (req, res) => {
         const language = req.body.language || 'en';
         const isTest = req.body.isTest === 'true';
 
+        console.log(`🎤 STT Request - File: ${req.file.originalname}, Size: ${req.file.size}, MIME: ${req.file.mimetype}`);
+
         try {
             // Import OpenAI
             const OpenAI = require('openai');
@@ -292,8 +294,26 @@ router.post('/api/stt/transcribe', upload.single('audio'), async (req, res) => {
                 apiKey: process.env.OPENAI_API_KEY
             });
 
-            // Create file stream for OpenAI API
+            // Determine the correct filename based on MIME type
+            let filename = 'audio.webm'; // Default to webm
+            if (req.file.mimetype === 'audio/wav') {
+                filename = 'audio.wav';
+            } else if (req.file.mimetype === 'audio/mpeg' || req.file.mimetype === 'audio/mp3') {
+                filename = 'audio.mp3';
+            } else if (req.file.mimetype === 'audio/webm' || req.file.originalname.endsWith('.webm')) {
+                filename = 'audio.webm';
+            }
+
+            console.log(`🎤 Using filename: ${filename} for MIME type: ${req.file.mimetype}`);
+
+            // Create file stream with proper filename for OpenAI API
             const fileStream = require('fs').createReadStream(req.file.path);
+
+            // Set the filename on the stream object for OpenAI to recognize the format
+            Object.defineProperty(fileStream, 'name', {
+                value: filename,
+                writable: false
+            });
 
             // Call OpenAI Whisper API
             const transcription = await openai.audio.transcriptions.create({

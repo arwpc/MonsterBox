@@ -815,15 +815,23 @@ router.post('/voice-chat', async (req, res) => {
             const audioBuffer = Buffer.isBuffer(audioData) ?
                 audioData : Buffer.from(audioData, 'base64');
 
-            // Create a temporary file for Whisper API
+            // Create a temporary file for Whisper API with proper extension
             const fs = require('fs').promises;
             const path = require('path');
-            const tempFile = path.join('/tmp', `whisper_${Date.now()}.wav`);
+            // Use .webm extension since most browser audio is WebM format
+            const tempFile = path.join('/tmp', `whisper_${Date.now()}.webm`);
             await fs.writeFile(tempFile, audioBuffer);
+
+            // Create file stream with proper filename
+            const fileStream = require('fs').createReadStream(tempFile);
+            Object.defineProperty(fileStream, 'name', {
+                value: 'audio.webm',
+                writable: false
+            });
 
             // Call OpenAI Whisper API
             const transcription = await openai.audio.transcriptions.create({
-                file: require('fs').createReadStream(tempFile),
+                file: fileStream,
                 model: sttConfig?.model || 'whisper-1',
                 language: sttConfig?.language || 'en'
             });
