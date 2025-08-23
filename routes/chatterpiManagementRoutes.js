@@ -868,6 +868,92 @@ router.post('/api/test/servo', async (req, res) => {
     }
 });
 
+// API: Test STT integration with jaw animation
+router.post('/api/test/stt-animation', async (req, res) => {
+    try {
+        const { testMode = 'stt-integration', duration = 3000 } = req.body;
+
+        // Simulate STT-driven jaw animation test
+        const testSequence = [
+            { angle: 50, duration: 0.2 }, // Start closed
+            { angle: 35, duration: 0.3 }, // Partial open
+            { angle: 30, duration: 0.2 }, // Full open
+            { angle: 40, duration: 0.3 }, // Mid position
+            { angle: 30, duration: 0.2 }, // Open again
+            { angle: 50, duration: 0.3 }  // Close
+        ];
+
+        logger.info(`Starting STT jaw animation test (${testMode}) for ${duration}ms`);
+
+        for (const step of testSequence) {
+            await moveJawServo(step.angle, step.duration);
+            await new Promise(resolve => setTimeout(resolve, step.duration * 1000));
+        }
+
+        res.json({
+            success: true,
+            message: 'STT jaw animation test completed successfully',
+            testMode: testMode,
+            duration: duration,
+            testSequence: testSequence
+        });
+    } catch (error) {
+        logger.error('STT jaw animation test failed:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// API: Sync STT settings with ChatterPi
+router.post('/api/sync/stt', async (req, res) => {
+    try {
+        const { sttConfig, syncTimestamp } = req.body;
+
+        if (!sttConfig) {
+            return res.status(400).json({
+                success: false,
+                error: 'STT configuration is required'
+            });
+        }
+
+        // Store STT sync configuration for jaw animation integration
+        const syncData = {
+            sttConfig: sttConfig,
+            syncTimestamp: syncTimestamp || Date.now(),
+            jawAnimationEnabled: true,
+            audioProcessing: {
+                confidenceThreshold: parseFloat(sttConfig.confidenceThreshold) || 0.7,
+                chunkDuration: parseInt(sttConfig.chunkDuration) || 2000,
+                language: sttConfig.language || 'auto'
+            }
+        };
+
+        logger.info('STT settings synced with ChatterPi:', {
+            confidenceThreshold: syncData.audioProcessing.confidenceThreshold,
+            chunkDuration: syncData.audioProcessing.chunkDuration,
+            language: syncData.audioProcessing.language
+        });
+
+        // Apply STT-specific jaw animation settings
+        const client = initializeServoClient();
+        if (client.isConnected) {
+            await client.sendRequest('configure_stt_integration', {
+                servo_id: '18',
+                stt_config: syncData.audioProcessing,
+                sync_timestamp: syncData.syncTimestamp
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'STT settings synced with ChatterPi jaw animation system',
+            syncData: syncData
+        });
+    } catch (error) {
+        logger.error('STT sync failed:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // Apply character configuration to servo service
 async function applyCharacterConfigToServo(characterId, config) {
     try {

@@ -330,6 +330,105 @@
             border: 1px solid rgba(0, 255, 0, 0.3);
         }
 
+        /* ChatterPi Integration Styles */
+        .integration-notice {
+            background: linear-gradient(135deg, #001100, #002200);
+            border: 1px solid #00ff00;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .integration-notice::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 0, 0.1), transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .notice-content {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .notice-content i {
+            color: #00ff00;
+            font-size: 1.2em;
+        }
+
+        .integration-link {
+            color: #ff6600;
+            text-decoration: none;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .integration-link:hover {
+            color: #ff8833;
+            text-decoration: underline;
+        }
+
+        .jaw-animation-integration {
+            background: #001100;
+            border: 1px solid #ff6600;
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 15px;
+        }
+
+        .integration-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .jaw-status {
+            margin-left: 8px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .jaw-status.connected {
+            background: rgba(0, 255, 0, 0.2);
+            color: #00ff00;
+            border: 1px solid rgba(0, 255, 0, 0.3);
+        }
+
+        .jaw-status.disconnected {
+            background: rgba(255, 0, 0, 0.2);
+            color: #ff6666;
+            border: 1px solid rgba(255, 0, 0, 0.3);
+        }
+
+        .integration-controls {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .small-btn {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 4px;
+        }
+
         /* UI Layout Improvements */
         .quick-actions {
             display: flex;
@@ -534,6 +633,15 @@
         <div class="info-section">
             <h2>🎤 OpenAI Whisper STT Configuration</h2>
             <p>Configure Speech-to-Text settings for converting spoken audio into text streams for AI processing</p>
+            <div class="integration-notice">
+                <div class="notice-content">
+                    <i class="fas fa-info-circle"></i>
+                    <div>
+                        <strong>ChatterPi Integration:</strong> STT settings automatically sync with jaw animation system for real-time audio-driven character performance.
+                        <a href="/chatterpi" class="integration-link">🦴 Manage Jaw Animation</a>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Quick Actions Bar -->
@@ -543,6 +651,9 @@
             </button>
             <button type="button" class="button secondary-btn" onclick="toggleRecording()">
                 <i class="fas fa-microphone"></i> Quick Test Recording
+            </button>
+            <button type="button" class="button secondary-btn" onclick="testJawAnimationWithSTT()">
+                <i class="fas fa-robot"></i> Test Jaw Animation
             </button>
             <button type="button" class="button secondary-btn" onclick="document.getElementById('sttConfigForm').scrollIntoView({behavior: 'smooth'})">
                 <i class="fas fa-cog"></i> Configuration Settings
@@ -571,6 +682,13 @@
                 <div style="display: flex; align-items: center;">
                     <span id="audioStatus">Ready</span>
                     <div class="status-indicator status-online" id="audioIndicator"></div>
+                </div>
+            </div>
+            <div class="status-item">
+                <span>ChatterPi Jaw Animation</span>
+                <div style="display: flex; align-items: center;">
+                    <span id="chatterpiStatus">Checking...</span>
+                    <div class="status-indicator" id="chatterpiIndicator"></div>
                 </div>
             </div>
 
@@ -738,6 +856,26 @@
                 <span id="confidencePercent">0%</span>
             </div>
 
+            <!-- ChatterPi Jaw Animation Integration -->
+            <div class="jaw-animation-integration">
+                <div class="integration-header">
+                    <i class="fas fa-robot" style="color: #ff6600; margin-right: 6px;"></i>
+                    <strong>Jaw Animation:</strong>
+                    <span class="jaw-status" id="jawAnimationStatus">Checking...</span>
+                </div>
+                <div class="integration-controls">
+                    <button class="button small-btn secondary-btn" onclick="testJawAnimationWithSTT()" title="Test jaw animation with STT input">
+                        <i class="fas fa-play"></i> Test with STT
+                    </button>
+                    <button class="button small-btn primary-btn" onclick="configureJawAnimation()" title="Configure jaw animation settings">
+                        <i class="fas fa-cog"></i> Configure
+                    </button>
+                    <button class="button small-btn secondary-btn" onclick="syncSTTWithChatterPi()" title="Sync STT settings with jaw animation">
+                        <i class="fas fa-sync"></i> Sync Settings
+                    </button>
+                </div>
+            </div>
+
             <div class="button-group">
                 <button type="button" class="button secondary-btn" onclick="clearResults()">
                     <i class="fas fa-trash"></i> Clear Results
@@ -765,6 +903,8 @@
         document.addEventListener('DOMContentLoaded', function() {
             checkStatus();
             updateConfidenceDisplay(document.getElementById('confidenceThreshold').value);
+            // Initialize ChatterPi jaw animation status
+            initializeJawAnimationStatus();
         });
 
         // Form submission
@@ -808,9 +948,28 @@
 
                 // Check microphone access
                 await checkMicrophoneAccess();
+
+                // Check ChatterPi status
+                await checkChatterPiStatus();
             } catch (error) {
                 console.error('Status check failed:', error);
                 updateStatusIndicator('apiStatus', 'apiIndicator', 'Error', 'offline');
+            }
+        }
+
+        async function checkChatterPiStatus() {
+            try {
+                const response = await fetch('/chatterpi/api/status');
+                const result = await response.json();
+
+                const isConnected = result.success && result.status.servo.connected;
+                updateStatusIndicator('chatterpiStatus', 'chatterpiIndicator',
+                    isConnected ? 'Connected' : 'Disconnected',
+                    isConnected ? 'online' : 'offline'
+                );
+            } catch (error) {
+                console.error('ChatterPi status check failed:', error);
+                updateStatusIndicator('chatterpiStatus', 'chatterpiIndicator', 'Error', 'offline');
             }
         }
 
@@ -1376,6 +1535,107 @@
             updateLevel();
         }
 
+        // ChatterPi Jaw Animation Integration Functions
+        async function initializeJawAnimationStatus() {
+            try {
+                const response = await fetch('/chatterpi/api/status');
+                const result = await response.json();
+
+                const isConnected = result.success && result.status.servo.connected;
+                updateJawAnimationStatus(isConnected);
+            } catch (error) {
+                console.error('Failed to check jaw animation status:', error);
+                updateJawAnimationStatus(false);
+            }
+        }
+
+        function updateJawAnimationStatus(isConnected) {
+            const statusElement = document.getElementById('jawAnimationStatus');
+            if (isConnected) {
+                statusElement.textContent = 'Connected';
+                statusElement.className = 'jaw-status connected';
+            } else {
+                statusElement.textContent = 'Disconnected';
+                statusElement.className = 'jaw-status disconnected';
+            }
+        }
+
+        async function testJawAnimationWithSTT() {
+            try {
+                showMessage('Testing jaw animation with STT...', 'info');
+
+                // First check if we have a recent transcription to use
+                const transcriptionElement = document.getElementById('transcriptionResult');
+                const hasTranscription = transcriptionElement &&
+                    !transcriptionElement.innerHTML.includes('Transcription will appear here');
+
+                if (!hasTranscription) {
+                    showMessage('Please record some audio first to test jaw animation with STT', 'error');
+                    return;
+                }
+
+                const response = await fetch('/chatterpi/api/test/stt-animation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        testMode: 'stt-integration',
+                        duration: 3000 // 3 second test
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage('STT jaw animation test completed successfully!', 'success');
+                } else {
+                    showMessage(`STT jaw animation test failed: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                console.error('STT jaw animation test error:', error);
+                showMessage(`STT jaw animation test error: ${error.message}`, 'error');
+            }
+        }
+
+        function configureJawAnimation() {
+            // Open ChatterPi configuration page
+            window.open('/chatterpi', '_blank');
+        }
+
+        async function syncSTTWithChatterPi() {
+            try {
+                showMessage('Syncing STT settings with ChatterPi...', 'info');
+
+                // Get current STT configuration
+                const formData = new FormData(document.getElementById('sttConfigForm'));
+                const sttConfig = Object.fromEntries(formData.entries());
+
+                const response = await fetch('/chatterpi/api/sync/stt', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        sttConfig: sttConfig,
+                        syncTimestamp: Date.now()
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage('STT settings synced with ChatterPi jaw animation system', 'success');
+                    // Refresh jaw animation status
+                    await initializeJawAnimationStatus();
+                } else {
+                    showMessage(`Failed to sync STT settings: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                console.error('STT sync error:', error);
+                showMessage(`STT sync error: ${error.message}`, 'error');
+            }
+        }
 
     </script>
 </body>
