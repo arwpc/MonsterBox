@@ -956,7 +956,7 @@ body {
   background-color: var(--primary);
 }
 
-/* Breadcrumbs */
+/* Legacy Breadcrumbs (for backward compatibility) */
 .breadcrumbs ul {
   display: flex;
   list-style: none;
@@ -970,6 +970,105 @@ body {
   margin: 0 8px;
   color: var(--base-content);
   opacity: 0.5;
+}
+
+/* Vertical Breadcrumb Navigation */
+.breadcrumb-vertical {
+  display: inline-block;
+  box-shadow: 0 0 15px 1px rgba(0, 255, 0, 0.2);
+  overflow: hidden;
+  border-radius: 8px;
+  counter-reset: breadcrumb-counter;
+  background: var(--base-200);
+  border: 1px solid var(--primary);
+}
+
+.breadcrumb-item {
+  text-decoration: none;
+  outline: none;
+  display: block;
+  font-size: 14px;
+  line-height: 40px;
+  color: var(--base-content);
+  padding: 0 15px 0 50px;
+  background: var(--base-200);
+  background: linear-gradient(135deg, var(--base-200), var(--base-300));
+  position: relative;
+  transition: all 0.3s ease;
+  border-bottom: 1px solid var(--base-300);
+}
+
+.breadcrumb-item:first-child {
+  padding-left: 35px;
+  border-radius: 8px 8px 0 0;
+}
+
+.breadcrumb-item:first-child:before {
+  left: 12px;
+}
+
+.breadcrumb-item:last-child {
+  border-radius: 0 0 8px 8px;
+  border-bottom: none;
+  padding-right: 20px;
+}
+
+/* Hover and active states */
+.breadcrumb-item:hover,
+.breadcrumb-item.active {
+  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary), var(--primary-focus));
+  color: var(--primary-content);
+  box-shadow: 0 0 10px var(--primary);
+}
+
+.breadcrumb-item.active:after,
+.breadcrumb-item:hover:after {
+  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary), var(--primary-focus));
+}
+
+/* Arrow indicators for vertical breadcrumbs */
+.breadcrumb-item:after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -10px;
+  width: 0;
+  height: 0;
+  border-left: 10px solid var(--base-200);
+  border-top: 10px solid transparent;
+  border-bottom: 10px solid transparent;
+  transform: translateY(-50%);
+  z-index: 1;
+  transition: all 0.3s ease;
+}
+
+.breadcrumb-item:last-child:after {
+  display: none;
+}
+
+/* Counter numbers for breadcrumb items */
+.breadcrumb-item:before {
+  content: counter(breadcrumb-counter);
+  counter-increment: breadcrumb-counter;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
+  margin: 8px 0;
+  position: absolute;
+  top: 50%;
+  left: 15px;
+  transform: translateY(-50%);
+  background: var(--base-300);
+  background: linear-gradient(135deg, var(--base-300), var(--base-100));
+  font-weight: bold;
+  font-size: 12px;
+  text-align: center;
+  color: var(--base-content);
+  border: 1px solid var(--primary);
+  box-shadow: 0 0 5px rgba(0, 255, 0, 0.3);
 }
 
 /* Tabs */

@@ -43,31 +43,100 @@ var pageBreadcrumbs = breadcrumbs || [
 }
 
 .compact-nav {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.9em;
+    display: inline-block;
+    box-shadow: 0 0 15px 1px rgba(0, 255, 0, 0.2);
+    overflow: hidden;
+    border-radius: 8px;
+    counter-reset: breadcrumb-counter;
+    background: #000000;
+    border: 1px solid #00ff00;
 }
 
-.nav-link {
-    color: #00ffff;
+.nav-link, .nav-current {
     text-decoration: none;
+    outline: none;
+    display: block;
+    font-size: 14px;
+    line-height: 36px;
+    color: #00ff00;
+    padding: 0 15px 0 45px;
+    background: #000000;
+    background: linear-gradient(135deg, #000000, #111111);
+    position: relative;
+    transition: all 0.3s ease;
+    border-bottom: 1px solid #333333;
+}
+
+.nav-link:first-child, .nav-current:first-child {
+    padding-left: 30px;
+    border-radius: 8px 8px 0 0;
+}
+
+.nav-link:first-child:before, .nav-current:first-child:before {
+    left: 8px;
+}
+
+.nav-link:last-child, .nav-current:last-child {
+    border-radius: 0 0 8px 8px;
+    border-bottom: none;
+    padding-right: 20px;
+}
+
+.nav-link:hover, .nav-current {
+    background: #00ff00;
+    background: linear-gradient(135deg, #00ff00, #00cc00);
+    color: #000000;
+    box-shadow: 0 0 10px #00ff00;
+    font-weight: bold;
+}
+
+.nav-link:after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: -8px;
+    width: 0;
+    height: 0;
+    border-left: 8px solid #000000;
+    border-top: 8px solid transparent;
+    border-bottom: 8px solid transparent;
+    transform: translateY(-50%);
+    z-index: 1;
     transition: all 0.3s ease;
 }
 
-.nav-link:hover {
-    color: #ffffff;
-    text-shadow: 0 0 5px #00ffff;
+.nav-link:hover:after {
+    border-left-color: #00ff00;
+}
+
+.nav-link:last-child:after, .nav-current:after {
+    display: none;
+}
+
+.nav-link:before, .nav-current:before {
+    content: counter(breadcrumb-counter);
+    counter-increment: breadcrumb-counter;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    margin: 8px 0;
+    position: absolute;
+    top: 50%;
+    left: 12px;
+    transform: translateY(-50%);
+    background: #333333;
+    background: linear-gradient(135deg, #333333, #111111);
+    font-weight: bold;
+    font-size: 11px;
+    text-align: center;
+    color: #00ff00;
+    border: 1px solid #00ff00;
+    box-shadow: 0 0 5px rgba(0, 255, 0, 0.3);
 }
 
 .nav-separator {
-    color: #666666;
-    font-weight: bold;
-}
-
-.nav-current {
-    color: #00ff00;
-    font-weight: bold;
+    display: none;
 }
 
 @media (max-width: 768px) {
@@ -93,14 +162,13 @@ var pageBreadcrumbs = breadcrumbs || [
         <nav class="compact-nav">
             <% pageBreadcrumbs.forEach((crumb, index) => { %>
                 <% if (crumb.current) { %>
-                    <span class="nav-current"><%= crumb.name %></span>
+                    <span class="nav-current">
+                        <% if (crumb.icon) { %><%= crumb.icon %> <% } %><%= crumb.name %>
+                    </span>
                 <% } else { %>
                     <a href="<%= crumb.url %>" class="nav-link">
                         <% if (crumb.icon) { %><%= crumb.icon %> <% } %><%= crumb.name %>
                     </a>
-                <% } %>
-                <% if (index < pageBreadcrumbs.length - 1) { %>
-                    <span class="nav-separator">•</span>
                 <% } %>
             <% }) %>
         </nav>

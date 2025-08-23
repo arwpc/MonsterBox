@@ -312,7 +312,7 @@ app.use('/characters',
     invalidateCache('GET:/api/characters:'), // Invalidate character cache on modifications
     characterRoutes
 );
-app.use('/ai-instances', require('./routes/aiInstanceRoutes'));
+
 app.use('/sounds', soundRoutes);
 app.use('/active-mode', activeModeRoutes);
 // System config routes for global servo management

@@ -95,29 +95,7 @@ class UIIntegrationTester {
         }
     }
 
-    async testAIInstancesData() {
-        const aiInstancesPath = path.join(__dirname, 'data', 'ai-instances.json');
-        const aiInstancesData = await fs.readFile(aiInstancesPath, 'utf8');
-        const aiInstances = JSON.parse(aiInstancesData);
-        
-        if (!Array.isArray(aiInstances)) {
-            throw new Error('AI instances data is not an array');
-        }
-        
-        if (aiInstances.length === 0) {
-            throw new Error('No AI instances found');
-        }
-        
-        // Check required fields
-        const requiredFields = ['id', 'name', 'type', 'config'];
-        for (const instance of aiInstances) {
-            for (const field of requiredFields) {
-                if (!instance[field]) {
-                    throw new Error(`AI instance missing required field: ${field}`);
-                }
-            }
-        }
-    }
+
 
     async testPartsPage() {
         const response = await axios.get(`${BASE_URL}/parts`);
@@ -143,15 +121,7 @@ class UIIntegrationTester {
         }
     }
 
-    async testAIInstancesPage() {
-        const response = await axios.get(`${BASE_URL}/ai-instances`);
-        if (response.status !== 200) {
-            throw new Error(`Expected status 200, got ${response.status}`);
-        }
-        if (!response.data.includes('AI Instances')) {
-            throw new Error('AI instances page does not contain expected content');
-        }
-    }
+
 
     async testHardwareMonitorPage() {
         const response = await axios.get(`${BASE_URL}/hardware-monitor.html`);
@@ -174,13 +144,13 @@ class UIIntegrationTester {
         await this.runTest('Hardware API Status', () => this.testHardwareAPIStatus());
         await this.runTest('Hardware API Services', () => this.testHardwareAPIServices());
         await this.runTest('Character Data Structure', () => this.testCharacterDataStructure());
-        await this.runTest('AI Instances Data', () => this.testAIInstancesData());
+
 
         // Phase 3: Testing & Validation
         console.log('\n📋 Phase 3: Testing & Validation');
         await this.runTest('Parts Page', () => this.testPartsPage());
         await this.runTest('Characters Page', () => this.testCharactersPage());
-        await this.runTest('AI Instances Page', () => this.testAIInstancesPage());
+
         await this.runTest('Hardware Monitor Page', () => this.testHardwareMonitorPage());
 
         // Results Summary

@@ -56,19 +56,10 @@
     <main id="main-content" class="flex-1 container mx-auto px-4 py-8">
         <!-- Breadcrumbs -->
         <% if (typeof breadcrumbs !== 'undefined' && breadcrumbs.length > 0) { %>
-        <div class="breadcrumbs text-sm mb-6">
-            <ul>
-                <% breadcrumbs.forEach(function(crumb, index) { %>
-                <li>
-                    <% if (index === breadcrumbs.length - 1) { %>
-                        <span class="text-primary"><%= crumb.name %></span>
-                    <% } else { %>
-                        <a href="<%= crumb.url %>" class="hover:text-primary"><%= crumb.name %></a>
-                    <% } %>
-                </li>
-                <% }); %>
-            </ul>
-        </div>
+        <%- include('components/button-components', {
+            component: 'breadcrumb',
+            items: breadcrumbs
+        }) %>
         <% } %>
 
         <!-- Page title -->

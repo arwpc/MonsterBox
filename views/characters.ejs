@@ -23,7 +23,6 @@
 
         <div class="button-group">
             <a href="/characters/new" class="button">🎭 Add New Character</a>
-            <a href="/ai-instances" class="button secondary-btn">🧠 Manage AI Instances</a>
             <a href="/parts" class="button secondary-btn">🔧 Manage Hardware Parts</a>
             <a href="/" class="button secondary-btn">🏠 Back to Main Menu</a>
         </div>
@@ -111,11 +110,11 @@
                                 <span class="badge info">🧠 <%= aiId === 'orlok' ? 'Count Orlok' : aiId === 'robochat' ? 'RoboChat' : aiId === 'blackbeard' ? 'Blackbeard' : aiId.charAt(0).toUpperCase() + aiId.slice(1) %></span>
                                 <% }); %>
                                 <br><small>Default: <%= character.chatterpi_config.default_character === 'orlok' ? 'Count Orlok' : character.chatterpi_config.default_character === 'robochat' ? 'RoboChat' : character.chatterpi_config.default_character === 'blackbeard' ? 'Blackbeard' : character.chatterpi_config.default_character || 'None' %></small>
-                                <br><a href="/characters/<%= character.id %>/ai" class="button small">🔄 Change AI</a>
+                                <br><a href="/ai-management" class="button small">🔄 Change AI</a>
                                 <button onclick="removeAI(<%= character.id %>)" class="button small danger">❌ Remove AI</button>
                             <% } else { %>
                                 <span class="text-muted">No AI assigned</span>
-                                <br><a href="/characters/<%= character.id %>/ai" class="button small">🧠 Assign AI</a>
+                                <br><a href="/ai-management" class="button small">🧠 Assign AI</a>
                             <% } %>
                         </td>
                         <td>
