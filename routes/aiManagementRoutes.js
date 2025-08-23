@@ -284,6 +284,7 @@ router.post('/api/stt/transcribe', upload.single('audio'), async (req, res) => {
         const startTime = Date.now();
         const language = req.body.language || 'en';
         const isTest = req.body.isTest === 'true';
+        let tempFilePath = null; // Track temp file for cleanup
 
         console.log(`🎤 STT Request - File: ${req.file.originalname}, Size: ${req.file.size}, MIME: ${req.file.mimetype}`);
 
@@ -294,30 +295,27 @@ router.post('/api/stt/transcribe', upload.single('audio'), async (req, res) => {
                 apiKey: process.env.OPENAI_API_KEY
             });
 
-            // Determine the correct filename based on MIME type
-            let filename = 'audio.webm'; // Default to webm
+            // Determine the correct file extension based on MIME type
+            let extension = '.webm'; // Default to webm
             if (req.file.mimetype === 'audio/wav') {
-                filename = 'audio.wav';
+                extension = '.wav';
             } else if (req.file.mimetype === 'audio/mpeg' || req.file.mimetype === 'audio/mp3') {
-                filename = 'audio.mp3';
+                extension = '.mp3';
             } else if (req.file.mimetype === 'audio/webm' || req.file.originalname.endsWith('.webm')) {
-                filename = 'audio.webm';
+                extension = '.webm';
             }
 
-            console.log(`🎤 Using filename: ${filename} for MIME type: ${req.file.mimetype}`);
+            console.log(`🎤 Processing audio file - Original: ${req.file.originalname}, MIME: ${req.file.mimetype}, Extension: ${extension}`);
 
-            // Create file stream with proper filename for OpenAI API
-            const fileStream = require('fs').createReadStream(req.file.path);
+            // Create a temporary file with the correct extension
+            tempFilePath = req.file.path + extension;
+            await fs.copyFile(req.file.path, tempFilePath);
 
-            // Set the filename on the stream object for OpenAI to recognize the format
-            Object.defineProperty(fileStream, 'name', {
-                value: filename,
-                writable: false
-            });
+            console.log(`🎤 Created temp file: ${tempFilePath}`);
 
-            // Call OpenAI Whisper API
+            // Call OpenAI Whisper API with the properly named file
             const transcription = await openai.audio.transcriptions.create({
-                file: fileStream,
+                file: require('fs').createReadStream(tempFilePath),
                 model: 'whisper-1',
                 language: language === 'auto' ? undefined : language,
                 response_format: 'json'
@@ -325,8 +323,9 @@ router.post('/api/stt/transcribe', upload.single('audio'), async (req, res) => {
 
             const responseTime = Date.now() - startTime;
 
-            // Clean up uploaded file
+            // Clean up uploaded files
             await fs.unlink(req.file.path);
+            await fs.unlink(tempFilePath);
 
             res.json({
                 success: true,
@@ -345,8 +344,15 @@ router.post('/api/stt/transcribe', upload.single('audio'), async (req, res) => {
         } catch (apiError) {
             console.error('OpenAI Whisper API error:', apiError);
 
-            // Clean up uploaded file
+            // Clean up uploaded files
             await fs.unlink(req.file.path);
+            if (tempFilePath) {
+                try {
+                    await fs.unlink(tempFilePath);
+                } catch (cleanupError) {
+                    // Ignore cleanup errors for temp file
+                }
+            }
 
             res.json({
                 success: false,
@@ -365,6 +371,15 @@ router.post('/api/stt/transcribe', upload.single('audio'), async (req, res) => {
                 await fs.unlink(req.file.path);
             } catch (cleanupError) {
                 console.error('Error cleaning up file:', cleanupError);
+            }
+        }
+
+        // Clean up temp file if it exists
+        if (tempFilePath) {
+            try {
+                await fs.unlink(tempFilePath);
+            } catch (cleanupError) {
+                // Ignore cleanup errors for temp file
             }
         }
 
