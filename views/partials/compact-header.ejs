@@ -1,0 +1,108 @@
+<%
+// Compact header partial for MonsterBox
+// Usage: <%- include('partials/compact-header', {
+//   title: 'Page Title',
+//   icon: '🧠',
+//   breadcrumbs: [
+//     { name: 'Home', url: '/', icon: '🏠' },
+//     { name: 'AI Management', url: '/ai-management', icon: '🧠' },
+//     { name: 'Current Page', current: true }
+//   ]
+// }) %>
+
+var pageTitle = title || 'MonsterBox';
+var pageIcon = icon || '🎭';
+var pageBreadcrumbs = breadcrumbs || [
+    { name: 'Home', url: '/', icon: '🏠' }
+];
+%>
+
+<style>
+/* Compact Header Styles */
+.compact-header {
+    background: #000000;
+    border-bottom: 2px solid #00ff00;
+    padding: 15px 20px;
+    margin: -20px -20px 20px -20px;
+}
+
+.header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.page-title {
+    font-family: 'Creepster', cursive;
+    font-size: 2em;
+    margin: 0;
+    color: #00ff00;
+    text-shadow: 0 0 10px #00ff00;
+}
+
+.compact-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9em;
+}
+
+.nav-link {
+    color: #00ffff;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.nav-link:hover {
+    color: #ffffff;
+    text-shadow: 0 0 5px #00ffff;
+}
+
+.nav-separator {
+    color: #666666;
+    font-weight: bold;
+}
+
+.nav-current {
+    color: #00ff00;
+    font-weight: bold;
+}
+
+@media (max-width: 768px) {
+    .compact-header {
+        padding: 10px 15px;
+        margin: -20px -20px 15px -20px;
+    }
+    
+    .page-title {
+        font-size: 1.5em;
+    }
+    
+    .compact-nav {
+        font-size: 0.8em;
+        flex-wrap: wrap;
+    }
+}
+</style>
+
+<header class="compact-header">
+    <div class="header-content">
+        <h1 class="page-title"><%= pageIcon %> <%= pageTitle %></h1>
+        <nav class="compact-nav">
+            <% pageBreadcrumbs.forEach((crumb, index) => { %>
+                <% if (crumb.current) { %>
+                    <span class="nav-current"><%= crumb.name %></span>
+                <% } else { %>
+                    <a href="<%= crumb.url %>" class="nav-link">
+                        <% if (crumb.icon) { %><%= crumb.icon %> <% } %><%= crumb.name %>
+                    </a>
+                <% } %>
+                <% if (index < pageBreadcrumbs.length - 1) { %>
+                    <span class="nav-separator">•</span>
+                <% } %>
+            <% }) %>
+        </nav>
+    </div>
+</header>

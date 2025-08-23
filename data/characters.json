@@ -59,7 +59,7 @@
       "maxTokens": 150,
       "systemPrompt": "",
       "contextLength": 5,
-      "enabled": true
+      "enabled": false
     }
   },
   {

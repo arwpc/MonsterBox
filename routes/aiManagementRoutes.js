@@ -397,13 +397,321 @@ router.post('/api/personalities/global', async (req, res) => {
     try {
         const config = req.body;
         const saved = await saveConfig(PERSONALITIES_CONFIG_FILE, config);
-        
+
         if (saved) {
             res.json({ success: true, message: 'Global AI configuration saved successfully' });
         } else {
             res.status(500).json({ success: false, error: 'Failed to save configuration' });
         }
     } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Create new AI personality (must be before character routes to avoid parameter conflict)
+router.post('/api/personalities/create', async (req, res) => {
+    try {
+        const config = req.body;
+
+        if (!config.personalityName || !config.personalityName.trim()) {
+            return res.status(400).json({ success: false, error: 'Personality name is required' });
+        }
+
+        // Load existing personalities
+        const personalitiesPath = path.join(__dirname, '../data/ai-personalities.json');
+        let personalities = [];
+
+        try {
+            const data = await fs.readFile(personalitiesPath, 'utf8');
+            personalities = JSON.parse(data);
+        } catch (error) {
+            // File doesn't exist yet, start with empty array
+            personalities = [];
+        }
+
+        // Check if personality name already exists
+        const existingPersonality = personalities.find(p =>
+            p.name.toLowerCase() === config.personalityName.toLowerCase()
+        );
+
+        if (existingPersonality) {
+            return res.status(400).json({
+                success: false,
+                error: 'A personality with this name already exists'
+            });
+        }
+
+        // Create new personality
+        const newPersonality = {
+            id: Date.now().toString(), // Simple ID generation
+            name: config.personalityName.trim(),
+            provider: config.aiProvider || 'openai',
+            model: config.aiModel || 'gpt-4',
+            temperature: parseFloat(config.aiTemperature) || 0.8,
+            maxTokens: parseInt(config.aiMaxTokens) || 150,
+            systemPrompt: config.systemPrompt || '',
+            contextLength: parseInt(config.contextLength) || 5,
+            enabled: config.enabled === 'true',
+            assignedCharacter: config.assignedCharacter || null, // Character assignment
+            createdAt: new Date().toISOString()
+        };
+
+        personalities.push(newPersonality);
+
+        // Save personalities file
+        await fs.writeFile(personalitiesPath, JSON.stringify(personalities, null, 2));
+
+        res.json({
+            success: true,
+            message: 'AI personality created successfully',
+            personality: newPersonality
+        });
+    } catch (error) {
+        console.error('Create personality error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Migrate character AI configs to personalities
+router.post('/api/personalities/migrate', async (req, res) => {
+    try {
+        const personalitiesPath = path.join(__dirname, '../data/ai-personalities.json');
+        let personalities = [];
+
+        try {
+            const data = await fs.readFile(personalitiesPath, 'utf8');
+            personalities = JSON.parse(data);
+        } catch (error) {
+            personalities = [];
+        }
+
+        // Get all characters with AI configurations
+        const characters = await characterService.getAllCharacters();
+        const migratedPersonalities = [];
+
+        for (const character of characters) {
+            if (character.aiConfig && Object.keys(character.aiConfig).length > 0) {
+                // Check if personality already exists for this character
+                const existingPersonality = personalities.find(p =>
+                    p.assignedCharacter === character.id.toString()
+                );
+
+                if (!existingPersonality) {
+                    // Create new personality from character AI config
+                    const newPersonality = {
+                        id: Date.now().toString() + '_' + character.id,
+                        name: character.char_name + ' Personality',
+                        provider: character.aiConfig.provider || 'openai',
+                        model: character.aiConfig.model || 'gpt-4',
+                        temperature: character.aiConfig.temperature || 0.8,
+                        maxTokens: character.aiConfig.maxTokens || 150,
+                        systemPrompt: character.aiConfig.systemPrompt || '',
+                        contextLength: character.aiConfig.contextLength || 5,
+                        enabled: character.aiConfig.enabled || false,
+                        assignedCharacter: character.id.toString(),
+                        createdAt: new Date().toISOString(),
+                        migratedFrom: 'character_config'
+                    };
+
+                    personalities.push(newPersonality);
+                    migratedPersonalities.push(newPersonality);
+                }
+            }
+        }
+
+        // Save updated personalities
+        await fs.writeFile(personalitiesPath, JSON.stringify(personalities, null, 2));
+
+        res.json({
+            success: true,
+            message: `Migrated ${migratedPersonalities.length} character AI configurations to personalities`,
+            migratedPersonalities
+        });
+    } catch (error) {
+        console.error('Migration error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Assign personality to character
+router.post('/api/personalities/:personalityId/assign', async (req, res) => {
+    try {
+        const { personalityId } = req.params;
+        const { characterId } = req.body;
+
+        const personalitiesPath = path.join(__dirname, '../data/ai-personalities.json');
+        let personalities = [];
+
+        try {
+            const data = await fs.readFile(personalitiesPath, 'utf8');
+            personalities = JSON.parse(data);
+        } catch (error) {
+            return res.status(404).json({ success: false, error: 'Personalities file not found' });
+        }
+
+        // Find the personality to update
+        const personalityIndex = personalities.findIndex(p => p.id === personalityId);
+        if (personalityIndex === -1) {
+            return res.status(404).json({ success: false, error: 'Personality not found' });
+        }
+
+        // If assigning to a character, check if another personality is already assigned
+        if (characterId) {
+            const existingAssignment = personalities.find(p =>
+                p.assignedCharacter === characterId && p.id !== personalityId
+            );
+
+            if (existingAssignment) {
+                // Unassign the existing personality
+                existingAssignment.assignedCharacter = null;
+                existingAssignment.lastModified = new Date().toISOString();
+            }
+        }
+
+        // Update the personality assignment
+        personalities[personalityIndex].assignedCharacter = characterId || null;
+        personalities[personalityIndex].lastModified = new Date().toISOString();
+
+        // Save updated personalities
+        await fs.writeFile(personalitiesPath, JSON.stringify(personalities, null, 2));
+
+        res.json({
+            success: true,
+            message: characterId ? 'Personality assigned to character successfully' : 'Personality unassigned successfully',
+            personality: personalities[personalityIndex]
+        });
+    } catch (error) {
+        console.error('Assignment error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// List all personalities
+router.get('/api/personalities/list', async (req, res) => {
+    try {
+        const personalitiesPath = path.join(__dirname, '../data/ai-personalities.json');
+        let personalities = [];
+
+        try {
+            const data = await fs.readFile(personalitiesPath, 'utf8');
+            personalities = JSON.parse(data);
+        } catch (error) {
+            // File doesn't exist yet, return empty array
+            personalities = [];
+        }
+
+        res.json({ success: true, personalities });
+    } catch (error) {
+        console.error('List personalities error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Get available characters for personality assignment
+router.get('/api/personalities/available-characters', async (req, res) => {
+    try {
+        const characters = await characterService.getAllCharacters();
+
+        // Return simplified character data for dropdown
+        const availableCharacters = characters.map(char => ({
+            id: char.id,
+            name: char.char_name,
+            description: char.description
+        }));
+
+        res.json({ success: true, characters: availableCharacters });
+    } catch (error) {
+        console.error('Get available characters error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Get specific personality
+router.get('/api/personalities/:personalityId', async (req, res) => {
+    try {
+        const personalityId = req.params.personalityId;
+        const personalitiesPath = path.join(__dirname, '../data/ai-personalities.json');
+
+        const data = await fs.readFile(personalitiesPath, 'utf8');
+        const personalities = JSON.parse(data);
+
+        const personality = personalities.find(p => p.id === personalityId);
+
+        if (!personality) {
+            return res.status(404).json({ success: false, error: 'Personality not found' });
+        }
+
+        res.json({ success: true, personality });
+    } catch (error) {
+        console.error('Get personality error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Update personality
+router.post('/api/personalities/:personalityId', async (req, res) => {
+    try {
+        const personalityId = req.params.personalityId;
+        const config = req.body;
+        const personalitiesPath = path.join(__dirname, '../data/ai-personalities.json');
+
+        const data = await fs.readFile(personalitiesPath, 'utf8');
+        const personalities = JSON.parse(data);
+
+        const personalityIndex = personalities.findIndex(p => p.id === personalityId);
+
+        if (personalityIndex === -1) {
+            return res.status(404).json({ success: false, error: 'Personality not found' });
+        }
+
+        // Update personality
+        personalities[personalityIndex] = {
+            ...personalities[personalityIndex],
+            name: config.personalityName.trim(),
+            provider: config.aiProvider,
+            model: config.aiModel,
+            temperature: parseFloat(config.aiTemperature),
+            maxTokens: parseInt(config.aiMaxTokens),
+            systemPrompt: config.systemPrompt,
+            contextLength: parseInt(config.contextLength),
+            enabled: config.enabled === 'true',
+            assignedCharacter: config.assignedCharacter || null,
+            lastModified: new Date().toISOString()
+        };
+
+        await fs.writeFile(personalitiesPath, JSON.stringify(personalities, null, 2));
+
+        res.json({ success: true, message: 'Personality updated successfully' });
+    } catch (error) {
+        console.error('Update personality error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Toggle personality enabled status
+router.post('/api/personalities/:personalityId/toggle', async (req, res) => {
+    try {
+        const personalityId = req.params.personalityId;
+        const { enabled } = req.body;
+        const personalitiesPath = path.join(__dirname, '../data/ai-personalities.json');
+
+        const data = await fs.readFile(personalitiesPath, 'utf8');
+        const personalities = JSON.parse(data);
+
+        const personalityIndex = personalities.findIndex(p => p.id === personalityId);
+
+        if (personalityIndex === -1) {
+            return res.status(404).json({ success: false, error: 'Personality not found' });
+        }
+
+        personalities[personalityIndex].enabled = enabled;
+        personalities[personalityIndex].lastModified = new Date().toISOString();
+
+        await fs.writeFile(personalitiesPath, JSON.stringify(personalities, null, 2));
+
+        res.json({ success: true, message: `Personality ${enabled ? 'enabled' : 'disabled'} successfully` });
+    } catch (error) {
+        console.error('Toggle personality error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -427,13 +735,13 @@ router.post('/api/personalities/character/:characterId', async (req, res) => {
     try {
         const characterId = req.params.characterId;
         const config = req.body;
-        
+
         // Update character with AI configuration
         const character = await characterService.getCharacterById(characterId);
         if (!character) {
             return res.status(404).json({ success: false, error: 'Character not found' });
         }
-        
+
         character.aiConfig = {
             provider: config.aiProvider,
             model: config.aiModel,

@@ -18,15 +18,42 @@
             background: #001100;
             border: 2px solid #00ff00;
             border-radius: 10px;
-            padding: 20px;
+            padding: 0;
             margin: 20px 0;
         }
-        
+
         .config-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 20px;
+            padding: 20px;
+            margin: 0;
+            cursor: pointer;
+            background: rgba(0, 255, 0, 0.1);
+            border-radius: 8px 8px 0 0;
+            transition: background-color 0.3s ease;
+        }
+
+        .config-header:hover {
+            background: rgba(0, 255, 0, 0.15);
+        }
+
+        .config-content {
+            padding: 20px;
+            display: block;
+        }
+
+        .config-content.collapsed {
+            display: none;
+        }
+
+        .collapse-icon {
+            font-size: 1.2em;
+            transition: transform 0.3s ease;
+        }
+
+        .collapse-icon.collapsed {
+            transform: rotate(-90deg);
         }
         
         .config-icon {
@@ -40,6 +67,25 @@
             grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
             gap: 20px;
             margin: 20px 0;
+        }
+
+        .personality-assignment {
+            margin: 10px 0;
+        }
+
+        .personality-assignment select {
+            width: 100%;
+            padding: 8px;
+            background: #001100;
+            border: 1px solid #00ff00;
+            border-radius: 5px;
+            color: #ffffff;
+            font-size: 14px;
+        }
+
+        .personality-assignment select option {
+            background: #001100;
+            color: #ffffff;
         }
         
         .character-card {
@@ -132,46 +178,96 @@
             gap: 20px;
             margin: 20px 0;
         }
-        
+
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 35px;
+            padding: 15px 15px 50px 15px; /* Much more bottom padding for help text */
+            background: rgba(0, 255, 0, 0.05);
+            border-radius: 8px;
+            border: 1px solid rgba(0, 255, 0, 0.2);
+            position: relative;
+            overflow: visible;
+            min-height: 110px; /* Ensure minimum height for proper spacing */
+            display: block; /* Ensure block layout */
         }
-        
+
         .form-group.full-width {
             grid-column: 1 / -1;
         }
-        
+
         .form-group label {
             display: block;
             color: #00ff00;
             font-weight: bold;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
+            font-size: 16px;
+            width: 100%;
+            clear: both;
         }
-        
+
         .form-group input,
         .form-group select,
         .form-group textarea {
             width: 100%;
             padding: 10px;
-            background: #000800;
-            border: 1px solid #00ff00;
+            background: #001100;
+            border: 2px solid #00ff00;
             border-radius: 5px;
             color: #ffffff;
             font-family: inherit;
+            font-size: 14px;
+            display: block;
+            box-sizing: border-box;
+            margin-top: 5px;
         }
-        
+
+        .form-group select {
+            background: #001100;
+            color: #ffffff;
+            cursor: pointer;
+            position: relative;
+            z-index: 10;
+        }
+
+        .form-group select:focus {
+            z-index: 20;
+        }
+
+        .form-group select option {
+            background: #001100;
+            color: #ffffff;
+            padding: 8px;
+            border: none;
+        }
+
+        .form-group select option:hover,
+        .form-group select option:selected {
+            background: #00ff00;
+            color: #000000;
+        }
+
         .form-group input:focus,
         .form-group select:focus,
         .form-group textarea:focus {
             outline: none;
             border-color: #ffff00;
-            box-shadow: 0 0 5px rgba(255, 255, 0, 0.3);
+            box-shadow: 0 0 8px rgba(255, 255, 0, 0.5);
+            background: #002200;
         }
-        
+
         .form-help {
-            font-size: 0.9em;
-            color: #cccccc;
-            margin-top: 5px;
+            font-size: 11px;
+            color: #aaffaa;
+            margin-top: 10px;
+            margin-bottom: 0;
+            font-style: italic;
+            line-height: 1.3;
+            position: absolute;
+            bottom: 10px;
+            left: 15px;
+            right: 15px;
+            z-index: 1;
+            display: block;
         }
         
         .test-section {
@@ -291,16 +387,102 @@
             margin: 20px 0;
             color: #6666ff;
         }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 10px 0 35px 0; /* Extra bottom margin for help text */
+        }
+
+        .slider-container input[type="range"] {
+            flex: 1;
+            height: 8px;
+            background: #001100;
+            border: 2px solid #00ff00;
+            border-radius: 5px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .slider-container input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #00ff00;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #ffffff;
+        }
+
+        .slider-container input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #00ff00;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #ffffff;
+        }
+
+        .slider-value {
+            min-width: 50px;
+            text-align: center;
+            background: #00ff00;
+            border: 2px solid #00ff00;
+            border-radius: 5px;
+            padding: 8px 12px;
+            color: #000000;
+            font-family: monospace;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+
+
+        /* Save Button Styles */
+        .save-btn {
+            background: #004400;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            border-radius: 5px;
+            padding: 8px 16px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .save-btn:hover {
+            background: #006600;
+            box-shadow: 0 0 10px #00ff00;
+        }
+
+        .save-btn:disabled {
+            background: #222222;
+            color: #666666;
+            border-color: #666666;
+            cursor: not-allowed;
+        }
+
+        .save-btn.saving {
+            background: #666600;
+            color: #ffff00;
+            border-color: #ffff00;
+        }
     </style>
 </head>
 <body>
-    <header>
-        <h1>🧠 AI Personalities Configuration</h1>
-        <nav class="breadcrumb">
-            <a href="/">Home</a> &gt; 
-            <a href="/ai-management">AI Management</a> &gt; 
-            <span>AI Personalities</span>
-        </nav>
+    <header class="compact-header">
+        <div class="header-content">
+            <h1 class="page-title">🧠 AI Personalities Configuration</h1>
+            <nav class="compact-nav">
+                <a href="/" class="nav-link">🏠 Home</a>
+                <span class="nav-separator">•</span>
+                <a href="/ai-management" class="nav-link">🧠 AI Management</a>
+                <span class="nav-separator">•</span>
+                <span class="nav-current">AI Personalities</span>
+            </nav>
+        </div>
     </header>
 
     <main class="personalities-config">
@@ -309,185 +491,141 @@
             <p>Configure AI personalities for each character with custom models, prompts, and behavioral parameters</p>
         </div>
 
-        <!-- Global Configuration -->
+
+
+        <!-- AI Personalities -->
         <div class="config-section">
-            <div class="config-header">
-                <div style="display: flex; align-items: center;">
-                    <i class="fas fa-globe config-icon"></i>
-                    <h3>Global AI Settings</h3>
+            <div class="config-header" onclick="toggleSection('personalities')">
+                <div>
+                    <i class="config-icon fas fa-theater-masks"></i>
+                    AI Personalities
                 </div>
-                <button class="button primary-btn" onclick="saveGlobalConfig()">
-                    <i class="fas fa-save"></i> Save Global Settings
-                </button>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <button class="button primary-btn" onclick="addNewPersonality(); event.stopPropagation();">
+                        <i class="fas fa-plus"></i> Add Personality
+                    </button>
+                    <button class="button secondary-btn" onclick="migrateCharacterConfigs(); event.stopPropagation();" id="migrateBtn">
+                        <i class="fas fa-sync"></i> Migrate Character Configs
+                    </button>
+                    <i class="collapse-icon fas fa-chevron-down" id="personalities-icon"></i>
+                </div>
             </div>
 
-            <form id="globalConfigForm" class="global-config">
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="defaultProvider">Default AI Provider</label>
-                        <select id="defaultProvider" name="defaultProvider">
-                            <option value="openai" <%= globalConfig && globalConfig.defaultProvider === 'openai' ? 'selected' : '' %>>OpenAI</option>
-                            <option value="anthropic" <%= globalConfig && globalConfig.defaultProvider === 'anthropic' ? 'selected' : '' %>>Anthropic</option>
-                            <option value="google" <%= globalConfig && globalConfig.defaultProvider === 'google' ? 'selected' : '' %>>Google AI</option>
-                        </select>
-                        <div class="form-help">Primary AI provider for all characters</div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="defaultModel">Default Model</label>
-                        <select id="defaultModel" name="defaultModel">
-                            <option value="gpt-4" <%= globalConfig && globalConfig.defaultModel === 'gpt-4' ? 'selected' : '' %>>GPT-4</option>
-                            <option value="gpt-3.5-turbo" <%= globalConfig && globalConfig.defaultModel === 'gpt-3.5-turbo' ? 'selected' : '' %>>GPT-3.5 Turbo</option>
-                            <option value="claude-3-opus" <%= globalConfig && globalConfig.defaultModel === 'claude-3-opus' ? 'selected' : '' %>>Claude 3 Opus</option>
-                            <option value="claude-3-sonnet" <%= globalConfig && globalConfig.defaultModel === 'claude-3-sonnet' ? 'selected' : '' %>>Claude 3 Sonnet</option>
-                            <option value="gemini-pro" <%= globalConfig && globalConfig.defaultModel === 'gemini-pro' ? 'selected' : '' %>>Gemini Pro</option>
-                        </select>
-                        <div class="form-help">Default model for new characters</div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="defaultTemperature">Default Temperature</label>
-                        <input type="range" id="defaultTemperature" name="defaultTemperature" 
-                               min="0" max="2" step="0.1" 
-                               value="<%= globalConfig && globalConfig.defaultTemperature ? globalConfig.defaultTemperature : '0.8' %>"
-                               oninput="updateTemperatureDisplay(this.value)">
-                        <div class="form-help">
-                            Creativity level: <span id="temperatureValue"><%= globalConfig && globalConfig.defaultTemperature ? globalConfig.defaultTemperature : '0.8' %></span>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="defaultMaxTokens">Default Max Tokens</label>
-                        <input type="number" id="defaultMaxTokens" name="defaultMaxTokens" 
-                               min="50" max="4000" step="50"
-                               value="<%= globalConfig && globalConfig.defaultMaxTokens ? globalConfig.defaultMaxTokens : '150' %>">
-                        <div class="form-help">Maximum response length</div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="contextLength">Context Length</label>
-                        <input type="number" id="contextLength" name="contextLength" 
-                               min="1" max="20" step="1"
-                               value="<%= globalConfig && globalConfig.contextLength ? globalConfig.contextLength : '5' %>">
-                        <div class="form-help">Number of previous messages to remember</div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="responseTimeout">Response Timeout (ms)</label>
-                        <input type="number" id="responseTimeout" name="responseTimeout" 
-                               min="5000" max="60000" step="1000"
-                               value="<%= globalConfig && globalConfig.responseTimeout ? globalConfig.responseTimeout : '30000' %>">
-                        <div class="form-help">Maximum time to wait for AI response</div>
-                    </div>
+            <div class="config-content" id="personalities-content">
+                <div class="character-grid" id="personalitiesGrid">
+                    <!-- Personalities will be loaded here -->
                 </div>
-            </form>
-        </div>
-
-        <!-- Character Personalities -->
-        <div class="config-section">
-            <div class="config-header">
-                <div style="display: flex; align-items: center;">
-                    <i class="fas fa-users config-icon"></i>
-                    <h3>Character Personalities</h3>
-                </div>
-                <button class="button primary-btn" onclick="addNewCharacter()">
-                    <i class="fas fa-plus"></i> Add Character
-                </button>
-            </div>
-
-            <div class="character-grid" id="characterGrid">
-                <% if (characters && characters.length > 0) { %>
-                    <% characters.forEach(function(character) { %>
-                        <div class="character-card" data-character-id="<%= character.id %>">
-                            <div class="character-status status-<%= character.aiConfig && character.aiConfig.enabled ? 'online' : 'offline' %>"></div>
-
-                            <div class="character-header">
-                                <div class="character-avatar">
-                                    <%= character.char_name ? character.char_name.charAt(0).toUpperCase() : '?' %>
-                                </div>
-                                <div class="character-info">
-                                    <h4><%= character.char_name || 'Unnamed Character' %></h4>
-                                    <p><%= character.char_description || 'No description' %></p>
-                                </div>
-                            </div>
-
-                            <div class="character-details">
-                                <div class="detail-row">
-                                    <span class="detail-label">Model:</span>
-                                    <span class="detail-value"><%= character.aiConfig ? character.aiConfig.model || 'Default' : 'Not configured' %></span>
-                                </div>
-                                <div class="detail-row">
-                                    <span class="detail-label">Temperature:</span>
-                                    <span class="detail-value"><%= character.aiConfig ? character.aiConfig.temperature || '0.8' : 'Default' %></span>
-                                </div>
-                                <div class="detail-row">
-                                    <span class="detail-label">Max Tokens:</span>
-                                    <span class="detail-value"><%= character.aiConfig ? character.aiConfig.maxTokens || '150' : 'Default' %></span>
-                                </div>
-                                <div class="detail-row">
-                                    <span class="detail-label">Status:</span>
-                                    <span class="detail-value"><%= character.aiConfig && character.aiConfig.enabled ? 'Active' : 'Inactive' %></span>
-                                </div>
-                            </div>
-
-                            <div class="character-actions">
-                                <button class="button small-btn primary-btn" onclick="configureCharacter('<%= character.id %>')">
-                                    <i class="fas fa-cog"></i> Configure
-                                </button>
-                                <button class="button small-btn secondary-btn" onclick="testCharacter('<%= character.id %>')">
-                                    <i class="fas fa-test-tube"></i> Test
-                                </button>
-                                <button class="button small-btn secondary-btn" onclick="toggleCharacter('<%= character.id %>', <%= character.aiConfig && character.aiConfig.enabled ? 'false' : 'true' %>)">
-                                    <i class="fas fa-<%= character.aiConfig && character.aiConfig.enabled ? 'pause' : 'play' %>"></i>
-                                    <%= character.aiConfig && character.aiConfig.enabled ? 'Disable' : 'Enable' %>
-                                </button>
-                            </div>
-                        </div>
-                    <% }); %>
-                <% } else { %>
-                    <div class="character-card">
-                        <div class="character-header">
-                            <div class="character-info">
-                                <h4>No Characters Found</h4>
-                                <p>Create characters in the Characters section first</p>
-                            </div>
-                        </div>
-                        <div class="character-actions">
-                            <a href="/characters" class="button primary-btn">
-                                <i class="fas fa-plus"></i> Create Characters
-                            </a>
-                        </div>
-                    </div>
-                <% } %>
             </div>
         </div>
 
-        <!-- AI Testing Section -->
-        <div class="test-section">
-            <div class="config-header">
-                <div style="display: flex; align-items: center;">
-                    <i class="fas fa-flask config-icon"></i>
-                    <h3>AI Personality Testing</h3>
+        <!-- AI Personality Testing -->
+        <div class="config-section">
+            <div class="config-header" onclick="toggleSection('testing')">
+                <div>
+                    <i class="config-icon fas fa-flask"></i>
+                    AI Personality Testing
+                </div>
+                <i class="collapse-icon fas fa-chevron-down" id="testing-icon"></i>
+            </div>
+
+            <div class="config-content" id="testing-content">
+                <div class="test-section">
+                    <div class="test-controls">
+                        <label for="testCharacter">Select Character to Test</label>
+                        <select id="testCharacter" class="test-input">
+                            <option value="">Choose a character...</option>
+                            <option value="1">Orlok</option>
+                            <option value="2">Coffin Breaker</option>
+                            <option value="3">PumpkinHead</option>
+                            <option value="4">Skulltalker</option>
+                        </select>
+                    </div>
+                    <div class="test-controls">
+                        <input type="text" id="testPrompt" class="test-input" placeholder="Enter test message..." value="Hello, this is a test message. Please respond in character.">
+                        <button class="button primary-btn" onclick="runAITest()">
+                            <i class="fas fa-paper-plane"></i> Send
+                        </button>
+                    </div>
+
+                    <div id="testResponse" class="test-response">
+                        AI response will appear here...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Global AI Settings -->
+        <div class="config-section">
+            <div class="config-header" onclick="toggleSection('global')">
+                <div>
+                    <i class="config-icon fas fa-cog"></i>
+                    Global AI Settings
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <button class="button primary-btn" onclick="saveGlobalConfig(); event.stopPropagation();">
+                        <i class="fas fa-save"></i> Save Global Settings
+                    </button>
+                    <i class="collapse-icon fas fa-chevron-down collapsed" id="global-icon"></i>
                 </div>
             </div>
 
-            <div class="test-controls">
-                <select id="testCharacter" class="form-control">
-                    <option value="">Select Character to Test</option>
-                    <% if (characters && characters.length > 0) { %>
-                        <% characters.forEach(function(character) { %>
-                            <option value="<%= character.id %>"><%= character.char_name || 'Unnamed Character' %></option>
-                        <% }); %>
-                    <% } %>
-                </select>
-                <input type="text" id="testPrompt" class="test-input" placeholder="Enter test message..." value="Hello, how are you today?">
-                <button class="button primary-btn" onclick="runAITest()">
-                    <i class="fas fa-paper-plane"></i> Send
-                </button>
-            </div>
+            <div class="config-content collapsed" id="global-content">
+                <form id="globalConfigForm" class="global-config">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="defaultProvider">Default AI Provider</label>
+                            <select id="defaultProvider" name="defaultProvider">
+                                <option value="openai">OpenAI</option>
+                                <option value="anthropic">Anthropic</option>
+                                <option value="google">Google AI</option>
+                            </select>
+                            <div class="form-help">Primary AI provider for all characters</div>
+                        </div>
 
-            <div class="test-response" id="testResponse">
-                <em>AI response will appear here...</em>
+                        <div class="form-group">
+                            <label for="defaultModel">Default Model</label>
+                            <select id="defaultModel" name="defaultModel">
+                                <option value="gpt-4">GPT-4</option>
+                                <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                                <option value="claude-3-opus">Claude 3 Opus</option>
+                                <option value="claude-3-sonnet">Claude 3 Sonnet</option>
+                                <option value="gemini-pro">Gemini Pro</option>
+                            </select>
+                            <div class="form-help">Default model for new characters</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="defaultTemperature">Default Temperature</label>
+                            <div class="slider-container">
+                                <input type="range" id="defaultTemperature" name="defaultTemperature"
+                                       min="0" max="2" step="0.1" value="0.7"
+                                       oninput="updateTemperatureDisplay(this.value)">
+                                <span class="slider-value" id="temperatureValue">0.7</span>
+                            </div>
+                            <div class="form-help">
+                                Creativity level (0.0 = very focused, 2.0 = very creative)
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="defaultMaxTokens">Default Max Tokens</label>
+                            <input type="number" id="defaultMaxTokens" name="defaultMaxTokens" value="150" min="50" max="4000">
+                            <div class="form-help">Maximum response length</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="defaultContextLength">Context Length</label>
+                            <input type="number" id="defaultContextLength" name="defaultContextLength" value="5" min="1" max="20">
+                            <div class="form-help">Number of previous messages to remember</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="responseTimeout">Response Timeout (ms)</label>
+                            <input type="number" id="responseTimeout" name="responseTimeout" value="30000" min="5000" max="120000">
+                            <div class="form-help">Maximum time to wait for AI response</div>
+                        </div>
+                    </div>
+                </form>
             </div>
         </div>
 
@@ -519,6 +657,24 @@
                 <form id="characterConfigForm">
                     <input type="hidden" id="characterId" name="characterId">
 
+                    <div class="form-group full-width" id="personalityNameGroup" style="display: none;">
+                        <label for="personalityName">Personality Name</label>
+                        <input type="text" id="personalityName" name="personalityName" placeholder="Enter a unique name for this personality">
+                        <div class="form-help">
+                            A descriptive name for this AI personality (e.g., "Mysterious Vampire", "Friendly Ghost", "Wise Oracle")
+                        </div>
+                    </div>
+
+                    <div class="form-group full-width" id="characterAssignmentGroup" style="display: none;">
+                        <label for="assignedCharacter">Assign to Character</label>
+                        <select id="assignedCharacter" name="assignedCharacter">
+                            <option value="">No Character Assignment</option>
+                        </select>
+                        <div class="form-help">
+                            Optionally assign this personality to a specific character. Each character can only have one personality assigned.
+                        </div>
+                    </div>
+
                     <div class="form-grid">
                         <div class="form-group">
                             <label for="aiProvider">AI Provider</label>
@@ -542,11 +698,14 @@
 
                         <div class="form-group">
                             <label for="aiTemperature">Temperature</label>
-                            <input type="range" id="aiTemperature" name="aiTemperature"
-                                   min="0" max="2" step="0.1" value="0.8"
-                                   oninput="updateModalTemperatureDisplay(this.value)">
+                            <div class="slider-container">
+                                <input type="range" id="aiTemperature" name="aiTemperature"
+                                       min="0" max="2" step="0.1" value="0.8"
+                                       oninput="updateModalTemperatureDisplay(this.value)">
+                                <span class="slider-value" id="modalTemperatureValue">0.8</span>
+                            </div>
                             <div class="form-help">
-                                Creativity: <span id="modalTemperatureValue">0.8</span>
+                                Creativity level (0.0 = very focused, 2.0 = very creative)
                             </div>
                         </div>
 
@@ -599,7 +758,22 @@
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
             updateTemperatureDisplay(document.getElementById('defaultTemperature').value);
+            loadPersonalities();
         });
+
+        // Section toggle functionality
+        function toggleSection(sectionId) {
+            const content = document.getElementById(sectionId + '-content');
+            const icon = document.getElementById(sectionId + '-icon');
+
+            if (content.classList.contains('collapsed')) {
+                content.classList.remove('collapsed');
+                icon.classList.remove('collapsed');
+            } else {
+                content.classList.add('collapsed');
+                icon.classList.add('collapsed');
+            }
+        }
 
         // Global configuration functions
         function updateTemperatureDisplay(value) {
@@ -657,6 +831,10 @@
             document.getElementById('characterId').value = character.id;
             document.getElementById('modalTitle').textContent = `Configure ${character.char_name || 'Character'} AI`;
 
+            // Hide personality name field and character assignment when editing existing character personalities
+            document.getElementById('personalityNameGroup').style.display = 'none';
+            document.getElementById('characterAssignmentGroup').style.display = 'none';
+
             const config = character.aiConfig || {};
             document.getElementById('aiProvider').value = config.provider || 'openai';
             document.getElementById('aiModel').value = config.model || 'gpt-4';
@@ -682,25 +860,76 @@
             const characterId = config.characterId;
 
             try {
-                showMessage('Saving character configuration...', 'info');
+                if (characterId === 'new') {
+                    // Creating a new personality
+                    if (!config.personalityName || !config.personalityName.trim()) {
+                        showMessage('Please enter a name for the personality', 'error');
+                        return;
+                    }
 
-                const response = await fetch(`/ai-management/api/personalities/character/${characterId}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(config)
-                });
+                    showMessage('Creating new AI personality...', 'info');
 
-                const data = await response.json();
+                    const response = await fetch('/ai-management/api/personalities/create', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(config)
+                    });
 
-                if (data.success) {
-                    showMessage('Character configuration saved successfully!', 'success');
-                    closeModal();
-                    setTimeout(() => location.reload(), 1000);
+                    const data = await response.json();
+
+                    if (data.success) {
+                        showMessage('AI personality created successfully!', 'success');
+                        closeModal();
+                        loadPersonalities(); // Reload personalities list
+                    } else {
+                        showMessage(`Failed to create personality: ${data.error}`, 'error');
+                    }
+                } else if (document.getElementById('personalityNameGroup').style.display !== 'none') {
+                    // Updating existing personality
+                    if (!config.personalityName || !config.personalityName.trim()) {
+                        showMessage('Please enter a name for the personality', 'error');
+                        return;
+                    }
+
+                    showMessage('Updating AI personality...', 'info');
+
+                    const response = await fetch(`/ai-management/api/personalities/${characterId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(config)
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        showMessage('AI personality updated successfully!', 'success');
+                        closeModal();
+                        loadPersonalities(); // Reload personalities list
+                    } else {
+                        showMessage(`Failed to update personality: ${data.error}`, 'error');
+                    }
                 } else {
-                    showMessage(`Failed to save character configuration: ${data.error}`, 'error');
+                    // Updating existing character personality
+                    showMessage('Saving character configuration...', 'info');
+
+                    const response = await fetch(`/ai-management/api/personalities/character/${characterId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(config)
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        showMessage('Character configuration saved successfully!', 'success');
+                        closeModal();
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        showMessage(`Failed to save character configuration: ${data.error}`, 'error');
+                    }
                 }
             } catch (error) {
-                showMessage(`Error saving character configuration: ${error.message}`, 'error');
+                showMessage(`Error saving configuration: ${error.message}`, 'error');
             }
         });
 
@@ -817,8 +1046,331 @@
             }
         }
 
-        function addNewCharacter() {
-            window.location.href = '/characters/new';
+        async function addNewPersonality() {
+            // Open modal for creating a new AI personality
+            document.getElementById('characterId').value = 'new';
+            document.getElementById('modalTitle').textContent = 'Create New AI Personality';
+
+            // Show personality name field and character assignment for new personalities
+            document.getElementById('personalityNameGroup').style.display = 'block';
+            document.getElementById('characterAssignmentGroup').style.display = 'block';
+            document.getElementById('personalityName').value = '';
+
+            // Load available characters for assignment
+            await loadAvailableCharacters();
+
+            // Reset form to defaults
+            document.getElementById('aiProvider').value = 'openai';
+            document.getElementById('aiModel').value = 'gpt-4';
+            document.getElementById('aiTemperature').value = '0.8';
+            document.getElementById('aiMaxTokens').value = '150';
+            document.getElementById('systemPrompt').value = '';
+            document.getElementById('contextLength').value = '5';
+            document.getElementById('enabled').value = 'true';
+            document.getElementById('assignedCharacter').value = '';
+
+            updateModalTemperatureDisplay('0.8');
+            document.getElementById('characterModal').style.display = 'block';
+        }
+
+        // Load and display personalities
+        async function loadPersonalities() {
+            try {
+                const response = await fetch('/ai-management/api/personalities/list');
+                const data = await response.json();
+
+                if (data.success) {
+                    displayPersonalities(data.personalities);
+                } else {
+                    console.error('Failed to load personalities:', data.error);
+                }
+            } catch (error) {
+                console.error('Error loading personalities:', error);
+            }
+        }
+
+        function displayPersonalities(personalities) {
+            const grid = document.getElementById('personalitiesGrid');
+            const migrateBtn = document.getElementById('migrateBtn');
+
+            if (!personalities || personalities.length === 0) {
+                grid.innerHTML = '<div class="info-message">No AI personalities created yet. Click "Add Personality" to create your first one, or "Migrate Character Configs" to convert existing character AI settings.</div>';
+                // Show migrate button if no personalities exist
+                if (migrateBtn) migrateBtn.style.display = 'inline-block';
+                return;
+            } else {
+                // Hide migrate button if personalities exist
+                if (migrateBtn) migrateBtn.style.display = 'none';
+            }
+
+            grid.innerHTML = personalities.map(personality => `
+                <div class="character-card" data-personality-id="${personality.id}">
+                    <div class="character-status status-${personality.enabled ? 'online' : 'offline'}"></div>
+
+                    <div class="character-header">
+                        <div class="character-avatar">
+                            ${personality.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div class="character-info">
+                            <h4>${personality.name}</h4>
+                            <p>${personality.systemPrompt ? personality.systemPrompt.substring(0, 100) + '...' : 'No system prompt defined'}</p>
+                        </div>
+                    </div>
+
+                    <div class="character-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Provider:</span>
+                            <span class="detail-value">${personality.provider}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Model:</span>
+                            <span class="detail-value">${personality.model}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Temperature:</span>
+                            <span class="detail-value">${personality.temperature}</span>
+                        </div>
+                        <div class="personality-assignment">
+                            <label for="assign-${personality.id}">Assign to Character:</label>
+                            <select id="assign-${personality.id}" onchange="markPersonalityChanged('${personality.id}')">
+                                <option value="">Unassigned</option>
+                                <option value="1" ${personality.assignedCharacter === '1' ? 'selected' : ''}>Orlok</option>
+                                <option value="2" ${personality.assignedCharacter === '2' ? 'selected' : ''}>Coffin Breaker</option>
+                                <option value="3" ${personality.assignedCharacter === '3' ? 'selected' : ''}>PumpkinHead</option>
+                                <option value="4" ${personality.assignedCharacter === '4' ? 'selected' : ''}>Skulltalker</option>
+                            </select>
+                            <button class="save-btn" id="save-${personality.id}" onclick="savePersonalityAssignment('${personality.id}')" disabled>
+                                <i class="fas fa-save"></i> Save Assignment
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="character-actions">
+                        <button class="button secondary-btn" onclick="editPersonality('${personality.id}')">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <button class="button secondary-btn" onclick="testPersonality('${personality.id}')">
+                            <i class="fas fa-vial"></i> Test
+                        </button>
+                        <button class="button ${personality.enabled ? 'danger-btn' : 'success-btn'}"
+                                onclick="togglePersonality('${personality.id}', ${!personality.enabled})">
+                            <i class="fas fa-power-off"></i> ${personality.enabled ? 'Disable' : 'Enable'}
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Load available characters for personality assignment
+        async function loadAvailableCharacters() {
+            try {
+                const response = await fetch('/ai-management/api/personalities/available-characters');
+                const data = await response.json();
+
+                if (data.success) {
+                    const select = document.getElementById('assignedCharacter');
+
+                    // Clear existing options except the first one
+                    while (select.children.length > 1) {
+                        select.removeChild(select.lastChild);
+                    }
+
+                    // Add character options
+                    data.characters.forEach(character => {
+                        const option = document.createElement('option');
+                        option.value = character.id;
+                        option.textContent = `${character.name} - ${character.description.substring(0, 50)}...`;
+                        select.appendChild(option);
+                    });
+                } else {
+                    console.error('Failed to load available characters:', data.error);
+                }
+            } catch (error) {
+                console.error('Error loading available characters:', error);
+            }
+        }
+
+        // Personality management functions
+        async function editPersonality(personalityId) {
+            try {
+                const response = await fetch(`/ai-management/api/personalities/${personalityId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    populatePersonalityModal(data.personality);
+                    document.getElementById('characterModal').style.display = 'block';
+                } else {
+                    showMessage(`Failed to load personality: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showMessage(`Error loading personality: ${error.message}`, 'error');
+            }
+        }
+
+        function populatePersonalityModal(personality) {
+            document.getElementById('characterId').value = personality.id;
+            document.getElementById('modalTitle').textContent = `Edit ${personality.name}`;
+
+            // Show personality name field and character assignment for editing personalities
+            document.getElementById('personalityNameGroup').style.display = 'block';
+            document.getElementById('characterAssignmentGroup').style.display = 'block';
+
+            // Populate fields
+            document.getElementById('personalityName').value = personality.name;
+            document.getElementById('aiProvider').value = personality.provider;
+            document.getElementById('aiModel').value = personality.model;
+            document.getElementById('aiTemperature').value = personality.temperature;
+            document.getElementById('aiMaxTokens').value = personality.maxTokens;
+            document.getElementById('systemPrompt').value = personality.systemPrompt;
+            document.getElementById('contextLength').value = personality.contextLength;
+            document.getElementById('enabled').value = personality.enabled ? 'true' : 'false';
+
+            // Load characters and set assignment
+            loadAvailableCharacters().then(() => {
+                document.getElementById('assignedCharacter').value = personality.assignedCharacter || '';
+            });
+
+            updateModalTemperatureDisplay(personality.temperature);
+        }
+
+        async function testPersonality(personalityId) {
+            const prompt = 'Hello, this is a test message. Please respond according to your personality.';
+
+            try {
+                showMessage('Testing personality...', 'info');
+
+                const response = await fetch('/ai-management/api/personalities/test-personality', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ personalityId, prompt })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage(`Test successful! Response: "${data.response}"`, 'success');
+                } else {
+                    showMessage(`Test failed: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showMessage(`Test error: ${error.message}`, 'error');
+            }
+        }
+
+        async function togglePersonality(personalityId, enable) {
+            try {
+                showMessage(`${enable ? 'Enabling' : 'Disabling'} personality...`, 'info');
+
+                const response = await fetch(`/ai-management/api/personalities/${personalityId}/toggle`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enabled: enable })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage(`Personality ${enable ? 'enabled' : 'disabled'} successfully!`, 'success');
+                    loadPersonalities(); // Reload to update display
+                } else {
+                    showMessage(`Failed to ${enable ? 'enable' : 'disable'} personality: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showMessage(`Error ${enable ? 'enabling' : 'disabling'} personality: ${error.message}`, 'error');
+            }
+        }
+
+        // Mark personality as changed when assignment dropdown changes
+        function markPersonalityChanged(personalityId) {
+            const saveBtn = document.getElementById(`save-${personalityId}`);
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.classList.remove('saving');
+            }
+        }
+
+        // Save personality assignment
+        async function savePersonalityAssignment(personalityId) {
+            const select = document.getElementById(`assign-${personalityId}`);
+            const saveBtn = document.getElementById(`save-${personalityId}`);
+
+            if (!select || !saveBtn) return;
+
+            const characterId = select.value;
+
+            try {
+                saveBtn.disabled = true;
+                saveBtn.classList.add('saving');
+                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+                showMessage('Updating character assignment...', 'info');
+
+                const response = await fetch(`/ai-management/api/personalities/${personalityId}/assign`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ characterId: characterId || null })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage('Character assignment saved successfully!', 'success');
+                    saveBtn.innerHTML = '<i class="fas fa-check"></i> Saved';
+                    saveBtn.classList.remove('saving');
+
+                    // Keep button disabled since no changes to save
+                    setTimeout(() => {
+                        saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Assignment';
+                    }, 2000);
+
+                    loadPersonalities(); // Reload to update display
+                } else {
+                    showMessage(`Failed to save assignment: ${data.error}`, 'error');
+                    saveBtn.disabled = false;
+                    saveBtn.classList.remove('saving');
+                    saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Assignment';
+                }
+            } catch (error) {
+                showMessage(`Save error: ${error.message}`, 'error');
+                saveBtn.disabled = false;
+                saveBtn.classList.remove('saving');
+                saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Assignment';
+            }
+        }
+
+        // Legacy function for backward compatibility (if needed elsewhere)
+        async function assignPersonalityToCharacter(personalityId, characterId) {
+            return savePersonalityAssignment(personalityId);
+        }
+
+        // Migration function
+        async function migrateCharacterConfigs() {
+            if (!confirm('This will migrate existing character AI configurations to standalone personalities. Continue?')) {
+                return;
+            }
+
+            try {
+                showMessage('Migrating character AI configurations...', 'info');
+
+                const response = await fetch('/ai-management/api/personalities/migrate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage(`Migration successful! Created ${data.migratedPersonalities.length} personalities.`, 'success');
+                    loadPersonalities(); // Reload personalities list
+
+                    // Hide migrate button after successful migration
+                    document.getElementById('migrateBtn').style.display = 'none';
+                } else {
+                    showMessage(`Migration failed: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showMessage(`Migration error: ${error.message}`, 'error');
+            }
         }
 
         // Utility functions
