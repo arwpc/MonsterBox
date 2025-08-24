@@ -25,6 +25,9 @@
       border-radius: 10px;
       padding: 20px;
       margin-bottom: 20px;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      overflow: hidden;
     }
 
     .assistant-header {
@@ -89,26 +92,39 @@
       padding: 15px;
     }
 
-    .voice-dropdown-container {
+    .voice-info-container {
       display: flex;
       align-items: center;
+      justify-content: space-between;
       gap: 10px;
       margin-bottom: 10px;
     }
 
-    .voice-select {
+    .voice-name {
       flex: 1;
-      padding: 8px 12px;
-      background: #001100;
-      border: 1px solid #00ff00;
-      border-radius: 4px;
-      color: #ffffff;
+      color: #00ff00;
       font-size: 14px;
+      min-width: 0; /* Allow flex item to shrink below content size */
+      max-width: 100%;
+      overflow: hidden;
     }
 
-    .voice-select option {
-      background: #001100;
-      color: #ffffff;
+    .voice-details {
+      color: #cccccc;
+      font-size: 12px;
+      font-weight: normal;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      max-width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: inline-block;
+    }
+
+    .no-voice {
+      color: #ff6666;
+      font-style: italic;
     }
 
     .voice-controls {
@@ -162,14 +178,18 @@
       <% } %>
       <% (assistants || []).forEach(function(a){ %>
         <div class="card assistant-card" data-id="<%= a.id %>">
+          <%
+            // Find the character assigned to this assistant (declare once for the entire card)
+            const assignedChar = characters.find(c => c.openaiAssistantId === a.id);
+            const voiceSettings = assignedChar?.voiceConfig?.settings || { speed: 1.0, pitch: 0, volume: 0, emotion: 'Neutral' };
+            const voiceName = assignedChar?.voiceConfig?.metadata?.voiceName || 'No voice assigned';
+          %>
           <div class="assistant-header">
             <div class="assistant-avatar">
-              <% if (a.name === 'Orlok' || a.name === 'Count Orlok') { %>
-                🧛
-              <% } else if (a.name === 'Coffin Breaker') { %>
-                ⚰️
-              <% } else if (a.name === 'Pumpkinhead') { %>
-                🎃
+              <% if (assignedChar && assignedChar.image) { %>
+                <img src="/images/characters/<%= assignedChar.image %>" alt="<%= assignedChar.char_name %>" />
+              <% } else if (assignedChar) { %>
+                <%= assignedChar.char_name ? assignedChar.char_name.charAt(0).toUpperCase() : '🤖' %>
               <% } else { %>
                 🤖
               <% } %>
@@ -237,32 +257,32 @@
           <div class="voice-assignment-section">
             <label class="voice-label">🎤 Assigned Voice:</label>
             <div class="voice-preview" id="voicePreview_<%= a.id %>">
-              <div class="voice-dropdown-container">
-                <select class="voice-select" data-assistant-id="<%= a.id %>">
-                  <option value="">— Select Voice —</option>
-                  <option value="en-US-JennyNeural">Jenny (English US)</option>
-                  <option value="en-US-GuyNeural">Guy (English US)</option>
-                  <option value="en-US-AriaNeural">Aria (English US)</option>
-                  <option value="en-US-DavisNeural">Davis (English US)</option>
-                  <option value="en-US-JaneNeural">Jane (English US)</option>
-                  <option value="en-US-JasonNeural">Jason (English US)</option>
-                  <option value="en-US-NancyNeural">Nancy (English US)</option>
-                  <option value="en-US-TonyNeural">Tony (English US)</option>
-                </select>
+              <div class="voice-info-container">
+                <div class="voice-name">
+                  <% if (assignedChar && assignedChar.voiceConfig) { %>
+                    <strong><%= voiceName %></strong>
+                    <span class="voice-details">
+                      (<%= assignedChar.voiceConfig.metadata?.voiceGender || 'Unknown' %> •
+                      <%= assignedChar.voiceConfig.metadata?.voiceLanguage || 'Unknown' %>)
+                    </span>
+                  <% } else { %>
+                    <span class="no-voice">No voice assigned - assign character first</span>
+                  <% } %>
+                </div>
                 <div class="voice-controls">
                   <button class="button small" onclick="previewVoice('<%= a.id %>')">▶️ Preview</button>
                   <button class="button small" onclick="configureVoice('<%= a.id %>')">⚙️ Configure</button>
                 </div>
               </div>
               <div class="voice-settings">
-                <span class="voice-setting">🎛️ Settings: Speed: 1 • Pitch: 0 • Volume: 0 • Emotion: Excited</span>
+                <span class="voice-setting">🎛️ Settings: Speed: <%= voiceSettings.speed %> • Pitch: <%= voiceSettings.pitch %> • Volume: <%= voiceSettings.volume %> • Emotion: <%= voiceSettings.emotion %></span>
               </div>
             </div>
           </div>
           <div class="actions">
             <button class="button" onclick="updateAssistant('<%= a.id %>', this)">💾 Save</button>
             <button class="button danger" onclick="deleteAssistant('<%= a.id %>')">🗑️ Delete</button>
-            <button class="button" onclick="testAssistant('<%= a.id %>')">🧪 Test</button>
+            <button class="button" onclick="testAssistant('<%= a.id %>')">🧪 Test Chat</button>
           </div>
           <div class="muted" data-msg></div>
         </div>
@@ -323,7 +343,15 @@
 
       const res = await fetch('/ai-management/api/assistants', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name, description, model, instructions})});
       const data = await res.json();
-      document.getElementById('createMsg').textContent = data.success ? 'Created ✅' : ('Error: '+data.error);
+
+      if (data.success) {
+        document.getElementById('createMsg').textContent = 'Created ✅ - New AI assistant ready with your specifications';
+        document.getElementById('createMsg').style.color = '#00ff00';
+        console.log('New assistant created:', data.assistant);
+      } else {
+        document.getElementById('createMsg').textContent = 'Error: ' + data.error;
+        document.getElementById('createMsg').style.color = '#ff6666';
+      }
       if (data.success) {
         // Save conversation starters
         await fetch(`/ai-management/api/assistants/${data.assistant.id}/starters`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ starters })});
@@ -399,7 +427,16 @@
       if (data.success && starters.length > 0) {
         await fetch(`/ai-management/api/assistants/${id}/starters`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ starters })});
       }
-      card.querySelector('[data-msg]').textContent = data.success ? 'Saved ✅' : ('Error: '+data.error);
+
+      if (data.success) {
+        card.querySelector('[data-msg]').textContent = 'Saved ✅ - Changes will affect AI behavior immediately';
+        card.querySelector('[data-msg]').style.color = '#00ff00';
+        console.log(`Assistant ${id} updated successfully:`, payload);
+        console.log('Updated assistant data:', data.assistant);
+      } else {
+        card.querySelector('[data-msg]').textContent = 'Error: ' + data.error;
+        card.querySelector('[data-msg]').style.color = '#ff6666';
+      }
     }
 
     async function deleteAssistant(id){
@@ -431,9 +468,42 @@
       document.getElementById('chatInput').value = '';
       modal.style.display = 'flex';
       chatState.open = true; chatState.assistantId = assistantId; chatState.threadId = null;
-      // Start a chat thread
+
+      // Start a chat thread and have the AI introduce itself
       fetch(`/ai-management/api/assistants/${assistantId}/chat/start`, { method: 'POST' })
-        .then(r=>r.json()).then(d=>{ if (d.success) chatState.threadId = d.threadId; else alert('Start chat failed: '+d.error); })
+        .then(r=>r.json())
+        .then(async d => {
+          if (d.success) {
+            chatState.threadId = d.threadId;
+
+            // Have the AI start the conversation with an introduction
+            appendChat('system', 'Starting conversation...');
+
+            try {
+              const introResponse = await fetch(`/ai-management/api/assistants/${assistantId}/chat/send`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  threadId: chatState.threadId,
+                  message: 'Please introduce yourself and start our conversation. Tell me who you are and what you can help me with.'
+                })
+              });
+
+              const introData = await introResponse.json();
+              if (introData.success) {
+                // Clear the system message and show the AI's introduction
+                document.getElementById('chatLog').textContent = '';
+                appendChat('assistant', introData.text || 'Hello! I\'m ready to chat with you.');
+              } else {
+                appendChat('system', 'Ready to chat! Type your message below.');
+              }
+            } catch (e) {
+              appendChat('system', 'Ready to chat! Type your message below.');
+            }
+          } else {
+            alert('Start chat failed: '+d.error);
+          }
+        })
         .catch(e=>alert('Start chat failed: '+e.message));
     }
 
@@ -580,30 +650,44 @@
 
     // Voice assignment functionality
     async function previewVoice(assistantId) {
-      const voiceSelect = document.querySelector(`[data-assistant-id="${assistantId}"]`);
-      const selectedVoice = voiceSelect.value;
+      // Find the character assigned to this assistant
+      const card = document.querySelector(`.card[data-id="${assistantId}"]`);
+      const assignSelect = card.querySelector('.assign-select');
+      const characterId = assignSelect.value;
 
-      if (!selectedVoice) {
-        alert('Please select a voice first');
+      if (!characterId) {
+        alert('Please assign this assistant to a character first to preview the voice');
         return;
       }
 
       try {
-        const response = await fetch('/ai-management/api/tts/preview', {
+        // Use the character's existing voice configuration for preview
+        const response = await fetch(`/api/voice/settings/${characterId}`);
+        const voiceConfig = await response.json();
+
+        if (!voiceConfig || !voiceConfig.speaker_id) {
+          alert('No voice configured for this character. Please configure a voice first.');
+          return;
+        }
+
+        // Generate preview using character's voice settings
+        const generateResponse = await fetch('/api/voice/generate', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
+            speaker_id: voiceConfig.speaker_id,
             text: 'Hello, this is a voice preview for the assistant.',
-            voiceId: selectedVoice
+            options: voiceConfig.settings || {},
+            characterId: characterId
           })
         });
 
-        const data = await response.json();
+        const data = await generateResponse.json();
 
-        if (data.success && data.audioUrl) {
-          const audio = new Audio(data.audioUrl);
+        if (data.success && data.url) {
+          const audio = new Audio(data.url);
           audio.play();
         } else {
           alert('Voice preview failed: ' + (data.error || 'Unknown error'));
@@ -615,70 +699,22 @@
     }
 
     async function configureVoice(assistantId) {
-      const voiceSelect = document.querySelector(`[data-assistant-id="${assistantId}"]`);
-      const selectedVoice = voiceSelect.value;
+      // Find the character assigned to this assistant
+      const card = document.querySelector(`.card[data-id="${assistantId}"]`);
+      const assignSelect = card.querySelector('.assign-select');
+      const characterId = assignSelect.value;
 
-      if (!selectedVoice) {
-        alert('Please select a voice first');
+      if (!characterId) {
+        alert('Please assign this assistant to a character first, then configure the voice');
         return;
       }
 
-      // For now, just show a simple configuration dialog
-      const speed = prompt('Voice Speed (0.5-2.0):', '1.0');
-      const pitch = prompt('Voice Pitch (-20 to 20):', '0');
-      const volume = prompt('Voice Volume (-20 to 20):', '0');
-      const emotion = prompt('Voice Emotion (Neutral, Excited, Sad, Angry):', 'Neutral');
-
-      if (speed !== null && pitch !== null && volume !== null && emotion !== null) {
-        try {
-          const response = await fetch(`/ai-management/api/assistants/${assistantId}/voice`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              voiceId: selectedVoice,
-              settings: {
-                speed: parseFloat(speed) || 1.0,
-                pitch: parseInt(pitch) || 0,
-                volume: parseInt(volume) || 0,
-                emotion: emotion || 'Neutral'
-              }
-            })
-          });
-
-          const data = await response.json();
-
-          if (data.success) {
-            // Update the settings display
-            const settingsSpan = document.querySelector(`#voicePreview_${assistantId} .voice-setting`);
-            if (settingsSpan) {
-              settingsSpan.textContent = `🎛️ Settings: Speed: ${speed} • Pitch: ${pitch} • Volume: ${volume} • Emotion: ${emotion}`;
-            }
-            alert('Voice settings saved successfully');
-          } else {
-            alert('Failed to save voice settings: ' + (data.error || 'Unknown error'));
-          }
-        } catch (error) {
-          console.error('Voice configuration error:', error);
-          alert('Failed to save voice settings: ' + error.message);
-        }
-      }
+      // Redirect to the TTS configuration page for this character with return URL
+      window.location.href = `/ai-management/tts?characterId=${characterId}&returnTo=/ai-management/assistants`;
     }
 
-    // Initialize voice selection event listeners
-    document.addEventListener('DOMContentLoaded', function() {
-      document.querySelectorAll('.voice-select').forEach(select => {
-        select.addEventListener('change', function() {
-          const assistantId = this.getAttribute('data-assistant-id');
-          const selectedVoice = this.value;
-
-          if (selectedVoice) {
-            console.log(`Voice selected for assistant ${assistantId}: ${selectedVoice}`);
-          }
-        });
-      });
-    });
+    // Voice assignment is now handled through the TTS configuration page
+    // No need for dropdown event listeners since we're just displaying the assigned voice
   </script>
 
   <!-- Simple Chat Modal -->

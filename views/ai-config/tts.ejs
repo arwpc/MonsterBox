@@ -52,6 +52,8 @@
             min-height: 300px;
             display: flex;
             flex-direction: column;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
 
         .character-voice-card:hover {
@@ -66,18 +68,18 @@
         }
         
         .character-avatar {
-            width: 50px;
-            height: 50px;
+            width: 125px;
+            height: 125px;
             border-radius: 50%;
             background: #001100;
             border: 2px solid #00ff00;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5em;
-            margin-right: 15px;
+            font-size: 3em;
+            margin-right: 20px;
             color: #00ff00;
-            object-fit: cover;
+            flex-shrink: 0;
             overflow: hidden;
         }
 
@@ -149,6 +151,9 @@
             margin-right: 10px;
             word-wrap: break-word;
             overflow-wrap: break-word;
+            min-width: 0; /* Allow flex item to shrink below content size */
+            max-width: 100%;
+            overflow: hidden;
         }
 
         .voice-name {
@@ -166,6 +171,11 @@
             line-height: 1.4;
             word-wrap: break-word;
             overflow-wrap: break-word;
+            max-width: 100%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: block;
         }
 
         .voice-controls {
@@ -236,6 +246,9 @@
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
             gap: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 10px;
         }
         
         .voice-item {
@@ -673,14 +686,7 @@
         <div class="info-section">
             <h2>🎤 TopMediaAI TTS Configuration</h2>
             <p>Configure Text-to-Speech voices for each character using the comprehensive TopMediaAI voice catalog</p>
-            <div class="integration-notice">
-                <div class="notice-content">
-                    <i class="fas fa-info-circle"></i>
-                    <div>
-                        <strong>ChatterPi Integration:</strong> Voice settings automatically sync with jaw animation system for seamless character performance.
-                    </div>
-                </div>
-            </div>
+
         </div>
 
         <!-- Character Voice Assignments -->
@@ -900,8 +906,8 @@
                 <audio controls id="testAudio" style="width: 100%;">
                     Your browser does not support the audio element.
                 </audio>
-                <div class="waveform" id="waveform">
-                    Audio waveform visualization
+                <div class="waveform" id="waveform" style="margin: 10px 0; height: 80px; background: #000800; border: 1px solid #00ff00; border-radius: 5px; position: relative;">
+                    <canvas id="waveformCanvas" style="width: 100%; height: 100%; border-radius: 5px;"></canvas>
                 </div>
                 <div style="margin-top: 10px;">
                     <button class="button secondary-btn" onclick="testAudioIntegrity()">
@@ -919,9 +925,15 @@
 
         <!-- Navigation -->
         <div class="button-group" style="margin-top: 30px;">
-            <a href="/ai-management" class="button secondary-btn">
-                <i class="fas fa-arrow-left"></i> Back to Dashboard
-            </a>
+            <% if (typeof returnTo !== 'undefined' && returnTo) { %>
+                <a href="<%= returnTo %>" class="button secondary-btn">
+                    <i class="fas fa-arrow-left"></i> Back to Assistants
+                </a>
+            <% } else { %>
+                <a href="/ai-management" class="button secondary-btn">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            <% } %>
             <a href="/characters" class="button">
                 <i class="fas fa-users"></i> Manage Characters
             </a>
@@ -1519,7 +1531,7 @@
             try {
                 showMessage('Generating speech...', 'info');
 
-                const response = await fetch('/api/voice/generate-for-scene', {
+                const response = await fetch('/api/voice/generate-test', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -1535,13 +1547,101 @@
                     audio.src = data.url;
                     document.getElementById('audioPlayer').style.display = 'block';
                     currentAudioUrl = data.url;
-                    showMessage('Speech generated successfully!', 'success');
+
+                    // Set up audio event listeners
+                    audio.onended = () => {
+                        if (animationId) {
+                            cancelAnimationFrame(animationId);
+                            animationId = null;
+                        }
+                    };
+
+                    // Auto-play the audio
+                    audio.play().then(() => {
+                        showMessage('Speech generated and playing!', 'success');
+                        // Initialize waveform visualization after play starts
+                        initializeWaveform(data.url);
+                    }).catch(error => {
+                        console.log('Auto-play prevented by browser:', error);
+                        showMessage('Audio generated! Click play to listen.', 'success');
+                        // Still initialize waveform for manual play
+                        initializeWaveform(data.url);
+                    });
                 } else {
                     showMessage(`Speech generation failed: ${data.error}`, 'error');
                 }
             } catch (error) {
                 showMessage(`Speech generation error: ${error.message}`, 'error');
             }
+        }
+
+        // Waveform visualization
+        let audioContext = null;
+        let analyser = null;
+        let animationId = null;
+
+        function initializeWaveform(audioUrl) {
+            const canvas = document.getElementById('waveformCanvas');
+            const ctx = canvas.getContext('2d');
+            const audio = document.getElementById('testAudio');
+
+            // Set canvas size
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+
+            // Initialize Web Audio API
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            // Create audio source and analyser
+            const source = audioContext.createMediaElementSource(audio);
+            analyser = audioContext.createAnalyser();
+            analyser.fftSize = 256;
+
+            source.connect(analyser);
+            analyser.connect(audioContext.destination);
+
+            // Start visualization
+            visualizeWaveform(ctx, canvas);
+        }
+
+        function visualizeWaveform(ctx, canvas) {
+            if (!analyser) return;
+
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            function draw() {
+                if (!analyser) return;
+
+                analyser.getByteFrequencyData(dataArray);
+
+                ctx.fillStyle = '#000800';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                const barWidth = (canvas.width / bufferLength) * 2.5;
+                let barHeight;
+                let x = 0;
+
+                for (let i = 0; i < bufferLength; i++) {
+                    barHeight = (dataArray[i] / 255) * canvas.height * 0.8;
+
+                    // Create gradient for bars
+                    const gradient = ctx.createLinearGradient(0, canvas.height - barHeight, 0, canvas.height);
+                    gradient.addColorStop(0, '#00ff00');
+                    gradient.addColorStop(1, '#004400');
+
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+
+                    x += barWidth + 1;
+                }
+
+                animationId = requestAnimationFrame(draw);
+            }
+
+            draw();
         }
 
         function downloadAudio() {
@@ -1552,6 +1652,39 @@
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
+            }
+        }
+
+        async function saveToLibrary() {
+            const characterId = document.getElementById('testCharacter').value;
+            const text = document.getElementById('testText').value;
+
+            if (!characterId || !text.trim()) {
+                showMessage('Please select a character and enter text', 'error');
+                return;
+            }
+
+            try {
+                showMessage('Saving to sound library...', 'info');
+
+                const response = await fetch('/api/voice/generate-for-scene', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: text,
+                        characterId: characterId
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage('Audio saved to sound library successfully!', 'success');
+                } else {
+                    showMessage(`Failed to save to library: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showMessage(`Error saving to library: ${error.message}`, 'error');
             }
         }
 

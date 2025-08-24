@@ -133,8 +133,17 @@ router.get('/assistants', async (req, res) => {
         const cfg = await assistantConfig.readConfig();
         const enriched = assistants.map(a => ({ ...a, config: cfg.assistants?.[a.id] || undefined }));
 
-        // Load characters for assignment dropdowns
+        // Load characters for assignment dropdowns and enrich with voice configurations
         const characters = await characterService.getAllCharacters();
+
+        // Add voice configuration to each character
+        for (let character of characters) {
+            try {
+                character.voiceConfig = await voiceService.getVoiceByCharacterId(character.id);
+            } catch (error) {
+                character.voiceConfig = null;
+            }
+        }
 
         res.render('ai-config/assistants', {
             title: 'OpenAI Assistants Management',
@@ -293,6 +302,29 @@ router.post('/api/assistants/:assistantId/starters', async (req, res) => {
     try {
         const { assistantId } = req.params; const { starters } = req.body;
         const updated = await assistantConfig.setAssistantConfig(assistantId, { conversationStarters: Array.isArray(starters)? starters : [] });
+        res.json({ success: true, config: updated });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Voice assignment for assistants
+router.post('/api/assistants/:assistantId/voice', async (req, res) => {
+    try {
+        const { assistantId } = req.params;
+        const { voiceId, settings } = req.body;
+
+        const voiceConfig = {
+            voiceId: voiceId,
+            settings: settings || {
+                speed: 1.0,
+                pitch: 0,
+                volume: 0,
+                emotion: 'Neutral'
+            }
+        };
+
+        const updated = await assistantConfig.setAssistantConfig(assistantId, { voice: voiceConfig });
         res.json({ success: true, config: updated });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
@@ -481,12 +513,14 @@ router.get('/tts', async (req, res) => {
 
         // Check if a specific character was requested
         const selectedCharacterId = req.query.characterId;
+        const returnTo = req.query.returnTo;
 
         res.render('ai-config/tts', {
             title: 'Text-to-Speech Configuration',
             globalTTSConfig,
             characters,
-            selectedCharacterId
+            selectedCharacterId,
+            returnTo
         });
     } catch (error) {
         console.error('TTS config error:', error);

@@ -54,6 +54,79 @@ async function downloadAudio(url, outputPath) {
     }
 }
 
+// Generate speech for testing without saving to library
+exports.generateTestSpeech = async (req, res) => {
+    let tempFilePath = null;
+    try {
+        const { text, characterId } = req.body;
+        logger.info(`Generating test speech for character ${characterId} with text: ${text}`);
+
+        if (!text || !characterId) {
+            return handleError(res, new Error('Text and character ID are required'), 400);
+        }
+
+        // Get voice settings for the character
+        const voice = await voiceService.getVoiceByCharacterId(characterId);
+        if (!voice || !voice.speaker_id) {
+            logger.error(`No voice configuration found for character ${characterId}`);
+            return handleError(res, new Error('No voice configured for this character'), 404);
+        }
+
+        // Generate the speech using character's voice settings
+        const result = await voiceService.generateSpeech(text, voice.speaker_id, voice.settings || {}, characterId);
+
+        // Create temporary filename
+        const timestamp = Date.now();
+        const sanitizedText = text.substring(0, 30).replace(/[^a-zA-Z0-9]/g, '_');
+        const extension = result.format === 'wav' ? '.wav' : '.mp3';
+        const filename = `temp_test_${timestamp}_${sanitizedText}${extension}`;
+        const filePath = path.join('public', 'sounds', filename);
+        const absolutePath = path.resolve(__dirname, '..', filePath);
+        tempFilePath = absolutePath;
+
+        // Download the audio file temporarily
+        await downloadAudio(result.url, absolutePath);
+
+        // Set up automatic cleanup after 5 minutes
+        setTimeout(() => {
+            if (fs.existsSync(absolutePath)) {
+                fs.unlink(absolutePath, (err) => {
+                    if (err) {
+                        logger.error(`Failed to cleanup temp file ${absolutePath}: ${err.message}`);
+                    } else {
+                        logger.info(`Cleaned up temp test file: ${filename}`);
+                    }
+                });
+            }
+        }, 5 * 60 * 1000); // 5 minutes
+
+        res.json({
+            success: true,
+            url: `/sounds/${filename}`,
+            duration: result.duration,
+            metadata: {
+                ...result.metadata,
+                temporary: true,
+                cleanupTime: new Date(Date.now() + 5 * 60 * 1000).toISOString()
+            }
+        });
+
+    } catch (error) {
+        logger.error(`Error generating test speech: ${error.message}`);
+
+        // Clean up temp file on error
+        if (tempFilePath && fs.existsSync(tempFilePath)) {
+            try {
+                fs.unlinkSync(tempFilePath);
+            } catch (cleanupError) {
+                logger.error(`Failed to clean up temp file on error: ${cleanupError.message}`);
+            }
+        }
+
+        handleError(res, error);
+    }
+};
+
 exports.getAvailableVoices = async (req, res) => {
     try {
         const voices = await voiceService.getAvailableVoices();

@@ -22,7 +22,6 @@
         "systemd-resolved",
         "bluetooth",
         "gpio-control",
-
         "camera",
         "head-tracking"
       ],
@@ -217,7 +216,6 @@
       ],
       "default_character": "Calvin"
     },
-
     "aiConfig": {
       "provider": "openai",
       "model": "gpt-4",
@@ -226,6 +224,7 @@
       "systemPrompt": "",
       "contextLength": 5,
       "enabled": true
-    }
+    },
+    "openaiAssistantId": "asst_UqgxEpp0UgLvf3V3ulhL0hud"
   }
 ]

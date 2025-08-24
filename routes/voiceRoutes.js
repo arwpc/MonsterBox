@@ -38,6 +38,7 @@ router.post('/settings', voiceController.saveVoiceSettings);
 router.put('/settings/:characterId', voiceController.updateVoiceSettings);
 router.post('/generate', voiceController.generateSpeech);
 router.post('/generate-for-scene', voiceController.generateAndSaveForScene);
+router.post('/generate-test', voiceController.generateTestSpeech);
 
 // Voice metadata routes
 router.patch('/metadata/:characterId', voiceController.updateVoiceMetadata);
