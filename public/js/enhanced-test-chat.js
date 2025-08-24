@@ -141,10 +141,27 @@ class EnhancedTestChat {
             const character = this.config.characters.find(c => c.id == characterId);
             if (character) {
                 this.currentCharacter = character;
-                this.assistantDisplay.value = character.openaiAssistantId || 'No assistant assigned';
-                
-                // Load character greeting
-                await this.loadCharacterGreeting(character);
+
+                // Update assistant display based on AI availability
+                if (character.hasAI && character.openaiAssistantId) {
+                    this.assistantDisplay.value = character.openaiAssistantId;
+                } else if (character.hasVoice) {
+                    this.assistantDisplay.value = 'Voice only (no AI chat)';
+                } else {
+                    this.assistantDisplay.value = 'No assistant assigned';
+                }
+
+                // Load character greeting if AI is available
+                if (character.hasAI) {
+                    await this.loadCharacterGreeting(character);
+                } else {
+                    // Clear chat for voice-only characters
+                    this.chatMessages.innerHTML = '';
+                    this.addMessage('system', `Selected ${character.char_name || character.name} - Voice features available`, {
+                        characterName: 'System',
+                        isInfo: true
+                    });
+                }
             }
             
             // Fetch detailed configuration
@@ -212,36 +229,69 @@ class EnhancedTestChat {
      */
     async startSTT() {
         try {
-            // Request microphone permission
-            this.audioStream = await navigator.mediaDevices.getUserMedia({ 
+            // Request microphone permission with optimized settings
+            this.audioStream = await navigator.mediaDevices.getUserMedia({
                 audio: {
                     echoCancellation: true,
                     noiseSuppression: true,
-                    autoGainControl: true
+                    autoGainControl: true,
+                    sampleRate: 16000,  // Lower sample rate for smaller files
+                    channelCount: 1     // Mono audio
                 }
             });
-            
-            // Setup media recorder
-            this.mediaRecorder = new MediaRecorder(this.audioStream);
-            this.audioChunks = [];
-            
-            this.mediaRecorder.ondataavailable = (event) => {
-                this.audioChunks.push(event.data);
+
+            // Setup media recorder with WebM format and time slicing
+            const options = {
+                mimeType: 'audio/webm;codecs=opus',
+                audioBitsPerSecond: 16000  // Lower bitrate for smaller files
             };
-            
+
+            // Fallback for browsers that don't support WebM
+            if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                options.mimeType = 'audio/webm';
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                    delete options.mimeType;  // Use default
+                }
+            }
+
+            this.mediaRecorder = new MediaRecorder(this.audioStream, options);
+            this.audioChunks = [];
+
+            this.mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    this.audioChunks.push(event.data);
+                }
+            };
+
             this.mediaRecorder.onstop = async () => {
                 await this.processSTTAudio();
             };
-            
-            // Start recording
-            this.mediaRecorder.start();
+
+            // Start recording with time slicing (1 second chunks)
+            this.mediaRecorder.start(1000);
             this.isSTTActive = true;
             this.updateSTTStatus(true, 'Listening...');
-            
-            console.log('🎤 STT started');
-            
+
+            // Auto-stop after 10 seconds to prevent huge files
+            this.sttTimeout = setTimeout(() => {
+                if (this.isSTTActive) {
+                    console.log('🎤 Auto-stopping STT after 10 seconds');
+                    this.stopSTT();
+                }
+            }, 10000);
+
+            console.log('🎤 STT started with optimized settings');
+
         } catch (error) {
             console.error('❌ Error starting STT:', error);
+            this.updateSTTStatus(false, 'Error');
+
+            // Show error message to user
+            this.addMessage('system', `Microphone access error: ${error.message}`, {
+                characterName: 'System',
+                isError: true
+            });
+
             throw error;
         }
     }
@@ -251,20 +301,26 @@ class EnhancedTestChat {
      */
     async stopSTT() {
         try {
+            // Clear timeout if it exists
+            if (this.sttTimeout) {
+                clearTimeout(this.sttTimeout);
+                this.sttTimeout = null;
+            }
+
             if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
                 this.mediaRecorder.stop();
             }
-            
+
             if (this.audioStream) {
                 this.audioStream.getTracks().forEach(track => track.stop());
                 this.audioStream = null;
             }
-            
+
             this.isSTTActive = false;
             this.updateSTTStatus(false, 'OFF');
-            
+
             console.log('🎤 STT stopped');
-            
+
         } catch (error) {
             console.error('❌ Error stopping STT:', error);
             throw error;
@@ -276,19 +332,35 @@ class EnhancedTestChat {
      */
     async processSTTAudio() {
         try {
-            if (this.audioChunks.length === 0) return;
-            
+            if (this.audioChunks.length === 0) {
+                console.log('🎤 No audio chunks to process');
+                this.updateSTTStatus(false, 'Ready');
+                return;
+            }
+
             const startTime = Date.now();
             this.updateSTTStatus(false, 'Processing...');
-            
-            // Create audio blob
-            const audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
+
+            // Create audio blob with correct MIME type
+            const audioBlob = new Blob(this.audioChunks, {
+                type: this.audioChunks[0].type || 'audio/webm'
+            });
             this.audioChunks = [];
-            
-            // Convert to base64
+
+            console.log(`🎤 Processing audio blob: ${audioBlob.size} bytes, type: ${audioBlob.type}`);
+
+            // Check file size (limit to 25MB to avoid "request entity too large")
+            if (audioBlob.size > 25 * 1024 * 1024) {
+                throw new Error('Audio file too large. Please record shorter audio.');
+            }
+
+            // Convert to base64 more efficiently
             const arrayBuffer = await audioBlob.arrayBuffer();
-            const base64Audio = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-            
+            const uint8Array = new Uint8Array(arrayBuffer);
+            const base64Audio = btoa(String.fromCharCode.apply(null, uint8Array));
+
+            console.log(`🎤 Sending ${base64Audio.length} characters of base64 audio data`);
+
             // Send to STT service
             const response = await fetch(`${this.config.apiBaseUrl}/voice/transcribe`, {
                 method: 'POST',
@@ -302,7 +374,11 @@ class EnhancedTestChat {
                     sttOnly: true
                 })
             });
-            
+
+            if (!response.ok) {
+                throw new Error(`STT request failed: ${response.status} ${response.statusText}`);
+            }
+
             const data = await response.json();
             const sttTime = Date.now() - startTime;
             
@@ -310,18 +386,34 @@ class EnhancedTestChat {
                 // Update input with transcribed text
                 this.chatInput.value = data.data.stt.text;
                 this.updateSendButton();
-                
+
                 // Update performance metrics
                 this.updatePerformanceMetric('stt', sttTime);
-                
+
                 console.log(`🎤 STT completed in ${sttTime}ms: "${data.data.stt.text}"`);
+
+                // Automatically send the transcribed text to AI if character has AI enabled
+                if (this.currentCharacter && this.currentCharacter.hasAI) {
+                    console.log('🤖 Auto-sending transcribed text to AI...');
+                    await this.sendMessage(data.data.stt.text);
+                }
+            } else if (data.data.stt && data.data.stt.error) {
+                console.error('❌ STT Error:', data.data.stt.error);
+                this.updateSTTStatus(false, 'ERROR');
+                return;
             }
-            
+
             this.updateSTTStatus(false, 'OFF');
             
         } catch (error) {
             console.error('❌ Error processing STT audio:', error);
             this.updateSTTStatus(false, 'Error');
+
+            // Show error message to user
+            this.addMessage('system', `Speech recognition error: ${error.message}`, {
+                characterName: 'System',
+                isError: true
+            });
         }
     }
     
@@ -337,22 +429,39 @@ class EnhancedTestChat {
     /**
      * Send message
      */
-    async sendMessage() {
-        const message = this.chatInput.value.trim();
+    async sendMessage(messageText = null) {
+        const message = messageText || this.chatInput.value.trim();
         if (!message || !this.currentCharacter || this.isProcessing) return;
-        
+
+        // Check if character has AI capabilities
+        if (!this.currentCharacter.hasAI) {
+            this.addMessage('system', `${this.currentCharacter.char_name || this.currentCharacter.name} only supports voice features. AI chat is not available for this character.`, {
+                characterName: 'System',
+                isInfo: true
+            });
+
+            // Still process TTS if enabled
+            if (this.isTTSActive) {
+                await this.speakText(message);
+            }
+
+            return;
+        }
+
         try {
             this.isProcessing = true;
             this.updateConnectionStatus('processing', 'Processing...');
-            
+
             // Add user message
             this.addMessage('user', message);
-            this.chatInput.value = '';
-            this.updateSendButton();
-            
+            if (!messageText) { // Only clear input if not called from STT
+                this.chatInput.value = '';
+                this.updateSendButton();
+            }
+
             // Show typing indicator
             const typingId = this.showTypingIndicator();
-            
+
             const startTime = Date.now();
             
             // Send to AI

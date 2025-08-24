@@ -458,8 +458,10 @@
                         <% characters.forEach(character => { %>
                             <option value="<%= character.id %>"
                                     data-assistant="<%= character.openaiAssistantId || '' %>"
-                                    data-name="<%= character.char_name %>">
-                                <%= character.char_name %>
+                                    data-name="<%= character.char_name %>"
+                                    data-has-ai="<%= character.hasAI ? 'true' : 'false' %>"
+                                    data-has-voice="<%= character.hasVoice ? 'true' : 'false' %>">
+                                <%= character.char_name %><%= character.hasAI ? ' (AI + Voice)' : ' (Voice Only)' %>
                             </option>
                         <% }); %>
                     <% } %>

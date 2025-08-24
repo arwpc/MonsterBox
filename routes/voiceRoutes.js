@@ -158,18 +158,27 @@ router.post('/transcribe', async (req, res) => {
                 fs.mkdirSync(tempDir, { recursive: true });
             }
 
-            const tempFilePath = path.join(tempDir, `audio_${Date.now()}.webm`);
+            // Use .webm extension since that's what MediaRecorder typically produces
+            const tempFilePath = path.join(tempDir, `stt_audio_${Date.now()}.webm`);
             fs.writeFileSync(tempFilePath, audioBuffer);
+
+            console.log(`🎤 Created temp audio file: ${tempFilePath} (${audioBuffer.length} bytes)`);
 
             // Transcribe audio
             const transcription = await openai.audio.transcriptions.create({
                 file: fs.createReadStream(tempFilePath),
                 model: 'whisper-1',
-                language: 'en'
+                language: 'en',
+                response_format: 'json'
             });
 
             // Clean up temp file
-            fs.unlinkSync(tempFilePath);
+            try {
+                fs.unlinkSync(tempFilePath);
+                console.log(`🧹 Cleaned up temp file: ${tempFilePath}`);
+            } catch (cleanupError) {
+                console.warn(`⚠️ Failed to clean up temp file: ${cleanupError.message}`);
+            }
 
             const sttTime = Date.now() - sttStartTime;
             result.data.stt = {

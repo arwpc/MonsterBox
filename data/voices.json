@@ -408,7 +408,7 @@
         "tags": [],
         "notes": "",
         "created": "2025-05-13T00:35:07.630Z",
-        "lastModified": "2025-08-24T19:26:44.966Z",
+        "lastModified": "2025-08-24T19:41:59.329Z",
         "migratedFrom": "Replica",
         "migrationDate": "2025-06-14T20:10:52.736Z",
         "originalSpeakerId": "55a0aad5-a739-402f-9cec-36b01ff81a41",
@@ -417,22 +417,6 @@
         "voiceLanguage": "English(US),Chinese(Mandarin),Spanish(Mexico),Japanese(Japan),Portuguese(Portugal),French(France),Russian(Russia),Korean(Korea),Malay,Danish(Denmark),Finnish(Finland),Turkish(Turkey),Slovak(Slovakia),Hindi(India),Swedish(Sweden),Italian(Italy),Polish(Poland),Czech(Czech),Dutch(Belgium),German(Germany),Filipino(Philippines),Indonesian(Indonesia),Croatian(Croatia),Arabic(Egyptian),Romanian(Romania),Bulgarian(Bulgaria),Greek(Greece),Tamil(India),Ukrainian(Ukraine),Vietnamese(Vietnam),Norwegian(Norway),Hungarian(Hungary),Portuguese(Brazil),Arabic(Saudi Arabia),Spanish(Spain),English(UK)"
       },
       "history": [
-        {
-          "timestamp": "2025-08-24T19:11:53.501Z",
-          "type": "settings_update",
-          "settings": {
-            "pitch": 0,
-            "speed": 1,
-            "volume": 0,
-            "emotion": "Neutral",
-            "sampleRate": 44100,
-            "bitRate": 128,
-            "outputFormat": "wav",
-            "channels": 1,
-            "languageCode": "en",
-            "provider": "TopMediai"
-          }
-        },
         {
           "timestamp": "2025-08-24T19:13:30.541Z",
           "type": "settings_update",
@@ -579,6 +563,22 @@
         },
         {
           "timestamp": "2025-08-24T19:26:44.966Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Neutral",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-08-24T19:41:59.329Z",
           "type": "settings_update",
           "settings": {
             "pitch": 0,

@@ -221,12 +221,12 @@ app.use(generalLimiter);
 
 // Basic Express setup with enhanced security
 app.use(express.json({
-    limit: '10mb', // Prevent large payload attacks
+    limit: '50mb', // Increased for audio uploads (STT)
     strict: true
 }));
 app.use(express.urlencoded({
     extended: true,
-    limit: '10mb',
+    limit: '50mb', // Increased for audio uploads
     parameterLimit: 1000 // Prevent parameter pollution
 }));
 app.set('view engine', 'ejs');
@@ -459,20 +459,35 @@ app.get('/test-chat', async (req, res) => {
             console.warn('⚠️ Could not load assistants config:', error.message);
         }
 
-        // Filter characters that have AI enabled and assistant IDs
-        const aiEnabledCharacters = characters.filter(char =>
-            char.aiConfig &&
-            char.aiConfig.enabled &&
-            char.openaiAssistantId
-        );
+        // Get voice service to check for voice configurations
+        const voiceService = require('./services/voiceService');
 
-        console.log(`🎭 Loaded ${aiEnabledCharacters.length} AI-enabled characters for test page`);
+        // Filter characters that have voice configurations (for TTS) and optionally AI enabled
+        const availableCharacters = [];
+        for (const char of characters) {
+            try {
+                const voiceConfig = await voiceService.getVoiceByCharacterId(char.id);
+                if (voiceConfig && voiceConfig.speaker_id) {
+                    // Character has voice configuration, include it
+                    availableCharacters.push({
+                        ...char,
+                        hasVoice: true,
+                        hasAI: char.aiConfig && char.aiConfig.enabled && char.openaiAssistantId
+                    });
+                }
+            } catch (error) {
+                console.warn(`⚠️ Could not check voice config for character ${char.id}:`, error.message);
+            }
+        }
+
+        console.log(`🎭 Loaded ${availableCharacters.length} characters with voice configurations for test page`);
+        console.log(`🤖 ${availableCharacters.filter(c => c.hasAI).length} characters have AI enabled`);
 
         res.render('enhanced-test-chat', {
             title: 'Enhanced Test Chat - AI Conversation Interface',
-            characterId: req.query.characterId || (aiEnabledCharacters.length > 0 ? aiEnabledCharacters[0].id : null),
+            characterId: req.query.characterId || (availableCharacters.length > 0 ? availableCharacters[0].id : null),
             pageTitle: 'Enhanced Test Chat',
-            characters: aiEnabledCharacters,
+            characters: availableCharacters,
             assistants: assistants
         });
     } catch (error) {
