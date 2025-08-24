@@ -168,7 +168,47 @@
             0%, 100% { opacity: 1; }
             50% { opacity: 0.6; }
         }
-        
+
+        /* Live Mode specific styling */
+        .live-mode-toggle.active {
+            border-color: #00ff88;
+            background: rgba(0, 255, 136, 0.1);
+            color: #00ff88;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+        }
+
+        .live-mode-toggle.active.listening {
+            border-color: #ff4444;
+            background: rgba(255, 68, 68, 0.1);
+            color: #ff4444;
+            animation: pulse 1.5s infinite;
+        }
+
+        .live-mode-toggle.active.speaking {
+            border-color: #4ecdc4;
+            background: rgba(78, 205, 196, 0.1);
+            color: #4ecdc4;
+            animation: wave 2s infinite;
+        }
+
+        .live-mode-toggle.active.processing {
+            border-color: #ffd93d;
+            background: rgba(255, 217, 61, 0.1);
+            color: #ffd93d;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes wave {
+            0%, 100% { transform: scale(1); }
+            25% { transform: scale(1.02); }
+            75% { transform: scale(0.98); }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         .voice-icon {
             font-size: 16px;
         }
@@ -485,6 +525,12 @@
                     <span class="voice-icon">🔊</span>
                     <span>Text to Speech</span>
                     <span class="voice-status" id="ttsStatus">OFF</span>
+                </div>
+
+                <div class="voice-toggle live-mode-toggle" id="liveModeToggle">
+                    <span class="voice-icon">🎙️</span>
+                    <span>Live Mode</span>
+                    <span class="voice-status" id="liveModeStatus">OFF</span>
                 </div>
             </div>
         </div>

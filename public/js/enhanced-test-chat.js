@@ -18,9 +18,13 @@ class EnhancedTestChat {
         this.currentCharacter = null;
         this.isSTTActive = false;
         this.isTTSActive = false;
+        this.isLiveModeActive = false;
         this.isProcessing = false;
         this.mediaRecorder = null;
         this.audioStream = null;
+        this.liveModeState = 'idle'; // idle, listening, processing, speaking
+        this.liveModeTimeout = null;
+        this.liveModeAudio = null;
         this.performanceMetrics = {
             stt: null,
             ai: null,
@@ -44,8 +48,10 @@ class EnhancedTestChat {
         // Voice controls
         this.sttToggle = document.getElementById('sttToggle');
         this.ttsToggle = document.getElementById('ttsToggle');
+        this.liveModeToggle = document.getElementById('liveModeToggle');
         this.sttStatus = document.getElementById('sttStatus');
         this.ttsStatus = document.getElementById('ttsStatus');
+        this.liveModeStatus = document.getElementById('liveModeStatus');
         
         // Chat interface
         this.chatMessages = document.getElementById('chatMessages');
@@ -76,6 +82,10 @@ class EnhancedTestChat {
         
         this.ttsToggle.addEventListener('click', () => {
             this.toggleTTS();
+        });
+
+        this.liveModeToggle.addEventListener('click', () => {
+            this.toggleLiveMode();
         });
         
         // Chat input
@@ -212,7 +222,13 @@ class EnhancedTestChat {
                 alert('Please select a character first');
                 return;
             }
-            
+
+            // Prevent STT toggle when Live Mode is active
+            if (this.isLiveModeActive) {
+                alert('Cannot toggle STT while Live Mode is active');
+                return;
+            }
+
             if (this.isSTTActive) {
                 await this.stopSTT();
             } else {
@@ -425,7 +441,420 @@ class EnhancedTestChat {
         this.updateTTSStatus(this.isTTSActive, this.isTTSActive ? 'ON' : 'OFF');
         console.log(`🔊 TTS ${this.isTTSActive ? 'enabled' : 'disabled'}`);
     }
-    
+
+    /**
+     * Toggle Live Mode
+     */
+    async toggleLiveMode() {
+        try {
+            if (!this.currentCharacter) {
+                alert('Please select a character first');
+                return;
+            }
+
+            if (!this.currentCharacter.hasAI) {
+                alert('Live Mode requires a character with AI capabilities');
+                return;
+            }
+
+            // Stop regular STT/TTS if active before starting Live Mode
+            if (!this.isLiveModeActive) {
+                if (this.isSTTActive) {
+                    await this.stopSTT();
+                }
+            }
+
+            if (this.isLiveModeActive) {
+                await this.stopLiveMode();
+            } else {
+                await this.startLiveMode();
+            }
+        } catch (error) {
+            console.error('❌ Error toggling Live Mode:', error);
+            this.updateLiveModeStatus(false, 'Error');
+        }
+    }
+
+    /**
+     * Start Live Mode
+     */
+    async startLiveMode() {
+        try {
+            console.log('🎙️ Starting Live Mode...');
+
+            // Clear chat history for fresh conversation
+            this.clearChatHistory();
+
+            // Enable TTS automatically for Live Mode
+            this.isTTSActive = true;
+            this.updateTTSStatus(true, 'ON');
+
+            // Set Live Mode active
+            this.isLiveModeActive = true;
+            this.liveModeState = 'listening';
+            this.updateLiveModeStatus(true, 'Starting...');
+
+            // Start continuous listening
+            await this.startContinuousListening();
+
+            console.log('🎙️ Live Mode started successfully');
+
+        } catch (error) {
+            console.error('❌ Error starting Live Mode:', error);
+            this.isLiveModeActive = false;
+            this.updateLiveModeStatus(false, 'Error');
+            throw error;
+        }
+    }
+
+    /**
+     * Stop Live Mode
+     */
+    async stopLiveMode() {
+        try {
+            console.log('🎙️ Stopping Live Mode...');
+
+            // Set Live Mode inactive
+            this.isLiveModeActive = false;
+            this.liveModeState = 'idle';
+
+            // Stop any ongoing audio
+            await this.stopContinuousListening();
+
+            // Stop any TTS playback
+            if (this.liveModeAudio) {
+                this.liveModeAudio.pause();
+                this.liveModeAudio = null;
+            }
+
+            // Clear timeouts
+            if (this.liveModeTimeout) {
+                clearTimeout(this.liveModeTimeout);
+                this.liveModeTimeout = null;
+            }
+
+            // Update status
+            this.updateLiveModeStatus(false, 'OFF');
+
+            console.log('🎙️ Live Mode stopped successfully');
+
+        } catch (error) {
+            console.error('❌ Error stopping Live Mode:', error);
+            this.updateLiveModeStatus(false, 'Error');
+        }
+    }
+
+    /**
+     * Start continuous listening for Live Mode
+     */
+    async startContinuousListening() {
+        try {
+            // Request microphone permission with optimized settings
+            this.audioStream = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true,
+                    sampleRate: 16000,
+                    channelCount: 1
+                }
+            });
+
+            // Create media recorder
+            this.mediaRecorder = new MediaRecorder(this.audioStream, {
+                mimeType: 'audio/webm;codecs=opus'
+            });
+
+            this.audioChunks = [];
+
+            this.mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    this.audioChunks.push(event.data);
+                }
+            };
+
+            this.mediaRecorder.onstop = async () => {
+                if (this.isLiveModeActive) {
+                    await this.processLiveModeAudio();
+                }
+            };
+
+            // Start recording with time slicing (3 second chunks for Live Mode)
+            this.mediaRecorder.start(3000);
+            this.updateLiveModeStatus(true, 'Listening...');
+
+            console.log('🎙️ Continuous listening started');
+
+        } catch (error) {
+            console.error('❌ Error starting continuous listening:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Stop continuous listening
+     */
+    async stopContinuousListening() {
+        try {
+            if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+                this.mediaRecorder.stop();
+            }
+
+            if (this.audioStream) {
+                this.audioStream.getTracks().forEach(track => track.stop());
+                this.audioStream = null;
+            }
+
+            console.log('🎙️ Continuous listening stopped');
+
+        } catch (error) {
+            console.error('❌ Error stopping continuous listening:', error);
+        }
+    }
+
+    /**
+     * Process audio for Live Mode
+     */
+    async processLiveModeAudio() {
+        try {
+            if (this.audioChunks.length === 0) {
+                console.log('🎙️ No audio chunks to process, restarting listening...');
+                if (this.isLiveModeActive) {
+                    this.restartContinuousListening();
+                }
+                return;
+            }
+
+            this.liveModeState = 'processing';
+            this.updateLiveModeStatus(true, 'Processing...');
+
+            // Create audio blob
+            const audioBlob = new Blob(this.audioChunks, {
+                type: this.audioChunks[0].type || 'audio/webm'
+            });
+
+            // Clear chunks for next recording
+            this.audioChunks = [];
+
+            // Convert to base64
+            const arrayBuffer = await audioBlob.arrayBuffer();
+            const uint8Array = new Uint8Array(arrayBuffer);
+            const base64Audio = btoa(String.fromCharCode.apply(null, uint8Array));
+
+            console.log(`🎙️ Processing ${base64Audio.length} characters of audio data`);
+
+            // Send to STT service
+            const response = await fetch(`${this.config.apiBaseUrl}/voice/transcribe`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    audioData: base64Audio,
+                    character: this.currentCharacter.name.toLowerCase(),
+                    characterId: this.currentCharacter.id,
+                    sttOnly: true
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`STT request failed: ${response.status} ${response.statusText}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success && data.data.stt && data.data.stt.text) {
+                const transcribedText = data.data.stt.text.trim();
+                console.log(`🎙️ Transcribed: "${transcribedText}"`);
+
+                // Only process if there's meaningful text (more than just noise)
+                if (transcribedText.length > 2) {
+                    await this.processLiveModeMessage(transcribedText);
+                } else {
+                    console.log('🎙️ Text too short, restarting listening...');
+                    if (this.isLiveModeActive) {
+                        this.restartContinuousListening();
+                    }
+                }
+            } else {
+                console.log('🎙️ No speech detected, restarting listening...');
+                if (this.isLiveModeActive) {
+                    this.restartContinuousListening();
+                }
+            }
+
+        } catch (error) {
+            console.error('❌ Error processing Live Mode audio:', error);
+            if (this.isLiveModeActive) {
+                this.restartContinuousListening();
+            }
+        }
+    }
+
+    /**
+     * Process message in Live Mode (auto-send to AI and speak response)
+     */
+    async processLiveModeMessage(message) {
+        try {
+            console.log(`🎙️ Processing Live Mode message: "${message}"`);
+
+            // Add user message to chat
+            this.addMessage('user', message);
+
+            // Send to AI
+            this.liveModeState = 'processing';
+            this.updateLiveModeStatus(true, 'Thinking...');
+
+            const response = await fetch(`${this.config.apiBaseUrl}/ai/chat`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message: message,
+                    character: this.currentCharacter.name.toLowerCase(),
+                    characterId: this.currentCharacter.id
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`AI request failed: ${response.status} ${response.statusText}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success && data.data.aiResponse && data.data.aiResponse.text) {
+                const aiResponse = data.data.aiResponse.text;
+                console.log(`🎙️ AI Response: "${aiResponse}"`);
+
+                // Add AI message to chat
+                this.addMessage('bot', aiResponse, {
+                    characterName: this.currentCharacter.char_name || this.currentCharacter.name
+                });
+
+                // Speak the response
+                await this.speakLiveModeText(aiResponse);
+            } else {
+                console.error('❌ Invalid AI response');
+                if (this.isLiveModeActive) {
+                    this.restartContinuousListening();
+                }
+            }
+
+        } catch (error) {
+            console.error('❌ Error processing Live Mode message:', error);
+            if (this.isLiveModeActive) {
+                this.restartContinuousListening();
+            }
+        }
+    }
+
+    /**
+     * Restart continuous listening
+     */
+    restartContinuousListening() {
+        if (!this.isLiveModeActive) return;
+
+        this.liveModeState = 'listening';
+        this.updateLiveModeStatus(true, 'Listening...');
+
+        // Small delay before restarting to prevent rapid cycling
+        this.liveModeTimeout = setTimeout(async () => {
+            if (this.isLiveModeActive) {
+                try {
+                    // Restart recording
+                    if (this.mediaRecorder && this.mediaRecorder.state === 'inactive') {
+                        this.audioChunks = [];
+                        this.mediaRecorder.start(3000);
+                        console.log('🎙️ Restarted continuous listening');
+                    }
+                } catch (error) {
+                    console.error('❌ Error restarting listening:', error);
+                }
+            }
+        }, 500);
+    }
+
+    /**
+     * Speak text in Live Mode
+     */
+    async speakLiveModeText(text) {
+        try {
+            if (!this.isLiveModeActive || !text) return;
+
+            this.liveModeState = 'speaking';
+            this.updateLiveModeStatus(true, 'Speaking...');
+
+            const response = await fetch(`${this.config.apiBaseUrl}/voice/speak`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    text: text,
+                    character: this.currentCharacter.name.toLowerCase(),
+                    characterId: this.currentCharacter.id,
+                    voiceConfig: this.currentCharacter.voiceConfig || {}
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success && data.audioUrl) {
+                // Play audio
+                this.liveModeAudio = new Audio(data.audioUrl);
+                this.liveModeAudio.volume = 0.8;
+
+                // When audio finishes, restart listening
+                this.liveModeAudio.onended = () => {
+                    console.log('🎙️ TTS finished, restarting listening...');
+                    this.liveModeAudio = null;
+                    if (this.isLiveModeActive) {
+                        this.restartContinuousListening();
+                    }
+                };
+
+                this.liveModeAudio.onerror = () => {
+                    console.error('❌ Live Mode audio playback error');
+                    this.liveModeAudio = null;
+                    if (this.isLiveModeActive) {
+                        this.restartContinuousListening();
+                    }
+                };
+
+                await this.liveModeAudio.play();
+                console.log('🎙️ Speaking Live Mode response');
+
+            } else {
+                console.error('❌ TTS failed in Live Mode');
+                if (this.isLiveModeActive) {
+                    this.restartContinuousListening();
+                }
+            }
+
+        } catch (error) {
+            console.error('❌ Error with Live Mode TTS:', error);
+            if (this.isLiveModeActive) {
+                this.restartContinuousListening();
+            }
+        }
+    }
+
+    /**
+     * Clear chat history
+     */
+    clearChatHistory() {
+        this.chatMessages.innerHTML = `
+            <div class="message bot">
+                <div class="message-content">
+                    Live Mode activated! I'm listening for your voice...
+                    <div class="message-time">${new Date().toLocaleTimeString()}</div>
+                </div>
+            </div>
+        `;
+        console.log('🎙️ Chat history cleared for Live Mode');
+    }
+
     /**
      * Send message
      */
@@ -665,6 +1094,33 @@ class EnhancedTestChat {
     updateTTSStatus(active, message) {
         this.ttsToggle.className = `voice-toggle ${active ? 'active' : ''}`;
         this.ttsStatus.textContent = message;
+    }
+
+    /**
+     * Update Live Mode status
+     */
+    updateLiveModeStatus(active, message) {
+        let className = 'voice-toggle live-mode-toggle';
+
+        if (active) {
+            className += ' active';
+
+            // Add state-specific classes for visual feedback
+            switch (this.liveModeState) {
+                case 'listening':
+                    className += ' listening';
+                    break;
+                case 'processing':
+                    className += ' processing';
+                    break;
+                case 'speaking':
+                    className += ' speaking';
+                    break;
+            }
+        }
+
+        this.liveModeToggle.className = className;
+        this.liveModeStatus.textContent = message;
     }
 
     /**
