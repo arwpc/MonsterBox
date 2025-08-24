@@ -387,5 +387,36 @@
     },
     "characterId": null,
     "format": "wav"
+  },
+  {
+    "id": 135,
+    "name": "Hello, I am your monster, hear me roar!",
+    "filename": "1756004846012-Hello__I_am_your_monster__hear.wav",
+    "file": "1756004846012-Hello__I_am_your_monster__hear.wav",
+    "characterIds": [
+      1
+    ],
+    "type": "voice",
+    "created": "2025-08-24T03:07:26.018Z",
+    "metadata": {
+      "originalText": "Hello, I am your monster, hear me roar!",
+      "voiceId": "829eb69c-8d2b-11ef-a4f6-00163e0082fe",
+      "voiceSettings": {
+        "pitch": -13,
+        "speed": 0.6,
+        "volume": 14,
+        "emotion": "Angry",
+        "sampleRate": 44100,
+        "bitRate": 128,
+        "outputFormat": "wav",
+        "channels": 1,
+        "languageCode": "en",
+        "provider": "TopMediai"
+      },
+      "audioFormat": "wav",
+      "created": "2025-08-24T03:07:26.018Z"
+    },
+    "characterId": null,
+    "format": "wav"
   }
 ]

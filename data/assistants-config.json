@@ -1,7 +1,10 @@
 {
   "assistants": {
     "asst_vJq9smE6nVrvibJKfUv2FmDq": {
-      "conversationStarters": [],
+      "conversationStarters": [
+        "Where is my mina?",
+        "What are you looking at mortal? I am Royalty."
+      ],
       "files": [
         {
           "fileId": "file-6sbKbajPxfYu8SC8kg7G7i",

@@ -129,7 +129,11 @@ exports.saveVoiceSettings = async (req, res) => {
             logger.info(`Voice settings saved successfully for character ${characterId}`);
         }
 
-        res.json(updatedVoice);
+        res.json({
+            success: true,
+            data: updatedVoice,
+            message: 'Voice settings saved successfully'
+        });
     } catch (error) {
         handleError(res, error);
     }

@@ -17,6 +17,114 @@
     .danger { background: #330000; color: #ff6666; border: 1px solid #ff0000; }
     .success { color: #00ff00; }
     .badge { border: 1px solid #00ff00; color: #00ff00; padding: 2px 6px; border-radius: 4px; font-size: 11px; }
+
+    /* Assistant Card Styling */
+    .assistant-card {
+      background: #001100;
+      border: 2px solid #00ff00;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .assistant-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .assistant-avatar {
+      width: 125px;
+      height: 125px;
+      border-radius: 50%;
+      background: #001100;
+      border: 2px solid #00ff00;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3em;
+      margin-right: 20px;
+      color: #00ff00;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .assistant-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+    }
+
+    .assistant-info {
+      flex: 1;
+    }
+
+    .assistant-info h4 {
+      color: #00ff00;
+      margin: 0 0 10px 0;
+      font-size: 1.4em;
+    }
+
+    .voice-assignment-section {
+      margin: 20px 0;
+      padding: 15px;
+      background: #000800;
+      border: 1px solid #00ff00;
+      border-radius: 8px;
+    }
+
+    .voice-label {
+      display: block;
+      color: #00ff00;
+      font-weight: bold;
+      margin-bottom: 12px;
+      font-size: 1.1em;
+    }
+
+    .voice-preview {
+      background: #001100;
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 15px;
+    }
+
+    .voice-dropdown-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .voice-select {
+      flex: 1;
+      padding: 8px 12px;
+      background: #001100;
+      border: 1px solid #00ff00;
+      border-radius: 4px;
+      color: #ffffff;
+      font-size: 14px;
+    }
+
+    .voice-select option {
+      background: #001100;
+      color: #ffffff;
+    }
+
+    .voice-controls {
+      display: flex;
+      gap: 5px;
+    }
+
+    .voice-settings {
+      color: #cccccc;
+      font-size: 0.9em;
+      margin-top: 8px;
+    }
+
+    .voice-setting {
+      display: block;
+    }
   </style>
 </head>
 <body>
@@ -53,9 +161,25 @@
         </div>
       <% } %>
       <% (assistants || []).forEach(function(a){ %>
-        <div class="card" data-id="<%= a.id %>">
-          <h4><%= a.name || a.id %></h4>
-          <div class="muted">ID: <span class="badge"><%= a.id %></span></div>
+        <div class="card assistant-card" data-id="<%= a.id %>">
+          <div class="assistant-header">
+            <div class="assistant-avatar">
+              <% if (a.name === 'Orlok' || a.name === 'Count Orlok') { %>
+                🧛
+              <% } else if (a.name === 'Coffin Breaker') { %>
+                ⚰️
+              <% } else if (a.name === 'Pumpkinhead') { %>
+                🎃
+              <% } else { %>
+                🤖
+              <% } %>
+            </div>
+            <div class="assistant-info">
+              <h4><%= a.name || a.id %></h4>
+              <div class="muted">ID: <span class="badge"><%= a.id %></span></div>
+            </div>
+          </div>
+
           <div class="row"><input value="<%= a.name || '' %>" data-field="name" placeholder="Name" /></div>
           <div class="row"><textarea data-field="description" rows="2" placeholder="Description (detailed summary)"><%= a.description || '' %></textarea></div>
           <div class="row">
@@ -108,6 +232,32 @@
                 <option value="<%= c.id %>" <%= c.openaiAssistantId===a.id ? 'selected' : '' %>><%= c.char_name %></option>
               <% }) %>
             </select>
+          </div>
+
+          <div class="voice-assignment-section">
+            <label class="voice-label">🎤 Assigned Voice:</label>
+            <div class="voice-preview" id="voicePreview_<%= a.id %>">
+              <div class="voice-dropdown-container">
+                <select class="voice-select" data-assistant-id="<%= a.id %>">
+                  <option value="">— Select Voice —</option>
+                  <option value="en-US-JennyNeural">Jenny (English US)</option>
+                  <option value="en-US-GuyNeural">Guy (English US)</option>
+                  <option value="en-US-AriaNeural">Aria (English US)</option>
+                  <option value="en-US-DavisNeural">Davis (English US)</option>
+                  <option value="en-US-JaneNeural">Jane (English US)</option>
+                  <option value="en-US-JasonNeural">Jason (English US)</option>
+                  <option value="en-US-NancyNeural">Nancy (English US)</option>
+                  <option value="en-US-TonyNeural">Tony (English US)</option>
+                </select>
+                <div class="voice-controls">
+                  <button class="button small" onclick="previewVoice('<%= a.id %>')">▶️ Preview</button>
+                  <button class="button small" onclick="configureVoice('<%= a.id %>')">⚙️ Configure</button>
+                </div>
+              </div>
+              <div class="voice-settings">
+                <span class="voice-setting">🎛️ Settings: Speed: 1 • Pitch: 0 • Volume: 0 • Emotion: Excited</span>
+              </div>
+            </div>
           </div>
           <div class="actions">
             <button class="button" onclick="updateAssistant('<%= a.id %>', this)">💾 Save</button>
@@ -427,6 +577,108 @@
         URL.revokeObjectURL(url);
       }
     }
+
+    // Voice assignment functionality
+    async function previewVoice(assistantId) {
+      const voiceSelect = document.querySelector(`[data-assistant-id="${assistantId}"]`);
+      const selectedVoice = voiceSelect.value;
+
+      if (!selectedVoice) {
+        alert('Please select a voice first');
+        return;
+      }
+
+      try {
+        const response = await fetch('/ai-management/api/tts/preview', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            text: 'Hello, this is a voice preview for the assistant.',
+            voiceId: selectedVoice
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.audioUrl) {
+          const audio = new Audio(data.audioUrl);
+          audio.play();
+        } else {
+          alert('Voice preview failed: ' + (data.error || 'Unknown error'));
+        }
+      } catch (error) {
+        console.error('Voice preview error:', error);
+        alert('Voice preview failed: ' + error.message);
+      }
+    }
+
+    async function configureVoice(assistantId) {
+      const voiceSelect = document.querySelector(`[data-assistant-id="${assistantId}"]`);
+      const selectedVoice = voiceSelect.value;
+
+      if (!selectedVoice) {
+        alert('Please select a voice first');
+        return;
+      }
+
+      // For now, just show a simple configuration dialog
+      const speed = prompt('Voice Speed (0.5-2.0):', '1.0');
+      const pitch = prompt('Voice Pitch (-20 to 20):', '0');
+      const volume = prompt('Voice Volume (-20 to 20):', '0');
+      const emotion = prompt('Voice Emotion (Neutral, Excited, Sad, Angry):', 'Neutral');
+
+      if (speed !== null && pitch !== null && volume !== null && emotion !== null) {
+        try {
+          const response = await fetch(`/ai-management/api/assistants/${assistantId}/voice`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              voiceId: selectedVoice,
+              settings: {
+                speed: parseFloat(speed) || 1.0,
+                pitch: parseInt(pitch) || 0,
+                volume: parseInt(volume) || 0,
+                emotion: emotion || 'Neutral'
+              }
+            })
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            // Update the settings display
+            const settingsSpan = document.querySelector(`#voicePreview_${assistantId} .voice-setting`);
+            if (settingsSpan) {
+              settingsSpan.textContent = `🎛️ Settings: Speed: ${speed} • Pitch: ${pitch} • Volume: ${volume} • Emotion: ${emotion}`;
+            }
+            alert('Voice settings saved successfully');
+          } else {
+            alert('Failed to save voice settings: ' + (data.error || 'Unknown error'));
+          }
+        } catch (error) {
+          console.error('Voice configuration error:', error);
+          alert('Failed to save voice settings: ' + error.message);
+        }
+      }
+    }
+
+    // Initialize voice selection event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('.voice-select').forEach(select => {
+        select.addEventListener('change', function() {
+          const assistantId = this.getAttribute('data-assistant-id');
+          const selectedVoice = this.value;
+
+          if (selectedVoice) {
+            console.log(`Voice selected for assistant ${assistantId}: ${selectedVoice}`);
+          }
+        });
+      });
+    });
   </script>
 
   <!-- Simple Chat Modal -->
