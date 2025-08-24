@@ -13,15 +13,16 @@ process.env.NODE_NO_WARNINGS = '1';
 
 let express, path, http, https, logger, app, server, httpsServer, port, audioStream, soundController, fs, os, session;
 let videoStream; // <-- Add videoStream variable
-let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, webcamRoutes, voiceRoutes, cleanupRoutes, healthRoutes, authRoutes, sshRoutes, aiConfigRoutes, aiManagementRoutes, configRoutes, headTrackingRoutes;
+let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, webcamRoutes, voiceRoutes, cleanupRoutes, healthRoutes, authRoutes, sshRoutes, aiConfigRoutes, aiManagementRoutes, configRoutes, headTrackingRoutes, conversationalAIRoutes;
 let characterService;
 let authMiddleware, rbacMiddleware;
 
-let chatterPiServiceManager;
+let conversationalAIServiceManager;
 let hardwareServiceManager;
 let serviceConnectionManager;
 let audioCleanupService;
 let microphoneManagerService;
+let elevenLabsService;
 
 // Import error handling middleware
 const { errorHandler, notFoundHandler, asyncHandler } = require('./middleware/errorHandler');
@@ -107,6 +108,9 @@ try {
     // Import AI configuration routes
     aiConfigRoutes = require('./routes/ai-config');
     aiManagementRoutes = require('./routes/aiManagementRoutes');
+
+    // Import Conversational AI routes
+    conversationalAIRoutes = require('./routes/conversationalAIRoutes');
 
 
 
@@ -437,6 +441,9 @@ app.use('/api/log-collection', require('./routes/logCollectionRoutes'));
 app.use('/ai-config', aiConfigRoutes);
 app.use('/ai-management', aiManagementRoutes);
 app.use('/api/ai', aiManagementRoutes);
+
+// Conversational AI routes
+app.use('/conversational-ai', conversationalAIRoutes);
 
 // Enhanced Test Chat route (formerly ChatterPi test)
 app.get('/test-chat', async (req, res) => {
@@ -817,8 +824,8 @@ async function initializeLegacyServices() {
     try {
 
 
-        // Initialize ChatterPi services with real-time optimizations
-        await initializeChatterPiServices();
+        // Initialize Conversational AI services with real-time optimizations
+        await initializeConversationalAIServices();
 
         // Initialize Hardware WebSocket Services
         await initializeHardwareServices();
@@ -837,10 +844,35 @@ async function initializeLegacyServices() {
 
 
 
-// ChatterPi services initialization removed - jaw animation functionality disabled
-async function initializeChatterPiServices() {
-    logger.info('🚀 ChatterPi services disabled - jaw animation functionality removed');
-    return true;
+// ElevenLabs Conversational AI Service initialization
+async function initializeConversationalAIServices() {
+    try {
+        logger.info('🤖 Initializing ElevenLabs Conversational AI Service...');
+
+        const ElevenLabsConversationalService = require('./services/elevenLabsConversationalService');
+        elevenLabsService = new ElevenLabsConversationalService();
+
+        await elevenLabsService.initialize();
+
+        // Make service globally available
+        global.elevenLabsService = elevenLabsService;
+
+        logger.info('✅ ElevenLabs Conversational AI Service initialized successfully');
+        logger.info(`🌐 ElevenLabs WebSocket server running on port ${elevenLabsService.port}`);
+
+        // Log available agents
+        const status = elevenLabsService.getStatus();
+        logger.info(`🎭 Available agents: ${status.availableAgents}`);
+        status.agents.forEach(agent => {
+            logger.info(`   - Character ${agent.characterId}: ${agent.name}`);
+        });
+
+        return true;
+
+    } catch (error) {
+        logger.error('❌ Failed to initialize ElevenLabs Conversational AI Service:', error);
+        return false;
+    }
 }
 
 // Initialize Hardware WebSocket Services
@@ -989,6 +1021,12 @@ async function shutdownLegacyServices() {
     logger.info('🔄 Shutting down legacy services...');
 
     try {
+        // Shutdown ElevenLabs service
+        if (elevenLabsService) {
+            await elevenLabsService.shutdown();
+            logger.info('ElevenLabs Conversational AI service stopped');
+        }
+
         // Shutdown hardware services
         if (hardwareServiceManager) {
             await hardwareServiceManager.shutdown();

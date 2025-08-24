@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="monsterbox">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title || 'Voice Chat - ElevenLabs Conversational AI' %></title>
+    
+    <!-- Preload critical fonts -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&family=Creepster&display=swap" as="style">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&family=Creepster&display=swap">
+    
+    <!-- MonsterBox CSS -->
+    <link rel="stylesheet" href="/css/main.css?v=<%= Date.now() %>">
+    
+    <!-- Favicon and meta tags -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <meta name="description" content="ChatterPi - ElevenLabs Conversational AI">
+    <meta name="theme-color" content="#00ff00">
+</head>
+
+<body class="min-h-screen bg-base-100 text-base-content font-terminal">
+    <!-- Skip to main content for accessibility -->
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 button z-50">
+        Skip to main content
+    </a>
+
+    <!-- Navigation -->
+    <nav class="navbar bg-base-200 border-b border-primary shadow-lg sticky top-0 z-40">
+        <div class="container mx-auto px-4">
+            <div class="navbar-start">
+                <!-- Logo -->
+                <a href="/" class="button ghost text-xl font-creepster text-primary hover:text-green-600">
+                    🎭 MonsterBox™
+                </a>
+            </div>
+            
+            <!-- Navigation Links -->
+            <div class="navbar-center hidden lg:flex">
+                <ul class="menu menu-horizontal px-1">
+                    <li><a href="/characters" class="button ghost">🎭 Characters</a></li>
+                    <li><a href="/ai-management" class="button ghost">🤖 AI Management</a></li>
+                    <li><a href="/configuration" class="button ghost">⚙️ Configuration</a></li>
+                </ul>
+            </div>
+            
+            <!-- User actions -->
+            <div class="navbar-end">
+                <a href="/" class="button ghost" aria-label="Home">
+                    🏠 Home
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main id="main-content" class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-creepster text-primary mb-4">
+                🤖 ChatterPi
+            </h1>
+            <p class="text-lg text-base-content/80">
+                ElevenLabs Conversational AI • Real-time Voice Conversations
+            </p>
+        </div>
+
+        <!-- Service Status -->
+        <div class="card bg-base-200 shadow-xl mb-8">
+            <div class="card-body">
+                <h2 class="card-title text-primary">
+                    📡 Service Status
+                </h2>
+                <div id="service-status" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="stat">
+                        <div class="stat-title">ElevenLabs Service</div>
+                        <div class="stat-value text-sm" id="service-running">
+                            <% if (serviceStatus && serviceStatus.isRunning) { %>
+                                <span class="text-success">✅ Running</span>
+                            <% } else { %>
+                                <span class="text-error">❌ Offline</span>
+                            <% } %>
+                        </div>
+                        <div class="stat-desc" id="service-port">
+                            <% if (serviceStatus) { %>
+                                Port: <%= serviceStatus.port %>
+                            <% } else { %>
+                                Service unavailable
+                            <% } %>
+                        </div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-title">Available Agents</div>
+                        <div class="stat-value text-2xl" id="available-agents">
+                            <%= serviceStatus ? serviceStatus.availableAgents : 0 %>
+                        </div>
+                        <div class="stat-desc">AI Characters Ready</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-title">Active Connections</div>
+                        <div class="stat-value text-2xl" id="active-connections">
+                            <%= serviceStatus ? serviceStatus.activeConnections : 0 %>
+                        </div>
+                        <div class="stat-desc">Live Conversations</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Character Selection -->
+        <div class="card bg-base-200 shadow-xl mb-8">
+            <div class="card-body">
+                <h2 class="card-title text-primary mb-4">
+                    🎭 Select Character
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="character-selection">
+                    <% characters.forEach(character => { %>
+                        <div class="card bg-base-300 hover:bg-base-100 cursor-pointer character-card transition-all duration-200" 
+                             data-character-id="<%= character.id %>"
+                             data-character-name="<%= character.char_name %>">
+                            <div class="card-body p-4">
+                                <h3 class="card-title text-sm">
+                                    <%= character.char_name %>
+                                </h3>
+                                <p class="text-xs text-base-content/70 line-clamp-2">
+                                    <%= character.char_description %>
+                                </p>
+                                <div class="card-actions justify-end mt-2">
+                                    <div class="badge badge-sm" id="status-<%= character.id %>">
+                                        <span class="loading loading-spinner loading-xs"></span>
+                                        Checking...
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <% }); %>
+                </div>
+            </div>
+        </div>
+
+        <!-- Conversation Interface -->
+        <div class="card bg-base-200 shadow-xl mb-8" id="conversation-interface" style="display: none;">
+            <div class="card-body">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="card-title text-primary">
+                        💬 Conversation with <span id="current-character-name">Character</span>
+                    </h2>
+                    <div class="flex gap-2">
+                        <button class="button button-sm button-outline" id="disconnect-btn">
+                            🔌 Disconnect
+                        </button>
+                        <button class="button button-sm button-primary" id="settings-btn">
+                            ⚙️ Settings
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Connection Status -->
+                <div class="alert mb-4" id="connection-status">
+                    <span class="loading loading-spinner loading-sm"></span>
+                    <span id="connection-message">Connecting to ElevenLabs...</span>
+                </div>
+
+                <!-- Conversation Starters -->
+                <div class="mb-4" id="conversation-starters" style="display: none;">
+                    <h3 class="text-sm font-semibold mb-2">💡 Conversation Starters:</h3>
+                    <div class="flex flex-wrap gap-2" id="starters-container">
+                        <!-- Starters will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Chat Messages -->
+                <div class="bg-base-300 rounded-lg p-4 h-64 overflow-y-auto mb-4" id="chat-messages">
+                    <div class="text-center text-base-content/50 text-sm">
+                        Select a character and start a conversation...
+                    </div>
+                </div>
+
+                <!-- Voice Controls -->
+                <div class="flex gap-2 mb-4">
+                    <button class="button button-primary flex-1" id="voice-btn" disabled>
+                        🎤 Hold to Talk
+                    </button>
+                    <button class="button button-outline" id="mute-btn">
+                        🔊 Mute
+                    </button>
+                </div>
+
+                <!-- Text Input -->
+                <div class="flex gap-2">
+                    <input type="text" 
+                           class="input input-bordered flex-1" 
+                           id="text-input" 
+                           placeholder="Type a message or use voice..."
+                           disabled>
+                    <button class="button button-primary" id="send-btn" disabled>
+                        📤 Send
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Advanced Settings -->
+        <div class="card bg-base-200 shadow-xl" id="advanced-settings" style="display: none;">
+            <div class="card-body">
+                <h2 class="card-title text-primary mb-4">
+                    ⚙️ Advanced Settings
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Audio Settings -->
+                    <div>
+                        <h3 class="text-lg font-semibold mb-3">🔊 Audio Settings</h3>
+                        <div class="space-y-4">
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text">Voice Activity Detection</span>
+                                </label>
+                                <input type="range" min="0.1" max="1.0" step="0.1" value="0.5" 
+                                       class="range range-primary" id="vad-threshold">
+                                <div class="w-full flex justify-between text-xs px-2">
+                                    <span>Sensitive</span>
+                                    <span>Balanced</span>
+                                    <span>Conservative</span>
+                                </div>
+                            </div>
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text">Audio Quality</span>
+                                </label>
+                                <select class="select select-bordered" id="audio-quality">
+                                    <option value="high">High Quality</option>
+                                    <option value="medium" selected>Medium Quality</option>
+                                    <option value="low">Low Quality (Faster)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Jaw Animation Settings -->
+                    <div>
+                        <h3 class="text-lg font-semibold mb-3">🦾 Jaw Animation</h3>
+                        <div class="space-y-4">
+                            <div class="form-control">
+                                <label class="cursor-pointer label">
+                                    <span class="label-text">Enable Jaw Animation</span>
+                                    <input type="checkbox" class="toggle toggle-primary" id="jaw-animation-enabled" checked>
+                                </label>
+                            </div>
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text">Animation Sensitivity</span>
+                                </label>
+                                <input type="range" min="0.1" max="2.0" step="0.1" value="1.0" 
+                                       class="range range-primary" id="jaw-sensitivity">
+                            </div>
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text">Servo GPIO Pin</span>
+                                </label>
+                                <input type="number" class="input input-bordered" value="18" id="servo-pin" readonly>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-actions justify-end mt-6">
+                    <button class="button button-outline" id="reset-settings-btn">
+                        🔄 Reset to Defaults
+                    </button>
+                    <button class="button button-primary" id="save-settings-btn">
+                        💾 Save Settings
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer footer-center p-4 bg-base-200 text-base-content mt-8">
+        <div>
+            <p class="font-terminal">
+                🎭 MonsterBox™ ChatterPi • Powered by ElevenLabs Conversational AI
+            </p>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        // Pass server data to JavaScript
+        window.ConversationalAIConfig = {
+            characters: <%- JSON.stringify(characters) %>,
+            serviceStatus: <%- JSON.stringify(serviceStatus) %>,
+            currentCharacterId: <%= currentCharacterId %>
+        };
+    </script>
+    <script src="/js/conversational-ai.js?v=<%= Date.now() %>"></script>
+</body>
+</html>

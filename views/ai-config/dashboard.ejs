@@ -223,18 +223,18 @@
 <body>
     <header class="compact-header">
         <div class="header-content">
-            <h1 class="page-title">🤖 AI Management Dashboard</h1>
+            <h1 class="page-title">🤖 ElevenLabs Conversational AI Dashboard</h1>
             <div class="breadcrumb-vertical">
                 <a href="/" class="breadcrumb-item">🏠 Home</a>
-                <span class="breadcrumb-item active">🤖 AI Management</span>
+                <span class="breadcrumb-item active">🤖 Conversational AI</span>
             </div>
         </div>
     </header>
 
     <main class="ai-dashboard">
         <div class="info-section">
-            <h2>🧠 Comprehensive AI System Management</h2>
-            <p>Centralized configuration and monitoring for all AI systems: Speech-to-Text, AI Personalities, and Text-to-Speech</p>
+            <h2>🤖 ElevenLabs Conversational AI Management</h2>
+            <p>Centralized configuration and monitoring for ElevenLabs Conversational AI agents with integrated voice processing</p>
         </div>
 
         <% if (typeof error !== 'undefined' && error) { %>
@@ -244,105 +244,105 @@
             </div>
         <% } %>
 
-        <!-- AI Pipeline Flow Diagram -->
+        <!-- ElevenLabs Conversational AI Flow -->
         <div class="pipeline-flow">
-            <h3>🔄 AI Processing Pipeline</h3>
+            <h3>🤖 ElevenLabs Conversational AI Pipeline</h3>
             <div class="flow-diagram">
-                <div class="flow-step <%= status && status.stt ? 'active' : '' %>">
+                <div class="flow-step <%= status && status.elevenlabs && status.elevenlabs.online ? 'active' : '' %>">
                     <i class="fas fa-microphone system-icon"></i>
-                    <div>Speech-to-Text</div>
-                    <small>OpenAI Whisper</small>
+                    <div>Voice Input</div>
+                    <small>Real-time Audio</small>
                 </div>
                 <div class="flow-arrow">→</div>
-                <div class="flow-step <%= status && status.ai ? 'active' : '' %>">
-                    <i class="fas fa-brain system-icon"></i>
-                    <div>OpenAI Assistant</div>
-                    <small>Assistants API</small>
+                <div class="flow-step <%= status && status.elevenlabs && status.elevenlabs.online ? 'active' : '' %>">
+                    <i class="fas fa-robot system-icon"></i>
+                    <div>ElevenLabs Agent</div>
+                    <small>Conversational AI</small>
                 </div>
                 <div class="flow-arrow">→</div>
-                <div class="flow-step <%= status && status.tts ? 'active' : '' %>">
+                <div class="flow-step <%= status && status.elevenlabs && status.elevenlabs.online ? 'active' : '' %>">
                     <i class="fas fa-volume-up system-icon"></i>
-                    <div>Text-to-Speech</div>
-                    <small>TopMediaAI</small>
+                    <div>Voice Output</div>
+                    <small>Natural Speech</small>
                 </div>
             </div>
         </div>
 
-        <!-- AI Systems Grid -->
+        <!-- ElevenLabs Systems Grid -->
         <div class="ai-system-grid">
-            <!-- Speech-to-Text System -->
+            <!-- ElevenLabs Conversational AI -->
             <div class="ai-system-card">
                 <div class="system-header">
-                    <i class="fas fa-microphone system-icon"></i>
-                    <div class="system-title">Speech-to-Text (STT)</div>
+                    <i class="fas fa-robot system-icon"></i>
+                    <div class="system-title">ElevenLabs Conversational AI</div>
                 </div>
                 <div class="system-status">
-                    <div class="status-indicator <%= status && status.stt && status.stt.online ? 'status-online' : 'status-offline' %>"></div>
-                    <span><%= status && status.stt ? (status.stt.online ? 'Online' : 'Offline') : 'Unknown' %></span>
+                    <div class="status-indicator <%= status && status.elevenlabs && status.elevenlabs.online ? 'status-online' : 'status-offline' %>"></div>
+                    <span><%= status && status.elevenlabs ? (status.elevenlabs.online ? 'Online' : 'Offline') : 'Unknown' %></span>
                 </div>
                 <div class="system-details">
-                    <p><strong>Provider:</strong> OpenAI Whisper</p>
-                    <p><strong>Model:</strong> <%= status && status.stt ? status.stt.model || 'whisper-1' : 'Not configured' %></p>
-                    <p><strong>Language:</strong> <%= status && status.stt ? status.stt.language || 'en' : 'Not configured' %></p>
-                    <p><strong>Status:</strong> <%= status && status.stt ? status.stt.status || 'Unknown' : 'Not initialized' %></p>
+                    <p><strong>Provider:</strong> ElevenLabs</p>
+                    <p><strong>Active Agents:</strong> <%= status && status.elevenlabs ? status.elevenlabs.activeAgents || 0 : 0 %></p>
+                    <p><strong>WebSocket Port:</strong> <%= status && status.elevenlabs ? status.elevenlabs.port || '8771' : 'Not configured' %></p>
+                    <p><strong>Status:</strong> <%= status && status.elevenlabs ? status.elevenlabs.status || 'Unknown' : 'Not initialized' %></p>
                 </div>
                 <div class="system-actions">
-                    <a href="/ai-management/stt" class="button primary-btn">
+                    <a href="/ai-management/agents" class="button primary-btn">
                         <i class="fas fa-cog"></i> Configure
                     </a>
-                    <button class="button secondary-btn" onclick="testSTT()">
+                    <button class="button secondary-btn" onclick="testElevenLabs()">
                         <i class="fas fa-test-tube"></i> Test
                     </button>
                 </div>
             </div>
 
-            <!-- AI Personality System -->
+            <!-- Voice Configuration -->
             <div class="ai-system-card">
                 <div class="system-header">
-                    <i class="fas fa-brain system-icon"></i>
-                    <div class="system-title">AI Personalities</div>
+                    <i class="fas fa-microphone-alt system-icon"></i>
+                    <div class="system-title">Voice Configuration</div>
                 </div>
                 <div class="system-status">
-                    <div class="status-indicator <%= status && status.ai && status.ai.online ? 'status-online' : 'status-offline' %>"></div>
-                    <span><%= status && status.ai ? (status.ai.online ? 'Online' : 'Offline') : 'Unknown' %></span>
+                    <div class="status-indicator <%= status && status.elevenlabs && status.elevenlabs.online ? 'status-online' : 'status-offline' %>"></div>
+                    <span><%= status && status.elevenlabs ? (status.elevenlabs.online ? 'Online' : 'Offline') : 'Unknown' %></span>
                 </div>
                 <div class="system-details">
-                    <p><strong>Provider:</strong> OpenAI</p>
-                    <p><strong>Active Characters:</strong> <%= status && status.ai ? status.ai.activeCharacters || 0 : 0 %></p>
-                    <p><strong>Default Model:</strong> <%= status && status.ai ? status.ai.defaultModel || 'gpt-4' : 'Not configured' %></p>
-                    <p><strong>Status:</strong> <%= status && status.ai ? status.ai.status || 'Unknown' : 'Not initialized' %></p>
+                    <p><strong>Provider:</strong> ElevenLabs</p>
+                    <p><strong>Available Voices:</strong> <%= status && status.elevenlabs ? status.elevenlabs.voiceCount || 'Loading...' : 'Unknown' %></p>
+                    <p><strong>Configured Characters:</strong> <%= status && status.elevenlabs ? status.elevenlabs.configuredCharacters || 0 : 0 %></p>
+                    <p><strong>Status:</strong> <%= status && status.elevenlabs ? status.elevenlabs.status || 'Unknown' : 'Not initialized' %></p>
                 </div>
                 <div class="system-actions">
-                    <a href="/ai-management/assistants" class="button primary-btn">
+                    <a href="/ai-management/voices" class="button primary-btn">
                         <i class="fas fa-cog"></i> Configure
                     </a>
-                    <button class="button secondary-btn" onclick="testAI()">
+                    <button class="button secondary-btn" onclick="testVoices()">
                         <i class="fas fa-test-tube"></i> Test
                     </button>
                 </div>
             </div>
 
-            <!-- Text-to-Speech System -->
+            <!-- Conversational AI Settings -->
             <div class="ai-system-card">
                 <div class="system-header">
-                    <i class="fas fa-volume-up system-icon"></i>
-                    <div class="system-title">Text-to-Speech (TTS)</div>
+                    <i class="fas fa-comments system-icon"></i>
+                    <div class="system-title">Conversation Settings</div>
                 </div>
                 <div class="system-status">
-                    <div class="status-indicator <%= status && status.tts && status.tts.online ? 'status-online' : 'status-offline' %>"></div>
-                    <span><%= status && status.tts ? (status.tts.online ? 'Online' : 'Offline') : 'Unknown' %></span>
+                    <div class="status-indicator <%= status && status.elevenlabs && status.elevenlabs.online ? 'status-online' : 'status-offline' %>"></div>
+                    <span><%= status && status.elevenlabs ? (status.elevenlabs.online ? 'Online' : 'Offline') : 'Unknown' %></span>
                 </div>
                 <div class="system-details">
-                    <p><strong>Provider:</strong> TopMediaAI</p>
-                    <p><strong>Available Voices:</strong> <%= status && status.tts ? status.tts.voiceCount || 'Loading...' : 'Unknown' %></p>
-                    <p><strong>Configured Characters:</strong> <%= status && status.tts ? status.tts.configuredCharacters || 0 : 0 %></p>
-                    <p><strong>Status:</strong> <%= status && status.tts ? status.tts.status || 'Unknown' : 'Not initialized' %></p>
+                    <p><strong>Provider:</strong> ElevenLabs</p>
+                    <p><strong>Active Connections:</strong> <%= status && status.elevenlabs ? status.elevenlabs.activeConnections || 0 : 0 %></p>
+                    <p><strong>Voice Detection:</strong> <%= status && status.elevenlabs ? (status.elevenlabs.vadEnabled ? 'Enabled' : 'Disabled') : 'Unknown' %></p>
+                    <p><strong>Status:</strong> <%= status && status.elevenlabs ? status.elevenlabs.status || 'Unknown' : 'Not initialized' %></p>
                 </div>
                 <div class="system-actions">
-                    <a href="/ai-management/tts" class="button primary-btn">
+                    <a href="/ai-management/conversation" class="button primary-btn">
                         <i class="fas fa-cog"></i> Configure
                     </a>
-                    <button class="button secondary-btn" onclick="testTTS()">
+                    <button class="button secondary-btn" onclick="testConversation()">
                         <i class="fas fa-test-tube"></i> Test
                     </button>
                 </div>
@@ -406,11 +406,11 @@
             <h3>🧭 System Navigation</h3>
             <div class="navigation-grid">
                 <div class="nav-section">
-                    <h4>🤖 AI Management</h4>
+                    <h4>🤖 Conversational AI</h4>
                     <div class="button-group">
-                        <a href="/ai-management/stt" class="button">🎤 Speech-to-Text</a>
-                        <a href="/ai-management/assistants" class="button">🧠 OpenAI Assistants</a>
-                        <a href="/ai-management/tts" class="button">🗣️ Text-to-Speech</a>
+                        <a href="/ai-management/agents" class="button">🤖 ElevenLabs Agents</a>
+                        <a href="/ai-management/voices" class="button">🎤 Voice Configuration</a>
+                        <a href="/ai-management/conversation" class="button">💬 Conversation Settings</a>
                     </div>
                 </div>
 
@@ -418,7 +418,7 @@
                     <h4>🎭 Character Control</h4>
                     <div class="button-group">
                         <a href="/characters" class="button">🎭 Characters</a>
-                        <a href="/ai-management/assistants" class="button">🧠 OpenAI Assistants</a>
+                        <a href="/conversational-ai" class="button">🤖 Voice Chat</a>
                     </div>
                 </div>
 
@@ -434,94 +434,80 @@
     </main>
 
     <script>
-        // Test functions
-        function testSTT() {
-            showModal('Testing STT...', '<p>Testing Speech-to-Text system...</p>');
-            fetch('/ai-management/api/test/stt', { method: 'POST' })
+        // Test functions for ElevenLabs
+        function testElevenLabs() {
+            showModal('Testing ElevenLabs...', '<p>Testing ElevenLabs Conversational AI system...</p>');
+            fetch('/ai-management/api/test/elevenlabs', { method: 'POST' })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        showModal('STT Test Result', `<p><strong>Success!</strong></p><p>Response Time: ${data.responseTime}ms</p><p>Status: ${data.status}</p>`);
+                        showModal('ElevenLabs Test Result', `<p><strong>Success!</strong></p><p>Active Agents: ${data.activeAgents}</p><p>WebSocket Status: ${data.wsStatus}</p><p>Response Time: ${data.responseTime}ms</p>`);
                     } else {
-                        showModal('STT Test Failed', `<p><strong>Error:</strong> ${data.error}</p>`);
+                        showModal('ElevenLabs Test Failed', `<p><strong>Error:</strong> ${data.error}</p>`);
                     }
                 })
                 .catch(error => {
-                    showModal('STT Test Error', `<p><strong>Error:</strong> ${error.message}</p>`);
+                    showModal('ElevenLabs Test Error', `<p><strong>Error:</strong> ${error.message}</p>`);
                 });
         }
 
-
-
-        function testAI() {
-            showModal('Testing AI...', '<p>Testing AI Personality system...</p>');
-            fetch('/ai-management/api/test/ai', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt: 'Hello, this is a test message.' })
-            })
+        function testVoices() {
+            showModal('Testing Voices...', '<p>Testing ElevenLabs voice system...</p>');
+            fetch('/ai-management/api/test/voices', { method: 'POST' })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        showModal('AI Test Result', `<p><strong>Success!</strong></p><p>Response: "${data.response}"</p><p>Response Time: ${data.responseTime}ms</p>`);
+                        showModal('Voice Test Result', `<p><strong>Success!</strong></p><p>Available Voices: ${data.voiceCount}</p><p>Response Time: ${data.responseTime}ms</p>`);
                     } else {
-                        showModal('AI Test Failed', `<p><strong>Error:</strong> ${data.error}</p>`);
+                        showModal('Voice Test Failed', `<p><strong>Error:</strong> ${data.error}</p>`);
                     }
                 })
                 .catch(error => {
-                    showModal('AI Test Error', `<p><strong>Error:</strong> ${error.message}</p>`);
+                    showModal('Voice Test Error', `<p><strong>Error:</strong> ${error.message}</p>`);
                 });
         }
 
-        function testTTS() {
-            showModal('Testing TTS...', '<p>Testing Text-to-Speech system...</p>');
-            fetch('/ai-management/api/test/tts', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: 'Hello, this is a test message.' })
-            })
+        function testConversation() {
+            showModal('Testing Conversation...', '<p>Testing ElevenLabs conversation system...</p>');
+            fetch('/ai-management/api/test/conversation', { method: 'POST' })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        showModal('TTS Test Result', `<p><strong>Success!</strong></p><p>Audio generated successfully</p><p>Response Time: ${data.responseTime}ms</p>`);
-                        if (data.audioUrl) {
-                            const audio = new Audio(data.audioUrl);
-                            audio.play();
-                        }
+                        showModal('Conversation Test Result', `<p><strong>Success!</strong></p><p>Active Connections: ${data.activeConnections}</p><p>VAD Status: ${data.vadStatus}</p><p>Response Time: ${data.responseTime}ms</p>`);
                     } else {
-                        showModal('TTS Test Failed', `<p><strong>Error:</strong> ${data.error}</p>`);
+                        showModal('Conversation Test Failed', `<p><strong>Error:</strong> ${data.error}</p>`);
                     }
                 })
                 .catch(error => {
-                    showModal('TTS Test Error', `<p><strong>Error:</strong> ${error.message}</p>`);
+                    showModal('Conversation Test Error', `<p><strong>Error:</strong> ${error.message}</p>`);
                 });
         }
 
-        function testFullPipeline() {
-            showModal('Testing Full Pipeline...', '<p>Testing complete STT → AI → TTS workflow...</p><div id="pipelineProgress"></div>');
+        function testFullConversation() {
+            showModal('Testing Full Conversation...', '<p>Testing complete ElevenLabs conversational AI workflow...</p><div id="conversationProgress"></div>');
 
-            const progressDiv = document.getElementById('pipelineProgress');
-            progressDiv.innerHTML = '<p>🎤 Starting Speech-to-Text test...</p>';
+            const progressDiv = document.getElementById('conversationProgress');
+            progressDiv.innerHTML = '<p>🤖 Starting ElevenLabs conversation test...</p>';
 
-            fetch('/ai-management/api/test/pipeline', { method: 'POST' })
+            fetch('/ai-management/api/test/full-conversation', { method: 'POST' })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        let html = '<h4>Pipeline Test Results:</h4>';
-                        html += `<p>🎤 STT: ${data.stt.success ? '✅ Success' : '❌ Failed'} (${data.stt.responseTime}ms)</p>`;
-                        html += `<p>🧠 AI: ${data.ai.success ? '✅ Success' : '❌ Failed'} (${data.ai.responseTime}ms)</p>`;
-                        html += `<p>🔊 TTS: ${data.tts.success ? '✅ Success' : '❌ Failed'} (${data.tts.responseTime}ms)</p>`;
+                        let html = '<h4>Conversation Test Results:</h4>';
+                        html += `<p>🤖 Agent Connection: ${data.agent.success ? '✅ Success' : '❌ Failed'} (${data.agent.responseTime}ms)</p>`;
+                        html += `<p>🎤 Voice Input: ${data.voiceInput.success ? '✅ Success' : '❌ Failed'} (${data.voiceInput.responseTime}ms)</p>`;
+                        html += `<p>🔊 Voice Output: ${data.voiceOutput.success ? '✅ Success' : '❌ Failed'} (${data.voiceOutput.responseTime}ms)</p>`;
                         html += `<p><strong>Total Time:</strong> ${data.totalTime}ms</p>`;
                         if (data.audioUrl) {
                             html += '<button onclick="playTestAudio(\'' + data.audioUrl + '\')" class="button">🔊 Play Result</button>';
                         }
-                        showModal('Pipeline Test Complete', html);
+                        showModal('Conversation Test Complete', html);
                     } else {
-                        showModal('Pipeline Test Failed', `<p><strong>Error:</strong> ${data.error}</p>`);
+                        showModal('Conversation Test Failed', `<p><strong>Error:</strong> ${data.error}</p>`);
                     }
                 })
                 .catch(error => {
-                    showModal('Pipeline Test Error', `<p><strong>Error:</strong> ${error.message}</p>`);
+                    showModal('Conversation Test Error', `<p><strong>Error:</strong> ${error.message}</p>`);
                 });
         }
 

@@ -469,21 +469,21 @@
         <div class="chat-header">
             <div class="performance-metrics">
                 <div class="metric">
-                    <div class="metric-label">STT</div>
-                    <div class="metric-value" id="sttTime">--</div>
+                    <div class="metric-label">Voice Input</div>
+                    <div class="metric-value" id="voiceInputTime">--</div>
                 </div>
                 <div class="metric">
-                    <div class="metric-label">AI</div>
-                    <div class="metric-value" id="aiTime">--</div>
+                    <div class="metric-label">Agent</div>
+                    <div class="metric-value" id="agentTime">--</div>
                 </div>
                 <div class="metric">
-                    <div class="metric-label">TTS</div>
-                    <div class="metric-value" id="ttsTime">--</div>
+                    <div class="metric-label">Voice Output</div>
+                    <div class="metric-value" id="voiceOutputTime">--</div>
                 </div>
             </div>
             
             <h1><%= pageTitle %></h1>
-            <div class="subtitle">Unified Interactive Conversation Interface</div>
+            <div class="subtitle">ElevenLabs Conversational AI Interface</div>
             
             <div class="status-indicator" id="connectionStatus">Initializing...</div>
         </div>
@@ -509,15 +509,15 @@
             </div>
 
             <div class="selection-group">
-                <label for="assistantDisplay">AI Assistant</label>
+                <label for="assistantDisplay">ElevenLabs Agent</label>
                 <input type="text" id="assistantDisplay" class="assistant-display"
                        placeholder="Select character first..." readonly>
             </div>
 
             <div class="voice-controls">
-                <div class="voice-toggle" id="sttToggle">
-                    <span class="voice-icon">🎤</span>
-                    <span>Speech to Text</span>
+                <div class="voice-toggle" id="elevenLabsToggle">
+                    <span class="voice-icon">🤖</span>
+                    <span>ElevenLabs Voice</span>
                     <span class="voice-status" id="sttStatus">OFF</span>
                 </div>
 

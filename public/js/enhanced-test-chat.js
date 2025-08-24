@@ -1,7 +1,7 @@
 /**
  * Enhanced Test Chat Interface
- * Unified interactive conversation interface with character selection,
- * voice controls (STT/TTS), and performance monitoring
+ * ElevenLabs Conversational AI interface with character selection,
+ * voice controls, and performance monitoring
  */
 
 class EnhancedTestChat {
@@ -16,19 +16,18 @@ class EnhancedTestChat {
         
         // State management
         this.currentCharacter = null;
-        this.isSTTActive = false;
-        this.isTTSActive = false;
+        this.isElevenLabsActive = false;
         this.isLiveModeActive = false;
         this.isProcessing = false;
-        this.mediaRecorder = null;
+        this.elevenLabsWs = null;
         this.audioStream = null;
         this.liveModeState = 'idle'; // idle, listening, processing, speaking
         this.liveModeTimeout = null;
         this.liveModeAudio = null;
         this.performanceMetrics = {
-            stt: null,
-            ai: null,
-            tts: null
+            voiceInput: null,
+            agent: null,
+            voiceOutput: null
         };
         
         // Initialize the interface
@@ -46,8 +45,7 @@ class EnhancedTestChat {
         this.assistantDisplay = document.getElementById('assistantDisplay');
         
         // Voice controls
-        this.sttToggle = document.getElementById('sttToggle');
-        this.ttsToggle = document.getElementById('ttsToggle');
+        this.elevenLabsToggle = document.getElementById('elevenLabsToggle');
         this.liveModeToggle = document.getElementById('liveModeToggle');
         this.sttStatus = document.getElementById('sttStatus');
         this.ttsStatus = document.getElementById('ttsStatus');
@@ -60,9 +58,9 @@ class EnhancedTestChat {
         
         // Status and metrics
         this.connectionStatus = document.getElementById('connectionStatus');
-        this.sttTime = document.getElementById('sttTime');
-        this.aiTime = document.getElementById('aiTime');
-        this.ttsTime = document.getElementById('ttsTime');
+        this.voiceInputTime = document.getElementById('voiceInputTime');
+        this.agentTime = document.getElementById('agentTime');
+        this.voiceOutputTime = document.getElementById('voiceOutputTime');
         this.welcomeTime = document.getElementById('welcomeTime');
     }
     
@@ -111,24 +109,90 @@ class EnhancedTestChat {
     async initializeInterface() {
         try {
             this.updateConnectionStatus('connecting', 'Initializing...');
-            
+
             // Set welcome time
             if (this.welcomeTime) {
                 this.welcomeTime.textContent = new Date().toLocaleTimeString();
             }
-            
+
             // Pre-select character if provided
             if (this.config.characterId) {
                 this.characterSelect.value = this.config.characterId;
                 await this.handleCharacterSelection(this.config.characterId);
             }
-            
+
+            // Initialize ElevenLabs WebSocket connection
+            await this.initializeElevenLabsConnection();
+
             this.updateConnectionStatus('connected', 'Ready');
             console.log('✅ Enhanced Test Chat initialized');
-            
+
         } catch (error) {
             console.error('❌ Failed to initialize Enhanced Test Chat:', error);
             this.updateConnectionStatus('disconnected', 'Error');
+        }
+    }
+
+    /**
+     * Initialize ElevenLabs WebSocket connection
+     */
+    async initializeElevenLabsConnection() {
+        try {
+            const wsUrl = `ws://${window.location.hostname}:8771`;
+            this.elevenLabsWs = new WebSocket(wsUrl);
+
+            this.elevenLabsWs.onopen = () => {
+                console.log('✅ Connected to ElevenLabs service');
+                this.updateConnectionStatus('connected', 'ElevenLabs Connected');
+            };
+
+            this.elevenLabsWs.onmessage = (event) => {
+                this.handleElevenLabsMessage(JSON.parse(event.data));
+            };
+
+            this.elevenLabsWs.onclose = () => {
+                console.log('🔌 ElevenLabs connection closed');
+                this.updateConnectionStatus('disconnected', 'ElevenLabs Disconnected');
+            };
+
+            this.elevenLabsWs.onerror = (error) => {
+                console.error('❌ ElevenLabs WebSocket error:', error);
+                this.updateConnectionStatus('error', 'ElevenLabs Error');
+            };
+
+        } catch (error) {
+            console.error('❌ Failed to initialize ElevenLabs connection:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Handle messages from ElevenLabs WebSocket
+     */
+    handleElevenLabsMessage(message) {
+        switch (message.type) {
+            case 'conversation_started':
+                this.addMessage('system', `Connected to ${message.characterName}`);
+                break;
+
+            case 'transcript':
+                if (message.role === 'user') {
+                    this.addMessage('user', message.text);
+                } else if (message.role === 'assistant') {
+                    this.addMessage('assistant', message.text);
+                }
+                break;
+
+            case 'audio':
+                this.handleAudioMessage(message);
+                break;
+
+            case 'conversation_end':
+                this.addMessage('system', 'Conversation ended');
+                break;
+
+            default:
+                console.log('📥 ElevenLabs message:', message);
         }
     }
     
@@ -985,24 +1049,18 @@ class EnhancedTestChat {
     }
 
     /**
-     * Send message
+     * Send message via ElevenLabs
      */
     async sendMessage(messageText = null) {
         const message = messageText || this.chatInput.value.trim();
         if (!message || !this.currentCharacter || this.isProcessing) return;
 
-        // Check if character has AI capabilities
-        if (!this.currentCharacter.hasAI) {
-            this.addMessage('system', `${this.currentCharacter.char_name || this.currentCharacter.name} only supports voice features. AI chat is not available for this character.`, {
+        // Check if ElevenLabs connection is available
+        if (!this.elevenLabsWs || this.elevenLabsWs.readyState !== WebSocket.OPEN) {
+            this.addMessage('system', 'ElevenLabs connection not available. Please check the connection.', {
                 characterName: 'System',
                 isInfo: true
             });
-
-            // Still process TTS if enabled
-            if (this.isTTSActive) {
-                await this.speakText(message);
-            }
-
             return;
         }
 
@@ -1012,7 +1070,7 @@ class EnhancedTestChat {
 
             // Add user message
             this.addMessage('user', message);
-            if (!messageText) { // Only clear input if not called from STT
+            if (!messageText) { // Only clear input if not called from voice input
                 this.chatInput.value = '';
                 this.updateSendButton();
             }
@@ -1021,19 +1079,17 @@ class EnhancedTestChat {
             const typingId = this.showTypingIndicator();
 
             const startTime = Date.now();
-            
-            // Send to AI
-            const response = await fetch(`${this.config.apiBaseUrl}/ai/chat`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    message: message,
-                    character: this.currentCharacter.name.toLowerCase(),
-                    characterId: this.currentCharacter.id
-                })
-            });
+
+            // Send to ElevenLabs via WebSocket
+            this.elevenLabsWs.send(JSON.stringify({
+                type: 'user_message',
+                message: message,
+                characterId: this.currentCharacter.id,
+                characterName: this.currentCharacter.name || this.currentCharacter.char_name
+            }));
+
+            // Update performance metrics
+            this.performanceMetrics.voiceInput = Date.now() - startTime;
             
             const data = await response.json();
             const aiTime = Date.now() - startTime;
@@ -1267,9 +1323,17 @@ class EnhancedTestChat {
      * Update performance metric
      */
     updatePerformanceMetric(type, time) {
-        this.performanceMetrics[type] = time;
+        // Map old metric names to new ones
+        const metricMap = {
+            'stt': 'voiceInput',
+            'ai': 'agent',
+            'tts': 'voiceOutput'
+        };
 
-        const element = this[`${type}Time`];
+        const mappedType = metricMap[type] || type;
+        this.performanceMetrics[mappedType] = time;
+
+        const element = this[`${mappedType}Time`];
         if (element) {
             element.textContent = `${time}ms`;
         }

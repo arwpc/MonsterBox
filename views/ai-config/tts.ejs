@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Text-to-Speech Configuration - MonsterBox</title>
+    <title>ElevenLabs Voice Configuration - MonsterBox</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="/css/style.css?v=<%= Date.now() %>">
@@ -674,18 +674,18 @@
 </head>
 <body>
     <header>
-        <h1>🔊 Text-to-Speech Configuration</h1>
+        <h1>🎤 ElevenLabs Voice Configuration</h1>
         <div class="breadcrumb-vertical mb-6">
             <a href="/" class="breadcrumb-item">🏠 Home</a>
-            <a href="/ai-management" class="breadcrumb-item">🧠 AI Management</a>
-            <span class="breadcrumb-item active">🔊 TTS Configuration</span>
+            <a href="/ai-management" class="breadcrumb-item">🤖 Conversational AI</a>
+            <span class="breadcrumb-item active">🎤 Voice Configuration</span>
         </div>
     </header>
 
     <main class="tts-config">
         <div class="info-section">
-            <h2>🎤 TopMediaAI TTS Configuration</h2>
-            <p>Configure Text-to-Speech voices for each character using the comprehensive TopMediaAI voice catalog</p>
+            <h2>🎤 ElevenLabs Voice Configuration</h2>
+            <p>Configure ElevenLabs voices for each character with natural speech synthesis and voice cloning capabilities</p>
 
         </div>
 
@@ -798,73 +798,76 @@
             </div>
         </div>
 
-        <!-- Global TTS Settings -->
+        <!-- Global ElevenLabs Settings -->
         <div class="config-section">
             <div class="config-header">
                 <div style="display: flex; align-items: center;">
                     <i class="fas fa-globe config-icon"></i>
-                    <h3>Global TTS Settings</h3>
+                    <h3>Global ElevenLabs Settings</h3>
                 </div>
-                <button class="button primary-btn" onclick="saveGlobalTTSSettings()">
+                <button class="button primary-btn" onclick="saveGlobalElevenLabsSettings()">
                     <i class="fas fa-save"></i> Save Global Settings
                 </button>
             </div>
 
-            <form id="globalTTSForm" class="voice-settings">
+            <form id="globalElevenLabsForm" class="voice-settings">
                 <div class="settings-grid">
                     <div class="setting-group">
-                        <label for="defaultSpeed">Default Speed</label>
-                        <input type="range" id="defaultSpeed" name="defaultSpeed"
-                               min="0.5" max="2.0" step="0.1"
-                               value="<%= globalTTSConfig && globalTTSConfig.defaultSpeed ? globalTTSConfig.defaultSpeed : '1.0' %>"
-                               oninput="updateSpeedDisplay(this.value)">
+                        <label for="defaultStability">Default Stability</label>
+                        <input type="range" id="defaultStability" name="defaultStability"
+                               min="0.0" max="1.0" step="0.1"
+                               value="<%= globalTTSConfig && globalTTSConfig.defaultStability ? globalTTSConfig.defaultStability : '0.5' %>"
+                               oninput="updateStabilityDisplay(this.value)">
                         <div class="range-display">
-                            <span>Slow (0.5)</span>
-                            <span id="speedValue"><%= globalTTSConfig && globalTTSConfig.defaultSpeed ? globalTTSConfig.defaultSpeed : '1.0' %></span>
-                            <span>Fast (2.0)</span>
+                            <span>Variable (0.0)</span>
+                            <span id="stabilityValue"><%= globalTTSConfig && globalTTSConfig.defaultStability ? globalTTSConfig.defaultStability : '0.5' %></span>
+                            <span>Stable (1.0)</span>
                         </div>
                     </div>
 
                     <div class="setting-group">
-                        <label for="defaultPitch">Default Pitch</label>
-                        <input type="range" id="defaultPitch" name="defaultPitch"
-                               min="-20" max="20" step="1"
-                               value="<%= globalTTSConfig && globalTTSConfig.defaultPitch ? globalTTSConfig.defaultPitch : '0' %>"
-                               oninput="updatePitchDisplay(this.value)">
+                        <label for="defaultSimilarity">Default Similarity</label>
+                        <input type="range" id="defaultSimilarity" name="defaultSimilarity"
+                               min="0.0" max="1.0" step="0.1"
+                               value="<%= globalTTSConfig && globalTTSConfig.defaultSimilarity ? globalTTSConfig.defaultSimilarity : '0.75' %>"
+                               oninput="updateSimilarityDisplay(this.value)">
                         <div class="range-display">
-                            <span>Low (-20)</span>
-                            <span id="pitchValue"><%= globalTTSConfig && globalTTSConfig.defaultPitch ? globalTTSConfig.defaultPitch : '0' %></span>
-                            <span>High (+20)</span>
+                            <span>Creative (0.0)</span>
+                            <span id="similarityValue"><%= globalTTSConfig && globalTTSConfig.defaultSimilarity ? globalTTSConfig.defaultSimilarity : '0.75' %></span>
+                            <span>Similar (1.0)</span>
                         </div>
                     </div>
 
                     <div class="setting-group">
-                        <label for="defaultVolume">Default Volume</label>
-                        <input type="range" id="defaultVolume" name="defaultVolume"
-                               min="-20" max="20" step="1"
-                               value="<%= globalTTSConfig && globalTTSConfig.defaultVolume ? globalTTSConfig.defaultVolume : '0' %>"
-                               oninput="updateVolumeDisplay(this.value)">
+                        <label for="defaultStyle">Default Style</label>
+                        <input type="range" id="defaultStyle" name="defaultStyle"
+                               min="0.0" max="1.0" step="0.1"
+                               value="<%= globalTTSConfig && globalTTSConfig.defaultStyle ? globalTTSConfig.defaultStyle : '0.0' %>"
+                               oninput="updateStyleDisplay(this.value)">
                         <div class="range-display">
-                            <span>Quiet (-20)</span>
-                            <span id="volumeValue"><%= globalTTSConfig && globalTTSConfig.defaultVolume ? globalTTSConfig.defaultVolume : '0' %></span>
-                            <span>Loud (+20)</span>
+                            <span>Natural (0.0)</span>
+                            <span id="styleValue"><%= globalTTSConfig && globalTTSConfig.defaultStyle ? globalTTSConfig.defaultStyle : '0.0' %></span>
+                            <span>Expressive (1.0)</span>
                         </div>
                     </div>
 
                     <div class="setting-group">
-                        <label for="audioFormat">Audio Format</label>
-                        <select id="audioFormat" name="audioFormat">
-                            <option value="mp3" <%= globalTTSConfig && globalTTSConfig.audioFormat === 'mp3' ? 'selected' : '' %>>MP3</option>
-                            <option value="wav" <%= globalTTSConfig && globalTTSConfig.audioFormat === 'wav' ? 'selected' : '' %>>WAV</option>
+                        <label for="outputFormat">Output Format</label>
+                        <select id="outputFormat" name="outputFormat">
+                            <option value="mp3_44100_128" <%= globalTTSConfig && globalTTSConfig.outputFormat === 'mp3_44100_128' ? 'selected' : '' %>>MP3 44.1kHz 128kbps</option>
+                            <option value="pcm_16000" <%= globalTTSConfig && globalTTSConfig.outputFormat === 'pcm_16000' ? 'selected' : '' %>>PCM 16kHz</option>
+                            <option value="pcm_22050" <%= globalTTSConfig && globalTTSConfig.outputFormat === 'pcm_22050' ? 'selected' : '' %>>PCM 22.05kHz</option>
+                            <option value="pcm_24000" <%= globalTTSConfig && globalTTSConfig.outputFormat === 'pcm_24000' ? 'selected' : '' %>>PCM 24kHz</option>
+                            <option value="pcm_44100" <%= globalTTSConfig && globalTTSConfig.outputFormat === 'pcm_44100' ? 'selected' : '' %>>PCM 44.1kHz</option>
                         </select>
                     </div>
 
                     <div class="setting-group">
-                        <label for="sampleRate">Sample Rate</label>
-                        <select id="sampleRate" name="sampleRate">
-                            <option value="22050" <%= globalTTSConfig && globalTTSConfig.sampleRate === '22050' ? 'selected' : '' %>>22.05 kHz</option>
-                            <option value="44100" <%= globalTTSConfig && globalTTSConfig.sampleRate === '44100' ? 'selected' : '' %>>44.1 kHz</option>
-                            <option value="48000" <%= globalTTSConfig && globalTTSConfig.sampleRate === '48000' ? 'selected' : '' %>>48 kHz</option>
+                        <label for="modelId">Model</label>
+                        <select id="modelId" name="modelId">
+                            <option value="eleven_monolingual_v1" <%= globalTTSConfig && globalTTSConfig.modelId === 'eleven_monolingual_v1' ? 'selected' : '' %>>Eleven Monolingual v1</option>
+                            <option value="eleven_multilingual_v1" <%= globalTTSConfig && globalTTSConfig.modelId === 'eleven_multilingual_v1' ? 'selected' : '' %>>Eleven Multilingual v1</option>
+                            <option value="eleven_multilingual_v2" <%= globalTTSConfig && globalTTSConfig.modelId === 'eleven_multilingual_v2' ? 'selected' : '' %>>Eleven Multilingual v2</option>
                         </select>
                     </div>
 
@@ -878,12 +881,12 @@
             </form>
         </div>
 
-        <!-- TTS Testing Section -->
+        <!-- ElevenLabs Voice Testing Section -->
         <div class="test-section">
             <div class="config-header">
                 <div style="display: flex; align-items: center;">
                     <i class="fas fa-flask config-icon"></i>
-                    <h3>TTS Testing</h3>
+                    <h3>ElevenLabs Voice Testing</h3>
                 </div>
             </div>
 
@@ -897,7 +900,7 @@
                     <% } %>
                 </select>
                 <input type="text" id="testText" class="test-input" placeholder="Enter text to synthesize..." value="Hello, I am your monster, hear me roar!">
-                <button class="button primary-btn" onclick="runTTSTest()">
+                <button class="button primary-btn" onclick="runElevenLabsTest()">
                     <i class="fas fa-volume-up"></i> Generate
                 </button>
             </div>
@@ -1100,10 +1103,10 @@
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
-            updateSpeedDisplay(document.getElementById('defaultSpeed').value);
-            updatePitchDisplay(document.getElementById('defaultPitch').value);
-            updateVolumeDisplay(document.getElementById('defaultVolume').value);
-            loadVoiceCatalog();
+            updateStabilityDisplay(document.getElementById('defaultStability').value);
+            updateSimilarityDisplay(document.getElementById('defaultSimilarity').value);
+            updateStyleDisplay(document.getElementById('defaultStyle').value);
+            loadElevenLabsVoices();
 
             // Check if a specific character was requested for voice configuration
             const urlParams = new URLSearchParams(window.location.search);
@@ -1156,16 +1159,33 @@
 
 
         // Global settings display updates
-        function updateSpeedDisplay(value) {
-            document.getElementById('speedValue').textContent = value;
+        function updateStabilityDisplay(value) {
+            document.getElementById('stabilityValue').textContent = value;
         }
 
-        function updatePitchDisplay(value) {
-            document.getElementById('pitchValue').textContent = value;
+        function updateSimilarityDisplay(value) {
+            document.getElementById('similarityValue').textContent = value;
         }
 
-        function updateVolumeDisplay(value) {
-            document.getElementById('volumeValue').textContent = value;
+        function updateStyleDisplay(value) {
+            document.getElementById('styleValue').textContent = value;
+        }
+
+        // Load ElevenLabs voices
+        async function loadElevenLabsVoices() {
+            try {
+                const response = await fetch('/ai-management/api/elevenlabs/voices');
+                const data = await response.json();
+
+                if (data.success) {
+                    // Update voice selection dropdowns
+                    console.log('Loaded ElevenLabs voices:', data.voices.length);
+                } else {
+                    console.error('Failed to load ElevenLabs voices:', data.error);
+                }
+            } catch (error) {
+                console.error('Error loading ElevenLabs voices:', error);
+            }
         }
 
         // Modal settings display updates
@@ -1620,14 +1640,14 @@
         }
 
         // Global settings functions
-        async function saveGlobalTTSSettings() {
-            const formData = new FormData(document.getElementById('globalTTSForm'));
+        async function saveGlobalElevenLabsSettings() {
+            const formData = new FormData(document.getElementById('globalElevenLabsForm'));
             const config = Object.fromEntries(formData.entries());
 
             try {
-                showMessage('Saving global TTS settings...', 'info');
+                showMessage('Saving global ElevenLabs settings...', 'info');
 
-                const response = await fetch('/ai-management/api/tts/global', {
+                const response = await fetch('/ai-management/api/elevenlabs/global', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(config)
@@ -1636,7 +1656,7 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    showMessage('Global TTS settings saved successfully!', 'success');
+                    showMessage('Global ElevenLabs settings saved successfully!', 'success');
                 } else {
                     showMessage(`Failed to save global settings: ${data.error}`, 'error');
                 }
@@ -1649,7 +1669,7 @@
             try {
                 showMessage('Saving all voice assignments...', 'info');
 
-                const response = await fetch('/ai-management/api/tts/save-all', {
+                const response = await fetch('/ai-management/api/elevenlabs/save-all', {
                     method: 'POST'
                 });
 
@@ -1666,7 +1686,7 @@
         }
 
         // Testing functions
-        async function runTTSTest() {
+        async function runElevenLabsTest() {
             const characterId = document.getElementById('testCharacter').value;
             const text = document.getElementById('testText').value;
 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Personalities Configuration - MonsterBox</title>
+    <title>ElevenLabs Agents Configuration - MonsterBox</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="/css/style.css?v=<%= Date.now() %>">
@@ -474,35 +474,35 @@
 <body>
     <header class="compact-header">
         <div class="header-content">
-            <h1 class="page-title">🧠 AI Personalities Configuration</h1>
+            <h1 class="page-title">🤖 ElevenLabs Agents Configuration</h1>
             <nav class="compact-nav">
                 <a href="/" class="nav-link">🏠 Home</a>
                 <span class="nav-separator">•</span>
-                <a href="/ai-management" class="nav-link">🧠 AI Management</a>
+                <a href="/ai-management" class="nav-link">🤖 Conversational AI</a>
                 <span class="nav-separator">•</span>
-                <span class="nav-current">AI Personalities</span>
+                <span class="nav-current">ElevenLabs Agents</span>
             </nav>
         </div>
     </header>
 
     <main class="personalities-config">
         <div class="info-section">
-            <h2>🎭 Character AI Personality Management</h2>
-            <p>Configure AI personalities for each character with custom models, prompts, and behavioral parameters</p>
+            <h2>🤖 ElevenLabs Conversational AI Agents</h2>
+            <p>Configure ElevenLabs agents for each character with custom prompts, voices, and conversation settings</p>
         </div>
 
 
 
-        <!-- AI Personalities -->
+        <!-- ElevenLabs Agents -->
         <div class="config-section">
-            <div class="config-header" onclick="toggleSection('personalities')">
+            <div class="config-header" onclick="toggleSection('agents')">
                 <div>
-                    <i class="config-icon fas fa-theater-masks"></i>
-                    AI Personalities
+                    <i class="config-icon fas fa-robot"></i>
+                    ElevenLabs Agents
                 </div>
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <button class="button primary-btn" onclick="addNewPersonality(); event.stopPropagation();">
-                        <i class="fas fa-plus"></i> Add Personality
+                    <button class="button primary-btn" onclick="addNewAgent(); event.stopPropagation();">
+                        <i class="fas fa-plus"></i> Add Agent
                     </button>
                     <button class="button secondary-btn" onclick="migrateCharacterConfigs(); event.stopPropagation();" id="migrateBtn">
                         <i class="fas fa-sync"></i> Migrate Character Configs
@@ -573,50 +573,45 @@
                 <form id="globalConfigForm" class="global-config">
                     <div class="form-grid">
                         <div class="form-group">
-                            <label for="defaultProvider">Default AI Provider</label>
+                            <label for="defaultProvider">Default Provider</label>
                             <select id="defaultProvider" name="defaultProvider">
-                                <option value="openai">OpenAI</option>
-                                <option value="anthropic">Anthropic</option>
-                                <option value="google">Google AI</option>
+                                <option value="elevenlabs">ElevenLabs</option>
                             </select>
-                            <div class="form-help">Primary AI provider for all characters</div>
+                            <div class="form-help">Conversational AI provider for all characters</div>
                         </div>
 
                         <div class="form-group">
-                            <label for="defaultModel">Default Model</label>
-                            <select id="defaultModel" name="defaultModel">
-                                <option value="gpt-4">GPT-4</option>
-                                <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                                <option value="claude-3-opus">Claude 3 Opus</option>
-                                <option value="claude-3-sonnet">Claude 3 Sonnet</option>
-                                <option value="gemini-pro">Gemini Pro</option>
+                            <label for="defaultVoiceId">Default Voice</label>
+                            <select id="defaultVoiceId" name="defaultVoiceId">
+                                <option value="">Select a voice...</option>
+                                <!-- Voice options will be loaded dynamically -->
                             </select>
-                            <div class="form-help">Default model for new characters</div>
+                            <div class="form-help">Default voice for new agents</div>
                         </div>
 
                         <div class="form-group">
-                            <label for="defaultTemperature">Default Temperature</label>
+                            <label for="defaultVadThreshold">Default VAD Threshold</label>
                             <div class="slider-container">
-                                <input type="range" id="defaultTemperature" name="defaultTemperature"
-                                       min="0" max="2" step="0.1" value="0.7"
-                                       oninput="updateTemperatureDisplay(this.value)">
-                                <span class="slider-value" id="temperatureValue">0.7</span>
+                                <input type="range" id="defaultVadThreshold" name="defaultVadThreshold"
+                                       min="0.1" max="1.0" step="0.1" value="0.5"
+                                       oninput="updateVadThresholdDisplay(this.value)">
+                                <span class="slider-value" id="vadThresholdValue">0.5</span>
                             </div>
                             <div class="form-help">
-                                Creativity level (0.0 = very focused, 2.0 = very creative)
+                                Voice activity detection sensitivity (0.1 = very sensitive, 1.0 = less sensitive)
                             </div>
                         </div>
 
                         <div class="form-group">
-                            <label for="defaultMaxTokens">Default Max Tokens</label>
-                            <input type="number" id="defaultMaxTokens" name="defaultMaxTokens" value="150" min="50" max="4000">
-                            <div class="form-help">Maximum response length</div>
+                            <label for="defaultPrefixPadding">Default Prefix Padding (ms)</label>
+                            <input type="number" id="defaultPrefixPadding" name="defaultPrefixPadding" value="300" min="0" max="1000" step="50">
+                            <div class="form-help">Audio padding before detected speech</div>
                         </div>
 
                         <div class="form-group">
-                            <label for="defaultContextLength">Context Length</label>
-                            <input type="number" id="defaultContextLength" name="defaultContextLength" value="5" min="1" max="20">
-                            <div class="form-help">Number of previous messages to remember</div>
+                            <label for="defaultSilenceDuration">Default Silence Duration (ms)</label>
+                            <input type="number" id="defaultSilenceDuration" name="defaultSilenceDuration" value="200" min="100" max="2000" step="50">
+                            <div class="form-help">Duration of silence before ending speech detection</div>
                         </div>
 
                         <div class="form-group">
@@ -674,56 +669,51 @@
 
                     <div class="form-grid">
                         <div class="form-group">
-                            <label for="aiProvider">AI Provider</label>
+                            <label for="aiProvider">Provider</label>
                             <select id="aiProvider" name="aiProvider">
-                                <option value="openai">OpenAI</option>
-                                <option value="anthropic">Anthropic</option>
-                                <option value="google">Google AI</option>
+                                <option value="elevenlabs">ElevenLabs</option>
                             </select>
                         </div>
 
                         <div class="form-group">
-                            <label for="aiModel">AI Model</label>
-                            <select id="aiModel" name="aiModel">
-                                <option value="gpt-4">GPT-4</option>
-                                <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                                <option value="claude-3-opus">Claude 3 Opus</option>
-                                <option value="claude-3-sonnet">Claude 3 Sonnet</option>
-                                <option value="gemini-pro">Gemini Pro</option>
+                            <label for="voiceId">Voice</label>
+                            <select id="voiceId" name="voiceId">
+                                <option value="">Select a voice...</option>
+                                <!-- Voice options will be loaded dynamically -->
                             </select>
                         </div>
 
                         <div class="form-group">
-                            <label for="aiTemperature">Temperature</label>
+                            <label for="vadThreshold">VAD Threshold</label>
                             <div class="slider-container">
-                                <input type="range" id="aiTemperature" name="aiTemperature"
-                                       min="0" max="2" step="0.1" value="0.8"
-                                       oninput="updateModalTemperatureDisplay(this.value)">
-                                <span class="slider-value" id="modalTemperatureValue">0.8</span>
+                                <input type="range" id="vadThreshold" name="vadThreshold"
+                                       min="0.1" max="1.0" step="0.1" value="0.5"
+                                       oninput="updateModalVadThresholdDisplay(this.value)">
+                                <span class="slider-value" id="modalVadThresholdValue">0.5</span>
                             </div>
                             <div class="form-help">
-                                Creativity level (0.0 = very focused, 2.0 = very creative)
+                                Voice activity detection sensitivity
                             </div>
                         </div>
 
                         <div class="form-group">
-                            <label for="aiMaxTokens">Max Tokens</label>
-                            <input type="number" id="aiMaxTokens" name="aiMaxTokens"
-                                   min="50" max="4000" step="50" value="150">
+                            <label for="prefixPadding">Prefix Padding (ms)</label>
+                            <input type="number" id="prefixPadding" name="prefixPadding"
+                                   min="0" max="1000" step="50" value="300">
                         </div>
 
                         <div class="form-group full-width">
-                            <label for="systemPrompt">System Prompt / Personality</label>
-                            <textarea id="systemPrompt" name="systemPrompt" rows="6"
-                                      placeholder="Define the character's personality, speaking style, background, and behavioral traits..."></textarea>
-                            <div class="form-help">Detailed personality description that defines how the character should behave and respond</div>
+                            <label for="agentPrompt">Agent Prompt / Personality</label>
+                            <textarea id="agentPrompt" name="agentPrompt" rows="6"
+                                      placeholder="Define the character's personality, speaking style, background, and behavioral traits for ElevenLabs agent..."></textarea>
+                            <div class="form-help">Detailed personality description that defines how the ElevenLabs agent should behave and respond</div>
                         </div>
 
                         <div class="form-group">
-                            <label for="contextLength">Context Length</label>
-                            <input type="number" id="contextLength" name="contextLength"
-                                   min="1" max="20" step="1" value="5">
-                            <div class="form-help">Messages to remember</div>
+                            <label for="silenceDuration">Silence Duration (ms)</label>
+                            <input type="number" id="silenceDuration" name="silenceDuration"
+                                   min="100" max="2000" step="50" value="200">
+                            <div class="form-help">Duration of silence before ending speech detection</div>
                         </div>
 
                         <div class="form-group">
@@ -1043,10 +1033,10 @@
             }
         }
 
-        async function addNewPersonality() {
-            // Open modal for creating a new AI personality
+        async function addNewAgent() {
+            // Open modal for creating a new ElevenLabs agent
             document.getElementById('characterId').value = 'new';
-            document.getElementById('modalTitle').textContent = 'Create New AI Personality';
+            document.getElementById('modalTitle').textContent = 'Create New ElevenLabs Agent';
 
             // Show personality name field and character assignment for new personalities
             document.getElementById('personalityNameGroup').style.display = 'block';
@@ -1056,13 +1046,16 @@
             // Load available characters for assignment
             await loadAvailableCharacters();
 
+            // Load available voices
+            await loadAvailableVoices();
+
             // Reset form to defaults
-            document.getElementById('aiProvider').value = 'openai';
-            document.getElementById('aiModel').value = 'gpt-4';
-            document.getElementById('aiTemperature').value = '0.8';
-            document.getElementById('aiMaxTokens').value = '150';
-            document.getElementById('systemPrompt').value = '';
-            document.getElementById('contextLength').value = '5';
+            document.getElementById('aiProvider').value = 'elevenlabs';
+            document.getElementById('voiceId').value = '';
+            document.getElementById('vadThreshold').value = '0.5';
+            document.getElementById('prefixPadding').value = '300';
+            document.getElementById('agentPrompt').value = '';
+            document.getElementById('silenceDuration').value = '200';
             document.getElementById('enabled').value = 'true';
             document.getElementById('assignedCharacter').value = '';
 
@@ -1454,6 +1447,42 @@
                 }
             }
         });
+
+        // Load available ElevenLabs voices
+        async function loadAvailableVoices() {
+            try {
+                const response = await fetch('/ai-management/api/elevenlabs/voices');
+                const data = await response.json();
+
+                if (data.success) {
+                    const voiceSelect = document.getElementById('voiceId');
+                    const defaultVoiceSelect = document.getElementById('defaultVoiceId');
+
+                    // Clear existing options
+                    voiceSelect.innerHTML = '<option value="">Select a voice...</option>';
+                    defaultVoiceSelect.innerHTML = '<option value="">Select a voice...</option>';
+
+                    // Add voice options
+                    data.voices.forEach(voice => {
+                        const option = new Option(voice.name, voice.voice_id);
+                        const defaultOption = new Option(voice.name, voice.voice_id);
+                        voiceSelect.add(option);
+                        defaultVoiceSelect.add(defaultOption);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading voices:', error);
+            }
+        }
+
+        // Update VAD threshold display functions
+        function updateVadThresholdDisplay(value) {
+            document.getElementById('vadThresholdValue').textContent = value;
+        }
+
+        function updateModalVadThresholdDisplay(value) {
+            document.getElementById('modalVadThresholdValue').textContent = value;
+        }
 
         // Close modal when clicking outside
         window.onclick = function(event) {

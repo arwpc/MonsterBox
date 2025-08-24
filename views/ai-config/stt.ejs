@@ -698,14 +698,14 @@
 
     <main class="stt-config">
         <div class="info-section">
-            <h2>🎤 OpenAI Whisper STT Configuration</h2>
-            <p>Configure Speech-to-Text settings for converting spoken audio into text streams for AI processing</p>
+            <h2>🎤 ElevenLabs Voice Activity Detection</h2>
+            <p>Configure voice activity detection and audio input settings for ElevenLabs Conversational AI</p>
             <div class="integration-notice">
                 <div class="notice-content">
                     <i class="fas fa-info-circle"></i>
                     <div>
-                        <strong>ChatterPi Integration:</strong> STT settings automatically sync with jaw animation system for real-time audio-driven character performance.
-                        <a href="/chatterpi" class="integration-link">🦴 Manage Jaw Animation</a>
+                        <strong>Conversational AI Integration:</strong> Voice settings automatically sync with jaw animation system for real-time audio-driven character performance.
+                        <a href="/conversational-ai" class="integration-link">🤖 Manage Voice Chat</a>
                     </div>
                 </div>
             </div>
@@ -713,16 +713,16 @@
 
         <!-- Quick Actions Bar -->
         <div class="quick-actions">
-            <button type="button" class="button primary-btn" onclick="testConnection()">
-                <i class="fas fa-test-tube"></i> Test Connection
+            <button type="button" class="button primary-btn" onclick="testElevenLabsConnection()">
+                <i class="fas fa-test-tube"></i> Test ElevenLabs Connection
             </button>
-            <button type="button" class="button secondary-btn" onclick="toggleRecording()">
-                <i class="fas fa-microphone"></i> Quick Test Recording
+            <button type="button" class="button secondary-btn" onclick="testVoiceDetection()">
+                <i class="fas fa-microphone"></i> Test Voice Detection
             </button>
-            <button type="button" class="button secondary-btn" onclick="testJawAnimationWithSTT()">
+            <button type="button" class="button secondary-btn" onclick="testJawAnimationWithVoice()">
                 <i class="fas fa-robot"></i> Test Jaw Animation
             </button>
-            <button type="button" class="button secondary-btn" onclick="document.getElementById('sttConfigForm').scrollIntoView({behavior: 'smooth'})">
+            <button type="button" class="button secondary-btn" onclick="document.getElementById('vadConfigForm').scrollIntoView({behavior: 'smooth'})">
                 <i class="fas fa-cog"></i> Configuration Settings
             </button>
         </div>
@@ -731,7 +731,7 @@
         <div class="status-display">
             <h3>📊 System Status</h3>
             <div class="status-item">
-                <span>OpenAI API Connection</span>
+                <span>ElevenLabs API Connection</span>
                 <div style="display: flex; align-items: center;">
                     <span id="apiStatus">Checking...</span>
                     <div class="status-indicator" id="apiIndicator"></div>
@@ -745,9 +745,9 @@
                 </div>
             </div>
             <div class="status-item">
-                <span>Audio Processing</span>
+                <span>Voice Activity Detection</span>
                 <div style="display: flex; align-items: center;">
-                    <span id="audioStatus">Ready</span>
+                    <span id="vadStatus">Ready</span>
                     <div class="status-indicator status-online" id="audioIndicator"></div>
                 </div>
             </div>
@@ -777,10 +777,10 @@
         </div>
 
         <!-- Configuration Form -->
-        <form id="sttConfigForm" class="config-section prominent-section">
+        <form id="vadConfigForm" class="config-section prominent-section">
             <div class="config-header">
                 <i class="fas fa-cog config-icon"></i>
-                <h3>⚙️ Configuration Settings</h3>
+                <h3>⚙️ Voice Activity Detection Settings</h3>
                 <div class="config-status">
                     <span class="config-indicator" id="configStatus">Not Configured</span>
                 </div>
@@ -799,47 +799,46 @@
             <div id="basicSettings" class="config-tab active">
                 <div class="form-grid">
                     <div class="form-group">
-                        <label for="apiKey">🔑 OpenAI API Key</label>
-                        <input type="password" id="apiKey" name="apiKey" value="<%= config && config.apiKey ? '••••••••••••' : '' %>" placeholder="sk-...">
-                        <div class="form-help">Your OpenAI API key for Whisper access</div>
+                        <label for="apiKey">🔑 ElevenLabs API Key</label>
+                        <input type="password" id="apiKey" name="apiKey" value="<%= config && config.apiKey ? '••••••••••••' : '' %>" placeholder="xi_...">
+                        <div class="form-help">Your ElevenLabs API key for Conversational AI access</div>
                     </div>
 
                     <div class="form-group">
-                        <label for="model">🤖 Whisper Model</label>
-                        <select id="model" name="model">
-                            <option value="whisper-1" <%= config && config.model === 'whisper-1' ? 'selected' : '' %>>whisper-1 (Recommended)</option>
+                        <label for="vadType">🎤 Voice Activity Detection Type</label>
+                        <select id="vadType" name="vadType">
+                            <option value="server_vad" <%= config && config.vadType === 'server_vad' ? 'selected' : '' %>>Server VAD (Recommended)</option>
+                            <option value="client_vad" <%= config && config.vadType === 'client_vad' ? 'selected' : '' %>>Client VAD</option>
                         </select>
-                        <div class="form-help">OpenAI Whisper model version</div>
+                        <div class="form-help">Voice activity detection method</div>
                     </div>
 
                     <div class="form-group">
-                        <label for="language">🌍 Language</label>
-                        <select id="language" name="language">
-                            <option value="auto" <%= config && config.language === 'auto' ? 'selected' : '' %>>Auto-detect (Recommended)</option>
-                            <option value="en" <%= config && config.language === 'en' ? 'selected' : '' %>>English</option>
-                            <option value="es" <%= config && config.language === 'es' ? 'selected' : '' %>>Spanish</option>
-                            <option value="fr" <%= config && config.language === 'fr' ? 'selected' : '' %>>French</option>
-                            <option value="de" <%= config && config.language === 'de' ? 'selected' : '' %>>German</option>
-                            <option value="it" <%= config && config.language === 'it' ? 'selected' : '' %>>Italian</option>
-                            <option value="pt" <%= config && config.language === 'pt' ? 'selected' : '' %>>Portuguese</option>
-                            <option value="ru" <%= config && config.language === 'ru' ? 'selected' : '' %>>Russian</option>
-                            <option value="ja" <%= config && config.language === 'ja' ? 'selected' : '' %>>Japanese</option>
-                            <option value="ko" <%= config && config.language === 'ko' ? 'selected' : '' %>>Korean</option>
-                            <option value="zh" <%= config && config.language === 'zh' ? 'selected' : '' %>>Chinese</option>
-                        </select>
-                        <div class="form-help">Primary language for speech recognition</div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="confidenceThreshold">🎯 Confidence Threshold</label>
+                        <label for="vadThreshold">🎯 VAD Threshold</label>
                         <div class="slider-container">
-                            <input type="range" id="confidenceThreshold" name="confidenceThreshold"
+                            <input type="range" id="vadThreshold" name="vadThreshold"
                                    min="0.1" max="1.0" step="0.1"
-                                   value="<%= config && config.confidenceThreshold ? config.confidenceThreshold : '0.7' %>"
-                                   oninput="updateConfidenceDisplay(this.value)">
-                            <div class="slider-value" id="confidenceValue"><%= config && config.confidenceThreshold ? config.confidenceThreshold : '0.7' %></div>
+                                   value="<%= config && config.vadThreshold ? config.vadThreshold : '0.5' %>"
+                                   oninput="updateVadThresholdDisplay(this.value)">
+                            <div class="slider-value" id="vadThresholdValue"><%= config && config.vadThreshold ? config.vadThreshold : '0.5' %></div>
                         </div>
-                        <div class="form-help">Minimum confidence level for accepting transcriptions</div>
+                        <div class="form-help">Sensitivity threshold for voice activity detection</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="prefixPadding">⏱️ Prefix Padding (ms)</label>
+                        <input type="number" id="prefixPadding" name="prefixPadding"
+                               min="0" max="1000" step="50"
+                               value="<%= config && config.prefixPadding ? config.prefixPadding : '300' %>">
+                        <div class="form-help">Audio padding before detected speech</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="silenceDuration">🔇 Silence Duration (ms)</label>
+                        <input type="number" id="silenceDuration" name="silenceDuration"
+                               min="100" max="2000" step="50"
+                               value="<%= config && config.silenceDuration ? config.silenceDuration : '200' %>">
+                        <div class="form-help">Duration of silence before ending speech detection</div>
                     </div>
                 </div>
             </div>
@@ -879,7 +878,7 @@
                 <button type="submit" class="button primary-btn">
                     <i class="fas fa-save"></i> Save Configuration
                 </button>
-                <button type="button" class="button secondary-btn" onclick="testConnection()">
+                <button type="button" class="button secondary-btn" onclick="testElevenLabsConnection()">
                     <i class="fas fa-test-tube"></i> Test Connection
                 </button>
                 <a href="/ai-management" class="button secondary-btn">
@@ -972,13 +971,13 @@
         });
 
         // Form submission
-        document.getElementById('sttConfigForm').addEventListener('submit', function(e) {
+        document.getElementById('vadConfigForm').addEventListener('submit', function(e) {
             e.preventDefault();
             saveConfiguration();
         });
 
-        function updateConfidenceDisplay(value) {
-            document.getElementById('confidenceValue').textContent = value;
+        function updateVadThresholdDisplay(value) {
+            document.getElementById('vadThresholdValue').textContent = value;
         }
 
         function switchConfigTab(tabName) {
@@ -1001,8 +1000,8 @@
 
         async function checkStatus() {
             try {
-                // Check API status
-                const apiResponse = await fetch('/ai-management/api/stt/status');
+                // Check ElevenLabs API status
+                const apiResponse = await fetch('/ai-management/api/test/elevenlabs', { method: 'POST' });
                 const apiData = await apiResponse.json();
 
                 updateStatusIndicator('apiStatus', 'apiIndicator',
@@ -1013,27 +1012,27 @@
                 // Check microphone access
                 await checkMicrophoneAccess();
 
-                // Check ChatterPi status
-                await checkChatterPiStatus();
+                // Check Conversational AI status
+                await checkConversationalAIStatus();
             } catch (error) {
                 console.error('Status check failed:', error);
                 updateStatusIndicator('apiStatus', 'apiIndicator', 'Error', 'offline');
             }
         }
 
-        async function checkChatterPiStatus() {
+        async function checkConversationalAIStatus() {
             try {
-                const response = await fetch('/chatterpi/api/status');
+                const response = await fetch('/conversational-ai/api/status');
                 const result = await response.json();
 
                 const isConnected = result.success && result.status.servo.connected;
-                updateStatusIndicator('chatterpiStatus', 'chatterpiIndicator',
+                updateStatusIndicator('conversationalAIStatus', 'conversationalAIIndicator',
                     isConnected ? 'Connected' : 'Disconnected',
                     isConnected ? 'online' : 'offline'
                 );
             } catch (error) {
-                console.error('ChatterPi status check failed:', error);
-                updateStatusIndicator('chatterpiStatus', 'chatterpiIndicator', 'Error', 'offline');
+                console.error('Conversational AI status check failed:', error);
+                updateStatusIndicator('conversationalAIStatus', 'conversationalAIIndicator', 'Error', 'offline');
             }
         }
 
@@ -1192,13 +1191,13 @@
         }
 
         async function saveConfiguration() {
-            const formData = new FormData(document.getElementById('sttConfigForm'));
+            const formData = new FormData(document.getElementById('vadConfigForm'));
             const config = Object.fromEntries(formData.entries());
 
             try {
                 showMessage('Saving configuration...', 'info');
 
-                const response = await fetch('/ai-management/api/stt/config', {
+                const response = await fetch('/ai-management/api/vad/config', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(config)
@@ -1207,7 +1206,7 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    showMessage('Configuration saved successfully!', 'success');
+                    showMessage('Voice Activity Detection configuration saved successfully!', 'success');
                     checkStatus(); // Refresh status
                 } else {
                     showMessage(`Failed to save configuration: ${data.error}`, 'error');
@@ -1217,28 +1216,48 @@
             }
         }
 
-        async function testConnection() {
+        async function testElevenLabsConnection() {
             try {
-                showMessage('Testing OpenAI Whisper connection...', 'info');
+                showMessage('Testing ElevenLabs connection...', 'info');
 
-                const response = await fetch('/ai-management/api/stt/test', {
+                const response = await fetch('/ai-management/api/test/elevenlabs', {
                     method: 'POST'
                 });
 
                 const data = await response.json();
 
                 if (data.success) {
-                    showMessage(`API connection test successful! Response time: ${data.responseTime}ms`, 'success');
+                    showMessage(`ElevenLabs connection test successful! Response time: ${data.responseTime}ms`, 'success');
 
                     // Also test microphone access
                     showMessage('Testing microphone access...', 'info');
                     await testMicrophoneAccess();
                     showMessage('Complete connection test successful!', 'success');
                 } else {
-                    showMessage(`API connection test failed: ${data.error}`, 'error');
+                    showMessage(`ElevenLabs connection test failed: ${data.error}`, 'error');
                 }
             } catch (error) {
                 showMessage(`Connection test error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testVoiceDetection() {
+            try {
+                showMessage('Testing voice activity detection...', 'info');
+
+                const response = await fetch('/ai-management/api/test/conversation', {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage(`Voice detection test successful! VAD Status: ${data.vadStatus}`, 'success');
+                } else {
+                    showMessage(`Voice detection test failed: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showMessage(`Voice detection test error: ${error.message}`, 'error');
             }
         }
 

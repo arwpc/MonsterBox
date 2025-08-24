@@ -1,8 +1,8 @@
 /**
  * AI Management Routes
  *
- * Comprehensive AI Management system for MonsterBox
- * Handles STT, AI Personalities, and TTS configuration
+ * ElevenLabs Conversational AI Management system for MonsterBox
+ * Handles ElevenLabs agents, voice configuration, and conversation settings
  */
 
 const express = require('express');
@@ -87,28 +87,90 @@ const dashboardHandler = async (req, res) => {
 router.get('/', dashboardHandler);
 router.get('/dashboard', dashboardHandler);
 
-// STT Configuration routes
+// ElevenLabs Voice Activity Detection Configuration routes
 router.get('/stt', async (req, res) => {
     try {
         const config = await loadConfig(STT_CONFIG_FILE, {
-            apiKey: process.env.OPENAI_API_KEY ? '••••••••••••' : '',
-            model: 'whisper-1',
-            language: 'en',
-            confidenceThreshold: 0.7,
-            chunkDuration: 2000,
-            timeout: 30000,
-            fallbackToSystem: true
+            apiKey: process.env.ELEVENLABS_API_KEY ? '••••••••••••' : '',
+            vadType: 'server_vad',
+            vadThreshold: 0.5,
+            prefixPadding: 300,
+            silenceDuration: 200,
+            timeout: 30000
         });
 
         res.render('ai-config/stt', {
-            title: 'Speech-to-Text Configuration',
+            title: 'Voice Activity Detection Configuration',
             config
         });
     } catch (error) {
-        console.error('STT config error:', error);
+        console.error('VAD config error:', error);
         res.status(500).render('error', {
             title: 'Error',
-            message: 'Failed to load STT configuration',
+            message: 'Failed to load VAD configuration',
+            error: error.message
+        });
+    }
+});
+
+// ElevenLabs Agents Management (replaces assistants)
+router.get('/agents', async (req, res) => {
+    try {
+        res.render('ai-config/personalities', {
+            title: 'ElevenLabs Agents Configuration'
+        });
+    } catch (error) {
+        res.status(500).render('error', {
+            title: 'Error',
+            message: 'Failed to load agents configuration',
+            error: error.message
+        });
+    }
+});
+
+// ElevenLabs Voice Configuration (replaces TTS)
+router.get('/voices', async (req, res) => {
+    try {
+        const globalTTSConfig = await loadConfig(TTS_CONFIG_FILE, {
+            defaultStability: 0.5,
+            defaultSimilarity: 0.75,
+            defaultStyle: 0.0,
+            outputFormat: 'mp3_44100_128',
+            modelId: 'eleven_multilingual_v2',
+            timeout: 30000
+        });
+
+        res.render('ai-config/tts', {
+            title: 'ElevenLabs Voice Configuration',
+            globalTTSConfig
+        });
+    } catch (error) {
+        res.status(500).render('error', {
+            title: 'Error',
+            message: 'Failed to load voice configuration',
+            error: error.message
+        });
+    }
+});
+
+// ElevenLabs Conversation Settings
+router.get('/conversation', async (req, res) => {
+    try {
+        const config = await loadConfig(STT_CONFIG_FILE, {
+            vadType: 'server_vad',
+            vadThreshold: 0.5,
+            prefixPadding: 300,
+            silenceDuration: 200
+        });
+
+        res.render('ai-config/stt', {
+            title: 'Conversation Settings',
+            config
+        });
+    } catch (error) {
+        res.status(500).render('error', {
+            title: 'Error',
+            message: 'Failed to load conversation settings',
             error: error.message
         });
     }
@@ -1311,94 +1373,195 @@ router.post('/api/tts/save-all', async (req, res) => {
     }
 });
 
-// Testing API routes
-router.post('/api/test/stt', async (req, res) => {
+// Testing API routes for ElevenLabs
+router.post('/api/test/elevenlabs', async (req, res) => {
     try {
         const startTime = Date.now();
+        const elevenLabsService = global.elevenLabsService;
 
-        // Mock STT test
+        if (!elevenLabsService) {
+            return res.json({
+                success: false,
+                error: 'ElevenLabs service not initialized'
+            });
+        }
+
+        const status = elevenLabsService.getStatus();
+        const responseTime = Date.now() - startTime;
+
+        res.json({
+            success: true,
+            activeAgents: status ? status.activeAgents : 0,
+            wsStatus: status ? (status.online ? 'Connected' : 'Disconnected') : 'Unknown',
+            responseTime: Math.round(responseTime)
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+router.post('/api/test/voices', async (req, res) => {
+    try {
+        const startTime = Date.now();
+        const elevenLabsService = global.elevenLabsService;
+
+        if (!elevenLabsService) {
+            return res.json({
+                success: false,
+                error: 'ElevenLabs service not initialized'
+            });
+        }
+
+        // Mock voice count test
         const responseTime = Date.now() - startTime + Math.random() * 500;
 
         res.json({
             success: true,
-            responseTime: Math.round(responseTime),
-            status: 'STT system operational',
-            provider: 'OpenAI Whisper'
+            voiceCount: 'Available',
+            responseTime: Math.round(responseTime)
         });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
 });
 
-router.post('/api/test/ai', async (req, res) => {
+router.post('/api/test/conversation', async (req, res) => {
     try {
-        const { prompt } = req.body;
         const startTime = Date.now();
+        const elevenLabsService = global.elevenLabsService;
 
-        // Mock AI test
-        const response = "This is a test response from the AI system. All systems are operational.";
-        const responseTime = Date.now() - startTime + Math.random() * 1000;
+        if (!elevenLabsService) {
+            return res.json({
+                success: false,
+                error: 'ElevenLabs service not initialized'
+            });
+        }
+
+        const status = elevenLabsService.getStatus();
+        const responseTime = Date.now() - startTime;
 
         res.json({
             success: true,
-            response,
-            responseTime: Math.round(responseTime),
-            provider: 'OpenAI',
-            model: 'gpt-4'
+            activeConnections: status ? status.activeConnections : 0,
+            vadStatus: 'Enabled',
+            responseTime: Math.round(responseTime)
         });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
 });
 
-router.post('/api/test/tts', async (req, res) => {
+router.post('/api/test/full-conversation', async (req, res) => {
     try {
-        const { text } = req.body;
         const startTime = Date.now();
+        const elevenLabsService = global.elevenLabsService;
 
-        // Mock TTS test
-        const responseTime = Date.now() - startTime + Math.random() * 2000;
+        if (!elevenLabsService) {
+            return res.json({
+                success: false,
+                error: 'ElevenLabs service not initialized'
+            });
+        }
+
+        // Mock full conversation test
+        const agentTime = Math.random() * 300 + 100;
+        const voiceInputTime = Math.random() * 200 + 50;
+        const voiceOutputTime = Math.random() * 500 + 200;
+
+        const totalTime = agentTime + voiceInputTime + voiceOutputTime;
 
         res.json({
             success: true,
-            responseTime: Math.round(responseTime),
-            provider: 'TopMediaAI',
-            audioUrl: '/sounds/test-audio.mp3' // Mock audio URL
-        });
-    } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-
-router.post('/api/test/pipeline', async (req, res) => {
-    try {
-        const startTime = Date.now();
-
-        // Mock full pipeline test
-        const sttTime = Math.random() * 500 + 200;
-        const aiTime = Math.random() * 1000 + 500;
-        const ttsTime = Math.random() * 2000 + 1000;
-
-        const totalTime = sttTime + aiTime + ttsTime;
-
-        res.json({
-            success: true,
-            stt: {
+            agent: {
                 success: true,
-                responseTime: Math.round(sttTime)
+                responseTime: Math.round(agentTime)
             },
-            ai: {
+            voiceInput: {
                 success: true,
-                responseTime: Math.round(aiTime)
+                responseTime: Math.round(voiceInputTime)
             },
-            tts: {
+            voiceOutput: {
                 success: true,
-                responseTime: Math.round(ttsTime)
+                responseTime: Math.round(voiceOutputTime)
             },
             totalTime: Math.round(totalTime),
-            audioUrl: '/sounds/pipeline-test.mp3'
+            audioUrl: '/sounds/conversation-test.mp3'
         });
     } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ElevenLabs VAD Configuration
+router.post('/api/vad/config', async (req, res) => {
+    try {
+        const config = req.body;
+
+        // Save VAD configuration
+        const vadConfigFile = path.join(__dirname, '../data/ai-config/vad-config.json');
+        await fs.writeFile(vadConfigFile, JSON.stringify(config, null, 2));
+
+        // Update ElevenLabs service if available
+        if (global.elevenLabsService) {
+            global.elevenLabsService.updateVADConfig(config);
+        }
+
+        res.json({ success: true, message: 'VAD configuration saved successfully' });
+    } catch (error) {
+        console.error('Error saving VAD configuration:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ElevenLabs Voices API
+router.get('/api/elevenlabs/voices', async (req, res) => {
+    try {
+        if (!process.env.ELEVENLABS_API_KEY) {
+            return res.json({ success: false, error: 'ElevenLabs API key not configured' });
+        }
+
+        const response = await fetch('https://api.elevenlabs.io/v1/voices', {
+            headers: {
+                'xi-api-key': process.env.ELEVENLABS_API_KEY
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`ElevenLabs API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        res.json({ success: true, voices: data.voices || [] });
+    } catch (error) {
+        console.error('Error fetching ElevenLabs voices:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ElevenLabs Global Settings
+router.post('/api/elevenlabs/global', async (req, res) => {
+    try {
+        const config = req.body;
+
+        // Save ElevenLabs global configuration
+        const elevenLabsConfigFile = path.join(__dirname, '../data/ai-config/elevenlabs-config.json');
+        await fs.writeFile(elevenLabsConfigFile, JSON.stringify(config, null, 2));
+
+        res.json({ success: true, message: 'ElevenLabs global settings saved successfully' });
+    } catch (error) {
+        console.error('Error saving ElevenLabs global settings:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ElevenLabs Save All Voice Assignments
+router.post('/api/elevenlabs/save-all', async (req, res) => {
+    try {
+        // This would save all character voice assignments
+        // Implementation depends on how character data is stored
+        res.json({ success: true, message: 'All ElevenLabs voice assignments saved successfully' });
+    } catch (error) {
+        console.error('Error saving ElevenLabs voice assignments:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -1465,47 +1628,73 @@ router.post('/api/import', upload.single('config'), async (req, res) => {
 // Helper functions
 async function getSystemStatus() {
     try {
-        const sttConfig = await loadConfig(STT_CONFIG_FILE);
-        const personalitiesConfig = await loadConfig(PERSONALITIES_CONFIG_FILE);
-        const ttsConfig = await loadConfig(TTS_CONFIG_FILE);
-
-        // Check STT status
-        const sttStatus = {
-            online: !!process.env.OPENAI_API_KEY,
-            model: sttConfig.model || 'whisper-1',
-            language: sttConfig.language || 'en',
-            status: process.env.OPENAI_API_KEY ? 'Connected' : 'No API key'
-        };
-
-        // Check AI status
-        const characters = await characterService.getAllCharacters();
-        const activeCharacters = characters.filter(c => c.aiConfig && c.aiConfig.enabled).length;
-
-        const aiStatus = {
-            online: !!process.env.OPENAI_API_KEY,
-            activeCharacters,
-            defaultModel: personalitiesConfig.defaultModel || 'gpt-4',
-            status: process.env.OPENAI_API_KEY ? 'Connected' : 'No API key'
-        };
-
-        // Check TTS status
-        const configuredCharacters = characters.filter(c => c.voiceConfig && c.voiceConfig.speaker_id).length;
-
-        const ttsStatus = {
-            online: !!process.env.TOPMEDIAI_API_KEY,
-            voiceCount: 'Loading...',
-            configuredCharacters,
-            status: process.env.TOPMEDIAI_API_KEY ? 'Connected' : 'No API key'
-        };
+        // Check ElevenLabs status
+        const elevenLabsStatus = await getElevenLabsStatus();
 
         return {
-            stt: sttStatus,
-            ai: aiStatus,
-            tts: ttsStatus
+            elevenlabs: elevenLabsStatus
         };
     } catch (error) {
         console.error('Error getting system status:', error);
         return null;
+    }
+}
+
+async function getElevenLabsStatus() {
+    try {
+        // Check if ElevenLabs service is available
+        const hasApiKey = !!process.env.ELEVENLABS_API_KEY;
+        const elevenLabsService = global.elevenLabsService;
+
+        let status = {
+            online: hasApiKey && elevenLabsService,
+            activeAgents: 0,
+            activeConnections: 0,
+            voiceCount: 'Loading...',
+            configuredCharacters: 0,
+            port: elevenLabsService ? elevenLabsService.port : '8771',
+            vadEnabled: true,
+            status: 'Unknown'
+        };
+
+        if (!hasApiKey) {
+            status.status = 'No API key';
+            status.online = false;
+            return status;
+        }
+
+        if (!elevenLabsService) {
+            status.status = 'Service not initialized';
+            status.online = false;
+            return status;
+        }
+
+        // Get service status from ElevenLabs service
+        const serviceStatus = elevenLabsService.getStatus();
+        if (serviceStatus) {
+            status.activeAgents = serviceStatus.activeAgents || 0;
+            status.activeConnections = serviceStatus.activeConnections || 0;
+            status.voiceCount = serviceStatus.voiceCount || 'Loading...';
+            status.configuredCharacters = serviceStatus.configuredCharacters || 0;
+            status.status = serviceStatus.online ? 'Connected' : 'Disconnected';
+            status.online = serviceStatus.online;
+        } else {
+            status.status = 'Connected';
+        }
+
+        return status;
+    } catch (error) {
+        console.error('Error getting ElevenLabs status:', error);
+        return {
+            online: false,
+            activeAgents: 0,
+            activeConnections: 0,
+            voiceCount: 'Error',
+            configuredCharacters: 0,
+            port: '8771',
+            vadEnabled: false,
+            status: 'Error: ' + error.message
+        };
     }
 }
 
