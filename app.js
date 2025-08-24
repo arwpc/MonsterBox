@@ -13,10 +13,10 @@ process.env.NODE_NO_WARNINGS = '1';
 
 let express, path, http, https, logger, app, server, httpsServer, port, audioStream, soundController, fs, os, session;
 let videoStream; // <-- Add videoStream variable
-let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, webcamRoutes, voiceRoutes, cleanupRoutes, healthRoutes, authRoutes, sshRoutes, jawAnimationRoutes, aiConfigRoutes, aiManagementRoutes, configRoutes, headTrackingRoutes, chatterpiManagementRoutes;
+let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, webcamRoutes, voiceRoutes, cleanupRoutes, healthRoutes, authRoutes, sshRoutes, aiConfigRoutes, aiManagementRoutes, configRoutes, headTrackingRoutes, chatterpiManagementRoutes;
 let characterService;
 let authMiddleware, rbacMiddleware;
-let jawAnimationSystem;
+
 let chatterPiServiceManager;
 let hardwareServiceManager;
 let serviceConnectionManager;
@@ -108,9 +108,7 @@ try {
     aiConfigRoutes = require('./routes/ai-config');
     aiManagementRoutes = require('./routes/aiManagementRoutes');
 
-    // Import jaw animation routes
-    const jawAnimationRoutesModule = require('./routes/jawAnimationRoutes');
-    jawAnimationRoutes = jawAnimationRoutesModule.router;
+
 
     // Import ChatterPi management routes
     chatterpiManagementRoutes = require('./routes/chatterpiManagementRoutes');
@@ -132,11 +130,7 @@ try {
         });
     }
 
-    // Import jaw animation system only if not in test mode
-    if (process.env.NODE_ENV !== 'test') {
-        const JawAnimationSystem = require('./scripts/jaw-animation/jawAnimationSystem');
-        jawAnimationSystem = new JawAnimationSystem();
-    }
+
 } catch (err) {
     try {
         require('./scripts/logger').error('Fatal error during app initialization:', err);
@@ -324,7 +318,7 @@ app.use('/api/streaming', require('./routes/streamingRoutes'));
 app.use('/api/character-webcam', require('./routes/api/characterWebcamApiRoutes'));
 app.use('/api/motion-tracking', require('./routes/api/motionTrackingApiRoutes'));
 app.use('/api/voice', voiceRoutes);
-app.use('/jaw-animation', jawAnimationRoutes);
+
 app.use('/api/chatterpi', require('./routes/chatterpiRoutes'));
 app.use('/api/hardware', require('./routes/api/hardwareApiRoutes').router);
 app.use('/api/hardware/head-tracking', require('./routes/api/headTrackingApiRoutes'));
@@ -404,7 +398,7 @@ app.get('/test/video-configuration', (req, res) => {
     });
 });
 
-// Test route for jaw animation - handled by jawAnimationRoutes
+
 
 app.use('/cleanup', cleanupRoutes);
 app.use('/health', healthRoutes);
@@ -766,8 +760,7 @@ async function initializeLegacyServices() {
     logger.info('🔄 Falling back to legacy service initialization...');
 
     try {
-        // Initialize jaw animation system
-        await initializeJawAnimationSystem(server, httpsServer);
+
 
         // Initialize ChatterPi services with real-time optimizations
         await initializeChatterPiServices();
@@ -787,57 +780,12 @@ async function initializeLegacyServices() {
     }
 }
 
-// Initialize jaw animation system
-async function initializeJawAnimationSystem(httpServer, httpsServer = null) {
-    try {
-        await jawAnimationSystem.initialize(httpServer);
 
-        // Initialize with HTTPS server if available
-        if (httpsServer) {
-            await jawAnimationSystem.initialize(httpsServer);
-        }
 
-        // Set the jaw animation system instance in the routes
-        const jawAnimationRoutesModule = require('./routes/jawAnimationRoutes');
-        jawAnimationRoutesModule.setJawAnimationSystem(jawAnimationSystem);
-
-        logger.info('Jaw animation system initialized successfully');
-    } catch (error) {
-        logger.error('Failed to initialize jaw animation system:', error);
-        // Don't exit - jaw animation is optional
-    }
-}
-
-// Initialize ChatterPi services with real-time optimizations
+// ChatterPi services initialization removed - jaw animation functionality disabled
 async function initializeChatterPiServices() {
-    try {
-        logger.info('🚀 Initializing ChatterPi services...');
-
-        const SimpleChatterPiManager = require('./services/simpleChatterPiManager');
-        chatterPiServiceManager = new SimpleChatterPiManager();
-
-        const success = await chatterPiServiceManager.initialize();
-
-        if (success) {
-            logger.info('✅ ChatterPi services initialized with real-time optimizations');
-
-            // Make service manager available to routes
-            const chatterpiRoutes = require('./routes/chatterpiRoutes');
-            if (chatterpiRoutes.setServiceManager) {
-                chatterpiRoutes.setServiceManager(chatterPiServiceManager);
-            }
-
-            // Log service status
-            const status = chatterPiServiceManager.getServiceStatus();
-            logger.info('ChatterPi Service Status:', status);
-
-        } else {
-            logger.error('❌ Failed to initialize ChatterPi services');
-        }
-
-    } catch (error) {
-        logger.error('❌ Error initializing ChatterPi services:', error);
-    }
+    logger.info('🚀 ChatterPi services disabled - jaw animation functionality removed');
+    return true;
 }
 
 // Initialize Hardware WebSocket Services

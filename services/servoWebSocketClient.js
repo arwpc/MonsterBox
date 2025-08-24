@@ -199,26 +199,7 @@ class ServoWebSocketClient extends EventEmitter {
         return this.sendRequest('update_servo_config', data);
     }
 
-    // Jaw animation methods
-    async startJawAnimation(servoId, characterId) {
-        return this.sendRequest('jaw_animation_start', {
-            servo_id: servoId,
-            character_id: characterId
-        });
-    }
 
-    async stopJawAnimation(servoId) {
-        return this.sendRequest('jaw_animation_stop', {
-            servo_id: servoId
-        });
-    }
-
-    async updateJawAnimation(servoId, volume) {
-        return this.sendRequest('jaw_animation_update', {
-            servo_id: servoId,
-            volume: volume
-        });
-    }
 
     disconnect() {
         if (this.ws) {

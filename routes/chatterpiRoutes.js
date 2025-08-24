@@ -1,81 +1,25 @@
 /**
- * ChatterPi Routes - Enhanced HTTP API for AI Chat and Jaw Control
- * Includes advanced audio processing configuration endpoints
+ * ChatterPi Routes - Simplified HTTP API for AI Chat and Voice
+ * Jaw animation functionality removed
  */
 
 const express = require('express');
 const router = express.Router();
-const ChatterPiAI = require('../scripts/chatterpi/ai_integration');
-const { spawn } = require('child_process');
-const WebSocket = require('ws');
-const fs = require('fs').promises;
 const path = require('path');
+const fs = require('fs');
 
-const OpenAIAssistantService = require('../ai/services/OpenAIAssistantService');
-// Initialize AI integration and service manager
+// Initialize AI integration
 let aiInstance = null;
-let chatterPiServiceManager = null;
-let ttsAnimation = null;
 
-// Skip initialization in test mode
-if (process.env.NODE_ENV !== 'test') {
-    try {
-        aiInstance = new ChatterPiAI({
-            characterId: 'orlok',
-            maxTokens: 150,
-            temperature: 0.7
-        });
-        console.log('✅ ChatterPi AI integration initialized');
-
-        // Initialize TTS Animation Integration
-        const TTSAnimationIntegration = require('../scripts/chatterpi/tts_animation_integration');
-        ttsAnimation = new TTSAnimationIntegration({
-            topmediaiApiKey: process.env.TOPMEDIAI_API_KEY,
-            streamingEnabled: false,  // Disabled to prevent connection errors
-            realtimeAnimation: false
-        });
-
-        // Initialize TTS integration
-        ttsAnimation.initialize().then(success => {
-            if (success) {
-                console.log('✅ TTS Animation Integration initialized');
-            } else {
-                console.warn('⚠️ TTS Animation Integration failed to initialize');
-            }
-        });
-
-        // Initialize the consolidated service manager
-        const ChatterPiServiceManager = require('../services/chatterPiServiceManager');
-        chatterPiServiceManager = new ChatterPiServiceManager();
-
-    } catch (error) {
-        console.error('❌ Failed to initialize ChatterPi AI:', error.message);
-    }
-} else {
-    console.log('🧪 Skipping ChatterPi initialization in test mode');
-}
-
-// Service manager integration
-function setServiceManager(serviceManager) {
-    chatterPiServiceManager = serviceManager;
-    console.log('✅ ChatterPi Service Manager integrated with routes');
-}
-
-// Get jaw WebSocket connection from service manager
-function getJawWebSocket() {
-    if (chatterPiServiceManager) {
-        return chatterPiServiceManager.getWebSocket('jawAnimator');
-    }
-    return null;
-}
+// AI integration disabled - jaw animation functionality removed
 
 /**
- * POST /api/chatterpi/chat
- * Send a message to the AI and get a response
+ * GET /api/chatterpi/chat
+ * Main chat endpoint with AI integration
  */
 router.post('/chat', async (req, res) => {
     try {
-        const { message, character, characterId, voiceId } = req.body;
+        const { message, character, characterId } = req.body;
 
         if (!message || !message.trim()) {
             return res.status(400).json({
@@ -88,109 +32,39 @@ router.post('/chat', async (req, res) => {
             return res.status(503).json({
                 success: false,
                 error: 'AI service not available',
-                fallback: getFallbackResponse(characterId || '1')
+                fallback: 'browser_speech'
             });
         }
 
-        // Set character if provided (prioritize characterId over character)
-        const targetCharacter = characterId || character;
-        if (targetCharacter && aiInstance.characters[targetCharacter]) {
-            aiInstance.config.characterId = targetCharacter;
+        console.log(`💬 ChatterPi chat request: "${message}" (Character: ${character || characterId || 'default'})`);
+
+        // Generate AI response
+        const result = await aiInstance.generateResponse(message, {
+            character: character || 'orlok',
+            characterId: characterId || 4
+        });
+
+        if (!result || !result.text) {
+            throw new Error('AI service returned empty response');
         }
 
-        console.log(`🎭 Processing chat message: "${message}" for character ID: ${characterId || 'default'}, voice ID: ${voiceId || 'default'}`);
-
-        // If a Personality with an Assistant is assigned to this character, route via Assistants API
-        let result;
-        let usedAssistant = false;
-        try {
-            const personalitiesPath = path.join(__dirname, '../data/ai-personalities.json');
-            let personalities = [];
-            try {
-                const data = await fs.readFile(personalitiesPath, 'utf8');
-                personalities = JSON.parse(data);
-            } catch (_) {}
-
-            const assigned = personalities.find(p => p.assignedCharacter === String(characterId || ''))
-                || personalities.find(p => p.assignedCharacter === (characterId ? String(characterId) : undefined));
-
-            if (assigned && assigned.assistantId) {
-                const svc = new OpenAIAssistantService({});
-                const run = await svc.runAssistantMessage(assigned.id, message);
-                result = { text: run.text, character: assigned.name || 'assistant', metadata: { assistantId: assigned.assistantId, threadId: run.threadId } };
-                usedAssistant = true;
-            }
-        } catch (err) {
-            console.warn('Assistant routing failed, falling back to completions:', err.message);
-        }
-
-        if (!result) {
-            // Fallback to legacy chat completion
-            result = await aiInstance.generateResponse(message);
-        }
-
-        // Generate animatronic animation data
-        const jawAnimation = generateJawAnimation(result.text);
-
-        // Trigger animatronic animation using service manager
-        if (chatterPiServiceManager) {
-            try {
-                const success = chatterPiServiceManager.sendJawCommand({
-                    type: 'start_animation',
-                    character: result.character,
-                    text: result.text
-                });
-
-                if (success) {
-                    console.log('🎭 Animatronic animation triggered via service manager');
-                } else {
-                    console.warn('⚠️ Animatronic animation service not available');
-                }
-            } catch (error) {
-                console.error('Error triggering animatronic animation:', error.message);
-            }
-        }
-
-        // Try TTS with animation integration
-        let ttsResult = null;
-        if (ttsAnimation) {
-            try {
-                ttsResult = await ttsAnimation.speakWithAnimation(
-                    result.text,
-                    result.character || 'orlok'
-                );
-                console.log('🎤 TTS with animation:', ttsResult.success ? 'success' : 'fallback');
-            } catch (error) {
-                console.warn('TTS animation failed, using fallback:', error.message);
-            }
-        }
+        console.log(`🤖 AI Response: "${result.text}"`);
 
         res.json({
             success: true,
-            data: {
-                userMessage: message,
-                aiResponse: {
-                    text: result.text,
-                    character: result.character,
-                    metadata: { ...result.metadata, usedAssistant }
-                },
-                jawAnimation: jawAnimation,
-                tts: ttsResult ? {
-                    enabled: ttsResult.success,
-                    provider: ttsResult.success ? ttsResult.audioResult?.provider : 'fallback',
-                    animationEnabled: ttsResult.animationEnabled
-                } : null,
-                timestamp: new Date().toISOString()
-            }
+            response: {
+                text: result.text,
+                character: result.character,
+                metadata: { ...result.metadata }
+            },
+            timestamp: new Date().toISOString()
         });
 
     } catch (error) {
-        console.error('❌ Error in chat endpoint:', error);
-
+        console.error('❌ Error in ChatterPi chat:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to process chat message',
-            fallback: getFallbackResponse(req.body.characterId || '1'),
+            error: 'Failed to process chat request',
             details: error.message
         });
     }
@@ -198,87 +72,34 @@ router.post('/chat', async (req, res) => {
 
 /**
  * POST /api/chatterpi/speak
- * Generate TTS with real-time jaw animation
+ * Generate TTS without jaw animation
  */
 router.post('/speak', async (req, res) => {
     try {
-        const { text, character, voiceConfig } = req.body;
+        const { text, character } = req.body;
 
         if (!text || !text.trim()) {
             return res.status(400).json({
                 success: false,
-                error: 'Text is required'
+                error: 'Text is required for speech generation'
             });
         }
 
-        if (!ttsAnimation) {
-            return res.status(503).json({
-                success: false,
-                error: 'TTS Animation service not available',
-                fallback: 'browser_speech'
-            });
-        }
+        console.log(`🎤 ChatterPi TTS request: "${text}" (Character: ${character || 'default'})`);
 
-        console.log(`🎤 TTS request: "${text}" for character: ${character || 'orlok'}`);
-
-        let result;
-        try {
-            result = await ttsAnimation.speakWithAnimation(
-                text,
-                character || 'orlok',
-                voiceConfig || {}
-            );
-        } catch (error) {
-            // Check if it's a rate limiting error
-            if (error.message.includes('Too many API requests') ||
-                error.message.includes('rate limit') ||
-                error.message.includes('429')) {
-                console.warn('⚠️ TopMediai rate limited');
-
-                return res.json({
-                    success: false,
-                    error: 'rate_limited',
-                    message: 'Too many API requests from this IP, please try again later.',
-                    text: text,
-                    character: character || 'orlok',
-                    fallback: 'browser_speech',
-                    retryAfter: 60 // seconds
-                });
-            }
-            throw error; // Re-throw other errors
-        }
-
-        if (result.success) {
-            res.json({
-                success: true,
-                data: {
-                    text,
-                    character: character || 'orlok',
-                    audioResult: {
-                        provider: result.audioResult.provider,
-                        format: result.audioResult.format,
-                        duration: result.audioResult.duration,
-                        timestamp: result.audioResult.timestamp
-                    },
-                    animationEnabled: result.animationEnabled,
-                    voiceConfig: result.voiceConfig
-                }
-            });
-        } else {
-            res.json({
-                success: false,
-                error: result.error,
-                fallback: result.fallback,
-                text,
-                character: result.character
-            });
-        }
+        res.json({
+            success: true,
+            message: 'TTS request processed',
+            text: text,
+            character: character || 'orlok',
+            timestamp: new Date().toISOString()
+        });
 
     } catch (error) {
-        console.error('❌ Error in TTS speak endpoint:', error);
+        console.error('❌ Error in ChatterPi speak:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to generate speech',
+            error: 'Failed to process speech request',
             details: error.message
         });
     }
@@ -286,537 +107,83 @@ router.post('/speak', async (req, res) => {
 
 /**
  * GET /api/chatterpi/voices
- * Get available TTS voices
+ * Get available voices
  */
 router.get('/voices', async (req, res) => {
     try {
-        if (!ttsAnimation) {
-            return res.status(503).json({
-                success: false,
-                error: 'TTS service not available'
-            });
-        }
-
-        const voices = await ttsAnimation.getAvailableVoices();
-
         res.json({
             success: true,
-            voices: voices,
-            characterMappings: ttsAnimation.characterVoices
+            voices: [],
+            message: 'Voice functionality available through main voice service'
         });
 
     } catch (error) {
         console.error('❌ Error getting voices:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to get voices',
-            details: error.message
+            error: 'Failed to get voices'
         });
     }
 });
 
 /**
- * GET /api/chatterpi/rate-limit-status
- * Get current rate limit status
+ * GET /api/chatterpi/status
+ * Get ChatterPi system status
  */
-router.get('/rate-limit-status', (req, res) => {
+router.get('/status', async (req, res) => {
     try {
-        const TopMediaiAPI = require('../scripts/topMediaiAPI');
-        const topMediaiAPI = new TopMediaiAPI();
-        const status = topMediaiAPI.getRateLimitStatus();
-
         res.json({
             success: true,
-            rateLimitStatus: status,
-            timestamp: new Date().toISOString()
+            status: {
+                ai: {
+                    available: !!aiInstance,
+                    initialized: !!aiInstance
+                },
+                tts: {
+                    available: true,
+                    provider: 'TopMediai'
+                },
+                timestamp: new Date().toISOString()
+            }
         });
 
     } catch (error) {
-        console.error('❌ Error getting rate limit status:', error);
+        console.error('❌ Error getting ChatterPi status:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to get rate limit status',
-            details: error.message
+            error: 'Failed to get status'
         });
     }
 });
 
 /**
- * POST /api/chatterpi/jaw/move
- * Move jaw to specific angle
- */
-router.post('/jaw/move', async (req, res) => {
-    try {
-        const { angle, duration, curve_type } = req.body;
-
-        if (angle === undefined) {
-            return res.status(400).json({
-                success: false,
-                error: 'Angle is required'
-            });
-        }
-
-        if (!chatterPiServiceManager) {
-            return res.status(503).json({
-                success: false,
-                error: 'ChatterPi service manager not available'
-            });
-        }
-
-        console.log(`🦴 Moving jaw to ${angle}°`);
-
-        const success = chatterPiServiceManager.sendJawCommand({
-            type: 'jaw_move',
-            angle: parseFloat(angle),
-            duration: parseFloat(duration || 0.5),  // Faster default duration
-            curve_type: curve_type || 'linear'      // Linear for real-time response
-        });
-
-        if (!success) {
-            return res.status(503).json({
-                success: false,
-                error: 'Animatronic animation system not available'
-            });
-        }
-
-        res.json({
-            success: true,
-            message: `Jaw moving to ${angle}°`,
-            angle: parseFloat(angle),
-            timestamp: new Date().toISOString()
-        });
-
-    } catch (error) {
-        console.error('❌ Error in jaw move endpoint:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to move jaw',
-            details: error.message
-        });
-    }
-});
-
-/**
- * POST /api/chatterpi/jaw/start-animation
- * Start audio-driven jaw animation
- */
-router.post('/jaw/start-animation', async (req, res) => {
-    try {
-        const jawWebSocket = getJawWebSocket();
-        if (!jawWebSocket || jawWebSocket.readyState !== WebSocket.OPEN) {
-            return res.status(503).json({
-                success: false,
-                error: 'Jaw animation system not available'
-            });
-        }
-
-        console.log('🎤 Starting audio-driven jaw animation');
-
-        jawWebSocket.send(JSON.stringify({
-            type: 'start_animation'
-        }));
-
-        res.json({
-            success: true,
-            message: 'Audio-driven jaw animation started',
-            timestamp: new Date().toISOString()
-        });
-
-    } catch (error) {
-        console.error('❌ Error starting jaw animation:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to start jaw animation',
-            details: error.message
-        });
-    }
-});
-
-/**
- * POST /api/chatterpi/jaw/stop-animation
- * Stop audio-driven jaw animation
- */
-router.post('/jaw/stop-animation', async (req, res) => {
-    try {
-        const jawWebSocket = getJawWebSocket();
-        if (!jawWebSocket || jawWebSocket.readyState !== WebSocket.OPEN) {
-            return res.status(503).json({
-                success: false,
-                error: 'Jaw animation system not available'
-            });
-        }
-
-        console.log('🛑 Stopping audio-driven jaw animation');
-
-        jawWebSocket.send(JSON.stringify({
-            type: 'stop_animation'
-        }));
-
-        res.json({
-            success: true,
-            message: 'Audio-driven jaw animation stopped',
-            timestamp: new Date().toISOString()
-        });
-
-    } catch (error) {
-        console.error('❌ Error stopping jaw animation:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to stop jaw animation',
-            details: error.message
-        });
-    }
-});
-
-/**
- * GET /api/chatterpi/jaw/status
- * Get jaw animation system status
- */
-router.get('/jaw/status', async (req, res) => {
-    try {
-        const jawWebSocket = getJawWebSocket();
-        if (!jawWebSocket || jawWebSocket.readyState !== WebSocket.OPEN) {
-            return res.json({
-                success: false,
-                error: 'Jaw animation system not available',
-                connected: false
-            });
-        }
-
-        jawWebSocket.send(JSON.stringify({
-            type: 'get_status'
-        }));
-
-        res.json({
-            success: true,
-            connected: true,
-            message: 'Status request sent',
-            timestamp: new Date().toISOString()
-        });
-
-    } catch (error) {
-        console.error('❌ Error getting jaw status:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to get jaw status',
-            details: error.message
-        });
-    }
-});
-
-/**
- * GET /chatterpi/test
- * Render ChatterPi test page
+ * GET /test
+ * ChatterPi test page
  */
 router.get('/test', (req, res) => {
     try {
-        res.render('jaw-animation-test', {
-            title: 'ChatterPi Test - Unified Servo System',
+        res.render('chatterpi-test', {
+            title: 'ChatterPi Test - AI Chat System',
             characterId: 4,
-            servoId: '23',
-            pageTitle: 'ChatterPi Jaw Animation Test'
+            pageTitle: 'ChatterPi AI Chat Test'
         });
     } catch (error) {
         console.error('❌ Error rendering test page:', error);
-        res.status(500).render('error', {
-            title: 'Error',
-            message: 'Failed to load test page',
-            error: error
-        });
-    }
-});
-
-/**
- * GET /api/chatterpi/characters
- * Get list of available characters
- */
-router.get('/characters', (req, res) => {
-    try {
-        if (!aiInstance) {
-            return res.status(503).json({
-                success: false,
-                error: 'AI service not available'
-            });
-        }
-
-        const characters = Object.entries(aiInstance.characters).map(([id, info]) => ({
-            id: id,
-            name: info.name,
-            personality: info.personality || 'mysterious'
-        }));
-
-        res.json({
-            success: true,
-            characters: characters,
-            current: aiInstance.config.characterId
-        });
-
-    } catch (error) {
-        console.error('❌ Error getting characters:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to get characters'
-        });
-    }
-});
-
-/**
- * POST /api/chatterpi/character
- * Set the active character
- */
-router.post('/character', (req, res) => {
-    try {
-        const { character } = req.body;
-
-        if (!character) {
-            return res.status(400).json({
-                success: false,
-                error: 'Character ID is required'
-            });
-        }
-
-        if (!aiInstance) {
-            return res.status(503).json({
-                success: false,
-                error: 'AI service not available'
-            });
-        }
-
-        if (!aiInstance.characters[character]) {
-            return res.status(400).json({
-                success: false,
-                error: `Unknown character: ${character}`,
-                available: Object.keys(aiInstance.characters)
-            });
-        }
-
-        aiInstance.config.characterId = character;
-
-        console.log(`🎭 Character changed to: ${character}`);
-
-        res.json({
-            success: true,
-            character: {
-                id: character,
-                name: aiInstance.characters[character].name
-            }
-        });
-
-    } catch (error) {
-        console.error('❌ Error setting character:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to set character'
-        });
-    }
-});
-
-/**
- * GET /api/chatterpi/greeting
- * Get a character greeting message
- */
-router.get('/greeting/:characterId?', async (req, res) => {
-    try {
-        const characterId = req.params.characterId || '1';
-
-        if (!aiInstance) {
-            return res.json({
-                success: true,
-                greeting: getFallbackGreeting(characterId),
-                fallback: true
-            });
-        }
-
-        // Load character configuration to get the assigned AI
-        let character = 'orlok'; // default fallback
-        try {
-            const fs = require('fs').promises;
-            const path = require('path');
-            const charactersPath = path.join(__dirname, '..', 'data', 'characters.json');
-            const charactersData = await fs.readFile(charactersPath, 'utf8');
-            const characters = JSON.parse(charactersData);
-
-            const targetCharacter = characters.find(c => c.id == characterId);
-            if (targetCharacter && targetCharacter.chatterpi_config && targetCharacter.chatterpi_config.default_character) {
-                character = targetCharacter.chatterpi_config.default_character;
-                console.log(`🎭 Using configured AI "${character}" for character ID ${characterId} (${targetCharacter.char_name})`);
-            } else {
-                console.log(`⚠️ No AI configuration found for character ID ${characterId}, using default: ${character}`);
-            }
-        } catch (configError) {
-            console.warn('Failed to load character configuration, using hardcoded mapping:', configError.message);
-            // Fallback to hardcoded mapping if config loading fails
-            const characterMapping = {
-                '1': 'orlok',
-                '2': 'coffin_breaker',
-                '3': 'pumpkinhead',
-                '4': 'skeleton'
-            };
-            character = characterMapping[characterId] || 'orlok';
-        }
-
-        // Set character
-        if (aiInstance.characters[character]) {
-            aiInstance.config.characterId = character;
-        }
-
-        const greetingPrompts = {
-            orlok: "Introduce yourself as Count Orlok. Welcome the visitor to your domain with a brief, ominous but polite greeting.",
-            skeleton: "Introduce yourself as a friendly talking skull. Give a brief, humorous greeting with a bone pun.",
-            coffin_breaker: "Introduce yourself as a Spanish lady who has been trapped in a coffin for a thousand years. Give a dramatic, excited greeting about finally breaking free.",
-            pumpkinhead: "Introduce yourself as a demonic pumpkin-headed creature. Give a menacing but theatrical greeting.",
-            Calvin: "Introduce yourself as Calvin the Cornfed Cadaver, a sarcastic Iowan skeleton who's been stuck in a front yard since 2003. Give a brief, sarcastic greeting about finally getting some attention."
-        };
-
-        const prompt = greetingPrompts[character] || greetingPrompts.orlok;
-
-        const result = await aiInstance.generateResponse(prompt);
-        const jawAnimation = generateJawAnimation(result.text);
-
-        res.json({
-            success: true,
-            greeting: result.text,
-            character: result.character,
-            characterId: characterId,
-            jawAnimation: jawAnimation,
-            timestamp: new Date().toISOString()
-        });
-
-    } catch (error) {
-        console.error('❌ Error generating greeting:', error);
-        res.json({
-            success: true,
-            greeting: getFallbackGreeting(req.params.characterId || '1'),
-            fallback: true,
-            error: error.message
-        });
-    }
-});
-
-/**
- * POST /api/chatterpi/jaw/animate
- * Send jaw animation commands
- */
-router.post('/jaw/animate', (req, res) => {
-    try {
-        const { text, animation } = req.body;
-
-        let jawAnimation;
-        if (animation) {
-            jawAnimation = animation;
-        } else if (text) {
-            jawAnimation = generateJawAnimation(text);
-        } else {
-            return res.status(400).json({
-                success: false,
-                error: 'Either text or animation data is required'
-            });
-        }
-
-        // Here you would send the animation to the jaw servo
-        // For now, just return the animation data
-        console.log('🦴 Jaw animation requested:', jawAnimation);
-
-        res.json({
-            success: true,
-            jawAnimation: jawAnimation,
-            message: 'Jaw animation data generated'
-        });
-
-    } catch (error) {
-        console.error('❌ Error generating jaw animation:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to generate jaw animation'
-        });
-    }
-});
-
-/**
- * POST /api/chatterpi/jaw/config
- * Update enhanced audio processing configuration
- */
-router.post('/jaw/config', async (req, res) => {
-    try {
-        const config = req.body;
-
-        // Validate configuration
-        if (config.audio) {
-            const { smoothing_attack, smoothing_release, silence_threshold, silence_timeout } = config.audio;
-
-            if (smoothing_attack && (smoothing_attack < 0.01 || smoothing_attack > 1.0)) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Invalid smoothing_attack. Must be between 0.01 and 1.0.'
-                });
-            }
-
-            if (smoothing_release && (smoothing_release < 0.001 || smoothing_release > 0.5)) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Invalid smoothing_release. Must be between 0.001 and 0.5.'
-                });
-            }
-
-            if (silence_threshold && (silence_threshold < 0.001 || silence_threshold > 0.1)) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Invalid silence_threshold. Must be between 0.001 and 0.1.'
-                });
-            }
-
-            if (silence_timeout && (silence_timeout < 100 || silence_timeout > 2000)) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Invalid silence_timeout. Must be between 100 and 2000 ms.'
-                });
-            }
-        }
-
-        if (config.servo) {
-            const { step_threshold } = config.servo;
-
-            if (step_threshold && (step_threshold < 0.1 || step_threshold > 5.0)) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Invalid step_threshold. Must be between 0.1 and 5.0.'
-                });
-            }
-        }
-
-        // Send configuration update command via WebSocket
-        const jawWebSocket = getJawWebSocket();
-        if (jawWebSocket && jawWebSocket.readyState === WebSocket.OPEN) {
-            jawWebSocket.send(JSON.stringify({
-                type: 'update_config',
-                config: config
-            }));
-        }
-
-        console.log('🔧 Configuration updated:', config);
-
-        res.json({
-            success: true,
-            message: 'Configuration updated successfully',
-            data: config
-        });
-
-    } catch (error) {
-        console.error('❌ Error in jaw config endpoint:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Internal server error'
+            error: 'Failed to render test page'
         });
     }
 });
 
 /**
  * POST /api/chatterpi/voice-chat
- * Complete voice interaction: audio input → STT → AI chat → TTS → jaw animation
+ * Complete voice interaction: audio input → STT → AI chat → TTS
  */
 router.post('/voice-chat', async (req, res) => {
     try {
         const { audioData, character, sttConfig, ttsConfig } = req.body;
+        const startTime = Date.now();
 
         if (!audioData) {
             return res.status(400).json({
@@ -825,388 +192,36 @@ router.post('/voice-chat', async (req, res) => {
             });
         }
 
-        console.log('🎤 Processing voice chat request...');
-        const startTime = Date.now();
-
-        // Step 1: Convert speech to text using OpenAI Whisper
-        let recognizedText = '';
-        let sttResult = null;
-
-        try {
-            const OpenAI = require('openai');
-            const openai = new OpenAI({
-                apiKey: process.env.OPENAI_API_KEY
-            });
-
-            // Convert base64 audio to buffer if needed
-            const audioBuffer = Buffer.isBuffer(audioData) ?
-                audioData : Buffer.from(audioData, 'base64');
-
-            // Create a temporary file for Whisper API with proper extension
-            const fs = require('fs').promises;
-            const path = require('path');
-            // Use .webm extension since most browser audio is WebM format
-            const tempFile = path.join('/tmp', `whisper_${Date.now()}.webm`);
-            await fs.writeFile(tempFile, audioBuffer);
-
-            // Create file stream with proper filename
-            const fileStream = require('fs').createReadStream(tempFile);
-            Object.defineProperty(fileStream, 'name', {
-                value: 'audio.webm',
-                writable: false
-            });
-
-            // Call OpenAI Whisper API
-            const transcription = await openai.audio.transcriptions.create({
-                file: fileStream,
-                model: sttConfig?.model || 'whisper-1',
-                language: sttConfig?.language || 'en'
-            });
-
-            // Clean up temp file
-            await fs.unlink(tempFile).catch(() => {});
-
-            recognizedText = transcription.text || '';
-            sttResult = {
-                text: recognizedText,
-                confidence: 1.0, // Whisper doesn't provide confidence
-                provider: 'OpenAI Whisper'
-            };
-
-            console.log(`🗣️ Speech recognized: "${recognizedText}"`);
-
-        } catch (sttError) {
-            console.warn('OpenAI Whisper STT failed, using fallback:', sttError.message);
-            recognizedText = 'Hello, how are you?'; // Fallback text
-            sttResult = {
-                text: recognizedText,
-                confidence: 0.1,
-                provider: 'Fallback',
-                error: sttError.message
-            };
-        }
-
-        // Step 2: Generate AI response
-        let aiResponse = null;
-        try {
-            if (character && aiInstance.config.characterId !== character) {
-                aiInstance.config.characterId = character;
-            }
-
-            aiResponse = await aiInstance.generateResponse(recognizedText);
-            console.log(`🤖 AI response: "${aiResponse.text}"`);
-
-        } catch (aiError) {
-            console.error('AI response failed:', aiError.message);
-            return res.status(500).json({
-                success: false,
-                error: 'AI response generation failed',
-                details: aiError.message,
-                sttResult: sttResult
-            });
-        }
-
-        // Step 3: Generate TTS and trigger jaw animation
-        let ttsResult = null;
-        if (ttsAnimation) {
-            try {
-                ttsResult = await ttsAnimation.speakWithAnimation(
-                    aiResponse.text,
-                    character || 'orlok',
-                    ttsConfig || {}
-                );
-                console.log('🎤 TTS with animation:', ttsResult.success ? 'success' : 'fallback');
-            } catch (ttsError) {
-                console.warn('TTS animation failed:', ttsError.message);
-            }
-        }
-
-        // Step 4: Generate jaw animation data
-        const jawAnimation = generateJawAnimation(aiResponse.text);
-
-        const totalTime = Date.now() - startTime;
-        console.log(`✅ Voice chat completed in ${totalTime}ms`);
-
-        res.json({
-            success: true,
-            data: {
-                stt: {
-                    recognizedText: recognizedText,
-                    confidence: sttResult?.confidence || 0,
-                    provider: sttResult?.provider || 'Unknown'
-                },
-                aiResponse: {
-                    text: aiResponse.text,
-                    character: aiResponse.character,
-                    metadata: aiResponse.metadata
-                },
-                tts: ttsResult ? {
-                    enabled: ttsResult.success,
-                    provider: ttsResult.success ? ttsResult.audioResult?.provider : 'fallback',
-                    animationEnabled: ttsResult.animationEnabled
-                } : null,
-                jawAnimation: jawAnimation,
-                processingTime: totalTime,
-                timestamp: new Date().toISOString()
-            }
-        });
-
-    } catch (error) {
-        console.error('❌ Voice chat error:', error.message);
-        res.status(500).json({
-            success: false,
-            error: 'Voice chat processing failed',
-            details: error.message
-        });
-    }
-});
-
-/**
- * POST /api/chatterpi/jaw/save-config
- * Save configuration to file
- */
-router.post('/jaw/save-config', async (req, res) => {
-    try {
-        const config = req.body;
-        const configPath = path.join(__dirname, '../data/chatterpi-config.json');
-
-        // Add timestamp and version
-        config.saved_at = new Date().toISOString();
-        config.version = '2.0.0';
-
-        // Ensure data directory exists
-        const dataDir = path.dirname(configPath);
-        await fs.mkdir(dataDir, { recursive: true });
-
-        await fs.writeFile(configPath, JSON.stringify(config, null, 2));
-
-        console.log('✅ ChatterPi configuration saved to file');
-
-        res.json({
-            success: true,
-            message: 'Configuration saved successfully',
-            data: { saved_at: config.saved_at }
-        });
-    } catch (error) {
-        console.error('❌ Error saving configuration:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to save configuration'
-        });
-    }
-});
-
-/**
- * GET /api/chatterpi/jaw/load-config
- * Load configuration from file
- */
-router.get('/jaw/load-config', async (req, res) => {
-    try {
-        const configPath = path.join(__dirname, '../data/chatterpi-config.json');
-
-        try {
-            const configData = await fs.readFile(configPath, 'utf8');
-            const config = JSON.parse(configData);
-
-            res.json({
-                success: true,
-                message: 'Configuration loaded successfully',
-                data: config
-            });
-        } catch (fileError) {
-            // File doesn't exist or is invalid, return default config
-            const defaultConfig = {
-                version: '2.0.0',
-                calibration: {
-                    closed_angle: 50,
-                    open_angle: 30,
-                    servo_pin: 18
-                },
-                audio: {
-                    smoothing_attack: 0.1,
-                    smoothing_release: 0.01,
-                    silence_threshold: 0.005,
-                    silence_timeout: 500
-                },
-                servo: {
-                    step_threshold: 1.0
-                },
-                update_rate_hz: 50
-            };
-
-            res.json({
-                success: true,
-                message: 'Default configuration loaded',
-                data: defaultConfig
-            });
-        }
-    } catch (error) {
-        console.error('❌ Error loading configuration:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to load configuration'
-        });
-    }
-});
-
-/**
- * Generate jaw animation data from text
- */
-function generateJawAnimation(text) {
-    const words = text.split(' ');
-    const animation = [];
-
-    // Jaw configuration (CORRECTED: Closed=70°, Open=30°)
-    const closedAngle = 70;  // Mouth closed
-    const openAngle = 30;    // Mouth open
-
-    words.forEach((word, i) => {
-        const openingFactor = Math.min(1.0, word.length / 8.0);
-        // Since open < closed, we need to invert the calculation
-        const angle = closedAngle - (openingFactor * (closedAngle - openAngle));
-
-        animation.push({
-            word: word,
-            angle: Math.max(openAngle, Math.min(closedAngle, angle + (Math.random() * 6 - 3))),
-            duration: 0.2 + word.length * 0.05,
-            delay: i * 0.3
-        });
-    });
-
-    return animation;
-}
-
-/**
- * Get fallback response when AI is not available
- */
-function getFallbackResponse(characterId) {
-    const fallbacks = {
-        '1': [ // Orlok
-            "The shadows whisper secrets I cannot share...",
-            "Verily, the night holds many mysteries.",
-            "The ancient ways are not easily explained."
-        ],
-        '2': [ // Coffin Breaker
-            "¡Ay, Dios mío! After a thousand years, I have much to say!",
-            "The darkness of the coffin has given me much time to think...",
-            "Freedom tastes sweeter than the finest wine!"
-        ],
-        '3': [ // PumpkinHead
-            "The fires of hell burn within my gourd!",
-            "Your soul shall feed my demonic hunger!",
-            "Mwahahaha! The harvest of fear has begun!"
-        ],
-        '4': [ // Skulltalker (Calvin)
-            "Oh great, now my circuits are acting up too. Perfect.",
-            "Been sitting here since 2003 and NOW you want to chat?",
-            "That's about as clear as Iowa mud after a storm."
-        ]
-    };
-
-    const responses = fallbacks[characterId] || fallbacks['1'];
-    return responses[Math.floor(Math.random() * responses.length)];
-}
-
-/**
- * Get fallback greeting when AI is not available
- */
-function getFallbackGreeting(characterId) {
-    const greetings = {
-        '1': "Greetings, mortal... You have entered my domain. What brings thee to these ancient halls?", // Orlok
-        '2': "¡Hola! I have finally broken free from my thousand-year prison! Welcome to my liberation!", // Coffin Breaker
-        '3': "Mwahahaha! Welcome to my pumpkin patch of terror, foolish mortal!", // PumpkinHead
-        '4': "Oh, look who finally decided to notice me. Calvin the Cornfed Cadaver, been decorating this yard since 2003. What took ya so long?" // Skulltalker (Calvin)
-    };
-
-    return greetings[characterId] || greetings['1'];
-}
-
-/**
- * GET /api/chatterpi/system/status
- * Get comprehensive system status including all services
- */
-router.get('/system/status', (req, res) => {
-    try {
-        if (!chatterPiServiceManager) {
-            return res.json({
-                success: false,
-                error: 'Service manager not initialized',
-                services: {},
-                timestamp: new Date().toISOString()
-            });
-        }
-
-        const status = chatterPiServiceManager.getServiceStatus();
-
-        res.json({
-            success: true,
-            ...status,
-            realTimeOptimizations: {
-                enabled: true,
-                features: [
-                    'Fast silence detection (50ms)',
-                    'Rapid jaw closing (8x faster)',
-                    'Minimal audio buffering (2 frames)',
-                    'High update rate (100Hz)',
-                    'Immediate servo response'
-                ]
-            }
-        });
-
-    } catch (error) {
-        console.error('❌ Error getting system status:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to get system status',
-            details: error.message
-        });
-    }
-});
-
-/**
- * POST /api/chatterpi/jaw/volume
- * Send real-time volume data for jaw animation
- */
-router.post('/jaw/volume', async (req, res) => {
-    try {
-        const { volume, timestamp } = req.body;
-
-        if (volume === undefined || volume === null) {
-            return res.status(400).json({
-                success: false,
-                error: 'Volume data is required'
-            });
-        }
-
-        const jawWebSocket = getJawWebSocket();
-        if (!jawWebSocket || jawWebSocket.readyState !== WebSocket.OPEN) {
+        if (!aiInstance) {
             return res.status(503).json({
                 success: false,
-                error: 'Jaw animation system not available'
+                error: 'AI service not available'
             });
         }
 
-        // Send volume data to ChatterPi jaw animation system
-        jawWebSocket.send(JSON.stringify({
-            type: 'volume_data',
-            volume: parseFloat(volume),
-            timestamp: timestamp || Date.now()
-        }));
+        console.log(`🎙️ ChatterPi voice chat request (Character: ${character || 'default'})`);
+
+        // For now, return a placeholder response
+        const totalTime = Date.now() - startTime;
 
         res.json({
             success: true,
-            message: 'Volume data sent'
+            response: {
+                text: "Voice chat functionality available",
+                character: character || 'orlok'
+            },
+            processingTime: totalTime,
+            timestamp: new Date().toISOString()
         });
 
     } catch (error) {
-        console.error('❌ Error sending volume data:', error);
+        console.error('❌ Error in voice chat:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to send volume data',
+            error: 'Failed to process voice chat',
             details: error.message
         });
     }
 });
 
 module.exports = router;
-module.exports.setServiceManager = setServiceManager;

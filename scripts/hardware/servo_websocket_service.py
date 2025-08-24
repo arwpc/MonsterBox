@@ -63,23 +63,10 @@ class ServoState:
     pulse_width: int
     control_active: bool = False
 
-@dataclass
-class JawAnimationConfig:
-    """Jaw animation specific configuration"""
-    servo_id: str
-    closed_angle: float = 50.0  # ChatterPi closed position
-    open_angle: float = 30.0    # ChatterPi open position
-    smoothing_factor: float = 0.8
-    volume_threshold: float = 0.02
-    attack_time: float = 0.05
-    release_time: float = 0.15
-    sensitivity: float = 1.5
-    step_threshold: float = 0.5
-    idle_timeout: float = 2.0
-    enabled: bool = True
+
 
 class ServoWebSocketService(BaseHardwareService):
-    """Unified WebSocket service for servo control and jaw animation"""
+    """WebSocket service for servo control"""
 
     def __init__(self, port: int = 8773, host: str = "0.0.0.0"):
         super().__init__("servo_service", "servo", port, host)
