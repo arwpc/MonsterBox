@@ -305,8 +305,11 @@ class OpenAIAssistantService {
     return data;
   }
 
-  async createAssistant({ name, model = 'gpt-4o-mini', instructions = '', tools = [] } = {}) {
+  async createAssistant({ name, model = 'gpt-4o-mini', instructions = '', description = '', tools = [] } = {}) {
     const toolSpecs = (tools || []).map(t => (typeof t === 'string' ? { type: t } : t));
+    const payload = { name, model, instructions, tools: toolSpecs };
+    if (description) payload.description = description;
+
     // Use REST API directly with v2 header to avoid deprecation warnings
     const resp = await this.fetch('https://api.openai.com/v1/assistants', {
       method: 'POST',
@@ -315,18 +318,19 @@ class OpenAIAssistantService {
         'Content-Type': 'application/json',
         'OpenAI-Beta': 'assistants=v2'
       },
-      body: JSON.stringify({ name, model, instructions, tools: toolSpecs })
+      body: JSON.stringify(payload)
     });
     const data = await resp.json();
     if (!resp.ok) throw new Error(data?.error?.message || `Assistant create failed (${resp.status})`);
     return data;
   }
 
-  async updateAssistant(assistantId, { name, model, instructions, tools, tool_resources } = {}) {
+  async updateAssistant(assistantId, { name, model, instructions, description, tools, tool_resources } = {}) {
     const payload = {};
     if (name !== undefined) payload.name = name;
     if (model !== undefined) payload.model = model;
     if (instructions !== undefined) payload.instructions = instructions;
+    if (description !== undefined) payload.description = description;
     if (tools !== undefined) payload.tools = tools.map(t => (typeof t === 'string' ? { type: t } : t));
     if (tool_resources !== undefined) payload.tool_resources = tool_resources;
 

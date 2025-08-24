@@ -7,7 +7,12 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
   <link rel="stylesheet" href="/css/style.css?v=<%= Date.now() %>">
   <style>
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); max-width: 100%; gap: 16px; }
+
+    /* Limit to maximum 3 columns */
+    @media (min-width: 1200px) {
+      .grid { grid-template-columns: repeat(3, 1fr); }
+    }
     .card { background: #000800; border: 1px solid #00ff00; border-radius: 8px; padding: 16px; }
     .card h4 { margin: 0 0 8px 0; color: #00ff00; }
     .muted { color: #aaa; font-size: 12px; }
@@ -17,6 +22,89 @@
     .danger { background: #330000; color: #ff6666; border: 1px solid #ff0000; }
     .success { color: #00ff00; }
     .badge { border: 1px solid #00ff00; color: #00ff00; padding: 2px 6px; border-radius: 4px; font-size: 11px; }
+
+    /* Breadcrumb Navigation Styling */
+    .breadcrumb-vertical {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      font-size: 1.1em;
+    }
+
+    .breadcrumb-item {
+      color: #00ffff;
+      text-decoration: none;
+      transition: all 0.3s ease;
+    }
+
+    .breadcrumb-item:hover {
+      color: #ffffff;
+      text-shadow: 0 0 5px #00ffff;
+    }
+
+    .breadcrumb-item.active {
+      color: #00ff00;
+      font-weight: bold;
+    }
+
+    .breadcrumb-item:not(.active):after {
+      content: ' → ';
+      color: #666666;
+      margin-left: 8px;
+    }
+
+    .mb-6 {
+      margin-bottom: 24px;
+    }
+
+    /* Enhanced Instructions Interface Styling */
+    .instructions-section {
+      background: #000800;
+      border: 1px solid #00ff00;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 10px 0;
+    }
+
+    .instruction-field {
+      margin-bottom: 15px;
+    }
+
+    .instruction-label {
+      display: block;
+      color: #00ff00;
+      font-weight: bold;
+      font-size: 12px;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .instruction-field textarea {
+      width: 100%;
+      background: #001100;
+      border: 1px solid #00ff00;
+      color: #00ff00;
+      border-radius: 4px;
+      padding: 8px;
+      font-family: inherit;
+      font-size: 13px;
+      resize: vertical;
+      min-height: 60px;
+    }
+
+    .instruction-field textarea:focus {
+      outline: none;
+      border-color: #66ff66;
+      box-shadow: 0 0 5px rgba(0, 255, 0, 0.3);
+    }
+
+    .instruction-field textarea::placeholder {
+      color: #666;
+      font-style: italic;
+    }
 
     /* Assistant Card Styling */
     .assistant-card {
@@ -144,16 +232,12 @@
   </style>
 </head>
 <body>
-  <header class="compact-header">
-    <div class="header-content">
-      <h1 class="page-title">🧠 OpenAI Assistants</h1>
-      <nav class="compact-nav">
-        <a href="/" class="nav-link">🏠 Home</a>
-        <span class="nav-separator">•</span>
-        <a href="/ai-management" class="nav-link">🤖 AI Management</a>
-        <span class="nav-separator">•</span>
-        <span class="nav-current">Assistants</span>
-      </nav>
+  <header>
+    <h1>🧠 OpenAI Assistants</h1>
+    <div class="breadcrumb-vertical mb-6">
+      <a href="/" class="breadcrumb-item">🏠 Home</a>
+      <a href="/ai-management" class="breadcrumb-item">🤖 AI Management</a>
+      <span class="breadcrumb-item active">🧠 Assistants</span>
     </div>
   </header>
 
@@ -210,7 +294,35 @@
               <% }) %>
             </select>
           </div>
-          <div class="row"><textarea rows="10" data-field="instructions" placeholder="Instructions"><%= a.instructions || '' %></textarea></div>
+          <!-- Enhanced AI Instructions Interface -->
+          <div class="instructions-section">
+            <label class="muted" style="font-weight: bold; color: #00ff00; margin-bottom: 10px; display: block;">AI Instructions (5 Sections):</label>
+
+            <div class="instruction-field">
+              <label class="instruction-label">1. OVERALL DESCRIPTION</label>
+              <textarea rows="3" data-field="overallDescription" placeholder="Brief character overview and core identity..."><%= a.parsedInstructions?.overallDescription || '' %></textarea>
+            </div>
+
+            <div class="instruction-field">
+              <label class="instruction-label">2. ROLE & VOICE</label>
+              <textarea rows="3" data-field="roleAndVoice" placeholder="Character identity, speaking style, personality traits..."><%= a.parsedInstructions?.roleAndVoice || '' %></textarea>
+            </div>
+
+            <div class="instruction-field">
+              <label class="instruction-label">3. HARD RULES</label>
+              <textarea rows="3" data-field="hardRules" placeholder="Strict behavioral constraints and absolute requirements..."><%= a.parsedInstructions?.hardRules || '' %></textarea>
+            </div>
+
+            <div class="instruction-field">
+              <label class="instruction-label">4. POSITIVE EXAMPLES</label>
+              <textarea rows="3" data-field="positiveExamples" placeholder="Sample good interactions and desired behaviors..."><%= a.parsedInstructions?.positiveExamples || '' %></textarea>
+            </div>
+
+            <div class="instruction-field">
+              <label class="instruction-label">5. NEGATIVE EXAMPLES (DO NOT DO)</label>
+              <textarea rows="3" data-field="negativeExamples" placeholder="Sample bad interactions to avoid and unwanted behaviors..."><%= a.parsedInstructions?.negativeExamples || '' %></textarea>
+            </div>
+          </div>
 
           <div class="row">
             <label class="muted">Conversation Starters:</label>
@@ -305,7 +417,35 @@
           <option value="o4-mini">o4-mini</option>
         </select>
       </div>
-      <div class="row"><textarea id="newInstructions" rows="10" placeholder="Instructions (system prompt)"></textarea></div>
+      <!-- Enhanced AI Instructions Interface for Create Form -->
+      <div class="instructions-section">
+        <label class="muted" style="font-weight: bold; color: #00ff00; margin-bottom: 10px; display: block;">AI Instructions (5 Sections):</label>
+
+        <div class="instruction-field">
+          <label class="instruction-label">1. OVERALL DESCRIPTION</label>
+          <textarea rows="3" id="newOverallDescription" placeholder="Brief character overview and core identity..."></textarea>
+        </div>
+
+        <div class="instruction-field">
+          <label class="instruction-label">2. ROLE & VOICE</label>
+          <textarea rows="3" id="newRoleAndVoice" placeholder="Character identity, speaking style, personality traits..."></textarea>
+        </div>
+
+        <div class="instruction-field">
+          <label class="instruction-label">3. HARD RULES</label>
+          <textarea rows="3" id="newHardRules" placeholder="Strict behavioral constraints and absolute requirements..."></textarea>
+        </div>
+
+        <div class="instruction-field">
+          <label class="instruction-label">4. POSITIVE EXAMPLES</label>
+          <textarea rows="3" id="newPositiveExamples" placeholder="Sample good interactions and desired behaviors..."></textarea>
+        </div>
+
+        <div class="instruction-field">
+          <label class="instruction-label">5. NEGATIVE EXAMPLES (DO NOT DO)</label>
+          <textarea rows="3" id="newNegativeExamples" placeholder="Sample bad interactions to avoid and unwanted behaviors..."></textarea>
+        </div>
+      </div>
       <div class="row">
         <label class="muted">Conversation Starters:</label>
         <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -328,11 +468,89 @@
   </main>
 
   <script>
+    // Instructions parsing functions
+    function concatenateInstructions(overallDescription, roleAndVoice, hardRules, positiveExamples, negativeExamples) {
+      const sections = [];
+
+      if (overallDescription && overallDescription.trim()) {
+        sections.push(`OVERALL DESCRIPTION:\n${overallDescription.trim()}`);
+      }
+
+      if (roleAndVoice && roleAndVoice.trim()) {
+        sections.push(`ROLE & VOICE:\n${roleAndVoice.trim()}`);
+      }
+
+      if (hardRules && hardRules.trim()) {
+        sections.push(`HARD RULES:\n${hardRules.trim()}`);
+      }
+
+      if (positiveExamples && positiveExamples.trim()) {
+        sections.push(`POSITIVE EXAMPLES:\n${positiveExamples.trim()}`);
+      }
+
+      if (negativeExamples && negativeExamples.trim()) {
+        sections.push(`NEGATIVE EXAMPLES (DO NOT DO):\n${negativeExamples.trim()}`);
+      }
+
+      return sections.join('\n\n');
+    }
+
+    function parseInstructions(instructions) {
+      if (!instructions || typeof instructions !== 'string') {
+        return {
+          overallDescription: '',
+          roleAndVoice: '',
+          hardRules: '',
+          positiveExamples: '',
+          negativeExamples: ''
+        };
+      }
+
+      const parsed = {
+        overallDescription: '',
+        roleAndVoice: '',
+        hardRules: '',
+        positiveExamples: '',
+        negativeExamples: ''
+      };
+
+      // Split by section headers
+      const sections = instructions.split(/\n\n(?=[A-Z][A-Z\s&()]+:)/);
+
+      sections.forEach(section => {
+        const trimmedSection = section.trim();
+        if (trimmedSection.startsWith('OVERALL DESCRIPTION:')) {
+          parsed.overallDescription = trimmedSection.replace('OVERALL DESCRIPTION:', '').trim();
+        } else if (trimmedSection.startsWith('ROLE & VOICE:')) {
+          parsed.roleAndVoice = trimmedSection.replace('ROLE & VOICE:', '').trim();
+        } else if (trimmedSection.startsWith('HARD RULES:')) {
+          parsed.hardRules = trimmedSection.replace('HARD RULES:', '').trim();
+        } else if (trimmedSection.startsWith('POSITIVE EXAMPLES:')) {
+          parsed.positiveExamples = trimmedSection.replace('POSITIVE EXAMPLES:', '').trim();
+        } else if (trimmedSection.startsWith('NEGATIVE EXAMPLES (DO NOT DO):')) {
+          parsed.negativeExamples = trimmedSection.replace('NEGATIVE EXAMPLES (DO NOT DO):', '').trim();
+        } else if (!trimmedSection.includes(':') && parsed.overallDescription === '') {
+          // If no section headers found, treat as overall description
+          parsed.overallDescription = trimmedSection;
+        }
+      });
+
+      return parsed;
+    }
+
     async function createAssistant(){
       const name = document.getElementById('newName').value.trim();
       const description = document.getElementById('newDescription').value.trim();
       const model = document.getElementById('newModel').value;
-      const instructions = document.getElementById('newInstructions').value.trim();
+
+      // Collect the 5 instruction fields and concatenate them
+      const overallDescription = document.getElementById('newOverallDescription').value.trim();
+      const roleAndVoice = document.getElementById('newRoleAndVoice').value.trim();
+      const hardRules = document.getElementById('newHardRules').value.trim();
+      const positiveExamples = document.getElementById('newPositiveExamples').value.trim();
+      const negativeExamples = document.getElementById('newNegativeExamples').value.trim();
+
+      const instructions = concatenateInstructions(overallDescription, roleAndVoice, hardRules, positiveExamples, negativeExamples);
 
       // Collect conversation starters from 5 separate fields
       const starters = [];
@@ -405,13 +623,25 @@
     async function updateAssistant(id, btn){
       const card = btn.closest('.card');
       const payload = {};
+
+      // Collect non-instruction fields
       card.querySelectorAll('[data-field]').forEach(inp=>{
         const field = inp.getAttribute('data-field');
-        // Skip conversation starter fields as we'll handle them separately
-        if (!field.startsWith('conversationStarter')) {
+        // Skip conversation starter fields and instruction fields as we'll handle them separately
+        if (!field.startsWith('conversationStarter') &&
+            !['overallDescription', 'roleAndVoice', 'hardRules', 'positiveExamples', 'negativeExamples'].includes(field)) {
           payload[field] = inp.value;
         }
       });
+
+      // Collect and concatenate the 5 instruction fields
+      const overallDescription = card.querySelector('[data-field="overallDescription"]')?.value.trim() || '';
+      const roleAndVoice = card.querySelector('[data-field="roleAndVoice"]')?.value.trim() || '';
+      const hardRules = card.querySelector('[data-field="hardRules"]')?.value.trim() || '';
+      const positiveExamples = card.querySelector('[data-field="positiveExamples"]')?.value.trim() || '';
+      const negativeExamples = card.querySelector('[data-field="negativeExamples"]')?.value.trim() || '';
+
+      payload.instructions = concatenateInstructions(overallDescription, roleAndVoice, hardRules, positiveExamples, negativeExamples);
 
       // Collect conversation starters from 5 separate fields
       const starters = [];
@@ -420,6 +650,11 @@
         if (starterInput && starterInput.value.trim()) {
           starters.push(starterInput.value.trim());
         }
+      }
+
+      // Log model changes for verification
+      if (payload.model) {
+        console.log(`🤖 Model change detected: ${payload.model} for assistant ${id}`);
       }
 
       const res = await fetch(`/ai-management/api/assistants/${id}`, {method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
@@ -433,6 +668,11 @@
         card.querySelector('[data-msg]').style.color = '#00ff00';
         console.log(`Assistant ${id} updated successfully:`, payload);
         console.log('Updated assistant data:', data.assistant);
+
+        // Specifically log model updates
+        if (payload.model && data.assistant && data.assistant.model) {
+          console.log(`✅ Model successfully updated to: ${data.assistant.model}`);
+        }
       } else {
         card.querySelector('[data-msg]').textContent = 'Error: ' + data.error;
         card.querySelector('[data-msg]').style.color = '#ff6666';

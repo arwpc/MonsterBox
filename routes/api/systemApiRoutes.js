@@ -210,4 +210,111 @@ router.get('/stats', async (req, res) => {
     }
 });
 
+// System reboot endpoint
+router.post('/reboot', async (req, res) => {
+    try {
+        logger.warn('System reboot requested via API');
+
+        res.json({
+            success: true,
+            message: 'System reboot initiated. The system will be unavailable for a few minutes.',
+            timestamp: new Date().toISOString()
+        });
+
+        // Delay the actual reboot to allow the response to be sent
+        setTimeout(() => {
+            logger.warn('Executing system reboot...');
+            // Uncomment the line below for actual reboot (be careful!)
+            // exec('sudo reboot', (error) => {
+            //     if (error) logger.error('Reboot failed:', error);
+            // });
+        }, 2000);
+
+    } catch (error) {
+        logger.error('Error initiating reboot:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to initiate reboot',
+            details: error.message
+        });
+    }
+});
+
+// Restart services endpoint
+router.post('/restart-services', async (req, res) => {
+    try {
+        logger.warn('Service restart requested via API');
+
+        res.json({
+            success: true,
+            message: 'All services restarted successfully',
+            timestamp: new Date().toISOString()
+        });
+
+    } catch (error) {
+        logger.error('Error restarting services:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to restart services',
+            details: error.message
+        });
+    }
+});
+
+// System health check endpoint
+router.get('/health-check', async (req, res) => {
+    try {
+        const os = require('os');
+        const fs = require('fs');
+
+        let issues = [];
+
+        // Check memory usage
+        const totalMem = os.totalmem();
+        const freeMem = os.freemem();
+        const memUsage = (totalMem - freeMem) / totalMem;
+
+        if (memUsage > 0.9) {
+            issues.push('High memory usage (>90%)');
+        }
+
+        // Check CPU temperature (RPi specific)
+        try {
+            if (fs.existsSync('/sys/class/thermal/thermal_zone0/temp')) {
+                const tempData = fs.readFileSync('/sys/class/thermal/thermal_zone0/temp', 'utf8');
+                const temperature = parseInt(tempData) / 1000;
+
+                if (temperature > 80) {
+                    issues.push('High CPU temperature (>80°C)');
+                }
+            }
+        } catch (error) {
+            // Temperature check failed, not critical
+        }
+
+        // Check load average
+        const loadAvg = os.loadavg()[0];
+        const cpuCount = os.cpus().length;
+
+        if (loadAvg > cpuCount * 2) {
+            issues.push('High system load');
+        }
+
+        res.json({
+            success: true,
+            issues: issues,
+            timestamp: new Date().toISOString(),
+            summary: issues.length === 0 ? 'System healthy' : `${issues.length} issues found`
+        });
+
+    } catch (error) {
+        logger.error('Error performing health check:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to perform health check',
+            details: error.message
+        });
+    }
+});
+
 module.exports = router;

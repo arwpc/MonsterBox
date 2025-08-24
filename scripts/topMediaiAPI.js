@@ -259,22 +259,25 @@ class TopMediaiAPI {
                 emotion: params.options?.emotion || 'Neutral'
             };
 
-            // Add optional voice parameters if provided
-            if (params.options?.speed !== undefined && params.options.speed !== 1.0) {
-                requestBody.speed = params.options.speed;
+            // Always include voice parameters to ensure they're applied
+            // TopMediai expects these values even if they're defaults
+            if (params.options?.speed !== undefined) {
+                requestBody.speed = parseFloat(params.options.speed);
             }
-            if (params.options?.pitch !== undefined && params.options.pitch !== 0) {
-                requestBody.pitch = params.options.pitch;
+            if (params.options?.pitch !== undefined) {
+                requestBody.pitch = parseInt(params.options.pitch);
             }
-            if (params.options?.volume !== undefined && params.options.volume !== 0) {
-                requestBody.volume = params.options.volume;
+            if (params.options?.volume !== undefined) {
+                requestBody.volume = parseInt(params.options.volume);
             }
 
-            logger.debug(`Requesting speech generation for speaker: ${params.voiceId}`, {
+            logger.info(`🎤 Generating speech with settings:`, {
+                speaker: params.voiceId,
                 emotion: requestBody.emotion,
-                speed: requestBody.speed,
-                pitch: requestBody.pitch,
-                volume: requestBody.volume
+                speed: requestBody.speed || 'default (1.0)',
+                pitch: requestBody.pitch || 'default (0)',
+                volume: requestBody.volume || 'default (0)',
+                textLength: params.text.length
             });
 
             // Make the actual TopMediai TTS request with proper error handling

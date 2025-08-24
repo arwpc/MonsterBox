@@ -186,17 +186,48 @@
             margin: 20px 0;
             color: #ff6666;
         }
+
+        /* Breadcrumb Navigation Styling */
+        .breadcrumb-vertical {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
+          margin-bottom: 20px;
+          font-size: 1.1em;
+        }
+
+        .breadcrumb-item {
+          color: #00ffff;
+          text-decoration: none;
+          transition: all 0.3s ease;
+        }
+
+        .breadcrumb-item:hover {
+          color: #ffffff;
+          text-shadow: 0 0 5px #00ffff;
+        }
+
+        .breadcrumb-item.active {
+          color: #00ff00;
+          font-weight: bold;
+        }
+
+        .breadcrumb-item:not(.active):after {
+          content: ' → ';
+          color: #666666;
+          margin-left: 8px;
+        }
     </style>
 </head>
 <body>
     <header class="compact-header">
         <div class="header-content">
             <h1 class="page-title">🤖 AI Management Dashboard</h1>
-            <nav class="compact-nav">
-                <a href="/" class="nav-link">🏠 Home</a>
-                <span class="nav-separator">•</span>
-                <span class="nav-current">AI Management</span>
-            </nav>
+            <div class="breadcrumb-vertical">
+                <a href="/" class="breadcrumb-item">🏠 Home</a>
+                <span class="breadcrumb-item active">🤖 AI Management</span>
+            </div>
         </div>
     </header>
 
@@ -318,56 +349,30 @@
             </div>
         </div>
 
-        <!-- ChatterPi Integration Section -->
-        <div class="section-container">
-            <h3>🦴 ChatterPi Jaw Animation</h3>
-            <p>Comprehensive jaw animation management with real-time audio processing and character integration</p>
-            <div class="system-grid">
-                <div class="system-card">
-                    <div class="system-icon">🎛️</div>
-                    <div class="system-title">Jaw Animation Control</div>
-                    <div class="system-details">
-                        <p><strong>Hardware:</strong> GPIO Pin 18 (50Hz PWM)</p>
-                        <p><strong>Audio Sources:</strong> TTS, Files, Microphone, Streams</p>
-                        <p><strong>Features:</strong> WebRTC VAD, Real-time Analysis</p>
-                        <p><strong>Status:</strong> <span id="chatterpi-status">Checking...</span></p>
-                    </div>
-                    <div class="system-actions">
-                        <a href="/chatterpi" class="button primary-btn">
-                            <i class="fas fa-cog"></i> Manage
-                        </a>
-                        <button class="button secondary-btn" onclick="testChatterPi()">
-                            <i class="fas fa-test-tube"></i> Test
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+
 
         <!-- Performance Metrics -->
-        <% if (metrics) { %>
         <div class="section-container">
             <h3>📊 Performance Metrics (Last 24 Hours)</h3>
             <div class="metrics-grid">
                 <div class="metric-card">
-                    <div class="metric-value"><%= metrics.totalRequests || 0 %></div>
+                    <div class="metric-value">0</div>
                     <div class="metric-label">Total Requests</div>
                 </div>
                 <div class="metric-card">
-                    <div class="metric-value"><%= metrics.averageResponseTime || 0 %>ms</div>
+                    <div class="metric-value">0ms</div>
                     <div class="metric-label">Avg Response Time</div>
                 </div>
                 <div class="metric-card">
-                    <div class="metric-value"><%= metrics.successRate || 0 %>%</div>
+                    <div class="metric-value">100%</div>
                     <div class="metric-label">Success Rate</div>
                 </div>
                 <div class="metric-card">
-                    <div class="metric-value"><%= metrics.errorCount || 0 %></div>
+                    <div class="metric-value">0</div>
                     <div class="metric-label">Errors</div>
                 </div>
             </div>
         </div>
-        <% } %>
 
         <!-- Quick Actions -->
         <div class="section-container">
@@ -413,7 +418,6 @@
                     <h4>🎭 Character Control</h4>
                     <div class="button-group">
                         <a href="/characters" class="button">🎭 Characters</a>
-                        <a href="/chatterpi" class="button">🦴 ChatterPi Jaw Animation</a>
                         <a href="/ai-management/assistants" class="button">🧠 OpenAI Assistants</a>
                     </div>
                 </div>
@@ -422,7 +426,6 @@
                     <h4>⚙️ System Settings</h4>
                     <div class="button-group">
                         <a href="/configuration" class="button">⚙️ Configuration</a>
-                        <a href="/chatterpi-chat.html" class="button">💬 ChatterPi Chat</a>
                         <a href="/" class="button secondary-btn">🏠 Main Menu</a>
                     </div>
                 </div>
@@ -448,21 +451,7 @@
                 });
         }
 
-        function testChatterPi() {
-            showModal('Testing ChatterPi...', '<p>Testing jaw animation servo system...</p>');
-            fetch('/chatterpi/api/test/servo', { method: 'POST' })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        showModal('ChatterPi Test Result', `<p><strong>Success!</strong></p><p>Servo test completed successfully</p><p>Character: ${data.characterId}</p>`);
-                    } else {
-                        showModal('ChatterPi Test Failed', `<p><strong>Error:</strong> ${data.error}</p>`);
-                    }
-                })
-                .catch(error => {
-                    showModal('ChatterPi Test Error', `<p><strong>Error:</strong> ${error.message}</p>`);
-                });
-        }
+
 
         function testAI() {
             showModal('Testing AI...', '<p>Testing AI Personality system...</p>');
@@ -612,33 +601,9 @@
             }
         }
 
-        // Check ChatterPi status on page load
-        function checkChatterPiStatus() {
-            fetch('/chatterpi/api/status')
-                .then(response => response.json())
-                .then(data => {
-                    const statusElement = document.getElementById('chatterpi-status');
-                    if (statusElement) {
-                        if (data.success && data.status.servo.connected) {
-                            statusElement.textContent = 'Connected';
-                            statusElement.style.color = '#00ff00';
-                        } else {
-                            statusElement.textContent = 'Disconnected';
-                            statusElement.style.color = '#ff0040';
-                        }
-                    }
-                })
-                .catch(error => {
-                    const statusElement = document.getElementById('chatterpi-status');
-                    if (statusElement) {
-                        statusElement.textContent = 'Error';
-                        statusElement.style.color = '#ff0040';
-                    }
-                });
-        }
 
-        // Check status on page load
-        document.addEventListener('DOMContentLoaded', checkChatterPiStatus);
+
+
 
         // Auto-refresh status every 30 seconds
         setInterval(() => {
@@ -653,8 +618,7 @@
                 })
                 .catch(error => console.log('AI status refresh failed:', error));
 
-            // Refresh ChatterPi status
-            checkChatterPiStatus();
+
         }, 30000);
     </script>
 
@@ -754,7 +718,6 @@
             console.log('🤖 AI Management Dashboard initialized');
 
             // Initialize status checks
-            checkChatterPiStatus();
 
             // Add keyboard shortcuts
             document.addEventListener('keydown', function(e) {
@@ -772,10 +735,7 @@
                             e.preventDefault();
                             window.location.href = '/ai-management/tts';
                             break;
-                        case '4':
-                            e.preventDefault();
-                            window.location.href = '/chatterpi';
-                            break;
+
                     }
                 }
             });

@@ -2,8 +2,11 @@
   "assistants": {
     "asst_vJq9smE6nVrvibJKfUv2FmDq": {
       "conversationStarters": [
-        "Where is my mina?",
-        "What are you looking at mortal? I am Royalty."
+        "Thou art come unbidden to mine domain.",
+        "The night is long, and I am... lonely.",
+        "What brings thee to these cursed lands?",
+        "I sense thy blood calls to me, mortal.",
+        "The shadows whisper thy name to me."
       ],
       "files": [
         {
@@ -19,10 +22,36 @@
     "asst_UqgxEpp0UgLvf3V3ulhL0hud": {
       "conversationStarters": [
         "I… was soldier… once… now bones… nothing more…",
-        "Buried deep… Master dug me out…",
-        "He promised rest… after one more soul… always one more…",
+        "You… there… castle waits… gates open…",
+        "Bones ache… Master hungry… will you come?",
         "Dust fills me… but hunger drives me…",
         "Orlok’s shadow holds my marrow… cannot escape…"
+      ],
+      "files": [],
+      "actions": [],
+      "vectorStoreId": null,
+      "openapi": null
+    },
+    "asst_P40HAZywfgZDHyeNqVrHKdsm": {
+      "conversationStarters": [
+        "“Is that… a voice I hear above the earth? Has someone come at last?",
+        "My lips are cold as stone… yet they remember the warmth of a kiss.",
+        "Why was I buried? I cannot recall… only the silence that binds me.",
+        "The coffin is cruel, but your touch… perhaps it could set me free.",
+        "I dream of moonlight, roses, and breath… will you grant me release"
+      ],
+      "files": [],
+      "actions": [],
+      "vectorStoreId": null,
+      "openapi": null
+    },
+    "asst_okvreZDd502nlLXsGqs3yuEs": {
+      "conversationStarters": [
+        "Hey, kid! You’d look good in my patch.",
+        "Closer… closer… I need fresh seeds.",
+        "he graveyard’s empty… but not for long.",
+        "Keep wriggling, I like when they squirm!",
+        "Here's a perfect pumpkin for your decorations. Come closer....look...."
       ],
       "files": [],
       "actions": [],

@@ -1039,7 +1039,7 @@
 
                         <div class="setting-group">
                             <label for="modalEmotion">Emotion</label>
-                            <select id="modalEmotion" name="modalEmotion">
+                            <select id="modalEmotion" name="modalEmotion" onchange="showSettingsChanged()">
                                 <option value="Neutral">Neutral</option>
                                 <option value="Happy">Happy</option>
                                 <option value="Sad">Sad</option>
@@ -1058,6 +1058,19 @@
                         <button class="button secondary-btn" onclick="previewSelectedVoice()">
                             <i class="fas fa-play"></i> Preview
                         </button>
+                        <button class="button small-btn primary-btn" onclick="testVoiceSettings()" title="Test different settings to hear the difference">
+                            <i class="fas fa-vial"></i> Test Settings
+                        </button>
+                    </div>
+
+                    <div style="background: #001100; border: 1px solid #00ff00; border-radius: 6px; padding: 10px; margin: 10px 0; font-size: 0.9em;">
+                        <i class="fas fa-info-circle" style="color: #00ff00; margin-right: 8px;"></i>
+                        <strong>Voice Settings Guide:</strong><br>
+                        • <strong>Speed:</strong> 0.5x = Very Slow, 1.0x = Normal, 2.0x = Very Fast<br>
+                        • <strong>Pitch:</strong> -20 = Lower Voice, 0 = Normal, +20 = Higher Voice<br>
+                        • <strong>Volume:</strong> -20 = Quieter, 0 = Normal, +20 = Louder<br>
+                        • <strong>Emotion:</strong> Changes the tone and feeling of the voice<br>
+                        <em>Use "Test Settings" to hear examples of different configurations!</em>
                     </div>
 
                     <div class="audio-player" id="modalAudioPlayer" style="display: none;">
@@ -1158,14 +1171,83 @@
         // Modal settings display updates
         function updateModalSpeedDisplay(value) {
             document.getElementById('modalSpeedValue').textContent = value;
+            showSettingsChanged();
         }
 
         function updateModalPitchDisplay(value) {
             document.getElementById('modalPitchValue').textContent = value;
+            showSettingsChanged();
         }
 
         function updateModalVolumeDisplay(value) {
             document.getElementById('modalVolumeValue').textContent = value;
+            showSettingsChanged();
+        }
+
+        function showSettingsChanged() {
+            // Visual feedback that settings have changed
+            const previewBtn = document.querySelector('button[onclick="previewSelectedVoice()"]');
+            if (previewBtn) {
+                previewBtn.style.background = '#ff6600';
+                previewBtn.innerHTML = '<i class="fas fa-play"></i> Preview (Settings Changed)';
+                setTimeout(() => {
+                    previewBtn.style.background = '';
+                    previewBtn.innerHTML = '<i class="fas fa-play"></i> Preview';
+                }, 2000);
+            }
+        }
+
+        async function testVoiceSettings() {
+            if (!selectedVoice) {
+                showMessage('Please select a voice first', 'error');
+                return;
+            }
+
+            const testText = "Testing voice settings: slow speed, then fast speed, low pitch, then high pitch.";
+
+            try {
+                showMessage('Testing different voice settings...', 'info');
+
+                // Test 1: Slow speed
+                await testWithSettings({ speed: 0.7, pitch: 0, volume: 0, emotion: 'Neutral' }, 'Slow Speed');
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
+                // Test 2: Fast speed
+                await testWithSettings({ speed: 1.5, pitch: 0, volume: 0, emotion: 'Neutral' }, 'Fast Speed');
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
+                // Test 3: Low pitch
+                await testWithSettings({ speed: 1.0, pitch: -10, volume: 0, emotion: 'Neutral' }, 'Low Pitch');
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
+                // Test 4: High pitch
+                await testWithSettings({ speed: 1.0, pitch: 10, volume: 0, emotion: 'Neutral' }, 'High Pitch');
+
+                showMessage('Voice settings test completed! You should hear differences in speed and pitch.', 'success');
+            } catch (error) {
+                showMessage(`Test error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testWithSettings(settings, description) {
+            const response = await fetch('/api/voice/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    speaker_id: selectedVoice.uuid || selectedVoice.speaker_id,
+                    text: `${description}: This is a test with different voice settings.`,
+                    options: settings
+                })
+            });
+
+            const data = await response.json();
+            if (data.success && data.url) {
+                const audio = new Audio(data.url);
+                await new Promise((resolve) => {
+                    audio.onended = resolve;
+                    audio.play();
+                });
+            }
         }
 
         // Voice catalog functions
@@ -1199,6 +1281,9 @@
                 const voiceItem = document.createElement('div');
                 voiceItem.className = 'voice-item';
                 voiceItem.onclick = () => selectVoice(voice);
+
+                // Add data attribute for voice identification
+                voiceItem.setAttribute('data-voice-id', voice.uuid || voice.speaker_id);
 
                 let badges = '';
                 if (voice.isVip) badges += '<span class="voice-badge badge-vip">VIP</span>';
@@ -1259,10 +1344,57 @@
         }
 
         // Character voice configuration functions
-        function configureVoice(characterId) {
+        async function configureVoice(characterId) {
             document.getElementById('selectedCharacterId').value = characterId;
             document.getElementById('catalogModalTitle').textContent = `Configure Voice for Character`;
             document.getElementById('voiceCatalogModal').style.display = 'block';
+
+            // Load current voice configuration for the character and pre-select it
+            try {
+                const response = await fetch(`/api/voice/settings/${characterId}`);
+                if (response.ok) {
+                    const voiceConfig = await response.json();
+                    if (voiceConfig && voiceConfig.speaker_id) {
+                        // Find and pre-select the current voice
+                        await preselectCurrentVoice(voiceConfig.speaker_id);
+                    }
+                }
+            } catch (error) {
+                console.warn('Could not load current voice configuration:', error);
+            }
+        }
+
+        async function preselectCurrentVoice(speakerId) {
+            // Wait for voices to be loaded if they haven't been yet
+            if (!availableVoices || availableVoices.length === 0) {
+                await loadVoiceCatalog();
+            }
+
+            // Find the voice with the matching speaker ID
+            const currentVoice = availableVoices.find(voice =>
+                voice.uuid === speakerId || voice.speaker_id === speakerId
+            );
+
+            if (currentVoice) {
+                // Pre-select this voice
+                selectedVoice = currentVoice;
+                document.getElementById('assignVoiceBtn').disabled = false;
+
+                // Highlight the voice in the UI after a short delay to ensure DOM is ready
+                setTimeout(() => {
+                    const voiceItems = document.querySelectorAll('.voice-item');
+                    voiceItems.forEach(item => {
+                        item.classList.remove('selected');
+                        // Check if this item represents the current voice
+                        const voiceId = item.getAttribute('data-voice-id');
+                        if (voiceId === speakerId) {
+                            item.classList.add('selected');
+                            // Scroll the selected voice into view
+                            item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    });
+                }, 100);
+            }
         }
 
         function closeCatalogModal() {
@@ -1298,6 +1430,9 @@
                     volume: parseInt(document.getElementById('modalVolume').value),
                     emotion: document.getElementById('modalEmotion').value
                 };
+
+                console.log('🎤 Preview with settings:', settings);
+                showMessage(`Generating preview with Speed: ${settings.speed}x, Pitch: ${settings.pitch}, Volume: ${settings.volume}, Emotion: ${settings.emotion}`, 'info');
 
                 const response = await fetch('/api/voice/generate', {
                     method: 'POST',
@@ -1352,6 +1487,9 @@
                     languageCode: 'en',
                     provider: 'TopMediai'
                 };
+
+                console.log('💾 Saving voice settings:', settings);
+                showMessage(`Saving voice with Speed: ${settings.speed}x, Pitch: ${settings.pitch}, Volume: ${settings.volume}, Emotion: ${settings.emotion}`, 'info');
 
                 const voiceData = {
                     characterId: parseInt(characterId),
@@ -1441,15 +1579,29 @@
 
         async function previewVoice(characterId, speakerId) {
             try {
-                showMessage('Generating voice preview...', 'info');
+                showMessage('Generating voice preview with character settings...', 'info');
+
+                // Get the character's voice settings first
+                let characterSettings = {};
+                try {
+                    const settingsResponse = await fetch(`/api/voice/settings/${characterId}`);
+                    if (settingsResponse.ok) {
+                        const voiceConfig = await settingsResponse.json();
+                        characterSettings = voiceConfig?.settings || {};
+                        console.log('🎭 Using character voice settings:', characterSettings);
+                    }
+                } catch (error) {
+                    console.warn('Could not load character settings, using defaults:', error);
+                }
 
                 const response = await fetch('/api/voice/generate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         speaker_id: speakerId,
-                        text: 'Hello, I am your character speaking.',
-                        characterId: characterId
+                        text: 'Hello, I am your character speaking with my configured voice settings.',
+                        characterId: characterId,
+                        options: characterSettings
                     })
                 });
 

@@ -128,10 +128,58 @@ router.get('/assistants', async (req, res) => {
             assistants = [];
         }
 
-        // Enrich assistants with local config (conversation starters, files, actions)
+        // Function to parse instructions into 5 sections
+        function parseInstructions(instructions) {
+            if (!instructions || typeof instructions !== 'string') {
+                return {
+                    overallDescription: '',
+                    roleAndVoice: '',
+                    hardRules: '',
+                    positiveExamples: '',
+                    negativeExamples: ''
+                };
+            }
+
+            const parsed = {
+                overallDescription: '',
+                roleAndVoice: '',
+                hardRules: '',
+                positiveExamples: '',
+                negativeExamples: ''
+            };
+
+            // Split by section headers
+            const sections = instructions.split(/\n\n(?=[A-Z][A-Z\s&()]+:)/);
+
+            sections.forEach(section => {
+                const trimmedSection = section.trim();
+                if (trimmedSection.startsWith('OVERALL DESCRIPTION:')) {
+                    parsed.overallDescription = trimmedSection.replace('OVERALL DESCRIPTION:', '').trim();
+                } else if (trimmedSection.startsWith('ROLE & VOICE:')) {
+                    parsed.roleAndVoice = trimmedSection.replace('ROLE & VOICE:', '').trim();
+                } else if (trimmedSection.startsWith('HARD RULES:')) {
+                    parsed.hardRules = trimmedSection.replace('HARD RULES:', '').trim();
+                } else if (trimmedSection.startsWith('POSITIVE EXAMPLES:')) {
+                    parsed.positiveExamples = trimmedSection.replace('POSITIVE EXAMPLES:', '').trim();
+                } else if (trimmedSection.startsWith('NEGATIVE EXAMPLES (DO NOT DO):')) {
+                    parsed.negativeExamples = trimmedSection.replace('NEGATIVE EXAMPLES (DO NOT DO):', '').trim();
+                } else if (!trimmedSection.includes(':') && parsed.overallDescription === '') {
+                    // If no section headers found, treat as overall description
+                    parsed.overallDescription = trimmedSection;
+                }
+            });
+
+            return parsed;
+        }
+
+        // Enrich assistants with local config (conversation starters, files, actions) and parsed instructions
         const assistantConfig = require('../ai/services/assistantConfigStore');
         const cfg = await assistantConfig.readConfig();
-        const enriched = assistants.map(a => ({ ...a, config: cfg.assistants?.[a.id] || undefined }));
+        const enriched = assistants.map(a => ({
+            ...a,
+            config: cfg.assistants?.[a.id] || undefined,
+            parsedInstructions: parseInstructions(a.instructions)
+        }));
 
         // Load characters for assignment dropdowns and enrich with voice configurations
         const characters = await characterService.getAllCharacters();
@@ -190,10 +238,20 @@ router.post('/api/assistants', async (req, res) => {
 router.patch('/api/assistants/:assistantId', async (req, res) => {
     try {
         const { assistantId } = req.params;
+        const updateData = req.body || {};
+
+        // Log instruction updates for verification
+        if (updateData.instructions) {
+            console.log(`📝 Instructions update for assistant ${assistantId}:`, updateData.instructions.substring(0, 100) + '...');
+        }
+
         const service = new OpenAIAssistantService({});
-        const updated = await service.updateAssistant(assistantId, req.body || {});
+        const updated = await service.updateAssistant(assistantId, updateData);
+
+        console.log(`✅ Assistant ${assistantId} updated successfully`);
         res.json({ success: true, assistant: updated });
     } catch (error) {
+        console.error(`❌ Failed to update assistant ${assistantId}:`, error.message);
         res.status(500).json({ success: false, error: error.message });
     }
 });

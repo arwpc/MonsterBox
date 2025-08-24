@@ -113,7 +113,8 @@
     "chatterpi_config": {
       "ai_characters": [],
       "default_character": null
-    }
+    },
+    "openaiAssistantId": "asst_P40HAZywfgZDHyeNqVrHKdsm"
   },
   {
     "id": 3,
@@ -160,7 +161,8 @@
         "collection_interval": 300,
         "max_lines": 1000
       }
-    }
+    },
+    "openaiAssistantId": "asst_okvreZDd502nlLXsGqs3yuEs"
   },
   {
     "id": 4,
