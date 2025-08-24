@@ -253,4 +253,50 @@ router.post('/api/test/tts', async (req, res) => {
     }
 });
 
+/**
+ * GET /test
+ * Enhanced ChatterPi test page with character selection and voice controls
+ */
+router.get('/test', async (req, res) => {
+    try {
+        const characterService = require('../services/characterService');
+        const fs = require('fs').promises;
+        const path = require('path');
+
+        // Get all characters
+        const characters = await characterService.getAllCharacters();
+
+        // Load assistants configuration
+        let assistants = {};
+        try {
+            const assistantsPath = path.join(__dirname, '../data/assistants-config.json');
+            const assistantsData = await fs.readFile(assistantsPath, 'utf8');
+            const assistantsConfig = JSON.parse(assistantsData);
+            assistants = assistantsConfig.assistants || {};
+        } catch (error) {
+            console.warn('⚠️ Could not load assistants config:', error.message);
+        }
+
+        // Filter characters that have AI enabled and assistant IDs
+        const aiEnabledCharacters = characters.filter(char =>
+            char.aiConfig &&
+            char.aiConfig.enabled &&
+            char.openaiAssistantId
+        );
+
+        console.log(`🎭 Loaded ${aiEnabledCharacters.length} AI-enabled characters for test page`);
+
+        res.render('chatterpi-test', {
+            title: 'Enhanced Test Chat - AI Conversation Interface',
+            characterId: req.query.characterId || (aiEnabledCharacters.length > 0 ? aiEnabledCharacters[0].id : null),
+            pageTitle: 'Enhanced Test Chat',
+            characters: aiEnabledCharacters,
+            assistants: assistants
+        });
+    } catch (error) {
+        console.error('❌ Error rendering enhanced test page:', error);
+        res.status(500).send('Failed to load test page: ' + error.message);
+    }
+});
+
 module.exports = router;

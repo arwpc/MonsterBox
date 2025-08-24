@@ -973,4 +973,62 @@ router.post('/:id/jaw-animation/preset/:presetName', async (req, res) => {
     }
 });
 
+// Character configuration endpoint for Enhanced Test Chat
+router.get('/:characterId/config', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.characterId);
+
+        if (!characterId) {
+            return res.status(400).json({
+                success: false,
+                error: 'Character ID is required'
+            });
+        }
+
+        // Get character details
+        const character = await characterService.getCharacterById(characterId);
+
+        if (!character) {
+            return res.status(404).json({
+                success: false,
+                error: 'Character not found'
+            });
+        }
+
+        // Get voice configuration
+        const voiceService = require('../services/voiceService');
+        const voiceServiceInstance = new voiceService();
+        let voiceConfig = null;
+
+        try {
+            voiceConfig = await voiceServiceInstance.getVoiceByCharacterId(characterId);
+        } catch (error) {
+            console.warn(`⚠️ Could not get voice config for character ${characterId}:`, error.message);
+        }
+
+        // Prepare character configuration
+        const characterConfig = {
+            id: character.id,
+            name: character.char_name,
+            description: character.char_description,
+            openaiAssistantId: character.openaiAssistantId,
+            voiceConfig: voiceConfig,
+            aiConfig: character.aiConfig || { enabled: false }
+        };
+
+        res.json({
+            success: true,
+            character: characterConfig
+        });
+
+    } catch (error) {
+        console.error('❌ Error getting character config:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get character configuration',
+            details: error.message
+        });
+    }
+});
+
 module.exports = router;

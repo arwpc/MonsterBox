@@ -53,6 +53,153 @@ router.post('/test-connection', voiceController.testVoiceConnection);
 // Audio integrity testing
 router.post('/test-audio-integrity', voiceController.testAudioIntegrity);
 
+// Live TTS endpoint for Enhanced Test Chat
+router.post('/speak', async (req, res) => {
+    try {
+        const { text, character, characterId, voiceConfig } = req.body;
+
+        if (!text || !text.trim()) {
+            return res.status(400).json({
+                success: false,
+                error: 'Text is required for speech generation'
+            });
+        }
+
+        console.log(`🎤 TTS request: "${text}" (Character: ${character || 'default'})`);
+
+        // Get voice service
+        const VoiceService = require('../services/voiceService');
+        const voiceService = new VoiceService();
+
+        // Get character's voice settings
+        let voiceSettings = null;
+        if (characterId) {
+            try {
+                voiceSettings = await voiceService.getVoiceByCharacterId(characterId);
+            } catch (error) {
+                console.warn(`⚠️ Could not get voice settings for character ${characterId}:`, error.message);
+            }
+        }
+
+        // Use default voice if no character voice found
+        const speakerId = voiceSettings?.speaker_id || 'en-US-AriaNeural';
+        const options = {
+            ...voiceSettings?.settings,
+            ...voiceConfig
+        };
+
+        // Generate speech
+        const result = await voiceService.generateSpeech(text, speakerId, options, characterId);
+
+        if (result && result.audioUrl) {
+            res.json({
+                success: true,
+                audioUrl: result.audioUrl,
+                text: text,
+                character: character || 'default',
+                provider: 'TopMediai',
+                duration: result.duration,
+                timestamp: new Date().toISOString()
+            });
+        } else {
+            throw new Error('Failed to generate audio');
+        }
+
+    } catch (error) {
+        console.error('❌ Error in TTS speak:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to process speech request',
+            details: error.message
+        });
+    }
+});
+
+// STT endpoint for Enhanced Test Chat
+router.post('/transcribe', async (req, res) => {
+    try {
+        const { audioData, character, characterId, sttOnly } = req.body;
+        const startTime = Date.now();
+
+        if (!audioData) {
+            return res.status(400).json({
+                success: false,
+                error: 'Audio data is required'
+            });
+        }
+
+        console.log(`🎙️ STT request (Character: ${character || 'default'})`);
+
+        const result = {
+            success: true,
+            data: {},
+            processingTime: {},
+            timestamp: new Date().toISOString()
+        };
+
+        // Speech-to-Text using OpenAI Whisper
+        const sttStartTime = Date.now();
+        try {
+            // Convert base64 audio to buffer
+            const audioBuffer = Buffer.from(audioData, 'base64');
+
+            // Use OpenAI Whisper for STT
+            const OpenAI = require('openai');
+            const openai = new OpenAI({
+                apiKey: process.env.OPENAI_API_KEY
+            });
+
+            // Create a temporary file for the audio
+            const fs = require('fs');
+            const path = require('path');
+            const tempDir = path.join(__dirname, '../temp');
+            if (!fs.existsSync(tempDir)) {
+                fs.mkdirSync(tempDir, { recursive: true });
+            }
+
+            const tempFilePath = path.join(tempDir, `audio_${Date.now()}.webm`);
+            fs.writeFileSync(tempFilePath, audioBuffer);
+
+            // Transcribe audio
+            const transcription = await openai.audio.transcriptions.create({
+                file: fs.createReadStream(tempFilePath),
+                model: 'whisper-1',
+                language: 'en'
+            });
+
+            // Clean up temp file
+            fs.unlinkSync(tempFilePath);
+
+            const sttTime = Date.now() - sttStartTime;
+            result.data.stt = {
+                text: transcription.text,
+                confidence: 1.0 // Whisper doesn't provide confidence scores
+            };
+            result.processingTime.stt = sttTime;
+
+            console.log(`🎤 STT completed in ${sttTime}ms: "${transcription.text}"`);
+
+        } catch (sttError) {
+            console.error('❌ STT Error:', sttError);
+            result.data.stt = {
+                text: '',
+                error: sttError.message
+            };
+        }
+
+        result.processingTime.total = Date.now() - startTime;
+        res.json(result);
+
+    } catch (error) {
+        console.error('❌ Error in STT transcribe:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to process transcription',
+            details: error.message
+        });
+    }
+});
+
 // Download file from URL
 async function downloadFile(url) {
     return new Promise((resolve, reject) => {

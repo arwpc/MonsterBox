@@ -1524,4 +1524,107 @@ async function getPerformanceMetrics() {
     }
 }
 
+// AI Chat endpoint for Enhanced Test Chat
+router.post('/chat', async (req, res) => {
+    try {
+        const { message, character, characterId } = req.body;
+
+        if (!message) {
+            return res.status(400).json({
+                success: false,
+                error: 'Message is required'
+            });
+        }
+
+        console.log(`💬 AI Chat request: "${message}" (Character: ${character || 'default'})`);
+
+        // Get character information
+        let targetCharacter = null;
+        if (characterId) {
+            try {
+                targetCharacter = await characterService.getCharacterById(characterId);
+            } catch (error) {
+                console.warn(`⚠️ Could not get character ${characterId}:`, error.message);
+            }
+        }
+
+        // Use OpenAI Assistant if character has one configured
+        if (targetCharacter && targetCharacter.openaiAssistantId) {
+            try {
+                const assistantService = new OpenAIAssistantService();
+
+                // Create a thread for this conversation
+                const thread = await assistantService.createThread();
+
+                // Send message to assistant
+                await assistantService.addMessage(thread.id, message);
+
+                // Run the assistant
+                const run = await assistantService.runAssistant(thread.id, targetCharacter.openaiAssistantId);
+
+                // Wait for completion and get response
+                const response = await assistantService.waitForCompletion(thread.id, run.id);
+
+                if (response && response.length > 0) {
+                    const aiResponse = response[0].content[0].text.value;
+
+                    res.json({
+                        success: true,
+                        data: {
+                            aiResponse: {
+                                text: aiResponse,
+                                character: targetCharacter.char_name,
+                                metadata: {
+                                    assistantId: targetCharacter.openaiAssistantId,
+                                    threadId: thread.id,
+                                    timestamp: new Date().toISOString()
+                                }
+                            }
+                        }
+                    });
+
+                    console.log(`🤖 AI response: "${aiResponse}"`);
+                    return;
+                }
+            } catch (assistantError) {
+                console.error('❌ Assistant error:', assistantError);
+                // Fall through to fallback response
+            }
+        }
+
+        // Fallback response if no assistant or assistant failed
+        const fallbackResponses = [
+            "I hear you, though the shadows cloud my response...",
+            "Your words echo in the darkness...",
+            "The spirits whisper, but I cannot make out their meaning...",
+            "Something stirs in the void, but I cannot grasp it...",
+            "The connection wavers between worlds..."
+        ];
+
+        const fallbackResponse = fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)];
+
+        res.json({
+            success: true,
+            data: {
+                aiResponse: {
+                    text: fallbackResponse,
+                    character: targetCharacter?.char_name || 'Unknown',
+                    metadata: {
+                        fallback: true,
+                        timestamp: new Date().toISOString()
+                    }
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ AI Chat error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to process chat message',
+            details: error.message
+        });
+    }
+});
+
 module.exports = router;

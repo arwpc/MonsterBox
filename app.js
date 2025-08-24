@@ -318,6 +318,7 @@ app.use('/api/streaming', require('./routes/streamingRoutes'));
 app.use('/api/character-webcam', require('./routes/api/characterWebcamApiRoutes'));
 app.use('/api/motion-tracking', require('./routes/api/motionTrackingApiRoutes'));
 app.use('/api/voice', voiceRoutes);
+app.use('/api/character', characterRoutes);
 
 app.use('/api/chatterpi', require('./routes/chatterpiRoutes'));
 app.use('/api/hardware', require('./routes/api/hardwareApiRoutes').router);
@@ -439,6 +440,7 @@ app.use('/api/log-collection', require('./routes/logCollectionRoutes'));
 // AI Configuration routes
 app.use('/ai-config', aiConfigRoutes);
 app.use('/ai-management', aiManagementRoutes);
+app.use('/api/ai', aiManagementRoutes);
 
 // ChatterPi Management routes
 app.use('/chatterpi', chatterpiManagementRoutes);
