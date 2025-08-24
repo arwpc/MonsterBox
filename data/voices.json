@@ -22,7 +22,7 @@
         "tags": [],
         "notes": "",
         "created": "2024-10-28T16:24:54.907Z",
-        "lastModified": "2025-08-23T19:49:45.328Z",
+        "lastModified": "2025-08-24T01:27:07.119Z",
         "migratedFrom": "Replica",
         "migrationDate": "2025-06-14T20:10:52.729Z",
         "originalSpeakerId": "b80ebe00-4738-4766-85b7-35c3096acb79",
@@ -31,21 +31,6 @@
         "voiceLanguage": "English(US),Chinese(Mandarin),Spanish(Mexico),Japanese(Japan),Portuguese(Portugal),French(France),Russian(Russia),Korean(Korea),Malay,Danish(Denmark),Finnish(Finland),Turkish(Turkey),Slovak(Slovakia),Hindi(India),Swedish(Sweden),Italian(Italy),Polish(Poland),Czech(Czech),Dutch(Belgium),German(Germany),Filipino(Philippines),Indonesian(Indonesia),Croatian(Croatia),Arabic(Egyptian),Romanian(Romania),Bulgarian(Bulgaria),Greek(Greece),Tamil(India),Ukrainian(Ukraine),Vietnamese(Vietnam),Norwegian(Norway),Hungarian(Hungary),Portuguese(Brazil),Arabic(Saudi Arabia),Spanish(Spain),English(UK)"
       },
       "history": [
-        {
-          "timestamp": "2025-06-20T21:43:22.980Z",
-          "type": "settings_update",
-          "settings": {
-            "pitch": 0,
-            "speed": 1,
-            "volume": 0,
-            "emotion": "Neutral",
-            "sampleRate": 44100,
-            "bitRate": 128,
-            "outputFormat": "mp3",
-            "channels": 1,
-            "languageCode": "en"
-          }
-        },
         {
           "timestamp": "2025-06-20T21:43:50.859Z",
           "type": "settings_update",
@@ -192,6 +177,22 @@
         },
         {
           "timestamp": "2025-08-23T19:49:45.328Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": -13,
+            "speed": 0.6,
+            "volume": 14,
+            "emotion": "Angry",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-08-24T01:27:07.119Z",
           "type": "settings_update",
           "settings": {
             "pitch": -13,
