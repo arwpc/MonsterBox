@@ -4,10 +4,10 @@
       "characterId": 1,
       "speaker_id": "829eb69c-8d2b-11ef-a4f6-00163e0082fe",
       "settings": {
-        "pitch": -19,
-        "speed": 0.5,
-        "volume": 13,
-        "emotion": "Angry",
+        "pitch": 0,
+        "speed": 1,
+        "volume": 0,
+        "emotion": "Neutral",
         "sampleRate": 44100,
         "bitRate": 128,
         "outputFormat": "wav",
@@ -22,7 +22,7 @@
         "tags": [],
         "notes": "",
         "created": "2024-10-28T16:24:54.907Z",
-        "lastModified": "2025-08-24T17:21:46.421Z",
+        "lastModified": "2025-08-24T21:20:30.468Z",
         "migratedFrom": "Replica",
         "migrationDate": "2025-06-14T20:10:52.729Z",
         "originalSpeakerId": "b80ebe00-4738-4766-85b7-35c3096acb79",
@@ -31,102 +31,6 @@
         "voiceLanguage": "English(US),Chinese(Mandarin),Spanish(Mexico),Japanese(Japan),Portuguese(Portugal),French(France),Russian(Russia),Korean(Korea),Malay,Danish(Denmark),Finnish(Finland),Turkish(Turkey),Slovak(Slovakia),Hindi(India),Swedish(Sweden),Italian(Italy),Polish(Poland),Czech(Czech),Dutch(Belgium),German(Germany),Filipino(Philippines),Indonesian(Indonesia),Croatian(Croatia),Arabic(Egyptian),Romanian(Romania),Bulgarian(Bulgaria),Greek(Greece),Tamil(India),Ukrainian(Ukraine),Vietnamese(Vietnam),Norwegian(Norway),Hungarian(Hungary),Portuguese(Brazil),Arabic(Saudi Arabia),Spanish(Spain),English(UK)"
       },
       "history": [
-        {
-          "timestamp": "2025-08-24T15:39:22.955Z",
-          "type": "settings_update",
-          "settings": {
-            "pitch": 0,
-            "speed": 1,
-            "volume": 0,
-            "emotion": "Neutral",
-            "sampleRate": 44100,
-            "bitRate": 128,
-            "outputFormat": "wav",
-            "channels": 1,
-            "languageCode": "en",
-            "provider": "TopMediai"
-          }
-        },
-        {
-          "timestamp": "2025-08-24T15:39:22.969Z",
-          "type": "settings_update",
-          "settings": {
-            "pitch": 0,
-            "speed": 1,
-            "volume": 0,
-            "emotion": "Neutral",
-            "sampleRate": 44100,
-            "bitRate": 128,
-            "outputFormat": "wav",
-            "channels": 1,
-            "languageCode": "en",
-            "provider": "TopMediai"
-          }
-        },
-        {
-          "timestamp": "2025-08-24T16:08:01.804Z",
-          "type": "settings_update",
-          "settings": {
-            "pitch": 0,
-            "speed": 1,
-            "volume": 0,
-            "emotion": "Neutral",
-            "sampleRate": 44100,
-            "bitRate": 128,
-            "outputFormat": "wav",
-            "channels": 1,
-            "languageCode": "en",
-            "provider": "TopMediai"
-          }
-        },
-        {
-          "timestamp": "2025-08-24T16:17:35.518Z",
-          "type": "settings_update",
-          "settings": {
-            "pitch": 0,
-            "speed": 1,
-            "volume": 0,
-            "emotion": "Neutral",
-            "sampleRate": 44100,
-            "bitRate": 128,
-            "outputFormat": "wav",
-            "channels": 1,
-            "languageCode": "en",
-            "provider": "TopMediai"
-          }
-        },
-        {
-          "timestamp": "2025-08-24T16:20:23.767Z",
-          "type": "settings_update",
-          "settings": {
-            "pitch": 0,
-            "speed": 1,
-            "volume": 0,
-            "emotion": "Neutral",
-            "sampleRate": 44100,
-            "bitRate": 128,
-            "outputFormat": "wav",
-            "channels": 1,
-            "languageCode": "en",
-            "provider": "TopMediai"
-          }
-        },
-        {
-          "timestamp": "2025-08-24T16:54:07.568Z",
-          "type": "settings_update",
-          "settings": {
-            "pitch": 0,
-            "speed": 1,
-            "volume": 0,
-            "emotion": "Neutral",
-            "sampleRate": 44100,
-            "bitRate": 128,
-            "outputFormat": "wav",
-            "channels": 1,
-            "languageCode": "en",
-            "provider": "TopMediai"
-          }
-        },
         {
           "timestamp": "2025-08-24T16:57:34.084Z",
           "type": "settings_update",
@@ -206,6 +110,102 @@
             "languageCode": "en",
             "provider": "TopMediai"
           }
+        },
+        {
+          "timestamp": "2025-08-24T19:59:29.269Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Neutral",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-08-24T19:59:29.276Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Neutral",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-08-24T21:18:19.088Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Neutral",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-08-24T21:18:38.116Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Neutral",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-08-24T21:19:41.762Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Neutral",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-08-24T21:20:30.468Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Neutral",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
         }
       ]
     },
@@ -216,10 +216,10 @@
         "pitch": 0,
         "speed": 1,
         "volume": 0,
-        "emotion": "Excited",
+        "emotion": "Neutral",
         "sampleRate": 44100,
         "bitRate": 128,
-        "outputFormat": "mp3",
+        "outputFormat": "wav",
         "channels": 1,
         "languageCode": "en",
         "provider": "TopMediai"
@@ -231,7 +231,7 @@
         "tags": [],
         "notes": "",
         "created": "2024-10-31T23:03:22.275Z",
-        "lastModified": "2025-08-24T16:54:32.626Z",
+        "lastModified": "2025-08-24T21:07:56.400Z",
         "migratedFrom": "Replica",
         "migrationDate": "2025-06-14T20:10:52.735Z",
         "originalSpeakerId": "5575403f-e535-4a84-96a1-8d717d7eab86",
@@ -240,58 +240,6 @@
         "voiceLanguage": "English(US),Chinese(Mandarin),Spanish(Mexico),Japanese(Japan),Portuguese(Portugal),French(France),Russian(Russia),Korean(Korea),Malay,Danish(Denmark),Finnish(Finland),Turkish(Turkey),Slovak(Slovakia),Hindi(India),Swedish(Sweden),Italian(Italy),Polish(Poland),Czech(Czech),Dutch(Belgium),German(Germany),Filipino(Philippines),Indonesian(Indonesia),Croatian(Croatia),Arabic(Egyptian),Romanian(Romania),Bulgarian(Bulgaria),Greek(Greece),Tamil(India),Ukrainian(Ukraine),Vietnamese(Vietnam),Norwegian(Norway),Hungarian(Hungary),Portuguese(Brazil),Arabic(Saudi Arabia),Spanish(Spain),English(UK)"
       },
       "history": [
-        {
-          "timestamp": "2024-11-01T23:54:17.578Z",
-          "type": "settings_update",
-          "settings": {
-            "pitch": 0,
-            "speed": 1,
-            "volume": 0,
-            "sampleRate": 44100,
-            "bitRate": 128,
-            "channels": 1,
-            "languageCode": "en"
-          }
-        },
-        {
-          "timestamp": "2024-11-01T23:54:46.676Z",
-          "type": "settings_update",
-          "settings": {
-            "pitch": 0,
-            "speed": 1,
-            "volume": 0,
-            "sampleRate": 44100,
-            "bitRate": 128,
-            "channels": 1,
-            "languageCode": "en"
-          }
-        },
-        {
-          "timestamp": "2024-11-01T23:55:11.234Z",
-          "type": "settings_update",
-          "settings": {
-            "pitch": 0,
-            "speed": 1,
-            "volume": 0,
-            "sampleRate": 44100,
-            "bitRate": 128,
-            "channels": 1,
-            "languageCode": "en"
-          }
-        },
-        {
-          "timestamp": "2024-11-01T23:55:26.246Z",
-          "type": "settings_update",
-          "settings": {
-            "pitch": 0,
-            "speed": 1,
-            "volume": 0,
-            "sampleRate": 44100,
-            "bitRate": 128,
-            "channels": 1,
-            "languageCode": "en"
-          }
-        },
         {
           "timestamp": "2024-11-01T23:55:53.552Z",
           "type": "settings_update",
@@ -383,6 +331,70 @@
             "languageCode": "en",
             "provider": "TopMediai"
           }
+        },
+        {
+          "timestamp": "2025-08-24T19:59:36.053Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Neutral",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-08-24T19:59:36.064Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Neutral",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-08-24T21:07:56.392Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Neutral",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-08-24T21:07:56.400Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Neutral",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
         }
       ]
     },
@@ -408,7 +420,7 @@
         "tags": [],
         "notes": "",
         "created": "2025-05-13T00:35:07.630Z",
-        "lastModified": "2025-08-24T19:41:59.329Z",
+        "lastModified": "2025-08-24T21:00:20.023Z",
         "migratedFrom": "Replica",
         "migrationDate": "2025-06-14T20:10:52.736Z",
         "originalSpeakerId": "55a0aad5-a739-402f-9cec-36b01ff81a41",
@@ -418,7 +430,7 @@
       },
       "history": [
         {
-          "timestamp": "2025-08-24T19:13:30.541Z",
+          "timestamp": "2025-08-24T20:12:24.359Z",
           "type": "settings_update",
           "settings": {
             "pitch": 0,
@@ -434,7 +446,7 @@
           }
         },
         {
-          "timestamp": "2025-08-24T19:14:24.605Z",
+          "timestamp": "2025-08-24T20:12:46.633Z",
           "type": "settings_update",
           "settings": {
             "pitch": 0,
@@ -450,7 +462,7 @@
           }
         },
         {
-          "timestamp": "2025-08-24T19:15:40.564Z",
+          "timestamp": "2025-08-24T20:20:38.815Z",
           "type": "settings_update",
           "settings": {
             "pitch": 0,
@@ -466,7 +478,7 @@
           }
         },
         {
-          "timestamp": "2025-08-24T19:18:32.493Z",
+          "timestamp": "2025-08-24T20:25:09.398Z",
           "type": "settings_update",
           "settings": {
             "pitch": 0,
@@ -482,7 +494,7 @@
           }
         },
         {
-          "timestamp": "2025-08-24T19:19:15.972Z",
+          "timestamp": "2025-08-24T20:28:10.779Z",
           "type": "settings_update",
           "settings": {
             "pitch": 0,
@@ -498,7 +510,7 @@
           }
         },
         {
-          "timestamp": "2025-08-24T19:20:09.177Z",
+          "timestamp": "2025-08-24T20:29:15.704Z",
           "type": "settings_update",
           "settings": {
             "pitch": 0,
@@ -514,7 +526,7 @@
           }
         },
         {
-          "timestamp": "2025-08-24T19:21:04.893Z",
+          "timestamp": "2025-08-24T20:43:38.575Z",
           "type": "settings_update",
           "settings": {
             "pitch": 0,
@@ -530,7 +542,7 @@
           }
         },
         {
-          "timestamp": "2025-08-24T19:21:41.584Z",
+          "timestamp": "2025-08-24T20:47:01.515Z",
           "type": "settings_update",
           "settings": {
             "pitch": 0,
@@ -546,7 +558,7 @@
           }
         },
         {
-          "timestamp": "2025-08-24T19:26:15.617Z",
+          "timestamp": "2025-08-24T20:47:14.010Z",
           "type": "settings_update",
           "settings": {
             "pitch": 0,
@@ -562,7 +574,7 @@
           }
         },
         {
-          "timestamp": "2025-08-24T19:26:44.966Z",
+          "timestamp": "2025-08-24T21:00:03.152Z",
           "type": "settings_update",
           "settings": {
             "pitch": 0,
@@ -578,7 +590,7 @@
           }
         },
         {
-          "timestamp": "2025-08-24T19:41:59.329Z",
+          "timestamp": "2025-08-24T21:00:20.023Z",
           "type": "settings_update",
           "settings": {
             "pitch": 0,
@@ -705,12 +717,12 @@
     },
     {
       "characterId": 3,
-      "speaker_id": "d23c47eb-5d1b-11ee-a861-00163e2ac61b",
+      "speaker_id": "8b181522-6dfc-11f0-9fd0-00163e0cb12c",
       "settings": {
-        "pitch": 0,
-        "speed": 1,
+        "pitch": -2,
+        "speed": 0.6,
         "volume": 0,
-        "emotion": "Neutral",
+        "emotion": "Fearful",
         "sampleRate": 44100,
         "bitRate": 128,
         "outputFormat": "wav",
@@ -724,11 +736,11 @@
         "favorited": false,
         "tags": [],
         "notes": "",
-        "voiceName": "Jenson Moore",
+        "voiceName": "Scorpion",
         "voiceGender": "male",
-        "voiceLanguage": "English(US)",
+        "voiceLanguage": "English(US),Chinese(Mandarin),Spanish(Mexico),Japanese(Japan),Portuguese(Portugal),French(France),Russian(Russia),Korean(Korea),Malay,Danish(Denmark),Finnish(Finland),Turkish(Turkey),Slovak(Slovakia),Hindi(India),Swedish(Sweden),Italian(Italy),Polish(Poland),Czech(Czech),Dutch(Belgium),German(Germany),Filipino(Philippines),Indonesian(Indonesia),Croatian(Croatia),Arabic(Egyptian),Romanian(Romania),Bulgarian(Bulgaria),Greek(Greece),Tamil(India),Ukrainian(Ukraine),Vietnamese(Vietnam),Norwegian(Norway),Hungarian(Hungary),Portuguese(Brazil),Arabic(Saudi Arabia),Spanish(Spain),English(UK)",
         "created": "2025-06-20T21:43:45.696Z",
-        "lastModified": "2025-06-20T21:43:45.696Z"
+        "lastModified": "2025-08-24T21:20:56.216Z"
       },
       "history": [
         {
@@ -739,6 +751,102 @@
             "speed": 1,
             "volume": 0,
             "emotion": "Neutral",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-08-24T20:04:08.867Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": -2,
+            "speed": 0.6,
+            "volume": 0,
+            "emotion": "Fearful",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-08-24T20:04:08.878Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": -2,
+            "speed": 0.6,
+            "volume": 0,
+            "emotion": "Fearful",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-08-24T20:04:28.093Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": -2,
+            "speed": 0.6,
+            "volume": 0,
+            "emotion": "Fearful",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-08-24T20:04:29.338Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": -2,
+            "speed": 0.6,
+            "volume": 0,
+            "emotion": "Fearful",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-08-24T21:20:43.115Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": -2,
+            "speed": 0.6,
+            "volume": 0,
+            "emotion": "Fearful",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "TopMediai"
+          }
+        },
+        {
+          "timestamp": "2025-08-24T21:20:56.216Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": -2,
+            "speed": 0.6,
+            "volume": 0,
+            "emotion": "Fearful",
             "sampleRate": 44100,
             "bitRate": 128,
             "outputFormat": "wav",

@@ -251,7 +251,7 @@ router.patch('/api/assistants/:assistantId', async (req, res) => {
         console.log(`✅ Assistant ${assistantId} updated successfully`);
         res.json({ success: true, assistant: updated });
     } catch (error) {
-        console.error(`❌ Failed to update assistant ${assistantId}:`, error.message);
+        console.error(`❌ Failed to update assistant ${req.params.assistantId}:`, error.message);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -1527,7 +1527,7 @@ async function getPerformanceMetrics() {
 // AI Chat endpoint for Enhanced Test Chat
 router.post('/chat', async (req, res) => {
     try {
-        const { message, character, characterId } = req.body;
+        const { message, character, characterId, context, liveMode } = req.body;
 
         if (!message) {
             return res.status(400).json({
@@ -1536,7 +1536,8 @@ router.post('/chat', async (req, res) => {
             });
         }
 
-        console.log(`💬 AI Chat request: "${message}" (Character: ${character || 'default'})`);
+        const modeLabel = liveMode ? '[LIVE]' : '[CHAT]';
+        console.log(`💬 ${modeLabel} AI Chat request: "${message}" (Character: ${character || 'default'})`);
 
         // Get character information
         let targetCharacter = null;
@@ -1556,11 +1557,22 @@ router.post('/chat', async (req, res) => {
                 // Create a thread for this conversation
                 const thread = await assistantService.createThread();
 
-                // Send message to assistant
+                // Add conversation context if provided (for Live Mode)
+                if (context && Array.isArray(context) && context.length > 0) {
+                    // Add recent conversation history to thread
+                    for (const contextMessage of context.slice(-3)) { // Last 3 messages for context
+                        if (contextMessage.content && contextMessage.role) {
+                            await assistantService.sendMessageToThread(thread.id, contextMessage.content);
+                        }
+                    }
+                }
+
+                // Send current message to assistant
                 await assistantService.sendMessageToThread(thread.id, message);
 
-                // Run the assistant and get response
-                const result = await assistantService.runAssistantOnThread(targetCharacter.openaiAssistantId, thread.id);
+                // Run the assistant and get response with timeout optimization for live mode
+                const timeoutMs = liveMode ? 15000 : 30000; // Faster timeout for live mode
+                const result = await assistantService.runAssistantOnThread(targetCharacter.openaiAssistantId, thread.id, { timeoutMs });
 
                 if (result && result.text) {
                     const aiResponse = result.text;
@@ -1574,13 +1586,16 @@ router.post('/chat', async (req, res) => {
                                 metadata: {
                                     assistantId: targetCharacter.openaiAssistantId,
                                     threadId: thread.id,
-                                    timestamp: new Date().toISOString()
+                                    timestamp: new Date().toISOString(),
+                                    liveMode: !!liveMode,
+                                    contextUsed: !!(context && context.length > 0)
                                 }
                             }
                         }
                     });
 
-                    console.log(`🤖 AI response: "${aiResponse}"`);
+                    const responseLabel = liveMode ? '🎙️ Live AI response' : '🤖 AI response';
+                    console.log(`${responseLabel}: "${aiResponse}"`);
                     return;
                 }
             } catch (assistantError) {

@@ -401,6 +401,23 @@ router.post('/:id/delete', async (req, res) => {
 
 	});
 
+// PATCH route for updating character data (used by AI Management)
+router.patch('/:id', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const character = await characterService.getCharacterById(id);
+        if (!character) {
+            return res.status(404).json({ success: false, error: 'Character not found' });
+        }
+
+        const updated = await characterService.updateCharacter(id, req.body);
+        res.json({ success: true, character: updated });
+    } catch (error) {
+        logger.error('Error updating character via PATCH:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // Remove AI (unassign OpenAI Assistant)
 router.post('/:id/ai/remove-all', async (req, res) => {
     try {

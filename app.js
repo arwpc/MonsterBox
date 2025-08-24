@@ -472,7 +472,7 @@ app.get('/test-chat', async (req, res) => {
                     availableCharacters.push({
                         ...char,
                         hasVoice: true,
-                        hasAI: char.aiConfig && char.aiConfig.enabled && char.openaiAssistantId
+                        hasAI: !!char.openaiAssistantId // Only require openaiAssistantId for AI capability
                     });
                 }
             } catch (error) {

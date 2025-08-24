@@ -197,13 +197,28 @@ class EnhancedTestChat {
      */
     async loadCharacterGreeting(character) {
         try {
+            console.log('🎭 Loading greeting for character:', character.char_name);
+            console.log('🎭 Assistant ID:', character.openaiAssistantId);
+            console.log('🎭 Available assistants:', Object.keys(this.config.assistants || {}));
+
             const assistantInfo = this.config.assistants[character.openaiAssistantId];
+            console.log('🎭 Assistant info:', assistantInfo);
+
             if (assistantInfo && assistantInfo.conversationStarters && assistantInfo.conversationStarters.length > 0) {
                 const randomGreeting = assistantInfo.conversationStarters[
                     Math.floor(Math.random() * assistantInfo.conversationStarters.length)
                 ];
-                
+
+                console.log('🎭 Selected greeting:', randomGreeting);
+
                 this.addMessage('bot', randomGreeting, {
+                    characterName: character.char_name || character.name,
+                    isGreeting: true
+                });
+            } else {
+                console.warn('⚠️ No conversation starters found for assistant:', character.openaiAssistantId);
+                // Fallback greeting
+                this.addMessage('bot', `Hello! I'm ready to chat. What would you like to talk about?`, {
                     characterName: character.char_name || character.name,
                     isGreeting: true
                 });
@@ -491,11 +506,11 @@ class EnhancedTestChat {
 
             // Set Live Mode active
             this.isLiveModeActive = true;
-            this.liveModeState = 'listening';
-            this.updateLiveModeStatus(true, 'Starting...');
+            this.liveModeState = 'starting';
+            this.updateLiveModeStatus(true, 'Starting conversation...');
 
-            // Start continuous listening
-            await this.startContinuousListening();
+            // Start with AI greeting/conversation starter
+            await this.startConversation();
 
             console.log('🎙️ Live Mode started successfully');
 
@@ -545,6 +560,46 @@ class EnhancedTestChat {
     }
 
     /**
+     * Start conversation with AI greeting
+     */
+    async startConversation() {
+        try {
+            console.log('🎙️ Starting conversation...');
+
+            // Get conversation starter from character or use default
+            let starterMessage = "Hello! I'm ready to chat. What would you like to talk about?";
+
+            // Check if character has conversation starters
+            if (this.currentCharacter && this.currentCharacter.conversationStarters && this.currentCharacter.conversationStarters.length > 0) {
+                const starters = this.currentCharacter.conversationStarters.filter(s => s && s.trim());
+                if (starters.length > 0) {
+                    starterMessage = starters[Math.floor(Math.random() * starters.length)];
+                }
+            }
+
+            // Add AI greeting to chat
+            this.addMessage('bot', starterMessage, {
+                characterName: this.currentCharacter.char_name || this.currentCharacter.name
+            });
+
+            // Speak the greeting
+            this.liveModeState = 'speaking';
+            this.updateLiveModeStatus(true, 'Speaking...');
+
+            // Initialize continuous listening first
+            await this.startContinuousListening();
+
+            // Then speak the greeting (which will restart listening when done)
+            await this.speakLiveModeText(starterMessage);
+
+        } catch (error) {
+            console.error('❌ Error starting conversation:', error);
+            // Fallback to listening mode
+            await this.startContinuousListening();
+        }
+    }
+
+    /**
      * Start continuous listening for Live Mode
      */
     async startContinuousListening() {
@@ -568,21 +623,28 @@ class EnhancedTestChat {
             this.audioChunks = [];
 
             this.mediaRecorder.ondataavailable = (event) => {
+                console.log('🎙️ Audio data available:', event.data.size, 'bytes');
                 if (event.data.size > 0) {
                     this.audioChunks.push(event.data);
+                    console.log('🎙️ Total audio chunks:', this.audioChunks.length);
+                } else {
+                    console.warn('🎙️ Empty audio chunk received');
                 }
             };
 
             this.mediaRecorder.onstop = async () => {
-                if (this.isLiveModeActive) {
+                if (this.isLiveModeActive && this.audioChunks.length > 0) {
+                    console.log('🎙️ Processing audio chunks:', this.audioChunks.length);
                     await this.processLiveModeAudio();
                 }
             };
 
-            // Start recording with time slicing (3 second chunks for Live Mode)
-            this.mediaRecorder.start(3000);
+            // Start recording with shorter chunks for faster response (1.5 seconds)
+            console.log('🎙️ Starting MediaRecorder with 1.5s chunks...');
+            this.mediaRecorder.start(1500);
             this.updateLiveModeStatus(true, 'Listening...');
 
+            console.log('🎙️ MediaRecorder state:', this.mediaRecorder.state);
             console.log('🎙️ Continuous listening started');
 
         } catch (error) {
@@ -636,14 +698,16 @@ class EnhancedTestChat {
             // Clear chunks for next recording
             this.audioChunks = [];
 
-            // Convert to base64
+            console.log(`🎙️ Processing audio blob: ${audioBlob.size} bytes`);
+
+            // Convert audio blob to base64 for the /voice/transcribe endpoint
             const arrayBuffer = await audioBlob.arrayBuffer();
             const uint8Array = new Uint8Array(arrayBuffer);
             const base64Audio = btoa(String.fromCharCode.apply(null, uint8Array));
 
-            console.log(`🎙️ Processing ${base64Audio.length} characters of audio data`);
+            console.log(`🎙️ Converted to base64: ${base64Audio.length} characters`);
 
-            // Send to STT service
+            // Send to STT service using JSON format
             const response = await fetch(`${this.config.apiBaseUrl}/voice/transcribe`, {
                 method: 'POST',
                 headers: {
@@ -658,20 +722,23 @@ class EnhancedTestChat {
             });
 
             if (!response.ok) {
+                const errorText = await response.text();
+                console.error('🎙️ STT request failed:', response.status, response.statusText, errorText);
                 throw new Error(`STT request failed: ${response.status} ${response.statusText}`);
             }
 
             const data = await response.json();
+            console.log('🎙️ STT response:', data);
 
-            if (data.success && data.data.stt && data.data.stt.text) {
+            if (data.success && data.data && data.data.stt && data.data.stt.text) {
                 const transcribedText = data.data.stt.text.trim();
                 console.log(`🎙️ Transcribed: "${transcribedText}"`);
 
-                // Only process if there's meaningful text (more than just noise)
-                if (transcribedText.length > 2) {
+                // Process any meaningful text (lowered threshold for faster response)
+                if (transcribedText.length > 1 && transcribedText.toLowerCase() !== 'you') {
                     await this.processLiveModeMessage(transcribedText);
                 } else {
-                    console.log('🎙️ Text too short, restarting listening...');
+                    console.log('🎙️ Text too short or noise, restarting listening...');
                     if (this.isLiveModeActive) {
                         this.restartContinuousListening();
                     }
@@ -701,9 +768,12 @@ class EnhancedTestChat {
             // Add user message to chat
             this.addMessage('user', message);
 
-            // Send to AI
+            // Send to AI with conversation context
             this.liveModeState = 'processing';
             this.updateLiveModeStatus(true, 'Thinking...');
+
+            // Add conversation context for better responses
+            const conversationContext = this.getChatHistory().slice(-5); // Last 5 messages for context
 
             const response = await fetch(`${this.config.apiBaseUrl}/ai/chat`, {
                 method: 'POST',
@@ -713,7 +783,9 @@ class EnhancedTestChat {
                 body: JSON.stringify({
                     message: message,
                     character: this.currentCharacter.name.toLowerCase(),
-                    characterId: this.currentCharacter.id
+                    characterId: this.currentCharacter.id,
+                    context: conversationContext,
+                    liveMode: true // Flag for faster, more conversational responses
                 })
             });
 
@@ -722,6 +794,7 @@ class EnhancedTestChat {
             }
 
             const data = await response.json();
+            console.log('🎙️ AI chat response:', data);
 
             if (data.success && data.data.aiResponse && data.data.aiResponse.text) {
                 const aiResponse = data.data.aiResponse.text;
@@ -733,9 +806,10 @@ class EnhancedTestChat {
                 });
 
                 // Speak the response
+                console.log('🎙️ Starting TTS for AI response...');
                 await this.speakLiveModeText(aiResponse);
             } else {
-                console.error('❌ Invalid AI response');
+                console.error('❌ Invalid AI response:', data);
                 if (this.isLiveModeActive) {
                     this.restartContinuousListening();
                 }
@@ -750,11 +824,39 @@ class EnhancedTestChat {
     }
 
     /**
+     * Get chat history for conversation context
+     */
+    getChatHistory() {
+        const chatContainer = document.getElementById('chat-messages');
+        if (!chatContainer) return [];
+
+        const messages = [];
+        const messageElements = chatContainer.querySelectorAll('.message');
+
+        messageElements.forEach(element => {
+            const isUser = element.classList.contains('user-message');
+            const text = element.querySelector('.message-text')?.textContent?.trim();
+            if (text) {
+                messages.push({
+                    role: isUser ? 'user' : 'assistant',
+                    content: text
+                });
+            }
+        });
+
+        return messages;
+    }
+
+    /**
      * Restart continuous listening
      */
     restartContinuousListening() {
-        if (!this.isLiveModeActive) return;
+        if (!this.isLiveModeActive) {
+            console.log('🎙️ Live mode not active, not restarting');
+            return;
+        }
 
+        console.log('🎙️ Scheduling restart of continuous listening...');
         this.liveModeState = 'listening';
         this.updateLiveModeStatus(true, 'Listening...');
 
@@ -762,11 +864,32 @@ class EnhancedTestChat {
         this.liveModeTimeout = setTimeout(async () => {
             if (this.isLiveModeActive) {
                 try {
-                    // Restart recording
-                    if (this.mediaRecorder && this.mediaRecorder.state === 'inactive') {
-                        this.audioChunks = [];
-                        this.mediaRecorder.start(3000);
-                        console.log('🎙️ Restarted continuous listening');
+                    console.log('🎙️ Attempting to restart MediaRecorder...');
+                    console.log('🎙️ MediaRecorder state:', this.mediaRecorder?.state);
+                    console.log('🎙️ Audio stream active:', !!this.audioStream);
+
+                    // Restart recording with shorter chunks for faster response
+                    if (this.mediaRecorder) {
+                        if (this.mediaRecorder.state === 'recording') {
+                            console.log('🎙️ Stopping current recording before restart...');
+                            this.mediaRecorder.stop();
+                            // Wait a bit for stop to complete, then restart
+                            setTimeout(() => {
+                                if (this.isLiveModeActive && this.mediaRecorder.state === 'inactive') {
+                                    this.audioChunks = [];
+                                    this.mediaRecorder.start(1500);
+                                    console.log('🎙️ Restarted continuous listening after stop, new state:', this.mediaRecorder.state);
+                                }
+                            }, 100);
+                        } else if (this.mediaRecorder.state === 'inactive') {
+                            this.audioChunks = [];
+                            this.mediaRecorder.start(1500);
+                            console.log('🎙️ Restarted continuous listening, new state:', this.mediaRecorder.state);
+                        } else {
+                            console.warn('🎙️ Cannot restart - MediaRecorder in unexpected state:', this.mediaRecorder.state);
+                        }
+                    } else {
+                        console.warn('🎙️ Cannot restart - MediaRecorder not available');
                     }
                 } catch (error) {
                     console.error('❌ Error restarting listening:', error);
@@ -785,6 +908,7 @@ class EnhancedTestChat {
             this.liveModeState = 'speaking';
             this.updateLiveModeStatus(true, 'Speaking...');
 
+            console.log('🎙️ Sending TTS request for:', text);
             const response = await fetch(`${this.config.apiBaseUrl}/voice/speak`, {
                 method: 'POST',
                 headers: {
@@ -798,7 +922,9 @@ class EnhancedTestChat {
                 })
             });
 
+            console.log('🎙️ TTS response status:', response.status);
             const data = await response.json();
+            console.log('🎙️ TTS response data:', data);
 
             if (data.success && data.audioUrl) {
                 // Play audio
@@ -808,6 +934,9 @@ class EnhancedTestChat {
                 // When audio finishes, restart listening
                 this.liveModeAudio.onended = () => {
                     console.log('🎙️ TTS finished, restarting listening...');
+                    console.log('🎙️ Live mode active:', this.isLiveModeActive);
+                    console.log('🎙️ MediaRecorder exists:', !!this.mediaRecorder);
+                    console.log('🎙️ MediaRecorder state before restart:', this.mediaRecorder?.state);
                     this.liveModeAudio = null;
                     if (this.isLiveModeActive) {
                         this.restartContinuousListening();

@@ -663,6 +663,30 @@
         await fetch(`/ai-management/api/assistants/${id}/starters`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ starters })});
       }
 
+      // Check if this assistant is assigned to a character and update character data if needed
+      const assignSelect = card.querySelector('.assign-select');
+      const characterId = assignSelect?.value;
+
+      if (data.success && characterId) {
+        try {
+          // Update character's assistant metadata to ensure consistency
+          const characterUpdateRes = await fetch(`/characters/${characterId}`, {
+            method: 'PATCH',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+              openaiAssistantId: id,
+              lastAssistantUpdate: new Date().toISOString()
+            })
+          });
+
+          if (characterUpdateRes.ok) {
+            console.log(`✅ Character ${characterId} updated with assistant ${id} metadata`);
+          }
+        } catch (error) {
+          console.warn('Character update failed:', error);
+        }
+      }
+
       if (data.success) {
         card.querySelector('[data-msg]').textContent = 'Saved ✅ - Changes will affect AI behavior immediately';
         card.querySelector('[data-msg]').style.color = '#00ff00';
