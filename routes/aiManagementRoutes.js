@@ -1557,16 +1557,13 @@ router.post('/chat', async (req, res) => {
                 const thread = await assistantService.createThread();
 
                 // Send message to assistant
-                await assistantService.addMessage(thread.id, message);
+                await assistantService.sendMessageToThread(thread.id, message);
 
-                // Run the assistant
-                const run = await assistantService.runAssistant(thread.id, targetCharacter.openaiAssistantId);
+                // Run the assistant and get response
+                const result = await assistantService.runAssistantOnThread(targetCharacter.openaiAssistantId, thread.id);
 
-                // Wait for completion and get response
-                const response = await assistantService.waitForCompletion(thread.id, run.id);
-
-                if (response && response.length > 0) {
-                    const aiResponse = response[0].content[0].text.value;
+                if (result && result.text) {
+                    const aiResponse = result.text;
 
                     res.json({
                         success: true,

@@ -997,11 +997,10 @@ router.get('/:characterId/config', async (req, res) => {
 
         // Get voice configuration
         const voiceService = require('../services/voiceService');
-        const voiceServiceInstance = new voiceService();
         let voiceConfig = null;
 
         try {
-            voiceConfig = await voiceServiceInstance.getVoiceByCharacterId(characterId);
+            voiceConfig = await voiceService.getVoiceByCharacterId(characterId);
         } catch (error) {
             console.warn(`⚠️ Could not get voice config for character ${characterId}:`, error.message);
         }

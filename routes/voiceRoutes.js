@@ -68,8 +68,7 @@ router.post('/speak', async (req, res) => {
         console.log(`🎤 TTS request: "${text}" (Character: ${character || 'default'})`);
 
         // Get voice service
-        const VoiceService = require('../services/voiceService');
-        const voiceService = new VoiceService();
+        const voiceService = require('../services/voiceService');
 
         // Get character's voice settings
         let voiceSettings = null;
@@ -91,10 +90,12 @@ router.post('/speak', async (req, res) => {
         // Generate speech
         const result = await voiceService.generateSpeech(text, speakerId, options, characterId);
 
-        if (result && result.audioUrl) {
+        console.log('🔍 Result keys:', result ? Object.keys(result) : 'null');
+
+        if (result && result.url) {
             res.json({
                 success: true,
-                audioUrl: result.audioUrl,
+                audioUrl: result.url,
                 text: text,
                 character: character || 'default',
                 provider: 'TopMediai',

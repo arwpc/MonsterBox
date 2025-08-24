@@ -408,7 +408,7 @@
         "tags": [],
         "notes": "",
         "created": "2025-05-13T00:35:07.630Z",
-        "lastModified": "2025-08-24T16:54:41.994Z",
+        "lastModified": "2025-08-24T19:26:44.966Z",
         "migratedFrom": "Replica",
         "migrationDate": "2025-06-14T20:10:52.736Z",
         "originalSpeakerId": "55a0aad5-a739-402f-9cec-36b01ff81a41",
@@ -418,7 +418,7 @@
       },
       "history": [
         {
-          "timestamp": "2025-06-22T00:18:04.516Z",
+          "timestamp": "2025-08-24T19:11:53.501Z",
           "type": "settings_update",
           "settings": {
             "pitch": 0,
@@ -434,7 +434,7 @@
           }
         },
         {
-          "timestamp": "2025-06-24T21:11:04.094Z",
+          "timestamp": "2025-08-24T19:13:30.541Z",
           "type": "settings_update",
           "settings": {
             "pitch": 0,
@@ -450,7 +450,7 @@
           }
         },
         {
-          "timestamp": "2025-06-24T21:11:47.232Z",
+          "timestamp": "2025-08-24T19:14:24.605Z",
           "type": "settings_update",
           "settings": {
             "pitch": 0,
@@ -466,7 +466,7 @@
           }
         },
         {
-          "timestamp": "2025-06-24T21:20:30.787Z",
+          "timestamp": "2025-08-24T19:15:40.564Z",
           "type": "settings_update",
           "settings": {
             "pitch": 0,
@@ -482,7 +482,7 @@
           }
         },
         {
-          "timestamp": "2025-06-24T21:20:58.618Z",
+          "timestamp": "2025-08-24T19:18:32.493Z",
           "type": "settings_update",
           "settings": {
             "pitch": 0,
@@ -498,7 +498,7 @@
           }
         },
         {
-          "timestamp": "2025-06-27T22:03:23.810Z",
+          "timestamp": "2025-08-24T19:19:15.972Z",
           "type": "settings_update",
           "settings": {
             "pitch": 0,
@@ -514,7 +514,7 @@
           }
         },
         {
-          "timestamp": "2025-06-27T22:04:01.856Z",
+          "timestamp": "2025-08-24T19:20:09.177Z",
           "type": "settings_update",
           "settings": {
             "pitch": 0,
@@ -530,7 +530,7 @@
           }
         },
         {
-          "timestamp": "2025-08-24T15:43:01.260Z",
+          "timestamp": "2025-08-24T19:21:04.893Z",
           "type": "settings_update",
           "settings": {
             "pitch": 0,
@@ -546,7 +546,7 @@
           }
         },
         {
-          "timestamp": "2025-08-24T16:28:16.230Z",
+          "timestamp": "2025-08-24T19:21:41.584Z",
           "type": "settings_update",
           "settings": {
             "pitch": 0,
@@ -562,7 +562,7 @@
           }
         },
         {
-          "timestamp": "2025-08-24T16:31:24.345Z",
+          "timestamp": "2025-08-24T19:26:15.617Z",
           "type": "settings_update",
           "settings": {
             "pitch": 0,
@@ -578,7 +578,7 @@
           }
         },
         {
-          "timestamp": "2025-08-24T16:54:41.994Z",
+          "timestamp": "2025-08-24T19:26:44.966Z",
           "type": "settings_update",
           "settings": {
             "pitch": 0,

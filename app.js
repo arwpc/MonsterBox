@@ -13,7 +13,7 @@ process.env.NODE_NO_WARNINGS = '1';
 
 let express, path, http, https, logger, app, server, httpsServer, port, audioStream, soundController, fs, os, session;
 let videoStream; // <-- Add videoStream variable
-let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, webcamRoutes, voiceRoutes, cleanupRoutes, healthRoutes, authRoutes, sshRoutes, aiConfigRoutes, aiManagementRoutes, configRoutes, headTrackingRoutes, chatterpiManagementRoutes;
+let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, webcamRoutes, voiceRoutes, cleanupRoutes, healthRoutes, authRoutes, sshRoutes, aiConfigRoutes, aiManagementRoutes, configRoutes, headTrackingRoutes;
 let characterService;
 let authMiddleware, rbacMiddleware;
 
@@ -110,8 +110,7 @@ try {
 
 
 
-    // Import ChatterPi management routes
-    chatterpiManagementRoutes = require('./routes/chatterpiManagementRoutes');
+
 
     // Import authentication middleware
     authMiddleware = require('./middleware/auth');
@@ -251,10 +250,7 @@ app.use(express.static(path.join(__dirname, 'public'), {
 // Add this line to serve files from the 'scripts' directory
 app.use('/scripts', express.static(path.join(__dirname, 'scripts')));
 
-// ChatterPi chat page route
-app.get('/chatterpi-chat', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'chatterpi-chat.html'));
-});
+
 
 // Use sceneRoutes before session middleware
 app.use('/scenes', sceneRoutes);
@@ -320,7 +316,7 @@ app.use('/api/motion-tracking', require('./routes/api/motionTrackingApiRoutes'))
 app.use('/api/voice', voiceRoutes);
 app.use('/api/character', characterRoutes);
 
-app.use('/api/chatterpi', require('./routes/chatterpiRoutes'));
+
 app.use('/api/hardware', require('./routes/api/hardwareApiRoutes').router);
 app.use('/api/hardware/head-tracking', require('./routes/api/headTrackingApiRoutes'));
 app.use('/api/character-audio-config', require('./routes/api/characterAudioConfigRoutes'));
@@ -442,8 +438,50 @@ app.use('/ai-config', aiConfigRoutes);
 app.use('/ai-management', aiManagementRoutes);
 app.use('/api/ai', aiManagementRoutes);
 
-// ChatterPi Management routes
-app.use('/chatterpi', chatterpiManagementRoutes);
+// Enhanced Test Chat route (formerly ChatterPi test)
+app.get('/test-chat', async (req, res) => {
+    try {
+        const characterService = require('./services/characterService');
+        const fs = require('fs').promises;
+        const path = require('path');
+
+        // Get all characters
+        const characters = await characterService.getAllCharacters();
+
+        // Load assistants configuration
+        let assistants = {};
+        try {
+            const assistantsPath = path.join(__dirname, 'data/assistants-config.json');
+            const assistantsData = await fs.readFile(assistantsPath, 'utf8');
+            const assistantsConfig = JSON.parse(assistantsData);
+            assistants = assistantsConfig.assistants || {};
+        } catch (error) {
+            console.warn('⚠️ Could not load assistants config:', error.message);
+        }
+
+        // Filter characters that have AI enabled and assistant IDs
+        const aiEnabledCharacters = characters.filter(char =>
+            char.aiConfig &&
+            char.aiConfig.enabled &&
+            char.openaiAssistantId
+        );
+
+        console.log(`🎭 Loaded ${aiEnabledCharacters.length} AI-enabled characters for test page`);
+
+        res.render('enhanced-test-chat', {
+            title: 'Enhanced Test Chat - AI Conversation Interface',
+            characterId: req.query.characterId || (aiEnabledCharacters.length > 0 ? aiEnabledCharacters[0].id : null),
+            pageTitle: 'Enhanced Test Chat',
+            characters: aiEnabledCharacters,
+            assistants: assistants
+        });
+    } catch (error) {
+        console.error('❌ Error rendering enhanced test page:', error);
+        res.status(500).send('Failed to load test page: ' + error.message);
+    }
+});
+
+
 
 // Connection monitoring endpoint
 app.get('/api/connections/status',
