@@ -11,6 +11,7 @@ const WebSocket = require('ws');
 const fs = require('fs').promises;
 const path = require('path');
 
+const OpenAIAssistantService = require('../ai/services/OpenAIAssistantService');
 // Initialize AI integration and service manager
 let aiInstance = null;
 let chatterPiServiceManager = null;
@@ -99,9 +100,35 @@ router.post('/chat', async (req, res) => {
 
         console.log(`🎭 Processing chat message: "${message}" for character ID: ${characterId || 'default'}, voice ID: ${voiceId || 'default'}`);
 
-        // Generate AI response
-        const result = await aiInstance.generateResponse(message);
-        
+        // If a Personality with an Assistant is assigned to this character, route via Assistants API
+        let result;
+        let usedAssistant = false;
+        try {
+            const personalitiesPath = path.join(__dirname, '../data/ai-personalities.json');
+            let personalities = [];
+            try {
+                const data = await fs.readFile(personalitiesPath, 'utf8');
+                personalities = JSON.parse(data);
+            } catch (_) {}
+
+            const assigned = personalities.find(p => p.assignedCharacter === String(characterId || ''))
+                || personalities.find(p => p.assignedCharacter === (characterId ? String(characterId) : undefined));
+
+            if (assigned && assigned.assistantId) {
+                const svc = new OpenAIAssistantService({});
+                const run = await svc.runAssistantMessage(assigned.id, message);
+                result = { text: run.text, character: assigned.name || 'assistant', metadata: { assistantId: assigned.assistantId, threadId: run.threadId } };
+                usedAssistant = true;
+            }
+        } catch (err) {
+            console.warn('Assistant routing failed, falling back to completions:', err.message);
+        }
+
+        if (!result) {
+            // Fallback to legacy chat completion
+            result = await aiInstance.generateResponse(message);
+        }
+
         // Generate animatronic animation data
         const jawAnimation = generateJawAnimation(result.text);
 
@@ -145,7 +172,7 @@ router.post('/chat', async (req, res) => {
                 aiResponse: {
                     text: result.text,
                     character: result.character,
-                    metadata: result.metadata
+                    metadata: { ...result.metadata, usedAssistant }
                 },
                 jawAnimation: jawAnimation,
                 tts: ttsResult ? {
@@ -156,10 +183,10 @@ router.post('/chat', async (req, res) => {
                 timestamp: new Date().toISOString()
             }
         });
-        
+
     } catch (error) {
         console.error('❌ Error in chat endpoint:', error);
-        
+
         res.status(500).json({
             success: false,
             error: 'Failed to process chat message',
@@ -511,19 +538,19 @@ router.get('/characters', (req, res) => {
                 error: 'AI service not available'
             });
         }
-        
+
         const characters = Object.entries(aiInstance.characters).map(([id, info]) => ({
             id: id,
             name: info.name,
             personality: info.personality || 'mysterious'
         }));
-        
+
         res.json({
             success: true,
             characters: characters,
             current: aiInstance.config.characterId
         });
-        
+
     } catch (error) {
         console.error('❌ Error getting characters:', error);
         res.status(500).json({
@@ -540,21 +567,21 @@ router.get('/characters', (req, res) => {
 router.post('/character', (req, res) => {
     try {
         const { character } = req.body;
-        
+
         if (!character) {
             return res.status(400).json({
                 success: false,
                 error: 'Character ID is required'
             });
         }
-        
+
         if (!aiInstance) {
             return res.status(503).json({
                 success: false,
                 error: 'AI service not available'
             });
         }
-        
+
         if (!aiInstance.characters[character]) {
             return res.status(400).json({
                 success: false,
@@ -562,11 +589,11 @@ router.post('/character', (req, res) => {
                 available: Object.keys(aiInstance.characters)
             });
         }
-        
+
         aiInstance.config.characterId = character;
-        
+
         console.log(`🎭 Character changed to: ${character}`);
-        
+
         res.json({
             success: true,
             character: {
@@ -574,7 +601,7 @@ router.post('/character', (req, res) => {
                 name: aiInstance.characters[character].name
             }
         });
-        
+
     } catch (error) {
         console.error('❌ Error setting character:', error);
         res.status(500).json({

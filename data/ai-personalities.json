@@ -25,7 +25,8 @@
     "enabled": true,
     "assignedCharacter": "2",
     "createdAt": "2025-08-23T21:15:00.001Z",
-    "migratedFrom": "character_description"
+    "migratedFrom": "character_description",
+    "lastModified": "2025-08-23T22:42:53.971Z"
   },
   {
     "id": "pumpkinhead_personality",

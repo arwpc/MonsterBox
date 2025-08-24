@@ -40,14 +40,14 @@ router.get('/new', async (req, res) => {
         // Get all parts and sounds
         const allParts = await partService.getAllParts();
         const allSounds = await soundService.getAllSounds();
-        
+
         // For new character, only show unassigned parts
         const parts = allParts.filter(part => !part.characterId);
-        
+
         // Show all sounds for new character (same as edit form)
         const sounds = allSounds;
-        
-        // Provide a temporary character object with temporary ID to ensure the form 
+
+        // Provide a temporary character object with temporary ID to ensure the form
         // behaves consistently with the edit form
         const tempCharacter = {
             id: 'new',  // Using 'new' instead of null so template conditions work
@@ -55,7 +55,7 @@ router.get('/new', async (req, res) => {
             char_description: '',
             image: null
         };
-        
+
         res.render('character-form', {
             title: 'Add New Character',
             action: '/characters',
@@ -84,7 +84,7 @@ router.get('/:id/edit', async (req, res) => {
         const allSounds = await soundService.getAllSounds();
 
         // Filter parts to show only unassigned parts and parts assigned to this character
-        const parts = allParts.filter(part => 
+        const parts = allParts.filter(part =>
             !part.characterId || part.characterId === characterId
         );
 
@@ -398,9 +398,21 @@ router.post('/:id/delete', async (req, res) => {
         logger.error('Error deleting character:', error);
         res.status(500).send('An error occurred while deleting the character');
     }
+
+	});
+
+// Remove AI (unassign OpenAI Assistant)
+router.post('/:id/ai/remove-all', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const character = await characterService.getCharacterById(id);
+        if (!character) return res.status(404).json({ success: false, error: 'Character not found' });
+        const updated = await characterService.updateCharacter(id, { ...character, openaiAssistantId: null, chatterpi_config: { ...(character.chatterpi_config||{}), ai_characters: [], default_character: null } });
+        res.json({ success: true, character: updated });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
 });
-
-
 
 // Animatronic Management Routes
 

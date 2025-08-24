@@ -225,8 +225,8 @@
                 <div class="flow-arrow">→</div>
                 <div class="flow-step <%= status && status.ai ? 'active' : '' %>">
                     <i class="fas fa-brain system-icon"></i>
-                    <div>AI Personality</div>
-                    <small>OpenAI GPT</small>
+                    <div>OpenAI Assistant</div>
+                    <small>Assistants API</small>
                 </div>
                 <div class="flow-arrow">→</div>
                 <div class="flow-step <%= status && status.tts ? 'active' : '' %>">
@@ -282,7 +282,7 @@
                     <p><strong>Status:</strong> <%= status && status.ai ? status.ai.status || 'Unknown' : 'Not initialized' %></p>
                 </div>
                 <div class="system-actions">
-                    <a href="/ai-management/personalities" class="button primary-btn">
+                    <a href="/ai-management/assistants" class="button primary-btn">
                         <i class="fas fa-cog"></i> Configure
                     </a>
                     <button class="button secondary-btn" onclick="testAI()">
@@ -404,7 +404,7 @@
                     <h4>🤖 AI Management</h4>
                     <div class="button-group">
                         <a href="/ai-management/stt" class="button">🎤 Speech-to-Text</a>
-                        <a href="/ai-management/personalities" class="button">🧠 AI Personalities</a>
+                        <a href="/ai-management/assistants" class="button">🧠 OpenAI Assistants</a>
                         <a href="/ai-management/tts" class="button">🗣️ Text-to-Speech</a>
                     </div>
                 </div>
@@ -414,7 +414,7 @@
                     <div class="button-group">
                         <a href="/characters" class="button">🎭 Characters</a>
                         <a href="/chatterpi" class="button">🦴 ChatterPi Jaw Animation</a>
-                        <a href="/ai-management/personalities" class="button">🧠 AI Personalities</a>
+                        <a href="/ai-management/assistants" class="button">🧠 OpenAI Assistants</a>
                     </div>
                 </div>
 

@@ -60,7 +60,8 @@
       "systemPrompt": "",
       "contextLength": 5,
       "enabled": false
-    }
+    },
+    "openaiAssistantId": "asst_vJq9smE6nVrvibJKfUv2FmDq"
   },
   {
     "id": 2,

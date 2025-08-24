@@ -13,7 +13,7 @@
             margin: 0 auto;
             padding: 20px;
         }
-        
+
         .config-section {
             background: #001100;
             border: 2px solid #00ff00;
@@ -55,13 +55,13 @@
         .collapse-icon.collapsed {
             transform: rotate(-90deg);
         }
-        
+
         .config-icon {
             font-size: 2em;
             margin-right: 15px;
             color: #00ff00;
         }
-        
+
         .character-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
@@ -87,7 +87,7 @@
             background: #001100;
             color: #ffffff;
         }
-        
+
         .character-card {
             background: #000800;
             border: 1px solid #00ff00;
@@ -95,13 +95,13 @@
             padding: 20px;
             position: relative;
         }
-        
+
         .character-header {
             display: flex;
             align-items: center;
             margin-bottom: 15px;
         }
-        
+
         .character-avatar {
             width: 50px;
             height: 50px;
@@ -113,18 +113,18 @@
             font-size: 1.5em;
             margin-right: 15px;
         }
-        
+
         .character-info h4 {
             color: #00ff00;
             margin: 0 0 5px 0;
         }
-        
+
         .character-info p {
             color: #cccccc;
             margin: 0;
             font-size: 0.9em;
         }
-        
+
         .character-status {
             position: absolute;
             top: 15px;
@@ -133,37 +133,37 @@
             height: 12px;
             border-radius: 50%;
         }
-        
+
         .status-online { background-color: #00ff00; }
         .status-offline { background-color: #ff0000; }
         .status-warning { background-color: #ffff00; }
-        
+
         .character-details {
             margin: 15px 0;
         }
-        
+
         .detail-row {
             display: flex;
             justify-content: space-between;
             margin: 8px 0;
             font-size: 0.9em;
         }
-        
+
         .detail-label {
             color: #cccccc;
         }
-        
+
         .detail-value {
             color: #ffffff;
             font-weight: bold;
         }
-        
+
         .character-actions {
             display: flex;
             gap: 10px;
             margin-top: 15px;
         }
-        
+
         .global-config {
             background: #000800;
             border: 1px solid #00ff00;
@@ -171,7 +171,7 @@
             padding: 20px;
             margin: 20px 0;
         }
-        
+
         .form-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -269,7 +269,7 @@
             z-index: 1;
             display: block;
         }
-        
+
         .test-section {
             background: #000800;
             border: 1px solid #00ff00;
@@ -277,18 +277,18 @@
             padding: 20px;
             margin: 20px 0;
         }
-        
+
         .test-controls {
             display: flex;
             gap: 15px;
             align-items: center;
             margin: 15px 0;
         }
-        
+
         .test-input {
             flex: 1;
         }
-        
+
         .test-response {
             background: #000800;
             border: 1px solid #00ff00;
@@ -299,7 +299,7 @@
             color: #ffffff;
             white-space: pre-wrap;
         }
-        
+
         .response-meta {
             font-size: 0.8em;
             color: #cccccc;
@@ -307,7 +307,7 @@
             padding-top: 10px;
             border-top: 1px solid #333333;
         }
-        
+
         .modal {
             display: none;
             position: fixed;
@@ -360,7 +360,7 @@
             padding: 20px;
             color: #cccccc;
         }
-        
+
         .error-message {
             background: #330000;
             border: 1px solid #ff0000;
@@ -369,7 +369,7 @@
             margin: 20px 0;
             color: #ff6666;
         }
-        
+
         .success-message {
             background: #003300;
             border: 1px solid #00ff00;
@@ -378,7 +378,7 @@
             margin: 20px 0;
             color: #66ff66;
         }
-        
+
         .info-message {
             background: #000033;
             border: 1px solid #0066ff;
@@ -1146,8 +1146,15 @@
                         <button class="button secondary-btn" onclick="editPersonality('${personality.id}')">
                             <i class="fas fa-edit"></i> Edit
                         </button>
-                        <button class="button secondary-btn" onclick="testPersonality('${personality.id}')">
-                            <i class="fas fa-vial"></i> Test
+                        <button class="button secondary-btn" onclick="syncAssistant('${personality.id}')">
+                            <i class="fas fa-robot"></i> Sync Assistant
+                        </button>
+                        <input type="file" id="docs-input-${personality.id}" multiple style="display:none" accept=".pdf,.txt,.md,.doc,.docx,.html,.csv,.json">
+                        <button class="button secondary-btn" onclick="document.getElementById('docs-input-${personality.id}').click()">
+                            <i class="fas fa-upload"></i> Upload Docs
+                        </button>
+                        <button class="button secondary-btn" onclick="testAssistant('${personality.id}')">
+                            <i class="fas fa-vial"></i> Test Assistant
                         </button>
                         <button class="button ${personality.enabled ? 'danger-btn' : 'success-btn'}"
                                 onclick="togglePersonality('${personality.id}', ${!personality.enabled})">
@@ -1362,6 +1369,7 @@
 
                     // Hide migrate button after successful migration
                     document.getElementById('migrateBtn').style.display = 'none';
+
                 } else {
                     showMessage(`Migration failed: ${data.error}`, 'error');
                 }
@@ -1386,6 +1394,66 @@
                 }
             }, 5000);
         }
+        async function syncAssistant(personalityId) {
+            try {
+                showMessage('Syncing OpenAI Assistant...', 'info');
+                const res = await fetch(`/ai-management/api/personalities/${personalityId}/sync-assistant`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    showMessage('Assistant synced successfully!', 'success');
+                } else {
+                    showMessage(`Assistant sync failed: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                showMessage(`Assistant sync error: ${e.message}`, 'error');
+            }
+        }
+
+        async function testAssistant(personalityId) {
+            try {
+                showMessage('Testing Assistant...', 'info');
+                const res = await fetch(`/ai-management/api/personalities/${personalityId}/test-assistant`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: 'Please introduce yourself in character.' })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showMessage(`Assistant responded: "${data.response}"`, 'success');
+                } else {
+                    showMessage(`Assistant test failed: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                showMessage(`Assistant test error: ${e.message}`, 'error');
+            }
+        }
+
+        document.addEventListener('change', async (evt) => {
+            if (evt.target && evt.target.id && evt.target.id.startsWith('docs-input-')) {
+                const personalityId = evt.target.id.replace('docs-input-', '');
+                const files = evt.target.files;
+                if (!files || files.length === 0) return;
+                try {
+                    showMessage('Uploading documents...', 'info');
+                    const form = new FormData();
+                    [...files].forEach(f => form.append('docs', f));
+                    const res = await fetch(`/ai-management/api/personalities/${personalityId}/upload-docs`, {
+                        method: 'POST',
+                        body: form
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        showMessage(`Uploaded ${data.uploaded.length} documents.`, 'success');
+                    } else {
+                        showMessage(`Upload failed: ${data.error}`, 'error');
+                    }
+                } catch (e) {
+                    showMessage(`Upload error: ${e.message}`, 'error');
+                } finally {
+                    evt.target.value = '';
+                }
+            }
+        });
 
         // Close modal when clicking outside
         window.onclick = function(event) {

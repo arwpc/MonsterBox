@@ -1,0 +1,17 @@
+{
+  "assistants": {
+    "asst_vJq9smE6nVrvibJKfUv2FmDq": {
+      "conversationStarters": [],
+      "files": [
+        {
+          "fileId": "file-6sbKbajPxfYu8SC8kg7G7i",
+          "filename": "Combined Nosferatu.txt",
+          "uploadedAt": "2025-08-24T01:00:26.152Z"
+        }
+      ],
+      "actions": [],
+      "vectorStoreId": "vs_68aa52e138e481918944566cd56db80c",
+      "openapi": null
+    }
+  }
+}

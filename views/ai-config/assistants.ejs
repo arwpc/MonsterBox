@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %></title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
+  <link rel="stylesheet" href="/css/style.css?v=<%= Date.now() %>">
+  <style>
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+    .card { background: #000800; border: 1px solid #00ff00; border-radius: 8px; padding: 16px; }
+    .card h4 { margin: 0 0 8px 0; color: #00ff00; }
+    .muted { color: #aaa; font-size: 12px; }
+    .row { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
+    .row input, .row select, .row textarea { flex: 1; background: #001100; border: 1px solid #00ff00; color: #00ff00; border-radius: 4px; padding: 6px 8px; }
+    .actions { display: flex; gap: 8px; margin-top: 10px; }
+    .danger { background: #330000; color: #ff6666; border: 1px solid #ff0000; }
+    .success { color: #00ff00; }
+    .badge { border: 1px solid #00ff00; color: #00ff00; padding: 2px 6px; border-radius: 4px; font-size: 11px; }
+  </style>
+</head>
+<body>
+  <header class="compact-header">
+    <div class="header-content">
+      <h1 class="page-title">🧠 OpenAI Assistants</h1>
+      <nav class="compact-nav">
+        <a href="/" class="nav-link">🏠 Home</a>
+        <span class="nav-separator">•</span>
+        <a href="/ai-management" class="nav-link">🤖 AI Management</a>
+        <span class="nav-separator">•</span>
+        <span class="nav-current">Assistants</span>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="info-section">
+      <h2>Direct OpenAI Assistants</h2>
+      <p>Manage OpenAI Assistants and assign them directly to characters. This replaces the legacy Personality system.</p>
+    </div>
+
+    <!-- Manage Assistants -->
+    <div class="info-section">
+      <h3>Manage Assistants</h3>
+    </div>
+
+    <!-- Assistants List -->
+    <div class="grid" id="assistantsGrid">
+      <% if (!assistants || assistants.length === 0) { %>
+        <div class="card">
+          <h4>No Assistants Found</h4>
+          <p class="muted">Create an Assistant below. Ensure your OpenAI API key is configured.</p>
+        </div>
+      <% } %>
+      <% (assistants || []).forEach(function(a){ %>
+        <div class="card" data-id="<%= a.id %>">
+          <h4><%= a.name || a.id %></h4>
+          <div class="muted">ID: <span class="badge"><%= a.id %></span></div>
+          <div class="row"><input value="<%= a.name || '' %>" data-field="name" placeholder="Name" /></div>
+          <div class="row"><textarea data-field="description" rows="2" placeholder="Description (detailed summary)"><%= a.description || '' %></textarea></div>
+          <div class="row">
+            <select data-field="model">
+              <% const models = ['gpt-4o-mini','gpt-4o','gpt-4.1-mini','gpt-4.1','o4-mini']; %>
+              <% models.forEach(m => { %>
+                <option value="<%= m %>" <%= (a.model===m)?'selected':'' %>><%= m %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="row"><textarea rows="10" data-field="instructions" placeholder="Instructions"><%= a.instructions || '' %></textarea></div>
+
+          <div class="row">
+            <label class="muted">Conversation Starters:</label>
+            <% const starters = a.config?.conversationStarters || []; %>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <input data-field="conversationStarter1" value="<%= starters[0] || '' %>" placeholder="Who are you?" />
+              <input data-field="conversationStarter2" value="<%= starters[1] || '' %>" placeholder="Tell me a story" />
+              <input data-field="conversationStarter3" value="<%= starters[2] || '' %>" placeholder="What can you do?" />
+              <input data-field="conversationStarter4" value="<%= starters[3] || '' %>" placeholder="How are you feeling today?" />
+              <input data-field="conversationStarter5" value="<%= starters[4] || '' %>" placeholder="What's your favorite memory?" />
+            </div>
+          </div>
+          <div class="row">
+            <label class="muted">Knowledge Files:</label>
+            <input type="file" multiple accept=".pdf,.txt,.md,.doc,.docx,.html,.csv,.json" class="file-input" />
+            <button class="button" onclick="uploadFiles('<%= a.id %>', this.previousElementSibling)">⬆️ Upload</button>
+          </div>
+          <div class="row">
+            <div class="muted">Current files:</div>
+            <ul class="muted" data-file-list>
+              <% if ((a.config?.files||[]).length === 0) { %>
+                <li>none</li>
+              <% } else { %>
+                <% (a.config?.files||[]).forEach(f => { %>
+                  <li data-file-id="<%= f.fileId %>">
+                    <a href="#" onclick="viewFile('<%= a.id %>', '<%= f.fileId %>', '<%= f.filename %>'); return false;"><%= f.filename %></a>
+                    <button class="button danger" onclick="deleteFile('<%= a.id %>','<%= f.fileId %>', this)">Delete</button>
+                  </li>
+                <% }) %>
+              <% } %>
+            </ul>
+          </div>
+
+          <div class="row">
+            <label class="muted">Assign to Character:</label>
+            <select class="assign-select">
+              <option value="">— Select Character —</option>
+              <% characters.forEach(c => { %>
+                <option value="<%= c.id %>" <%= c.openaiAssistantId===a.id ? 'selected' : '' %>><%= c.char_name %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="actions">
+            <button class="button" onclick="updateAssistant('<%= a.id %>', this)">💾 Save</button>
+            <button class="button danger" onclick="deleteAssistant('<%= a.id %>')">🗑️ Delete</button>
+            <button class="button" onclick="testAssistant('<%= a.id %>')">🧪 Test</button>
+          </div>
+          <div class="muted" data-msg></div>
+        </div>
+      <% }) %>
+    </div>
+
+    <!-- Create Assistant -->
+    <div class="info-section">
+      <h3>Create Assistant</h3>
+    </div>
+    <div class="card">
+      <div class="row"><input id="newName" placeholder="Name (e.g., Count Orlok)" /></div>
+      <div class="row"><textarea id="newDescription" rows="2" placeholder="Description (detailed summary)"></textarea></div>
+      <div class="row">
+        <select id="newModel">
+          <option value="gpt-4o-mini" selected>gpt-4o-mini</option>
+          <option value="gpt-4o">gpt-4o</option>
+          <option value="gpt-4.1-mini">gpt-4.1-mini</option>
+          <option value="gpt-4.1">gpt-4.1</option>
+          <option value="o4-mini">o4-mini</option>
+        </select>
+      </div>
+      <div class="row"><textarea id="newInstructions" rows="10" placeholder="Instructions (system prompt)"></textarea></div>
+      <div class="row">
+        <label class="muted">Conversation Starters:</label>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <input id="newStarter1" placeholder="Who are you?" />
+          <input id="newStarter2" placeholder="Tell me a story" />
+          <input id="newStarter3" placeholder="What can you do?" />
+          <input id="newStarter4" placeholder="How are you feeling today?" />
+          <input id="newStarter5" placeholder="What's your favorite memory?" />
+        </div>
+      </div>
+      <div class="row">
+        <label class="muted">Knowledge Files:</label>
+        <input type="file" id="newFiles" multiple accept=".pdf,.txt,.md,.doc,.docx,.html,.csv,.json" />
+      </div>
+      <div class="actions">
+        <button class="button" onclick="createAssistant()">➕ Create</button>
+      </div>
+      <div id="createMsg" class="muted"></div>
+    </div>
+  </main>
+
+  <script>
+    async function createAssistant(){
+      const name = document.getElementById('newName').value.trim();
+      const description = document.getElementById('newDescription').value.trim();
+      const model = document.getElementById('newModel').value;
+      const instructions = document.getElementById('newInstructions').value.trim();
+
+      // Collect conversation starters from 5 separate fields
+      const starters = [];
+      for (let i = 1; i <= 5; i++) {
+        const starter = document.getElementById(`newStarter${i}`).value.trim();
+        if (starter) starters.push(starter);
+      }
+
+      const res = await fetch('/ai-management/api/assistants', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name, description, model, instructions})});
+      const data = await res.json();
+      document.getElementById('createMsg').textContent = data.success ? 'Created ✅' : ('Error: '+data.error);
+      if (data.success) {
+        // Save conversation starters
+        await fetch(`/ai-management/api/assistants/${data.assistant.id}/starters`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ starters })});
+        // Knowledge files upload if any
+        const filesInput = document.getElementById('newFiles');
+        if (filesInput.files && filesInput.files.length>0) await uploadFiles(data.assistant.id, filesInput);
+        location.reload();
+      }
+    }
+
+    async function uploadFiles(id, input){
+      if (!input || !input.files || input.files.length===0) return;
+      const fd = new FormData();
+      Array.from(input.files).forEach(f=>fd.append('files', f));
+      const res = await fetch(`/ai-management/api/assistants/${id}/files`, { method:'POST', body: fd });
+      const data = await res.json();
+      if (!data.success) alert('Upload failed: '+data.error);
+      else await refreshFilesUI(id, input.closest('.card'));
+    }
+
+    async function refreshFilesUI(id, card){
+      try {
+        const res = await fetch(`/ai-management/api/assistants/${id}/files`);
+        const data = await res.json();
+        if (!data.success) return;
+        const ul = card.querySelector('[data-file-list]');
+        ul.innerHTML = '';
+        const files = data.files || [];
+        if (files.length === 0) {
+          ul.innerHTML = '<li>none</li>';
+        } else {
+          files.forEach(f=>{
+            const li = document.createElement('li');
+            li.setAttribute('data-file-id', f.fileId);
+            li.innerHTML = `${f.filename} <button class="button danger" onclick="deleteFile('${id}','${f.fileId}', this)">Delete</button>`;
+            ul.appendChild(li);
+          });
+        }
+      } catch (e) {}
+    }
+
+    async function deleteFile(id, fileId, btn){
+      if (!confirm('Remove this file from the assistant knowledge base?')) return;
+      const res = await fetch(`/ai-management/api/assistants/${id}/files/${fileId}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!data.success) { alert('Delete failed: '+data.error); return; }
+      await refreshFilesUI(id, btn.closest('.card'));
+    }
+
+    // ===== Assistant editing =====
+    async function updateAssistant(id, btn){
+      const card = btn.closest('.card');
+      const payload = {};
+      card.querySelectorAll('[data-field]').forEach(inp=>{
+        const field = inp.getAttribute('data-field');
+        // Skip conversation starter fields as we'll handle them separately
+        if (!field.startsWith('conversationStarter')) {
+          payload[field] = inp.value;
+        }
+      });
+
+      // Collect conversation starters from 5 separate fields
+      const starters = [];
+      for (let i = 1; i <= 5; i++) {
+        const starterInput = card.querySelector(`[data-field="conversationStarter${i}"]`);
+        if (starterInput && starterInput.value.trim()) {
+          starters.push(starterInput.value.trim());
+        }
+      }
+
+      const res = await fetch(`/ai-management/api/assistants/${id}`, {method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+      const data = await res.json();
+      if (data.success && starters.length > 0) {
+        await fetch(`/ai-management/api/assistants/${id}/starters`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ starters })});
+      }
+      card.querySelector('[data-msg]').textContent = data.success ? 'Saved ✅' : ('Error: '+data.error);
+    }
+
+    async function deleteAssistant(id){
+      if (!confirm('Delete this Assistant? This cannot be undone.')) return;
+      const res = await fetch(`/ai-management/api/assistants/${id}`, {method:'DELETE'});
+      const data = await res.json();
+      if (data.success) location.reload(); else alert(data.error||'Delete failed');
+    }
+
+    document.querySelectorAll('.assign-select').forEach(sel=>{
+      sel.addEventListener('change', async (e)=>{
+        const card = sel.closest('.card');
+        const id = card.getAttribute('data-id');
+        const characterId = sel.value;
+        if (!characterId) return;
+        const res = await fetch(`/ai-management/api/assistants/${id}/assign`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ characterId })});
+        const data = await res.json();
+        card.querySelector('[data-msg]').textContent = data.success ? 'Assigned ✅' : ('Error: '+data.error);
+      });
+    });
+
+    // ===== Simple Chat Modal =====
+    const chatState = { open: false, assistantId: null, threadId: null };
+
+    function openChat(assistantId, assistantName){
+      const modal = document.getElementById('chatModal');
+      document.getElementById('chatTitle').textContent = assistantName || 'Assistant Chat';
+      document.getElementById('chatLog').textContent = '';
+      document.getElementById('chatInput').value = '';
+      modal.style.display = 'flex';
+      chatState.open = true; chatState.assistantId = assistantId; chatState.threadId = null;
+      // Start a chat thread
+      fetch(`/ai-management/api/assistants/${assistantId}/chat/start`, { method: 'POST' })
+        .then(r=>r.json()).then(d=>{ if (d.success) chatState.threadId = d.threadId; else alert('Start chat failed: '+d.error); })
+        .catch(e=>alert('Start chat failed: '+e.message));
+    }
+
+    function closeChat(){
+      const modal = document.getElementById('chatModal');
+      modal.style.display = 'none';
+      chatState.open = false; chatState.assistantId = null; chatState.threadId = null;
+    }
+
+    function appendChat(role, text){
+      const log = document.getElementById('chatLog');
+      const label = role === 'user' ? 'You' : 'Assistant';
+      const line = `[${label}] ${text}\n`;
+      log.textContent += line;
+      log.scrollTop = log.scrollHeight;
+    }
+
+    async function sendChat(){
+      const input = document.getElementById('chatInput');
+      const msg = input.value.trim();
+      if (!msg) return;
+      if (!chatState.threadId) { alert('Chat is not ready yet—please wait a moment.'); return; }
+      input.value = '';
+      appendChat('user', msg);
+      const res = await fetch(`/ai-management/api/assistants/${chatState.assistantId}/chat/send`, {
+        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ threadId: chatState.threadId, message: msg })
+      });
+      const data = await res.json();
+      if (data.success) appendChat('assistant', data.text || '[no response]'); else alert('Chat error: '+data.error);
+    }
+
+    // Wire Enter key to send
+    document.addEventListener('keydown', (e)=>{
+      const modal = document.getElementById('chatModal');
+      if (modal.style.display === 'flex' && e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendChat();
+      }
+    });
+
+    // Replace old test prompt with chat modal
+    async function testAssistant(id){
+      const card = document.querySelector(`.card[data-id="${id}"]`);
+      const nameEl = card ? card.querySelector('h4') : null;
+      openChat(id, nameEl ? nameEl.textContent.trim() : 'Assistant Chat');
+    }
+
+    // File viewing functionality
+    async function viewFile(assistantId, fileId, filename) {
+      try {
+        const response = await fetch(`/ai-management/api/assistants/${assistantId}/files/${fileId}/content`);
+        const data = await response.json();
+
+        if (data.success) {
+          showFileModal(filename, data.content, data.contentType);
+        } else {
+          alert('Failed to load file: ' + data.error);
+        }
+      } catch (error) {
+        console.error('File view error:', error);
+        alert('Failed to load file: ' + error.message);
+      }
+    }
+
+    function showFileModal(filename, content, contentType) {
+      // Create modal if it doesn't exist
+      let modal = document.getElementById('fileModal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'fileModal';
+        modal.innerHTML = `
+          <div class="modal-overlay" onclick="closeFileModal()">
+            <div class="modal-content" onclick="event.stopPropagation()">
+              <div class="modal-header">
+                <h3 id="fileModalTitle">File Content</h3>
+                <button onclick="closeFileModal()" class="button">&times;</button>
+              </div>
+              <div class="modal-body">
+                <pre id="fileModalContent"></pre>
+              </div>
+              <div class="modal-footer">
+                <button onclick="downloadFileContent()" class="button">Download</button>
+                <button onclick="closeFileModal()" class="button">Close</button>
+              </div>
+            </div>
+          </div>
+        `;
+        modal.style.cssText = `
+          position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+          background: rgba(0,0,0,0.8); z-index: 1000; display: none;
+        `;
+        modal.querySelector('.modal-overlay').style.cssText = `
+          width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+        `;
+        modal.querySelector('.modal-content').style.cssText = `
+          background: var(--bg-color, #1a1a1a); border: 1px solid var(--border-color, #333);
+          border-radius: 8px; max-width: 80%; max-height: 80%; overflow: hidden; display: flex; flex-direction: column;
+        `;
+        modal.querySelector('.modal-header').style.cssText = `
+          padding: 1rem; border-bottom: 1px solid var(--border-color, #333); display: flex; justify-content: space-between; align-items: center;
+        `;
+        modal.querySelector('.modal-body').style.cssText = `
+          padding: 1rem; overflow: auto; flex: 1;
+        `;
+        modal.querySelector('.modal-footer').style.cssText = `
+          padding: 1rem; border-top: 1px solid var(--border-color, #333); display: flex; gap: 1rem; justify-content: flex-end;
+        `;
+        modal.querySelector('#fileModalContent').style.cssText = `
+          white-space: pre-wrap; word-wrap: break-word; margin: 0; font-family: monospace; font-size: 14px;
+        `;
+        document.body.appendChild(modal);
+      }
+
+      // Update modal content
+      document.getElementById('fileModalTitle').textContent = filename;
+      document.getElementById('fileModalContent').textContent = content;
+      modal.style.display = 'block';
+
+      // Store for download
+      window.currentFileContent = { filename, content, contentType };
+    }
+
+    function closeFileModal() {
+      const modal = document.getElementById('fileModal');
+      if (modal) {
+        modal.style.display = 'none';
+      }
+    }
+
+    function downloadFileContent() {
+      if (window.currentFileContent) {
+        const { filename, content } = window.currentFileContent;
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    }
+  </script>
+
+  <!-- Simple Chat Modal -->
+  <style>
+    #chatModal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 1000; }
+    .chat-box { width: min(800px, 95vw); background: #000800; border: 1px solid #00ff00; border-radius: 8px; padding: 12px; box-shadow: 0 0 20px #0f0; }
+    .chat-header { display:flex; justify-content: space-between; align-items:center; color:#0f0; margin-bottom:8px; }
+    .chat-log { height: 340px; overflow: auto; background: #001100; border: 1px solid #00ff00; border-radius: 4px; padding: 8px; white-space: pre-wrap; color:#9f9; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+    .chat-input-row { display:flex; gap:8px; margin-top:8px; }
+    .chat-input-row textarea { flex:1; background:#001100; border:1px solid #00ff00; color:#00ff00; border-radius:4px; padding:6px 8px; min-height:56px; }
+  </style>
+  <div id="chatModal">
+    <div class="chat-box">
+      <div class="chat-header">
+        <div id="chatTitle">Assistant Chat</div>
+        <div>
+          <button class="button" onclick="sendChat()">Send</button>
+          <button class="button danger" onclick="closeChat()">Cancel</button>
+        </div>
+      </div>
+      <div id="chatLog" class="chat-log"></div>
+      <div class="chat-input-row">
+        <textarea id="chatInput" placeholder="Type a message and press Enter... (Shift+Enter for newline)"></textarea>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+

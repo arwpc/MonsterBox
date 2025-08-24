@@ -1,6 +1,6 @@
 /**
  * AI Management Routes
- * 
+ *
  * Comprehensive AI Management system for MonsterBox
  * Handles STT, AI Personalities, and TTS configuration
  */
@@ -15,10 +15,11 @@ const multer = require('multer');
 const characterService = require('../services/characterService');
 const voiceService = require('../services/voiceService');
 
+const OpenAIAssistantService = require('../ai/services/OpenAIAssistantService');
 // Configure multer for file uploads
-const upload = multer({ 
+const upload = multer({
     dest: 'uploads/',
-    limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+    limits: { fileSize: 20 * 1024 * 1024 } // 20MB limit
 });
 
 // Configuration file paths
@@ -98,7 +99,7 @@ router.get('/stt', async (req, res) => {
             timeout: 30000,
             fallbackToSystem: true
         });
-        
+
         res.render('ai-config/stt', {
             title: 'Speech-to-Text Configuration',
             config
@@ -113,35 +114,346 @@ router.get('/stt', async (req, res) => {
     }
 });
 
-// AI Personalities Configuration routes
-router.get('/personalities', async (req, res) => {
+// OpenAI Assistants Management UI
+router.get('/assistants', async (req, res) => {
     try {
-        const globalConfig = await loadConfig(PERSONALITIES_CONFIG_FILE, {
-            defaultProvider: 'openai',
-            defaultModel: 'gpt-4',
-            defaultTemperature: 0.8,
-            defaultMaxTokens: 150,
-            contextLength: 5,
-            responseTimeout: 30000
-        });
-        
-        // Load characters
+        const OpenAIAssistantService = require('../ai/services/OpenAIAssistantService');
+        const assistantService = new OpenAIAssistantService({});
+
+        // List assistants (best-effort if key missing)
+        let assistants = [];
+        try {
+            assistants = await assistantService.listAssistants({ limit: 100 });
+        } catch (e) {
+            assistants = [];
+        }
+
+        // Enrich assistants with local config (conversation starters, files, actions)
+        const assistantConfig = require('../ai/services/assistantConfigStore');
+        const cfg = await assistantConfig.readConfig();
+        const enriched = assistants.map(a => ({ ...a, config: cfg.assistants?.[a.id] || undefined }));
+
+        // Load characters for assignment dropdowns
         const characters = await characterService.getAllCharacters();
-        
-        res.render('ai-config/personalities', {
-            title: 'AI Personalities Configuration',
-            globalConfig,
+
+        res.render('ai-config/assistants', {
+            title: 'OpenAI Assistants Management',
+            assistants: enriched,
             characters
         });
     } catch (error) {
-        console.error('Personalities config error:', error);
+        console.error('Assistants config error:', error);
         res.status(500).render('error', {
             title: 'Error',
-            message: 'Failed to load personalities configuration',
+            message: 'Failed to load OpenAI Assistants',
             error: error.message
         });
     }
 });
+
+// Backward-compat: redirect old personalities page to assistants
+router.get('/personalities', (req, res) => {
+    return res.redirect('/ai-management/assistants');
+});
+
+
+// Assistants CRUD API
+router.get('/api/assistants', async (req, res) => {
+    try {
+        const service = new OpenAIAssistantService({});
+        const assistants = await service.listAssistants({ limit: 100 });
+        res.json({ success: true, assistants });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+router.post('/api/assistants', async (req, res) => {
+    try {
+        const service = new OpenAIAssistantService({});
+        const assistant = await service.createAssistant(req.body || {});
+        res.json({ success: true, assistant });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+router.patch('/api/assistants/:assistantId', async (req, res) => {
+    try {
+        const { assistantId } = req.params;
+        const service = new OpenAIAssistantService({});
+        const updated = await service.updateAssistant(assistantId, req.body || {});
+        res.json({ success: true, assistant: updated });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+router.delete('/api/assistants/:assistantId', async (req, res) => {
+    try {
+        const { assistantId } = req.params;
+        // Prevent deletion if assigned to a character
+        const characters = await characterService.getAllCharacters();
+        const inUse = characters.some(c => c.openaiAssistantId === assistantId);
+        if (inUse) {
+            return res.status(400).json({ success: false, error: 'Assistant is assigned to a character and cannot be deleted' });
+        }
+        const service = new OpenAIAssistantService({});
+        await service.deleteAssistant(assistantId);
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Assign assistant to character
+router.post('/api/assistants/:assistantId/assign', async (req, res) => {
+    try {
+        const { assistantId } = req.params;
+        const { characterId } = req.body;
+        const character = await characterService.getCharacterById(characterId);
+        if (!character) return res.status(404).json({ success: false, error: 'Character not found' });
+
+        const updated = await characterService.updateCharacter(characterId, {
+            ...character,
+            openaiAssistantId: assistantId
+        });
+        res.json({ success: true, character: updated });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+
+// Test an assistant directly by ID
+router.post('/api/assistants/:assistantId/test', async (req, res) => {
+    try {
+        const { assistantId } = req.params;
+        const { prompt } = req.body;
+        const service = new OpenAIAssistantService({});
+        const result = await service.runAssistantMessageByAssistantId(assistantId, prompt || 'Introduce yourself.');
+        res.json({ success: true, response: result.text, metadata: { threadId: result.threadId, runId: result.runId } });
+    } catch (error) {
+        console.error('Assistant test error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Chat API for an assistant: start thread and send messages
+router.post('/api/assistants/:assistantId/chat/start', async (req, res) => {
+    try {
+        const { assistantId } = req.params;
+        const service = new OpenAIAssistantService({});
+        // ensure file_search with vector store if configured
+        const cfg = await assistantConfig.getAssistantConfig(assistantId);
+        if (cfg.vectorStoreId) {
+            try { await service.ensureAssistantHasFileSearch(assistantId, cfg.vectorStoreId); } catch (e) {}
+        }
+        const thread = await service.createThread();
+        res.json({ success: true, threadId: thread.id });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+router.post('/api/assistants/:assistantId/chat/send', async (req, res) => {
+    try {
+        const { assistantId } = req.params;
+        const { threadId, message } = req.body;
+        if (!threadId) throw new Error('threadId is required');
+        if (!message) throw new Error('message is required');
+        const service = new OpenAIAssistantService({});
+        await service.sendMessageToThread(threadId, message);
+        const { text, runId } = await service.runAssistantOnThread(assistantId, threadId, {});
+        res.json({ success: true, runId, text });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+
+// Assistant configuration store
+const assistantConfig = require('../ai/services/assistantConfigStore');
+
+// List assistants (+ configs)
+router.get('/api/assistants', async (req, res) => {
+    try {
+        const service = new OpenAIAssistantService({});
+        const list = await service.listAssistants({ limit: 100 });
+        const cfg = await assistantConfig.readConfig();
+        const enriched = list.map(a => ({ ...a, config: cfg.assistants?.[a.id] || undefined }));
+        res.json({ success: true, assistants: enriched });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Update conversation starters
+router.post('/api/assistants/:assistantId/starters', async (req, res) => {
+    try {
+        const { assistantId } = req.params; const { starters } = req.body;
+        const updated = await assistantConfig.setAssistantConfig(assistantId, { conversationStarters: Array.isArray(starters)? starters : [] });
+        res.json({ success: true, config: updated });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Knowledge files: upload
+
+router.post('/api/assistants/:assistantId/files', upload.array('files'), async (req, res) => {
+    try {
+        const { assistantId } = req.params;
+        const service = new OpenAIAssistantService({});
+        // Ensure vector store and assistant file_search tool
+        let cfg = await assistantConfig.getAssistantConfig(assistantId);
+        if (!cfg.vectorStoreId) {
+            const vs = await service.createVectorStore({ name: `kb_${assistantId}` });
+            cfg = await assistantConfig.setAssistantConfig(assistantId, { vectorStoreId: vs.id });
+            await service.ensureAssistantHasFileSearch(assistantId, vs.id);
+        }
+        const uploaded = [];
+        try {
+            // First try SDK batch upload for efficiency
+            const batchFiles = await service.uploadFilesToVectorStore(cfg.vectorStoreId, (req.files||[]).map(f => f.path));
+            for (let i = 0; i < (req.files||[]).length; i++) {
+                const f = req.files[i];
+                const bf = batchFiles[i] || batchFiles.find(x => x?.filename === f.originalname || x?.display_name === f.originalname) || {};
+                const fileId = bf?.id || bf?.file_id || bf?.file?.id;
+                uploaded.push({ fileId, filename: f.originalname, uploadedAt: new Date().toISOString() });
+            }
+        } catch (e) {
+            // Per-file fallback path
+            for (const f of req.files || []) {
+                try {
+                    const vfile = await service.uploadFileToVectorStore(cfg.vectorStoreId, f.path, { filename: f.originalname });
+                    const fileId = vfile?.id || vfile?.file?.id || vfile?.data?.id;
+                    uploaded.push({ fileId, filename: f.originalname, uploadedAt: new Date().toISOString() });
+                } catch (e2) {
+                    console.error('Knowledge file upload failed:', f.originalname, e2?.message || e2);
+                    throw e2;
+                } finally {
+                    try { await fs.unlink(f.path); } catch (_) {}
+                }
+            }
+        } finally {
+            // Ensure we always clean up any remaining temp files
+            for (const f of req.files || []) { try { await fs.unlink(f.path); } catch (_) {} }
+        }
+        const merged = await assistantConfig.setAssistantConfig(assistantId, { files: [...(cfg.files||[]), ...uploaded] });
+        res.json({ success: true, files: merged.files, vectorStoreId: merged.vectorStoreId });
+    } catch (error) {
+        console.error('Upload knowledge files error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Knowledge files: list
+router.get('/api/assistants/:assistantId/files', async (req, res) => {
+    try {
+        const { assistantId } = req.params; const cfg = await assistantConfig.getAssistantConfig(assistantId);
+        res.json({ success: true, files: cfg.files || [], vectorStoreId: cfg.vectorStoreId || null });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Knowledge files: delete
+router.delete('/api/assistants/:assistantId/files/:fileId', async (req, res) => {
+    try {
+        const { assistantId, fileId } = req.params; const service = new OpenAIAssistantService({});
+        const cfg = await assistantConfig.getAssistantConfig(assistantId);
+        if (cfg.vectorStoreId) {
+            try { await service.removeFileFromVectorStore(cfg.vectorStoreId, fileId); } catch (e) {}
+        }
+        const remaining = (cfg.files||[]).filter(f=>f.fileId!==fileId);
+        const updated = await assistantConfig.setAssistantConfig(assistantId, { files: remaining });
+        res.json({ success: true, files: updated.files });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Knowledge files: get content
+router.get('/api/assistants/:assistantId/files/:fileId/content', async (req, res) => {
+    try {
+        const { assistantId, fileId } = req.params;
+        const service = new OpenAIAssistantService({});
+
+        // Get file content from OpenAI
+        const fileContent = await service.getFileContent(fileId);
+
+        res.json({
+            success: true,
+            content: fileContent.content,
+            contentType: fileContent.contentType || 'text/plain'
+        });
+    } catch (error) {
+        console.error('File content retrieval error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Actions (OpenAPI): import
+router.post('/api/assistants/:assistantId/actions/import-openapi', async (req, res) => {
+    try {
+        const { assistantId } = req.params; const { openapiUrl, schema } = req.body;
+        const source = openapiUrl ? 'url' : 'upload';
+        let openapi;
+        if (openapiUrl) {
+            const axios = require('axios');
+            const resp = await axios.get(openapiUrl);
+            openapi = resp.data;
+        } else {
+            openapi = schema;
+        }
+        // Derive function tools from OpenAPI (simplified)
+        const tools = [];
+        const paths = openapi?.paths || {};
+        for (const [p, methods] of Object.entries(paths)) {
+            for (const [m, spec] of Object.entries(methods)) {
+                const name = (spec.operationId || `${m}_${p}`).replace(/[^a-zA-Z0-9_]/g,'_');
+                tools.push({ type: 'function', function: { name, description: spec.summary || spec.description || name, parameters: spec.requestBody?.content?.['application/json']?.schema || { type:'object', properties:{} } } });
+            }
+        }
+        // Update assistant tools (merge with file_search if exists)
+        const service = new OpenAIAssistantService({});
+        const a = await service.getAssistant(assistantId);
+        const baseTools = Array.isArray(a.tools)? a.tools : [];
+        const mergedTools = [...baseTools.filter(t=>t.type==='file_search'), ...tools];
+        await service.updateAssistant(assistantId, { tools: mergedTools });
+        const updatedCfg = await assistantConfig.setAssistantConfig(assistantId, { openapi: { source, url: openapiUrl || null, schema: openapi, functions: tools.map(t=>({ name: t.function.name, description: t.function.description, parameters: t.function.parameters, enabled: true })) } });
+        res.json({ success: true, tools: mergedTools, config: updatedCfg });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Actions: list
+router.get('/api/assistants/:assistantId/actions', async (req, res) => {
+    try {
+        const { assistantId } = req.params; const cfg = await assistantConfig.getAssistantConfig(assistantId);
+        res.json({ success: true, actions: cfg.openapi?.functions || [] });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Actions: enable/disable set
+router.patch('/api/assistants/:assistantId/actions', async (req, res) => {
+    try {
+        const { assistantId } = req.params; const { functions } = req.body; // [{name, enabled}]
+        const cfg = await assistantConfig.getAssistantConfig(assistantId);
+        const fnMap = new Map((functions||[]).map(f=>[f.name, f.enabled]));
+        const updatedFns = (cfg.openapi?.functions||[]).map(f=>({ ...f, enabled: fnMap.has(f.name) ? !!fnMap.get(f.name) : f.enabled }));
+        const updated = await assistantConfig.setAssistantConfig(assistantId, { openapi: { ...(cfg.openapi||{}), functions: updatedFns } });
+        res.json({ success: true, actions: updated.openapi.functions });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+
 
 // TTS Configuration routes
 router.get('/tts', async (req, res) => {
@@ -202,7 +514,7 @@ router.get('/api/status', async (req, res) => {
 router.get('/api/stt/status', async (req, res) => {
     try {
         const hasApiKey = !!process.env.OPENAI_API_KEY;
-        res.json({ 
+        res.json({
             success: hasApiKey,
             status: hasApiKey ? 'Connected' : 'No API key configured',
             model: 'whisper-1'
@@ -215,14 +527,14 @@ router.get('/api/stt/status', async (req, res) => {
 router.post('/api/stt/config', async (req, res) => {
     try {
         const config = req.body;
-        
+
         // Don't save the API key if it's masked
         if (config.apiKey && config.apiKey.includes('••••')) {
             delete config.apiKey;
         }
-        
+
         const saved = await saveConfig(STT_CONFIG_FILE, config);
-        
+
         if (saved) {
             res.json({ success: true, message: 'STT configuration saved successfully' });
         } else {
@@ -236,28 +548,28 @@ router.post('/api/stt/config', async (req, res) => {
 router.post('/api/stt/test', async (req, res) => {
     try {
         const startTime = Date.now();
-        
+
         // Test OpenAI API connection
         if (!process.env.OPENAI_API_KEY) {
-            return res.json({ 
-                success: false, 
-                error: 'OpenAI API key not configured' 
+            return res.json({
+                success: false,
+                error: 'OpenAI API key not configured'
             });
         }
-        
+
         // Simple test - we can't actually test Whisper without audio
         // but we can verify the API key format
         const apiKey = process.env.OPENAI_API_KEY;
         if (!apiKey.startsWith('sk-')) {
-            return res.json({ 
-                success: false, 
-                error: 'Invalid OpenAI API key format' 
+            return res.json({
+                success: false,
+                error: 'Invalid OpenAI API key format'
             });
         }
-        
+
         const responseTime = Date.now() - startTime;
-        res.json({ 
-            success: true, 
+        res.json({
+            success: true,
             responseTime,
             status: 'API key format valid',
             message: 'STT connection test successful'
@@ -686,7 +998,66 @@ router.post('/api/personalities/:personalityId', async (req, res) => {
         console.error('Update personality error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
+    });
+
+// Sync a personality to an OpenAI Assistant (create/update) and ensure vector store
+router.post('/api/personalities/:personalityId/sync-assistant', async (req, res) => {
+    try {
+        if (!process.env.OPENAI_API_KEY) {
+            return res.status(400).json({ success: false, error: 'OpenAI API key not configured' });
+        }
+        const { personalityId } = req.params;
+        const service = new OpenAIAssistantService({});
+        const result = await service.ensureAssistantForPersonality(personalityId);
+        res.json({ success: true, ...result });
+    } catch (error) {
+        console.error('Sync assistant error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
 });
+
+// Upload training documents for a personality
+router.post('/api/personalities/:personalityId/upload-docs', upload.array('docs', 10), async (req, res) => {
+    try {
+        if (!process.env.OPENAI_API_KEY) {
+            return res.status(400).json({ success: false, error: 'OpenAI API key not configured' });
+        }
+        const { personalityId } = req.params;
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({ success: false, error: 'No documents uploaded' });
+        }
+        const filePaths = req.files.map(f => f.path);
+        const service = new OpenAIAssistantService({});
+        const result = await service.uploadDocuments(personalityId, filePaths);
+        // Cleanup local uploads after sending to OpenAI
+        try {
+            await Promise.all(filePaths.map(p => fs.unlink(p).catch(() => {})));
+        } catch (cleanupErr) {}
+        res.json({ success: true, ...result });
+    } catch (error) {
+        console.error('Upload docs error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Test a personality assistant with a prompt
+router.post('/api/personalities/:personalityId/test-assistant', async (req, res) => {
+    try {
+        if (!process.env.OPENAI_API_KEY) {
+            return res.status(400).json({ success: false, error: 'OpenAI API key not configured' });
+        }
+        const { personalityId } = req.params;
+        const { prompt } = req.body;
+        const service = new OpenAIAssistantService({});
+        const result = await service.runAssistantMessage(personalityId, prompt || 'Introduce yourself.');
+        res.json({ success: true, response: result.text, metadata: { threadId: result.threadId, runId: result.runId } });
+    } catch (error) {
+        console.error('Test assistant error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+
 
 // Toggle personality enabled status
 router.post('/api/personalities/:personalityId/toggle', async (req, res) => {
@@ -720,11 +1091,11 @@ router.get('/api/personalities/character/:characterId', async (req, res) => {
     try {
         const characterId = req.params.characterId;
         const character = await characterService.getCharacterById(characterId);
-        
+
         if (!character) {
             return res.status(404).json({ success: false, error: 'Character not found' });
         }
-        
+
         res.json({ success: true, character });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
@@ -751,9 +1122,9 @@ router.post('/api/personalities/character/:characterId', async (req, res) => {
             contextLength: parseInt(config.contextLength),
             enabled: config.enabled === 'true'
         };
-        
+
         const updated = await characterService.updateCharacter(characterId, character);
-        
+
         if (updated) {
             res.json({ success: true, message: 'Character AI configuration saved successfully' });
         } else {
@@ -768,20 +1139,20 @@ router.post('/api/personalities/character/:characterId/toggle', async (req, res)
     try {
         const characterId = req.params.characterId;
         const { enabled } = req.body;
-        
+
         const character = await characterService.getCharacterById(characterId);
         if (!character) {
             return res.status(404).json({ success: false, error: 'Character not found' });
         }
-        
+
         if (!character.aiConfig) {
             character.aiConfig = {};
         }
-        
+
         character.aiConfig.enabled = enabled;
-        
+
         const updated = await characterService.updateCharacter(characterId, character);
-        
+
         if (updated) {
             res.json({ success: true, message: `Character AI ${enabled ? 'enabled' : 'disabled'} successfully` });
         } else {
@@ -796,7 +1167,7 @@ router.post('/api/personalities/test', async (req, res) => {
     try {
         const { characterId, prompt } = req.body;
         const startTime = Date.now();
-        
+
         // Mock AI response for testing
         const responses = [
             "Greetings, mortal. I am pleased to make your acquaintance.",
@@ -805,10 +1176,10 @@ router.post('/api/personalities/test', async (req, res) => {
             "Welcome to my realm. I trust you find it... accommodating.",
             "Your presence brings warmth to these cold halls."
         ];
-        
+
         const response = responses[Math.floor(Math.random() * responses.length)];
         const responseTime = Date.now() - startTime + Math.random() * 1000; // Add some realistic delay
-        
+
         res.json({
             success: true,
             response,
