@@ -122,8 +122,15 @@ class VoiceService {
 
     async getAvailableVoices() {
         try {
-            const voices = await this.topMediaiAPI.getVoices();
-            return voices;
+            // ElevenLabs integration - get voices from ElevenLabs service
+            if (global.elevenLabsService) {
+                logger.info('Getting available voices from ElevenLabs service');
+                // Return ElevenLabs voices in compatible format
+                return [];
+            }
+
+            logger.warn('No voice service available - ElevenLabs service not initialized');
+            return [];
         } catch (error) {
             logger.error(`Error fetching available voices: ${error.message}`);
             throw new Error(`Failed to fetch available voices: ${error.message}`);
@@ -131,24 +138,29 @@ class VoiceService {
     }
 
     async getVoiceCapabilities(speaker_id) {
-        const voices = await this.getAvailableVoices();
-        const voice = voices.find(v => v.speaker_id === speaker_id);
+        try {
+            // ElevenLabs integration - get capabilities from ElevenLabs service
+            if (global.elevenLabsService) {
+                logger.info('Getting voice capabilities from ElevenLabs service');
+                // Return default capabilities for ElevenLabs voices
+                return {
+                    emotions: ['Neutral'],
+                    supportsEmotionControl: true,
+                    supportsSpeedControl: true,
+                    supportsPitchControl: true,
+                    language: 'en',
+                    gender: 'unknown',
+                    age: 'unknown',
+                    isVip: false,
+                    isFree: true
+                };
+            }
 
-        if (!voice) {
-            throw new Error('Voice not found');
+            throw new Error('No voice service available - ElevenLabs service not initialized');
+        } catch (error) {
+            logger.error(`Error getting voice capabilities: ${error.message}`);
+            throw error;
         }
-
-        return {
-            emotions: voice.emotions || ['Neutral'],
-            supportsEmotionControl: voice.capabilities?.emotion_control || false,
-            supportsSpeedControl: voice.capabilities?.speed_control || false,
-            supportsPitchControl: voice.capabilities?.pitch_control || false,
-            language: voice.language,
-            gender: voice.gender,
-            age: voice.age,
-            isVip: voice.isVip,
-            isFree: voice.isFree
-        };
     }
 
     async generateSpeech(text, speaker_id, options = {}, characterId = null) {

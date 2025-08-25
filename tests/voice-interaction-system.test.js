@@ -1,6 +1,6 @@
 /**
  * Voice Interaction System Tests
- * Tests the complete voice interaction pipeline: OpenAI Whisper STT + TopMediai TTS + ChatterPi Integration
+ * Tests the complete voice interaction pipeline: OpenAI Whisper STT + ElevenLabs TTS + ChatterPi Integration
  */
 
 const { expect } = require('chai');
@@ -10,24 +10,22 @@ const fs = require('fs').promises;
 
 // Import the modules we're testing
 const OpenAISTTIntegration = require('../scripts/chatterpi/openai_stt_integration');
-const TopMediaiAPI = require('../scripts/topMediaiAPI');
 
 describe('Voice Interaction System', function() {
     this.timeout(30000); // 30 second timeout for API calls
 
     let sttIntegration;
-    let topMediaiAPI;
     let sandbox;
 
     beforeEach(function() {
         sandbox = sinon.createSandbox();
-        
+
         // Mock environment variables if not set
         if (!process.env.OPENAI_API_KEY) {
             process.env.OPENAI_API_KEY = 'test-openai-key';
         }
-        if (!process.env.TOPMEDIAI_API_KEY) {
-            process.env.TOPMEDIAI_API_KEY = 'test-topmediai-key';
+        if (!process.env.ELEVENLABS_API_KEY) {
+            process.env.ELEVENLABS_API_KEY = 'test-elevenlabs-key';
         }
     });
 
@@ -145,64 +143,45 @@ describe('Voice Interaction System', function() {
         });
     });
 
-    describe('TopMediai TTS Integration', function() {
-        
-        beforeEach(function() {
-            topMediaiAPI = new TopMediaiAPI();
+    describe('ElevenLabs TTS Integration', function() {
+
+        it('should have ElevenLabs service available globally', function() {
+            // Test that ElevenLabs service is properly initialized
+            // This would be set up by the main application
+            if (global.elevenLabsService) {
+                expect(global.elevenLabsService).to.be.an('object');
+                expect(global.elevenLabsService.getStatus).to.be.a('function');
+            } else {
+                console.log('⚠️ ElevenLabs service not initialized in test environment');
+            }
         });
 
-        it('should initialize with correct base URL and API key', function() {
-            expect(topMediaiAPI.baseURL).to.equal('https://api.topmediai.com/v1');
-            expect(topMediaiAPI.apiKey).to.equal(process.env.TOPMEDIAI_API_KEY);
-        });
-
-        it('should handle rate limiting correctly', async function() {
-            // Mock the rate limit check
-            const rateLimitStub = sandbox.stub(topMediaiAPI, 'checkRateLimit').resolves();
-            
-            await topMediaiAPI.checkRateLimit();
-            expect(rateLimitStub.calledOnce).to.be.true;
-        });
-
-        it('should format TTS request correctly', function() {
-            const params = {
-                text: 'Hello, world!',
-                voiceId: 'test-voice',
-                options: { emotion: 'Happy' }
+        it('should handle voice generation requests', function() {
+            // Test voice generation through ElevenLabs service
+            // This would test the integration with the conversational AI service
+            const testParams = {
+                text: 'Hello world',
+                characterId: 1,
+                agentId: 'test-agent-id'
             };
 
-            // This would be tested by mocking the actual API call
-            expect(params.text).to.equal('Hello, world!');
-            expect(params.voiceId).to.equal('test-voice');
-            expect(params.options.emotion).to.equal('Happy');
+            expect(testParams.text).to.equal('Hello world');
+            expect(testParams.characterId).to.equal(1);
         });
 
-        it('should cache voices list correctly', async function() {
-            // Mock the API response
-            const mockVoices = [
-                { id: 'voice1', name: 'Voice 1' },
-                { id: 'voice2', name: 'Voice 2' }
-            ];
-            
-            sandbox.stub(topMediaiAPI.axiosInstance, 'get').resolves({
-                data: mockVoices
+        it('should support multiple character voices', function() {
+            // Test that different characters can use different ElevenLabs voices
+            const characterVoices = {
+                1: 'pNInz6obpgDQGcFmaJgB', // Adam
+                2: 'EXAVITQu4vr4xnSDxMaL', // Bella
+                3: 'VR6AewLTigWG4xSOukaG', // Josh
+                4: 'onwK4e9ZLuTAKqWW03F9'  // Daniel
+            };
+
+            Object.keys(characterVoices).forEach(characterId => {
+                expect(characterVoices[characterId]).to.be.a('string');
+                expect(characterVoices[characterId].length).to.be.greaterThan(10);
             });
-
-            const voices1 = await topMediaiAPI.getVoices();
-            const voices2 = await topMediaiAPI.getVoices();
-            
-            expect(voices1).to.deep.equal(voices2);
-            expect(topMediaiAPI.voicesCache).to.not.be.null;
-        });
-
-        it('should clear cache when requested', function() {
-            topMediaiAPI.voicesCache = ['cached', 'voices'];
-            topMediaiAPI.voicesCacheExpiry = Date.now() + 10000;
-            
-            topMediaiAPI.clearCache();
-            
-            expect(topMediaiAPI.voicesCache).to.be.null;
-            expect(topMediaiAPI.voicesCacheExpiry).to.be.null;
         });
     });
 

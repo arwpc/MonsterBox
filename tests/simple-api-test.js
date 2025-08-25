@@ -45,32 +45,32 @@ describe('🔑 Simple API Key Tests', function() {
         });
     });
 
-    describe('🎤 TopMediai API', function() {
-        it('should have a valid TopMediai API key', async function() {
-            const apiKey = process.env.TOPMEDIAI_API_KEY;
+    describe('🎤 ElevenLabs API', function() {
+        it('should have a valid ElevenLabs API key', async function() {
+            const apiKey = process.env.ELEVENLABS_API_KEY;
 
             if (!apiKey || apiKey.includes('your_') || apiKey.includes('_here')) {
-                this.skip('TopMediai API key not configured');
+                this.skip('ElevenLabs API key not configured');
             }
 
             try {
-                const response = await axios.get('https://api.topmediai.com/v1/voices_list', {
+                const response = await axios.get('https://api.elevenlabs.io/v1/voices', {
                     headers: {
-                        'x-api-key': apiKey,
+                        'xi-api-key': apiKey,
                         'Accept': 'application/json'
                     },
                     timeout: 15000
                 });
 
                 expect(response.status).to.equal(200);
-                expect(response.data).to.have.property('Voice');
-                expect(response.data.Voice).to.be.an('array');
-                
-                console.log(`✅ TopMediai API key is valid (${response.data.Voice.length} voices available)`);
-                
+                expect(response.data).to.have.property('voices');
+                expect(response.data.voices).to.be.an('array');
+
+                console.log(`✅ ElevenLabs API key is valid (${response.data.voices.length} voices available)`);
+
             } catch (error) {
-                console.error('❌ TopMediai API test failed:', error.message);
-                throw new Error(`TopMediai API failed: ${error.response?.data?.error || error.message}`);
+                console.error('❌ ElevenLabs API test failed:', error.message);
+                throw new Error(`ElevenLabs API failed: ${error.response?.data?.detail || error.message}`);
             }
         });
     });

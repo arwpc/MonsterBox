@@ -286,12 +286,12 @@
     <!-- Agents List -->
     <% if (agents && agents.length > 0) { %>
       <div class="agents-container">
-        <% agents.forEach(agent => { %>
+        <% agents.forEach(function(agent, index) { %>
           <div class="agent-card" data-agent-id="<%= agent.agentId %>">
             <div class="agent-header">
               <div>
-                <div class="agent-name"><%= agent.name %></div>
-                <div class="agent-id">Agent ID: <%= agent.agentId %></div>
+                <div class="agent-name"><%= agent.name || 'Unnamed Agent' %></div>
+                <div class="agent-id">Agent ID: <%= agent.agentId || 'No Agent ID' %></div>
               </div>
               <div class="badge">ElevenLabs Agent</div>
             </div>
@@ -315,16 +315,18 @@
               <label for="character-<%= agent.agentId %>">Assign to Character:</label>
               <select id="character-<%= agent.agentId %>" class="character-select" data-agent-id="<%= agent.agentId %>">
                 <option value="">Select Character...</option>
-                <% characters.forEach(character => { %>
-                  <option value="<%= character.id %>" <%= agent.characterId == character.id ? 'selected' : '' %>>
-                    <%= character.char_name %>
-                  </option>
-                <% }); %>
+                <% if (characters && characters.length > 0) { %>
+                  <% characters.forEach(function(character) { %>
+                    <option value="<%= character.id %>" <%= agent.characterId == character.id ? 'selected' : '' %>>
+                      <%= character.char_name || 'Unnamed Character' %>
+                    </option>
+                  <% }); %>
+                <% } %>
               </select>
             </div>
 
             <div class="agent-actions">
-              <button class="btn-test" onclick="testAgent('<%= agent.agentId %>', '<%= agent.name %>')">
+              <button class="btn-test" onclick="testAgent('<%= agent.agentId %>', '<%= agent.name || 'Agent' %>')">
                 🎤 Test Agent
               </button>
               <button class="btn-configure" onclick="configureAgent('<%= agent.agentId %>')">

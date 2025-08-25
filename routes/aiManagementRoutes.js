@@ -155,6 +155,8 @@ router.get('/agents', async (req, res) => {
             });
         }
 
+
+
         res.render('ai-config/agents', {
             title: 'ElevenLabs Agents Management',
             agents: agents,
@@ -254,8 +256,6 @@ router.get('/conversation', async (req, res) => {
 router.get('/assistants', async (req, res) => {
     // Redirect to ElevenLabs agents page
     return res.redirect('/ai-management/agents');
-});
-
 });
 
 // Backward-compat: redirect old personalities page to agents
