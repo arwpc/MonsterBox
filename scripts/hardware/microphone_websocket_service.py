@@ -75,21 +75,43 @@ class MicrophoneWebSocketService(BaseHardwareService):
         self.audio_system = None
         if PYAUDIO_AVAILABLE:
             try:
-                # Suppress ALSA warnings during PyAudio initialization
+                # Suppress ALSA and Jack warnings during PyAudio initialization
                 import os
                 import sys
+                import warnings
 
-                # Redirect stderr temporarily to suppress ALSA warnings
+                # Suppress all warnings temporarily
+                warnings.filterwarnings("ignore")
+
+                # Set environment variables to suppress Jack and ALSA warnings
+                os.environ['JACK_NO_AUDIO_RESERVATION'] = '1'
+                os.environ['ALSA_PCM_CARD'] = 'default'
+                os.environ['ALSA_PCM_DEVICE'] = '0'
+
+                # Redirect stderr temporarily to suppress audio system warnings
                 stderr_backup = sys.stderr
+                stdout_backup = sys.stdout
+
                 with open(os.devnull, 'w') as devnull:
                     sys.stderr = devnull
+                    sys.stdout = devnull
                     self.audio_system = pyaudio.PyAudio()
-                    sys.stderr = stderr_backup
+
+                # Restore output streams
+                sys.stderr = stderr_backup
+                sys.stdout = stdout_backup
+
+                # Restore warnings
+                warnings.resetwarnings()
 
                 logger.info("✅ PyAudio system initialized")
             except Exception as e:
-                # Restore stderr if there was an error
-                sys.stderr = stderr_backup
+                # Restore output streams if there was an error
+                if 'stderr_backup' in locals():
+                    sys.stderr = stderr_backup
+                if 'stdout_backup' in locals():
+                    sys.stdout = stdout_backup
+                warnings.resetwarnings()
                 logger.error(f"Failed to initialize PyAudio: {e}")
                 self.audio_system = None
     

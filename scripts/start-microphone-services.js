@@ -181,8 +181,8 @@ class MicrophoneServicesStarter {
                     startTime: Date.now()
                 });
 
-                // Wait for service to start
-                await this.waitForService(config.port, 15000);
+                // Wait for service to start (reduced timeout)
+                await this.waitForService(config.port, 8000);
 
                 logger.info(`✅ ${config.name} started successfully on port ${config.port}`);
                 return true;
@@ -218,7 +218,7 @@ class MicrophoneServicesStarter {
     /**
      * Wait for a service to become available on a port
      */
-    async waitForService(port, timeout = 15000) {
+    async waitForService(port, timeout = 8000) {
         const startTime = Date.now();
         
         while (Date.now() - startTime < timeout) {

@@ -110,7 +110,7 @@ try {
     aiManagementRoutes = require('./routes/aiManagementRoutes');
 
     // Import Conversational AI routes
-    conversationalAIRoutes = require('./routes/conversationalAIRoutes');
+    conversationalAIRoutes = require('./routes/conversationalAiRoutes');
 
 
 

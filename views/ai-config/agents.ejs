@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %></title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
+  <link rel="stylesheet" href="/css/style.css?v=<%= Date.now() %>">
+  <style>
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); max-width: 100%; gap: 16px; }
+
+    /* Limit to maximum 3 columns */
+    @media (min-width: 1200px) {
+      .grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    .card { background: #000800; border: 1px solid #00ff00; border-radius: 8px; padding: 16px; }
+    .card h4 { margin: 0 0 8px 0; color: #00ff00; }
+    .muted { color: #aaa; font-size: 12px; }
+    .row { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
+    .row input, .row select, .row textarea { flex: 1; background: #001100; border: 1px solid #00ff00; color: #00ff00; border-radius: 4px; padding: 6px 8px; }
+    .actions { display: flex; gap: 8px; margin-top: 10px; }
+    .danger { background: #330000; color: #ff6666; border: 1px solid #ff0000; }
+    .success { color: #00ff00; }
+    .badge { border: 1px solid #00ff00; color: #00ff00; padding: 2px 6px; border-radius: 4px; font-size: 11px; }
+
+    /* Breadcrumb Navigation Styling */
+    .breadcrumb-vertical {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      font-size: 1.1em;
+    }
+
+    .breadcrumb-item {
+      color: #00ffff;
+      text-decoration: none;
+      transition: all 0.3s ease;
+    }
+
+    .breadcrumb-item:hover {
+      color: #ffffff;
+      text-shadow: 0 0 5px #00ffff;
+    }
+
+    .breadcrumb-item.active {
+      color: #00ff00;
+      font-weight: bold;
+    }
+
+    .breadcrumb-item:not(.active):after {
+      content: ' → ';
+      color: #666666;
+      margin-left: 8px;
+    }
+
+    .mb-6 {
+      margin-bottom: 24px;
+    }
+
+    /* Service Status Section */
+    .service-status {
+      background: #000800;
+      border: 2px solid #00ff00;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-top: 15px;
+    }
+
+    .status-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 15px;
+      background: #001100;
+      border: 1px solid #00ff00;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .status-value {
+      color: #00ff88;
+      font-weight: bold;
+    }
+
+    .status-offline {
+      color: #ff6666;
+    }
+
+    .status-online {
+      color: #00ff00;
+    }
+
+    /* Agent Cards */
+    .agent-card {
+      background: #000800;
+      border: 2px solid #00ff00;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .agent-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #00ff00;
+    }
+
+    .agent-name {
+      color: #00ff00;
+      font-size: 18px;
+      font-weight: bold;
+      text-shadow: 0 0 5px rgba(0, 255, 0, 0.3);
+    }
+
+    .agent-id {
+      color: #888;
+      font-size: 12px;
+      font-family: monospace;
+    }
+
+    .agent-info {
+      margin: 15px 0;
+    }
+
+    .agent-info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 8px 0;
+      font-size: 14px;
+    }
+
+    .agent-info-label {
+      color: #00ffff;
+      font-weight: bold;
+    }
+
+    .agent-info-value {
+      color: #ffffff;
+    }
+
+    .character-assignment {
+      margin: 15px 0;
+      padding: 15px;
+      background: #001100;
+      border: 1px solid #00ff00;
+      border-radius: 6px;
+    }
+
+    .character-assignment label {
+      display: block;
+      color: #00ff00;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    .character-assignment select {
+      width: 100%;
+      background: #000800;
+      border: 1px solid #00ff00;
+      color: #00ff00;
+      border-radius: 4px;
+      padding: 8px;
+    }
+
+    .agent-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+      flex-wrap: wrap;
+    }
+
+    .btn-test {
+      background: linear-gradient(45deg, #00ff00, #00cc00);
+      color: #000000;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+
+    .btn-test:hover {
+      background: linear-gradient(45deg, #00cc00, #009900);
+      box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+    }
+
+    .btn-configure {
+      background: linear-gradient(45deg, #00ffff, #00cccc);
+      color: #000000;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+
+    .btn-configure:hover {
+      background: linear-gradient(45deg, #00cccc, #009999);
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+    }
+
+    .no-agents {
+      text-align: center;
+      padding: 40px;
+      color: #888;
+      font-style: italic;
+    }
+
+    .refresh-btn {
+      background: linear-gradient(45deg, #ff00ff, #cc00cc);
+      color: #ffffff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      margin-bottom: 20px;
+      transition: all 0.3s ease;
+    }
+
+    .refresh-btn:hover {
+      background: linear-gradient(45deg, #cc00cc, #990099);
+      box-shadow: 0 0 15px rgba(255, 0, 255, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <div class="container">
+    <!-- Breadcrumb Navigation -->
+    <nav class="breadcrumb-vertical mb-6">
+      <a href="/" class="breadcrumb-item">🏠 Home</a>
+      <a href="/ai-management" class="breadcrumb-item">🤖 AI Management</a>
+      <span class="breadcrumb-item active">🎭 ElevenLabs Agents</span>
+    </nav>
+
+    <h1 style="text-align: center; color: #00ff00; margin-bottom: 30px; text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);">
+      🎭 ElevenLabs Agents Management
+    </h1>
+
+    <!-- Service Status -->
+    <div class="service-status">
+      <h3 style="color: #00ff00; margin-bottom: 15px;">📡 ElevenLabs Service Status</h3>
+      <div class="status-grid">
+        <div class="status-item">
+          <span>Service Status</span>
+          <span class="status-value <%= serviceStatus && serviceStatus.isRunning ? 'status-online' : 'status-offline' %>">
+            <%= serviceStatus && serviceStatus.isRunning ? '✅ Running' : '❌ Offline' %>
+          </span>
+        </div>
+        <div class="status-item">
+          <span>Available Agents</span>
+          <span class="status-value"><%= agents.length %></span>
+        </div>
+        <div class="status-item">
+          <span>Active Connections</span>
+          <span class="status-value"><%= serviceStatus ? serviceStatus.activeConnections : 0 %></span>
+        </div>
+        <div class="status-item">
+          <span>WebSocket Port</span>
+          <span class="status-value"><%= serviceStatus ? serviceStatus.port : 'N/A' %></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Refresh Button -->
+    <button class="refresh-btn" onclick="location.reload()">🔄 Refresh Agents</button>
+
+    <!-- Agents List -->
+    <% if (agents && agents.length > 0) { %>
+      <div class="agents-container">
+        <% agents.forEach(agent => { %>
+          <div class="agent-card" data-agent-id="<%= agent.agentId %>">
+            <div class="agent-header">
+              <div>
+                <div class="agent-name"><%= agent.name %></div>
+                <div class="agent-id">Agent ID: <%= agent.agentId %></div>
+              </div>
+              <div class="badge">ElevenLabs Agent</div>
+            </div>
+
+            <div class="agent-info">
+              <div class="agent-info-row">
+                <span class="agent-info-label">Character ID:</span>
+                <span class="agent-info-value"><%= agent.characterId || 'Not Assigned' %></span>
+              </div>
+              <div class="agent-info-row">
+                <span class="agent-info-label">Status:</span>
+                <span class="agent-info-value status-online">Active</span>
+              </div>
+              <div class="agent-info-row">
+                <span class="agent-info-label">Created:</span>
+                <span class="agent-info-value"><%= new Date().toLocaleDateString() %></span>
+              </div>
+            </div>
+
+            <div class="character-assignment">
+              <label for="character-<%= agent.agentId %>">Assign to Character:</label>
+              <select id="character-<%= agent.agentId %>" class="character-select" data-agent-id="<%= agent.agentId %>">
+                <option value="">Select Character...</option>
+                <% characters.forEach(character => { %>
+                  <option value="<%= character.id %>" <%= agent.characterId == character.id ? 'selected' : '' %>>
+                    <%= character.char_name %>
+                  </option>
+                <% }); %>
+              </select>
+            </div>
+
+            <div class="agent-actions">
+              <button class="btn-test" onclick="testAgent('<%= agent.agentId %>', '<%= agent.name %>')">
+                🎤 Test Agent
+              </button>
+              <button class="btn-configure" onclick="configureAgent('<%= agent.agentId %>')">
+                ⚙️ Configure
+              </button>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+    <% } else { %>
+      <div class="no-agents">
+        <h3>No ElevenLabs Agents Available</h3>
+        <p>No agents found. Please check your ElevenLabs service configuration.</p>
+        <% if (!serviceStatus || !serviceStatus.isRunning) { %>
+          <p style="color: #ff6666;">⚠️ ElevenLabs service appears to be offline.</p>
+        <% } %>
+      </div>
+    <% } %>
+  </div>
+
+  <script>
+    // Handle character assignment
+    document.querySelectorAll('.character-select').forEach(select => {
+      select.addEventListener('change', async (e) => {
+        const agentId = e.target.dataset.agentId;
+        const characterId = e.target.value;
+        
+        try {
+          const response = await fetch('/api/elevenlabs/agents/assign', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              agentId: agentId,
+              characterId: characterId
+            })
+          });
+          
+          const data = await response.json();
+          
+          if (data.success) {
+            console.log('✅ Agent assigned successfully');
+          } else {
+            console.error('❌ Assignment failed:', data.error);
+            alert('Assignment failed: ' + data.error);
+          }
+        } catch (error) {
+          console.error('❌ Assignment error:', error);
+          alert('Assignment error: ' + error.message);
+        }
+      });
+    });
+
+    function testAgent(agentId, agentName) {
+      // Open test chat with this agent
+      window.open(`/test-chat?agentId=${agentId}`, '_blank');
+    }
+
+    function configureAgent(agentId) {
+      // Navigate to agent configuration
+      window.location.href = `/ai-management/agents/${agentId}/configure`;
+    }
+  </script>
+</body>
+</html>

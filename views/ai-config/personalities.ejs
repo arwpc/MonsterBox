@@ -504,9 +504,7 @@
                     <button class="button primary-btn" onclick="addNewAgent(); event.stopPropagation();">
                         <i class="fas fa-plus"></i> Add Agent
                     </button>
-                    <button class="button secondary-btn" onclick="migrateCharacterConfigs(); event.stopPropagation();" id="migrateBtn">
-                        <i class="fas fa-sync"></i> Migrate Character Configs
-                    </button>
+
                     <i class="collapse-icon fas fa-chevron-down" id="personalities-icon"></i>
                 </div>
             </div>
@@ -746,6 +744,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             updateTemperatureDisplay(document.getElementById('defaultTemperature').value);
             loadPersonalities();
+            loadAvailableVoices();
         });
 
         // Section toggle functionality
@@ -1066,92 +1065,72 @@
         // Load and display personalities
         async function loadPersonalities() {
             try {
-                const response = await fetch('/ai-management/api/personalities/list');
+                const response = await fetch('/ai-management/api/elevenlabs/agents');
                 const data = await response.json();
 
                 if (data.success) {
-                    displayPersonalities(data.personalities);
+                    displayPersonalities(data.agents);
                 } else {
-                    console.error('Failed to load personalities:', data.error);
+                    console.error('Failed to load ElevenLabs agents:', data.error);
                 }
             } catch (error) {
-                console.error('Error loading personalities:', error);
+                console.error('Error loading ElevenLabs agents:', error);
             }
         }
 
         function displayPersonalities(personalities) {
             const grid = document.getElementById('personalitiesGrid');
-            const migrateBtn = document.getElementById('migrateBtn');
 
             if (!personalities || personalities.length === 0) {
-                grid.innerHTML = '<div class="info-message">No AI personalities created yet. Click "Add Personality" to create your first one, or "Migrate Character Configs" to convert existing character AI settings.</div>';
-                // Show migrate button if no personalities exist
-                if (migrateBtn) migrateBtn.style.display = 'inline-block';
+                grid.innerHTML = '<div class="info-message">No ElevenLabs agents found. ElevenLabs agents are automatically loaded from your ElevenLabs account.</div>';
                 return;
-            } else {
-                // Hide migrate button if personalities exist
-                if (migrateBtn) migrateBtn.style.display = 'none';
             }
 
-            grid.innerHTML = personalities.map(personality => `
-                <div class="character-card" data-personality-id="${personality.id}">
-                    <div class="character-status status-${personality.enabled ? 'online' : 'offline'}"></div>
+            grid.innerHTML = personalities.map(agent => `
+                <div class="character-card" data-agent-id="${agent.agentId}">
+                    <div class="character-status status-online"></div>
 
                     <div class="character-header">
                         <div class="character-avatar">
-                            ${personality.name.charAt(0).toUpperCase()}
+                            ${agent.name.charAt(0).toUpperCase()}
                         </div>
                         <div class="character-info">
-                            <h4>${personality.name}</h4>
-                            <p>${personality.systemPrompt ? personality.systemPrompt.substring(0, 100) + '...' : 'No system prompt defined'}</p>
+                            <h4>${agent.name}</h4>
+                            <p>ElevenLabs Conversational Agent</p>
                         </div>
                     </div>
 
                     <div class="character-details">
                         <div class="detail-row">
                             <span class="detail-label">Provider:</span>
-                            <span class="detail-value">${personality.provider}</span>
+                            <span class="detail-value">ElevenLabs</span>
                         </div>
                         <div class="detail-row">
-                            <span class="detail-label">Model:</span>
-                            <span class="detail-value">${personality.model}</span>
+                            <span class="detail-label">Character ID:</span>
+                            <span class="detail-value">${agent.characterId}</span>
                         </div>
                         <div class="detail-row">
-                            <span class="detail-label">Temperature:</span>
-                            <span class="detail-value">${personality.temperature}</span>
+                            <span class="detail-label">Agent ID:</span>
+                            <span class="detail-value">${agent.agentId.substring(0, 20)}...</span>
                         </div>
                         <div class="personality-assignment">
-                            <label for="assign-${personality.id}">Assign to Character:</label>
-                            <select id="assign-${personality.id}" onchange="markPersonalityChanged('${personality.id}')">
-                                <option value="">Unassigned</option>
-                                <option value="1" ${personality.assignedCharacter === '1' ? 'selected' : ''}>Orlok</option>
-                                <option value="2" ${personality.assignedCharacter === '2' ? 'selected' : ''}>Coffin Breaker</option>
-                                <option value="3" ${personality.assignedCharacter === '3' ? 'selected' : ''}>PumpkinHead</option>
-                                <option value="4" ${personality.assignedCharacter === '4' ? 'selected' : ''}>Skulltalker</option>
-                            </select>
-                            <button class="save-btn" id="save-${personality.id}" onclick="savePersonalityAssignment('${personality.id}')" disabled>
-                                <i class="fas fa-save"></i> Save Assignment
-                            </button>
+                            <label>Character Assignment:</label>
+                            <div class="assignment-info">
+                                <span class="detail-value">Character ${agent.characterId} (${agent.name})</span>
+                                <span class="assignment-status">✅ Active</span>
+                            </div>
                         </div>
                     </div>
 
                     <div class="character-actions">
-                        <button class="button secondary-btn" onclick="editPersonality('${personality.id}')">
-                            <i class="fas fa-edit"></i> Edit
+                        <button class="button secondary-btn" onclick="testElevenLabsAgent('${agent.agentId}')">
+                            <i class="fas fa-vial"></i> Test Agent
                         </button>
-                        <button class="button secondary-btn" onclick="syncAssistant('${personality.id}')">
-                            <i class="fas fa-robot"></i> Sync Assistant
+                        <button class="button secondary-btn" onclick="viewElevenLabsAgent('${agent.agentId}')">
+                            <i class="fas fa-eye"></i> View Details
                         </button>
-                        <input type="file" id="docs-input-${personality.id}" multiple style="display:none" accept=".pdf,.txt,.md,.doc,.docx,.html,.csv,.json">
-                        <button class="button secondary-btn" onclick="document.getElementById('docs-input-${personality.id}').click()">
-                            <i class="fas fa-upload"></i> Upload Docs
-                        </button>
-                        <button class="button secondary-btn" onclick="testAssistant('${personality.id}')">
-                            <i class="fas fa-vial"></i> Test Assistant
-                        </button>
-                        <button class="button ${personality.enabled ? 'danger-btn' : 'success-btn'}"
-                                onclick="togglePersonality('${personality.id}', ${!personality.enabled})">
-                            <i class="fas fa-power-off"></i> ${personality.enabled ? 'Disable' : 'Enable'}
+                        <button class="button secondary-btn" onclick="openElevenLabsConsole('${agent.agentId}')">
+                            <i class="fas fa-external-link-alt"></i> ElevenLabs Console
                         </button>
                     </div>
                 </div>
@@ -1340,36 +1319,7 @@
             return savePersonalityAssignment(personalityId);
         }
 
-        // Migration function
-        async function migrateCharacterConfigs() {
-            if (!confirm('This will migrate existing character AI configurations to standalone personalities. Continue?')) {
-                return;
-            }
 
-            try {
-                showMessage('Migrating character AI configurations...', 'info');
-
-                const response = await fetch('/ai-management/api/personalities/migrate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    showMessage(`Migration successful! Created ${data.migratedPersonalities.length} personalities.`, 'success');
-                    loadPersonalities(); // Reload personalities list
-
-                    // Hide migrate button after successful migration
-                    document.getElementById('migrateBtn').style.display = 'none';
-
-                } else {
-                    showMessage(`Migration failed: ${data.error}`, 'error');
-                }
-            } catch (error) {
-                showMessage(`Migration error: ${error.message}`, 'error');
-            }
-        }
 
         // Utility functions
         function showMessage(message, type) {
@@ -1491,6 +1441,25 @@
                 closeModal();
             }
         }
+        // ElevenLabs Agent Functions
+        function testElevenLabsAgent(agentId) {
+            showMessage('Testing ElevenLabs agent...', 'info');
+            // Redirect to test chat with the specific agent
+            window.open(`/test-chat?agent=${agentId}`, '_blank');
+        }
+
+        function viewElevenLabsAgent(agentId) {
+            showMessage('Viewing ElevenLabs agent details...', 'info');
+            // Show agent details in a modal or redirect to details page
+            alert(`Agent ID: ${agentId}\n\nThis would show detailed agent information from ElevenLabs.`);
+        }
+
+        function openElevenLabsConsole(agentId) {
+            showMessage('Opening ElevenLabs console...', 'info');
+            // Open ElevenLabs console in new tab
+            window.open('https://elevenlabs.io/app/conversational-ai', '_blank');
+        }
+
     </script>
 </body>
 </html>

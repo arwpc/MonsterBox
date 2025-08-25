@@ -108,19 +108,17 @@ class ChatterPiInterface {
      */
     async checkCharacterAvailability() {
         try {
-            const response = await fetch('/chatterpi/api/characters');
+            const response = await fetch('/conversational-ai/api/characters');
             const result = await response.json();
-            
+
             if (result.success) {
                 result.data.forEach(character => {
                     const statusElement = document.getElementById(`status-${character.id}`);
                     if (statusElement) {
                         if (character.available) {
-                            statusElement.innerHTML = '<span class="text-success">✅ Ready</span>';
-                            statusElement.className = 'badge badge-sm badge-success';
+                            statusElement.innerHTML = '<span class="status-online">✅ Ready</span>';
                         } else {
-                            statusElement.innerHTML = '<span class="text-error">❌ Unavailable</span>';
-                            statusElement.className = 'badge badge-sm badge-error';
+                            statusElement.innerHTML = '<span class="status-offline">❌ Unavailable</span>';
                         }
                     }
                 });
@@ -135,18 +133,32 @@ class ChatterPiInterface {
      */
     async updateServiceStatus() {
         try {
-            const response = await fetch('/chatterpi/api/status');
+            const response = await fetch('/conversational-ai/api/status');
             const result = await response.json();
-            
+
             if (result.success) {
                 const status = result.data;
-                
-                document.getElementById('service-running').innerHTML = 
-                    status.isRunning ? '<span class="text-success">✅ Running</span>' : '<span class="text-error">❌ Offline</span>';
-                
-                document.getElementById('service-port').textContent = `Port: ${status.port}`;
-                document.getElementById('available-agents').textContent = status.availableAgents;
-                document.getElementById('active-connections').textContent = status.activeConnections;
+
+                const serviceRunningElement = document.getElementById('service-running');
+                if (serviceRunningElement) {
+                    serviceRunningElement.innerHTML =
+                        status.isRunning ? '<span class="status-online">✅ Running</span>' : '<span class="status-offline">❌ Offline</span>';
+                }
+
+                const servicePortElement = document.getElementById('service-port');
+                if (servicePortElement) {
+                    servicePortElement.textContent = status.port || 'N/A';
+                }
+
+                const availableAgentsElement = document.getElementById('available-agents');
+                if (availableAgentsElement) {
+                    availableAgentsElement.textContent = status.availableAgents || 0;
+                }
+
+                const activeConnectionsElement = document.getElementById('active-connections');
+                if (activeConnectionsElement) {
+                    activeConnectionsElement.textContent = status.activeConnections || 0;
+                }
             }
         } catch (error) {
             console.error('Error updating service status:', error);
@@ -168,7 +180,7 @@ class ChatterPiInterface {
             document.querySelector(`[data-character-id="${characterId}"]`).classList.add('ring-2', 'ring-primary');
             
             // Start conversation
-            const response = await fetch('/chatterpi/api/start-conversation', {
+            const response = await fetch('/conversational-ai/api/start-conversation', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ characterId })

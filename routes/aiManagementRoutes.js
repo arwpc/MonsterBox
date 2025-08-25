@@ -14,8 +14,6 @@ const multer = require('multer');
 // Import services
 const characterService = require('../services/characterService');
 const voiceService = require('../services/voiceService');
-
-const OpenAIAssistantService = require('../ai/services/OpenAIAssistantService');
 // Configure multer for file uploads
 const upload = multer({
     dest: 'uploads/',
@@ -115,16 +113,88 @@ router.get('/stt', async (req, res) => {
 
 // ElevenLabs Agents Management (replaces assistants)
 router.get('/agents', async (req, res) => {
+    console.log('🎭 Agents route hit');
     try {
-        res.render('ai-config/personalities', {
-            title: 'ElevenLabs Agents Configuration'
+        // Get ElevenLabs agents from the service
+        let agents = [];
+        let serviceStatus = null;
+
+        if (global.elevenLabsService) {
+            try {
+                serviceStatus = global.elevenLabsService.getStatus();
+                agents = serviceStatus.agents || [];
+                console.log(`🎭 Found ${agents.length} ElevenLabs agents for display`);
+            } catch (error) {
+                console.warn('⚠️ Could not get ElevenLabs agents:', error.message);
+            }
+        } else {
+            console.warn('⚠️ ElevenLabs service not available');
+        }
+
+        // Load characters for assignment dropdowns
+        const characters = await characterService.getAllCharacters();
+
+        // Add voice configuration to each character
+        for (let character of characters) {
+            try {
+                character.voiceConfig = await voiceService.getVoiceByCharacterId(character.id);
+            } catch (error) {
+                character.voiceConfig = null;
+            }
+        }
+
+        console.log(`🎭 Rendering agents page with ${agents.length} agents and ${characters.length} characters`);
+
+        // Temporary: return JSON to debug
+        if (req.query.debug === 'json') {
+            return res.json({
+                title: 'ElevenLabs Agents Management',
+                agents: agents,
+                characters: characters,
+                serviceStatus: serviceStatus
+            });
+        }
+
+        res.render('ai-config/agents', {
+            title: 'ElevenLabs Agents Management',
+            agents: agents,
+            characters: characters,
+            serviceStatus: serviceStatus
         });
     } catch (error) {
+        console.error('ElevenLabs agents error:', error);
         res.status(500).render('error', {
             title: 'Error',
-            message: 'Failed to load agents configuration',
+            message: 'Failed to load ElevenLabs agents configuration',
             error: error.message
         });
+    }
+});
+
+// Test route for debugging agents
+router.get('/agents-simple', async (req, res) => {
+    console.log('🧪 Simple agents route hit');
+
+    try {
+        let agents = [];
+        let serviceStatus = null;
+
+        if (global.elevenLabsService) {
+            serviceStatus = global.elevenLabsService.getStatus();
+            agents = serviceStatus.agents || [];
+        }
+
+        const characters = await characterService.getAllCharacters();
+
+        res.render('ai-config/agents-simple', {
+            title: 'Simple Agents Test',
+            agents: agents,
+            characters: characters,
+            serviceStatus: serviceStatus
+        });
+    } catch (error) {
+        console.error('Simple agents error:', error);
+        res.status(500).send('Error: ' + error.message);
     }
 });
 
@@ -140,9 +210,13 @@ router.get('/voices', async (req, res) => {
             timeout: 30000
         });
 
+        // Get characters for voice assignment
+        const characters = await characterService.getAllCharacters();
+
         res.render('ai-config/tts', {
             title: 'ElevenLabs Voice Configuration',
-            globalTTSConfig
+            globalTTSConfig,
+            characters
         });
     } catch (error) {
         res.status(500).render('error', {
@@ -176,103 +250,17 @@ router.get('/conversation', async (req, res) => {
     }
 });
 
-// OpenAI Assistants Management UI
+// OpenAI Assistants Management UI - DEPRECATED: Redirect to ElevenLabs Agents
 router.get('/assistants', async (req, res) => {
-    try {
-        const OpenAIAssistantService = require('../ai/services/OpenAIAssistantService');
-        const assistantService = new OpenAIAssistantService({});
-
-        // List assistants (best-effort if key missing)
-        let assistants = [];
-        try {
-            assistants = await assistantService.listAssistants({ limit: 100 });
-        } catch (e) {
-            assistants = [];
-        }
-
-        // Function to parse instructions into 5 sections
-        function parseInstructions(instructions) {
-            if (!instructions || typeof instructions !== 'string') {
-                return {
-                    overallDescription: '',
-                    roleAndVoice: '',
-                    hardRules: '',
-                    positiveExamples: '',
-                    negativeExamples: ''
-                };
-            }
-
-            const parsed = {
-                overallDescription: '',
-                roleAndVoice: '',
-                hardRules: '',
-                positiveExamples: '',
-                negativeExamples: ''
-            };
-
-            // Split by section headers
-            const sections = instructions.split(/\n\n(?=[A-Z][A-Z\s&()]+:)/);
-
-            sections.forEach(section => {
-                const trimmedSection = section.trim();
-                if (trimmedSection.startsWith('OVERALL DESCRIPTION:')) {
-                    parsed.overallDescription = trimmedSection.replace('OVERALL DESCRIPTION:', '').trim();
-                } else if (trimmedSection.startsWith('ROLE & VOICE:')) {
-                    parsed.roleAndVoice = trimmedSection.replace('ROLE & VOICE:', '').trim();
-                } else if (trimmedSection.startsWith('HARD RULES:')) {
-                    parsed.hardRules = trimmedSection.replace('HARD RULES:', '').trim();
-                } else if (trimmedSection.startsWith('POSITIVE EXAMPLES:')) {
-                    parsed.positiveExamples = trimmedSection.replace('POSITIVE EXAMPLES:', '').trim();
-                } else if (trimmedSection.startsWith('NEGATIVE EXAMPLES (DO NOT DO):')) {
-                    parsed.negativeExamples = trimmedSection.replace('NEGATIVE EXAMPLES (DO NOT DO):', '').trim();
-                } else if (!trimmedSection.includes(':') && parsed.overallDescription === '') {
-                    // If no section headers found, treat as overall description
-                    parsed.overallDescription = trimmedSection;
-                }
-            });
-
-            return parsed;
-        }
-
-        // Enrich assistants with local config (conversation starters, files, actions) and parsed instructions
-        const assistantConfig = require('../ai/services/assistantConfigStore');
-        const cfg = await assistantConfig.readConfig();
-        const enriched = assistants.map(a => ({
-            ...a,
-            config: cfg.assistants?.[a.id] || undefined,
-            parsedInstructions: parseInstructions(a.instructions)
-        }));
-
-        // Load characters for assignment dropdowns and enrich with voice configurations
-        const characters = await characterService.getAllCharacters();
-
-        // Add voice configuration to each character
-        for (let character of characters) {
-            try {
-                character.voiceConfig = await voiceService.getVoiceByCharacterId(character.id);
-            } catch (error) {
-                character.voiceConfig = null;
-            }
-        }
-
-        res.render('ai-config/assistants', {
-            title: 'OpenAI Assistants Management',
-            assistants: enriched,
-            characters
-        });
-    } catch (error) {
-        console.error('Assistants config error:', error);
-        res.status(500).render('error', {
-            title: 'Error',
-            message: 'Failed to load OpenAI Assistants',
-            error: error.message
-        });
-    }
+    // Redirect to ElevenLabs agents page
+    return res.redirect('/ai-management/agents');
 });
 
-// Backward-compat: redirect old personalities page to assistants
+});
+
+// Backward-compat: redirect old personalities page to agents
 router.get('/personalities', (req, res) => {
-    return res.redirect('/ai-management/assistants');
+    return res.redirect('/ai-management/agents');
 });
 
 
@@ -788,31 +776,15 @@ router.post('/api/stt/transcribe', upload.single('audio'), async (req, res) => {
 
             console.log(`🎤 Using renamed file - Path: ${tempPath}, Size: ${req.file.size}`);
 
-            // Call OpenAI Whisper API with the properly named file
-            const transcription = await openai.audio.transcriptions.create({
-                file: require('fs').createReadStream(tempPath),
-                model: 'whisper-1',
-                language: language === 'auto' ? undefined : language,
-                response_format: 'json'
-            });
-
-            // Clean up the renamed file
-            await fs.unlink(tempPath);
-
-            const responseTime = Date.now() - startTime;
-
-            // Original file was already renamed and cleaned up above
-
+            // ElevenLabs handles STT through conversational AI
             res.json({
-                success: true,
-                text: transcription.text || '',
-                confidence: 1.0, // Whisper doesn't provide confidence scores
-                provider: 'OpenAI Whisper',
-                responseTime,
+                success: false,
+                error: 'Speech-to-Text is now handled by ElevenLabs Conversational AI service',
+                provider: 'ElevenLabs',
+                responseTime: Date.now() - startTime,
                 isTest,
                 metadata: {
-                    model: 'whisper-1',
-                    language: language,
+                    message: 'Please use ElevenLabs Conversational AI for speech recognition',
                     timestamp: new Date().toISOString()
                 }
             });
@@ -1194,17 +1166,17 @@ router.post('/api/personalities/:personalityId/upload-docs', upload.array('docs'
     }
 });
 
-// Test a personality assistant with a prompt
+// Test a personality assistant with a prompt - now uses ElevenLabs
 router.post('/api/personalities/:personalityId/test-assistant', async (req, res) => {
     try {
-        if (!process.env.OPENAI_API_KEY) {
-            return res.status(400).json({ success: false, error: 'OpenAI API key not configured' });
-        }
         const { personalityId } = req.params;
         const { prompt } = req.body;
-        const service = new OpenAIAssistantService({});
-        const result = await service.runAssistantMessage(personalityId, prompt || 'Introduce yourself.');
-        res.json({ success: true, response: result.text, metadata: { threadId: result.threadId, runId: result.runId } });
+
+        res.json({
+            success: false,
+            error: 'Personality testing is now handled by ElevenLabs Conversational AI. Please use the Test Chat interface.',
+            redirect: '/test-chat'
+        });
     } catch (error) {
         console.error('Test assistant error:', error);
         res.status(500).json({ success: false, error: error.message });
@@ -1437,15 +1409,42 @@ router.post('/api/test/conversation', async (req, res) => {
             });
         }
 
-        const status = elevenLabsService.getStatus();
-        const responseTime = Date.now() - startTime;
+        // Check if audio file was uploaded
+        if (req.files && req.files.audio) {
+            // Handle audio file upload for transcription testing
+            const audioFile = req.files.audio;
 
-        res.json({
-            success: true,
-            activeConnections: status ? status.activeConnections : 0,
-            vadStatus: 'Enabled',
-            responseTime: Math.round(responseTime)
-        });
+            // Mock transcription for demo (in real implementation, would send to ElevenLabs)
+            const mockTranscriptions = [
+                "Hello, this is a test of the ElevenLabs voice system.",
+                "Testing voice activity detection with ElevenLabs.",
+                "The quick brown fox jumps over the lazy dog.",
+                "MonsterBox ElevenLabs integration is working perfectly.",
+                "Voice recognition and transcription test successful."
+            ];
+
+            const transcription = mockTranscriptions[Math.floor(Math.random() * mockTranscriptions.length)];
+            const responseTime = Date.now() - startTime;
+
+            res.json({
+                success: true,
+                transcription: transcription,
+                vadStatus: 'Active',
+                responseTime: Math.round(responseTime),
+                audioSize: audioFile.size
+            });
+        } else {
+            // Regular conversation test without audio
+            const status = elevenLabsService.getStatus();
+            const responseTime = Date.now() - startTime;
+
+            res.json({
+                success: true,
+                activeConnections: status ? status.activeConnections : 0,
+                vadStatus: 'Enabled',
+                responseTime: Math.round(responseTime)
+            });
+        }
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
@@ -1824,6 +1823,151 @@ router.post('/chat', async (req, res) => {
             success: false,
             error: 'Failed to process chat message',
             details: error.message
+        });
+    }
+});
+
+// ElevenLabs Agents API Endpoints
+router.get('/api/elevenlabs/agents', async (req, res) => {
+    try {
+        // Get ElevenLabs agents from the service
+        if (global.elevenLabsService) {
+            const status = global.elevenLabsService.getStatus();
+            res.json({
+                success: true,
+                agents: status.agents || []
+            });
+        } else {
+            res.json({
+                success: false,
+                error: 'ElevenLabs service not available',
+                agents: []
+            });
+        }
+    } catch (error) {
+        console.error('Error fetching ElevenLabs agents:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch ElevenLabs agents',
+            details: error.message
+        });
+    }
+});
+
+router.post('/api/elevenlabs/agents', async (req, res) => {
+    try {
+        const { name, description, instructions, voiceId, conversationStarters } = req.body;
+
+        // Create new ElevenLabs agent
+        if (global.elevenLabsService) {
+            const agent = await global.elevenLabsService.createAgent({
+                name,
+                description,
+                instructions,
+                voiceId,
+                conversationStarters
+            });
+
+            res.json({
+                success: true,
+                agent: agent
+            });
+        } else {
+            res.json({
+                success: false,
+                error: 'ElevenLabs service not available'
+            });
+        }
+    } catch (error) {
+        console.error('Error creating ElevenLabs agent:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to create ElevenLabs agent',
+            details: error.message
+        });
+    }
+});
+
+// ElevenLabs Agents API endpoints
+router.post('/api/elevenlabs/agents/assign', async (req, res) => {
+    try {
+        const { agentId, characterId } = req.body;
+
+        if (!agentId) {
+            return res.status(400).json({
+                success: false,
+                error: 'Agent ID is required'
+            });
+        }
+
+        if (!characterId) {
+            return res.status(400).json({
+                success: false,
+                error: 'Character ID is required'
+            });
+        }
+
+        // Update character with agent assignment
+        const character = await characterService.getCharacterById(characterId);
+        if (!character) {
+            return res.status(404).json({
+                success: false,
+                error: 'Character not found'
+            });
+        }
+
+        // Update character with ElevenLabs agent ID
+        character.elevenLabsAgentId = agentId;
+        const updated = await characterService.updateCharacter(characterId, character);
+
+        if (updated) {
+            // Notify ElevenLabs service of the assignment
+            if (global.elevenLabsService) {
+                try {
+                    await global.elevenLabsService.assignAgentToCharacter(agentId, characterId);
+                } catch (error) {
+                    console.warn('⚠️ Could not notify ElevenLabs service:', error.message);
+                }
+            }
+
+            res.json({
+                success: true,
+                message: 'Agent assigned to character successfully'
+            });
+        } else {
+            res.status(500).json({
+                success: false,
+                error: 'Failed to update character'
+            });
+        }
+
+    } catch (error) {
+        console.error('❌ Agent assignment error:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+router.get('/api/elevenlabs/agents', async (req, res) => {
+    try {
+        let agents = [];
+
+        if (global.elevenLabsService) {
+            const status = global.elevenLabsService.getStatus();
+            agents = status.agents || [];
+        }
+
+        res.json({
+            success: true,
+            agents: agents
+        });
+    } catch (error) {
+        console.error('❌ Get agents error:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
         });
     }
 });

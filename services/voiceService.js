@@ -1,22 +1,19 @@
 const fs = require('fs').promises;
 const path = require('path');
 const logger = require('../scripts/logger');
-const TopMediaiAPI = require('../scripts/topMediaiAPI');
 
 class VoiceService {
     constructor() {
         this.voicesPath = path.join(__dirname, '../data/voices.json');
-        this.topMediaiAPI = new TopMediaiAPI();
         this.defaultSettings = {
             pitch: 0,
             speed: 1,
             volume: 0,
             emotion: 'Neutral',
-            // Use the standardized audio settings from TopMediaiAPI
-            sampleRate: this.topMediaiAPI.audioSettings.sampleRate,
-            bitRate: this.topMediaiAPI.audioSettings.bitRate,
-            outputFormat: 'wav', // Force WAV format for TopMediai
-            channels: this.topMediaiAPI.audioSettings.channels,
+            sampleRate: 44100,
+            bitRate: 128,
+            outputFormat: 'wav',
+            channels: 1,
             languageCode: 'en'
         };
     }
@@ -164,42 +161,15 @@ class VoiceService {
                 throw new Error('Speaker ID is required');
             }
 
-            // Get voice capabilities for enhanced options
-            const capabilities = await this.getVoiceCapabilities(speaker_id);
-
-            // Use the standardized audio settings from TopMediaiAPI
-            const result = await this.topMediaiAPI.textToSpeech({
-                voiceId: speaker_id,
-                text: text.trim(),
-                options: {
-                    ...this.defaultSettings,
-                    ...options,
-                    // Use available emotions if supported
-                    emotion: options.emotion || 'Neutral'
-                }
-            });
-
-            // Add generation to voice history if associated with a character
-            if (characterId) {
-                const voice = await this.getVoiceByCharacterId(characterId);
-                if (voice) {
-                    voice.history.push({
-                        timestamp: new Date().toISOString(),
-                        type: 'generation',
-                        textLength: text.length,
-                        settings: {
-                            ...options,
-                            emotion: options.emotion || 'Neutral',
-                            audioSettings: this.topMediaiAPI.audioSettings,
-                            provider: 'TopMediai'
-                        },
-                        duration: result.duration
-                    });
-                    await this.saveVoice(voice);
-                }
+            // ElevenLabs integration - delegate to ElevenLabs service
+            if (global.elevenLabsService) {
+                logger.info('Using ElevenLabs for speech generation');
+                // This would be handled by the ElevenLabs conversational AI service
+                throw new Error('Speech generation now handled by ElevenLabs Conversational AI service');
             }
 
-            return result;
+            throw new Error('No speech generation service available. Please use ElevenLabs Conversational AI.');
+
         } catch (error) {
             logger.error(`Error generating speech: ${error.message}`);
             throw new Error(`Speech generation failed: ${error.message}`);
@@ -272,9 +242,9 @@ class VoiceService {
             voice.settings = {
                 ...voice.settings,
                 ...settings,
-                // Ensure WAV format for TopMediai
+                // Ensure WAV format for ElevenLabs
                 outputFormat: 'wav',
-                provider: 'TopMediai'
+                provider: 'ElevenLabs'
             };
 
             // Save the updated voice configuration

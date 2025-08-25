@@ -509,8 +509,70 @@ class ElevenLabsConversationalService extends EventEmitter {
             agents: Array.from(this.agents.entries()).map(([id, agent]) => ({
                 characterId: id,
                 name: agent.name,
-                agentId: agent.agentId
+                agentId: agent.agentId,
+                id: agent.agentId // Add id field for consistency
             }))
+        };
+    }
+
+    /**
+     * Assign an agent to a character
+     */
+    async assignAgentToCharacter(agentId, characterId) {
+        // Find agent by agentId
+        let foundAgent = null;
+        for (const [id, agent] of this.agents.entries()) {
+            if (agent.agentId === agentId) {
+                foundAgent = agent;
+                break;
+            }
+        }
+
+        if (!foundAgent) {
+            throw new Error(`Agent ${agentId} not found`);
+        }
+
+        // Update the agent's character assignment
+        foundAgent.characterId = characterId;
+        console.log(`🎭 Assigned ElevenLabs agent ${agentId} (${foundAgent.name}) to character ${characterId}`);
+
+        return true;
+    }
+
+    /**
+     * Update VAD configuration
+     */
+    async updateVADConfig(config) {
+        try {
+            console.log('🎤 Updating VAD configuration:', config);
+
+            // Store VAD configuration (could be saved to file if needed)
+            this.vadConfig = {
+                vadType: config.vadType || 'server_vad',
+                vadThreshold: parseFloat(config.vadThreshold) || 0.5,
+                prefixPadding: parseInt(config.prefixPadding) || 300,
+                silenceDuration: parseInt(config.silenceDuration) || 700,
+                updatedAt: new Date().toISOString()
+            };
+
+            console.log('✅ VAD configuration updated successfully');
+            return { success: true, config: this.vadConfig };
+
+        } catch (error) {
+            console.error('❌ Failed to update VAD configuration:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * Get VAD configuration
+     */
+    getVADConfig() {
+        return this.vadConfig || {
+            vadType: 'server_vad',
+            vadThreshold: 0.5,
+            prefixPadding: 300,
+            silenceDuration: 700
         };
     }
 
