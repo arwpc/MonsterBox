@@ -122,14 +122,38 @@ class VoiceService {
 
     async getAvailableVoices() {
         try {
-            // ElevenLabs integration - get voices from ElevenLabs service
-            if (global.elevenLabsService) {
-                logger.info('Getting available voices from ElevenLabs service');
-                // Return ElevenLabs voices in compatible format
-                return [];
+            // ElevenLabs integration - get voices from ElevenLabs API
+            if (process.env.ELEVENLABS_API_KEY) {
+                logger.info('Getting available voices from ElevenLabs API');
+
+                const fetch = require('node-fetch');
+                const response = await fetch('https://api.elevenlabs.io/v1/voices', {
+                    headers: {
+                        'xi-api-key': process.env.ELEVENLABS_API_KEY
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`ElevenLabs API error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const voices = data.voices || [];
+
+                // Convert to compatible format
+                return voices.map(voice => ({
+                    uuid: voice.voice_id,
+                    speaker_id: voice.voice_id,
+                    name: voice.name,
+                    gender: voice.labels?.gender || 'unknown',
+                    language: voice.labels?.language || 'en',
+                    category: voice.category || 'custom',
+                    preview_url: voice.preview_url,
+                    available_for_tiers: voice.available_for_tiers || []
+                }));
             }
 
-            logger.warn('No voice service available - ElevenLabs service not initialized');
+            logger.warn('No ElevenLabs API key available');
             return [];
         } catch (error) {
             logger.error(`Error fetching available voices: ${error.message}`);
@@ -173,18 +197,90 @@ class VoiceService {
                 throw new Error('Speaker ID is required');
             }
 
-            // ElevenLabs integration - delegate to ElevenLabs service
-            if (global.elevenLabsService) {
+            // ElevenLabs direct TTS generation
+            if (process.env.ELEVENLABS_API_KEY) {
                 logger.info('Using ElevenLabs for speech generation');
-                // This would be handled by the ElevenLabs conversational AI service
-                throw new Error('Speech generation now handled by ElevenLabs Conversational AI service');
+                return await this.generateElevenLabsSpeech(text, speaker_id, options);
             }
 
-            throw new Error('No speech generation service available. Please use ElevenLabs Conversational AI.');
+            throw new Error('No speech generation service available. Please configure ElevenLabs API key.');
 
         } catch (error) {
             logger.error(`Error generating speech: ${error.message}`);
             throw new Error(`Speech generation failed: ${error.message}`);
+        }
+    }
+
+    async generateElevenLabsSpeech(text, voiceId, options = {}) {
+        try {
+            const fetch = require('node-fetch');
+            const fs = require('fs').promises;
+            const path = require('path');
+
+            const apiKey = process.env.ELEVENLABS_API_KEY;
+            if (!apiKey) {
+                throw new Error('ElevenLabs API key not configured');
+            }
+
+            // Prepare request body with voice settings
+            const requestBody = {
+                text: text,
+                model_id: options.model || 'eleven_monolingual_v1',
+                voice_settings: {
+                    stability: options.stability || 0.5,
+                    similarity_boost: options.similarity_boost || 0.8,
+                    style: options.style || 0.0,
+                    use_speaker_boost: options.use_speaker_boost || true
+                }
+            };
+
+            logger.info(`Generating ElevenLabs speech for voice ${voiceId} with text: "${text.substring(0, 50)}..."`);
+
+            // Make request to ElevenLabs API
+            const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'audio/mpeg',
+                    'Content-Type': 'application/json',
+                    'xi-api-key': apiKey
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`ElevenLabs API error: ${response.status} - ${errorText}`);
+            }
+
+            // Generate unique filename
+            const timestamp = Date.now();
+            const sanitizedText = text.substring(0, 30).replace(/[^a-zA-Z0-9]/g, '_');
+            const filename = `elevenlabs_${timestamp}_${sanitizedText}.mp3`;
+            const outputDir = path.join(__dirname, '../public/sounds');
+            const filePath = path.join(outputDir, filename);
+
+            // Ensure output directory exists
+            await fs.mkdir(outputDir, { recursive: true });
+
+            // Save audio file
+            const audioBuffer = await response.buffer();
+            await fs.writeFile(filePath, audioBuffer);
+
+            logger.info(`ElevenLabs speech generated successfully: ${filename}`);
+
+            return {
+                url: `/sounds/${filename}`,
+                filepath: filePath,
+                filename: filename,
+                format: 'mp3',
+                provider: 'ElevenLabs',
+                duration: null, // ElevenLabs doesn't provide duration in response
+                voiceId: voiceId
+            };
+
+        } catch (error) {
+            logger.error(`Error generating ElevenLabs speech: ${error.message}`);
+            throw error;
         }
     }
 

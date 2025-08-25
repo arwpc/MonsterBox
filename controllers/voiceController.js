@@ -161,15 +161,20 @@ exports.getVoiceSettings = async (req, res) => {
 
 exports.saveVoiceSettings = async (req, res) => {
     try {
-        const { characterId, voiceId, settings } = req.body;
+        const { characterId, voiceId, settings, metadata } = req.body;
 
         if (!characterId) {
             return handleError(res, new Error('Character ID is required'), 400);
         }
 
+        if (!voiceId) {
+            return handleError(res, new Error('Voice ID is required'), 400);
+        }
+
         logger.info(`Saving voice settings for character ${characterId}:`, {
             voiceId,
-            settings
+            settings,
+            metadata
         });
 
         // Use the new persistent voice settings method
@@ -183,7 +188,9 @@ exports.saveVoiceSettings = async (req, res) => {
             // Also update voice metadata if we can find the voice info
             try {
                 const availableVoices = await voiceService.getAvailableVoices();
-                const selectedVoice = availableVoices.find(v => v.uuid === voiceId || v.speaker_id === voiceId);
+                const selectedVoice = availableVoices.find(v =>
+                    v.voice_id === voiceId || v.uuid === voiceId || v.speaker_id === voiceId
+                );
                 if (selectedVoice) {
                     updatedVoice.metadata = {
                         ...updatedVoice.metadata,
@@ -193,6 +200,14 @@ exports.saveVoiceSettings = async (req, res) => {
                         lastModified: new Date().toISOString()
                     };
                     logger.info(`Updated voice metadata for ${selectedVoice.name}`);
+                } else if (metadata) {
+                    // Use metadata from request if voice not found in available voices
+                    updatedVoice.metadata = {
+                        ...updatedVoice.metadata,
+                        ...metadata,
+                        lastModified: new Date().toISOString()
+                    };
+                    logger.info(`Updated voice metadata from request data`);
                 }
             } catch (metadataError) {
                 logger.warn(`Could not update voice metadata: ${metadataError.message}`);

@@ -479,7 +479,7 @@ app.get('/test-chat', async (req, res) => {
                     availableCharacters.push({
                         ...char,
                         hasVoice: true,
-                        hasAI: !!char.openaiAssistantId // Only require openaiAssistantId for AI capability
+                        hasAI: !!char.elevenLabsAgentId // Only require elevenLabsAgentId for AI capability
                     });
                 }
             } catch (error) {
@@ -490,10 +490,25 @@ app.get('/test-chat', async (req, res) => {
         console.log(`🎭 Loaded ${availableCharacters.length} characters with voice configurations for test page`);
         console.log(`🤖 ${availableCharacters.filter(c => c.hasAI).length} characters have AI enabled`);
 
+        // Handle agentId parameter for ElevenLabs agents
+        let selectedAgent = null;
+        if (req.query.agentId && global.elevenLabsService) {
+            try {
+                const serviceStatus = global.elevenLabsService.getStatus();
+                const agents = serviceStatus.agents || [];
+                selectedAgent = agents.find(a => a.agentId === req.query.agentId);
+                console.log(`🎭 Found agent for test chat:`, selectedAgent ? selectedAgent.name : 'Not found');
+            } catch (error) {
+                console.warn('⚠️ Could not get ElevenLabs agent for test chat:', error.message);
+            }
+        }
+
         res.render('enhanced-test-chat', {
             title: 'Enhanced Test Chat - AI Conversation Interface',
             characterId: req.query.characterId || (availableCharacters.length > 0 ? availableCharacters[0].id : null),
-            pageTitle: 'Enhanced Test Chat',
+            agentId: req.query.agentId || null,
+            selectedAgent: selectedAgent,
+            pageTitle: selectedAgent ? `Test Chat - ${selectedAgent.name}` : 'Enhanced Test Chat',
             characters: availableCharacters,
             assistants: assistants
         });

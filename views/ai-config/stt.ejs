@@ -3,10 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ElevenLabs Voice Testing - MonsterBox</title>
+    <title><%= title %> - MonsterBox</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="/css/style.css?v=<%= Date.now() %>">
+
+    <!-- Redirect to proper conversational AI interface if accessed via conversation URL -->
+    <script>
+        if (window.location.pathname === '/ai-management/conversation') {
+            window.location.replace('/conversational-ai');
+        }
+    </script>
     <style>
         .voice-test-container {
             max-width: 800px;

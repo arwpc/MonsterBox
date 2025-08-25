@@ -15,7 +15,7 @@ class CoreAIIntegration {
         this.config = {
             enableMonitoring: options.enableMonitoring !== false,
             enableKeyManagement: options.enableKeyManagement !== false,
-            defaultProvider: options.defaultProvider || 'openai',
+            defaultProvider: options.defaultProvider || 'elevenlabs',
             fallbackProviders: options.fallbackProviders || ['anthropic', 'google'],
             ...options
         };

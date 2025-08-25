@@ -252,11 +252,11 @@
       "PWM"
     ],
     "createdAt": "2025-06-24T01:27:31.334Z",
-    "description": "Jaw servo for ChatterPi animation - GPIO 18, 30°=open, 50°=closed"
+    "description": "Servo for character animation - GPIO 18, 30°=open, 50°=closed"
   },
   {
     "id": 24,
-    "name": "ChatterPi Microphone",
+    "name": "Character Microphone",
     "type": "microphone",
     "characterId": 4,
     "deviceId": "2",
@@ -268,6 +268,6 @@
     "autoGainControl": "on",
     "voiceActivationThreshold": "0.1",
     "createdAt": "2025-06-24T01:27:31.334Z",
-    "description": "USB sound card microphone for ChatterPi STT and jaw animation"
+    "description": "USB sound card microphone for ElevenLabs conversational AI"
   }
 ]

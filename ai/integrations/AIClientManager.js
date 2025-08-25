@@ -9,16 +9,16 @@ const EventEmitter = require('events');
 const logger = require('../../scripts/logger');
 
 // Import individual AI clients
-const OpenAIClient = require('./OpenAIClient');
 const AnthropicClient = require('./AnthropicClient');
 const GoogleAIClient = require('./GoogleAIClient');
+// Note: ElevenLabs client would be imported here when available
 
 class AIClientManager extends EventEmitter {
     constructor(options = {}) {
         super();
         
         this.config = {
-            defaultProvider: options.defaultProvider || 'openai',
+            defaultProvider: options.defaultProvider || 'elevenlabs',
             fallbackProviders: options.fallbackProviders || ['anthropic', 'google'],
             maxRetries: options.maxRetries || 3,
             retryDelay: options.retryDelay || 1000,
@@ -52,7 +52,7 @@ class AIClientManager extends EventEmitter {
      */
     initializeClients() {
         const clientConfigs = [
-            { name: 'openai', ClientClass: OpenAIClient, apiKey: process.env.OPENAI_API_KEY },
+            // { name: 'elevenlabs', ClientClass: ElevenLabsClient, apiKey: process.env.ELEVENLABS_API_KEY }, // TODO: Implement ElevenLabsClient
             { name: 'anthropic', ClientClass: AnthropicClient, apiKey: process.env.ANTHROPIC_API_KEY },
             { name: 'google', ClientClass: GoogleAIClient, apiKey: process.env.GOOGLE_API_KEY }
         ];

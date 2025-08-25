@@ -26,7 +26,7 @@ class CharacterAudioConfigService {
                 language: 'en',
                 confidenceThreshold: 0.7,
                 realTimeProcessing: true,
-                provider: 'openai-whisper'
+                provider: 'elevenlabs'
             },
             jawAnimation: {
                 enabled: true,

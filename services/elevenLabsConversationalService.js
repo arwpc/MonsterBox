@@ -186,7 +186,8 @@ class ElevenLabsConversationalService extends EventEmitter {
                     break;
 
                 case 'send_text':
-                    await this.sendTextToAgent(sessionId, message.text);
+                case 'user_message':
+                    await this.sendTextToAgent(sessionId, message.text || message.message);
                     break;
 
                 case 'stop_conversation':

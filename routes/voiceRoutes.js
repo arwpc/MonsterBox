@@ -131,74 +131,17 @@ router.post('/transcribe', async (req, res) => {
 
         console.log(`🎙️ STT request (Character: ${character || 'default'})`);
 
-        const result = {
-            success: true,
-            data: {},
-            processingTime: {},
-            timestamp: new Date().toISOString()
-        };
+        // Voice processing is now handled by ElevenLabs Conversational AI
+        console.log('🎭 Voice processing redirected to ElevenLabs Conversational AI');
 
-        // Speech-to-Text using OpenAI Whisper
-        const sttStartTime = Date.now();
-        try {
-            // Convert base64 audio to buffer
-            const audioBuffer = Buffer.from(audioData, 'base64');
-
-            // Use OpenAI Whisper for STT
-            const OpenAI = require('openai');
-            const openai = new OpenAI({
-                apiKey: process.env.OPENAI_API_KEY
-            });
-
-            // Create a temporary file for the audio
-            const fs = require('fs');
-            const path = require('path');
-            const tempDir = path.join(__dirname, '../temp');
-            if (!fs.existsSync(tempDir)) {
-                fs.mkdirSync(tempDir, { recursive: true });
+        res.json({
+            success: false,
+            error: 'Voice processing has been replaced by ElevenLabs Conversational AI',
+            redirect: '/conversational-ai',
+            data: {
+                message: 'Please use the ElevenLabs Conversational AI interface for voice interactions'
             }
-
-            // Use .webm extension since that's what MediaRecorder typically produces
-            const tempFilePath = path.join(tempDir, `stt_audio_${Date.now()}.webm`);
-            fs.writeFileSync(tempFilePath, audioBuffer);
-
-            console.log(`🎤 Created temp audio file: ${tempFilePath} (${audioBuffer.length} bytes)`);
-
-            // Transcribe audio
-            const transcription = await openai.audio.transcriptions.create({
-                file: fs.createReadStream(tempFilePath),
-                model: 'whisper-1',
-                language: 'en',
-                response_format: 'json'
-            });
-
-            // Clean up temp file
-            try {
-                fs.unlinkSync(tempFilePath);
-                console.log(`🧹 Cleaned up temp file: ${tempFilePath}`);
-            } catch (cleanupError) {
-                console.warn(`⚠️ Failed to clean up temp file: ${cleanupError.message}`);
-            }
-
-            const sttTime = Date.now() - sttStartTime;
-            result.data.stt = {
-                text: transcription.text,
-                confidence: 1.0 // Whisper doesn't provide confidence scores
-            };
-            result.processingTime.stt = sttTime;
-
-            console.log(`🎤 STT completed in ${sttTime}ms: "${transcription.text}"`);
-
-        } catch (sttError) {
-            console.error('❌ STT Error:', sttError);
-            result.data.stt = {
-                text: '',
-                error: sttError.message
-            };
-        }
-
-        result.processingTime.total = Date.now() - startTime;
-        res.json(result);
+        });
 
     } catch (error) {
         console.error('❌ Error in STT transcribe:', error);

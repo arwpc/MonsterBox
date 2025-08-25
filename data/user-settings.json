@@ -1,6 +1,6 @@
 {
-  "theme": "dark",
-  "fontSize": "medium",
+  "theme": "monsterbox",
+  "fontSize": "small",
   "fontFamily": "terminal",
   "accentColor": "neon-green",
   "navigationStyle": "sidebar",

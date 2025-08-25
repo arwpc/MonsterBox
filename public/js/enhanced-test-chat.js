@@ -46,6 +46,7 @@ class EnhancedTestChat {
         
         // Voice controls
         this.elevenLabsToggle = document.getElementById('elevenLabsToggle');
+        this.ttsToggle = document.getElementById('ttsToggle');
         this.liveModeToggle = document.getElementById('liveModeToggle');
         this.sttStatus = document.getElementById('sttStatus');
         this.ttsStatus = document.getElementById('ttsStatus');
@@ -74,10 +75,10 @@ class EnhancedTestChat {
         });
         
         // Voice controls
-        this.sttToggle.addEventListener('click', () => {
-            this.toggleSTT();
+        this.elevenLabsToggle.addEventListener('click', () => {
+            this.toggleElevenLabs();
         });
-        
+
         this.ttsToggle.addEventListener('click', () => {
             this.toggleTTS();
         });
@@ -115,8 +116,23 @@ class EnhancedTestChat {
                 this.welcomeTime.textContent = new Date().toLocaleTimeString();
             }
 
-            // Pre-select character if provided
-            if (this.config.characterId) {
+            // Handle agent-specific initialization
+            if (this.config.agentId && this.config.selectedAgent) {
+                console.log(`🎭 Initializing with ElevenLabs agent: ${this.config.selectedAgent.name}`);
+                // Find character assigned to this agent
+                const assignedCharacter = this.config.characters.find(c => c.elevenLabsAgentId === this.config.agentId);
+                if (assignedCharacter) {
+                    this.characterSelect.value = assignedCharacter.id;
+                    await this.handleCharacterSelection(assignedCharacter.id);
+                } else {
+                    // No character assigned, show agent info in welcome message
+                    this.addMessage('bot', `Hello! I'm ${this.config.selectedAgent.name}, an ElevenLabs AI agent. I'm ready to chat with you!`, {
+                        characterName: this.config.selectedAgent.name,
+                        isSystem: true
+                    });
+                }
+            } else if (this.config.characterId) {
+                // Pre-select character if provided
                 this.characterSelect.value = this.config.characterId;
                 await this.handleCharacterSelection(this.config.characterId);
             }
@@ -170,16 +186,23 @@ class EnhancedTestChat {
      * Handle messages from ElevenLabs WebSocket
      */
     handleElevenLabsMessage(message) {
+        console.log('📥 ElevenLabs message:', message);
+
         switch (message.type) {
             case 'conversation_started':
-                this.addMessage('system', `Connected to ${message.characterName}`);
+                this.addMessage('system', `Connected to ${message.characterName}`, {
+                    characterName: 'System',
+                    isInfo: true
+                });
                 break;
 
             case 'transcript':
                 if (message.role === 'user') {
-                    this.addMessage('user', message.text);
+                    // User message echo - we already added it
+                    console.log('👤 User message confirmed:', message.text);
                 } else if (message.role === 'assistant') {
-                    this.addMessage('assistant', message.text);
+                    // AI response received
+                    this.handleAIResponse(message.text);
                 }
                 break;
 
@@ -188,12 +211,147 @@ class EnhancedTestChat {
                 break;
 
             case 'conversation_end':
-                this.addMessage('system', 'Conversation ended');
+                this.addMessage('system', 'Conversation ended', {
+                    characterName: 'System',
+                    isInfo: true
+                });
+                break;
+
+            case 'error':
+                console.error('❌ ElevenLabs error:', message.error);
+                this.addMessage('system', `Error: ${message.error}`, {
+                    characterName: 'System',
+                    isError: true
+                });
+                this.handleMessageComplete();
                 break;
 
             default:
-                console.log('📥 ElevenLabs message:', message);
+                console.log('📥 Unknown ElevenLabs message type:', message.type);
         }
+    }
+
+    /**
+     * Handle AI response from ElevenLabs
+     */
+    handleAIResponse(responseText) {
+        if (!this.pendingMessage) {
+            console.warn('⚠️ Received AI response but no pending message');
+            return;
+        }
+
+        const aiTime = Date.now() - this.pendingMessage.startTime;
+
+        // Remove typing indicator
+        if (this.pendingMessage.typingId) {
+            this.removeTypingIndicator(this.pendingMessage.typingId);
+        }
+
+        // Add AI response
+        this.addMessage('bot', responseText, {
+            characterName: this.currentCharacter ? this.currentCharacter.name : 'AI Assistant',
+            performance: { ai: aiTime }
+        });
+
+        // Update performance metrics
+        this.updatePerformanceMetric('agent', aiTime);
+
+        // Handle TTS if enabled
+        if (this.isTTSActive) {
+            this.speakText(responseText);
+        }
+
+        console.log(`🤖 AI response in ${aiTime}ms`);
+
+        // Complete message handling
+        this.handleMessageComplete();
+    }
+
+    /**
+     * Complete message handling and reset state
+     */
+    handleMessageComplete() {
+        this.isProcessing = false;
+        this.pendingMessage = null;
+        this.updateConnectionStatus('connected', 'Ready');
+        this.updateSendButton();
+    }
+
+    /**
+     * Start ElevenLabs conversation
+     */
+    async startElevenLabsConversation(character) {
+        try {
+            console.log('🎭 Starting ElevenLabs conversation for character:', character.char_name);
+
+            // Clear chat
+            this.chatMessages.innerHTML = '';
+
+            // Wait for WebSocket connection if needed
+            if (!this.elevenLabsWs || this.elevenLabsWs.readyState !== WebSocket.OPEN) {
+                this.addMessage('system', 'Connecting to ElevenLabs service...', {
+                    characterName: 'System',
+                    isInfo: true
+                });
+
+                // Wait for connection to be established
+                await this.waitForWebSocketConnection();
+            }
+
+            // Send conversation start message
+            const agentId = this.config.agentId || character.elevenLabsAgentId;
+            const startMessage = {
+                type: 'start_conversation',
+                characterId: character.id,
+                agentId: agentId,
+                characterName: character.char_name || character.name
+            };
+
+            console.log('📤 Starting conversation with:', startMessage);
+            this.elevenLabsWs.send(JSON.stringify(startMessage));
+
+            this.addMessage('system', `Connected to ElevenLabs service. Ready to chat with ${character.char_name || character.name}!`, {
+                characterName: 'System',
+                isInfo: true
+            });
+
+            // Update connection status to ready
+            this.updateConnectionStatus('connected', 'Ready to Chat');
+
+        } catch (error) {
+            console.error('❌ Error starting ElevenLabs conversation:', error);
+            this.addMessage('system', 'Failed to start conversation. Please try again.', {
+                characterName: 'System',
+                isError: true
+            });
+        }
+    }
+
+    /**
+     * Wait for WebSocket connection to be established
+     */
+    async waitForWebSocketConnection(maxWait = 5000) {
+        return new Promise((resolve, reject) => {
+            if (this.elevenLabsWs && this.elevenLabsWs.readyState === WebSocket.OPEN) {
+                resolve();
+                return;
+            }
+
+            const timeout = setTimeout(() => {
+                reject(new Error('WebSocket connection timeout'));
+            }, maxWait);
+
+            const checkConnection = () => {
+                if (this.elevenLabsWs && this.elevenLabsWs.readyState === WebSocket.OPEN) {
+                    clearTimeout(timeout);
+                    resolve();
+                } else {
+                    setTimeout(checkConnection, 100);
+                }
+            };
+
+            checkConnection();
+        });
     }
     
     /**
@@ -225,8 +383,10 @@ class EnhancedTestChat {
                     this.assistantDisplay.value = 'No assistant assigned';
                 }
 
-                // Load character greeting if AI is available
-                if (character.hasAI) {
+                // Start ElevenLabs conversation if agent is available, or try anyway for testing
+                if (this.config.agentId || character.elevenLabsAgentId || this.elevenLabsWs) {
+                    await this.startElevenLabsConversation(character);
+                } else if (character.hasAI) {
                     await this.loadCharacterGreeting(character);
                 } else {
                     // Clear chat for voice-only characters
@@ -512,6 +672,15 @@ class EnhancedTestChat {
         }
     }
     
+    /**
+     * Toggle ElevenLabs Voice
+     */
+    toggleElevenLabs() {
+        this.isElevenLabsActive = !this.isElevenLabsActive;
+        this.updateElevenLabsStatus(this.isElevenLabsActive, this.isElevenLabsActive ? 'ON' : 'OFF');
+        console.log(`🤖 ElevenLabs Voice ${this.isElevenLabsActive ? 'enabled' : 'disabled'}`);
+    }
+
     /**
      * Toggle Text-to-Speech
      */
@@ -1081,46 +1250,26 @@ class EnhancedTestChat {
             const startTime = Date.now();
 
             // Send to ElevenLabs via WebSocket
-            this.elevenLabsWs.send(JSON.stringify({
+            const messageData = {
                 type: 'user_message',
                 message: message,
                 characterId: this.currentCharacter.id,
-                characterName: this.currentCharacter.name || this.currentCharacter.char_name
-            }));
+                characterName: this.currentCharacter.name || this.currentCharacter.char_name,
+                agentId: this.config.agentId || null
+            };
+
+            console.log('📤 Sending message to ElevenLabs:', messageData);
+            this.elevenLabsWs.send(JSON.stringify(messageData));
+
+            // Store message context for response handling
+            this.pendingMessage = {
+                startTime: startTime,
+                typingId: typingId,
+                message: message
+            };
 
             // Update performance metrics
             this.performanceMetrics.voiceInput = Date.now() - startTime;
-            
-            const data = await response.json();
-            const aiTime = Date.now() - startTime;
-            
-            // Remove typing indicator
-            this.removeTypingIndicator(typingId);
-            
-            if (data.success && data.data.aiResponse) {
-                // Add AI response
-                this.addMessage('bot', data.data.aiResponse.text, {
-                    characterName: this.currentCharacter.name,
-                    performance: { ai: aiTime }
-                });
-                
-                // Update performance metrics
-                this.updatePerformanceMetric('ai', aiTime);
-                
-                // Handle TTS if enabled
-                if (this.isTTSActive) {
-                    await this.speakText(data.data.aiResponse.text);
-                }
-                
-                console.log(`🤖 AI response in ${aiTime}ms`);
-            } else {
-                this.addMessage('bot', 'Sorry, I encountered an error processing your message.', {
-                    characterName: 'System',
-                    isError: true
-                });
-            }
-            
-            this.updateConnectionStatus('connected', 'Ready');
             
         } catch (error) {
             console.error('❌ Error sending message:', error);
@@ -1129,8 +1278,7 @@ class EnhancedTestChat {
                 isError: true
             });
             this.updateConnectionStatus('disconnected', 'Error');
-        } finally {
-            this.isProcessing = false;
+            this.handleMessageComplete();
         }
     }
 
@@ -1270,6 +1418,14 @@ class EnhancedTestChat {
      */
     updateSTTStatus(active, message) {
         this.sttToggle.className = `voice-toggle ${active ? 'active' : ''} ${active && message === 'Listening...' ? 'listening' : ''}`;
+        this.sttStatus.textContent = message;
+    }
+
+    /**
+     * Update ElevenLabs status
+     */
+    updateElevenLabsStatus(active, message) {
+        this.elevenLabsToggle.className = `voice-toggle ${active ? 'active' : ''}`;
         this.sttStatus.textContent = message;
     }
 

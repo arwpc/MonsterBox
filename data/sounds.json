@@ -293,7 +293,7 @@
         "outputFormat": "mp3",
         "channels": 1,
         "languageCode": "en",
-        "provider": "TopMediai"
+        "provider": "ElevenLabs"
       }
     },
     "characterId": null
@@ -321,7 +321,7 @@
         "outputFormat": "mp3",
         "channels": 1,
         "languageCode": "en",
-        "provider": "TopMediai"
+        "provider": "ElevenLabs"
       }
     },
     "characterId": null
@@ -349,7 +349,7 @@
         "outputFormat": "wav",
         "channels": 1,
         "languageCode": "en",
-        "provider": "TopMediai"
+        "provider": "ElevenLabs"
       },
       "audioFormat": "wav",
       "created": "2025-06-28T22:06:20.600Z"
@@ -380,7 +380,7 @@
         "outputFormat": "wav",
         "channels": 1,
         "languageCode": "en",
-        "provider": "TopMediai"
+        "provider": "ElevenLabs"
       },
       "audioFormat": "wav",
       "created": "2025-08-24T01:27:07.134Z"
@@ -411,7 +411,7 @@
         "outputFormat": "wav",
         "channels": 1,
         "languageCode": "en",
-        "provider": "TopMediai"
+        "provider": "ElevenLabs"
       },
       "audioFormat": "wav",
       "created": "2025-08-24T03:07:26.018Z"
@@ -442,7 +442,7 @@
         "outputFormat": "wav",
         "channels": 1,
         "languageCode": "en",
-        "provider": "TopMediai"
+        "provider": "ElevenLabs"
       },
       "audioFormat": "wav",
       "created": "2025-08-24T15:43:01.274Z"

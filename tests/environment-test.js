@@ -30,19 +30,12 @@ describe('🔧 Environment Configuration Tests', function() {
             console.log(`✅ PORT configured: ${port}`);
         });
 
-        it('should have OpenAI API key configured', function() {
-            const apiKey = process.env.OPENAI_API_KEY;
-            expect(apiKey).to.exist;
-            expect(apiKey.length).to.be.above(50);
-            expect(apiKey).to.include('sk-proj-');
-            console.log('✅ OpenAI API key configured');
-        });
-
-        it('should have TopMediai API key configured', function() {
-            const apiKey = process.env.TOPMEDIAI_API_KEY;
+        it('should have ElevenLabs API key configured', function() {
+            const apiKey = process.env.ELEVENLABS_API_KEY;
             expect(apiKey).to.exist;
             expect(apiKey.length).to.be.above(10);
-            console.log('✅ TopMediai API key configured');
+            expect(apiKey).to.include('xi_');
+            console.log('✅ ElevenLabs API key configured');
         });
 
         it('should have Anthropic API key configured', function() {

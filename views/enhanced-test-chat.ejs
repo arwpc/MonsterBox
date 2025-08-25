@@ -566,6 +566,8 @@
         document.addEventListener('DOMContentLoaded', function() {
             const testChat = new EnhancedTestChat({
                 characterId: <%= characterId || 'null' %>,
+                agentId: '<%= agentId || '' %>',
+                selectedAgent: <%- JSON.stringify(selectedAgent || null) %>,
                 characters: <%- JSON.stringify(characters || []) %>,
                 assistants: <%- JSON.stringify(assistants || {}) %>
             });

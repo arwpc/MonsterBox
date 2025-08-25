@@ -51,17 +51,7 @@
       "ai_characters": [],
       "default_character": null
     },
-    "aiConfig": {
-      "provider": "openai",
-      "model": "gpt-4",
-      "temperature": 0.8,
-      "maxTokens": 150,
-      "systemPrompt": "",
-      "contextLength": 5,
-      "enabled": false
-    },
-    "openaiAssistantId": "asst_vJq9smE6nVrvibJKfUv2FmDq",
-    "lastAssistantUpdate": "2025-08-24T21:17:42.928Z"
+    "elevenLabsAgentId": "orlok"
   },
   {
     "id": 2,
@@ -115,8 +105,7 @@
       "ai_characters": [],
       "default_character": null
     },
-    "openaiAssistantId": "asst_P40HAZywfgZDHyeNqVrHKdsm",
-    "lastAssistantUpdate": "2025-08-24T21:17:51.721Z"
+    "elevenLabsAgentId": "coffin-breaker"
   },
   {
     "id": 3,
@@ -164,8 +153,7 @@
         "max_lines": 1000
       }
     },
-    "openaiAssistantId": "asst_okvreZDd502nlLXsGqs3yuEs",
-    "lastAssistantUpdate": "2025-08-24T21:17:50.430Z"
+    "elevenLabsAgentId": "pumpkinhead"
   },
   {
     "id": 4,
@@ -221,16 +209,6 @@
       ],
       "default_character": "Calvin"
     },
-    "aiConfig": {
-      "provider": "openai",
-      "model": "gpt-4",
-      "temperature": 0.8,
-      "maxTokens": 150,
-      "systemPrompt": "",
-      "contextLength": 5,
-      "enabled": true
-    },
-    "openaiAssistantId": "asst_UqgxEpp0UgLvf3V3ulhL0hud",
-    "lastAssistantUpdate": "2025-08-24T21:17:56.546Z"
+    "elevenLabsAgentId": "skulltalker"
   }
 ]
