@@ -244,8 +244,9 @@ class ServiceManager {
      */
     async checkServiceStatus(port) {
         try {
-            const ws = new WebSocket(`ws://localhost:${port}`);
-            
+            // Use IPv4 address to avoid IPv6 connection issues
+            const ws = new WebSocket(`ws://127.0.0.1:${port}`);
+
             return new Promise((resolve) => {
                 const timer = setTimeout(() => {
                     ws.close();

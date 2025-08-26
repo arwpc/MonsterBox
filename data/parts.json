@@ -269,5 +269,13 @@
     "voiceActivationThreshold": "0.1",
     "createdAt": "2025-06-24T01:27:31.334Z",
     "description": "USB sound card microphone for ElevenLabs conversational AI"
+  },
+  {
+    "id": 25,
+    "name": "Test Microphone",
+    "deviceId": "test-device",
+    "sensitivity": "0.5",
+    "type": "microphone",
+    "characterId": 1
   }
 ]

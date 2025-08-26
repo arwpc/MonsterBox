@@ -25,8 +25,8 @@ class EnhancedAudioStream {
     startStream(server) {
         this.wss = new WebSocket.Server({ server, path: '/enhanced-audiostream' });
         
-        // Start ChatterPi audio bridge
-        this.startChatterPiAudioBridge();
+        // ChatterPi audio bridge disabled - now using ElevenLabs Conversational AI
+        // this.startChatterPiAudioBridge();
 
         this.wss.on('connection', (ws) => {
             logger.info('New enhanced audio stream connection');

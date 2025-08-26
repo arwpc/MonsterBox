@@ -959,11 +959,7 @@ async function initializeMicrophoneManager() {
         if (success) {
             logger.info('✅ Microphone Manager Service initialized successfully');
 
-            // Initialize STT Integration Service with shared microphone manager
-            const MicrophoneSTTIntegrationService = require('./services/microphoneSTTIntegrationService');
-            const sttIntegrationService = new MicrophoneSTTIntegrationService(microphoneManagerService);
-            await sttIntegrationService.initialize();
-            logger.info('🎤🗣️ STT Integration Service initialized');
+            // STT Integration Service removed - now using ElevenLabs Conversational AI
 
             // Initialize Audio Stream Service with shared microphone manager
             const AudioStreamService = require('./services/audioStreamService');

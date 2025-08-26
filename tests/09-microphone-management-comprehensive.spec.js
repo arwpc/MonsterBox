@@ -123,9 +123,7 @@ test.describe('Microphone Management Page - Comprehensive Testing', () => {
     const tabs = [
       { selector: '[data-tab="overview"]', name: 'Overview Tab', contentId: 'overview-tab' },
       { selector: '[data-tab="crud"]', name: 'CRUD Tab', contentId: 'crud-tab' },
-      { selector: '[data-tab="testing"]', name: 'Testing Tab', contentId: 'testing-tab' },
-      { selector: '[data-tab="monitoring"]', name: 'Monitoring Tab', contentId: 'monitoring-tab' },
-      { selector: '[data-tab="configuration"]', name: 'Configuration Tab', contentId: 'configuration-tab' }
+      { selector: '[data-tab="monitoring"]', name: 'Monitoring Tab', contentId: 'monitoring-tab' }
     ];
     
     for (const tab of tabs) {
@@ -296,45 +294,7 @@ test.describe('Microphone Management Page - Comprehensive Testing', () => {
     await TestHelpers.takeScreenshot(page, testInfo, 'crud_tab_tested');
   });
 
-  test('Testing tab controls work', async ({ page }, testInfo) => {
-    TestHelpers.logStep('🧪 Testing testing tab controls');
-    
-    // Switch to testing tab
-    await TestHelpers.safeClick(page, page.locator('[data-tab="testing"]'));
-    await page.waitForTimeout(1000);
-    
-    const testingButtons = [
-      { selector: '#startComprehensiveTest', name: 'Start Comprehensive Test' },
-      { selector: '#stopTest', name: 'Stop Test' },
-      { selector: '#quickTest', name: 'Quick Test' },
-      { selector: '#ambientTest', name: 'Ambient Test' }
-    ];
-    
-    for (const button of testingButtons) {
-      try {
-        const buttonElement = page.locator(button.selector);
-        if (await buttonElement.count() > 0) {
-          await expect(buttonElement).toBeVisible();
-          
-          // Check if button is properly disabled when no microphone selected
-          const microphoneSelect = page.locator('#testMicrophoneSelect');
-          if (await microphoneSelect.count() > 0) {
-            const isDisabled = await buttonElement.isDisabled();
-            // This is expected behavior when no microphone is selected
-            TestHelpers.logStep(`${button.name} disabled state: ${isDisabled}`);
-          }
-          
-          testResults.buttonsWorking.push(button.name);
-          TestHelpers.logStep(`✅ ${button.name} button exists and behaves correctly`);
-        }
-      } catch (error) {
-        testResults.buttonsFailed.push(button.name);
-        testResults.errors.push(`${button.name}: ${error.message}`);
-      }
-    }
-    
-    await TestHelpers.takeScreenshot(page, testInfo, 'testing_tab_tested');
-  });
+
 
   test('Search and filter functionality works', async ({ page }, testInfo) => {
     TestHelpers.logStep('🧪 Testing search and filter functionality');

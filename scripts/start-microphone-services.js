@@ -157,9 +157,15 @@ class MicrophoneServicesStarter {
 
                 childProcess.stderr.on('data', (data) => {
                     const message = data.toString().trim();
-                    // Filter out common non-error messages
+                    // Filter out common non-error messages and INFO logs
                     if (!this.isIgnorableMessage(message)) {
-                        logger.warn(`${config.name}: ${message}`);
+                        // Check if it's an INFO level message from Python service
+                        if (message.includes('INFO:') && (message.includes('websockets.server') || message.includes('base_hardware_service'))) {
+                            // Log INFO messages as debug instead of warning
+                            logger.debug(`${config.name}: ${message}`);
+                        } else {
+                            logger.warn(`${config.name}: ${message}`);
+                        }
                     }
                 });
 
@@ -207,11 +213,23 @@ class MicrophoneServicesStarter {
             'Cannot connect to server',
             'bt_audio_service_open',
             'deprecation',
-            'warning'
+            'warning',
+            'JackShmReadWritePtr',
+            'Init not done for -1',
+            'skipping unlock',
+            'INFO:websockets.server:server listening',
+            'INFO:websockets.server:connection open',
+            'INFO:websockets.server:connection closed',
+            'INFO:base_hardware_service:✅',
+            'INFO:base_hardware_service:Client connected',
+            'INFO:base_hardware_service:Client disconnected',
+            'INFO:__main__:✅ PyAudio system initialized',
+            'INFO:__main__:🎤 Discovered',
+            'INFO:__main__:✅ Microphone hardware initialized'
         ];
 
-        return ignorablePatterns.some(pattern => 
-            message.toLowerCase().includes(pattern.toLowerCase())
+        return ignorablePatterns.some(pattern =>
+            message.includes(pattern)
         );
     }
 
@@ -220,11 +238,12 @@ class MicrophoneServicesStarter {
      */
     async waitForService(port, timeout = 8000) {
         const startTime = Date.now();
-        
+
         while (Date.now() - startTime < timeout) {
             try {
-                const ws = new WebSocket(`ws://localhost:${port}`);
-                
+                // Use IPv4 address to avoid IPv6 connection issues
+                const ws = new WebSocket(`ws://127.0.0.1:${port}`);
+
                 await new Promise((resolve, reject) => {
                     const timer = setTimeout(() => {
                         ws.close();
@@ -259,8 +278,9 @@ class MicrophoneServicesStarter {
      */
     async checkServiceStatus(port) {
         try {
-            const ws = new WebSocket(`ws://localhost:${port}`);
-            
+            // Use IPv4 address to avoid IPv6 connection issues
+            const ws = new WebSocket(`ws://127.0.0.1:${port}`);
+
             return new Promise((resolve) => {
                 const timer = setTimeout(() => {
                     ws.close();

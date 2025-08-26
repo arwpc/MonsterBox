@@ -832,11 +832,11 @@ class MicrophoneService extends EventEmitter {
         try {
             const WebSocket = require('ws');
 
-            // Check microphone service
-            const micServiceStatus = await this.checkWebSocketService('ws://localhost:8776');
+            // Check microphone service (use IPv4 to avoid connection issues)
+            const micServiceStatus = await this.checkWebSocketService('ws://127.0.0.1:8776');
 
-            // Check audio stream service
-            const audioServiceStatus = await this.checkWebSocketService('ws://localhost:8777');
+            // Check audio stream service (use IPv4 to avoid connection issues)
+            const audioServiceStatus = await this.checkWebSocketService('ws://127.0.0.1:8777');
 
             return {
                 microphoneService: {
@@ -867,7 +867,9 @@ class MicrophoneService extends EventEmitter {
     async checkWebSocketService(url) {
         return new Promise((resolve) => {
             try {
-                const ws = new (require('ws'))(url);
+                // Use IPv4 address to avoid IPv6 connection issues
+                const ipv4Url = url.replace('localhost', '127.0.0.1');
+                const ws = new (require('ws'))(ipv4Url);
                 const timeout = setTimeout(() => {
                     ws.close();
                     resolve(false);
@@ -953,7 +955,12 @@ class MicrophoneService extends EventEmitter {
      * @returns {Object} Test results
      */
     async performBasicTest(microphone, duration) {
-        // Simulate basic test results
+        logger.info(`🧪 Running basic test for ${duration} seconds...`);
+
+        // Actually wait for the specified duration to simulate real testing
+        await new Promise(resolve => setTimeout(resolve, duration * 1000));
+
+        // Simulate basic test results after waiting
         return {
             deviceDetected: true,
             audioLevelDetected: Math.random() > 0.1,
@@ -973,7 +980,22 @@ class MicrophoneService extends EventEmitter {
      * @returns {Object} Test results
      */
     async performComprehensiveTest(microphone, duration) {
-        const basicResults = await this.performBasicTest(microphone, duration);
+        logger.info(`🧪 Running comprehensive test for ${duration} seconds...`);
+
+        // Actually wait for the specified duration to simulate real testing
+        await new Promise(resolve => setTimeout(resolve, duration * 1000));
+
+        // Generate comprehensive test results after waiting
+        const basicResults = {
+            deviceDetected: true,
+            audioLevelDetected: Math.random() > 0.1,
+            averageLevel: Math.random() * 100,
+            peakLevel: Math.random() * 100,
+            noiseFloor: -45 + Math.random() * 10,
+            testDuration: duration,
+            sampleRate: microphone.config?.sampleRate || 16000,
+            channels: microphone.config?.channels || 1
+        };
 
         return {
             ...basicResults,
@@ -993,6 +1015,12 @@ class MicrophoneService extends EventEmitter {
      * @returns {Object} Test results
      */
     async performAmbientTest(microphone, duration) {
+        logger.info(`🧪 Running ambient test for ${duration} seconds...`);
+
+        // Actually wait for the specified duration to simulate real testing
+        await new Promise(resolve => setTimeout(resolve, duration * 1000));
+
+        // Generate ambient test results after waiting
         return {
             ambientDetected: true,
             ambientLevel: 20 + Math.random() * 30,

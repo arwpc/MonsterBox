@@ -92,8 +92,8 @@ class HardwareWebSocketProxy {
         logger.info(`🔌 Browser connected to ${serviceName} proxy: ${clientId}`);
         logger.debug(`Connection details - Origin: ${request.headers.origin}, User-Agent: ${request.headers['user-agent']}`);
 
-        // Connect to Python service with retry logic
-        const pythonWs = new WebSocket(`ws://localhost:${pythonPort}`, {
+        // Connect to Python service with retry logic (use IPv4 to avoid IPv6 issues)
+        const pythonWs = new WebSocket(`ws://127.0.0.1:${pythonPort}`, {
             perMessageDeflate: false
         });
 

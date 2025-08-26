@@ -227,8 +227,8 @@ class DynamicWebSocketProxy extends EventEmitter {
         
         logger.debug(`🔌 Browser connected to ${service.name} proxy: ${connectionId}`);
         
-        // Create connection to target service
-        const targetWs = new WebSocket(`ws://localhost:${service.port}`, {
+        // Create connection to target service (use IPv4 to avoid IPv6 issues)
+        const targetWs = new WebSocket(`ws://127.0.0.1:${service.port}`, {
             perMessageDeflate: false
         });
         
