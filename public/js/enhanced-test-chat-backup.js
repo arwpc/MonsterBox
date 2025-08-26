@@ -17,7 +17,6 @@ class EnhancedTestChat {
         // State management
         this.currentCharacter = null;
         this.isElevenLabsActive = false;
-        this.isTTSActive = false;
         this.isLiveModeActive = false;
         this.isProcessing = false;
         this.elevenLabsWs = null;
@@ -25,7 +24,6 @@ class EnhancedTestChat {
         this.liveModeState = 'idle'; // idle, listening, processing, speaking
         this.liveModeTimeout = null;
         this.liveModeAudio = null;
-        this.liveModeToggleInProgress = false;
         this.performanceMetrics = {
             voiceInput: null,
             agent: null,
@@ -134,17 +132,14 @@ class EnhancedTestChat {
                         isSystem: true
                     });
                 }
-            }
-
-            // Initialize ElevenLabs WebSocket connection first
-            await this.initializeElevenLabsConnection();
-
-            // Now handle character selection after WebSocket is connected
-            if (this.config.characterId) {
+            } else if (this.config.characterId) {
                 // Pre-select character if provided
                 this.characterSelect.value = this.config.characterId;
                 await this.handleCharacterSelection(this.config.characterId);
             }
+
+            // Initialize ElevenLabs WebSocket connection
+            await this.initializeElevenLabsConnection();
 
             this.updateConnectionStatus('connected', 'Ready');
             console.log('✅ Enhanced Test Chat initialized');
@@ -168,9 +163,6 @@ class EnhancedTestChat {
             console.log('🔗 Connecting to ElevenLabs WebSocket:', wsUrl);
             this.elevenLabsWs = new WebSocket(wsUrl);
 
-            // Store connection details for potential fallback
-            this.connectionAttempt = { protocol, port, wsUrl };
-
             this.elevenLabsWs.onopen = () => {
                 console.log('✅ Connected to ElevenLabs service');
                 this.updateConnectionStatus('connected', 'ElevenLabs Connected');
@@ -183,66 +175,29 @@ class EnhancedTestChat {
 
             this.elevenLabsWs.onmessage = async (event) => {
                 try {
-                    const data = event.data;
+                    let data = event.data;
 
-                    // Handle binary audio data (Blob or ArrayBuffer)
+                    // Handle Blob data (convert to text)
                     if (data instanceof Blob) {
-                        console.log('📥 Received binary Blob from ElevenLabs, size:', data.size);
-
-                        // Always try to parse as JSON first, regardless of size
-                        try {
-                            const text = await data.text();
-                            const jsonData = JSON.parse(text);
-                            console.log('📥 Blob contains JSON message:', jsonData);
-                            this.handleElevenLabsMessage(jsonData);
-                            return;
-                        } catch (parseError) {
-                            // If JSON parsing fails, treat as binary audio data
-                            console.log('🔊 Blob is not JSON, processing as audio data');
-                            await this.handleElevenLabsBinaryData(data);
-                            return;
-                        }
+                        data = await data.text();
                     }
 
-                    // Handle ArrayBuffer binary data
+                    // Handle binary data (convert to string)
                     if (data instanceof ArrayBuffer) {
-                        console.log('📥 Received ArrayBuffer from ElevenLabs, size:', data.byteLength);
-
-                        // Large ArrayBuffers are likely audio
-                        if (data.byteLength > 100) {
-                            console.log('🔊 Processing ArrayBuffer as audio data');
-                            const blob = new Blob([data]);
-                            await this.handleElevenLabsBinaryData(blob);
-                            return;
-                        }
-
-                        // Try to decode as text for small ArrayBuffers
-                        try {
-                            const text = new TextDecoder().decode(data);
-                            const jsonData = JSON.parse(text);
-                            this.handleElevenLabsMessage(jsonData);
-                            return;
-                        } catch (parseError) {
-                            console.warn('⚠️ ArrayBuffer is not JSON, treating as audio');
-                            const blob = new Blob([data]);
-                            await this.handleElevenLabsBinaryData(blob);
-                            return;
-                        }
+                        data = new TextDecoder().decode(data);
                     }
 
-                    // Handle string data (JSON messages)
+                    // Parse JSON if it's a string
                     if (typeof data === 'string') {
                         try {
                             const jsonData = JSON.parse(data);
                             this.handleElevenLabsMessage(jsonData);
                         } catch (parseError) {
-                            console.warn('⚠️ Received non-JSON string message:', data.substring(0, 100) + '...');
+                            console.warn('⚠️ Received non-JSON message:', data);
                         }
-                        return;
+                    } else {
+                        console.warn('⚠️ Received unknown data type:', typeof data, data);
                     }
-
-                    console.warn('⚠️ Received unknown data type:', typeof data, data);
-
                 } catch (error) {
                     console.error('❌ Error processing WebSocket message:', error);
                 }
@@ -255,47 +210,13 @@ class EnhancedTestChat {
 
             this.elevenLabsWs.onerror = (error) => {
                 console.error('❌ ElevenLabs WebSocket error:', error);
-
-                // Check if this is an SSL certificate issue
-                if (window.location.protocol === 'https:' && this.connectionAttempt.port === '8872') {
-                    this.updateConnectionStatus('error', 'SSL Certificate Required');
-                    this.showSSLCertificateInstructions();
-                } else {
-                    this.updateConnectionStatus('error', 'ElevenLabs Error');
-                }
+                this.updateConnectionStatus('error', 'ElevenLabs Error');
             };
 
         } catch (error) {
             console.error('❌ Failed to initialize ElevenLabs connection:', error);
             throw error;
         }
-    }
-
-    /**
-     * Show SSL certificate acceptance instructions
-     */
-    showSSLCertificateInstructions() {
-        const instructionsHtml = `
-            <div class="ssl-instructions" style="background: #2a2a2a; border: 2px solid #ff6b6b; border-radius: 8px; padding: 20px; margin: 10px 0; color: #fff;">
-                <h3 style="color: #ff6b6b; margin-top: 0;">🔒 SSL Certificate Required</h3>
-                <p>To use the ElevenLabs WebSocket connection over HTTPS, you need to accept the SSL certificate:</p>
-                <ol style="margin: 15px 0; padding-left: 20px;">
-                    <li>Click this link: <a href="https://localhost:8872" target="_blank" style="color: #4ecdc4; text-decoration: underline;">https://localhost:8872</a></li>
-                    <li>Accept the security warning/certificate in the new tab</li>
-                    <li>Return to this page and refresh</li>
-                </ol>
-                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #444;">
-                    <button onclick="window.testChat.tryInsecureConnection()" style="background: #ff9500; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-right: 10px;">
-                        🔓 Try Insecure Connection (Testing)
-                    </button>
-                    <span style="font-size: 0.9em; color: #ccc;">For testing only - may not work in production</span>
-                </div>
-                <p style="margin-bottom: 0; font-size: 0.9em; color: #ccc;">This is a one-time setup for the self-signed SSL certificate.</p>
-            </div>
-        `;
-
-        // Add instructions to chat area
-        this.chatMessages.innerHTML = instructionsHtml + this.chatMessages.innerHTML;
     }
 
     /**
@@ -337,7 +258,7 @@ class EnhancedTestChat {
                 break;
 
             case 'audio':
-                this.handleAudioResponse(message);
+                this.handleAudioMessage(message);
                 break;
 
             case 'conversation_end':
@@ -371,9 +292,6 @@ class EnhancedTestChat {
         }
 
         const aiTime = Date.now() - this.pendingMessage.startTime;
-
-        // Store response for fallback TTS
-        this.lastAIResponse = responseText;
 
         // Remove typing indicator
         if (this.pendingMessage.typingId) {
@@ -420,20 +338,18 @@ class EnhancedTestChat {
             // Clear chat
             this.chatMessages.innerHTML = '';
 
-            // Check if WebSocket connection exists and is ready
-            if (!this.elevenLabsWs) {
-                throw new Error('ElevenLabs WebSocket not initialized');
-            }
-
-            // If connection is not open, wait for it with a shorter timeout
-            if (this.elevenLabsWs.readyState !== WebSocket.OPEN) {
+            // Wait for WebSocket connection if needed
+            if (!this.elevenLabsWs || this.elevenLabsWs.readyState !== WebSocket.OPEN) {
                 this.addMessage('system', 'Connecting to ElevenLabs service...', {
                     characterName: 'System',
                     isInfo: true
                 });
 
-                // Wait for connection to be established with shorter timeout
-                await this.waitForWebSocketConnection(5000);
+                // Wait for connection to be established
+                await this.waitForWebSocketConnection();
+
+                // Additional delay to ensure service is ready
+                await new Promise(resolve => setTimeout(resolve, 1000));
             }
 
             // Verify we have an agent ID
@@ -464,11 +380,10 @@ class EnhancedTestChat {
 
         } catch (error) {
             console.error('❌ Error starting ElevenLabs conversation:', error);
-            this.addMessage('system', `Failed to start conversation. Please try again. ${error.message}`, {
+            this.addMessage('system', 'Failed to start conversation. Please try again.', {
                 characterName: 'System',
                 isError: true
             });
-            throw error;
         }
     }
 
@@ -529,29 +444,22 @@ class EnhancedTestChat {
             if (character) {
                 this.currentCharacter = character;
 
-                // Update assistant display based on available capabilities
+                // Update assistant display based on ElevenLabs agent availability
                 const agentId = this.config.agentId || character.elevenLabsAgentId;
-                const assistantId = character.openaiAssistantId;
-
-                let displayText = '';
-                if (agentId && assistantId) {
-                    displayText = `ElevenLabs: ${agentId} + OpenAI: ${assistantId}`;
-                } else if (agentId) {
-                    displayText = `ElevenLabs: ${agentId}`;
-                } else if (assistantId) {
-                    displayText = `OpenAI: ${assistantId}`;
+                if (agentId) {
+                    this.assistantDisplay.value = agentId;
+                } else if (character.hasAI && character.openaiAssistantId) {
+                    this.assistantDisplay.value = `OpenAI: ${character.openaiAssistantId}`;
                 } else if (character.hasVoice) {
-                    displayText = 'Voice only (no AI chat)';
+                    this.assistantDisplay.value = 'Voice only (no AI chat)';
                 } else {
-                    displayText = 'No assistant assigned';
+                    this.assistantDisplay.value = 'No assistant assigned';
                 }
-
-                this.assistantDisplay.value = displayText;
 
                 // Start ElevenLabs conversation if agent is available, or try anyway for testing
                 if (this.config.agentId || character.elevenLabsAgentId || this.elevenLabsWs) {
                     await this.startElevenLabsConversation(character);
-                } else if (character.openaiAssistantId) {
+                } else if (character.hasAI) {
                     await this.loadCharacterGreeting(character);
                 } else {
                     // Clear chat for voice-only characters
@@ -564,17 +472,12 @@ class EnhancedTestChat {
             }
             
             // Fetch detailed configuration
-            console.log(`🔍 Fetching character config for ID: ${characterId}`);
             const response = await fetch(`${this.config.apiBaseUrl}/character/${characterId}/config`);
-            console.log(`🔍 Character config response status: ${response.status}`);
             const data = await response.json();
-            console.log(`🔍 Character config data:`, data);
-
+            
             if (data.success) {
                 this.currentCharacter = { ...this.currentCharacter, ...data.character };
                 console.log(`🎭 Selected character: ${this.currentCharacter.name}`);
-            } else {
-                console.warn(`⚠️ Character config fetch failed:`, data);
             }
             
             this.updateSendButton();
@@ -582,18 +485,6 @@ class EnhancedTestChat {
             
         } catch (error) {
             console.error('❌ Error selecting character:', error);
-
-            // If we started an ElevenLabs conversation but then failed, clean it up
-            if (this.elevenLabsWs && this.elevenLabsWs.readyState === WebSocket.OPEN) {
-                try {
-                    this.elevenLabsWs.send(JSON.stringify({
-                        type: 'stop_conversation'
-                    }));
-                } catch (cleanupError) {
-                    console.error('❌ Error cleaning up conversation:', cleanupError);
-                }
-            }
-
             this.updateConnectionStatus('disconnected', 'Character load failed');
         }
     }
@@ -799,7 +690,7 @@ class EnhancedTestChat {
             console.log(`🎤 Sending ${base64Audio.length} characters of base64 audio data`);
 
             // Send to STT service
-            const response = await fetch(`${this.config.apiBaseUrl}/api/voice/transcribe`, {
+            const response = await fetch(`${this.config.apiBaseUrl}/voice/transcribe`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -830,7 +721,7 @@ class EnhancedTestChat {
                 console.log(`🎤 STT completed in ${sttTime}ms: "${data.data.stt.text}"`);
 
                 // Automatically send the transcribed text to AI if character has AI enabled
-                if (this.currentCharacter && (this.currentCharacter.elevenLabsAgentId || this.currentCharacter.openaiAssistantId)) {
+                if (this.currentCharacter && this.currentCharacter.hasAI) {
                     console.log('🤖 Auto-sending transcribed text to AI...');
                     await this.sendMessage(data.data.stt.text);
                 }
@@ -877,23 +768,13 @@ class EnhancedTestChat {
      */
     async toggleLiveMode() {
         try {
-            console.log('🎙️ toggleLiveMode called, current state:', this.isLiveModeActive);
-
-            // Prevent rapid toggling
-            if (this.liveModeToggleInProgress) {
-                console.log('🎙️ Live Mode toggle already in progress, ignoring...');
-                return;
-            }
-
-            this.liveModeToggleInProgress = true;
             if (!this.currentCharacter) {
                 alert('Please select a character first');
                 return;
             }
 
-            // Check if character has ElevenLabs agent for Live Mode
-            if (!this.currentCharacter.elevenLabsAgentId && !this.config.agentId) {
-                alert('Live Mode requires a character with ElevenLabs AI agent configured');
+            if (!this.currentCharacter.hasAI) {
+                alert('Live Mode requires a character with AI capabilities');
                 return;
             }
 
@@ -912,11 +793,6 @@ class EnhancedTestChat {
         } catch (error) {
             console.error('❌ Error toggling Live Mode:', error);
             this.updateLiveModeStatus(false, 'Error');
-        } finally {
-            // Reset toggle flag after a short delay
-            setTimeout(() => {
-                this.liveModeToggleInProgress = false;
-            }, 1000);
         }
     }
 
@@ -926,27 +802,24 @@ class EnhancedTestChat {
     async startLiveMode() {
         try {
             console.log('🎙️ Starting ElevenLabs Live Mode...');
-            console.log('🎙️ Current Live Mode state before start:', this.isLiveModeActive);
 
-            // Don't clear chat history - continue existing conversation
-            // this.clearChatHistory(); // Removed to preserve conversation
+            // Clear chat history for fresh conversation
+            this.clearChatHistory();
 
             // Set Live Mode active
             this.isLiveModeActive = true;
             this.liveModeState = 'starting';
-            this.updateLiveModeStatus(true, 'Starting Live Mode...');
+            this.updateLiveModeStatus(true, 'Connecting to ElevenLabs...');
 
-            // Start continuous listening directly since ElevenLabs connection is already established
-            await this.startContinuousListening();
-            this.updateLiveModeStatus(true, 'Live Mode Active - Listening...');
+            // Initialize ElevenLabs Conversational AI WebSocket
+            await this.initializeElevenLabsConversation();
 
             console.log('🎙️ ElevenLabs Live Mode started successfully');
 
         } catch (error) {
             console.error('❌ Error starting ElevenLabs Live Mode:', error);
-            console.error('❌ Error details:', error.message, error.stack);
             this.isLiveModeActive = false;
-            this.updateLiveModeStatus(false, 'Error: ' + error.message);
+            this.updateLiveModeStatus(false, 'Error');
             throw error;
         }
     }
@@ -962,33 +835,16 @@ class EnhancedTestChat {
             this.isLiveModeActive = false;
             this.liveModeState = 'idle';
 
-            // Send stop conversation message
-            const ws = this.elevenLabsConversationWs || this.elevenLabsWs;
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({
-                    type: 'stop_conversation'
-                }));
-            }
-
-            // Close ElevenLabs conversation WebSocket (only if it's separate)
-            if (this.elevenLabsConversationWs && this.elevenLabsConversationWs !== this.elevenLabsWs) {
+            // Close ElevenLabs conversation WebSocket
+            if (this.elevenLabsConversationWs) {
                 this.elevenLabsConversationWs.close();
                 this.elevenLabsConversationWs = null;
             }
-
-            // Stop microphone level indicator
-            this.stopMicrophoneLevelIndicator();
 
             // Stop microphone stream
             if (this.audioStream) {
                 this.audioStream.getTracks().forEach(track => track.stop());
                 this.audioStream = null;
-            }
-
-            // Stop MediaRecorder
-            if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
-                this.mediaRecorder.stop();
-                this.mediaRecorder = null;
             }
 
             // Stop any audio playback
@@ -997,15 +853,10 @@ class EnhancedTestChat {
                 this.currentAudio = null;
             }
 
-            // Clear timeouts and intervals
+            // Clear timeouts
             if (this.liveModeTimeout) {
                 clearTimeout(this.liveModeTimeout);
                 this.liveModeTimeout = null;
-            }
-
-            if (this.liveModeStatusInterval) {
-                clearInterval(this.liveModeStatusInterval);
-                this.liveModeStatusInterval = null;
             }
 
             // Update status
@@ -1027,33 +878,41 @@ class EnhancedTestChat {
             console.log('🎭 Initializing ElevenLabs Conversational AI...');
 
             // Get agent ID from current character
-            const agentId = this.currentCharacter?.elevenLabsAgentId;
+            const agentId = this.currentCharacter?.elevenLabsConfig?.agent_id;
             if (!agentId) {
                 throw new Error('No ElevenLabs agent ID found for current character');
             }
 
-            // Use the existing ElevenLabs WebSocket connection if available
-            if (this.elevenLabsWs && this.elevenLabsWs.readyState === WebSocket.OPEN) {
-                console.log('🔗 Using existing ElevenLabs connection for Live Mode');
-                await this.handleElevenLabsConversationOpen();
-                return;
-            }
+            // Connect directly to ElevenLabs Conversational AI WebSocket
+            const wsUrl = `wss://api.elevenlabs.io/v1/convai/conversation?agent_id=${agentId}`;
+            console.log('🔗 Connecting to ElevenLabs Conversational AI:', wsUrl);
 
-            // If no connection exists, throw error - connection should be established during initialization
-            if (!this.elevenLabsWs) {
-                throw new Error('ElevenLabs WebSocket connection not available. Please refresh the page.');
-            }
+            this.elevenLabsConversationWs = new WebSocket(wsUrl);
 
-            // If connection is connecting, wait for it
-            if (this.elevenLabsWs.readyState === WebSocket.CONNECTING) {
-                console.log('⏳ Waiting for ElevenLabs connection to establish...');
-                await this.waitForWebSocketConnection(10000);
-                await this.handleElevenLabsConversationOpen();
-                return;
-            }
+            // Set up WebSocket event handlers
+            this.elevenLabsConversationWs.onopen = () => {
+                console.log('✅ Connected to ElevenLabs Conversational AI');
+                this.handleElevenLabsConversationOpen();
+            };
 
-            // If connection is closed, it needs to be re-established
-            throw new Error('ElevenLabs WebSocket connection is closed. Please refresh the page.');
+            this.elevenLabsConversationWs.onmessage = (event) => {
+                this.handleElevenLabsConversationMessage(event);
+            };
+
+            this.elevenLabsConversationWs.onclose = (event) => {
+                console.log('🔌 ElevenLabs Conversational AI connection closed:', event.code, event.reason);
+                if (this.isLiveModeActive) {
+                    this.updateLiveModeStatus(false, 'Disconnected');
+                }
+            };
+
+            this.elevenLabsConversationWs.onerror = (error) => {
+                console.error('❌ ElevenLabs Conversational AI error:', error);
+                this.updateLiveModeStatus(false, 'Connection Error');
+            };
+
+            // Wait for connection to be established
+            await this.waitForElevenLabsConnection();
 
         } catch (error) {
             console.error('❌ Failed to initialize ElevenLabs Conversational AI:', error);
@@ -1062,70 +921,41 @@ class EnhancedTestChat {
     }
 
     /**
-     * Connect to ElevenLabs for Live Mode via authenticated proxy
+     * Wait for ElevenLabs Conversational AI connection
      */
-    async connectDirectlyToElevenLabs(agentId) {
-        try {
-            console.log('🔗 Getting ElevenLabs conversation token...');
-
-            // Get authentication token from backend
-            const response = await fetch('/ai-management/api/elevenlabs/conversation-token', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ agentId })
-            });
-
-            const data = await response.json();
-            if (!data.success) {
-                throw new Error(data.error || 'Failed to get conversation token');
+    async waitForElevenLabsConnection(maxWait = 10000) {
+        return new Promise((resolve, reject) => {
+            if (this.elevenLabsConversationWs && this.elevenLabsConversationWs.readyState === WebSocket.OPEN) {
+                resolve();
+                return;
             }
 
-            console.log('🔗 Connecting to ElevenLabs via authenticated proxy...');
+            const timeout = setTimeout(() => {
+                reject(new Error('ElevenLabs connection timeout'));
+            }, maxWait);
 
-            // Connect to our proxy with the token
-            const proxyWsUrl = `wss://${window.location.hostname}:8872`;
-            this.elevenLabsDirectWs = new WebSocket(proxyWsUrl);
-
-            // Store token for authentication
-            this.authToken = data.token;
-            this.agentId = agentId;
-
-            // Set up WebSocket event handlers
-            this.elevenLabsDirectWs.onopen = () => {
-                console.log('✅ Connected to ElevenLabs proxy');
-                // Send authentication and start Live Mode
-                this.elevenLabsDirectWs.send(JSON.stringify({
-                    type: 'authenticate',
-                    token: this.authToken,
-                    agentId: this.agentId,
-                    liveMode: true
-                }));
+            const checkConnection = () => {
+                if (this.elevenLabsConversationWs && this.elevenLabsConversationWs.readyState === WebSocket.OPEN) {
+                    clearTimeout(timeout);
+                    resolve();
+                } else if (this.elevenLabsConversationWs && this.elevenLabsConversationWs.readyState === WebSocket.CLOSED) {
+                    clearTimeout(timeout);
+                    reject(new Error('ElevenLabs connection closed'));
+                } else {
+                    setTimeout(checkConnection, 100);
+                }
             };
 
-            this.elevenLabsDirectWs.onmessage = (event) => {
-                this.handleElevenLabsDirectMessage(event);
-            };
-
-            this.elevenLabsDirectWs.onerror = (error) => {
-                console.error('❌ ElevenLabs proxy WebSocket error:', error);
-            };
-
-            this.elevenLabsDirectWs.onclose = (event) => {
-                console.log('🔌 ElevenLabs proxy WebSocket closed:', event.code, event.reason);
-            };
-
-        } catch (error) {
-            console.error('❌ Error connecting to ElevenLabs proxy:', error);
-            throw error;
-        }
+            checkConnection();
+        });
     }
 
     /**
-     * Handle direct ElevenLabs connection open
+     * Handle ElevenLabs Conversational AI connection open
      */
-    async handleElevenLabsDirectConversationOpen() {
+    async handleElevenLabsConversationOpen() {
         try {
-            console.log('🎤 Initializing direct ElevenLabs conversation...');
+            console.log('🎤 Initializing ElevenLabs conversation...');
 
             // Send conversation initiation message
             const initMessage = {
@@ -1144,266 +974,12 @@ class EnhancedTestChat {
                 }
             };
 
-            console.log('📤 Sending conversation initiation:', initMessage);
-            this.elevenLabsDirectWs.send(JSON.stringify(initMessage));
+            this.elevenLabsConversationWs.send(JSON.stringify(initMessage));
 
-        } catch (error) {
-            console.error('❌ Error handling direct ElevenLabs connection:', error);
-        }
-    }
+            // Initialize microphone
+            await this.initializeMicrophone();
 
-    /**
-     * Handle direct ElevenLabs WebSocket messages
-     */
-    async handleElevenLabsDirectMessage(event) {
-        try {
-            const data = event.data;
-
-            // Check if the data is binary (Blob) or ArrayBuffer
-            if (data instanceof Blob) {
-                console.log('📥 Received binary Blob from direct ElevenLabs, size:', data.size);
-
-                // Try to parse as JSON first
-                try {
-                    const text = await data.text();
-                    const jsonData = JSON.parse(text);
-                    console.log('📥 Direct ElevenLabs Blob contains JSON:', jsonData);
-                    this.handleDirectElevenLabsJsonMessage(jsonData);
-                    return;
-                } catch (parseError) {
-                    // If JSON parsing fails, treat as binary audio data
-                    console.log('🔊 Direct ElevenLabs Blob is not JSON, processing as audio');
-                    this.handleElevenLabsBinaryData(data);
-                    return;
-                }
-            }
-
-            if (data instanceof ArrayBuffer) {
-                console.log('📥 Received ArrayBuffer from direct ElevenLabs, size:', data.byteLength);
-                const blob = new Blob([data]);
-                this.handleElevenLabsBinaryData(blob);
-                return;
-            }
-
-            // Handle JSON messages
-            if (typeof data === 'string') {
-                try {
-                    const message = JSON.parse(data);
-                    console.log('📥 Direct ElevenLabs message:', message);
-                    this.handleDirectElevenLabsJsonMessage(message);
-                } catch (parseError) {
-                    console.warn('⚠️ Received non-JSON string from direct ElevenLabs:', data.substring(0, 100) + '...');
-                }
-                return;
-            }
-
-            console.warn('⚠️ Unknown data type from direct ElevenLabs:', typeof data);
-
-        } catch (error) {
-            console.error('❌ Error handling direct ElevenLabs message:', error);
-        }
-    }
-
-    /**
-     * Handle JSON messages from direct ElevenLabs connection
-     */
-    handleDirectElevenLabsJsonMessage(message) {
-        try {
-
-            switch (message.type) {
-                case 'authentication_success':
-                    console.log('✅ Live Mode authentication successful');
-                    this.updateLiveModeStatus(true, 'Live Mode Active - Speak now!');
-                    break;
-
-                case 'authentication_error':
-                    console.error('❌ Live Mode authentication failed:', message.error);
-                    this.updateLiveModeStatus(false, 'Authentication Failed');
-                    break;
-
-                case 'conversation_initiation_metadata':
-                    this.handleDirectConversationStarted(message);
-                    break;
-
-                case 'audio':
-                    this.handleDirectAudioResponse(message);
-                    break;
-
-                case 'transcript':
-                    if (message.role === 'assistant') {
-                        this.handleAIResponse(message.text);
-                    }
-                    break;
-
-                case 'live_mode_error':
-                    console.error('❌ Live Mode error:', message.error);
-                    this.updateLiveModeStatus(false, 'Error');
-                    break;
-
-                default:
-                    console.log('📥 Unknown direct ElevenLabs message type:', message.type);
-            }
-
-        } catch (error) {
-            console.error('❌ Error handling direct ElevenLabs message:', error);
-        }
-    }
-
-    /**
-     * Handle binary audio data from ElevenLabs
-     */
-    async handleElevenLabsBinaryData(blob) {
-        try {
-            console.log('🔊 Processing binary audio data from ElevenLabs');
-
-            // Convert blob to array buffer
-            const arrayBuffer = await blob.arrayBuffer();
-            const audioData = new Uint8Array(arrayBuffer);
-
-            // Convert to base64 for our existing audio playback system
-            let binary = '';
-            for (let i = 0; i < audioData.length; i++) {
-                binary += String.fromCharCode(audioData[i]);
-            }
-            const base64Audio = btoa(binary);
-
-            // Use our existing audio playback method
-            await this.playAudioFromBase64(base64Audio);
-
-        } catch (error) {
-            console.error('❌ Error processing binary audio data:', error);
-        }
-    }
-
-    /**
-     * Handle direct conversation started
-     */
-    handleDirectConversationStarted(message) {
-        console.log('🎭 Direct conversation started:', message);
-        this.conversationId = message.conversationId;
-
-        // ElevenLabs Conversational AI is now ready for voice input
-        this.updateLiveModeStatus(true, 'Live Mode Active - Speak now!');
-
-        // Add system message to chat
-        this.addMessage('system', `🎙️ Live Mode activated! ElevenLabs is listening for your voice. Start speaking to ${this.currentCharacter?.char_name || 'the character'}.`, {
-            characterName: 'System'
-        });
-    }
-
-    /**
-     * Handle direct audio response
-     */
-    handleDirectAudioResponse(message) {
-        console.log('🔊 Received direct audio response');
-
-        if (message.audio_event && message.audio_event.audio_base_64) {
-            // Play audio directly from base64
-            this.playAudioFromBase64(message.audio_event.audio_base_64);
-        }
-    }
-
-    /**
-     * Get conversation starter for character
-     */
-    getConversationStarter() {
-        if (this.currentCharacter?.elevenLabsConfig?.first_message) {
-            return this.currentCharacter.elevenLabsConfig.first_message;
-        }
-
-        const characterName = this.currentCharacter?.char_name || this.currentCharacter?.name || 'AI Assistant';
-        return `Hello! I'm ${characterName}. How can I help you today?`;
-    }
-
-    /**
-     * Wait for ElevenLabs Conversational AI connection
-     */
-    async waitForElevenLabsConnection(maxWait = 10000) {
-        return new Promise((resolve, reject) => {
-            // Check if we're using existing connection
-            const ws = this.elevenLabsConversationWs || this.elevenLabsWs;
-
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                resolve();
-                return;
-            }
-
-            const timeout = setTimeout(() => {
-                reject(new Error('ElevenLabs connection timeout'));
-            }, maxWait);
-
-            const checkConnection = () => {
-                const currentWs = this.elevenLabsConversationWs || this.elevenLabsWs;
-
-                if (currentWs && currentWs.readyState === WebSocket.OPEN) {
-                    clearTimeout(timeout);
-                    resolve();
-                } else if (currentWs && currentWs.readyState === WebSocket.CLOSED) {
-                    clearTimeout(timeout);
-                    reject(new Error('ElevenLabs connection closed'));
-                } else {
-                    setTimeout(checkConnection, 100);
-                }
-            };
-
-            checkConnection();
-        });
-    }
-
-    /**
-     * Handle ElevenLabs Conversational AI connection open
-     */
-    async handleElevenLabsConversationOpen() {
-        try {
-            console.log('🎤 Starting ElevenLabs Conversational AI...');
-
-            // Only send start_conversation if we don't already have an active conversation
-            // Check if we already have a conversation by looking for existing messages or connection state
-            const hasActiveConversation = this.currentAgentId && this.elevenLabsWs && this.elevenLabsWs.readyState === WebSocket.OPEN;
-
-            if (!hasActiveConversation) {
-                // Start conversation using the existing service protocol
-                const startMessage = {
-                    type: 'start_conversation',
-                    characterId: this.currentCharacter.id
-                };
-
-                console.log('📤 Sending start_conversation message:', startMessage);
-
-                // Use the appropriate WebSocket connection
-                const ws = this.elevenLabsConversationWs || this.elevenLabsWs;
-                if (ws && ws.readyState === WebSocket.OPEN) {
-                    ws.send(JSON.stringify(startMessage));
-                } else {
-                    throw new Error('No active ElevenLabs WebSocket connection');
-                }
-            } else {
-                console.log('🔗 Using existing active conversation for Live Mode');
-            }
-
-            // If Live Mode is active, start continuous listening for microphone input
-            if (this.isLiveModeActive) {
-                console.log('🎙️ Starting microphone for Live Mode...');
-                this.updateLiveModeStatus(true, 'Starting microphone...');
-
-                // Start continuous listening immediately
-                try {
-                    await this.startContinuousListening();
-                    this.updateLiveModeStatus(true, 'Live Mode Active - Listening...');
-                    console.log('✅ Live Mode microphone started successfully');
-                } catch (error) {
-                    console.error('❌ Failed to start microphone:', error);
-                    this.updateLiveModeStatus(false, 'Microphone Error');
-
-                    // Show user-friendly error message
-                    this.addMessage('system', `Microphone access denied or unavailable. Please check browser permissions and try again.`, {
-                        characterName: 'System',
-                        isError: true
-                    });
-                }
-            } else {
-                this.updateLiveModeStatus(true, 'Connected to ElevenLabs');
-            }
+            this.updateLiveModeStatus(true, 'Ready - Listening...');
 
         } catch (error) {
             console.error('❌ Error handling ElevenLabs connection open:', error);
@@ -1458,37 +1034,28 @@ class EnhancedTestChat {
             console.log('📥 ElevenLabs Conversational AI message:', message);
 
             switch (message.type) {
-                case 'connected':
-                    this.handleServiceConnected(message);
+                case 'conversation_initiation_metadata':
+                    this.handleConversationInitiation(message);
                     break;
 
-                case 'conversation_started':
-                    this.handleConversationStarted(message);
-                    break;
-
-                case 'conversation_metadata':
-                    this.handleConversationMetadata(message);
-                    break;
-
-                case 'transcript':
-                    this.handleTranscript(message);
+                case 'agent_response':
+                    this.handleAgentResponse(message);
                     break;
 
                 case 'audio':
                     this.handleAudioResponse(message);
                     break;
 
-                case 'conversation_starters':
-                    this.handleConversationStarters(message);
+                case 'user_transcript':
+                    this.handleUserTranscript(message);
                     break;
 
-                case 'error':
-                    this.handleServiceError(message);
+                case 'vad_score':
+                    this.handleVADScore(message);
                     break;
 
-                case 'conversation_stopped':
-                case 'conversation_ended':
-                    this.handleConversationEnded(message);
+                case 'ping':
+                    this.handlePing(message);
                     break;
 
                 default:
@@ -1497,329 +1064,183 @@ class EnhancedTestChat {
 
         } catch (error) {
             console.error('❌ Error handling ElevenLabs message:', error);
-            console.error('❌ Message data:', event.data);
         }
     }
 
     /**
-     * ElevenLabs Conversational AI handles microphone access natively
-     * No custom microphone initialization needed
+     * Initialize microphone for ElevenLabs Conversational AI
      */
+    async initializeMicrophone() {
+        try {
+            console.log('🎤 Initializing microphone for ElevenLabs...');
 
-    /**
-     * ElevenLabs Conversational AI handles all audio processing natively
-     * No custom audio processing needed
-     */
+            // Request microphone access
+            this.audioStream = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true,
+                    sampleRate: 16000,
+                    channelCount: 1
+                }
+            });
 
-    /**
-     * Handle service connected message
-     */
-    handleServiceConnected(message) {
-        console.log('🔗 ElevenLabs service connected:', message);
-        this.sessionId = message.sessionId;
-        this.updateLiveModeStatus(true, 'Connected');
+            // Create audio context and processor
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)({
+                sampleRate: 16000
+            });
+
+            const source = this.audioContext.createMediaStreamSource(this.audioStream);
+
+            // Create script processor for audio chunks
+            this.audioProcessor = this.audioContext.createScriptProcessor(4096, 1, 1);
+
+            this.audioProcessor.onaudioprocess = (event) => {
+                if (this.isLiveModeActive && this.elevenLabsConversationWs &&
+                    this.elevenLabsConversationWs.readyState === WebSocket.OPEN) {
+
+                    const inputBuffer = event.inputBuffer.getChannelData(0);
+
+                    // Convert to 16-bit PCM
+                    const pcmData = new Int16Array(inputBuffer.length);
+                    for (let i = 0; i < inputBuffer.length; i++) {
+                        pcmData[i] = Math.max(-32768, Math.min(32767, inputBuffer[i] * 32768));
+                    }
+
+                    // Convert to base64
+                    const base64Audio = btoa(String.fromCharCode(...new Uint8Array(pcmData.buffer)));
+
+                    // Send audio chunk to ElevenLabs
+                    this.elevenLabsConversationWs.send(JSON.stringify({
+                        user_audio_chunk: base64Audio
+                    }));
+                }
+            };
+
+            source.connect(this.audioProcessor);
+            this.audioProcessor.connect(this.audioContext.destination);
+
+            console.log('✅ Microphone initialized for ElevenLabs');
+
+        } catch (error) {
+            console.error('❌ Error initializing microphone:', error);
+            throw error;
+        }
     }
 
     /**
-     * Handle conversation started message
+     * Handle conversation initiation metadata
      */
-    handleConversationStarted(message) {
-        console.log('🎭 Conversation started:', message);
-        this.conversationId = message.conversationId;
+    handleConversationInitiation(message) {
+        console.log('🎭 Conversation initiated:', message.conversation_initiation_metadata_event);
+        this.conversationId = message.conversation_initiation_metadata_event.conversation_id;
+        this.updateLiveModeStatus(true, 'Conversation Started');
+    }
 
-        // ElevenLabs Conversational AI is now ready for voice input
-        this.updateLiveModeStatus(true, 'Live Mode Active - Speak now!');
+    /**
+     * Handle agent response
+     */
+    handleAgentResponse(message) {
+        const response = message.agent_response_event.agent_response;
+        console.log('🤖 Agent response:', response);
 
-        // Add system message to chat
-        this.addMessage('system', `🎙️ Live Mode activated! ElevenLabs is listening for your voice. Start speaking to ${message.characterName || this.currentCharacter?.char_name || 'the character'}.`, {
-            characterName: 'System'
+        // Add agent message to chat
+        this.addMessage('bot', response, {
+            characterName: this.currentCharacter?.char_name || this.currentCharacter?.name || 'AI'
         });
-    }
-
-    /**
-     * Handle conversation metadata
-     */
-    handleConversationMetadata(message) {
-        console.log('📋 Conversation metadata:', message);
-        this.conversationId = message.conversationId;
-        this.audioFormat = message.audioFormat;
-    }
-
-    /**
-     * Handle transcript messages (both user and assistant)
-     */
-    handleTranscript(message) {
-        console.log('📝 Transcript:', message);
-
-        const role = message.role === 'user' ? 'user' : 'bot';
-        const characterName = role === 'user' ? 'You' : (this.currentCharacter?.char_name || this.currentCharacter?.name || 'AI');
-
-        // Add message to chat
-        this.addMessage(role, message.text, {
-            characterName: characterName
-        });
-    }
-
-    /**
-     * Handle conversation starters
-     */
-    handleConversationStarters(message) {
-        console.log('💬 Conversation starters:', message);
-        // Could be used to update UI with available conversation starters
-    }
-
-    /**
-     * Handle service errors
-     */
-    handleServiceError(message) {
-        console.error('❌ ElevenLabs service error:', message);
-        this.updateLiveModeStatus(false, `Error: ${message.message}`);
-    }
-
-    /**
-     * Handle conversation ended
-     */
-    handleConversationEnded(message) {
-        console.log('🔚 Conversation ended:', message);
-        this.updateLiveModeStatus(false, 'Conversation Ended');
     }
 
     /**
      * Handle audio response
      */
     handleAudioResponse(message) {
-        try {
-            const audioBase64 = message.audioData || message.audio;
-            if (!audioBase64) {
-                console.error('❌ No audio data in message:', message);
-                return;
-            }
+        const audioBase64 = message.audio_event.audio_base_64;
+        console.log('🔊 Received audio response');
 
-            console.log('🔊 Received audio response');
+        // Convert base64 to audio and play
+        this.playAudioFromBase64(audioBase64);
+    }
 
-            // Convert base64 to audio and play
-            this.playAudioFromBase64(audioBase64);
-        } catch (error) {
-            console.error('❌ Error handling audio response:', error);
+    /**
+     * Handle user transcript
+     */
+    handleUserTranscript(message) {
+        const transcript = message.user_transcription_event.user_transcript;
+        console.log('🎙️ User transcript:', transcript);
+
+        // Add user message to chat
+        this.addMessage('user', transcript, {
+            characterName: 'You'
+        });
+    }
+
+    /**
+     * Handle VAD (Voice Activity Detection) score
+     */
+    handleVADScore(message) {
+        const vadScore = message.vad_score_event.vad_score;
+
+        // Update UI based on VAD score (0-1, higher = more likely speech)
+        if (vadScore > 0.5) {
+            this.updateLiveModeStatus(true, 'Listening - Speech Detected');
+        } else {
+            this.updateLiveModeStatus(true, 'Listening...');
         }
     }
 
+    /**
+     * Handle ping message
+     */
+    handlePing(message) {
+        const eventId = message.ping_event.event_id;
 
+        // Send pong response
+        this.elevenLabsConversationWs.send(JSON.stringify({
+            type: 'pong',
+            event_id: eventId
+        }));
+    }
 
     /**
      * Play audio from base64 data
      */
-    async playAudioFromBase64(audioBase64) {
+    playAudioFromBase64(audioBase64) {
         try {
-            if (!audioBase64) {
-                console.error('❌ No audio data provided');
-                return;
+            // Convert base64 to blob
+            const audioData = atob(audioBase64);
+            const audioArray = new Uint8Array(audioData.length);
+            for (let i = 0; i < audioData.length; i++) {
+                audioArray[i] = audioData.charCodeAt(i);
             }
 
-            // Check if voice output is enabled
-            if (!this.isElevenLabsActive && !this.isTTSActive) {
-                console.log('🔇 Audio playback disabled by user controls');
-                return;
-            }
+            const audioBlob = new Blob([audioArray], { type: 'audio/mpeg' });
+            const audioUrl = URL.createObjectURL(audioBlob);
 
-            console.log('🔊 Playing audio from base64, length:', audioBase64.length);
+            // Play audio
+            this.currentAudio = new Audio(audioUrl);
+            this.currentAudio.volume = 0.8;
 
-            // First, try to detect if this is already a complete audio format (MP3, WAV, etc.)
-            try {
-                // Try direct playback first using blob URL (avoids CSP issues)
-                const audioBytes = atob(audioBase64);
-                const audioArray = new Uint8Array(audioBytes.length);
-                for (let i = 0; i < audioBytes.length; i++) {
-                    audioArray[i] = audioBytes.charCodeAt(i);
-                }
+            this.currentAudio.onended = () => {
+                URL.revokeObjectURL(audioUrl);
+                this.currentAudio = null;
+            };
 
-                const audioBlob = new Blob([audioArray], { type: 'audio/mpeg' });
-                const audioUrl = URL.createObjectURL(audioBlob);
-                const testAudio = new Audio(audioUrl);
+            this.currentAudio.onerror = (error) => {
+                console.error('❌ Audio playback error:', error);
+                URL.revokeObjectURL(audioUrl);
+                this.currentAudio = null;
+            };
 
-                await new Promise((resolve, reject) => {
-                    const timeout = setTimeout(() => {
-                        reject(new Error('Audio load timeout'));
-                    }, 2000);
-
-                    testAudio.oncanplaythrough = () => {
-                        clearTimeout(timeout);
-                        resolve();
-                    };
-
-                    testAudio.onerror = () => {
-                        clearTimeout(timeout);
-                        reject(new Error('Direct audio playback failed'));
-                    };
-
-                    testAudio.load();
-                });
-
-                // If we get here, direct playback works
-                console.log('✅ Direct audio playback successful');
-                this.currentAudio = testAudio;
-                this.currentAudio.volume = 0.8;
-
-                this.currentAudio.onended = () => {
-                    URL.revokeObjectURL(audioUrl);
-                    this.currentAudio = null;
-                };
-
-                await this.currentAudio.play();
-                return;
-
-            } catch (directPlaybackError) {
-                console.log('🔄 Direct playback failed, trying PCM conversion:', directPlaybackError.message);
-
-                // Try PCM to WAV conversion
-                try {
-                    const pcmData = atob(audioBase64);
-                    const wavBlob = this.convertPCMToWAV(pcmData, 16000, 1); // 16kHz, mono
-                    const audioUrl = URL.createObjectURL(wavBlob);
-
-                    this.currentAudio = new Audio(audioUrl);
-                    this.currentAudio.volume = 0.8;
-
-                    this.currentAudio.onended = () => {
-                        URL.revokeObjectURL(audioUrl);
-                        this.currentAudio = null;
-                    };
-
-                    this.currentAudio.onerror = (error) => {
-                        console.error('❌ PCM audio playback error:', error);
-                        URL.revokeObjectURL(audioUrl);
-                        this.currentAudio = null;
-                        this.fallbackToExistingTTS();
-                    };
-
-                    this.currentAudio.onloadeddata = () => {
-                        console.log('✅ PCM audio converted to WAV and loaded successfully');
-                    };
-
-                    await this.currentAudio.play();
-                    console.log('✅ Playing converted PCM audio');
-
-                } catch (pcmError) {
-                    console.error('❌ Error converting PCM to WAV:', pcmError);
-                    this.fallbackToExistingTTS();
-                }
-            }
+            this.currentAudio.play().catch(error => {
+                console.error('❌ Failed to play audio:', error);
+            });
 
         } catch (error) {
             console.error('❌ Error playing audio from base64:', error);
-            this.fallbackToExistingTTS();
-        }
-    }
-
-    /**
-     * Convert PCM audio data to WAV format
-     */
-    convertPCMToWAV(pcmData, sampleRate, channels) {
-        try {
-            console.log('🔧 Converting PCM to WAV:', {
-                pcmDataLength: pcmData.length,
-                sampleRate,
-                channels,
-                dataType: typeof pcmData
-            });
-
-            // Handle different PCM data formats
-            let samples;
-            if (typeof pcmData === 'string') {
-                // Convert string to Uint8Array
-                samples = new Uint8Array(pcmData.length);
-                for (let i = 0; i < pcmData.length; i++) {
-                    samples[i] = pcmData.charCodeAt(i);
-                }
-            } else if (pcmData instanceof ArrayBuffer) {
-                samples = new Uint8Array(pcmData);
-            } else if (pcmData instanceof Uint8Array) {
-                samples = pcmData;
-            } else {
-                throw new Error('Unsupported PCM data format: ' + typeof pcmData);
-            }
-
-            // Assume 16-bit PCM (2 bytes per sample)
-            const numSamples = Math.floor(samples.length / 2);
-            const arrayBuffer = new ArrayBuffer(44 + samples.length);
-            const view = new DataView(arrayBuffer);
-
-            // WAV header
-            const writeString = (offset, string) => {
-                for (let i = 0; i < string.length; i++) {
-                    view.setUint8(offset + i, string.charCodeAt(i));
-                }
-            };
-
-            // RIFF header
-            writeString(0, 'RIFF');
-            view.setUint32(4, 36 + samples.length, true); // File size - 8
-            writeString(8, 'WAVE');
-
-            // fmt chunk
-            writeString(12, 'fmt ');
-            view.setUint32(16, 16, true); // fmt chunk size
-            view.setUint16(20, 1, true); // PCM format
-            view.setUint16(22, channels, true); // Number of channels
-            view.setUint32(24, sampleRate, true); // Sample rate
-            view.setUint32(28, sampleRate * channels * 2, true); // Byte rate
-            view.setUint16(32, channels * 2, true); // Block align
-            view.setUint16(34, 16, true); // Bits per sample
-
-            // data chunk
-            writeString(36, 'data');
-            view.setUint32(40, samples.length, true); // Data size
-
-            // Copy PCM data
-            const dataView = new Uint8Array(arrayBuffer, 44);
-            dataView.set(samples);
-
-            console.log('✅ PCM to WAV conversion completed:', {
-                originalSize: samples.length,
-                wavSize: arrayBuffer.byteLength,
-                numSamples: numSamples
-            });
-
-            return new Blob([arrayBuffer], { type: 'audio/wav' });
-
-        } catch (error) {
-            console.error('❌ Error in PCM to WAV conversion:', error);
-            throw error;
-        }
-    }
-
-    fallbackToExistingTTS() {
-        // Since we've moved to ElevenLabs, we don't have a fallback TTS system
-        // Log the issue and inform the user
-        console.warn('⚠️ ElevenLabs audio playback failed and no fallback TTS available');
-
-        if (this.lastAIResponse) {
-            // Add a system message to inform the user
-            this.addMessage('system', `Audio playback failed. Response text: "${this.lastAIResponse}"`, {
-                characterName: 'System',
-                isError: true
-            });
         }
     }
 
     // Legacy Live Mode methods removed - now using ElevenLabs native Conversational AI
-
-    /**
-     * Send user message to ElevenLabs Conversational AI
-     */
-    sendUserMessageToElevenLabs(text) {
-        if (!this.elevenLabsConversationWs || this.elevenLabsConversationWs.readyState !== WebSocket.OPEN) {
-            console.warn('⚠️ ElevenLabs Conversational AI not connected');
-            return;
-        }
-
-        console.log('📤 Sending user message to ElevenLabs:', text);
-
-        this.elevenLabsConversationWs.send(JSON.stringify({
-            type: 'user_message',
-            text: text
-        }));
-    }
 
 
 
@@ -1867,7 +1288,7 @@ class EnhancedTestChat {
                 return;
             }
 
-            // Convert audio blob to base64 for the /api/voice/transcribe endpoint
+            // Convert audio blob to base64 for the /voice/transcribe endpoint
             const arrayBuffer = await audioBlob.arrayBuffer();
             const uint8Array = new Uint8Array(arrayBuffer);
             const base64Audio = btoa(String.fromCharCode.apply(null, uint8Array));
@@ -1875,7 +1296,7 @@ class EnhancedTestChat {
             console.log(`🎙️ Converted to base64: ${base64Audio.length} characters`);
 
             // Send to STT service using JSON format
-            const response = await fetch(`${this.config.apiBaseUrl}/api/voice/transcribe`, {
+            const response = await fetch(`${this.config.apiBaseUrl}/voice/transcribe`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -1908,8 +1329,8 @@ class EnhancedTestChat {
             const data = await response.json();
             console.log('🎙️ STT response:', data);
 
-            if (data.success && data.transcription) {
-                const transcribedText = data.transcription.trim();
+            if (data.success && data.data && data.data.stt && data.data.stt.text) {
+                const transcribedText = data.data.stt.text.trim();
                 console.log(`🎙️ Transcribed: "${transcribedText}"`);
 
                 // Improved speech detection - filter out common noise patterns
@@ -1986,8 +1407,9 @@ class EnhancedTestChat {
                     characterName: this.currentCharacter.char_name || this.currentCharacter.name
                 });
 
-                // ElevenLabs handles TTS directly, no need for separate TTS call
-                console.log('🎙️ AI response added to chat - ElevenLabs will handle TTS automatically');
+                // Speak the response
+                console.log('🎙️ Starting TTS for AI response...');
+                await this.speakLiveModeText(aiResponse);
             } else {
                 console.error('❌ Invalid AI response:', data);
                 if (this.isLiveModeActive) {
@@ -2083,115 +1505,6 @@ class EnhancedTestChat {
     }
 
     /**
-     * Start continuous listening for Live Mode
-     */
-    async startContinuousListening() {
-        try {
-            console.log('🎙️ Starting continuous listening for Live Mode...');
-
-            if (!this.isLiveModeActive) {
-                console.log('🎙️ Live mode not active, not starting listening');
-                return;
-            }
-
-            // Check if browser supports getUserMedia
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                throw new Error('Browser does not support microphone access');
-            }
-
-            console.log('🎙️ Requesting microphone permission...');
-
-            // Request microphone permission with optimized settings for Live Mode
-            this.audioStream = await navigator.mediaDevices.getUserMedia({
-                audio: {
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                    autoGainControl: true,
-                    sampleRate: 16000,  // Lower sample rate for smaller files
-                    channelCount: 1     // Mono audio
-                }
-            });
-
-            console.log('✅ Microphone access granted');
-
-            // Setup media recorder with WebM format and time slicing for continuous recording
-            const options = {
-                mimeType: 'audio/webm;codecs=opus',
-                audioBitsPerSecond: 16000  // Lower bitrate for smaller files
-            };
-
-            // Fallback for browsers that don't support WebM
-            if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-                options.mimeType = 'audio/webm';
-                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-                    delete options.mimeType;  // Use default
-                }
-            }
-
-            this.mediaRecorder = new MediaRecorder(this.audioStream, options);
-            this.audioChunks = [];
-
-            // Set up event handlers for continuous recording
-            this.mediaRecorder.ondataavailable = (event) => {
-                console.log('🎙️ MediaRecorder data available:', event.data.size, 'bytes');
-                if (event.data.size > 0) {
-                    this.audioChunks.push(event.data);
-                    console.log('🎙️ Total audio chunks now:', this.audioChunks.length);
-
-                    // Process audio chunks when we have enough data (every ~2 seconds)
-                    if (this.audioChunks.length >= 2 && this.isLiveModeActive) {
-                        console.log('🎙️ Processing audio chunks for Live Mode...');
-                        // Use setTimeout to make this async and avoid blocking the recorder
-                        setTimeout(() => {
-                            this.processLiveModeAudio().catch(error => {
-                                console.error('❌ Error processing Live Mode audio:', error);
-                            });
-                        }, 0);
-                    }
-                }
-            };
-
-            this.mediaRecorder.onstop = async () => {
-                console.log('🎙️ MediaRecorder stopped, processing audio chunks:', this.audioChunks.length);
-                if (this.isLiveModeActive) {
-                    await this.processLiveModeAudio();
-                }
-            };
-
-            // Start recording with 1-second chunks for more responsive Live Mode
-            this.mediaRecorder.start(1000);
-            this.liveModeState = 'listening';
-            this.updateLiveModeStatus(true, 'Listening...');
-
-            console.log('🎙️ Continuous listening started for Live Mode');
-            console.log('🎙️ MediaRecorder state after start:', this.mediaRecorder.state);
-
-            // Add periodic status check for debugging
-            this.liveModeStatusInterval = setInterval(() => {
-                if (this.isLiveModeActive && this.mediaRecorder) {
-                    console.log('🎙️ Live Mode Status Check - State:', this.mediaRecorder.state, 'Chunks:', this.audioChunks.length);
-                }
-            }, 3000);
-
-            // Start visual microphone level indicator
-            this.startMicrophoneLevelIndicator();
-
-        } catch (error) {
-            console.error('❌ Error starting continuous listening:', error);
-            console.error('❌ Continuous listening error details:', error.message, error.stack);
-            this.updateLiveModeStatus(false, 'Microphone Error: ' + error.message);
-
-            // Show error message to user
-            this.addMessage('system', `Microphone access error: ${error.message}`, {
-                characterName: 'System',
-                isError: true
-            });
-
-            throw error;
-        }
-    }
-
-    /**
      * Restart continuous listening
      */
     restartContinuousListening() {
@@ -2221,13 +1534,13 @@ class EnhancedTestChat {
                             setTimeout(() => {
                                 if (this.isLiveModeActive && this.mediaRecorder.state === 'inactive') {
                                     this.audioChunks = [];
-                                    this.mediaRecorder.start(1000);
+                                    this.mediaRecorder.start(2000);
                                     console.log('🎙️ Restarted continuous listening after stop, new state:', this.mediaRecorder.state);
                                 }
                             }, 100);
                         } else if (this.mediaRecorder.state === 'inactive') {
                             this.audioChunks = [];
-                            this.mediaRecorder.start(1000);
+                            this.mediaRecorder.start(2000);
                             console.log('🎙️ Restarted continuous listening, new state:', this.mediaRecorder.state);
                         } else {
                             console.warn('🎙️ Cannot restart - MediaRecorder in unexpected state:', this.mediaRecorder.state);
@@ -2243,18 +1556,73 @@ class EnhancedTestChat {
     }
 
     /**
-     * Speak text in Live Mode (DEPRECATED - ElevenLabs handles TTS directly)
+     * Speak text in Live Mode
      */
     async speakLiveModeText(text) {
-        console.warn('⚠️ speakLiveModeText() called but TTS is now handled directly by ElevenLabs');
-        console.log('📝 Text that would have been spoken:', text);
+        try {
+            if (!this.isLiveModeActive || !text) return;
 
-        // ElevenLabs Conversational AI handles TTS automatically
-        // Just restart listening if in Live Mode
-        if (this.isLiveModeActive) {
-            setTimeout(() => {
+            this.liveModeState = 'speaking';
+            this.updateLiveModeStatus(true, 'Speaking...');
+
+            console.log('🎙️ Sending TTS request for:', text);
+            const response = await fetch(`${this.config.apiBaseUrl}/voice/speak`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    text: text,
+                    character: this.currentCharacter.name.toLowerCase(),
+                    characterId: this.currentCharacter.id,
+                    voiceConfig: this.currentCharacter.voiceConfig || {}
+                })
+            });
+
+            console.log('🎙️ TTS response status:', response.status);
+            const data = await response.json();
+            console.log('🎙️ TTS response data:', data);
+
+            if (data.success && data.audioUrl) {
+                // Play audio
+                this.liveModeAudio = new Audio(data.audioUrl);
+                this.liveModeAudio.volume = 0.8;
+
+                // When audio finishes, restart listening
+                this.liveModeAudio.onended = () => {
+                    console.log('🎙️ TTS finished, restarting listening...');
+                    console.log('🎙️ Live mode active:', this.isLiveModeActive);
+                    console.log('🎙️ MediaRecorder exists:', !!this.mediaRecorder);
+                    console.log('🎙️ MediaRecorder state before restart:', this.mediaRecorder?.state);
+                    this.liveModeAudio = null;
+                    if (this.isLiveModeActive) {
+                        this.restartContinuousListening();
+                    }
+                };
+
+                this.liveModeAudio.onerror = () => {
+                    console.error('❌ Live Mode audio playback error');
+                    this.liveModeAudio = null;
+                    if (this.isLiveModeActive) {
+                        this.restartContinuousListening();
+                    }
+                };
+
+                await this.liveModeAudio.play();
+                console.log('🎙️ Speaking Live Mode response');
+
+            } else {
+                console.error('❌ TTS failed in Live Mode');
+                if (this.isLiveModeActive) {
+                    this.restartContinuousListening();
+                }
+            }
+
+        } catch (error) {
+            console.error('❌ Error with Live Mode TTS:', error);
+            if (this.isLiveModeActive) {
                 this.restartContinuousListening();
-            }, 1000); // Give a brief pause before restarting
+            }
         }
     }
 
@@ -2265,7 +1633,7 @@ class EnhancedTestChat {
         this.chatMessages.innerHTML = `
             <div class="message bot">
                 <div class="message-content">
-                    🎙️ Initializing ElevenLabs Live Mode... Please wait for connection.
+                    Live Mode activated! I'm listening for your voice...
                     <div class="message-time">${new Date().toLocaleTimeString()}</div>
                 </div>
             </div>
@@ -2339,207 +1707,56 @@ class EnhancedTestChat {
     }
 
     /**
-     * Start visual microphone level indicator
-     */
-    startMicrophoneLevelIndicator() {
-        if (!this.audioStream) {
-            console.warn('⚠️ No audio stream available for level indicator');
-            return;
-        }
-
-        try {
-            // Create audio context and analyzer
-            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            this.analyser = this.audioContext.createAnalyser();
-            this.microphone = this.audioContext.createMediaStreamSource(this.audioStream);
-
-            // Configure analyzer for real-time level detection
-            this.analyser.fftSize = 256;
-            this.analyser.smoothingTimeConstant = 0.8;
-            this.microphone.connect(this.analyser);
-
-            // Create data array for frequency data
-            this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
-
-            // Start the level monitoring loop
-            this.monitorMicrophoneLevel();
-
-            console.log('🎤 Microphone level indicator started');
-
-        } catch (error) {
-            console.error('❌ Error starting microphone level indicator:', error);
-        }
-    }
-
-    /**
-     * Monitor microphone level and update visual indicator
-     */
-    monitorMicrophoneLevel() {
-        if (!this.isLiveModeActive || !this.analyser) {
-            return;
-        }
-
-        // Get frequency data
-        this.analyser.getByteFrequencyData(this.dataArray);
-
-        // Calculate average volume level
-        let sum = 0;
-        for (let i = 0; i < this.dataArray.length; i++) {
-            sum += this.dataArray[i];
-        }
-        const averageLevel = sum / this.dataArray.length;
-
-        // Convert to percentage (0-100)
-        const levelPercentage = Math.round((averageLevel / 255) * 100);
-
-        // Update visual indicator
-        this.updateMicrophoneLevelDisplay(levelPercentage);
-
-        // Continue monitoring
-        if (this.isLiveModeActive) {
-            requestAnimationFrame(() => this.monitorMicrophoneLevel());
-        }
-    }
-
-    /**
-     * Update the visual microphone level display
-     */
-    updateMicrophoneLevelDisplay(levelPercentage) {
-        // Find or create the microphone level indicator
-        let levelIndicator = document.getElementById('microphoneLevelIndicator');
-        if (!levelIndicator) {
-            levelIndicator = this.createMicrophoneLevelIndicator();
-        }
-
-        // Update the level bar
-        const levelBar = levelIndicator.querySelector('.mic-level-bar');
-        const levelText = levelIndicator.querySelector('.mic-level-text');
-
-        if (levelBar && levelText) {
-            levelBar.style.width = `${levelPercentage}%`;
-            levelText.textContent = `${levelPercentage}%`;
-
-            // Color coding based on level
-            if (levelPercentage > 50) {
-                levelBar.style.backgroundColor = '#00ff00'; // Green - good level
-            } else if (levelPercentage > 20) {
-                levelBar.style.backgroundColor = '#ffff00'; // Yellow - moderate level
-            } else {
-                levelBar.style.backgroundColor = '#ff6600'; // Orange - low level
-            }
-        }
-    }
-
-    /**
-     * Create the visual microphone level indicator
-     */
-    createMicrophoneLevelIndicator() {
-        // Find the Live Mode toggle area to attach the indicator
-        const liveModeToggle = document.getElementById('liveModeToggle');
-        if (!liveModeToggle) {
-            console.warn('⚠️ Live Mode toggle not found for microphone indicator');
-            return null;
-        }
-
-        // Create the indicator container
-        const indicator = document.createElement('div');
-        indicator.id = 'microphoneLevelIndicator';
-        indicator.className = 'microphone-level-indicator';
-        indicator.innerHTML = `
-            <div class="mic-level-label">🎤 Mic Level:</div>
-            <div class="mic-level-container">
-                <div class="mic-level-bar"></div>
-            </div>
-            <div class="mic-level-text">0%</div>
-        `;
-
-        // Add CSS styles
-        const style = document.createElement('style');
-        style.textContent = `
-            .microphone-level-indicator {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                margin-top: 8px;
-                padding: 8px;
-                background: rgba(0, 255, 0, 0.1);
-                border: 1px solid #00ff00;
-                border-radius: 4px;
-                font-family: 'Courier New', monospace;
-                font-size: 12px;
-                color: #00ff00;
-            }
-            .mic-level-label {
-                white-space: nowrap;
-                min-width: 80px;
-            }
-            .mic-level-container {
-                flex: 1;
-                height: 16px;
-                background: rgba(0, 0, 0, 0.3);
-                border: 1px solid #333;
-                border-radius: 2px;
-                overflow: hidden;
-                position: relative;
-            }
-            .mic-level-bar {
-                height: 100%;
-                background: #00ff00;
-                width: 0%;
-                transition: width 0.1s ease-out;
-            }
-            .mic-level-text {
-                min-width: 35px;
-                text-align: right;
-                font-weight: bold;
-            }
-        `;
-
-        if (!document.getElementById('microphoneLevelStyles')) {
-            style.id = 'microphoneLevelStyles';
-            document.head.appendChild(style);
-        }
-
-        // Add to Live Mode toggle area
-        liveModeToggle.appendChild(indicator);
-
-        return indicator;
-    }
-
-    /**
-     * Stop microphone level indicator
-     */
-    stopMicrophoneLevelIndicator() {
-        // Clean up audio context
-        if (this.audioContext) {
-            this.audioContext.close();
-            this.audioContext = null;
-        }
-
-        this.analyser = null;
-        this.microphone = null;
-        this.dataArray = null;
-
-        // Remove visual indicator
-        const indicator = document.getElementById('microphoneLevelIndicator');
-        if (indicator) {
-            indicator.remove();
-        }
-
-        console.log('🎤 Microphone level indicator stopped');
-    }
-
-    /**
-     * Speak text using TTS (DEPRECATED - ElevenLabs handles TTS directly)
+     * Speak text using TTS
      */
     async speakText(text) {
-        console.warn('⚠️ speakText() called but TTS is now handled directly by ElevenLabs');
-        console.log('📝 Text that would have been spoken:', text);
+        try {
+            if (!this.isTTSActive || !text) return;
 
-        // Since ElevenLabs handles TTS directly through WebSocket,
-        // this method is no longer needed but kept for compatibility
-        if (this.isTTSActive) {
-            this.updateTTSStatus(this.isTTSActive, 'ElevenLabs TTS Active');
+            const startTime = Date.now();
+            this.updateTTSStatus(true, 'Speaking...');
+
+            const response = await fetch(`${this.config.apiBaseUrl}/voice/speak`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    text: text,
+                    character: this.currentCharacter.name.toLowerCase(),
+                    characterId: this.currentCharacter.id,
+                    voiceConfig: this.currentCharacter.voiceConfig || {}
+                })
+            });
+
+            const data = await response.json();
+            const ttsTime = Date.now() - startTime;
+
+            if (data.success && data.audioUrl) {
+                // Play audio
+                const audio = new Audio(data.audioUrl);
+                audio.volume = 0.8;
+
+                audio.onended = () => {
+                    this.updateTTSStatus(this.isTTSActive, this.isTTSActive ? 'ON' : 'OFF');
+                };
+
+                audio.onerror = () => {
+                    console.error('❌ Audio playback error');
+                    this.updateTTSStatus(this.isTTSActive, 'Error');
+                };
+
+                await audio.play();
+
+                // Update performance metrics
+                this.updatePerformanceMetric('tts', ttsTime);
+
+                console.log(`🔊 TTS completed in ${ttsTime}ms`);
+            }
+
+        } catch (error) {
+            console.error('❌ Error with TTS:', error);
+            this.updateTTSStatus(this.isTTSActive, 'Error');
         }
     }
 

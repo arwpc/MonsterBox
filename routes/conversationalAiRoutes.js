@@ -3,7 +3,7 @@ const router = express.Router();
 const characterService = require('../services/characterService');
 
 // Conversational AI API routes
-router.get('/api/status', async (req, res) => {
+router.get('/status', async (req, res) => {
     try {
         let status = {
             isRunning: false,
@@ -29,7 +29,7 @@ router.get('/api/status', async (req, res) => {
     }
 });
 
-router.get('/api/characters', async (req, res) => {
+router.get('/characters', async (req, res) => {
     try {
         const characters = await characterService.getAllCharacters();
         
@@ -53,7 +53,7 @@ router.get('/api/characters', async (req, res) => {
     }
 });
 
-router.post('/api/start-conversation', async (req, res) => {
+router.post('/start-conversation', async (req, res) => {
     try {
         const { characterId } = req.body;
         

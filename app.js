@@ -13,7 +13,7 @@ process.env.NODE_NO_WARNINGS = '1';
 
 let express, path, http, https, logger, app, server, httpsServer, port, audioStream, soundController, fs, os, session;
 let videoStream; // <-- Add videoStream variable
-let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, webcamRoutes, voiceRoutes, cleanupRoutes, healthRoutes, authRoutes, sshRoutes, aiConfigRoutes, aiManagementRoutes, configRoutes, headTrackingRoutes;
+let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, webcamRoutes, voiceRoutes, cleanupRoutes, healthRoutes, authRoutes, sshRoutes, aiConfigRoutes, aiManagementRoutes, configRoutes, headTrackingRoutes, conversationalAiRoutes;
 let characterService;
 let authMiddleware, rbacMiddleware;
 
@@ -109,6 +109,9 @@ try {
     // Import AI configuration routes
     aiConfigRoutes = require('./routes/ai-config');
     aiManagementRoutes = require('./routes/aiManagementRoutes');
+
+    // Import ElevenLabs Conversational AI routes
+    conversationalAiRoutes = require('./routes/conversationalAiRoutes');
 
 
 
@@ -442,7 +445,77 @@ app.use('/ai-config', aiConfigRoutes);
 app.use('/ai-management', aiManagementRoutes);
 app.use('/api/ai', aiManagementRoutes);
 
+// ElevenLabs Conversational AI routes
+app.use('/api/conversational-ai', conversationalAiRoutes);
 
+// Conversational AI Interface route
+app.get('/conversational-ai', async (req, res) => {
+    try {
+        const characterService = require('./services/characterService');
+        const fs = require('fs').promises;
+        const path = require('path');
+
+        // Get all characters
+        const characters = await characterService.getAllCharacters();
+
+        // Get voice service to check for voice configurations
+        const voiceService = require('./services/voiceService');
+
+        // Get ElevenLabs agent mapping
+        let elevenLabsAgents = {};
+        if (global.elevenLabsService) {
+            try {
+                const serviceStatus = global.elevenLabsService.getStatus();
+                const agents = serviceStatus.agents || [];
+                // Create mapping from character ID to actual agent ID
+                agents.forEach(agent => {
+                    if (agent.characterId) {
+                        elevenLabsAgents[agent.characterId] = agent.agentId;
+                    }
+                });
+                console.log(`🎭 Loaded ${agents.length} ElevenLabs agents for conversational AI interface`);
+            } catch (error) {
+                console.warn('⚠️ Could not load ElevenLabs agents:', error.message);
+            }
+        }
+
+        // Filter characters that have voice configurations and ElevenLabs agents
+        const availableCharacters = [];
+        for (const char of characters) {
+            try {
+                const voiceConfig = await voiceService.getVoiceByCharacterId(char.id);
+                const actualAgentId = elevenLabsAgents[char.id];
+
+                if (voiceConfig && voiceConfig.speaker_id && actualAgentId) {
+                    // Character has both voice configuration and ElevenLabs agent
+                    availableCharacters.push({
+                        ...char,
+                        hasVoice: true,
+                        hasAI: true,
+                        elevenLabsAgentId: actualAgentId
+                    });
+                }
+            } catch (error) {
+                console.warn(`⚠️ Could not check config for character ${char.id}:`, error.message);
+            }
+        }
+
+        console.log(`🎭 Loaded ${availableCharacters.length} characters with ElevenLabs AI for conversational interface`);
+
+        res.render('enhanced-test-chat', {
+            title: 'ElevenLabs Conversational AI',
+            characterId: req.query.characterId || (availableCharacters.length > 0 ? availableCharacters[0].id : null),
+            agentId: req.query.agentId || null,
+            selectedAgent: null,
+            pageTitle: 'ElevenLabs Conversational AI',
+            characters: availableCharacters,
+            assistants: {}
+        });
+    } catch (error) {
+        console.error('❌ Error rendering conversational AI interface:', error);
+        res.status(500).send('Failed to load conversational AI interface: ' + error.message);
+    }
+});
 
 // Enhanced Test Chat route (formerly ChatterPi test)
 app.get('/test-chat', async (req, res) => {
@@ -468,17 +541,39 @@ app.get('/test-chat', async (req, res) => {
         // Get voice service to check for voice configurations
         const voiceService = require('./services/voiceService');
 
+        // Get ElevenLabs agent mapping
+        let elevenLabsAgents = {};
+        if (global.elevenLabsService) {
+            try {
+                const serviceStatus = global.elevenLabsService.getStatus();
+                const agents = serviceStatus.agents || [];
+                // Create mapping from character ID to actual agent ID
+                agents.forEach(agent => {
+                    if (agent.characterId) {
+                        elevenLabsAgents[agent.characterId] = agent.agentId;
+                    }
+                });
+                console.log(`🎭 Loaded ${agents.length} ElevenLabs agents for mapping`);
+            } catch (error) {
+                console.warn('⚠️ Could not load ElevenLabs agents:', error.message);
+            }
+        }
+
         // Filter characters that have voice configurations (for TTS) and optionally AI enabled
         const availableCharacters = [];
         for (const char of characters) {
             try {
                 const voiceConfig = await voiceService.getVoiceByCharacterId(char.id);
                 if (voiceConfig && voiceConfig.speaker_id) {
+                    // Get the actual ElevenLabs agent ID for this character
+                    const actualAgentId = elevenLabsAgents[char.id];
+
                     // Character has voice configuration, include it
                     availableCharacters.push({
                         ...char,
                         hasVoice: true,
-                        hasAI: !!char.elevenLabsAgentId // Only require elevenLabsAgentId for AI capability
+                        hasAI: !!actualAgentId, // Use actual agent ID for AI capability
+                        elevenLabsAgentId: actualAgentId || char.elevenLabsAgentId // Use actual agent ID if available
                     });
                 }
             } catch (error) {

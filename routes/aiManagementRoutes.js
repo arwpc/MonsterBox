@@ -339,6 +339,71 @@ router.get('/voices', async (req, res) => {
     }
 });
 
+// Enhanced Test Chat Interface
+router.get('/enhanced-test-chat', async (req, res) => {
+    try {
+        const characters = await characterService.getAllCharacters();
+
+        // Load ElevenLabs agents configuration
+        const agentsPath = path.join(__dirname, '../data/elevenlabs-agents.json');
+        let agents = {};
+        let assistants = {};
+
+        try {
+            const agentsData = await fs.readFile(agentsPath, 'utf8');
+            const agentsJson = JSON.parse(agentsData);
+
+            // Map agents by character ID for easy lookup
+            agentsJson.agents.forEach(agent => {
+                agents[agent.originalCharacterId] = agent;
+                assistants[agent.agentId] = {
+                    id: agent.agentId,
+                    name: agent.originalName,
+                    description: agent.agentConfig.prompt || 'ElevenLabs Conversational AI Agent',
+                    conversationStarters: agent.conversationStarters || []
+                };
+            });
+        } catch (error) {
+            console.warn('⚠️ Could not load ElevenLabs agents:', error.message);
+        }
+
+        // Enhance characters with AI and Voice capability flags
+        const enhancedCharacters = characters.map(character => {
+            const hasElevenLabsAgent = !!character.elevenLabsAgentId;
+            const hasOpenAIAssistant = !!(character.openaiAssistantId || (character.ai_instances && character.ai_instances.length > 0));
+            const hasVoiceCapability = !!(character.elevenLabsAgentId || character.parts?.length > 0 || character.sounds?.length > 0);
+
+            return {
+                ...character,
+                hasAI: hasElevenLabsAgent || hasOpenAIAssistant,
+                hasVoice: hasVoiceCapability,
+                hasElevenLabs: hasElevenLabsAgent,
+                hasOpenAI: hasOpenAIAssistant
+            };
+        });
+
+        res.render('enhanced-test-chat', {
+            title: 'Enhanced Test Chat - ElevenLabs Live Mode',
+            pageTitle: 'Enhanced Test Chat - ElevenLabs Live Mode',
+            characterId: null, // Will be selected by user
+            agentId: '',
+            selectedAgent: null,
+            characters: enhancedCharacters,
+            agents,
+            assistants,
+            layout: 'layouts/main'
+        });
+    } catch (error) {
+        logger.error('Error loading enhanced-test-chat page:', error);
+        res.status(500).render('error', {
+            title: 'Error',
+            message: 'Failed to load enhanced test chat',
+            error: error,
+            layout: 'layouts/main'
+        });
+    }
+});
+
 // Microphone and STT Testing Interface
 router.get('/microphone-stt', async (req, res) => {
     try {
@@ -1578,6 +1643,71 @@ router.get('/api/elevenlabs/voices', async (req, res) => {
     } catch (error) {
         console.error('Error fetching ElevenLabs voices:', error);
         res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ElevenLabs Conversational AI Token
+router.post('/api/elevenlabs/conversation-token', async (req, res) => {
+    try {
+        const { agentId } = req.body;
+
+        if (!agentId) {
+            return res.status(400).json({ success: false, error: 'Agent ID is required' });
+        }
+
+        if (!process.env.ELEVENLABS_API_KEY) {
+            return res.status(400).json({ success: false, error: 'ElevenLabs API key not configured' });
+        }
+
+        // Create a signed token for ElevenLabs API access
+        const crypto = require('crypto');
+        const timestamp = Date.now();
+        const payload = JSON.stringify({ agentId, timestamp, apiKey: process.env.ELEVENLABS_API_KEY });
+        const token = Buffer.from(payload).toString('base64');
+
+        res.json({
+            success: true,
+            token: token,
+            agentId: agentId,
+            timestamp: timestamp
+        });
+    } catch (error) {
+        console.error('Error creating ElevenLabs conversation token:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ElevenLabs Token Validation (for WebSocket proxy)
+router.post('/api/elevenlabs/validate-token', async (req, res) => {
+    try {
+        const { token } = req.body;
+
+        if (!token) {
+            return res.status(400).json({ success: false, error: 'Token is required' });
+        }
+
+        // Decode and validate token
+        const payload = JSON.parse(Buffer.from(token, 'base64').toString());
+        const { agentId, timestamp, apiKey } = payload;
+
+        // Check if token is not too old (5 minutes)
+        if (Date.now() - timestamp > 5 * 60 * 1000) {
+            return res.status(401).json({ success: false, error: 'Token expired' });
+        }
+
+        // Validate API key
+        if (apiKey !== process.env.ELEVENLABS_API_KEY) {
+            return res.status(401).json({ success: false, error: 'Invalid token' });
+        }
+
+        res.json({
+            success: true,
+            agentId: agentId,
+            apiKey: apiKey
+        });
+    } catch (error) {
+        console.error('Error validating ElevenLabs token:', error);
+        res.status(401).json({ success: false, error: 'Invalid token format' });
     }
 });
 

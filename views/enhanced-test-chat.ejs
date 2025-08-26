@@ -498,10 +498,18 @@
                         <% characters.forEach(character => { %>
                             <option value="<%= character.id %>"
                                     data-assistant="<%= character.openaiAssistantId || '' %>"
+                                    data-elevenlabs-agent="<%= character.elevenLabsAgentId || '' %>"
                                     data-name="<%= character.char_name %>"
                                     data-has-ai="<%= character.hasAI ? 'true' : 'false' %>"
-                                    data-has-voice="<%= character.hasVoice ? 'true' : 'false' %>">
-                                <%= character.char_name %><%= character.hasAI ? ' (AI + Voice)' : ' (Voice Only)' %>
+                                    data-has-voice="<%= character.hasVoice ? 'true' : 'false' %>"
+                                    data-has-elevenlabs="<%= character.hasElevenLabs ? 'true' : 'false' %>"
+                                    data-has-openai="<%= character.hasOpenAI ? 'true' : 'false' %>">
+                                <%= character.char_name %><%
+                                    let capabilities = [];
+                                    if (character.hasElevenLabs) capabilities.push('ElevenLabs');
+                                    if (character.hasOpenAI) capabilities.push('OpenAI');
+                                    if (character.hasVoice && !character.hasAI) capabilities.push('Voice Only');
+                                    if (capabilities.length > 0) { %> (<%= capabilities.join(' + ') %>)<% } %>
                             </option>
                         <% }); %>
                     <% } %>

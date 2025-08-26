@@ -1,0 +1,324 @@
+<testsuites id="" name="" tests="26" failures="12" skipped="14" errors="0" time="42.014025">
+<testsuite name="enhanced-test-chat.spec.js" timestamp="2025-08-26T19:33:07.378Z" hostname="chromium" tests="26" failures="12" skipped="14" time="0.689" errors="0">
+<testcase name="Enhanced Test Chat - Comprehensive Test Suite › Page Loading and Basic Structure › should load Enhanced Test Chat page successfully" classname="enhanced-test-chat.spec.js" time="0.055">
+<failure message="enhanced-test-chat.spec.js:26:9 should load Enhanced Test Chat page successfully" type="FAILURE">
+<![CDATA[  [chromium] › enhanced-test-chat.spec.js:26:9 › Enhanced Test Chat - Comprehensive Test Suite › Page Loading and Basic Structure › should load Enhanced Test Chat page successfully 
+
+    Error: browserType.launch: Target page, context or browser has been closed
+    Browser logs:
+
+    ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like you launched a headed browser without having a XServer running.                     ║
+    ║ Set either 'headless: true' or use 'xvfb-run <your-playwright-app>' before running Playwright. ║
+    ║                                                                                                ║
+    ║ <3 Playwright Team                                                                             ║
+    ╚════════════════════════════════════════════════════════════════════════════════════════════════╝
+    Call log:
+      - <launching> /home/remote/.cache/ms-playwright/chromium-1179/chrome-linux/chrome --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AutoExpandDetailsElement,AvoidUnnecessaryBeforeUnloadCheckSync,CertificateTransparencyComponentUpdater,DestroyProfileOnBrowserClose,DialMediaRouteProvider,ExtensionManifestV2Disabled,GlobalMediaControls,HttpsUpgrades,ImprovedCookieControls,LazyFrameLoading,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --enable-automation --no-sandbox --user-data-dir=/tmp/playwright_chromiumdev_profile-5zVUuc --remote-debugging-pipe --no-startup-window
+      - <launched> pid=11929
+      - [pid=11929][err] [11929:11929:0826/143314.893732:ERROR:ui/ozone/platform/x11/ozone_platform_x11.cc:249] Missing X server or $DISPLAY
+      - [pid=11929][err] [11929:11929:0826/143314.893893:ERROR:ui/aura/env.cc:257] The platform failed to initialize.  Exiting.
+
+]]>
+</failure>
+</testcase>
+<testcase name="Enhanced Test Chat - Comprehensive Test Suite › Page Loading and Basic Structure › should display all essential UI elements" classname="enhanced-test-chat.spec.js" time="0.052">
+<failure message="enhanced-test-chat.spec.js:39:9 should display all essential UI elements" type="FAILURE">
+<![CDATA[  [chromium] › enhanced-test-chat.spec.js:39:9 › Enhanced Test Chat - Comprehensive Test Suite › Page Loading and Basic Structure › should display all essential UI elements 
+
+    Error: browserType.launch: Target page, context or browser has been closed
+    Browser logs:
+
+    ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like you launched a headed browser without having a XServer running.                     ║
+    ║ Set either 'headless: true' or use 'xvfb-run <your-playwright-app>' before running Playwright. ║
+    ║                                                                                                ║
+    ║ <3 Playwright Team                                                                             ║
+    ╚════════════════════════════════════════════════════════════════════════════════════════════════╝
+    Call log:
+      - <launching> /home/remote/.cache/ms-playwright/chromium-1179/chrome-linux/chrome --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AutoExpandDetailsElement,AvoidUnnecessaryBeforeUnloadCheckSync,CertificateTransparencyComponentUpdater,DestroyProfileOnBrowserClose,DialMediaRouteProvider,ExtensionManifestV2Disabled,GlobalMediaControls,HttpsUpgrades,ImprovedCookieControls,LazyFrameLoading,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --enable-automation --no-sandbox --user-data-dir=/tmp/playwright_chromiumdev_profile-NWB1e6 --remote-debugging-pipe --no-startup-window
+      - <launched> pid=11944
+      - [pid=11944][err] [11944:11944:0826/143314.893730:ERROR:ui/ozone/platform/x11/ozone_platform_x11.cc:249] Missing X server or $DISPLAY
+      - [pid=11944][err] [11944:11944:0826/143314.893892:ERROR:ui/aura/env.cc:257] The platform failed to initialize.  Exiting.
+
+]]>
+</failure>
+</testcase>
+<testcase name="Enhanced Test Chat - Comprehensive Test Suite › Page Loading and Basic Structure › should display performance metrics with correct labels" classname="enhanced-test-chat.spec.js" time="0.038">
+<failure message="enhanced-test-chat.spec.js:65:9 should display performance metrics with correct labels" type="FAILURE">
+<![CDATA[  [chromium] › enhanced-test-chat.spec.js:65:9 › Enhanced Test Chat - Comprehensive Test Suite › Page Loading and Basic Structure › should display performance metrics with correct labels 
+
+    Error: browserType.launch: Target page, context or browser has been closed
+    Browser logs:
+
+    ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like you launched a headed browser without having a XServer running.                     ║
+    ║ Set either 'headless: true' or use 'xvfb-run <your-playwright-app>' before running Playwright. ║
+    ║                                                                                                ║
+    ║ <3 Playwright Team                                                                             ║
+    ╚════════════════════════════════════════════════════════════════════════════════════════════════╝
+    Call log:
+      - <launching> /home/remote/.cache/ms-playwright/chromium-1179/chrome-linux/chrome --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AutoExpandDetailsElement,AvoidUnnecessaryBeforeUnloadCheckSync,CertificateTransparencyComponentUpdater,DestroyProfileOnBrowserClose,DialMediaRouteProvider,ExtensionManifestV2Disabled,GlobalMediaControls,HttpsUpgrades,ImprovedCookieControls,LazyFrameLoading,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --enable-automation --no-sandbox --user-data-dir=/tmp/playwright_chromiumdev_profile-A8vw2i --remote-debugging-pipe --no-startup-window
+      - <launched> pid=12048
+      - [pid=12048][err] [12048:12048:0826/143320.360667:ERROR:ui/ozone/platform/x11/ozone_platform_x11.cc:249] Missing X server or $DISPLAY
+      - [pid=12048][err] [12048:12048:0826/143320.360862:ERROR:ui/aura/env.cc:257] The platform failed to initialize.  Exiting.
+
+]]>
+</failure>
+</testcase>
+<testcase name="Enhanced Test Chat - Comprehensive Test Suite › Character Selection Functionality › should populate character dropdown with available characters" classname="enhanced-test-chat.spec.js" time="0.039">
+<failure message="enhanced-test-chat.spec.js:81:9 should populate character dropdown with available characters" type="FAILURE">
+<![CDATA[  [chromium] › enhanced-test-chat.spec.js:81:9 › Enhanced Test Chat - Comprehensive Test Suite › Character Selection Functionality › should populate character dropdown with available characters 
+
+    Error: browserType.launch: Target page, context or browser has been closed
+    Browser logs:
+
+    ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like you launched a headed browser without having a XServer running.                     ║
+    ║ Set either 'headless: true' or use 'xvfb-run <your-playwright-app>' before running Playwright. ║
+    ║                                                                                                ║
+    ║ <3 Playwright Team                                                                             ║
+    ╚════════════════════════════════════════════════════════════════════════════════════════════════╝
+    Call log:
+      - <launching> /home/remote/.cache/ms-playwright/chromium-1179/chrome-linux/chrome --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AutoExpandDetailsElement,AvoidUnnecessaryBeforeUnloadCheckSync,CertificateTransparencyComponentUpdater,DestroyProfileOnBrowserClose,DialMediaRouteProvider,ExtensionManifestV2Disabled,GlobalMediaControls,HttpsUpgrades,ImprovedCookieControls,LazyFrameLoading,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --enable-automation --no-sandbox --user-data-dir=/tmp/playwright_chromiumdev_profile-7EL5Nj --remote-debugging-pipe --no-startup-window
+      - <launched> pid=12047
+      - [pid=12047][err] [12047:12047:0826/143320.493090:ERROR:ui/ozone/platform/x11/ozone_platform_x11.cc:249] Missing X server or $DISPLAY
+      - [pid=12047][err] [12047:12047:0826/143320.494526:ERROR:ui/aura/env.cc:257] The platform failed to initialize.  Exiting.
+
+]]>
+</failure>
+</testcase>
+<testcase name="Enhanced Test Chat - Comprehensive Test Suite › Character Selection Functionality › should update assistant display when character is selected" classname="enhanced-test-chat.spec.js" time="0.041">
+<failure message="enhanced-test-chat.spec.js:95:9 should update assistant display when character is selected" type="FAILURE">
+<![CDATA[  [chromium] › enhanced-test-chat.spec.js:95:9 › Enhanced Test Chat - Comprehensive Test Suite › Character Selection Functionality › should update assistant display when character is selected 
+
+    Error: browserType.launch: Target page, context or browser has been closed
+    Browser logs:
+
+    ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like you launched a headed browser without having a XServer running.                     ║
+    ║ Set either 'headless: true' or use 'xvfb-run <your-playwright-app>' before running Playwright. ║
+    ║                                                                                                ║
+    ║ <3 Playwright Team                                                                             ║
+    ╚════════════════════════════════════════════════════════════════════════════════════════════════╝
+    Call log:
+      - <launching> /home/remote/.cache/ms-playwright/chromium-1179/chrome-linux/chrome --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AutoExpandDetailsElement,AvoidUnnecessaryBeforeUnloadCheckSync,CertificateTransparencyComponentUpdater,DestroyProfileOnBrowserClose,DialMediaRouteProvider,ExtensionManifestV2Disabled,GlobalMediaControls,HttpsUpgrades,ImprovedCookieControls,LazyFrameLoading,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --enable-automation --no-sandbox --user-data-dir=/tmp/playwright_chromiumdev_profile-3ZQK5k --remote-debugging-pipe --no-startup-window
+      - <launched> pid=12173
+      - [pid=12173][err] [12173:12173:0826/143326.566240:ERROR:ui/ozone/platform/x11/ozone_platform_x11.cc:249] Missing X server or $DISPLAY
+      - [pid=12173][err] [12173:12173:0826/143326.566475:ERROR:ui/aura/env.cc:257] The platform failed to initialize.  Exiting.
+
+]]>
+</failure>
+</testcase>
+<testcase name="Enhanced Test Chat - Comprehensive Test Suite › Character Selection Functionality › should enable send button when character is selected and message is typed" classname="enhanced-test-chat.spec.js" time="0.045">
+<failure message="enhanced-test-chat.spec.js:114:9 should enable send button when character is selected and message is typed" type="FAILURE">
+<![CDATA[  [chromium] › enhanced-test-chat.spec.js:114:9 › Enhanced Test Chat - Comprehensive Test Suite › Character Selection Functionality › should enable send button when character is selected and message is typed 
+
+    Error: browserType.launch: Target page, context or browser has been closed
+    Browser logs:
+
+    ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like you launched a headed browser without having a XServer running.                     ║
+    ║ Set either 'headless: true' or use 'xvfb-run <your-playwright-app>' before running Playwright. ║
+    ║                                                                                                ║
+    ║ <3 Playwright Team                                                                             ║
+    ╚════════════════════════════════════════════════════════════════════════════════════════════════╝
+    Call log:
+      - <launching> /home/remote/.cache/ms-playwright/chromium-1179/chrome-linux/chrome --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AutoExpandDetailsElement,AvoidUnnecessaryBeforeUnloadCheckSync,CertificateTransparencyComponentUpdater,DestroyProfileOnBrowserClose,DialMediaRouteProvider,ExtensionManifestV2Disabled,GlobalMediaControls,HttpsUpgrades,ImprovedCookieControls,LazyFrameLoading,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --enable-automation --no-sandbox --user-data-dir=/tmp/playwright_chromiumdev_profile-O0rhL8 --remote-debugging-pipe --no-startup-window
+      - <launched> pid=12172
+      - [pid=12172][err] [12172:12172:0826/143326.374806:ERROR:ui/ozone/platform/x11/ozone_platform_x11.cc:249] Missing X server or $DISPLAY
+      - [pid=12172][err] [12172:12172:0826/143326.374986:ERROR:ui/aura/env.cc:257] The platform failed to initialize.  Exiting.
+
+]]>
+</failure>
+</testcase>
+<testcase name="Enhanced Test Chat - Comprehensive Test Suite › Character Selection Functionality › should show character-specific information in chat" classname="enhanced-test-chat.spec.js" time="0.038">
+<failure message="enhanced-test-chat.spec.js:134:9 should show character-specific information in chat" type="FAILURE">
+<![CDATA[  [chromium] › enhanced-test-chat.spec.js:134:9 › Enhanced Test Chat - Comprehensive Test Suite › Character Selection Functionality › should show character-specific information in chat 
+
+    Error: browserType.launch: Target page, context or browser has been closed
+    Browser logs:
+
+    ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like you launched a headed browser without having a XServer running.                     ║
+    ║ Set either 'headless: true' or use 'xvfb-run <your-playwright-app>' before running Playwright. ║
+    ║                                                                                                ║
+    ║ <3 Playwright Team                                                                             ║
+    ╚════════════════════════════════════════════════════════════════════════════════════════════════╝
+    Call log:
+      - <launching> /home/remote/.cache/ms-playwright/chromium-1179/chrome-linux/chrome --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AutoExpandDetailsElement,AvoidUnnecessaryBeforeUnloadCheckSync,CertificateTransparencyComponentUpdater,DestroyProfileOnBrowserClose,DialMediaRouteProvider,ExtensionManifestV2Disabled,GlobalMediaControls,HttpsUpgrades,ImprovedCookieControls,LazyFrameLoading,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --enable-automation --no-sandbox --user-data-dir=/tmp/playwright_chromiumdev_profile-8bIVyj --remote-debugging-pipe --no-startup-window
+      - <launched> pid=12268
+      - [pid=12268][err] [12268:12268:0826/143331.788899:ERROR:ui/ozone/platform/x11/ozone_platform_x11.cc:249] Missing X server or $DISPLAY
+      - [pid=12268][err] [12268:12268:0826/143331.789040:ERROR:ui/aura/env.cc:257] The platform failed to initialize.  Exiting.
+
+]]>
+</failure>
+</testcase>
+<testcase name="Enhanced Test Chat - Comprehensive Test Suite › Voice Control Button Functionality › should toggle ElevenLabs button state" classname="enhanced-test-chat.spec.js" time="0.041">
+<failure message="enhanced-test-chat.spec.js:150:9 should toggle ElevenLabs button state" type="FAILURE">
+<![CDATA[  [chromium] › enhanced-test-chat.spec.js:150:9 › Enhanced Test Chat - Comprehensive Test Suite › Voice Control Button Functionality › should toggle ElevenLabs button state 
+
+    Error: browserType.launch: Target page, context or browser has been closed
+    Browser logs:
+
+    ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like you launched a headed browser without having a XServer running.                     ║
+    ║ Set either 'headless: true' or use 'xvfb-run <your-playwright-app>' before running Playwright. ║
+    ║                                                                                                ║
+    ║ <3 Playwright Team                                                                             ║
+    ╚════════════════════════════════════════════════════════════════════════════════════════════════╝
+    Call log:
+      - <launching> /home/remote/.cache/ms-playwright/chromium-1179/chrome-linux/chrome --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AutoExpandDetailsElement,AvoidUnnecessaryBeforeUnloadCheckSync,CertificateTransparencyComponentUpdater,DestroyProfileOnBrowserClose,DialMediaRouteProvider,ExtensionManifestV2Disabled,GlobalMediaControls,HttpsUpgrades,ImprovedCookieControls,LazyFrameLoading,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --enable-automation --no-sandbox --user-data-dir=/tmp/playwright_chromiumdev_profile-4gVSzQ --remote-debugging-pipe --no-startup-window
+      - <launched> pid=12278
+      - [pid=12278][err] [12278:12278:0826/143331.933400:ERROR:ui/ozone/platform/x11/ozone_platform_x11.cc:249] Missing X server or $DISPLAY
+      - [pid=12278][err] [12278:12278:0826/143331.933580:ERROR:ui/aura/env.cc:257] The platform failed to initialize.  Exiting.
+
+]]>
+</failure>
+</testcase>
+<testcase name="Enhanced Test Chat - Comprehensive Test Suite › Voice Control Button Functionality › should toggle TTS button state" classname="enhanced-test-chat.spec.js" time="0.052">
+<failure message="enhanced-test-chat.spec.js:167:9 should toggle TTS button state" type="FAILURE">
+<![CDATA[  [chromium] › enhanced-test-chat.spec.js:167:9 › Enhanced Test Chat - Comprehensive Test Suite › Voice Control Button Functionality › should toggle TTS button state 
+
+    Error: browserType.launch: Target page, context or browser has been closed
+    Browser logs:
+
+    ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like you launched a headed browser without having a XServer running.                     ║
+    ║ Set either 'headless: true' or use 'xvfb-run <your-playwright-app>' before running Playwright. ║
+    ║                                                                                                ║
+    ║ <3 Playwright Team                                                                             ║
+    ╚════════════════════════════════════════════════════════════════════════════════════════════════╝
+    Call log:
+      - <launching> /home/remote/.cache/ms-playwright/chromium-1179/chrome-linux/chrome --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AutoExpandDetailsElement,AvoidUnnecessaryBeforeUnloadCheckSync,CertificateTransparencyComponentUpdater,DestroyProfileOnBrowserClose,DialMediaRouteProvider,ExtensionManifestV2Disabled,GlobalMediaControls,HttpsUpgrades,ImprovedCookieControls,LazyFrameLoading,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --enable-automation --no-sandbox --user-data-dir=/tmp/playwright_chromiumdev_profile-c2yUX0 --remote-debugging-pipe --no-startup-window
+      - <launched> pid=12362
+      - [pid=12362][err] [12362:12362:0826/143337.129064:ERROR:ui/ozone/platform/x11/ozone_platform_x11.cc:249] Missing X server or $DISPLAY
+      - [pid=12362][err] [12362:12362:0826/143337.129191:ERROR:ui/aura/env.cc:257] The platform failed to initialize.  Exiting.
+
+]]>
+</failure>
+</testcase>
+<testcase name="Enhanced Test Chat - Comprehensive Test Suite › Voice Control Button Functionality › should toggle Live Mode button state" classname="enhanced-test-chat.spec.js" time="0.08">
+<failure message="enhanced-test-chat.spec.js:184:9 should toggle Live Mode button state" type="FAILURE">
+<![CDATA[  [chromium] › enhanced-test-chat.spec.js:184:9 › Enhanced Test Chat - Comprehensive Test Suite › Voice Control Button Functionality › should toggle Live Mode button state 
+
+    Error: browserType.launch: Target page, context or browser has been closed
+    Browser logs:
+
+    ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like you launched a headed browser without having a XServer running.                     ║
+    ║ Set either 'headless: true' or use 'xvfb-run <your-playwright-app>' before running Playwright. ║
+    ║                                                                                                ║
+    ║ <3 Playwright Team                                                                             ║
+    ╚════════════════════════════════════════════════════════════════════════════════════════════════╝
+    Call log:
+      - <launching> /home/remote/.cache/ms-playwright/chromium-1179/chrome-linux/chrome --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AutoExpandDetailsElement,AvoidUnnecessaryBeforeUnloadCheckSync,CertificateTransparencyComponentUpdater,DestroyProfileOnBrowserClose,DialMediaRouteProvider,ExtensionManifestV2Disabled,GlobalMediaControls,HttpsUpgrades,ImprovedCookieControls,LazyFrameLoading,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --enable-automation --no-sandbox --user-data-dir=/tmp/playwright_chromiumdev_profile-8vP9zL --remote-debugging-pipe --no-startup-window
+      - <launched> pid=12375
+      - [pid=12375][err] [12375:12375:0826/143337.571284:ERROR:ui/ozone/platform/x11/ozone_platform_x11.cc:249] Missing X server or $DISPLAY
+      - [pid=12375][err] [12375:12375:0826/143337.571482:ERROR:ui/aura/env.cc:257] The platform failed to initialize.  Exiting.
+
+]]>
+</failure>
+</testcase>
+<testcase name="Enhanced Test Chat - Comprehensive Test Suite › Voice Control Button Functionality › should update connection status when toggling voice controls" classname="enhanced-test-chat.spec.js" time="0.04">
+<failure message="enhanced-test-chat.spec.js:201:9 should update connection status when toggling voice controls" type="FAILURE">
+<![CDATA[  [chromium] › enhanced-test-chat.spec.js:201:9 › Enhanced Test Chat - Comprehensive Test Suite › Voice Control Button Functionality › should update connection status when toggling voice controls 
+
+    Error: browserType.launch: Target page, context or browser has been closed
+    Browser logs:
+
+    ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like you launched a headed browser without having a XServer running.                     ║
+    ║ Set either 'headless: true' or use 'xvfb-run <your-playwright-app>' before running Playwright. ║
+    ║                                                                                                ║
+    ║ <3 Playwright Team                                                                             ║
+    ╚════════════════════════════════════════════════════════════════════════════════════════════════╝
+    Call log:
+      - <launching> /home/remote/.cache/ms-playwright/chromium-1179/chrome-linux/chrome --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AutoExpandDetailsElement,AvoidUnnecessaryBeforeUnloadCheckSync,CertificateTransparencyComponentUpdater,DestroyProfileOnBrowserClose,DialMediaRouteProvider,ExtensionManifestV2Disabled,GlobalMediaControls,HttpsUpgrades,ImprovedCookieControls,LazyFrameLoading,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --enable-automation --no-sandbox --user-data-dir=/tmp/playwright_chromiumdev_profile-i1E7dH --remote-debugging-pipe --no-startup-window
+      - <launched> pid=12459
+      - [pid=12459][err] [12459:12459:0826/143342.501743:ERROR:ui/ozone/platform/x11/ozone_platform_x11.cc:249] Missing X server or $DISPLAY
+      - [pid=12459][err] [12459:12459:0826/143342.501863:ERROR:ui/aura/env.cc:257] The platform failed to initialize.  Exiting.
+
+]]>
+</failure>
+</testcase>
+<testcase name="Enhanced Test Chat - Comprehensive Test Suite › Text Chat Functionality › should send and display user messages" classname="enhanced-test-chat.spec.js" time="0.054">
+<failure message="enhanced-test-chat.spec.js:218:9 should send and display user messages" type="FAILURE">
+<![CDATA[  [chromium] › enhanced-test-chat.spec.js:218:9 › Enhanced Test Chat - Comprehensive Test Suite › Text Chat Functionality › should send and display user messages 
+
+    Error: browserType.launch: Target page, context or browser has been closed
+    Browser logs:
+
+    ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like you launched a headed browser without having a XServer running.                     ║
+    ║ Set either 'headless: true' or use 'xvfb-run <your-playwright-app>' before running Playwright. ║
+    ║                                                                                                ║
+    ║ <3 Playwright Team                                                                             ║
+    ╚════════════════════════════════════════════════════════════════════════════════════════════════╝
+    Call log:
+      - <launching> /home/remote/.cache/ms-playwright/chromium-1179/chrome-linux/chrome --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AutoExpandDetailsElement,AvoidUnnecessaryBeforeUnloadCheckSync,CertificateTransparencyComponentUpdater,DestroyProfileOnBrowserClose,DialMediaRouteProvider,ExtensionManifestV2Disabled,GlobalMediaControls,HttpsUpgrades,ImprovedCookieControls,LazyFrameLoading,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --enable-automation --no-sandbox --user-data-dir=/tmp/playwright_chromiumdev_profile-6KeEPm --remote-debugging-pipe --no-startup-window
+      - <launched> pid=12472
+      - [pid=12472][err] [12472:12472:0826/143342.873967:ERROR:ui/ozone/platform/x11/ozone_platform_x11.cc:249] Missing X server or $DISPLAY
+      - [pid=12472][err] [12472:12472:0826/143342.874156:ERROR:ui/aura/env.cc:257] The platform failed to initialize.  Exiting.
+
+]]>
+</failure>
+</testcase>
+<testcase name="Enhanced Test Chat - Comprehensive Test Suite › Text Chat Functionality › should handle Enter key for sending messages" classname="enhanced-test-chat.spec.js" time="0.059">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Enhanced Test Chat - Comprehensive Test Suite › Text Chat Functionality › should prevent sending empty messages" classname="enhanced-test-chat.spec.js" time="0.055">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Enhanced Test Chat - Comprehensive Test Suite › Text Chat Functionality › should receive AI responses to user messages" classname="enhanced-test-chat.spec.js" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Enhanced Test Chat - Comprehensive Test Suite › WebSocket Connection Management › should establish WebSocket connection to ElevenLabs service" classname="enhanced-test-chat.spec.js" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Enhanced Test Chat - Comprehensive Test Suite › WebSocket Connection Management › should handle WebSocket connection errors gracefully" classname="enhanced-test-chat.spec.js" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Enhanced Test Chat - Comprehensive Test Suite › Live Voice Conversation Flow › should request microphone permissions when Live Mode is activated" classname="enhanced-test-chat.spec.js" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Enhanced Test Chat - Comprehensive Test Suite › Live Voice Conversation Flow › should handle microphone permission denial gracefully" classname="enhanced-test-chat.spec.js" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Enhanced Test Chat - Comprehensive Test Suite › Performance Metrics Tracking › should update performance metrics during interactions" classname="enhanced-test-chat.spec.js" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Enhanced Test Chat - Comprehensive Test Suite › Performance Metrics Tracking › should display metrics in correct format" classname="enhanced-test-chat.spec.js" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Enhanced Test Chat - Comprehensive Test Suite › Error Handling and Edge Cases › should handle API errors gracefully" classname="enhanced-test-chat.spec.js" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Enhanced Test Chat - Comprehensive Test Suite › Error Handling and Edge Cases › should maintain functionality after network interruptions" classname="enhanced-test-chat.spec.js" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Enhanced Test Chat - Comprehensive Test Suite › Responsive Design and Accessibility › should work on mobile viewport" classname="enhanced-test-chat.spec.js" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Enhanced Test Chat - Comprehensive Test Suite › Responsive Design and Accessibility › should work on tablet viewport" classname="enhanced-test-chat.spec.js" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Enhanced Test Chat - Comprehensive Test Suite › Responsive Design and Accessibility › should have proper keyboard navigation" classname="enhanced-test-chat.spec.js" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+</testsuites>

@@ -56,6 +56,7 @@ router.post('/test-audio-integrity', voiceController.testAudioIntegrity);
 // Live TTS endpoint for Enhanced Test Chat
 router.post('/speak', async (req, res) => {
     try {
+        const startTime = Date.now();
         const { text, character, characterId, voiceConfig } = req.body;
 
         if (!text || !text.trim()) {
@@ -89,6 +90,7 @@ router.post('/speak', async (req, res) => {
 
         // Generate speech
         const result = await voiceService.generateSpeech(text, speakerId, options, characterId);
+        const processingTime = Date.now() - startTime;
 
         console.log('🔍 Result keys:', result ? Object.keys(result) : 'null');
 
@@ -98,8 +100,9 @@ router.post('/speak', async (req, res) => {
                 audioUrl: result.url,
                 text: text,
                 character: character || 'default',
-                provider: 'TopMediai',
+                provider: result.provider || 'ElevenLabs',
                 duration: result.duration,
+                processingTime: processingTime,
                 timestamp: new Date().toISOString()
             });
         } else {
@@ -107,11 +110,13 @@ router.post('/speak', async (req, res) => {
         }
 
     } catch (error) {
+        const processingTime = Date.now() - startTime;
         console.error('❌ Error in TTS speak:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to process speech request',
-            details: error.message
+            details: error.message,
+            processingTime: processingTime
         });
     }
 });

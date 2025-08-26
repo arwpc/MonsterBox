@@ -202,6 +202,10 @@ class ElevenLabsConversationalService extends EventEmitter {
                 const message = JSON.parse(dataString);
 
                 switch (message.type) {
+                    case 'authenticate':
+                        await this.handleAuthentication(sessionId, message);
+                        break;
+
                     case 'start_conversation':
                         await this.startConversation(sessionId, message.characterId);
                         break;
@@ -240,6 +244,122 @@ class ElevenLabsConversationalService extends EventEmitter {
                 type: 'error',
                 message: 'Failed to process message'
             });
+        }
+    }
+
+    /**
+     * Handle authentication for Live Mode
+     */
+    async handleAuthentication(sessionId, message) {
+        try {
+            console.log(`🔐 Authenticating session ${sessionId} for Live Mode`);
+
+            const { token, agentId, liveMode } = message;
+
+            // Validate token with backend
+            const response = await fetch('http://localhost:3000/ai-management/api/elevenlabs/validate-token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token })
+            });
+
+            const validation = await response.json();
+            if (!validation.success) {
+                throw new Error(validation.error || 'Authentication failed');
+            }
+
+            // Store authentication info
+            const connection = this.activeConnections.get(sessionId);
+            if (connection) {
+                connection.authenticated = true;
+                connection.agentId = agentId;
+                connection.liveMode = liveMode;
+                connection.apiKey = validation.apiKey;
+            }
+
+            // If Live Mode, connect directly to ElevenLabs
+            if (liveMode) {
+                await this.startLiveModeConnection(sessionId, agentId, validation.apiKey);
+            }
+
+            // Send authentication success
+            this.sendToClient(sessionId, {
+                type: 'authentication_success',
+                liveMode: liveMode
+            });
+
+            console.log(`✅ Session ${sessionId} authenticated for Live Mode`);
+
+        } catch (error) {
+            console.error(`❌ Authentication failed for session ${sessionId}:`, error.message);
+            this.sendToClient(sessionId, {
+                type: 'authentication_error',
+                error: error.message
+            });
+        }
+    }
+
+    /**
+     * Start Live Mode connection to ElevenLabs
+     */
+    async startLiveModeConnection(sessionId, agentId, apiKey) {
+        try {
+            console.log(`🎙️ Starting Live Mode connection for session ${sessionId}`);
+
+            const connection = this.activeConnections.get(sessionId);
+            if (!connection) {
+                throw new Error('Connection not found');
+            }
+
+            // Connect directly to ElevenLabs Conversational AI
+            const wsUrl = `wss://api.elevenlabs.io/v1/convai/conversation?agent_id=${agentId}`;
+            const elevenLabsWs = new WebSocket(wsUrl, {
+                headers: {
+                    'xi-api-key': apiKey
+                }
+            });
+
+            connection.elevenLabsWs = elevenLabsWs;
+
+            elevenLabsWs.on('open', () => {
+                console.log(`✅ Live Mode connected to ElevenLabs for session ${sessionId}`);
+
+                // Send conversation initiation
+                const initMessage = {
+                    type: 'conversation_initiation_client_data',
+                    conversation_config_override: {
+                        agent: {
+                            language: "en"
+                        }
+                    }
+                };
+
+                elevenLabsWs.send(JSON.stringify(initMessage));
+            });
+
+            elevenLabsWs.on('message', (data) => {
+                // Forward ElevenLabs messages to client
+                this.sendToClient(sessionId, JSON.parse(data.toString()));
+            });
+
+            elevenLabsWs.on('error', (error) => {
+                console.error(`❌ Live Mode ElevenLabs error for session ${sessionId}:`, error);
+                this.sendToClient(sessionId, {
+                    type: 'live_mode_error',
+                    error: error.message
+                });
+            });
+
+            elevenLabsWs.on('close', () => {
+                console.log(`🔌 Live Mode ElevenLabs connection closed for session ${sessionId}`);
+                if (connection.elevenLabsWs) {
+                    connection.elevenLabsWs = null;
+                }
+            });
+
+        } catch (error) {
+            console.error(`❌ Error starting Live Mode connection for session ${sessionId}:`, error.message);
+            throw error;
         }
     }
 
@@ -287,7 +407,12 @@ class ElevenLabsConversationalService extends EventEmitter {
                 connection.elevenLabsWs = elevenLabsWs;
                 connection.characterId = characterId;
                 connection.isActive = true;
-                
+
+                // Send conversation initiation message to ElevenLabs
+                elevenLabsWs.send(JSON.stringify({
+                    type: 'conversation_initiation_client_data'
+                }));
+
                 this.sendToClient(sessionId, {
                     type: 'conversation_started',
                     characterId,
@@ -369,24 +494,66 @@ class ElevenLabsConversationalService extends EventEmitter {
             
             switch (message.type) {
                 case 'audio':
-                    // Forward audio to client and jaw animation
-                    this.handleAudioMessage(sessionId, message);
+                    // Handle audio response from ElevenLabs
+                    this.handleAudioResponse(sessionId, message);
                     break;
-                    
-                case 'transcript':
-                    // Forward transcript to client
+
+                case 'user_transcript':
+                    // Forward user transcript to client
                     this.sendToClient(sessionId, {
                         type: 'transcript',
-                        text: message.text,
-                        role: message.role
+                        text: message.user_transcription_event.user_transcript,
+                        role: 'user'
                     });
                     break;
-                    
+
+                case 'agent_response':
+                    // Forward agent response to client
+                    this.sendToClient(sessionId, {
+                        type: 'transcript',
+                        text: message.agent_response_event.agent_response,
+                        role: 'assistant'
+                    });
+                    break;
+
+                case 'agent_response_correction':
+                    // Forward corrected agent response to client
+                    this.sendToClient(sessionId, {
+                        type: 'transcript',
+                        text: message.agent_response_correction_event.corrected_agent_response,
+                        role: 'assistant'
+                    });
+                    break;
+
+                case 'ping':
+                    // Respond to ping to keep connection alive
+                    this.handlePingMessage(sessionId, message);
+                    break;
+
+                case 'conversation_initiation_metadata':
+                    // Handle conversation initialization metadata
+                    console.log(`🎯 Conversation initialized for session ${sessionId}:`, message.conversation_initiation_metadata_event);
+                    this.sendToClient(sessionId, {
+                        type: 'conversation_metadata',
+                        conversationId: message.conversation_initiation_metadata_event.conversation_id,
+                        audioFormat: message.conversation_initiation_metadata_event.agent_output_audio_format
+                    });
+                    break;
+
+                case 'interruption':
+                    // Handle interruption
+                    this.sendToClient(sessionId, {
+                        type: 'interruption',
+                        reason: message.interruption_event.reason
+                    });
+                    break;
+
                 case 'conversation_end':
                     this.handleConversationEnd(sessionId);
                     break;
-                    
+
                 default:
+                    console.log(`🔍 Unknown ElevenLabs message type: ${message.type}`, message);
                     // Forward other messages as-is
                     this.sendToClient(sessionId, message);
             }
@@ -397,23 +564,53 @@ class ElevenLabsConversationalService extends EventEmitter {
     }
 
     /**
-     * Handle audio message and trigger jaw animation
+     * Handle audio response from ElevenLabs
      */
-    handleAudioMessage(sessionId, message) {
+    handleAudioResponse(sessionId, message) {
         const connection = this.activeConnections.get(sessionId);
         if (!connection) return;
-        
+
         // Forward audio to client
         this.sendToClient(sessionId, {
             type: 'audio',
-            audioData: message.audio_base64,
+            audioData: message.audio_event.audio_base_64,
             format: 'base64'
         });
-        
+
         // Trigger jaw animation if character has animatronic enabled
         const agent = this.agents.get(connection.characterId);
         if (agent && agent.hardwareConfig.animatronic.enabled) {
-            this.triggerJawAnimation(sessionId, message.audio_base64);
+            this.triggerJawAnimation(sessionId, message.audio_event.audio_base_64);
+        }
+    }
+
+    /**
+     * Handle ping message from ElevenLabs
+     */
+    handlePingMessage(sessionId, message) {
+        const connection = this.activeConnections.get(sessionId);
+        if (!connection || !connection.elevenLabsWs) return;
+
+        try {
+            // Send pong response
+            const pongMessage = {
+                type: 'pong',
+                event_id: message.ping_event.event_id
+            };
+
+            // Add delay if specified
+            if (message.ping_event.ping_ms) {
+                setTimeout(() => {
+                    if (connection.elevenLabsWs && connection.elevenLabsWs.readyState === WebSocket.OPEN) {
+                        connection.elevenLabsWs.send(JSON.stringify(pongMessage));
+                    }
+                }, message.ping_event.ping_ms);
+            } else {
+                connection.elevenLabsWs.send(JSON.stringify(pongMessage));
+            }
+
+        } catch (error) {
+            console.error(`❌ Error sending pong for ${sessionId}:`, error.message);
         }
     }
 
@@ -527,12 +724,14 @@ class ElevenLabsConversationalService extends EventEmitter {
         }
 
         try {
+            // Send text as user message to ElevenLabs
             const message = {
-                type: 'text',
+                type: 'user_message',
                 text: text
             };
 
             connection.elevenLabsWs.send(JSON.stringify(message));
+            console.log(`💬 Sent user message to ElevenLabs agent for session ${sessionId}: "${text}"`);
 
         } catch (error) {
             console.error(`❌ Error sending text to agent for ${sessionId}:`, error.message);
