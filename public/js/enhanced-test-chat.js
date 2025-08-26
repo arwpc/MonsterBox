@@ -23,6 +23,7 @@ class EnhancedTestChat {
         this.elevenLabsWs = null;
         this.audioStream = null;
         this.liveModeState = 'idle'; // idle, listening, processing, speaking
+        this.speechDetected = false; // Track speech state for ElevenLabs VAD
         this.liveModeTimeout = null;
         this.liveModeAudio = null;
         this.liveModeToggleInProgress = false;
@@ -340,6 +341,35 @@ class EnhancedTestChat {
                 this.handleAudioResponse(message);
                 break;
 
+            case 'user_transcript':
+                // Handle user speech transcription from ElevenLabs
+                console.log('👤 User transcript from ElevenLabs:', message.user_transcription_event?.user_transcript);
+                if (message.user_transcription_event?.user_transcript) {
+                    this.addMessage('user', message.user_transcription_event.user_transcript, {
+                        characterName: 'You',
+                        isTranscript: true
+                    });
+                }
+                break;
+
+            case 'agent_response':
+                // Handle AI response text from ElevenLabs
+                console.log('🤖 Agent response from ElevenLabs:', message.agent_response_event?.agent_response);
+                if (message.agent_response_event?.agent_response) {
+                    this.addMessage('bot', message.agent_response_event.agent_response, {
+                        characterName: this.currentCharacter ? this.currentCharacter.name : 'AI Assistant'
+                    });
+                }
+                break;
+
+            case 'audio':
+                // Handle audio response from ElevenLabs
+                console.log('🔊 Audio response from ElevenLabs:', message.audio_event);
+                if (message.audio_event?.audio_base_64) {
+                    this.handleElevenLabsAudio(message.audio_event.audio_base_64);
+                }
+                break;
+
             case 'conversation_end':
                 this.addMessage('system', 'Conversation ended', {
                     characterName: 'System',
@@ -398,6 +428,133 @@ class EnhancedTestChat {
 
         // Complete message handling
         this.handleMessageComplete();
+    }
+
+    /**
+     * Detect if audio data contains actual speech/sound activity
+     */
+    detectAudioActivity(pcmData) {
+        try {
+            // Convert Uint8Array back to Int16Array for analysis
+            const int16Data = new Int16Array(pcmData.buffer);
+
+        let totalEnergy = 0;
+        let maxAmplitude = 0;
+        let nonZeroSamples = 0;
+
+        // Calculate audio energy and statistics
+        for (let i = 0; i < int16Data.length; i++) {
+            const sample = Math.abs(int16Data[i]);
+            totalEnergy += sample * sample;
+            maxAmplitude = Math.max(maxAmplitude, sample);
+            if (sample > 100) { // Threshold for non-silence
+                nonZeroSamples++;
+            }
+        }
+
+        const averageEnergy = totalEnergy / int16Data.length;
+        const activityRatio = nonZeroSamples / int16Data.length;
+
+        // Thresholds for speech detection (more sensitive for ElevenLabs server_vad)
+        const energyThreshold = 500000;  // Reduced for better sensitivity
+        const amplitudeThreshold = 300;  // Reduced for better sensitivity
+        const activityThreshold = 0.005; // Reduced to 0.5% for better sensitivity
+
+        const hasActivity = averageEnergy > energyThreshold ||
+                           maxAmplitude > amplitudeThreshold ||
+                           activityRatio > activityThreshold;
+
+        console.log(`🎙️ Audio activity: energy=${averageEnergy.toFixed(0)}, max=${maxAmplitude}, activity=${(activityRatio*100).toFixed(1)}%, hasActivity=${hasActivity}`);
+
+        return hasActivity;
+        } catch (error) {
+            console.error('❌ Error detecting audio activity:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Convert audio blob to PCM 16kHz format for ElevenLabs
+     */
+    async convertToPCM16kHz(audioBlob) {
+        try {
+            // Create audio context with 16kHz sample rate
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)({
+                sampleRate: 16000
+            });
+
+            // Decode the audio blob
+            const arrayBuffer = await audioBlob.arrayBuffer();
+            const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+            // Get the audio data as Float32Array
+            const channelData = audioBuffer.getChannelData(0); // Use first channel (mono)
+
+            // Convert Float32 to Int16 PCM
+            const pcmData = new Int16Array(channelData.length);
+            for (let i = 0; i < channelData.length; i++) {
+                // Convert from [-1, 1] to [-32768, 32767]
+                pcmData[i] = Math.max(-32768, Math.min(32767, channelData[i] * 32767));
+            }
+
+            // Convert Int16Array to Uint8Array for base64 encoding
+            const uint8Array = new Uint8Array(pcmData.buffer);
+
+            console.log(`🎙️ Converted to PCM 16kHz: ${uint8Array.length} bytes`);
+            return uint8Array;
+
+        } catch (error) {
+            console.error('❌ Error converting to PCM 16kHz:', error);
+            // Return empty array on error to avoid crashes
+            return new Uint8Array(0);
+        }
+    }
+
+    /**
+     * Send end-of-speech signal to ElevenLabs
+     */
+    sendEndOfSpeechToElevenLabs() {
+        try {
+            if (this.elevenLabsWs && this.elevenLabsWs.readyState === WebSocket.OPEN) {
+                // Send empty audio message to signal end of speech (ElevenLabs format)
+                const endMessage = {
+                    user_audio_chunk: '' // Empty audio data signals end of speech
+                };
+
+                this.elevenLabsWs.send(JSON.stringify(endMessage));
+                console.log('✅ End-of-speech signal sent to ElevenLabs');
+            }
+        } catch (error) {
+            console.error('❌ Error sending end-of-speech signal:', error);
+        }
+    }
+
+    /**
+     * Handle audio response from ElevenLabs
+     */
+    async handleElevenLabsAudio(base64Audio) {
+        try {
+            console.log('🔊 Processing ElevenLabs audio response...');
+
+            // Convert base64 to audio blob
+            const audioData = atob(base64Audio);
+            const audioArray = new Uint8Array(audioData.length);
+            for (let i = 0; i < audioData.length; i++) {
+                audioArray[i] = audioData.charCodeAt(i);
+            }
+
+            const audioBlob = new Blob([audioArray], { type: 'audio/wav' });
+            const audioUrl = URL.createObjectURL(audioBlob);
+
+            // Play the audio
+            const audio = new Audio(audioUrl);
+            audio.play();
+
+            console.log('✅ ElevenLabs audio played successfully');
+
+        } catch (error) {
+            console.error('❌ Error playing ElevenLabs audio:', error);
+        }
     }
 
     /**
@@ -1858,8 +2015,8 @@ class EnhancedTestChat {
                 return;
             }
 
-            // Skip very small audio blobs (likely silence)
-            if (audioBlob.size < 1000) {
+            // Skip very small audio blobs (likely silence) - reduced threshold for better sensitivity
+            if (audioBlob.size < 500) {
                 console.log(`🎙️ Audio blob too small (${audioBlob.size} bytes), likely silence - restarting`);
                 if (this.isLiveModeActive) {
                     this.restartContinuousListening();
@@ -1867,65 +2024,60 @@ class EnhancedTestChat {
                 return;
             }
 
-            // Convert audio blob to base64 for the /api/voice/transcribe endpoint
-            const arrayBuffer = await audioBlob.arrayBuffer();
-            const uint8Array = new Uint8Array(arrayBuffer);
-            const base64Audio = btoa(String.fromCharCode.apply(null, uint8Array));
+            // Convert audio blob to PCM 16kHz format for ElevenLabs
+            console.log(`🎙️ Converting audio blob to PCM 16kHz format...`);
+            const pcmAudio = await this.convertToPCM16kHz(audioBlob);
 
-            console.log(`🎙️ Converted to base64: ${base64Audio.length} characters`);
-
-            // Send to STT service using JSON format
-            const response = await fetch(`${this.config.apiBaseUrl}/api/voice/transcribe`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    audioData: base64Audio,
-                    character: this.currentCharacter.name.toLowerCase(),
-                    characterId: this.currentCharacter.id,
-                    sttOnly: true
-                })
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('🎙️ STT request failed:', response.status, response.statusText, errorText);
-
-                // Handle specific error cases
-                if (response.status === 413) {
-                    console.warn('⚠️ Audio payload too large, reducing chunk size for next recording');
-                    // Continue with live mode but skip this chunk
-                    if (this.isLiveModeActive) {
-                        this.restartContinuousListening();
-                    }
-                    return;
+            // Check if audio contains actual speech (not just silence)
+            const hasAudio = this.detectAudioActivity(pcmAudio);
+            if (!hasAudio) {
+                console.log(`🎙️ Audio chunk contains mostly silence, skipping...`);
+                // Reset speech state if we were previously detecting speech
+                if (this.speechDetected) {
+                    console.log(`🎙️ Speech ended, sending end-of-speech signal to ElevenLabs`);
+                    this.speechDetected = false;
+                    // Send empty audio chunk to signal end of speech
+                    this.sendEndOfSpeechToElevenLabs();
                 }
-
-                throw new Error(`STT request failed: ${response.status} ${response.statusText}`);
+                if (this.isLiveModeActive) {
+                    this.restartContinuousListening();
+                }
+                return;
             }
 
-            const data = await response.json();
-            console.log('🎙️ STT response:', data);
+            // Mark that we're detecting speech
+            if (!this.speechDetected) {
+                console.log(`🎙️ Speech started, beginning transmission to ElevenLabs`);
+                this.speechDetected = true;
+            }
 
-            if (data.success && data.transcription) {
-                const transcribedText = data.transcription.trim();
-                console.log(`🎙️ Transcribed: "${transcribedText}"`);
+            const base64Audio = btoa(String.fromCharCode.apply(null, pcmAudio));
+            console.log(`🎙️ Converted to PCM 16kHz base64: ${base64Audio.length} characters`);
 
-                // Improved speech detection - filter out common noise patterns
-                const isValidSpeech = this.isValidSpeech(transcribedText);
+            // Send audio chunk directly to ElevenLabs API (using official ElevenLabs format)
+            if (this.elevenLabsWs && this.elevenLabsWs.readyState === WebSocket.OPEN) {
+                console.log('🎙️ Sending audio chunk to ElevenLabs WebSocket...');
 
-                if (isValidSpeech) {
-                    console.log(`🎙️ Valid speech detected: "${transcribedText}"`);
-                    await this.processLiveModeMessage(transcribedText);
-                } else {
-                    console.log(`🎙️ Filtered out noise/invalid speech: "${transcribedText}"`);
-                    if (this.isLiveModeActive) {
-                        this.restartContinuousListening();
-                    }
+                const audioMessage = {
+                    user_audio_chunk: base64Audio
+                };
+
+                this.elevenLabsWs.send(JSON.stringify(audioMessage));
+                console.log('✅ Audio chunk sent to ElevenLabs');
+
+                this.liveModeState = 'listening';
+                this.updateLiveModeStatus(true, 'Listening...');
+
+                // Continue listening for more audio
+                if (this.isLiveModeActive) {
+                    this.restartContinuousListening();
                 }
             } else {
-                console.log('🎙️ No speech detected, restarting listening...');
+                console.error('❌ ElevenLabs WebSocket not connected');
+                this.liveModeState = 'listening';
+                this.updateLiveModeStatus(true, 'WebSocket Error');
+
+                // Try to restart listening anyway
                 if (this.isLiveModeActive) {
                     this.restartContinuousListening();
                 }

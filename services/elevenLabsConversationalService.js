@@ -228,7 +228,11 @@ class ElevenLabsConversationalService extends EventEmitter {
                         break;
 
                     default:
-                        console.warn(`⚠️  Unknown message type: ${message.type}`);
+                        // Only warn about unknown message types if the message actually has a type
+                        // (avoid warnings for outgoing user_audio_chunk messages that get echoed back)
+                        if (message.type !== undefined) {
+                            console.warn(`⚠️  Unknown message type: ${message.type}`);
+                        }
                 }
                 return;
             }
@@ -408,9 +412,10 @@ class ElevenLabsConversationalService extends EventEmitter {
                 connection.characterId = characterId;
                 connection.isActive = true;
 
-                // Send conversation initiation message to ElevenLabs
+                // Send conversation initiation message to ElevenLabs (use pre-configured agent)
                 elevenLabsWs.send(JSON.stringify({
                     type: 'conversation_initiation_client_data'
+                    // No conversation_config_override - use the pre-configured agent settings
                 }));
 
                 this.sendToClient(sessionId, {
