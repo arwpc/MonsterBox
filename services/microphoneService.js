@@ -949,6 +949,81 @@ class MicrophoneService extends EventEmitter {
     }
 
     /**
+     * Get available audio devices
+     * @returns {Array} Array of available audio devices
+     */
+    async getAvailableDevices() {
+        try {
+            // This would typically interface with the system's audio subsystem
+            // For now, return some common device options
+            return [
+                { id: 'default', name: 'Default Audio Device' },
+                { id: 'hw:0,0', name: 'Built-in Audio (hw:0,0)' },
+                { id: 'hw:1,0', name: 'USB Audio Device (hw:1,0)' },
+                { id: 'plughw:0,0', name: 'Built-in Audio with Plugin (plughw:0,0)' }
+            ];
+        } catch (error) {
+            logger.error('Error getting available devices:', error);
+            return [{ id: 'default', name: 'Default Audio Device' }];
+        }
+    }
+
+    /**
+     * Test audio levels for a microphone
+     * @param {number} microphoneId - Microphone ID
+     * @param {number} duration - Test duration in seconds
+     * @returns {Object} Audio level test results
+     */
+    async testAudioLevels(microphoneId, duration) {
+        logger.info(`🎵 Testing audio levels for microphone ${microphoneId} for ${duration} seconds...`);
+
+        // Simulate audio level testing
+        await new Promise(resolve => setTimeout(resolve, duration * 1000));
+
+        return {
+            current: Math.random() * 100,
+            peak: 80 + Math.random() * 20,
+            average: 40 + Math.random() * 30,
+            noiseFloor: -60 + Math.random() * 15,
+            testDuration: duration
+        };
+    }
+
+    /**
+     * Get current audio levels for a microphone
+     * @param {number} microphoneId - Microphone ID
+     * @returns {Object} Current audio levels
+     */
+    async getCurrentAudioLevels(microphoneId) {
+        // Simulate real-time audio level data
+        return {
+            current: Math.random() * 100,
+            peak: Math.random() * 100,
+            average: Math.random() * 60,
+            noiseFloor: -60 + Math.random() * 15
+        };
+    }
+
+    /**
+     * Get service status
+     * @returns {Object} Service status information
+     */
+    async getServiceStatus() {
+        return {
+            microphone: {
+                active: true,
+                port: 8776,
+                status: 'running'
+            },
+            audioStream: {
+                active: true,
+                port: 8777,
+                status: 'running'
+            }
+        };
+    }
+
+    /**
      * Perform basic microphone test
      * @param {Object} microphone - Microphone configuration
      * @param {number} duration - Test duration

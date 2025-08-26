@@ -10,6 +10,7 @@ const router = express.Router();
 const fs = require('fs').promises;
 const path = require('path');
 const multer = require('multer');
+const logger = require('../scripts/logger');
 
 // Import services
 const characterService = require('../services/characterService');
@@ -338,10 +339,49 @@ router.get('/voices', async (req, res) => {
     }
 });
 
-// ElevenLabs Conversational AI Interface - Redirect to proper conversational AI page
-router.get('/conversation', async (req, res) => {
-    // Redirect to the proper conversational AI interface
-    res.redirect('/conversational-ai');
+// Microphone and STT Testing Interface
+router.get('/microphone-stt', async (req, res) => {
+    try {
+        // Get available microphones (if any microphone service is available)
+        let microphones = [];
+        try {
+            // Try to get microphones from parts service
+            const partService = require('../services/partService');
+            const allParts = await partService.getAllParts();
+            microphones = allParts.filter(part => part.type === 'microphone');
+        } catch (error) {
+            console.warn('Could not load microphones:', error.message);
+        }
+
+        // Get all characters for character selection
+        const characterService = require('../services/characterService');
+        const characters = await characterService.getAllCharacters();
+
+        // Get character-specific audio configurations
+        const audioConfigService = require('../services/characterAudioConfigService');
+
+        // Add audio config to each character
+        for (let character of characters) {
+            try {
+                character.audioConfig = await audioConfigService.getAudioConfig(character.id);
+            } catch (error) {
+                character.audioConfig = null;
+            }
+        }
+
+        res.render('ai-config/microphone-stt', {
+            title: 'Microphone and STT Testing',
+            microphones: microphones,
+            characters: characters
+        });
+    } catch (error) {
+        console.error('Error loading microphone-stt page:', error);
+        res.status(500).render('error', {
+            title: 'Error',
+            message: 'Failed to load Microphone and STT Testing page',
+            error: error.message
+        });
+    }
 });
 
 // DEPRECATED: Redirect old OpenAI assistant routes to ElevenLabs agents
@@ -558,12 +598,21 @@ router.get('/api/status', async (req, res) => {
 // STT API routes
 router.get('/api/stt/status', async (req, res) => {
     try {
+        // Initialize ElevenLabs STT service if not already done
+        if (!global.elevenLabsSTTService) {
+            const ElevenLabsSTTService = require('../services/elevenLabsSTTService');
+            global.elevenLabsSTTService = new ElevenLabsSTTService();
+        }
+
+        const status = global.elevenLabsSTTService.getStatus();
+
         res.json({
             success: true,
-            status: 'ElevenLabs Conversational AI handles STT',
+            status: status.isConfigured ? 'available' : 'not_configured',
             provider: 'ElevenLabs',
-            model: 'ElevenLabs STT',
-            redirect: '/conversational-ai'
+            model: status.model,
+            isConfigured: status.isConfigured,
+            apiKeyConfigured: status.apiKeyConfigured
         });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
@@ -593,12 +642,21 @@ router.post('/api/stt/config', async (req, res) => {
 
 router.post('/api/stt/test', async (req, res) => {
     try {
+        // Initialize ElevenLabs STT service if not already done
+        if (!global.elevenLabsSTTService) {
+            const ElevenLabsSTTService = require('../services/elevenLabsSTTService');
+            global.elevenLabsSTTService = new ElevenLabsSTTService();
+        }
+
+        const testResult = await global.elevenLabsSTTService.testConnection();
+
         res.json({
-            success: false,
-            status: 'STT testing is now handled by ElevenLabs Conversational AI',
+            success: testResult.success,
+            status: testResult.success ? 'available' : 'error',
             provider: 'ElevenLabs',
-            responseTime: 0,
-            redirect: '/conversational-ai'
+            responseTime: testResult.responseTime || 0,
+            message: testResult.message,
+            error: testResult.error
         });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
@@ -611,41 +669,118 @@ router.post('/api/stt/transcribe', upload.single('audio'), async (req, res) => {
             return res.status(400).json({ success: false, error: 'No audio file provided' });
         }
 
-        // Clean up uploaded file since we're redirecting to ElevenLabs
+        // Initialize ElevenLabs STT service if not already done
+        if (!global.elevenLabsSTTService) {
+            const ElevenLabsSTTService = require('../services/elevenLabsSTTService');
+            global.elevenLabsSTTService = new ElevenLabsSTTService();
+        }
+
+        const startTime = Date.now();
+        logger.info(`🎙️ STT transcription request for file: ${req.file.originalname}`);
+        console.log('File object:', JSON.stringify(req.file, null, 2));
+        console.log('File path exists:', require('fs').existsSync(req.file.path));
+        console.log('File path:', req.file.path);
+
+        // Transcribe the uploaded audio file using the file path
+        const transcriptionResult = await global.elevenLabsSTTService.transcribeAudio(req.file.path, {
+            language: req.body.language || 'en',
+            model: req.body.model || 'scribe_v1'
+        });
+
+        if (transcriptionResult.success) {
+            logger.info(`✅ STT transcription completed: "${transcriptionResult.text?.substring(0, 50)}..."`);
+
+            res.json({
+                success: true,
+                transcription: transcriptionResult.text,
+                language: transcriptionResult.language,
+                confidence: transcriptionResult.confidence,
+                words: transcriptionResult.words,
+                responseTime: transcriptionResult.responseTime,
+                provider: 'elevenlabs',
+                audioSize: req.file.size
+            });
+        } else {
+            logger.error(`❌ STT transcription failed: ${transcriptionResult.error}`);
+            res.status(500).json({
+                success: false,
+                error: transcriptionResult.error,
+                provider: 'elevenlabs'
+            });
+        }
+    } catch (error) {
+        logger.error('❌ STT transcription error:', error.message);
+        res.status(500).json({
+            success: false,
+            error: error.message,
+            provider: 'elevenlabs'
+        });
+    }
+});
+
+// Legacy STT transcribe endpoint (for backward compatibility)
+router.post('/api/stt/transcribe-legacy', upload.single('audio'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, error: 'No audio file provided' });
+        }
+
+        const startTime = Date.now();
+        const language = req.body.language || 'en';
+        const microphone = req.body.microphone || 'default';
+        const characterId = req.body.characterId;
+        const isTest = req.body.isTest === 'true';
+
+        console.log(`🎤 STT Test Request - File: ${req.file.originalname}, Size: ${req.file.size}, MIME: ${req.file.mimetype}, Microphone: ${microphone}, Character: ${characterId}`);
+
+        // For testing purposes, we'll simulate STT processing
+        // In a real implementation, this would call ElevenLabs STT service
+
+        // Simulate processing time
+        await new Promise(resolve => setTimeout(resolve, Math.random() * 500 + 200));
+
+        // Mock transcription responses for testing
+        const mockTranscriptions = [
+            "Hello, this is a test of the speech to text system.",
+            "Testing microphone and speech recognition functionality.",
+            "The quick brown fox jumps over the lazy dog.",
+            "Speech to text is working correctly.",
+            "This is a sample transcription for testing purposes.",
+            "Audio quality seems good for speech recognition.",
+            "Testing the microphone input and STT processing.",
+            "Voice recognition test completed successfully."
+        ];
+
+        // Simulate confidence based on audio file size (larger files = better quality = higher confidence)
+        const confidence = Math.min(95, Math.max(60, (req.file.size / 1024) * 2 + Math.random() * 20));
+
+        // Select a random transcription for testing
+        const transcription = mockTranscriptions[Math.floor(Math.random() * mockTranscriptions.length)];
+
+        const responseTime = Date.now() - startTime;
+
+        // Clean up uploaded file
         try {
             await fs.unlink(req.file.path);
         } catch (e) {
             console.warn('Could not clean up uploaded file:', e.message);
         }
 
-        const startTime = Date.now();
-        const language = req.body.language || 'en';
-        const isTest = req.body.isTest === 'true';
-
-        // Determine the correct file extension based on MIME type (needed for cleanup)
-        let extension = '.webm'; // Default to webm
-        if (req.file.mimetype === 'audio/wav') {
-            extension = '.wav';
-        } else if (req.file.mimetype === 'audio/mpeg' || req.file.mimetype === 'audio/mp3') {
-            extension = '.mp3';
-        } else if (req.file.mimetype === 'audio/webm' || req.file.originalname.endsWith('.webm')) {
-            extension = '.webm';
-        }
-
-        console.log(`🎤 STT Request - File: ${req.file.originalname}, Size: ${req.file.size}, MIME: ${req.file.mimetype}`);
-
-        // ElevenLabs handles STT through conversational AI
-        console.log(`🎤 STT request redirected to ElevenLabs - File: ${req.file.originalname}, Size: ${req.file.size}`);
+        console.log(`🎤 STT Test Response - Transcription: "${transcription}", Confidence: ${confidence.toFixed(1)}%, Time: ${responseTime}ms`);
 
         res.json({
-            success: false,
-            error: 'Speech-to-Text is now handled by ElevenLabs Conversational AI service',
-            provider: 'ElevenLabs',
-            responseTime: Date.now() - startTime,
-            isTest,
-            redirect: '/conversational-ai',
+            success: true,
+            transcription: transcription,
+            confidence: Math.round(confidence),
+            provider: 'Mock STT (Testing)',
+            responseTime: responseTime,
+            audioSize: req.file.size,
+            microphone: microphone,
+            language: language,
+            isTest: true,
             metadata: {
-                message: 'Please use ElevenLabs Conversational AI for speech recognition',
+                originalFilename: req.file.originalname,
+                mimeType: req.file.mimetype,
                 timestamp: new Date().toISOString()
             }
         });
@@ -662,9 +797,11 @@ router.post('/api/stt/transcribe', upload.single('audio'), async (req, res) => {
             }
         }
 
-        // No temp files to clean up
-
-        res.status(500).json({ success: false, error: error.message });
+        res.status(500).json({
+            success: false,
+            error: error.message,
+            responseTime: Date.now() - (req.startTime || Date.now())
+        });
     }
 });
 
@@ -1092,6 +1229,146 @@ router.post('/api/tts/save-all', async (req, res) => {
         // For now, just return success
         res.json({ success: true, message: 'All voice assignments saved successfully' });
     } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Character-specific STT configuration API (legacy - for backward compatibility)
+router.get('/api/stt/character/:characterId/config', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.characterId);
+        const audioConfigService = require('../services/characterAudioConfigService');
+
+        const config = await audioConfigService.getCharacterAudioConfig(characterId);
+        res.json({ success: true, config: config.stt });
+    } catch (error) {
+        console.error(`Error loading STT config for character ${characterId}:`, error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+router.post('/api/stt/character/:characterId/config', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.characterId);
+        const audioConfigService = require('../services/characterAudioConfigService');
+
+        const currentConfig = await audioConfigService.getCharacterAudioConfig(characterId);
+        const updatedConfig = {
+            ...currentConfig,
+            stt: {
+                ...currentConfig.stt,
+                ...req.body
+            }
+        };
+
+        await audioConfigService.updateCharacterAudioConfig(characterId, updatedConfig);
+        res.json({ success: true, config: updatedConfig.stt });
+    } catch (error) {
+        console.error(`Error updating STT config for character ${characterId}:`, error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Character + Microphone specific STT configuration API
+router.get('/api/stt/character/:characterId/microphone/:microphoneId/config', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.characterId);
+        const microphoneId = parseInt(req.params.microphoneId);
+        const audioConfigService = require('../services/characterAudioConfigService');
+
+        const config = await audioConfigService.getCharacterMicrophoneSTTConfig(characterId, microphoneId);
+        res.json({ success: true, config });
+    } catch (error) {
+        console.error(`Error loading STT config for character ${characterId} microphone ${microphoneId}:`, error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+router.post('/api/stt/character/:characterId/microphone/:microphoneId/config', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.characterId);
+        const microphoneId = parseInt(req.params.microphoneId);
+        const audioConfigService = require('../services/characterAudioConfigService');
+
+        await audioConfigService.updateCharacterMicrophoneSTTConfig(characterId, microphoneId, req.body);
+        const updatedConfig = await audioConfigService.getCharacterMicrophoneSTTConfig(characterId, microphoneId);
+
+        res.json({ success: true, config: updatedConfig });
+    } catch (error) {
+        console.error(`Error updating STT config for character ${characterId} microphone ${microphoneId}:`, error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Live transcription WebSocket endpoint info
+router.get('/api/stt/live-transcription-info', async (req, res) => {
+    try {
+        // Initialize ElevenLabs Live STT service if not already done
+        if (!global.elevenLabsLiveSTTService) {
+            const ElevenLabsLiveSTTService = require('../services/elevenLabsLiveSTTService');
+            global.elevenLabsLiveSTTService = new ElevenLabsLiveSTTService();
+            await global.elevenLabsLiveSTTService.initialize();
+        }
+
+        const liveSTTStatus = global.elevenLabsLiveSTTService.getStatus();
+        const hostname = req.hostname === 'localhost' ? '127.0.0.1' : req.hostname;
+
+        // Check if secure proxy is available for HTTPS requests
+        let websocketUrl, port, protocol;
+
+        // Debug request details
+        const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https' || req.protocol === 'https';
+        const proxyAvailable = false; // We'll use direct connection for now
+
+        console.log(`🔍 Live transcription request debug:`, {
+            secure: req.secure,
+            protocol: req.protocol,
+            xForwardedProto: req.headers['x-forwarded-proto'],
+            isSecure,
+            proxyAvailable,
+            hostname
+        });
+
+        // Always connect to Live STT service for transcription-only functionality
+        // The Conversational Service (port 8771) is for full AI conversations
+        // The Live STT Service (port 8778) is for speech-to-text transcription only
+
+        if (isSecure && global.elevenLabsSTTWebSocketProxy) {
+            // Use secure WebSocket proxy for HTTPS requests
+            const sttProxyStatus = global.elevenLabsSTTWebSocketProxy.getStatus();
+            if (sttProxyStatus.isRunning) {
+                protocol = 'wss';
+                port = sttProxyStatus.proxyPort; // Should be 8873
+                websocketUrl = `${protocol}://${hostname}:${port}`;
+                console.log(`✅ Using secure STT proxy: ${websocketUrl}`);
+            } else {
+                // Fallback to plain WebSocket
+                protocol = 'ws';
+                port = 8778;
+                websocketUrl = `${protocol}://${hostname}:${port}`;
+                console.log(`⚠️ Secure STT proxy not running, using plain WebSocket: ${websocketUrl}`);
+            }
+        } else {
+            // Use plain WebSocket for HTTP requests - connect to Live STT service
+            protocol = 'ws';
+            port = 8778; // ElevenLabs Live STT service port
+            websocketUrl = `${protocol}://${hostname}:${port}`;
+            console.log(`🔗 Using Live STT WebSocket: ${websocketUrl} (isSecure: ${isSecure}, sttProxyAvailable: ${global.elevenLabsSTTWebSocketProxy ? 'true' : 'false'})`);
+        }
+        console.log(`📝 Note: Using Live STT Service for transcription-only functionality`);
+
+        res.json({
+            success: true,
+            websocketUrl: websocketUrl,
+            status: liveSTTStatus.isRunning ? 'available' : 'unavailable',
+            port: port,
+            hostname: hostname,
+            protocol: protocol,
+            sttServiceConfigured: liveSTTStatus.sttServiceConfigured,
+            activeConnections: liveSTTStatus.activeConnections
+        });
+    } catch (error) {
+        console.error('Error getting live transcription info:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });

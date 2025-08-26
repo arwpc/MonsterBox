@@ -131,17 +131,39 @@ router.post('/transcribe', async (req, res) => {
 
         console.log(`🎙️ STT request (Character: ${character || 'default'})`);
 
-        // Voice processing is now handled by ElevenLabs Conversational AI
-        console.log('🎭 Voice processing redirected to ElevenLabs Conversational AI');
+        // Initialize ElevenLabs STT service if not already done
+        if (!global.elevenLabsSTTService) {
+            const ElevenLabsSTTService = require('../services/elevenLabsSTTService');
+            global.elevenLabsSTTService = new ElevenLabsSTTService();
+        }
 
-        res.json({
-            success: false,
-            error: 'Voice processing has been replaced by ElevenLabs Conversational AI',
-            redirect: '/conversational-ai',
-            data: {
-                message: 'Please use the ElevenLabs Conversational AI interface for voice interactions'
-            }
+        // Transcribe the audio data (base64 encoded)
+        const transcriptionResult = await global.elevenLabsSTTService.transcribeBase64Audio(audioData, {
+            language: 'en'
         });
+
+        if (transcriptionResult.success) {
+            const responseTime = Date.now() - startTime;
+            console.log(`✅ STT transcription completed: "${transcriptionResult.text?.substring(0, 50)}..."`);
+
+            res.json({
+                success: true,
+                transcription: transcriptionResult.text,
+                language: transcriptionResult.language,
+                confidence: transcriptionResult.confidence,
+                responseTime: responseTime,
+                provider: 'elevenlabs',
+                characterId: characterId,
+                character: character
+            });
+        } else {
+            console.error(`❌ STT transcription failed: ${transcriptionResult.error}`);
+            res.status(500).json({
+                success: false,
+                error: transcriptionResult.error,
+                provider: 'elevenlabs'
+            });
+        }
 
     } catch (error) {
         console.error('❌ Error in STT transcribe:', error);

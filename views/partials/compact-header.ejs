@@ -1,6 +1,6 @@
 <%
 // Compact header partial for MonsterBox
-// Usage: <%- include('partials/compact-header', {
+// Usage: include('partials/compact-header', {
 //   title: 'Page Title',
 //   icon: '🧠',
 //   breadcrumbs: [
@@ -8,11 +8,11 @@
 //     { name: 'AI Management', url: '/ai-management', icon: '🧠' },
 //     { name: 'Current Page', current: true }
 //   ]
-// }) %>
+// })
 
-var pageTitle = title || 'MonsterBox';
-var pageIcon = icon || '🎭';
-var pageBreadcrumbs = breadcrumbs || [
+var pageTitle = typeof title !== 'undefined' ? title : 'MonsterBox';
+var pageIcon = typeof icon !== 'undefined' ? icon : '🎭';
+var pageBreadcrumbs = typeof breadcrumbs !== 'undefined' ? breadcrumbs : [
     { name: 'Home', url: '/', icon: '🏠' }
 ];
 %>

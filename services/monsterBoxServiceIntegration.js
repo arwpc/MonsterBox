@@ -25,7 +25,8 @@ class MonsterBoxServiceIntegration {
             coreServices: [
                 'hardwareRegistry',
                 'microphone',
-                'audioStream'
+                'audioStream',
+                'elevenLabsConversational'
             ],
             
             hardwareServices: [

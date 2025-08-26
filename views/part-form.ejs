@@ -27,13 +27,23 @@
                 <option value="servo" <%= part.type === 'servo' ? 'selected' : '' %>>Servo</option>
                 <option value="sensor" <%= part.type === 'sensor' ? 'selected' : '' %>>Sensor</option>
                 <option value="linear-actuator" <%= part.type === 'linear-actuator' ? 'selected' : '' %>>Linear Actuator</option>
+                <option value="microphone" <%= part.type === 'microphone' ? 'selected' : '' %>>Microphone</option>
             </select>
         </div>
         <div>
             <label for="characterId">Character:</label>
-            <select id="characterId" name="characterId" required disabled>
-                <option value="<%= character.id %>" selected><%= character.char_name %></option>
+            <select id="characterId" name="characterId" required <% if (part.type !== 'microphone') { %>disabled<% } %>>
+                <% if (part.type === 'microphone') { %>
+                    <% characters.forEach(function(char) { %>
+                        <option value="<%= char.id %>" <%= char.id === character.id ? 'selected' : '' %>><%= char.char_name %></option>
+                    <% }); %>
+                <% } else { %>
+                    <option value="<%= character.id %>" selected><%= character.char_name %></option>
+                <% } %>
             </select>
+            <% if (part.type === 'microphone') { %>
+                <small>Select which character this microphone will be assigned to</small>
+            <% } %>
         </div>
         <div id="motorInputs" style="display: none;">
             <div>
@@ -89,73 +99,179 @@
             </div>
         </div>
         <div id="microphoneInputs" style="display: none;">
-            <div>
-                <label for="deviceId">Device ID:</label>
-                <input type="text" id="deviceId" name="deviceId" value="<%= part.deviceId || 'default' %>" placeholder="default">
-                <small>Audio device identifier (e.g., 'default', '/dev/audio0', or device index)</small>
+            <!-- Basic Configuration -->
+            <div class="microphone-section">
+                <h4>🎤 Basic Configuration</h4>
+                <div class="form-grid">
+                    <div>
+                        <label for="deviceId">Device ID:</label>
+                        <select id="deviceId" name="deviceId">
+                            <option value="default" <%= (part.deviceId || 'default') === 'default' ? 'selected' : '' %>>Default Device</option>
+                            <!-- Device options will be populated by JavaScript -->
+                        </select>
+                        <button type="button" id="detectDevicesBtn" class="btn-small">🔍 Detect Devices</button>
+                        <small>Audio device identifier</small>
+                    </div>
+                    <div>
+                        <label for="sampleRate">Sample Rate (Hz):</label>
+                        <select id="sampleRate" name="sampleRate">
+                            <option value="8000" <%= part.sampleRate === 8000 ? 'selected' : '' %>>8000</option>
+                            <option value="16000" <%= part.sampleRate === 16000 || !part.sampleRate ? 'selected' : '' %>>16000</option>
+                            <option value="22050" <%= part.sampleRate === 22050 ? 'selected' : '' %>>22050</option>
+                            <option value="44100" <%= part.sampleRate === 44100 ? 'selected' : '' %>>44100</option>
+                            <option value="48000" <%= part.sampleRate === 48000 ? 'selected' : '' %>>48000</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="channels">Channels:</label>
+                        <select id="channels" name="channels">
+                            <option value="1" <%= part.channels === 1 || !part.channels ? 'selected' : '' %>>1 (Mono)</option>
+                            <option value="2" <%= part.channels === 2 ? 'selected' : '' %>>2 (Stereo)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="sensitivity">Sensitivity:</label>
+                        <input type="range" id="sensitivity" name="sensitivity" min="0.1" max="3.0" step="0.1" value="<%= part.sensitivity || 1.0 %>">
+                        <span id="sensitivityValue"><%= part.sensitivity || 1.0 %></span>
+                        <small>Microphone input sensitivity (0.1 - 3.0)</small>
+                    </div>
+                </div>
             </div>
-            <div>
-                <label for="sampleRate">Sample Rate (Hz):</label>
-                <select id="sampleRate" name="sampleRate">
-                    <option value="8000" <%= part.sampleRate === 8000 ? 'selected' : '' %>>8000</option>
-                    <option value="16000" <%= part.sampleRate === 16000 || !part.sampleRate ? 'selected' : '' %>>16000</option>
-                    <option value="22050" <%= part.sampleRate === 22050 ? 'selected' : '' %>>22050</option>
-                    <option value="44100" <%= part.sampleRate === 44100 ? 'selected' : '' %>>44100</option>
-                    <option value="48000" <%= part.sampleRate === 48000 ? 'selected' : '' %>>48000</option>
-                </select>
-            </div>
-            <div>
-                <label for="channels">Channels:</label>
-                <select id="channels" name="channels">
-                    <option value="1" <%= part.channels === 1 || !part.channels ? 'selected' : '' %>>1 (Mono)</option>
-                    <option value="2" <%= part.channels === 2 ? 'selected' : '' %>>2 (Stereo)</option>
-                </select>
-            </div>
-            <div>
-                <label for="sensitivity">Sensitivity:</label>
-                <input type="range" id="sensitivity" name="sensitivity" min="0.1" max="3.0" step="0.1" value="<%= part.sensitivity || 1.0 %>">
-                <span id="sensitivityValue"><%= part.sensitivity || 1.0 %></span>
-                <small>Microphone input sensitivity (0.1 - 3.0)</small>
-            </div>
-            <div>
-                <label>
-                    <input type="checkbox" id="echoCancellation" name="echoCancellation" <%= part.echoCancellation !== false ? 'checked' : '' %>>
-                    Echo Cancellation
-                </label>
-            </div>
-            <div>
-                <label>
-                    <input type="checkbox" id="noiseSuppression" name="noiseSuppression" <%= part.noiseSuppression !== false ? 'checked' : '' %>>
-                    Noise Suppression
-                </label>
-            </div>
-            <div>
-                <label>
-                    <input type="checkbox" id="autoGainControl" name="autoGainControl" <%= part.autoGainControl !== false ? 'checked' : '' %>>
-                    Auto Gain Control
-                </label>
-            </div>
-            <div>
-                <label>
-                    <input type="checkbox" id="voiceActivation" name="voiceActivation" <%= part.voiceActivation ? 'checked' : '' %>>
-                    Voice Activation Detection
-                </label>
-            </div>
-            <div id="voiceActivationThresholdDiv" style="display: <%= part.voiceActivation ? 'block' : 'none' %>;">
-                <label for="voiceActivationThreshold">Voice Activation Threshold:</label>
-                <input type="range" id="voiceActivationThreshold" name="voiceActivationThreshold" min="0.01" max="1.0" step="0.01" value="<%= part.voiceActivationThreshold || 0.1 %>">
-                <span id="thresholdValue"><%= part.voiceActivationThreshold || 0.1 %></span>
-                <small>Threshold for voice activation (0.01 - 1.0)</small>
+
+            <!-- Audio Processing -->
+            <div class="microphone-section">
+                <h4>🔧 Audio Processing</h4>
+                <div class="checkbox-grid">
+                    <div>
+                        <label>
+                            <input type="checkbox" id="echoCancellation" name="echoCancellation" <%= part.echoCancellation !== false ? 'checked' : '' %>>
+                            Echo Cancellation
+                        </label>
+                        <small>Reduces echo and feedback</small>
+                    </div>
+                    <div>
+                        <label>
+                            <input type="checkbox" id="noiseSuppression" name="noiseSuppression" <%= part.noiseSuppression !== false ? 'checked' : '' %>>
+                            Noise Suppression
+                        </label>
+                        <small>Filters background noise</small>
+                    </div>
+                    <div>
+                        <label>
+                            <input type="checkbox" id="autoGainControl" name="autoGainControl" <%= part.autoGainControl !== false ? 'checked' : '' %>>
+                            Auto Gain Control
+                        </label>
+                        <small>Automatically adjusts volume levels</small>
+                    </div>
+                    <div>
+                        <label>
+                            <input type="checkbox" id="voiceActivation" name="voiceActivation" <%= part.voiceActivation ? 'checked' : '' %>>
+                            Voice Activation Detection
+                        </label>
+                        <small>Only record when voice is detected</small>
+                    </div>
+                </div>
+                <div id="voiceActivationThresholdDiv" style="display: <%= part.voiceActivation ? 'block' : 'none' %>;">
+                    <label for="voiceActivationThreshold">Voice Activation Threshold:</label>
+                    <input type="range" id="voiceActivationThreshold" name="voiceActivationThreshold" min="0.01" max="1.0" step="0.01" value="<%= part.voiceActivationThreshold || 0.1 %>">
+                    <span id="thresholdValue"><%= part.voiceActivationThreshold || 0.1 %></span>
+                    <small>Threshold for voice activation (0.01 - 1.0)</small>
+                </div>
             </div>
         </div>
         <button type="submit">Save Part</button>
     </form>
-    <button type="button" id="testPartButton" onclick="testPart()">Test Part</button>
-    <div id="testArea">
-        <h2>Test Results</h2>
-        <p id="testStatus">Not tested yet</p>
-        <pre id="testOutput"></pre>
+
+    <!-- Microphone Management Section (only visible for microphone parts) -->
+    <div id="microphoneManagement" style="display: none;">
+        <div class="management-tabs">
+            <div class="tab-navigation">
+                <button class="tab-button active" data-tab="test">🧪 Test</button>
+                <button class="tab-button" data-tab="monitor">👁️ Monitor</button>
+                <button class="tab-button" data-tab="stt">🎙️ STT Integration</button>
+            </div>
+
+            <!-- Test Tab -->
+            <div id="test-tab" class="tab-content active">
+                <div class="test-section">
+                    <h4>🧪 Microphone Testing</h4>
+                    <div class="test-controls">
+                        <button type="button" id="testMicrophoneBtn" class="btn primary">🎤 Test Microphone</button>
+                        <button type="button" id="testAudioLevelsBtn" class="btn secondary">📊 Test Audio Levels</button>
+                        <button type="button" id="testSTTBtn" class="btn secondary">🎙️ Test STT</button>
+                    </div>
+                    <div id="testResults" class="test-results">
+                        <h5>Test Results</h5>
+                        <div id="testStatus">Not tested yet</div>
+                        <pre id="testOutput"></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Monitor Tab -->
+            <div id="monitor-tab" class="tab-content">
+                <div class="monitor-section">
+                    <h4>👁️ Live Monitoring</h4>
+                    <div class="monitor-controls">
+                        <button type="button" id="startMonitoringBtn" class="btn primary">▶️ Start Monitoring</button>
+                        <button type="button" id="stopMonitoringBtn" class="btn secondary">⏹️ Stop Monitoring</button>
+                    </div>
+                    <div class="audio-level-container">
+                        <div class="audio-level-meter">
+                            <div class="level-bar" id="audioLevelBar"></div>
+                        </div>
+                        <div class="audio-level-percentage" id="audioLevelPercentage">0%</div>
+                    </div>
+                    <div id="monitoringData" class="monitoring-data">
+                        <div class="metric">
+                            <span class="metric-label">Peak Level:</span>
+                            <span class="metric-value" id="peakLevel">0 dB</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Average Level:</span>
+                            <span class="metric-value" id="avgLevel">0 dB</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Noise Floor:</span>
+                            <span class="metric-value" id="noiseFloor">-∞ dB</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STT Integration Tab -->
+            <div id="stt-tab" class="tab-content">
+                <div class="stt-section">
+                    <h4>🎙️ Speech-to-Text Integration</h4>
+                    <div class="stt-status">
+                        <div class="status-indicator">
+                            <span class="indicator-dot" id="sttStatusDot"></span>
+                            <span id="sttStatusText">STT Service Status: Checking...</span>
+                        </div>
+                    </div>
+                    <div class="stt-controls">
+                        <button type="button" id="testSTTIntegrationBtn" class="btn primary">🎙️ Test STT Integration</button>
+                        <button type="button" id="configureSTTBtn" class="btn secondary">⚙️ Configure STT</button>
+                    </div>
+                    <div id="sttResults" class="stt-results">
+                        <h5>STT Test Results</h5>
+                        <div id="transcriptionOutput"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <!-- Standard Test Area (for non-microphone parts) -->
+    <div id="standardTestArea">
+        <button type="button" id="testPartButton" onclick="testPart()">Test Part</button>
+        <div id="testArea">
+            <h2>Test Results</h2>
+            <p id="testStatus">Not tested yet</p>
+            <pre id="testOutput"></pre>
+        </div>
+    </div>
+
     <a href="/parts" class="button">Back to Parts</a>
 
     <script>
@@ -164,12 +280,23 @@
 
         function toggleInputs() {
             const type = document.getElementById('type').value;
+            const isMicrophone = type === 'microphone';
+
+            // Toggle input sections
             document.getElementById('motorInputs').style.display = ['motor', 'linear-actuator'].includes(type) ? 'block' : 'none';
             document.getElementById('singlePinInputs').style.display = ['light'].includes(type) ? 'block' : 'none';
             document.getElementById('sensorInputs').style.display = type === 'sensor' ? 'block' : 'none';
             document.getElementById('ledInputs').style.display = type === 'led' ? 'block' : 'none';
             document.getElementById('servoInputs').style.display = type === 'servo' ? 'block' : 'none';
-            document.getElementById('microphoneInputs').style.display = type === 'microphone' ? 'block' : 'none';
+            document.getElementById('microphoneInputs').style.display = isMicrophone ? 'block' : 'none';
+
+            // Toggle character selection (enable for microphones)
+            const characterSelect = document.getElementById('characterId');
+            characterSelect.disabled = !isMicrophone;
+
+            // Toggle management sections
+            document.getElementById('microphoneManagement').style.display = isMicrophone ? 'block' : 'none';
+            document.getElementById('standardTestArea').style.display = isMicrophone ? 'none' : 'block';
         }
 
         // Call toggleInputs on page load to set initial state
@@ -203,7 +330,320 @@
                     thresholdDiv.style.display = this.checked ? 'block' : 'none';
                 });
             }
+
+            // Initialize microphone management features
+            initializeMicrophoneManagement();
         });
+
+        // Initialize microphone management functionality
+        function initializeMicrophoneManagement() {
+            // Tab switching
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const targetTab = this.getAttribute('data-tab');
+
+                    // Update active states
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+
+                    this.classList.add('active');
+                    document.getElementById(targetTab + '-tab').classList.add('active');
+                });
+            });
+
+            // Device detection
+            const detectDevicesBtn = document.getElementById('detectDevicesBtn');
+            if (detectDevicesBtn) {
+                detectDevicesBtn.addEventListener('click', detectAudioDevices);
+            }
+
+            // Test buttons
+            const testMicrophoneBtn = document.getElementById('testMicrophoneBtn');
+            if (testMicrophoneBtn) {
+                testMicrophoneBtn.addEventListener('click', testMicrophone);
+            }
+
+            const testAudioLevelsBtn = document.getElementById('testAudioLevelsBtn');
+            if (testAudioLevelsBtn) {
+                testAudioLevelsBtn.addEventListener('click', testAudioLevels);
+            }
+
+            const testSTTBtn = document.getElementById('testSTTBtn');
+            if (testSTTBtn) {
+                testSTTBtn.addEventListener('click', testSTTIntegration);
+            }
+
+            // Monitoring buttons
+            const startMonitoringBtn = document.getElementById('startMonitoringBtn');
+            if (startMonitoringBtn) {
+                startMonitoringBtn.addEventListener('click', startMonitoring);
+            }
+
+            const stopMonitoringBtn = document.getElementById('stopMonitoringBtn');
+            if (stopMonitoringBtn) {
+                stopMonitoringBtn.addEventListener('click', stopMonitoring);
+            }
+
+            // STT Integration buttons
+            const testSTTIntegrationBtn = document.getElementById('testSTTIntegrationBtn');
+            if (testSTTIntegrationBtn) {
+                testSTTIntegrationBtn.addEventListener('click', testSTTIntegration);
+            }
+
+            const configureSTTBtn = document.getElementById('configureSTTBtn');
+            if (configureSTTBtn) {
+                configureSTTBtn.addEventListener('click', configureSTT);
+            }
+
+            // Initialize device detection on page load
+            if (document.getElementById('type').value === 'microphone') {
+                detectAudioDevices();
+                checkSTTStatus();
+            }
+        }
+
+        // Microphone Management Functions
+        async function detectAudioDevices() {
+            try {
+                const response = await axios.get('/parts/api/microphone/devices');
+                const deviceSelect = document.getElementById('deviceId');
+
+                // Clear existing options except default
+                deviceSelect.innerHTML = '<option value="default">Default Device</option>';
+
+                if (response.data.success && response.data.devices) {
+                    response.data.devices.forEach(device => {
+                        const option = document.createElement('option');
+                        option.value = device.id;
+                        option.textContent = `${device.name} (${device.id})`;
+                        deviceSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error detecting audio devices:', error);
+                showNotification('Failed to detect audio devices', 'error');
+            }
+        }
+
+        async function testMicrophone() {
+            const testStatus = document.getElementById('testStatus');
+            const testOutput = document.getElementById('testOutput');
+
+            testStatus.textContent = 'Testing microphone...';
+            testOutput.textContent = '';
+
+            try {
+                const microphoneConfig = {
+                    deviceId: document.getElementById('deviceId').value,
+                    sampleRate: parseInt(document.getElementById('sampleRate').value),
+                    channels: parseInt(document.getElementById('channels').value),
+                    sensitivity: parseFloat(document.getElementById('sensitivity').value)
+                };
+
+                const response = await axios.post('/parts/api/microphone/test', {
+                    config: microphoneConfig,
+                    duration: 5
+                });
+
+                if (response.data.success) {
+                    testStatus.textContent = 'Microphone test completed successfully';
+                    testOutput.textContent = JSON.stringify(response.data.results, null, 2);
+                } else {
+                    testStatus.textContent = 'Microphone test failed';
+                    testOutput.textContent = response.data.error || 'Unknown error';
+                }
+            } catch (error) {
+                console.error('Error testing microphone:', error);
+                testStatus.textContent = 'Error testing microphone';
+                testOutput.textContent = error.message;
+            }
+        }
+
+        async function testAudioLevels() {
+            const testStatus = document.getElementById('testStatus');
+            testStatus.textContent = 'Testing audio levels...';
+
+            try {
+                const response = await axios.post('/parts/api/microphone/test-levels', {
+                    microphoneId: partId,
+                    duration: 10
+                });
+
+                if (response.data.success) {
+                    testStatus.textContent = 'Audio level test completed';
+                    updateAudioLevelDisplay(response.data.levels);
+                } else {
+                    testStatus.textContent = 'Audio level test failed';
+                }
+            } catch (error) {
+                console.error('Error testing audio levels:', error);
+                testStatus.textContent = 'Error testing audio levels';
+            }
+        }
+
+        async function startMonitoring() {
+            try {
+                const response = await axios.post(`/parts/api/microphone/${partId}/start-monitoring`);
+
+                if (response.data.success) {
+                    showNotification('Monitoring started', 'success');
+                    // Start real-time updates
+                    startAudioLevelUpdates();
+                } else {
+                    showNotification('Failed to start monitoring', 'error');
+                }
+            } catch (error) {
+                console.error('Error starting monitoring:', error);
+                showNotification('Error starting monitoring', 'error');
+            }
+        }
+
+        async function stopMonitoring() {
+            try {
+                const response = await axios.post(`/parts/api/microphone/${partId}/stop-monitoring`);
+
+                if (response.data.success) {
+                    showNotification('Monitoring stopped', 'success');
+                    stopAudioLevelUpdates();
+                } else {
+                    showNotification('Failed to stop monitoring', 'error');
+                }
+            } catch (error) {
+                console.error('Error stopping monitoring:', error);
+                showNotification('Error stopping monitoring', 'error');
+            }
+        }
+
+        async function testSTTIntegration() {
+            const sttResults = document.getElementById('transcriptionOutput');
+            sttResults.innerHTML = '<div class="loading">Testing STT integration...</div>';
+
+            try {
+                const response = await axios.post('/parts/api/microphone/test-stt', {
+                    microphoneId: partId,
+                    characterId: characterId,
+                    duration: 10
+                });
+
+                if (response.data.success) {
+                    sttResults.innerHTML = `
+                        <div class="stt-result success">
+                            <h6>STT Test Successful</h6>
+                            <p><strong>Transcription:</strong> ${response.data.transcription}</p>
+                            <p><strong>Confidence:</strong> ${response.data.confidence}%</p>
+                            <p><strong>Language:</strong> ${response.data.language}</p>
+                        </div>
+                    `;
+                } else {
+                    sttResults.innerHTML = `
+                        <div class="stt-result error">
+                            <h6>STT Test Failed</h6>
+                            <p>${response.data.error}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error testing STT integration:', error);
+                sttResults.innerHTML = `
+                    <div class="stt-result error">
+                        <h6>STT Test Error</h6>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function configureSTT() {
+            // Open STT configuration modal or redirect to STT config page
+            window.open(`/ai/stt/configure?characterId=${characterId}`, '_blank');
+        }
+
+        async function checkSTTStatus() {
+            try {
+                const response = await axios.get('/parts/api/microphone/stt-status');
+                const statusDot = document.getElementById('sttStatusDot');
+                const statusText = document.getElementById('sttStatusText');
+
+                if (response.data.success && response.data.status === 'active') {
+                    statusDot.className = 'indicator-dot active';
+                    statusText.textContent = 'STT Service Status: Active';
+                } else {
+                    statusDot.className = 'indicator-dot inactive';
+                    statusText.textContent = 'STT Service Status: Inactive';
+                }
+            } catch (error) {
+                console.error('Error checking STT status:', error);
+                const statusDot = document.getElementById('sttStatusDot');
+                const statusText = document.getElementById('sttStatusText');
+                statusDot.className = 'indicator-dot error';
+                statusText.textContent = 'STT Service Status: Error';
+            }
+        }
+
+        function updateAudioLevelDisplay(levels) {
+            const levelBar = document.getElementById('audioLevelBar');
+            const levelPercentage = document.getElementById('audioLevelPercentage');
+            const peakLevel = document.getElementById('peakLevel');
+            const avgLevel = document.getElementById('avgLevel');
+            const noiseFloor = document.getElementById('noiseFloor');
+
+            if (levels) {
+                const percentage = Math.min(100, Math.max(0, levels.current || 0));
+                levelBar.style.width = percentage + '%';
+                levelPercentage.textContent = percentage.toFixed(1) + '%';
+
+                if (peakLevel) peakLevel.textContent = (levels.peak || 0).toFixed(1) + ' dB';
+                if (avgLevel) avgLevel.textContent = (levels.average || 0).toFixed(1) + ' dB';
+                if (noiseFloor) noiseFloor.textContent = (levels.noiseFloor || -60).toFixed(1) + ' dB';
+            }
+        }
+
+        let audioLevelInterval;
+        function startAudioLevelUpdates() {
+            audioLevelInterval = setInterval(async () => {
+                try {
+                    const response = await axios.get(`/parts/api/microphone/${partId}/levels`);
+                    if (response.data.success) {
+                        updateAudioLevelDisplay(response.data.levels);
+                    }
+                } catch (error) {
+                    console.error('Error getting audio levels:', error);
+                }
+            }, 100); // Update every 100ms
+        }
+
+        function stopAudioLevelUpdates() {
+            if (audioLevelInterval) {
+                clearInterval(audioLevelInterval);
+                audioLevelInterval = null;
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            // Simple notification system
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 10px 20px;
+                border-radius: 5px;
+                color: white;
+                z-index: 1000;
+                background-color: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#2196F3'};
+            `;
+
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 3000);
+        }
 
         function testPart() {
             const type = document.getElementById('type').value;
@@ -275,5 +715,282 @@
                 });
         }
     </script>
+
+    <!-- Microphone Management Styles -->
+    <style>
+        .microphone-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+
+        .microphone-section h4 {
+            margin: 0 0 15px 0;
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 5px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .checkbox-grid label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-grid small {
+            display: block;
+            color: #666;
+            font-size: 0.8em;
+            margin-top: 2px;
+        }
+
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 0.8em;
+            margin-left: 10px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-small:hover {
+            background-color: #1976D2;
+        }
+
+        .management-tabs {
+            margin: 20px 0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .tab-navigation {
+            display: flex;
+            background-color: #f5f5f5;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            background-color: transparent;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .tab-button:hover {
+            background-color: #e0e0e0;
+        }
+
+        .tab-button.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 20px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .test-section, .monitor-section, .stt-section {
+            max-width: 800px;
+        }
+
+        .test-controls, .monitor-controls, .stt-controls {
+            margin: 15px 0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .btn.primary {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .btn.primary:hover {
+            background-color: #45a049;
+        }
+
+        .btn.secondary {
+            background-color: #2196F3;
+            color: white;
+        }
+
+        .btn.secondary:hover {
+            background-color: #1976D2;
+        }
+
+        .test-results {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        .audio-level-container {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        .audio-level-meter {
+            width: 100%;
+            height: 30px;
+            background-color: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .level-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50 0%, #FFC107 70%, #f44336 100%);
+            width: 0%;
+            transition: width 0.1s ease;
+        }
+
+        .audio-level-percentage {
+            text-align: center;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .monitoring-data {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .metric {
+            padding: 10px;
+            background-color: white;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+
+        .metric-label {
+            display: block;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .metric-value {
+            display: block;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .stt-status {
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #f0f0f0;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .indicator-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #ccc;
+        }
+
+        .indicator-dot.active {
+            background-color: #4CAF50;
+        }
+
+        .indicator-dot.inactive {
+            background-color: #FFC107;
+        }
+
+        .indicator-dot.error {
+            background-color: #f44336;
+        }
+
+        .stt-results {
+            margin: 20px 0;
+        }
+
+        .stt-result {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        .stt-result.success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .stt-result.error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .notification {
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
 </body>
 </html>

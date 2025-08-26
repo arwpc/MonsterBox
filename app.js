@@ -13,7 +13,7 @@ process.env.NODE_NO_WARNINGS = '1';
 
 let express, path, http, https, logger, app, server, httpsServer, port, audioStream, soundController, fs, os, session;
 let videoStream; // <-- Add videoStream variable
-let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, webcamRoutes, voiceRoutes, cleanupRoutes, healthRoutes, authRoutes, sshRoutes, aiConfigRoutes, aiManagementRoutes, configRoutes, headTrackingRoutes, conversationalAIRoutes;
+let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, webcamRoutes, voiceRoutes, cleanupRoutes, healthRoutes, authRoutes, sshRoutes, aiConfigRoutes, aiManagementRoutes, configRoutes, headTrackingRoutes;
 let characterService;
 let authMiddleware, rbacMiddleware;
 
@@ -23,6 +23,7 @@ let serviceConnectionManager;
 let audioCleanupService;
 let microphoneManagerService;
 let elevenLabsService;
+let elevenLabsWebSocketProxy;
 
 // Import error handling middleware
 const { errorHandler, notFoundHandler, asyncHandler } = require('./middleware/errorHandler');
@@ -109,8 +110,7 @@ try {
     aiConfigRoutes = require('./routes/ai-config');
     aiManagementRoutes = require('./routes/aiManagementRoutes');
 
-    // Import Conversational AI routes
-    conversationalAIRoutes = require('./routes/conversationalAIRoutes');
+
 
 
 
@@ -442,8 +442,7 @@ app.use('/ai-config', aiConfigRoutes);
 app.use('/ai-management', aiManagementRoutes);
 app.use('/api/ai', aiManagementRoutes);
 
-// Conversational AI routes
-app.use('/conversational-ai', conversationalAIRoutes);
+
 
 // Enhanced Test Chat route (formerly ChatterPi test)
 app.get('/test-chat', async (req, res) => {
@@ -825,10 +824,22 @@ async function initializeServiceManagement() {
             await initializeLegacyServices();
         }
 
+        // Always ensure ElevenLabs service is initialized (regardless of service management approach)
+        if (!global.elevenLabsService) {
+            logger.info('🤖 Ensuring ElevenLabs service is initialized...');
+            await initializeConversationalAIServices();
+        }
+
     } catch (error) {
         logger.error('❌ Error initializing centralized service management:', error);
         // Fall back to legacy initialization
         await initializeLegacyServices();
+    }
+
+    // Always ensure ElevenLabs service is initialized (regardless of service management approach)
+    if (!global.elevenLabsService) {
+        logger.info('🤖 Ensuring ElevenLabs service is initialized...');
+        await initializeConversationalAIServices();
     }
 }
 
@@ -872,6 +883,14 @@ async function initializeConversationalAIServices() {
         // Make service globally available
         global.elevenLabsService = elevenLabsService;
 
+        // Initialize ElevenLabs Live STT Service
+        logger.info('🎤 Initializing ElevenLabs Live STT Service...');
+        const ElevenLabsLiveSTTService = require('./services/elevenLabsLiveSTTService');
+        const elevenLabsLiveSTTService = new ElevenLabsLiveSTTService();
+        await elevenLabsLiveSTTService.initialize();
+        global.elevenLabsLiveSTTService = elevenLabsLiveSTTService;
+        logger.info(`✅ ElevenLabs Live STT Service initialized on port ${elevenLabsLiveSTTService.port}`);
+
         logger.info('✅ ElevenLabs Conversational AI Service initialized successfully');
         logger.info(`🌐 ElevenLabs WebSocket server running on port ${elevenLabsService.port}`);
 
@@ -881,6 +900,45 @@ async function initializeConversationalAIServices() {
         status.agents.forEach(agent => {
             logger.info(`   - Character ${agent.characterId}: ${agent.name}`);
         });
+
+        // Initialize ElevenLabs WebSocket SSL Proxies
+        try {
+            const ElevenLabsWebSocketProxy = require('./services/elevenLabsWebSocketProxy');
+
+            // Conversational Service Proxy (8771 → 8872)
+            elevenLabsWebSocketProxy = new ElevenLabsWebSocketProxy({
+                proxyPort: 8872,
+                targetPort: 8771,
+                serviceName: 'ElevenLabs Conversational'
+            });
+            await elevenLabsWebSocketProxy.start();
+
+            // Make proxy globally available
+            global.elevenLabsWebSocketProxy = elevenLabsWebSocketProxy;
+
+            const proxyStatus = elevenLabsWebSocketProxy.getStatus();
+            if (proxyStatus.isRunning) {
+                logger.info(`🔐 ElevenLabs Conversational secure WebSocket proxy running on port ${proxyStatus.proxyPort}`);
+            }
+
+            // Live STT Service Proxy (8778 → 8873)
+            const elevenLabsSTTWebSocketProxy = new ElevenLabsWebSocketProxy({
+                proxyPort: 8873,
+                targetPort: 8778,
+                serviceName: 'ElevenLabs Live STT'
+            });
+            await elevenLabsSTTWebSocketProxy.start();
+
+            // Make STT proxy globally available
+            global.elevenLabsSTTWebSocketProxy = elevenLabsSTTWebSocketProxy;
+
+            const sttProxyStatus = elevenLabsSTTWebSocketProxy.getStatus();
+            if (sttProxyStatus.isRunning) {
+                logger.info(`🔐 ElevenLabs Live STT secure WebSocket proxy running on port ${sttProxyStatus.proxyPort}`);
+            }
+        } catch (error) {
+            logger.warn('⚠️ ElevenLabs secure WebSocket proxies not started:', error.message);
+        }
 
         return true;
 
@@ -1036,6 +1094,12 @@ async function shutdownLegacyServices() {
         if (elevenLabsService) {
             await elevenLabsService.shutdown();
             logger.info('ElevenLabs Conversational AI service stopped');
+        }
+
+        // Shutdown ElevenLabs WebSocket proxy
+        if (elevenLabsWebSocketProxy) {
+            await elevenLabsWebSocketProxy.stop();
+            logger.info('ElevenLabs WebSocket proxy stopped');
         }
 
         // Shutdown hardware services

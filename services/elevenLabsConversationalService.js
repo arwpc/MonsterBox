@@ -19,6 +19,13 @@ class ElevenLabsConversationalService extends EventEmitter {
             'xi-api-key': this.apiKey,
             'Content-Type': 'application/json'
         };
+
+        // Debug API key availability
+        if (!this.apiKey) {
+            console.warn('⚠️ ElevenLabs API key not found in environment variables');
+        } else {
+            console.log(`🔑 ElevenLabs API key loaded (length: ${this.apiKey.length})`);
+        }
         
         // Agent management
         this.agents = new Map(); // Character ID -> Agent data
@@ -168,40 +175,65 @@ class ElevenLabsConversationalService extends EventEmitter {
      */
     async handleClientMessage(sessionId, data) {
         try {
-            const message = JSON.parse(data.toString());
             const connection = this.activeConnections.get(sessionId);
-            
+
             if (!connection) {
                 console.error(`❌ No connection found for session: ${sessionId}`);
                 return;
             }
-            
-            switch (message.type) {
-                case 'start_conversation':
-                    await this.startConversation(sessionId, message.characterId);
-                    break;
-                    
-                case 'send_audio':
-                    await this.sendAudioToAgent(sessionId, message.audioData);
-                    break;
 
-                case 'send_text':
-                case 'user_message':
-                    await this.sendTextToAgent(sessionId, message.text || message.message);
-                    break;
+            // Convert data to string for analysis
+            let dataString = data.toString();
 
-                case 'stop_conversation':
-                    await this.stopConversation(sessionId);
-                    break;
-                    
-                case 'get_conversation_starters':
-                    this.sendConversationStarters(sessionId, message.characterId);
-                    break;
-                    
-                default:
-                    console.warn(`⚠️  Unknown message type: ${message.type}`);
+            // Debug: Log data type and first few bytes
+            console.log(`🔍 Received data for session ${sessionId}:`, {
+                type: typeof data,
+                isBuffer: data instanceof Buffer,
+                isBlob: data instanceof Blob,
+                length: data.length || data.size,
+                firstBytes: data instanceof Buffer ? data.slice(0, 10).toString('hex') : 'N/A',
+                dataString: dataString.substring(0, 100)
+            });
+
+            // Check if it looks like JSON (starts with { or [)
+            if (dataString.trim().startsWith('{') || dataString.trim().startsWith('[')) {
+                // This is a JSON message
+                console.log(`📨 Received JSON message for session ${sessionId}: ${dataString.substring(0, 100)}`);
+                const message = JSON.parse(dataString);
+
+                switch (message.type) {
+                    case 'start_conversation':
+                        await this.startConversation(sessionId, message.characterId);
+                        break;
+
+                    case 'send_audio':
+                        await this.sendAudioToAgent(sessionId, message.audioData);
+                        break;
+
+                    case 'send_text':
+                    case 'user_message':
+                        await this.sendTextToAgent(sessionId, message.text || message.message);
+                        break;
+
+                    case 'stop_conversation':
+                        await this.stopConversation(sessionId);
+                        break;
+
+                    case 'get_conversation_starters':
+                        this.sendConversationStarters(sessionId, message.characterId);
+                        break;
+
+                    default:
+                        console.warn(`⚠️  Unknown message type: ${message.type}`);
+                }
+                return;
             }
-            
+
+            // If not JSON, treat as binary audio data
+            console.log(`🎵 Received binary audio data: ${data.length} bytes for session ${sessionId}`);
+            await this.sendAudioToAgent(sessionId, data);
+
+
         } catch (error) {
             console.error(`❌ Error handling client message for ${sessionId}:`, error.message);
             this.sendToClient(sessionId, {
@@ -223,6 +255,13 @@ class ElevenLabsConversationalService extends EventEmitter {
             
             if (!connection || !agent) {
                 throw new Error(`Invalid session or character: ${sessionId}, ${characterId}`);
+            }
+
+            // Check if API key is available
+            if (!this.apiKey) {
+                console.warn(`⚠️ ElevenLabs API key not available, using mock mode for ${sessionId}`);
+                this.startMockConversation(sessionId, agent);
+                return;
             }
             
             // Get signed URL for ElevenLabs WebSocket
@@ -276,11 +315,46 @@ class ElevenLabsConversationalService extends EventEmitter {
             
         } catch (error) {
             console.error(`❌ Failed to start conversation for ${sessionId}:`, error.message);
+            console.error(`❌ Full error details:`, error);
+
+            // Send detailed error to client
             this.sendToClient(sessionId, {
                 type: 'error',
-                message: 'Failed to start conversation'
+                message: `Failed to start conversation: ${error.message}`,
+                details: error.message.includes('API') ? 'ElevenLabs API connection failed' : 'Service error'
             });
         }
+    }
+
+    /**
+     * Start mock conversation when ElevenLabs API is not available
+     */
+    startMockConversation(sessionId, agent) {
+        const connection = this.activeConnections.get(sessionId);
+        if (!connection) return;
+
+        console.log(`🎭 Starting mock conversation for ${agent.name}`);
+
+        // Mark connection as active
+        connection.characterId = agent.characterId;
+        connection.isActive = true;
+
+        // Send conversation started message
+        this.sendToClient(sessionId, {
+            type: 'conversation_started',
+            characterId: agent.characterId,
+            characterName: agent.name,
+            mode: 'mock'
+        });
+
+        // Send a welcome message
+        setTimeout(() => {
+            this.sendToClient(sessionId, {
+                type: 'transcript',
+                text: `Hello! I'm ${agent.name}. This is a mock conversation since ElevenLabs API is not available.`,
+                role: 'assistant'
+            });
+        }, 1000);
     }
 
     /**
@@ -379,12 +453,31 @@ class ElevenLabsConversationalService extends EventEmitter {
         }
 
         try {
+            let base64Audio;
+
+            // Convert binary data to base64 if needed
+            if (audioData instanceof Buffer) {
+                base64Audio = audioData.toString('base64');
+            } else if (audioData instanceof Blob) {
+                // Convert Blob to base64
+                const arrayBuffer = await audioData.arrayBuffer();
+                const buffer = Buffer.from(arrayBuffer);
+                base64Audio = buffer.toString('base64');
+            } else if (typeof audioData === 'string') {
+                // Assume it's already base64 encoded
+                base64Audio = audioData;
+            } else {
+                console.error(`❌ Unsupported audio data type for session ${sessionId}:`, typeof audioData);
+                return;
+            }
+
             const message = {
                 type: 'audio',
-                audio_base64: audioData
+                audio_base64: base64Audio
             };
 
             connection.elevenLabsWs.send(JSON.stringify(message));
+            console.log(`🎵 Sent ${base64Audio.length} characters of base64 audio to ElevenLabs agent for session ${sessionId}`);
 
         } catch (error) {
             console.error(`❌ Error sending audio to agent for ${sessionId}:`, error.message);
@@ -396,8 +489,40 @@ class ElevenLabsConversationalService extends EventEmitter {
      */
     async sendTextToAgent(sessionId, text) {
         const connection = this.activeConnections.get(sessionId);
-        if (!connection || !connection.elevenLabsWs || !connection.isActive) {
-            console.error(`❌ No active ElevenLabs connection for session: ${sessionId}`);
+        if (!connection || !connection.isActive) {
+            console.error(`❌ No active connection for session: ${sessionId}`);
+            return;
+        }
+
+        // Handle mock mode
+        if (!connection.elevenLabsWs) {
+            console.log(`💬 Mock response for "${text}"`);
+
+            // Echo the user's message
+            this.sendToClient(sessionId, {
+                type: 'transcript',
+                text: text,
+                role: 'user'
+            });
+
+            // Send a mock response
+            setTimeout(() => {
+                const responses = [
+                    "That's interesting! Tell me more.",
+                    "I understand what you're saying.",
+                    "Thanks for sharing that with me.",
+                    "How does that make you feel?",
+                    "That's a great point!"
+                ];
+                const response = responses[Math.floor(Math.random() * responses.length)];
+
+                this.sendToClient(sessionId, {
+                    type: 'transcript',
+                    text: response,
+                    role: 'assistant'
+                });
+            }, 1000 + Math.random() * 2000);
+
             return;
         }
 

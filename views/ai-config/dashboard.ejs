@@ -322,27 +322,27 @@
                 </div>
             </div>
 
-            <!-- Conversational AI Settings -->
+            <!-- Microphone and STT -->
             <div class="ai-system-card">
                 <div class="system-header">
-                    <i class="fas fa-comments system-icon"></i>
-                    <div class="system-title">Conversation Settings</div>
+                    <i class="fas fa-microphone system-icon"></i>
+                    <div class="system-title">Microphone and STT</div>
                 </div>
                 <div class="system-status">
                     <div class="status-indicator <%= status && status.elevenlabs && status.elevenlabs.online ? 'status-online' : 'status-offline' %>"></div>
                     <span><%= status && status.elevenlabs ? (status.elevenlabs.online ? 'Online' : 'Offline') : 'Unknown' %></span>
                 </div>
                 <div class="system-details">
-                    <p><strong>Provider:</strong> ElevenLabs</p>
-                    <p><strong>Active Connections:</strong> <%= status && status.elevenlabs ? status.elevenlabs.activeConnections || 0 : 0 %></p>
-                    <p><strong>Voice Detection:</strong> <%= status && status.elevenlabs ? (status.elevenlabs.vadEnabled ? 'Enabled' : 'Disabled') : 'Unknown' %></p>
+                    <p><strong>Provider:</strong> Speech-to-Text Testing</p>
+                    <p><strong>Microphones:</strong> Available</p>
+                    <p><strong>STT Engine:</strong> <%= status && status.elevenlabs ? (status.elevenlabs.vadEnabled ? 'Enabled' : 'Disabled') : 'Unknown' %></p>
                     <p><strong>Status:</strong> <%= status && status.elevenlabs ? status.elevenlabs.status || 'Unknown' : 'Not initialized' %></p>
                 </div>
                 <div class="system-actions">
-                    <a href="/ai-management/conversation" class="button primary-btn">
+                    <a href="/ai-management/microphone-stt" class="button primary-btn">
                         <i class="fas fa-cog"></i> Configure
                     </a>
-                    <button class="button secondary-btn" onclick="testConversation()">
+                    <button class="button secondary-btn" onclick="testSTT()">
                         <i class="fas fa-test-tube"></i> Test
                     </button>
                 </div>
@@ -410,7 +410,7 @@
                     <div class="button-group">
                         <a href="/ai-management/agents" class="button">🤖 ElevenLabs Agents</a>
                         <a href="/ai-management/voices" class="button">🎤 Voice Configuration</a>
-                        <a href="/ai-management/conversation" class="button">💬 Conversation Settings</a>
+                        <a href="/ai-management/microphone-stt" class="button">🎤 Microphone and STT</a>
                     </div>
                 </div>
 
@@ -418,7 +418,7 @@
                     <h4>🎭 Character Control</h4>
                     <div class="button-group">
                         <a href="/characters" class="button">🎭 Characters</a>
-                        <a href="/conversational-ai" class="button">🤖 Voice Chat</a>
+                        <a href="/test-chat" class="button">🤖 Enhanced Voice Chat</a>
                     </div>
                 </div>
 
@@ -467,19 +467,19 @@
                 });
         }
 
-        function testConversation() {
-            showModal('Testing Conversation...', '<p>Testing ElevenLabs conversation system...</p>');
-            fetch('/ai-management/api/test/conversation', { method: 'POST' })
+        function testSTT() {
+            showModal('Testing STT...', '<p>Testing Speech-to-Text system...</p>');
+            fetch('/ai-management/api/test/stt', { method: 'POST' })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        showModal('Conversation Test Result', `<p><strong>Success!</strong></p><p>Active Connections: ${data.activeConnections}</p><p>VAD Status: ${data.vadStatus}</p><p>Response Time: ${data.responseTime}ms</p>`);
+                        showModal('STT Test Result', `<p><strong>Success!</strong></p><p>STT System Status: ${data.sttSystemStatus}</p><p>VAD Status: ${data.vadStatus}</p><p>Response Time: ${data.responseTime}ms</p>`);
                     } else {
-                        showModal('Conversation Test Failed', `<p><strong>Error:</strong> ${data.error}</p>`);
+                        showModal('STT Test Failed', `<p><strong>Error:</strong> ${data.error}</p>`);
                     }
                 })
                 .catch(error => {
-                    showModal('Conversation Test Error', `<p><strong>Error:</strong> ${error.message}</p>`);
+                    showModal('STT Test Error', `<p><strong>Error:</strong> ${error.message}</p>`);
                 });
         }
 
