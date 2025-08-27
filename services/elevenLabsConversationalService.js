@@ -342,8 +342,8 @@ class ElevenLabsConversationalService extends EventEmitter {
             });
 
             elevenLabsWs.on('message', (data) => {
-                // Forward ElevenLabs messages to client
-                this.sendToClient(sessionId, JSON.parse(data.toString()));
+                // Process ElevenLabs messages properly
+                this.handleElevenLabsMessage(sessionId, data);
             });
 
             elevenLabsWs.on('error', (error) => {
@@ -494,9 +494,16 @@ class ElevenLabsConversationalService extends EventEmitter {
         try {
             const message = JSON.parse(data.toString());
             const connection = this.activeConnections.get(sessionId);
-            
+
             if (!connection) return;
-            
+
+            // Debug: Log all incoming messages from ElevenLabs
+            console.log(`🔍 ElevenLabs message for session ${sessionId}:`, {
+                type: message.type,
+                keys: Object.keys(message),
+                message: JSON.stringify(message).substring(0, 200) + '...'
+            });
+
             switch (message.type) {
                 case 'audio':
                     // Handle audio response from ElevenLabs
