@@ -338,7 +338,12 @@ class EnhancedTestChat {
                 break;
 
             case 'audio':
-                this.handleAudioResponse(message);
+                // Unify audio handling: support both proxied (audioData) and direct (audio_event.audio_base_64)
+                if (message.audio_event && message.audio_event.audio_base_64) {
+                    this.handleElevenLabsAudio(message.audio_event.audio_base_64);
+                } else {
+                    this.handleAudioResponse(message);
+                }
                 break;
 
             case 'user_transcript':
@@ -1764,7 +1769,26 @@ class EnhancedTestChat {
 
 
     /**
-     * Play audio from base64 data
+     * Stop and clean up any currently playing audio (barge-in friendly)
+     */
+    stopCurrentAudio() {
+        try {
+            if (this.currentAudio) {
+                try { this.currentAudio.pause(); } catch (e) {}
+                // Revoke blob URL if present
+                if (this.currentAudio._blobUrl) {
+                    try { URL.revokeObjectURL(this.currentAudio._blobUrl); } catch (e) {}
+                }
+                this.currentAudio.src = '';
+                this.currentAudio = null;
+            }
+        } catch (e) {
+            console.warn('⚠️ Error while stopping current audio:', e);
+        }
+    }
+
+    /**
+     * Play audio from base64 data (single-stream, interruptible)
      */
     async playAudioFromBase64(audioBase64) {
         try {
@@ -1778,6 +1802,9 @@ class EnhancedTestChat {
                 console.log('🔇 Audio playback disabled by user controls');
                 return;
             }
+
+            // Ensure only one audio stream at a time
+            this.stopCurrentAudio();
 
             console.log('🔊 Playing audio from base64, length:', audioBase64.length);
 
@@ -1793,6 +1820,8 @@ class EnhancedTestChat {
                 const audioBlob = new Blob([audioArray], { type: 'audio/mpeg' });
                 const audioUrl = URL.createObjectURL(audioBlob);
                 const testAudio = new Audio(audioUrl);
+                // Track URL for cleanup
+                testAudio._blobUrl = audioUrl;
 
                 await new Promise((resolve, reject) => {
                     const timeout = setTimeout(() => {
@@ -1818,7 +1847,9 @@ class EnhancedTestChat {
                 this.currentAudio.volume = 0.8;
 
                 this.currentAudio.onended = () => {
-                    URL.revokeObjectURL(audioUrl);
+                    if (this.currentAudio?._blobUrl) {
+                        URL.revokeObjectURL(this.currentAudio._blobUrl);
+                    }
                     this.currentAudio = null;
                 };
 
@@ -1835,16 +1866,22 @@ class EnhancedTestChat {
                     const audioUrl = URL.createObjectURL(wavBlob);
 
                     this.currentAudio = new Audio(audioUrl);
+                    // Track URL for cleanup
+                    this.currentAudio._blobUrl = audioUrl;
                     this.currentAudio.volume = 0.8;
 
                     this.currentAudio.onended = () => {
-                        URL.revokeObjectURL(audioUrl);
+                        if (this.currentAudio?._blobUrl) {
+                            URL.revokeObjectURL(this.currentAudio._blobUrl);
+                        }
                         this.currentAudio = null;
                     };
 
                     this.currentAudio.onerror = (error) => {
                         console.error('❌ PCM audio playback error:', error);
-                        URL.revokeObjectURL(audioUrl);
+                        if (this.currentAudio?._blobUrl) {
+                            URL.revokeObjectURL(this.currentAudio._blobUrl);
+                        }
                         this.currentAudio = null;
                         this.fallbackToExistingTTS();
                     };
@@ -2036,6 +2073,8 @@ class EnhancedTestChat {
                 if (this.speechDetected) {
                     console.log(`🎙️ Speech ended, sending end-of-speech signal to ElevenLabs`);
                     this.speechDetected = false;
+                    // Client-side barge-in: stop any agent playback as soon as we start (or end) speaking
+                    this.stopCurrentAudio();
                     // Send empty audio chunk to signal end of speech
                     this.sendEndOfSpeechToElevenLabs();
                 }
@@ -2049,6 +2088,8 @@ class EnhancedTestChat {
             if (!this.speechDetected) {
                 console.log(`🎙️ Speech started, beginning transmission to ElevenLabs`);
                 this.speechDetected = true;
+                // Client-side barge-in: immediately stop any agent playback on speech start
+                this.stopCurrentAudio();
             }
 
             const base64Audio = btoa(String.fromCharCode.apply(null, pcmAudio));

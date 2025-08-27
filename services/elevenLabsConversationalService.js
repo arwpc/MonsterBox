@@ -201,6 +201,12 @@ class ElevenLabsConversationalService extends EventEmitter {
                 console.log(`📨 Received JSON message for session ${sessionId}: ${dataString.substring(0, 100)}`);
                 const message = JSON.parse(dataString);
 
+                // ElevenLabs Live Mode: forward user audio chunks directly if present
+                if (Object.prototype.hasOwnProperty.call(message, 'user_audio_chunk')) {
+                    await this.sendAudioToAgent(sessionId, message.user_audio_chunk);
+                    return;
+                }
+
                 switch (message.type) {
                     case 'authenticate':
                         await this.handleAuthentication(sessionId, message);
@@ -680,13 +686,13 @@ class ElevenLabsConversationalService extends EventEmitter {
                 return;
             }
 
+            // ElevenLabs ConvAI expects a root-level user_audio_chunk field
             const message = {
-                type: 'audio',
-                audio_base64: base64Audio
+                user_audio_chunk: base64Audio
             };
 
             connection.elevenLabsWs.send(JSON.stringify(message));
-            console.log(`🎵 Sent ${base64Audio.length} characters of base64 audio to ElevenLabs agent for session ${sessionId}`);
+            console.log(`🎵 Forwarded user_audio_chunk (${base64Audio.length} base64 chars) to ElevenLabs for session ${sessionId}`);
 
         } catch (error) {
             console.error(`❌ Error sending audio to agent for ${sessionId}:`, error.message);
