@@ -61,10 +61,12 @@ router.get('/', async (req, res) => {
             platform: os.platform(),
             arch: os.arch(),
             hostname: os.hostname(),
-            totalMem: (os.totalmem() / (1024 * 1024 * 1024)).toFixed(2) + ' GB',
-            freeMem: (os.freemem() / (1024 * 1024 * 1024)).toFixed(2) + ' GB',
-            cpus: os.cpus().length,
-            uptime: (os.uptime() / 3600).toFixed(2) + ' hours'
+            totalMemory: (os.totalmem() / (1024 * 1024 * 1024)).toFixed(2) + ' GB',
+            freeMemory: (os.freemem() / (1024 * 1024 * 1024)).toFixed(2) + ' GB',
+            cpuCores: os.cpus().length,
+            cpuModel: os.cpus()[0]?.model || 'Unknown CPU',
+            uptime: (os.uptime() / 3600).toFixed(2) + ' hours',
+            loadAverage: os.loadavg()[0].toFixed(2)
         };
 
         // Get IP address
@@ -82,11 +84,20 @@ router.get('/', async (req, res) => {
                 size: (drive.size / (1024 * 1024 * 1024)).toFixed(2) + ' GB',
                 used: (drive.used / (1024 * 1024 * 1024)).toFixed(2) + ' GB',
                 available: (drive.available / (1024 * 1024 * 1024)).toFixed(2) + ' GB',
-                capacity: drive.capacity
+                capacity: drive.capacity,
+                mount: drive.mounted || '/'
             }));
         } catch (error) {
             logger.warn('Error getting disk information:', error);
-            driveInfo = [{ error: 'Unable to retrieve disk information' }];
+            driveInfo = [{
+                filesystem: 'Unknown',
+                size: 'N/A',
+                used: 'N/A',
+                available: 'N/A',
+                capacity: '0%',
+                mount: '/',
+                error: 'Unable to retrieve disk information'
+            }];
         }
 
         // Get WiFi signal strength (Linux specific)
@@ -373,6 +384,88 @@ router.post('/api/devices/scan', (req, res) => {
     } catch (error) {
         logger.error('Error scanning devices:', error);
         res.status(500).json({ success: false, error: 'Failed to scan devices' });
+    }
+});
+
+// Sound cleanup analyze endpoint
+router.post('/api/cleanup/analyze', async (req, res) => {
+    try {
+        const fs = require('fs').promises;
+        const path = require('path');
+
+        // Paths
+        const soundsJsonPath = path.join(__dirname, '../data/sounds.json');
+        const soundsDirPath = path.join(__dirname, '../public/sounds');
+
+        // Get all files in the sounds directory
+        const files = await fs.readdir(soundsDirPath);
+
+        // Read and parse sounds.json
+        const soundsData = await fs.readFile(soundsJsonPath, 'utf8');
+        const sounds = JSON.parse(soundsData);
+
+        // Collect all filenames used in sounds.json
+        const usedFilenames = new Set();
+        sounds.forEach(sound => {
+            if (sound && sound.filename) usedFilenames.add(sound.filename);
+            if (sound && sound.file) usedFilenames.add(sound.file);
+        });
+
+        // Find unused files
+        const unusedFiles = files.filter(file => !usedFilenames.has(file));
+
+        logger.info(`Sound cleanup analysis: ${files.length} total files, ${unusedFiles.length} unused`);
+
+        res.json({
+            success: true,
+            totalFiles: files.length,
+            referencedFiles: usedFilenames.size,
+            unusedFilesFound: unusedFiles.length,
+            unusedFiles: unusedFiles
+        });
+
+    } catch (error) {
+        logger.error('Error analyzing sound files:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to analyze sound files',
+            details: error.message
+        });
+    }
+});
+
+// Sound cleanup execute endpoint
+router.post('/api/cleanup/execute', async (req, res) => {
+    try {
+        const cleanupScript = require('../scripts/cleanup_sounds');
+
+        // Run the actual cleanup
+        const result = await cleanupScript();
+
+        if (result.success) {
+            logger.info(`Sound cleanup completed: deleted ${result.deletedCount} files`);
+            res.json({
+                success: true,
+                deletedCount: result.deletedCount,
+                message: `Successfully deleted ${result.deletedCount} unused sound files`,
+                details: result
+            });
+        } else {
+            logger.error('Sound cleanup failed:', result.error);
+            res.status(500).json({
+                success: false,
+                error: result.error,
+                details: result
+            });
+        }
+
+    } catch (error) {
+        logger.error('Error executing sound cleanup:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to execute sound cleanup',
+            details: error.message
+        });
     }
 });
 

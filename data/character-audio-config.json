@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastUpdated": "2025-06-21T17:19:29.521Z",
+  "lastUpdated": "2025-08-27T20:00:48.535Z",
   "characters": {
     "1": {
       "characterId": 1,
@@ -14,9 +14,68 @@
       },
       "lastModified": "2025-06-21T17:19:29.521Z",
       "stt": {},
-      "jawAnimation": {},
       "audioProcessing": {},
       "characterSpecific": {}
+    },
+    "4": {
+      "characterId": 4,
+      "created": "2025-08-27T20:00:48.527Z",
+      "microphone": {
+        "enabled": true,
+        "sensitivity": 1,
+        "echoCancellation": true,
+        "noiseSuppression": true,
+        "autoGainControl": true,
+        "voiceActivation": false,
+        "voiceActivationThreshold": 0.1
+      },
+      "stt": {
+        "enabled": true,
+        "language": "en",
+        "confidenceThreshold": 0.7,
+        "realTimeProcessing": true,
+        "provider": "elevenlabs",
+        "vadThreshold": 0.5,
+        "silenceDuration": 200,
+        "prefixPadding": 300
+      },
+      "microphoneSTTConfigs": {
+        "24": {
+          "language": "en",
+          "confidenceThreshold": 0.7,
+          "realTimeProcessing": true,
+          "vadThreshold": 0.5,
+          "silenceDuration": 200,
+          "prefixPadding": 300,
+          "provider": "elevenlabs",
+          "lastModified": "2025-08-27T20:00:48.527Z"
+        }
+      },
+      "jawAnimation": {
+        "enabled": true,
+        "sensitivity": 1.2,
+        "responseCurve": "exponential",
+        "attackTime": 0.03,
+        "releaseTime": 0.1,
+        "minPosition": 45,
+        "maxPosition": 10,
+        "volumeThreshold": 0.005,
+        "smoothingFactor": 0.7
+      },
+      "audioProcessing": {
+        "sampleRate": 16000,
+        "channels": 1,
+        "bufferSize": 1024,
+        "processingDelay": 100,
+        "enableRealTimeEffects": false
+      },
+      "characterSpecific": {
+        "voiceProfile": "default",
+        "emotionalResponse": true,
+        "contextAwareness": true,
+        "personalityAdjustments": true
+      },
+      "lastModified": "2025-08-27T20:00:48.534Z"
     }
   }
 }

@@ -1,6 +1,7 @@
 const voiceService = require('../services/voiceService');
 const soundService = require('../services/soundService');
 const logger = require('../scripts/logger');
+
 const path = require('path');
 const fs = require('fs');
 const axios = require('axios');
@@ -53,6 +54,79 @@ async function downloadAudio(url, outputPath) {
     }
 }
 
+// Generate speech for testing without saving to library
+exports.generateTestSpeech = async (req, res) => {
+    let tempFilePath = null;
+    try {
+        const { text, characterId } = req.body;
+        logger.info(`Generating test speech for character ${characterId} with text: ${text}`);
+
+        if (!text || !characterId) {
+            return handleError(res, new Error('Text and character ID are required'), 400);
+        }
+
+        // Get voice settings for the character
+        const voice = await voiceService.getVoiceByCharacterId(characterId);
+        if (!voice || !voice.speaker_id) {
+            logger.error(`No voice configuration found for character ${characterId}`);
+            return handleError(res, new Error('No voice configured for this character'), 404);
+        }
+
+        // Generate the speech using character's voice settings
+        const result = await voiceService.generateSpeech(text, voice.speaker_id, voice.settings || {}, characterId);
+
+        // Create temporary filename
+        const timestamp = Date.now();
+        const sanitizedText = text.substring(0, 30).replace(/[^a-zA-Z0-9]/g, '_');
+        const extension = result.format === 'wav' ? '.wav' : '.mp3';
+        const filename = `temp_test_${timestamp}_${sanitizedText}${extension}`;
+        const filePath = path.join('public', 'sounds', filename);
+        const absolutePath = path.resolve(__dirname, '..', filePath);
+        tempFilePath = absolutePath;
+
+        // Download the audio file temporarily
+        await downloadAudio(result.url, absolutePath);
+
+        // Set up automatic cleanup after 5 minutes
+        setTimeout(() => {
+            if (fs.existsSync(absolutePath)) {
+                fs.unlink(absolutePath, (err) => {
+                    if (err) {
+                        logger.error(`Failed to cleanup temp file ${absolutePath}: ${err.message}`);
+                    } else {
+                        logger.info(`Cleaned up temp test file: ${filename}`);
+                    }
+                });
+            }
+        }, 5 * 60 * 1000); // 5 minutes
+
+        res.json({
+            success: true,
+            url: `/sounds/${filename}`,
+            duration: result.duration,
+            metadata: {
+                ...result.metadata,
+                temporary: true,
+                cleanupTime: new Date(Date.now() + 5 * 60 * 1000).toISOString()
+            }
+        });
+
+    } catch (error) {
+        logger.error(`Error generating test speech: ${error.message}`);
+
+        // Clean up temp file on error
+        if (tempFilePath && fs.existsSync(tempFilePath)) {
+            try {
+                fs.unlinkSync(tempFilePath);
+            } catch (cleanupError) {
+                logger.error(`Failed to clean up temp file on error: ${cleanupError.message}`);
+            }
+        }
+
+        handleError(res, error);
+    }
+};
+
 exports.getAvailableVoices = async (req, res) => {
     try {
         const voices = await voiceService.getAvailableVoices();
@@ -87,15 +161,20 @@ exports.getVoiceSettings = async (req, res) => {
 
 exports.saveVoiceSettings = async (req, res) => {
     try {
-        const { characterId, voiceId, settings } = req.body;
+        const { characterId, voiceId, settings, metadata } = req.body;
 
         if (!characterId) {
             return handleError(res, new Error('Character ID is required'), 400);
         }
 
+        if (!voiceId) {
+            return handleError(res, new Error('Voice ID is required'), 400);
+        }
+
         logger.info(`Saving voice settings for character ${characterId}:`, {
             voiceId,
-            settings
+            settings,
+            metadata
         });
 
         // Use the new persistent voice settings method
@@ -109,7 +188,9 @@ exports.saveVoiceSettings = async (req, res) => {
             // Also update voice metadata if we can find the voice info
             try {
                 const availableVoices = await voiceService.getAvailableVoices();
-                const selectedVoice = availableVoices.find(v => v.uuid === voiceId || v.speaker_id === voiceId);
+                const selectedVoice = availableVoices.find(v =>
+                    v.voice_id === voiceId || v.uuid === voiceId || v.speaker_id === voiceId
+                );
                 if (selectedVoice) {
                     updatedVoice.metadata = {
                         ...updatedVoice.metadata,
@@ -119,6 +200,14 @@ exports.saveVoiceSettings = async (req, res) => {
                         lastModified: new Date().toISOString()
                     };
                     logger.info(`Updated voice metadata for ${selectedVoice.name}`);
+                } else if (metadata) {
+                    // Use metadata from request if voice not found in available voices
+                    updatedVoice.metadata = {
+                        ...updatedVoice.metadata,
+                        ...metadata,
+                        lastModified: new Date().toISOString()
+                    };
+                    logger.info(`Updated voice metadata from request data`);
                 }
             } catch (metadataError) {
                 logger.warn(`Could not update voice metadata: ${metadataError.message}`);
@@ -128,7 +217,11 @@ exports.saveVoiceSettings = async (req, res) => {
             logger.info(`Voice settings saved successfully for character ${characterId}`);
         }
 
-        res.json(updatedVoice);
+        res.json({
+            success: true,
+            data: updatedVoice,
+            message: 'Voice settings saved successfully'
+        });
     } catch (error) {
         handleError(res, error);
     }
@@ -210,6 +303,8 @@ exports.generateAndSaveForScene = async (req, res) => {
         logger.info(`Generating speech with speaker_id: ${voice.speaker_id}`);
         const result = await voiceService.generateSpeech(text, voice.speaker_id, voice.settings || {}, characterId);
         logger.info(`Speech generation result:`, result);
+
+
 
         // Create filename and path with correct extension
         const timestamp = Date.now();

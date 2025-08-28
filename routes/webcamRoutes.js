@@ -77,6 +77,24 @@ router.post('/', checkCharacterSelected, async (req, res) => {
             throw new Error('Character already has a webcam assigned. Each character can only have one webcam.');
         }
 
+        // Extract camera controls from form data
+        const cameraControls = {
+            brightness: parseInt(req.body.brightness) || 0,
+            contrast: parseInt(req.body.contrast) || 32,
+            saturation: parseInt(req.body.saturation) || 64,
+            hue: parseInt(req.body.hue) || 0,
+            gamma: parseInt(req.body.gamma) || 100,
+            gain: parseInt(req.body.gain) || 0,
+            sharpness: parseInt(req.body.sharpness) || 10,
+            backlight_compensation: parseInt(req.body.backlight_compensation) || 80,
+            white_balance_temperature: parseInt(req.body.white_balance_temperature) || 4600,
+            exposure_time_absolute: parseInt(req.body.exposure_time_absolute) || 157,
+            white_balance_automatic: req.body.white_balance_automatic === 'on' || req.body.white_balance_automatic === true,
+            exposure_dynamic_framerate: req.body.exposure_dynamic_framerate === 'on' || req.body.exposure_dynamic_framerate === true,
+            auto_exposure: parseInt(req.body.auto_exposure) || 3,
+            power_line_frequency: parseInt(req.body.power_line_frequency) || 1
+        };
+
         const newWebcam = {
             name: req.body.name,
             type: 'webcam',
@@ -85,7 +103,8 @@ router.post('/', checkCharacterSelected, async (req, res) => {
             devicePath: req.body.devicePath || `/dev/video${req.body.deviceId}`,
             resolution: req.body.resolution || '1280x720',
             fps: parseInt(req.body.fps, 10) || 30,
-            status: req.body.status || 'active'
+            status: req.body.status || 'active',
+            cameraControls: cameraControls
         };
 
         // Validate device ID
@@ -138,6 +157,24 @@ router.post('/:id', checkCharacterSelected, async (req, res) => {
             }
         }
 
+        // Extract camera controls from form data
+        const cameraControls = {
+            brightness: parseInt(req.body.brightness) || 0,
+            contrast: parseInt(req.body.contrast) || 32,
+            saturation: parseInt(req.body.saturation) || 64,
+            hue: parseInt(req.body.hue) || 0,
+            gamma: parseInt(req.body.gamma) || 100,
+            gain: parseInt(req.body.gain) || 0,
+            sharpness: parseInt(req.body.sharpness) || 10,
+            backlight_compensation: parseInt(req.body.backlight_compensation) || 80,
+            white_balance_temperature: parseInt(req.body.white_balance_temperature) || 4600,
+            exposure_time_absolute: parseInt(req.body.exposure_time_absolute) || 157,
+            white_balance_automatic: req.body.white_balance_automatic === 'on' || req.body.white_balance_automatic === true,
+            exposure_dynamic_framerate: req.body.exposure_dynamic_framerate === 'on' || req.body.exposure_dynamic_framerate === true,
+            auto_exposure: parseInt(req.body.auto_exposure) || 3,
+            power_line_frequency: parseInt(req.body.power_line_frequency) || 1
+        };
+
         const updatedWebcam = {
             name: req.body.name,
             type: 'webcam',
@@ -146,7 +183,8 @@ router.post('/:id', checkCharacterSelected, async (req, res) => {
             devicePath: req.body.devicePath || `/dev/video${req.body.deviceId}`,
             resolution: req.body.resolution || '1280x720',
             fps: parseInt(req.body.fps, 10) || 30,
-            status: req.body.status || 'active'
+            status: req.body.status || 'active',
+            cameraControls: cameraControls
         };
 
         // Validate device ID

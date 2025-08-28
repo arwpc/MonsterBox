@@ -9,7 +9,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const ChatterPiAI = require('./scripts/chatterpi/ai_integration');
+const ChatterPiAI = require('../../scripts/chatterpi/ai_integration');
 
 const app = express();
 const PORT = 8766;

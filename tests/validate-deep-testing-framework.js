@@ -187,7 +187,7 @@ class FrameworkValidator {
       'tests/deep-functionality/02-hardware-parts-deep.spec.js',
       'tests/deep-functionality/03-ai-management-deep.spec.js',
       'tests/deep-functionality/04-sounds-deep.spec.js',
-      'tests/deep-functionality/07-chatterpi-deep.spec.js',
+      'tests/deep-functionality/07-elevenlabs-deep.spec.js',
       'tests/deep-functionality/08-integration-deep.spec.js'
     ];
 

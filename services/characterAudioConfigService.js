@@ -26,7 +26,14 @@ class CharacterAudioConfigService {
                 language: 'en',
                 confidenceThreshold: 0.7,
                 realTimeProcessing: true,
-                provider: 'openai-whisper'
+                provider: 'elevenlabs',
+                vadThreshold: 0.5,
+                silenceDuration: 200,
+                prefixPadding: 300
+            },
+            // Character + Microphone specific STT settings
+            microphoneSTTConfigs: {
+                // microphoneId: { stt settings specific to this character + microphone combo }
             },
             jawAnimation: {
                 enabled: true,
@@ -346,6 +353,96 @@ class CharacterAudioConfigService {
             return true;
         } catch (error) {
             logger.error(`Error importing audio config for character ${characterId}:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get STT configuration for a specific character + microphone combination
+     */
+    async getCharacterMicrophoneSTTConfig(characterId, microphoneId) {
+        try {
+            const config = await this.getCharacterAudioConfig(characterId);
+
+            // Check if there's a specific config for this character + microphone combo
+            if (config.microphoneSTTConfigs && config.microphoneSTTConfigs[microphoneId]) {
+                return {
+                    ...this.defaultConfig.stt,
+                    ...config.microphoneSTTConfigs[microphoneId]
+                };
+            }
+
+            // Fall back to character-level STT config
+            return {
+                ...this.defaultConfig.stt,
+                ...config.stt
+            };
+        } catch (error) {
+            logger.error(`Error getting STT config for character ${characterId} microphone ${microphoneId}:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Update STT configuration for a specific character + microphone combination
+     */
+    async updateCharacterMicrophoneSTTConfig(characterId, microphoneId, sttConfig) {
+        try {
+            const currentConfig = await this.getCharacterAudioConfig(characterId);
+
+            // Initialize microphoneSTTConfigs if it doesn't exist
+            if (!currentConfig.microphoneSTTConfigs) {
+                currentConfig.microphoneSTTConfigs = {};
+            }
+
+            // Update the specific microphone STT config
+            currentConfig.microphoneSTTConfigs[microphoneId] = {
+                ...currentConfig.microphoneSTTConfigs[microphoneId],
+                ...sttConfig,
+                lastModified: new Date().toISOString()
+            };
+
+            // Update the overall character config
+            await this.updateCharacterAudioConfig(characterId, currentConfig);
+
+            logger.info(`Updated STT config for character ${characterId} microphone ${microphoneId}`);
+            return currentConfig.microphoneSTTConfigs[microphoneId];
+        } catch (error) {
+            logger.error(`Error updating STT config for character ${characterId} microphone ${microphoneId}:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get all microphone STT configurations for a character
+     */
+    async getCharacterMicrophoneSTTConfigs(characterId) {
+        try {
+            const config = await this.getCharacterAudioConfig(characterId);
+            return config.microphoneSTTConfigs || {};
+        } catch (error) {
+            logger.error(`Error getting microphone STT configs for character ${characterId}:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Delete STT configuration for a specific character + microphone combination
+     */
+    async deleteCharacterMicrophoneSTTConfig(characterId, microphoneId) {
+        try {
+            const currentConfig = await this.getCharacterAudioConfig(characterId);
+
+            if (currentConfig.microphoneSTTConfigs && currentConfig.microphoneSTTConfigs[microphoneId]) {
+                delete currentConfig.microphoneSTTConfigs[microphoneId];
+                await this.updateCharacterAudioConfig(characterId, currentConfig);
+                logger.info(`Deleted STT config for character ${characterId} microphone ${microphoneId}`);
+                return true;
+            }
+
+            return false;
+        } catch (error) {
+            logger.error(`Error deleting STT config for character ${characterId} microphone ${microphoneId}:`, error);
             throw error;
         }
     }

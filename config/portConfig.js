@@ -19,7 +19,7 @@ const portConfig = {
                 websocket: { start: 8000, end: 8199 },
                 proxy: { start: 8200, end: 8399 },
                 hardware: { start: 8400, end: 8599 },
-                chatterpi: { start: 8600, end: 8699 },
+                elevenlabs: { start: 8600, end: 8699 },
                 testing: { start: 8700, end: 8799 },
                 reserved: { start: 8800, end: 8999 }
             },
@@ -37,7 +37,7 @@ const portConfig = {
                 websocket: { start: 8000, end: 8299 },
                 proxy: { start: 8300, end: 8599 },
                 hardware: { start: 8600, end: 8799 },
-                chatterpi: { start: 8800, end: 8899 },
+                elevenlabs: { start: 8800, end: 8899 },
                 testing: { start: 8900, end: 8999 },
                 reserved: { start: 9000, end: 9999 }
             },
@@ -55,7 +55,7 @@ const portConfig = {
                 websocket: { start: 9000, end: 9199 },
                 proxy: { start: 9200, end: 9399 },
                 hardware: { start: 9400, end: 9599 },
-                chatterpi: { start: 9600, end: 9699 },
+                elevenlabs: { start: 9600, end: 9699 },
                 testing: { start: 9700, end: 9799 },
                 reserved: { start: 9800, end: 9999 }
             },
@@ -73,7 +73,7 @@ const portConfig = {
         main: 100,
         hardware: 90,
         websocket: 80,
-        chatterpi: 70,
+        elevenlabs: 70,
         proxy: 60,
         testing: 50
     },
@@ -104,8 +104,8 @@ const portConfig = {
             autoRestart: true,
             critical: true
         },
-        chatterpi: {
-            description: 'ChatterPi AI and animation services',
+        elevenlabs: {
+            description: 'ElevenLabs Conversational AI services',
             requiresProxy: true,
             autoRestart: true,
             critical: false
@@ -138,21 +138,12 @@ const portConfig = {
                 protocol: 'websocket'
             }
         },
-        jawAnimation: {
-            type: 'chatterpi',
-            tags: ['animation', 'servo', 'chatterpi'],
+        elevenLabsConversational: {
+            type: 'elevenlabs',
+            tags: ['ai', 'conversation', 'elevenlabs'],
             dependencies: ['audioStream'],
             metadata: {
-                description: 'Jaw Animation Service',
-                protocol: 'websocket'
-            }
-        },
-        aibridge: {
-            type: 'chatterpi',
-            tags: ['ai', 'bridge', 'chatterpi'],
-            dependencies: ['jawAnimation'],
-            metadata: {
-                description: 'AI Bridge Service',
+                description: 'ElevenLabs Conversational AI Service',
                 protocol: 'websocket'
             }
         },

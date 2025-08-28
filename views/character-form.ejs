@@ -233,6 +233,26 @@
                         <textarea id="char_description" name="char_description" required><%= character ? character.char_description : '' %></textarea>
                     </div>
 
+
+                        <!-- OpenAI Assistant Assignment -->
+                        <div class="form-section">
+                            <h3>🧠 OpenAI Assistant</h3>
+                            <div class="form-group">
+                                <% if (character && character.openaiAssistantId) { %>
+                                    <div class="info-section" style="padding:8px; border:1px solid #00ff00; border-radius:6px; background:#000800;">
+                                        <div><strong>Assigned Assistant ID:</strong> <span class="badge"><%= character.openaiAssistantId %></span></div>
+                                        <div class="button-group" style="margin-top:8px;">
+                                            <a href="/ai-management/assistants" class="button secondary-btn">🔄 Change Assistant</a>
+                                            <button type="button" class="button danger" onclick="unassignAssistant(<%= character.id %>)">❌ Unassign</button>
+                                        </div>
+                                    </div>
+                                <% } else { %>
+                                    <p class="text-muted">No Assistant assigned</p>
+                                    <a href="/ai-management/assistants" class="button">🧠 Assign Assistant</a>
+                                <% } %>
+                            </div>
+                        </div>
+
                     <!-- Animatronic Configuration Section -->
                     <div class="form-section">
                         <h3>🤖 Animatronic Configuration</h3>
@@ -441,6 +461,15 @@
                                 </div>
                             </div>
 
+        async function unassignAssistant(characterId){
+            try{
+                const res = await fetch(`/characters/${characterId}/ai/remove-all`, { method:'POST', headers:{'Content-Type':'application/json'} });
+                const data = await res.json();
+                if (data.success) location.reload(); else alert('Error: '+data.error);
+            } catch(e){ alert('Error: '+e.message); }
+        }
+
+
                             <!-- Live Microphone Test -->
                             <div class="microphone-test-section">
                                 <h4>🎤 Live Microphone Test</h4>
@@ -481,7 +510,7 @@
                         img.alt = 'Character image';
                         imagePreview.parentNode.replaceChild(img, imagePreview);
                     }
-                    
+
                     // Display file name next to the Upload Picture button
                     const fileName = e.target.files[0].name;
                     document.querySelector('.custom-file-upload').innerHTML = `Selected: ${fileName.length > 15 ? fileName.substring(0, 12) + '...' : fileName}`;
@@ -493,7 +522,7 @@
         function moveSelectedOptions(fromSelectId, toSelectId) {
             const fromSelect = document.getElementById(fromSelectId);
             const toSelect = document.getElementById(toSelectId);
-            
+
             for (let option of fromSelect.selectedOptions) {
                 toSelect.appendChild(option.cloneNode(true));
                 fromSelect.remove(option.index);

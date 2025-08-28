@@ -40,14 +40,14 @@ router.get('/new', async (req, res) => {
         // Get all parts and sounds
         const allParts = await partService.getAllParts();
         const allSounds = await soundService.getAllSounds();
-        
+
         // For new character, only show unassigned parts
         const parts = allParts.filter(part => !part.characterId);
-        
+
         // Show all sounds for new character (same as edit form)
         const sounds = allSounds;
-        
-        // Provide a temporary character object with temporary ID to ensure the form 
+
+        // Provide a temporary character object with temporary ID to ensure the form
         // behaves consistently with the edit form
         const tempCharacter = {
             id: 'new',  // Using 'new' instead of null so template conditions work
@@ -55,7 +55,7 @@ router.get('/new', async (req, res) => {
             char_description: '',
             image: null
         };
-        
+
         res.render('character-form', {
             title: 'Add New Character',
             action: '/characters',
@@ -84,7 +84,7 @@ router.get('/:id/edit', async (req, res) => {
         const allSounds = await soundService.getAllSounds();
 
         // Filter parts to show only unassigned parts and parts assigned to this character
-        const parts = allParts.filter(part => 
+        const parts = allParts.filter(part =>
             !part.characterId || part.characterId === characterId
         );
 
@@ -398,9 +398,38 @@ router.post('/:id/delete', async (req, res) => {
         logger.error('Error deleting character:', error);
         res.status(500).send('An error occurred while deleting the character');
     }
+
+	});
+
+// PATCH route for updating character data (used by AI Management)
+router.patch('/:id', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const character = await characterService.getCharacterById(id);
+        if (!character) {
+            return res.status(404).json({ success: false, error: 'Character not found' });
+        }
+
+        const updated = await characterService.updateCharacter(id, req.body);
+        res.json({ success: true, character: updated });
+    } catch (error) {
+        logger.error('Error updating character via PATCH:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
 });
 
-
+// Remove AI (unassign OpenAI Assistant)
+router.post('/:id/ai/remove-all', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const character = await characterService.getCharacterById(id);
+        if (!character) return res.status(404).json({ success: false, error: 'Character not found' });
+        const updated = await characterService.updateCharacter(id, { ...character, openaiAssistantId: null, chatterpi_config: { ...(character.chatterpi_config||{}), ai_characters: [], default_character: null } });
+        res.json({ success: true, character: updated });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
 
 // Animatronic Management Routes
 
@@ -762,164 +791,13 @@ router.post('/:id/parts/unassign', async (req, res) => {
     }
 });
 
-// Character-AI Assignment Routes
-router.get('/:id/ai', async (req, res) => {
-    try {
-        const characterId = parseInt(req.params.id);
-        const character = await characterService.getCharacterById(characterId);
-        if (!character) {
-            return res.status(404).send('Character not found');
-        }
 
-        // Load AI instances
-        const aiInstancesPath = path.join(__dirname, '..', 'data', 'ai-instances.json');
-        const aiInstancesData = await fs.readFile(aiInstancesPath, 'utf8');
-        const allAIInstances = JSON.parse(aiInstancesData);
 
-        // Get assigned AI instances for this character
-        const assignedAIInstances = character.ai_instances || [];
-        const availableAIInstances = allAIInstances.filter(ai =>
-            !assignedAIInstances.includes(ai.id)
-        );
 
-        res.render('character-ai', {
-            title: `${character.char_name} - AI Instances`,
-            character,
-            assignedAIInstances: allAIInstances.filter(ai => assignedAIInstances.includes(ai.id)),
-            availableAIInstances
-        });
-    } catch (error) {
-        logger.error('Error fetching character AI instances:', error);
-        res.status(500).send('An error occurred while fetching character AI instances');
-    }
-});
 
-// Assign AI instance to character
-router.post('/:id/ai/assign', async (req, res) => {
-    try {
-        const characterId = parseInt(req.params.id);
-        const aiInstanceId = req.body.aiInstanceId;
 
-        const character = await characterService.getCharacterById(characterId);
-        if (!character) {
-            return res.status(404).json({ success: false, error: 'Character not found' });
-        }
 
-        // Initialize ai_instances array if it doesn't exist
-        if (!character.ai_instances) {
-            character.ai_instances = [];
-        }
 
-        // Check if AI instance is already assigned
-        if (character.ai_instances.includes(aiInstanceId)) {
-            return res.status(400).json({
-                success: false,
-                error: 'AI instance is already assigned to this character'
-            });
-        }
-
-        // Add AI instance to character
-        character.ai_instances.push(aiInstanceId);
-
-        // Also update chatterpi_config for compatibility
-        if (!character.chatterpi_config) {
-            character.chatterpi_config = {};
-        }
-        if (!character.chatterpi_config.ai_characters) {
-            character.chatterpi_config.ai_characters = [];
-        }
-
-        // Add to chatterpi_config if not already there
-        if (!character.chatterpi_config.ai_characters.includes(aiInstanceId)) {
-            character.chatterpi_config.ai_characters.push(aiInstanceId);
-        }
-
-        // Set as default if it's the first AI assigned
-        if (!character.chatterpi_config.default_character) {
-            character.chatterpi_config.default_character = aiInstanceId;
-        }
-
-        await characterService.updateCharacter(characterId, character);
-
-        logger.info(`✅ Assigned AI instance ${aiInstanceId} to character ${characterId}`);
-        res.json({ success: true, message: 'AI instance assigned successfully' });
-    } catch (error) {
-        logger.error('Error assigning AI instance to character:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-
-// Unassign AI instance from character
-router.post('/:id/ai/unassign', async (req, res) => {
-    try {
-        const characterId = parseInt(req.params.id);
-        const aiInstanceId = req.body.aiInstanceId;
-
-        const character = await characterService.getCharacterById(characterId);
-        if (!character) {
-            return res.status(404).json({ success: false, error: 'Character not found' });
-        }
-
-        if (!character.ai_instances || !character.ai_instances.includes(aiInstanceId)) {
-            return res.status(400).json({
-                success: false,
-                error: 'AI instance is not assigned to this character'
-            });
-        }
-
-        // Remove AI instance from character
-        character.ai_instances = character.ai_instances.filter(id => id !== aiInstanceId);
-
-        // Also update chatterpi_config for compatibility
-        if (character.chatterpi_config && character.chatterpi_config.ai_characters) {
-            character.chatterpi_config.ai_characters = character.chatterpi_config.ai_characters.filter(id => id !== aiInstanceId);
-
-            // If this was the default character, clear the default
-            if (character.chatterpi_config.default_character === aiInstanceId) {
-                character.chatterpi_config.default_character = character.chatterpi_config.ai_characters.length > 0
-                    ? character.chatterpi_config.ai_characters[0]
-                    : null;
-            }
-        }
-
-        await characterService.updateCharacter(characterId, character);
-
-        logger.info(`✅ Unassigned AI instance ${aiInstanceId} from character ${characterId}`);
-        res.json({ success: true, message: 'AI instance unassigned successfully' });
-    } catch (error) {
-        logger.error('Error unassigning AI instance from character:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-
-// Remove all AI assignments from character
-router.post('/:id/ai/remove-all', async (req, res) => {
-    try {
-        const characterId = parseInt(req.params.id);
-
-        const character = await characterService.getCharacterById(characterId);
-        if (!character) {
-            return res.status(404).json({ success: false, error: 'Character not found' });
-        }
-
-        // Clear all AI assignments
-        if (character.chatterpi_config) {
-            character.chatterpi_config.ai_characters = [];
-            character.chatterpi_config.default_character = null;
-        }
-        if (character.ai_instances) {
-            character.ai_instances = [];
-        }
-
-        await characterService.updateCharacter(characterId, character);
-
-        logger.info(`✅ Removed all AI assignments from character ${characterId}`);
-        res.json({ success: true, message: 'All AI assignments removed successfully' });
-    } catch (error) {
-        logger.error('Error removing all AI assignments from character:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
 
 // Character Jaw Animation Configuration Routes
 
@@ -1109,6 +987,63 @@ router.post('/:id/jaw-animation/preset/:presetName', async (req, res) => {
     } catch (error) {
         logger.error('Error applying jaw animation preset:', error);
         res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Character configuration endpoint for Enhanced Test Chat
+router.get('/:characterId/config', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.characterId);
+
+        if (!characterId) {
+            return res.status(400).json({
+                success: false,
+                error: 'Character ID is required'
+            });
+        }
+
+        // Get character details
+        const character = await characterService.getCharacterById(characterId);
+
+        if (!character) {
+            return res.status(404).json({
+                success: false,
+                error: 'Character not found'
+            });
+        }
+
+        // Get voice configuration
+        const voiceService = require('../services/voiceService');
+        let voiceConfig = null;
+
+        try {
+            voiceConfig = await voiceService.getVoiceByCharacterId(characterId);
+        } catch (error) {
+            console.warn(`⚠️ Could not get voice config for character ${characterId}:`, error.message);
+        }
+
+        // Prepare character configuration
+        const characterConfig = {
+            id: character.id,
+            name: character.char_name,
+            description: character.char_description,
+            openaiAssistantId: character.openaiAssistantId,
+            voiceConfig: voiceConfig,
+            aiConfig: character.aiConfig || { enabled: false }
+        };
+
+        res.json({
+            success: true,
+            character: characterConfig
+        });
+
+    } catch (error) {
+        console.error('❌ Error getting character config:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get character configuration',
+            details: error.message
+        });
     }
 });
 

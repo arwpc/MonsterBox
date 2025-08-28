@@ -22,7 +22,6 @@
         "systemd-resolved",
         "bluetooth",
         "gpio-control",
-        "servo-control",
         "camera",
         "head-tracking"
       ],
@@ -51,7 +50,8 @@
     "chatterpi_config": {
       "ai_characters": [],
       "default_character": null
-    }
+    },
+    "elevenLabsAgentId": "orlok"
   },
   {
     "id": 2,
@@ -104,7 +104,8 @@
     "chatterpi_config": {
       "ai_characters": [],
       "default_character": null
-    }
+    },
+    "elevenLabsAgentId": "coffin-breaker"
   },
   {
     "id": 3,
@@ -151,12 +152,13 @@
         "collection_interval": 300,
         "max_lines": 1000
       }
-    }
+    },
+    "elevenLabsAgentId": "pumpkinhead"
   },
   {
     "id": 4,
     "char_name": "Skulltalker",
-    "char_description": "A talking skull with jaw animation, camera, speakers, and an attitude",
+    "char_description": "A talking skull with camera, speakers, and an attitude",
     "parts": [],
     "sounds": [],
     "image": "94e0dca132f0e88d51d2eecff4e9348e",
@@ -164,7 +166,7 @@
       "enabled": true,
       "status": "running",
       "character_type": "Skeleton",
-      "description": "Talking skull animatronic with jaw movement, camera and audio capabilities",
+      "description": "Talking skull animatronic with camera and audio capabilities",
       "hardware_monitoring": true,
       "motion_tracking": {
         "enabled": true,
@@ -207,110 +209,6 @@
       ],
       "default_character": "Calvin"
     },
-    "jaw_animation_config": {
-      "enabled": true,
-      "servo": {
-        "pin": 18,
-        "channel": null,
-        "closedAngle": 50,
-        "openAngle": 30,
-        "minPosition": 0,
-        "maxPosition": 180,
-        "stepThreshold": 0.5
-      },
-      "audioAnalysis": {
-        "volumeThreshold": 0.02,
-        "smoothingFactor": 0.8,
-        "attackTime": 0.05,
-        "releaseTime": 0.15,
-        "sensitivity": 1.5,
-        "responseCurve": "exponential"
-      },
-      "calibration": {
-        "isCalibrated": false,
-        "calibratedClosedAngle": null,
-        "calibratedOpenAngle": null,
-        "calibrationDate": null
-      },
-      "preset": "skeleton",
-      "presets": {
-        "skeleton": {
-          "minPosition": 0,
-          "maxPosition": 180,
-          "sensitivity": 1.5,
-          "volumeThreshold": 0.02,
-          "responseCurve": "exponential"
-        },
-        "bear": {
-          "minPosition": 10,
-          "maxPosition": 170,
-          "sensitivity": 1.2,
-          "volumeThreshold": 0.015,
-          "responseCurve": "linear"
-        },
-        "fish": {
-          "minPosition": 20,
-          "maxPosition": 160,
-          "sensitivity": 2,
-          "volumeThreshold": 0.01,
-          "responseCurve": "logarithmic"
-        },
-        "demon": {
-          "minPosition": 0,
-          "maxPosition": 180,
-          "sensitivity": 1.8,
-          "volumeThreshold": 0.025,
-          "responseCurve": "exponential"
-        }
-      }
-    }
-  },
-  {
-    "id": 5,
-    "char_name": "Test Character 1750704145907",
-    "char_description": "A test character created by automated testing",
-    "parts": [],
-    "sounds": [],
-    "image": null,
-    "animatronic": {
-      "enabled": false,
-      "status": "virtual",
-      "character_type": "Virtual Character",
-      "description": "Software-only character",
-      "rpi_config": null,
-      "services": [
-        "monsterbox"
-      ],
-      "log_types": [
-        "system",
-        "application"
-      ],
-      "hardware_monitoring": false,
-      "animatronic_parts": []
-    }
-  },
-  {
-    "id": 6,
-    "char_name": "Test Character 1750705258098",
-    "char_description": "A test character created by automated testing",
-    "parts": [],
-    "sounds": [],
-    "image": null,
-    "animatronic": {
-      "enabled": false,
-      "status": "virtual",
-      "character_type": "Virtual Character",
-      "description": "Software-only character",
-      "rpi_config": null,
-      "services": [
-        "monsterbox"
-      ],
-      "log_types": [
-        "system",
-        "application"
-      ],
-      "hardware_monitoring": false,
-      "animatronic_parts": []
-    }
+    "elevenLabsAgentId": "skulltalker"
   }
 ]

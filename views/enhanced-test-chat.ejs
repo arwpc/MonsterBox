@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            color: #00ff41;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .chat-container {
+            width: 100%;
+            max-width: 1200px;
+            height: 90vh;
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #00ff41;
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(0, 255, 65, 0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .chat-header {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            color: #00ff41;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            border-bottom: 2px solid #00ff41;
+        }
+        
+        .chat-header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+        }
+        
+        .chat-header .subtitle {
+            font-size: 14px;
+            opacity: 0.8;
+            color: #00ccff;
+        }
+        
+        /* Performance Metrics */
+        .performance-metrics {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            display: flex;
+            gap: 15px;
+            font-size: 11px;
+            color: #888;
+        }
+        
+        .metric {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 5px 8px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 4px;
+            border: 1px solid #333;
+        }
+        
+        .metric-label {
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+        
+        .metric-value {
+            color: #00ff41;
+            font-weight: bold;
+        }
+        
+        /* Character Selection Section */
+        .character-selection {
+            padding: 15px 20px;
+            background: rgba(0, 20, 40, 0.8);
+            border-bottom: 1px solid #00ff41;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .selection-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .selection-group label {
+            font-size: 12px;
+            font-weight: bold;
+            color: #00ccff;
+            text-transform: uppercase;
+        }
+        
+        .character-select, .assistant-display {
+            padding: 8px 12px;
+            border: 1px solid #00ff41;
+            border-radius: 6px;
+            background: rgba(0, 0, 0, 0.7);
+            color: #00ff41;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        
+        .character-select:focus {
+            outline: none;
+            border-color: #00ccff;
+            box-shadow: 0 0 10px rgba(0, 204, 255, 0.3);
+        }
+        
+        .assistant-display {
+            background: rgba(0, 0, 0, 0.5);
+            border-color: #666;
+            color: #ccc;
+            cursor: not-allowed;
+        }
+        
+        /* Voice Controls */
+        .voice-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .voice-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border: 2px solid #666;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 12px;
+            color: #ccc;
+        }
+        
+        .voice-toggle.active {
+            border-color: #00ff41;
+            background: rgba(0, 255, 65, 0.1);
+            color: #00ff41;
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.3);
+        }
+        
+        .voice-toggle.listening {
+            border-color: #ff4444;
+            background: rgba(255, 68, 68, 0.1);
+            color: #ff4444;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        /* Live Mode specific styling */
+        .live-mode-toggle.active {
+            border-color: #00ff88;
+            background: rgba(0, 255, 136, 0.1);
+            color: #00ff88;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+        }
+
+        .live-mode-toggle.active.listening {
+            border-color: #ff4444;
+            background: rgba(255, 68, 68, 0.1);
+            color: #ff4444;
+            animation: pulse 1.5s infinite;
+        }
+
+        .live-mode-toggle.active.speaking {
+            border-color: #4ecdc4;
+            background: rgba(78, 205, 196, 0.1);
+            color: #4ecdc4;
+            animation: wave 2s infinite;
+        }
+
+        .live-mode-toggle.active.processing {
+            border-color: #ffd93d;
+            background: rgba(255, 217, 61, 0.1);
+            color: #ffd93d;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes wave {
+            0%, 100% { transform: scale(1); }
+            25% { transform: scale(1.02); }
+            75% { transform: scale(0.98); }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .voice-icon {
+            font-size: 16px;
+        }
+        
+        .voice-status {
+            font-size: 10px;
+            margin-left: 5px;
+            opacity: 0.8;
+        }
+        
+        /* Chat Messages Area */
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.8);
+            scrollbar-width: thin;
+            scrollbar-color: #00ff41 rgba(0, 0, 0, 0.3);
+        }
+        
+        .chat-messages::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .chat-messages::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #00ff41;
+            border-radius: 4px;
+        }
+        
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        
+        .message.user {
+            justify-content: flex-end;
+        }
+        
+        .message.bot {
+            justify-content: flex-start;
+        }
+        
+        .message-content {
+            max-width: 70%;
+            padding: 15px 20px;
+            border-radius: 15px;
+            font-size: 14px;
+            line-height: 1.5;
+            position: relative;
+            border: 1px solid;
+        }
+        
+        .message.user .message-content {
+            background: linear-gradient(135deg, #00ff41 0%, #00ccff 100%);
+            color: #000;
+            border-color: #00ff41;
+            border-bottom-right-radius: 5px;
+        }
+        
+        .message.bot .message-content {
+            background: rgba(0, 0, 0, 0.8);
+            color: #00ff41;
+            border-color: #00ff41;
+            border-bottom-left-radius: 5px;
+        }
+        
+        .message-time {
+            font-size: 10px;
+            opacity: 0.6;
+            margin-top: 5px;
+            color: #666;
+        }
+        
+        .message-performance {
+            font-size: 9px;
+            opacity: 0.5;
+            margin-top: 3px;
+            color: #888;
+        }
+        
+        /* Chat Input Area */
+        .chat-input-container {
+            padding: 20px;
+            background: rgba(0, 20, 40, 0.9);
+            border-top: 2px solid #00ff41;
+        }
+        
+        .chat-input-wrapper {
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+        }
+        
+        .chat-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #00ff41;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #00ff41;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 50px;
+            max-height: 120px;
+        }
+        
+        .chat-input:focus {
+            outline: none;
+            border-color: #00ccff;
+            box-shadow: 0 0 15px rgba(0, 204, 255, 0.3);
+        }
+        
+        .chat-input::placeholder {
+            color: #666;
+            opacity: 0.8;
+        }
+        
+        .send-button {
+            padding: 12px 20px;
+            border: 2px solid #00ff41;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #00ff41 0%, #00ccff 100%);
+            color: #000;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .send-button:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
+        }
+        
+        .send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* Status indicators */
+        .status-indicator {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        
+        .status-connected {
+            background: #00ff41;
+            color: #000;
+        }
+        
+        .status-disconnected {
+            background: #ff4444;
+            color: #fff;
+        }
+        
+        .status-processing {
+            background: #ffaa00;
+            color: #000;
+            animation: pulse 1s infinite;
+        }
+        
+        /* Loading states */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #666;
+            font-style: italic;
+            margin: 10px 0;
+        }
+        
+        .typing-dots {
+            display: flex;
+            gap: 3px;
+        }
+        
+        .typing-dot {
+            width: 4px;
+            height: 4px;
+            background: #666;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typing {
+            0%, 60%, 100% { opacity: 0.3; }
+            30% { opacity: 1; }
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .chat-container {
+                height: 95vh;
+                margin: 10px;
+            }
+
+            .character-selection {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+
+            .voice-controls {
+                justify-content: center;
+            }
+
+            .performance-metrics {
+                position: static;
+                justify-content: center;
+                margin-top: 10px;
+            }
+
+            .message-content {
+                max-width: 85%;
+            }
+
+            .chat-header h1 {
+                font-size: 22px;
+            }
+
+            .selection-group {
+                width: 100%;
+            }
+
+            .character-select, .assistant-display {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <!-- Header with Performance Metrics -->
+        <div class="chat-header">
+            <div class="performance-metrics">
+                <div class="metric">
+                    <div class="metric-label">Voice Input</div>
+                    <div class="metric-value" id="voiceInputTime">--</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Agent</div>
+                    <div class="metric-value" id="agentTime">--</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Voice Output</div>
+                    <div class="metric-value" id="voiceOutputTime">--</div>
+                </div>
+            </div>
+
+            <h1><%= pageTitle %></h1>
+            <div class="subtitle">ElevenLabs Conversational AI Interface</div>
+
+            <div class="status-indicator" id="connectionStatus">Initializing...</div>
+
+
+        </div>
+
+        <!-- Character Selection and Voice Controls -->
+        <div class="character-selection">
+            <div class="selection-group">
+                <label for="characterSelect">Character</label>
+                <select id="characterSelect" class="character-select">
+                    <option value="">Select Character...</option>
+                    <% if (characters && characters.length > 0) { %>
+                        <% characters.forEach(character => { %>
+                            <option value="<%= character.id %>"
+                                    data-assistant="<%= character.openaiAssistantId || '' %>"
+                                    data-elevenlabs-agent="<%= character.elevenLabsAgentId || '' %>"
+                                    data-name="<%= character.char_name %>"
+                                    data-has-ai="<%= character.hasAI ? 'true' : 'false' %>"
+                                    data-has-voice="<%= character.hasVoice ? 'true' : 'false' %>"
+                                    data-has-elevenlabs="<%= character.hasElevenLabs ? 'true' : 'false' %>"
+                                    data-has-openai="<%= character.hasOpenAI ? 'true' : 'false' %>">
+                                <%= character.char_name %><%
+                                    let capabilities = [];
+                                    if (character.hasElevenLabs) capabilities.push('ElevenLabs');
+                                    if (character.hasOpenAI) capabilities.push('OpenAI');
+                                    if (character.hasVoice && !character.hasAI) capabilities.push('Voice Only');
+                                    if (capabilities.length > 0) { %> (<%= capabilities.join(' + ') %>)<% } %>
+                            </option>
+                        <% }); %>
+                    <% } %>
+                </select>
+            </div>
+
+            <div class="selection-group">
+                <label for="assistantDisplay">ElevenLabs Agent</label>
+                <input type="text" id="assistantDisplay" class="assistant-display"
+                       placeholder="Select character first..." readonly>
+            </div>
+
+            <div class="voice-controls">
+                <div class="voice-toggle" id="elevenLabsToggle">
+                    <span class="voice-icon">🤖</span>
+                    <span>ElevenLabs Voice</span>
+                    <span class="voice-status" id="sttStatus">OFF</span>
+                </div>
+
+                <div class="voice-toggle" id="ttsToggle">
+                    <span class="voice-icon">🔊</span>
+                    <span>Text to Speech</span>
+                    <span class="voice-status" id="ttsStatus">OFF</span>
+                </div>
+
+                <div class="voice-toggle live-mode-toggle" id="liveModeToggle">
+                    <span class="voice-icon">🎙️</span>
+                    <span>Live Mode</span>
+                    <span class="voice-status" id="liveModeStatus">OFF</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Messages -->
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot">
+                <div class="message-content">
+                    Welcome to the Enhanced Test Chat Interface! Select a character above to begin your conversation.
+                    <div class="message-time" id="welcomeTime"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inline STT Settings (per character) -->
+        <div class="character-selection" style="border-top:1px solid rgba(0,255,65,0.15); margin-top:6px; padding-top:8px;">
+            <div class="selection-group" style="min-width:260px;">
+                <label for="sttLanguageInline">STT Language</label>
+                <select id="sttLanguageInline" class="character-select">
+                    <option value="en">English</option>
+                    <option value="es">Spanish</option>
+                    <option value="fr">French</option>
+                    <option value="de">German</option>
+                    <option value="it">Italian</option>
+                    <option value="pt">Portuguese</option>
+                    <option value="ja">Japanese</option>
+                </select>
+            </div>
+            <div class="selection-group">
+                <label for="confidenceThresholdInline" title="Minimum transcript confidence. Higher = filters out uncertain transcriptions. Lower = accepts more but may include mistakes.">Confidence</label>
+                <input type="range" id="confidenceThresholdInline" min="0" max="1" step="0.05" value="0.7"/>
+            </div>
+            <div class="selection-group">
+                <label for="vadThresholdInline" title="Voice Activity Detection sensitivity. Higher = requires louder/clearer speech. Lower = more sensitive to quiet or background noise.">VAD Threshold</label>
+                <input type="range" id="vadThresholdInline" min="0" max="1" step="0.05" value="0.5"/>
+            </div>
+            <div class="selection-group">
+                <label for="silenceDurationInline" title="Milliseconds of silence to consider speech ended. Higher = waits longer after you stop speaking. Lower = cuts off sooner.">Silence ms</label>
+                <input type="number" id="silenceDurationInline" min="100" max="2000" step="50" value="700"/>
+            </div>
+            <div class="selection-group">
+                <label for="prefixPaddingInline" title="Milliseconds of audio to include before detected speech starts. Higher = captures more lead-in. Lower = tighter start.">Prefix ms</label>
+                <input type="number" id="prefixPaddingInline" min="0" max="1000" step="50" value="300"/>
+            </div>
+            <div class="selection-group">
+                <button id="saveInlineSTT" class="send-button" style="padding:6px 12px;">Save STT</button>
+                <a href="https://skulltalker:8080/ai-management/microphone-stt" target="_blank" class="send-button" style="padding:6px 12px;">STT Config</a>
+            </div>
+        </div>
+
+        <!-- Chat Input -->
+        <div class="chat-input-container">
+            <div class="chat-input-wrapper">
+                <textarea class="chat-input" id="chatInput"
+                          placeholder="Type your message here or enable Speech to Text..."
+                          rows="2"></textarea>
+                <button class="send-button" id="sendButton" disabled>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                    </svg>
+                    Send
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize the Enhanced Test Chat Interface
+        document.addEventListener('DOMContentLoaded', function() {
+            const testChat = new EnhancedTestChat({
+                characterId: <%= characterId || 'null' %>,
+                agentId: '<%= agentId || '' %>',
+                selectedAgent: <%- JSON.stringify(selectedAgent || null) %>,
+                characters: <%- JSON.stringify(characters || []) %>,
+                assistants: <%- JSON.stringify(assistants || {}) %>
+            });
+        });
+    </script>
+
+    <!-- Enhanced Test Chat JavaScript will be included here -->
+    <script src="/js/enhanced-test-chat.js"></script>
+</body>
+</html>

@@ -38,6 +38,7 @@ router.post('/settings', voiceController.saveVoiceSettings);
 router.put('/settings/:characterId', voiceController.updateVoiceSettings);
 router.post('/generate', voiceController.generateSpeech);
 router.post('/generate-for-scene', voiceController.generateAndSaveForScene);
+router.post('/generate-test', voiceController.generateTestSpeech);
 
 // Voice metadata routes
 router.patch('/metadata/:characterId', voiceController.updateVoiceMetadata);
@@ -51,6 +52,133 @@ router.post('/test-connection', voiceController.testVoiceConnection);
 
 // Audio integrity testing
 router.post('/test-audio-integrity', voiceController.testAudioIntegrity);
+
+// Live TTS endpoint for Enhanced Test Chat
+router.post('/speak', async (req, res) => {
+    try {
+        const startTime = Date.now();
+        const { text, character, characterId, voiceConfig } = req.body;
+
+        if (!text || !text.trim()) {
+            return res.status(400).json({
+                success: false,
+                error: 'Text is required for speech generation'
+            });
+        }
+
+        console.log(`🎤 TTS request: "${text}" (Character: ${character || 'default'})`);
+
+        // Get voice service
+        const voiceService = require('../services/voiceService');
+
+        // Get character's voice settings
+        let voiceSettings = null;
+        if (characterId) {
+            try {
+                voiceSettings = await voiceService.getVoiceByCharacterId(characterId);
+            } catch (error) {
+                console.warn(`⚠️ Could not get voice settings for character ${characterId}:`, error.message);
+            }
+        }
+
+        // Use default voice if no character voice found
+        const speakerId = voiceSettings?.speaker_id || 'en-US-AriaNeural';
+        const options = {
+            ...voiceSettings?.settings,
+            ...voiceConfig
+        };
+
+        // Generate speech
+        const result = await voiceService.generateSpeech(text, speakerId, options, characterId);
+        const processingTime = Date.now() - startTime;
+
+        console.log('🔍 Result keys:', result ? Object.keys(result) : 'null');
+
+        if (result && result.url) {
+            res.json({
+                success: true,
+                audioUrl: result.url,
+                text: text,
+                character: character || 'default',
+                provider: result.provider || 'ElevenLabs',
+                duration: result.duration,
+                processingTime: processingTime,
+                timestamp: new Date().toISOString()
+            });
+        } else {
+            throw new Error('Failed to generate audio');
+        }
+
+    } catch (error) {
+        const processingTime = Date.now() - startTime;
+        console.error('❌ Error in TTS speak:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to process speech request',
+            details: error.message,
+            processingTime: processingTime
+        });
+    }
+});
+
+// STT endpoint for Enhanced Test Chat
+router.post('/transcribe', async (req, res) => {
+    try {
+        const { audioData, character, characterId, sttOnly } = req.body;
+        const startTime = Date.now();
+
+        if (!audioData) {
+            return res.status(400).json({
+                success: false,
+                error: 'Audio data is required'
+            });
+        }
+
+        console.log(`🎙️ STT request (Character: ${character || 'default'})`);
+
+        // Initialize ElevenLabs STT service if not already done
+        if (!global.elevenLabsSTTService) {
+            const ElevenLabsSTTService = require('../services/elevenLabsSTTService');
+            global.elevenLabsSTTService = new ElevenLabsSTTService();
+        }
+
+        // Transcribe the audio data (base64 encoded)
+        const transcriptionResult = await global.elevenLabsSTTService.transcribeBase64Audio(audioData, {
+            language: 'en'
+        });
+
+        if (transcriptionResult.success) {
+            const responseTime = Date.now() - startTime;
+            console.log(`✅ STT transcription completed: "${transcriptionResult.text?.substring(0, 50)}..."`);
+
+            res.json({
+                success: true,
+                transcription: transcriptionResult.text,
+                language: transcriptionResult.language,
+                confidence: transcriptionResult.confidence,
+                responseTime: responseTime,
+                provider: 'elevenlabs',
+                characterId: characterId,
+                character: character
+            });
+        } else {
+            console.error(`❌ STT transcription failed: ${transcriptionResult.error}`);
+            res.status(500).json({
+                success: false,
+                error: transcriptionResult.error,
+                provider: 'elevenlabs'
+            });
+        }
+
+    } catch (error) {
+        console.error('❌ Error in STT transcribe:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to process transcription',
+            details: error.message
+        });
+    }
+});
 
 // Download file from URL
 async function downloadFile(url) {

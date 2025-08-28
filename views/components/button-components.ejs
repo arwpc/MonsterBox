@@ -106,22 +106,22 @@
 </div>
 <% } %>
 
-<%# Breadcrumb Component %>
+<%# Vertical Breadcrumb Component %>
 <% if (typeof component !== 'undefined' && component === 'breadcrumb') { %>
-<div class="breadcrumbs text-sm mb-6">
-  <ul>
-    <% if (typeof items !== 'undefined' && Array.isArray(items)) { %>
-      <% items.forEach(function(item, index) { %>
-      <li>
-        <% if (index === items.length - 1 || !item.url) { %>
-          <span class="text-primary"><%= item.name %></span>
-        <% } else { %>
-          <a href="<%= item.url %>" class="hover:text-primary"><%= item.name %></a>
-        <% } %>
-      </li>
-      <% }); %>
+<div class="breadcrumb-vertical mb-6">
+  <% if (typeof items !== 'undefined' && Array.isArray(items)) { %>
+    <% items.forEach(function(item, index) { %>
+    <% if (index === items.length - 1 || !item.url) { %>
+      <span class="breadcrumb-item active">
+        <% if (item.icon) { %><%= item.icon %> <% } %><%= item.name %>
+      </span>
+    <% } else { %>
+      <a href="<%= item.url %>" class="breadcrumb-item">
+        <% if (item.icon) { %><%= item.icon %> <% } %><%= item.name %>
+      </a>
     <% } %>
-  </ul>
+    <% }); %>
+  <% } %>
 </div>
 <% } %>
 

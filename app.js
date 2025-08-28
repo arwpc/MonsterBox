@@ -13,15 +13,17 @@ process.env.NODE_NO_WARNINGS = '1';
 
 let express, path, http, https, logger, app, server, httpsServer, port, audioStream, soundController, fs, os, session;
 let videoStream; // <-- Add videoStream variable
-let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, webcamRoutes, voiceRoutes, cleanupRoutes, healthRoutes, authRoutes, sshRoutes, jawAnimationRoutes, aiConfigRoutes, aiManagementRoutes, configRoutes, headTrackingRoutes;
+let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, webcamRoutes, voiceRoutes, cleanupRoutes, healthRoutes, authRoutes, sshRoutes, aiConfigRoutes, aiManagementRoutes, configRoutes, headTrackingRoutes, conversationalAiRoutes;
 let characterService;
 let authMiddleware, rbacMiddleware;
-let jawAnimationSystem;
-let chatterPiServiceManager;
+
+let conversationalAIServiceManager;
 let hardwareServiceManager;
 let serviceConnectionManager;
 let audioCleanupService;
 let microphoneManagerService;
+let elevenLabsService;
+let elevenLabsWebSocketProxy;
 
 // Import error handling middleware
 const { errorHandler, notFoundHandler, asyncHandler } = require('./middleware/errorHandler');
@@ -108,9 +110,14 @@ try {
     aiConfigRoutes = require('./routes/ai-config');
     aiManagementRoutes = require('./routes/aiManagementRoutes');
 
-    // Import jaw animation routes
-    const jawAnimationRoutesModule = require('./routes/jawAnimationRoutes');
-    jawAnimationRoutes = jawAnimationRoutesModule.router;
+    // Import ElevenLabs Conversational AI routes
+    conversationalAiRoutes = require('./routes/conversationalAiRoutes');
+
+
+
+
+
+
 
     // Import authentication middleware
     authMiddleware = require('./middleware/auth');
@@ -129,11 +136,7 @@ try {
         });
     }
 
-    // Import jaw animation system only if not in test mode
-    if (process.env.NODE_ENV !== 'test') {
-        const JawAnimationSystem = require('./scripts/jaw-animation/jawAnimationSystem');
-        jawAnimationSystem = new JawAnimationSystem();
-    }
+
 } catch (err) {
     try {
         require('./scripts/logger').error('Fatal error during app initialization:', err);
@@ -225,12 +228,12 @@ app.use(generalLimiter);
 
 // Basic Express setup with enhanced security
 app.use(express.json({
-    limit: '10mb', // Prevent large payload attacks
+    limit: '50mb', // Increased for audio uploads (STT)
     strict: true
 }));
 app.use(express.urlencoded({
     extended: true,
-    limit: '10mb',
+    limit: '50mb', // Increased for audio uploads
     parameterLimit: 1000 // Prevent parameter pollution
 }));
 app.set('view engine', 'ejs');
@@ -254,10 +257,7 @@ app.use(express.static(path.join(__dirname, 'public'), {
 // Add this line to serve files from the 'scripts' directory
 app.use('/scripts', express.static(path.join(__dirname, 'scripts')));
 
-// ChatterPi chat page route
-app.get('/chatterpi-chat', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'chatterpi-chat.html'));
-});
+
 
 // Use sceneRoutes before session middleware
 app.use('/scenes', sceneRoutes);
@@ -303,12 +303,13 @@ app.use('/parts/sensor', sensorRoutes);
 app.use('/parts/linear-actuator', linearActuatorRoutes);
 app.use('/parts/webcam', webcamRoutes);
 app.use('/parts/head-tracking', headTrackingRoutes);
+app.use('/parts/microphone', partRoutes.router); // Microphone routes from partRoutes
 app.use('/parts', partRoutes.router);
 app.use('/characters',
     invalidateCache('GET:/api/characters:'), // Invalidate character cache on modifications
     characterRoutes
 );
-app.use('/ai-instances', require('./routes/aiInstanceRoutes'));
+
 app.use('/sounds', soundRoutes);
 app.use('/active-mode', activeModeRoutes);
 // System config routes for global servo management
@@ -320,8 +321,9 @@ app.use('/api/streaming', require('./routes/streamingRoutes'));
 app.use('/api/character-webcam', require('./routes/api/characterWebcamApiRoutes'));
 app.use('/api/motion-tracking', require('./routes/api/motionTrackingApiRoutes'));
 app.use('/api/voice', voiceRoutes);
-app.use('/jaw-animation', jawAnimationRoutes);
-app.use('/api/chatterpi', require('./routes/chatterpiRoutes'));
+app.use('/api/character', characterRoutes);
+
+
 app.use('/api/hardware', require('./routes/api/hardwareApiRoutes').router);
 app.use('/api/hardware/head-tracking', require('./routes/api/headTrackingApiRoutes'));
 app.use('/api/character-audio-config', require('./routes/api/characterAudioConfigRoutes'));
@@ -400,7 +402,7 @@ app.get('/test/video-configuration', (req, res) => {
     });
 });
 
-// Test route for jaw animation - handled by jawAnimationRoutes
+
 
 app.use('/cleanup', cleanupRoutes);
 app.use('/health', healthRoutes);
@@ -438,9 +440,182 @@ app.post('/api/audio-cleanup/run',
 app.use('/log-collection', require('./routes/logCollectionRoutes'));
 app.use('/api/log-collection', require('./routes/logCollectionRoutes'));
 
+// Browser error logging routes (webcam and console error monitoring)
+app.use('/api/logs', require('./routes/browserErrorRoutes'));
+
 // AI Configuration routes
 app.use('/ai-config', aiConfigRoutes);
 app.use('/ai-management', aiManagementRoutes);
+app.use('/api/ai', aiManagementRoutes);
+
+// ElevenLabs Conversational AI routes
+app.use('/api/conversational-ai', conversationalAiRoutes);
+
+// Conversational AI Interface route
+app.get('/conversational-ai', async (req, res) => {
+    try {
+        const characterService = require('./services/characterService');
+        const fs = require('fs').promises;
+        const path = require('path');
+
+        // Get all characters
+        const characters = await characterService.getAllCharacters();
+
+        // Get voice service to check for voice configurations
+        const voiceService = require('./services/voiceService');
+
+        // Get ElevenLabs agent mapping
+        let elevenLabsAgents = {};
+        if (global.elevenLabsService) {
+            try {
+                const serviceStatus = global.elevenLabsService.getStatus();
+                const agents = serviceStatus.agents || [];
+                // Create mapping from character ID to actual agent ID
+                agents.forEach(agent => {
+                    if (agent.characterId) {
+                        elevenLabsAgents[agent.characterId] = agent.agentId;
+                    }
+                });
+                console.log(`🎭 Loaded ${agents.length} ElevenLabs agents for conversational AI interface`);
+            } catch (error) {
+                console.warn('⚠️ Could not load ElevenLabs agents:', error.message);
+            }
+        }
+
+        // Filter characters that have voice configurations and ElevenLabs agents
+        const availableCharacters = [];
+        for (const char of characters) {
+            try {
+                const voiceConfig = await voiceService.getVoiceByCharacterId(char.id);
+                const actualAgentId = elevenLabsAgents[char.id];
+
+                if (voiceConfig && voiceConfig.speaker_id && actualAgentId) {
+                    // Character has both voice configuration and ElevenLabs agent
+                    availableCharacters.push({
+                        ...char,
+                        hasVoice: true,
+                        hasAI: true,
+                        elevenLabsAgentId: actualAgentId
+                    });
+                }
+            } catch (error) {
+                console.warn(`⚠️ Could not check config for character ${char.id}:`, error.message);
+            }
+        }
+
+        console.log(`🎭 Loaded ${availableCharacters.length} characters with ElevenLabs AI for conversational interface`);
+
+        res.render('enhanced-test-chat', {
+            title: 'ElevenLabs Conversational AI',
+            characterId: req.query.characterId || (availableCharacters.length > 0 ? availableCharacters[0].id : null),
+            agentId: req.query.agentId || null,
+            selectedAgent: null,
+            pageTitle: 'ElevenLabs Conversational AI',
+            characters: availableCharacters,
+            assistants: {}
+        });
+    } catch (error) {
+        console.error('❌ Error rendering conversational AI interface:', error);
+        res.status(500).send('Failed to load conversational AI interface: ' + error.message);
+    }
+});
+
+// Enhanced Test Chat route (formerly ChatterPi test)
+app.get('/test-chat', async (req, res) => {
+    try {
+        const characterService = require('./services/characterService');
+        const fs = require('fs').promises;
+        const path = require('path');
+
+        // Get all characters
+        const characters = await characterService.getAllCharacters();
+
+        // Load assistants configuration
+        let assistants = {};
+        try {
+            const assistantsPath = path.join(__dirname, 'data/assistants-config.json');
+            const assistantsData = await fs.readFile(assistantsPath, 'utf8');
+            const assistantsConfig = JSON.parse(assistantsData);
+            assistants = assistantsConfig.assistants || {};
+        } catch (error) {
+            console.warn('⚠️ Could not load assistants config:', error.message);
+        }
+
+        // Get voice service to check for voice configurations
+        const voiceService = require('./services/voiceService');
+
+        // Get ElevenLabs agent mapping
+        let elevenLabsAgents = {};
+        if (global.elevenLabsService) {
+            try {
+                const serviceStatus = global.elevenLabsService.getStatus();
+                const agents = serviceStatus.agents || [];
+                // Create mapping from character ID to actual agent ID
+                agents.forEach(agent => {
+                    if (agent.characterId) {
+                        elevenLabsAgents[agent.characterId] = agent.agentId;
+                    }
+                });
+                console.log(`🎭 Loaded ${agents.length} ElevenLabs agents for mapping`);
+            } catch (error) {
+                console.warn('⚠️ Could not load ElevenLabs agents:', error.message);
+            }
+        }
+
+        // Filter characters that have voice configurations (for TTS) and optionally AI enabled
+        const availableCharacters = [];
+        for (const char of characters) {
+            try {
+                const voiceConfig = await voiceService.getVoiceByCharacterId(char.id);
+                if (voiceConfig && voiceConfig.speaker_id) {
+                    // Get the actual ElevenLabs agent ID for this character
+                    const actualAgentId = elevenLabsAgents[char.id];
+
+                    // Character has voice configuration, include it
+                    availableCharacters.push({
+                        ...char,
+                        hasVoice: true,
+                        hasAI: !!actualAgentId, // Use actual agent ID for AI capability
+                        elevenLabsAgentId: actualAgentId || char.elevenLabsAgentId // Use actual agent ID if available
+                    });
+                }
+            } catch (error) {
+                console.warn(`⚠️ Could not check voice config for character ${char.id}:`, error.message);
+            }
+        }
+
+        console.log(`🎭 Loaded ${availableCharacters.length} characters with voice configurations for test page`);
+        console.log(`🤖 ${availableCharacters.filter(c => c.hasAI).length} characters have AI enabled`);
+
+        // Handle agentId parameter for ElevenLabs agents
+        let selectedAgent = null;
+        if (req.query.agentId && global.elevenLabsService) {
+            try {
+                const serviceStatus = global.elevenLabsService.getStatus();
+                const agents = serviceStatus.agents || [];
+                selectedAgent = agents.find(a => a.agentId === req.query.agentId);
+                console.log(`🎭 Found agent for test chat:`, selectedAgent ? selectedAgent.name : 'Not found');
+            } catch (error) {
+                console.warn('⚠️ Could not get ElevenLabs agent for test chat:', error.message);
+            }
+        }
+
+        res.render('enhanced-test-chat', {
+            title: 'Enhanced Test Chat - AI Conversation Interface',
+            characterId: req.query.characterId || (availableCharacters.length > 0 ? availableCharacters[0].id : null),
+            agentId: req.query.agentId || null,
+            selectedAgent: selectedAgent,
+            pageTitle: selectedAgent ? `Test Chat - ${selectedAgent.name}` : 'Enhanced Test Chat',
+            characters: availableCharacters,
+            assistants: assistants
+        });
+    } catch (error) {
+        console.error('❌ Error rendering enhanced test page:', error);
+        res.status(500).send('Failed to load test page: ' + error.message);
+    }
+});
+
+
 
 // Connection monitoring endpoint
 app.get('/api/connections/status',
@@ -747,10 +922,22 @@ async function initializeServiceManagement() {
             await initializeLegacyServices();
         }
 
+        // Always ensure ElevenLabs service is initialized (regardless of service management approach)
+        if (!global.elevenLabsService) {
+            logger.info('🤖 Ensuring ElevenLabs service is initialized...');
+            await initializeConversationalAIServices();
+        }
+
     } catch (error) {
         logger.error('❌ Error initializing centralized service management:', error);
         // Fall back to legacy initialization
         await initializeLegacyServices();
+    }
+
+    // Always ensure ElevenLabs service is initialized (regardless of service management approach)
+    if (!global.elevenLabsService) {
+        logger.info('🤖 Ensuring ElevenLabs service is initialized...');
+        await initializeConversationalAIServices();
     }
 }
 
@@ -759,11 +946,10 @@ async function initializeLegacyServices() {
     logger.info('🔄 Falling back to legacy service initialization...');
 
     try {
-        // Initialize jaw animation system
-        await initializeJawAnimationSystem(server, httpsServer);
 
-        // Initialize ChatterPi services with real-time optimizations
-        await initializeChatterPiServices();
+
+        // Initialize Conversational AI services with real-time optimizations
+        await initializeConversationalAIServices();
 
         // Initialize Hardware WebSocket Services
         await initializeHardwareServices();
@@ -780,56 +966,83 @@ async function initializeLegacyServices() {
     }
 }
 
-// Initialize jaw animation system
-async function initializeJawAnimationSystem(httpServer, httpsServer = null) {
+
+
+// ElevenLabs Conversational AI Service initialization
+async function initializeConversationalAIServices() {
     try {
-        await jawAnimationSystem.initialize(httpServer);
+        logger.info('🤖 Initializing ElevenLabs Conversational AI Service...');
 
-        // Initialize with HTTPS server if available
-        if (httpsServer) {
-            await jawAnimationSystem.initialize(httpsServer);
-        }
+        const ElevenLabsConversationalService = require('./services/elevenLabsConversationalService');
+        elevenLabsService = new ElevenLabsConversationalService();
 
-        // Set the jaw animation system instance in the routes
-        const jawAnimationRoutesModule = require('./routes/jawAnimationRoutes');
-        jawAnimationRoutesModule.setJawAnimationSystem(jawAnimationSystem);
+        await elevenLabsService.initialize();
 
-        logger.info('Jaw animation system initialized successfully');
-    } catch (error) {
-        logger.error('Failed to initialize jaw animation system:', error);
-        // Don't exit - jaw animation is optional
-    }
-}
+        // Make service globally available
+        global.elevenLabsService = elevenLabsService;
 
-// Initialize ChatterPi services with real-time optimizations
-async function initializeChatterPiServices() {
-    try {
-        logger.info('🚀 Initializing ChatterPi services...');
+        // Initialize ElevenLabs Live STT Service
+        logger.info('🎤 Initializing ElevenLabs Live STT Service...');
+        const ElevenLabsLiveSTTService = require('./services/elevenLabsLiveSTTService');
+        const elevenLabsLiveSTTService = new ElevenLabsLiveSTTService();
+        await elevenLabsLiveSTTService.initialize();
+        global.elevenLabsLiveSTTService = elevenLabsLiveSTTService;
+        logger.info(`✅ ElevenLabs Live STT Service initialized on port ${elevenLabsLiveSTTService.port}`);
 
-        const SimpleChatterPiManager = require('./services/simpleChatterPiManager');
-        chatterPiServiceManager = new SimpleChatterPiManager();
+        logger.info('✅ ElevenLabs Conversational AI Service initialized successfully');
+        logger.info(`🌐 ElevenLabs WebSocket server running on port ${elevenLabsService.port}`);
 
-        const success = await chatterPiServiceManager.initialize();
+        // Log available agents
+        const status = elevenLabsService.getStatus();
+        logger.info(`🎭 Available agents: ${status.availableAgents}`);
+        status.agents.forEach(agent => {
+            logger.info(`   - Character ${agent.characterId}: ${agent.name}`);
+        });
 
-        if (success) {
-            logger.info('✅ ChatterPi services initialized with real-time optimizations');
+        // Initialize ElevenLabs WebSocket SSL Proxies
+        try {
+            const ElevenLabsWebSocketProxy = require('./services/elevenLabsWebSocketProxy');
 
-            // Make service manager available to routes
-            const chatterpiRoutes = require('./routes/chatterpiRoutes');
-            if (chatterpiRoutes.setServiceManager) {
-                chatterpiRoutes.setServiceManager(chatterPiServiceManager);
+            // Conversational Service Proxy (8771 → 8872)
+            elevenLabsWebSocketProxy = new ElevenLabsWebSocketProxy({
+                proxyPort: 8872,
+                targetPort: 8771,
+                serviceName: 'ElevenLabs Conversational'
+            });
+            await elevenLabsWebSocketProxy.start();
+
+            // Make proxy globally available
+            global.elevenLabsWebSocketProxy = elevenLabsWebSocketProxy;
+
+            const proxyStatus = elevenLabsWebSocketProxy.getStatus();
+            if (proxyStatus.isRunning) {
+                logger.info(`🔐 ElevenLabs Conversational secure WebSocket proxy running on port ${proxyStatus.proxyPort}`);
             }
 
-            // Log service status
-            const status = chatterPiServiceManager.getServiceStatus();
-            logger.info('ChatterPi Service Status:', status);
+            // Live STT Service Proxy (8778 → 8873)
+            const elevenLabsSTTWebSocketProxy = new ElevenLabsWebSocketProxy({
+                proxyPort: 8873,
+                targetPort: 8778,
+                serviceName: 'ElevenLabs Live STT'
+            });
+            await elevenLabsSTTWebSocketProxy.start();
 
-        } else {
-            logger.error('❌ Failed to initialize ChatterPi services');
+            // Make STT proxy globally available
+            global.elevenLabsSTTWebSocketProxy = elevenLabsSTTWebSocketProxy;
+
+            const sttProxyStatus = elevenLabsSTTWebSocketProxy.getStatus();
+            if (sttProxyStatus.isRunning) {
+                logger.info(`🔐 ElevenLabs Live STT secure WebSocket proxy running on port ${sttProxyStatus.proxyPort}`);
+            }
+        } catch (error) {
+            logger.warn('⚠️ ElevenLabs secure WebSocket proxies not started:', error.message);
         }
 
+        return true;
+
     } catch (error) {
-        logger.error('❌ Error initializing ChatterPi services:', error);
+        logger.error('❌ Failed to initialize ElevenLabs Conversational AI Service:', error);
+        return false;
     }
 }
 
@@ -902,11 +1115,7 @@ async function initializeMicrophoneManager() {
         if (success) {
             logger.info('✅ Microphone Manager Service initialized successfully');
 
-            // Initialize STT Integration Service with shared microphone manager
-            const MicrophoneSTTIntegrationService = require('./services/microphoneSTTIntegrationService');
-            const sttIntegrationService = new MicrophoneSTTIntegrationService(microphoneManagerService);
-            await sttIntegrationService.initialize();
-            logger.info('🎤🗣️ STT Integration Service initialized');
+            // STT Integration Service removed - now using ElevenLabs Conversational AI
 
             // Initialize Audio Stream Service with shared microphone manager
             const AudioStreamService = require('./services/audioStreamService');
@@ -979,6 +1188,18 @@ async function shutdownLegacyServices() {
     logger.info('🔄 Shutting down legacy services...');
 
     try {
+        // Shutdown ElevenLabs service
+        if (elevenLabsService) {
+            await elevenLabsService.shutdown();
+            logger.info('ElevenLabs Conversational AI service stopped');
+        }
+
+        // Shutdown ElevenLabs WebSocket proxy
+        if (elevenLabsWebSocketProxy) {
+            await elevenLabsWebSocketProxy.stop();
+            logger.info('ElevenLabs WebSocket proxy stopped');
+        }
+
         // Shutdown hardware services
         if (hardwareServiceManager) {
             await hardwareServiceManager.shutdown();

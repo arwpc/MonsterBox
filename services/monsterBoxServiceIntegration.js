@@ -25,7 +25,8 @@ class MonsterBoxServiceIntegration {
             coreServices: [
                 'hardwareRegistry',
                 'microphone',
-                'audioStream'
+                'audioStream',
+                'elevenLabsConversational'
             ],
             
             hardwareServices: [
@@ -38,8 +39,7 @@ class MonsterBoxServiceIntegration {
             ],
             
             chatterpiServices: [
-                'jawAnimation',
-                'aibridge'
+                // ChatterPi services disabled - jaw animation functionality removed
             ],
             
             ...options

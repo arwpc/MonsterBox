@@ -6,6 +6,7 @@ const { spawn } = require('child_process');
 const path = require('path');
 const logger = require('../scripts/logger');
 const fs = require('fs');
+const { getServoClient } = require('../services/servoWebSocketClient');
 
 // Function to read servo configurations
 const getServoConfigs = () => {
@@ -115,14 +116,39 @@ router.post('/', async (req, res) => {
 
 router.post('/test', async (req, res) => {
     try {
-        const { angle, usePCA9685, channel, pin, servoType, duration } = req.body;
-        const controlType = usePCA9685 ? 'pca9685' : 'gpio';
+        const { angle, usePCA9685, channel, pin, servoType, duration, servoId } = req.body;
 
-        // Try to execute the Python script
+        logger.debug('Testing servo with params:', { angle, usePCA9685, channel, pin, servoType, duration, servoId });
+
+        // Try WebSocket service first
+        try {
+            const servoClient = getServoClient();
+
+            if (servoId) {
+                // Test existing servo by ID
+                const result = await servoClient.testServo(servoId, [angle || 90], duration || 1.0);
+
+                res.json({
+                    success: true,
+                    message: 'Servo test completed via WebSocket service',
+                    output: result,
+                    method: 'websocket'
+                });
+                return;
+            } else {
+                // For new servo testing, we need to create a temporary configuration
+                // This would require extending the WebSocket service to handle temporary servos
+                logger.debug('Testing new servo configuration - falling back to legacy method');
+            }
+        } catch (wsError) {
+            logger.warn('WebSocket servo test failed, falling back to legacy method:', wsError.message);
+        }
+
+        // Fallback to legacy Python script method
+        const controlType = usePCA9685 ? 'pca9685' : 'gpio';
         const scriptPath = path.join(__dirname, '..', 'scripts', 'servo_control.py');
         const pinOrChannel = usePCA9685 ? (channel || '0') : (pin || '3');
 
-        // Properly format arguments for servo_control.py
         const args = [
             'test',                    // command
             controlType,               // control_type
@@ -133,7 +159,7 @@ router.post('/test', async (req, res) => {
         ];
 
         logger.debug('Executing servo_control.py with args:', args);
-        
+
         try {
             const process = spawn('python3', [scriptPath, ...args]);
             let stdout = '';
@@ -152,50 +178,56 @@ router.post('/test', async (req, res) => {
             process.on('close', (code) => {
                 logger.debug(`Python script exited with code ${code}`);
                 if (code === 0) {
-                    res.json({ success: true, message: 'Servo test completed successfully', output: stdout });
+                    res.json({
+                        success: true,
+                        message: 'Servo test completed via legacy script',
+                        output: stdout,
+                        method: 'legacy'
+                    });
                 } else {
                     // If Python script fails, simulate the movement
                     logger.debug('Python script failed, simulating servo movement');
-                    res.json({ 
-                        success: true, 
+                    res.json({
+                        success: true,
                         message: 'Servo test simulated',
                         details: {
                             note: 'Hardware control unavailable - servo movement simulated',
                             params: { angle, controlType, channel, pin, servoType, duration }
-                        }
+                        },
+                        method: 'simulation'
                     });
                 }
             });
 
             process.on('error', (error) => {
-                // If Python script cannot be executed, simulate the movement
                 logger.debug('Python script execution failed, simulating servo movement');
-                res.json({ 
-                    success: true, 
+                res.json({
+                    success: true,
                     message: 'Servo test simulated',
                     details: {
                         note: 'Hardware control unavailable - servo movement simulated',
                         params: { angle, controlType, channel, pin, servoType, duration }
-                    }
+                    },
+                    method: 'simulation'
                 });
             });
         } catch (error) {
-            // If spawn fails, simulate the movement
             logger.debug('Failed to spawn Python process, simulating servo movement');
-            res.json({ 
-                success: true, 
+            res.json({
+                success: true,
                 message: 'Servo test simulated',
                 details: {
                     note: 'Hardware control unavailable - servo movement simulated',
                     params: { angle, controlType, channel, pin, servoType, duration }
-                }
+                },
+                method: 'simulation'
             });
         }
     } catch (error) {
         logger.error('Error testing servo:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'An error occurred while testing the servo', 
+        res.status(500).json({
+            success: false,
+            message: 'An error occurred while testing the servo',
             error: error.message
         });
     }
@@ -251,6 +283,180 @@ router.post('/:id', async (req, res) => {
     } catch (error) {
         logger.error('Error updating Servo:', error);
         res.status(500).send('An error occurred while updating the Servo: ' + error.message);
+    }
+});
+
+// New WebSocket-based servo control routes
+router.post('/move', async (req, res) => {
+    try {
+        const { servoId, angle, duration } = req.body;
+
+        if (!servoId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Servo ID is required'
+            });
+        }
+
+        const servoClient = getServoClient();
+        const result = await servoClient.moveServo(servoId, angle || 90, duration || 0.5);
+
+        res.json({
+            success: true,
+            message: 'Servo moved successfully',
+            result: result
+        });
+
+    } catch (error) {
+        logger.error('Error moving servo via WebSocket:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to move servo',
+            error: error.message
+        });
+    }
+});
+
+router.post('/stop', async (req, res) => {
+    try {
+        const { servoId } = req.body;
+
+        if (!servoId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Servo ID is required'
+            });
+        }
+
+        const servoClient = getServoClient();
+        const result = await servoClient.stopServo(servoId);
+
+        res.json({
+            success: true,
+            message: 'Servo stopped successfully',
+            result: result
+        });
+
+    } catch (error) {
+        logger.error('Error stopping servo via WebSocket:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to stop servo',
+            error: error.message
+        });
+    }
+});
+
+router.get('/status/:servoId?', async (req, res) => {
+    try {
+        const { servoId } = req.params;
+
+        const servoClient = getServoClient();
+        const result = await servoClient.getServoStatus(servoId || null);
+
+        res.json({
+            success: true,
+            data: result
+        });
+
+    } catch (error) {
+        logger.error('Error getting servo status via WebSocket:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to get servo status',
+            error: error.message
+        });
+    }
+});
+
+// Jaw animation control routes
+router.post('/jaw/start', async (req, res) => {
+    try {
+        const { servoId, characterId } = req.body;
+
+        if (!servoId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Servo ID is required'
+            });
+        }
+
+        const servoClient = getServoClient();
+        const result = await servoClient.startJawAnimation(servoId, characterId);
+
+        res.json({
+            success: true,
+            message: 'Jaw animation started successfully',
+            result: result
+        });
+
+    } catch (error) {
+        logger.error('Error starting jaw animation via WebSocket:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to start jaw animation',
+            error: error.message
+        });
+    }
+});
+
+router.post('/jaw/stop', async (req, res) => {
+    try {
+        const { servoId } = req.body;
+
+        if (!servoId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Servo ID is required'
+            });
+        }
+
+        const servoClient = getServoClient();
+        const result = await servoClient.stopJawAnimation(servoId);
+
+        res.json({
+            success: true,
+            message: 'Jaw animation stopped successfully',
+            result: result
+        });
+
+    } catch (error) {
+        logger.error('Error stopping jaw animation via WebSocket:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to stop jaw animation',
+            error: error.message
+        });
+    }
+});
+
+router.post('/jaw/update', async (req, res) => {
+    try {
+        const { servoId, volume } = req.body;
+
+        if (!servoId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Servo ID is required'
+            });
+        }
+
+        const servoClient = getServoClient();
+        const result = await servoClient.updateJawAnimation(servoId, volume || 0);
+
+        res.json({
+            success: true,
+            message: 'Jaw animation updated successfully',
+            result: result
+        });
+
+    } catch (error) {
+        logger.error('Error updating jaw animation via WebSocket:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to update jaw animation',
+            error: error.message
+        });
     }
 });
 

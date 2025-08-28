@@ -1,24 +1,47 @@
-// Script to safely delete unused sound files
+// Script to safely delete unused sound files and directories
 const fs = require('fs').promises;
 const path = require('path');
+
+async function deleteRecursively(dirPath) {
+    try {
+        const items = await fs.readdir(dirPath);
+
+        for (const item of items) {
+            const itemPath = path.join(dirPath, item);
+            const stat = await fs.stat(itemPath);
+
+            if (stat.isDirectory()) {
+                await deleteRecursively(itemPath);
+            } else {
+                await fs.unlink(itemPath);
+                console.log(`  Deleted file: ${item}`);
+            }
+        }
+
+        await fs.rmdir(dirPath);
+        console.log(`  Deleted directory: ${path.basename(dirPath)}`);
+    } catch (error) {
+        throw new Error(`Failed to delete directory ${dirPath}: ${error.message}`);
+    }
+}
 
 async function cleanupSounds() {
     try {
         console.log('Starting sound file cleanup...');
-        
+
         // Paths
         const soundsJsonPath = path.join(__dirname, '../data/sounds.json');
         const soundsDirPath = path.join(__dirname, '../public/sounds');
-        
-        // Get all files in the sounds directory
-        const files = await fs.readdir(soundsDirPath);
-        console.log(`Found ${files.length} files in sounds directory`);
-        
+
+        // Get all items in the sounds directory
+        const items = await fs.readdir(soundsDirPath);
+        console.log(`Found ${items.length} items in sounds directory`);
+
         // Read and parse sounds.json
         const soundsData = await fs.readFile(soundsJsonPath, 'utf8');
         const sounds = JSON.parse(soundsData);
         console.log(`Found ${sounds.length} sound entries in sounds.json`);
-        
+
         // Collect all filenames used in sounds.json
         const usedFilenames = new Set();
         sounds.forEach(sound => {
@@ -26,40 +49,49 @@ async function cleanupSounds() {
             if (sound && sound.file) usedFilenames.add(sound.file);
         });
         console.log(`${usedFilenames.size} unique filenames referenced in sounds.json`);
-        
-        // Find unused files
-        const unusedFiles = files.filter(file => !usedFilenames.has(file));
-        console.log(`Found ${unusedFiles.length} unused files to delete`);
-        
-        // Delete unused files
+
+        // Find unused items (files and directories)
+        const unusedItems = items.filter(item => !usedFilenames.has(item));
+        console.log(`Found ${unusedItems.length} unused items to delete`);
+
+        // Delete unused items
         let deletedCount = 0;
         const failures = [];
-        
-        for (const file of unusedFiles) {
+
+        for (const item of unusedItems) {
             try {
-                await fs.unlink(path.join(soundsDirPath, file));
-                deletedCount++;
-                console.log(`Deleted: ${file}`);
+                const itemPath = path.join(soundsDirPath, item);
+                const stat = await fs.stat(itemPath);
+
+                if (stat.isDirectory()) {
+                    console.log(`Deleting directory: ${item}`);
+                    await deleteRecursively(itemPath);
+                    deletedCount++;
+                } else {
+                    await fs.unlink(itemPath);
+                    deletedCount++;
+                    console.log(`Deleted file: ${item}`);
+                }
             } catch (error) {
-                console.error(`Failed to delete ${file}: ${error.message}`);
-                failures.push({ file, error: error.message });
+                console.error(`Failed to delete ${item}: ${error.message}`);
+                failures.push({ item, error: error.message });
             }
         }
         
         console.log(`
 Cleanup completed:
-- Total files: ${files.length}
+- Total items: ${items.length}
 - Referenced files: ${usedFilenames.size}
-- Unused files found: ${unusedFiles.length}
+- Unused items found: ${unusedItems.length}
 - Successfully deleted: ${deletedCount}
 - Failed deletions: ${failures.length}
         `);
-        
+
         return {
             success: true,
-            totalFiles: files.length,
+            totalItems: items.length,
             referencedFiles: usedFilenames.size,
-            unusedFilesFound: unusedFiles.length,
+            unusedItemsFound: unusedItems.length,
             deletedCount,
             failures
         };

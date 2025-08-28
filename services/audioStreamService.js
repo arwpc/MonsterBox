@@ -92,8 +92,8 @@ class AudioStreamService extends EventEmitter {
      */
     async connectToMicrophoneService() {
         try {
-            // Connect to microphone WebSocket service
-            this.microphoneWS = new WebSocket('ws://localhost:8776');
+            // Connect to microphone WebSocket service (use IPv4 to avoid IPv6 issues)
+            this.microphoneWS = new WebSocket('ws://127.0.0.1:8776');
             
             this.microphoneWS.on('open', () => {
                 logger.info('🎤 Connected to Microphone WebSocket Service for audio streaming');
@@ -135,9 +135,27 @@ class AudioStreamService extends EventEmitter {
     async startAudioStreamServer() {
         try {
             // Create WebSocket server for audio streaming
-            this.audioStreamServer = new WebSocket.Server({ 
+            this.audioStreamServer = new WebSocket.Server({
                 port: 8777,
                 perMessageDeflate: false // Disable compression for real-time audio
+            });
+
+            // Wait for server to be ready
+            await new Promise((resolve, reject) => {
+                this.audioStreamServer.on('listening', () => {
+                    logger.info('🔊 Audio Stream WebSocket server listening on port 8777');
+                    resolve();
+                });
+
+                this.audioStreamServer.on('error', (error) => {
+                    logger.error('❌ Audio Stream server error:', error);
+                    reject(error);
+                });
+
+                // Timeout after 5 seconds
+                setTimeout(() => {
+                    reject(new Error('Audio Stream server startup timeout'));
+                }, 5000);
             });
 
             this.audioStreamServer.on('connection', (ws, req) => {

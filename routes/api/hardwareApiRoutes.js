@@ -314,6 +314,177 @@ router.post('/emergency-stop', (req, res) => {
     }
 });
 
+// System stats endpoint for monitoring
+router.get('/stats', (req, res) => {
+    try {
+        const os = require('os');
+        const fs = require('fs');
+
+        // Get CPU usage
+        const cpus = os.cpus();
+        let totalIdle = 0;
+        let totalTick = 0;
+
+        cpus.forEach(cpu => {
+            for (type in cpu.times) {
+                totalTick += cpu.times[type];
+            }
+            totalIdle += cpu.times.idle;
+        });
+
+        const idle = totalIdle / cpus.length;
+        const total = totalTick / cpus.length;
+        const usage = 100 - ~~(100 * idle / total);
+
+        // Get memory usage
+        const totalMem = os.totalmem();
+        const freeMem = os.freemem();
+        const usedMem = totalMem - freeMem;
+        const memUsage = Math.round(usedMem / 1024 / 1024); // Convert to MB
+
+        // Get CPU temperature (Raspberry Pi specific)
+        let temperature = 'N/A';
+        try {
+            if (fs.existsSync('/sys/class/thermal/thermal_zone0/temp')) {
+                const tempData = fs.readFileSync('/sys/class/thermal/thermal_zone0/temp', 'utf8');
+                temperature = Math.round(parseInt(tempData) / 1000);
+            }
+        } catch (error) {
+            logger.warn('Could not read CPU temperature:', error.message);
+        }
+
+        res.json({
+            success: true,
+            timestamp: new Date().toISOString(),
+            cpu: usage,
+            memory: memUsage,
+            temperature: temperature,
+            uptime: Math.round(os.uptime()),
+            loadAverage: os.loadavg()[0].toFixed(2)
+        });
+
+    } catch (error) {
+        logger.error('Error getting system stats:', error);
+        res.status(500).json({
+            error: 'Failed to get system stats',
+            message: error.message
+        });
+    }
+});
+
+// Motor control endpoint
+router.post('/motor', (req, res) => {
+    try {
+        const { pin, direction, speed } = req.body;
+
+        if (!pin || !direction || speed === undefined) {
+            return res.status(400).json({
+                success: false,
+                error: 'Pin, direction, and speed are required'
+            });
+        }
+
+        // Mock motor control - in real implementation this would
+        // send commands to the motor service
+        logger.info(`Motor control: Pin ${pin}, Direction ${direction}, Speed ${speed}%`);
+
+        res.json({
+            success: true,
+            message: `Motor on pin ${pin} set to ${direction} at ${speed}% speed`,
+            timestamp: new Date().toISOString()
+        });
+
+    } catch (error) {
+        logger.error('Error controlling motor:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to control motor',
+            message: error.message
+        });
+    }
+});
+
+// LED control endpoint
+router.post('/led', (req, res) => {
+    try {
+        const { pin, color, brightness } = req.body;
+
+        if (!pin || !color || brightness === undefined) {
+            return res.status(400).json({
+                success: false,
+                error: 'Pin, color, and brightness are required'
+            });
+        }
+
+        // Mock LED control - in real implementation this would
+        // send commands to the light service
+        logger.info(`LED control: Pin ${pin}, Color ${color}, Brightness ${brightness}`);
+
+        res.json({
+            success: true,
+            message: `LED on pin ${pin} set to ${color} at ${brightness} brightness`,
+            timestamp: new Date().toISOString()
+        });
+
+    } catch (error) {
+        logger.error('Error controlling LED:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to control LED',
+            message: error.message
+        });
+    }
+});
+
+// Sensor reading endpoint
+router.post('/sensor', (req, res) => {
+    try {
+        const { pin, type } = req.body;
+
+        if (!pin || !type) {
+            return res.status(400).json({
+                success: false,
+                error: 'Pin and type are required'
+            });
+        }
+
+        // Mock sensor reading - in real implementation this would
+        // read from the sensor service
+        let value;
+        switch (type) {
+            case 'digital':
+                value = Math.random() > 0.5 ? 1 : 0;
+                break;
+            case 'analog':
+                value = Math.round(Math.random() * 1023);
+                break;
+            case 'pir':
+                value = Math.random() > 0.7 ? 'Motion Detected' : 'No Motion';
+                break;
+            default:
+                value = 'Unknown';
+        }
+
+        logger.info(`Sensor reading: Pin ${pin}, Type ${type}, Value ${value}`);
+
+        res.json({
+            success: true,
+            value: value,
+            pin: pin,
+            type: type,
+            timestamp: new Date().toISOString()
+        });
+
+    } catch (error) {
+        logger.error('Error reading sensor:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to read sensor',
+            message: error.message
+        });
+    }
+});
+
 // Get service description
 function getServiceDescription(serviceName) {
     const descriptions = {
@@ -322,7 +493,7 @@ function getServiceDescription(serviceName) {
         motor: 'Motor Service - Controls servo motors and actuators',
         light: 'Light Service - Manages LED strips and lighting effects'
     };
-    
+
     return descriptions[serviceName] || `${serviceName} service`;
 }
 

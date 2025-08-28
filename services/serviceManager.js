@@ -12,6 +12,15 @@ class ServiceManager {
     constructor() {
         this.services = new Map();
         this.serviceDefinitions = {
+            // Hardware Services
+            servoService: {
+                name: 'Unified Servo WebSocket Service',
+                port: 8773,
+                script: 'scripts/hardware/servo_websocket_service.py',
+                type: 'python',
+                critical: true,
+                description: 'Unified servo control and jaw animation service'
+            },
             microphone: {
                 name: 'Microphone WebSocket Service',
                 port: 8776,
@@ -26,12 +35,15 @@ class ServiceManager {
                 type: 'node',
                 critical: true
             },
-            jawAnimation: {
-                name: 'Jaw Animation Service',
+
+            // ChatterPi Services - UNIFIED SERVICE TO PREVENT GPIO CONFLICTS
+            unifiedJawAnimation: {
+                name: 'Unified Jaw Animation Service',
                 port: 8765,
-                script: 'scripts/chatterpi/jaw_websocket_server.py',
+                script: 'scripts/chatterpi/unified_jaw_animation_service.py',
                 type: 'python',
-                critical: false
+                critical: true,
+                description: 'Consolidated jaw animation with audio processing and servo control'
             },
             aibridge: {
                 name: 'AI Bridge Service',
@@ -232,8 +244,9 @@ class ServiceManager {
      */
     async checkServiceStatus(port) {
         try {
-            const ws = new WebSocket(`ws://localhost:${port}`);
-            
+            // Use IPv4 address to avoid IPv6 connection issues
+            const ws = new WebSocket(`ws://127.0.0.1:${port}`);
+
             return new Promise((resolve) => {
                 const timer = setTimeout(() => {
                     ws.close();

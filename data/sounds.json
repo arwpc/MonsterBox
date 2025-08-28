@@ -293,7 +293,7 @@
         "outputFormat": "mp3",
         "channels": 1,
         "languageCode": "en",
-        "provider": "TopMediai"
+        "provider": "ElevenLabs"
       }
     },
     "characterId": null
@@ -321,9 +321,133 @@
         "outputFormat": "mp3",
         "channels": 1,
         "languageCode": "en",
-        "provider": "TopMediai"
+        "provider": "ElevenLabs"
       }
     },
     "characterId": null
+  },
+  {
+    "id": 133,
+    "name": "Hello, I am your monster, hear me roar!",
+    "filename": "1751148380594-Hello__I_am_your_monster__hear.wav",
+    "file": "1751148380594-Hello__I_am_your_monster__hear.wav",
+    "characterIds": [
+      1
+    ],
+    "type": "voice",
+    "created": "2025-06-28T22:06:20.600Z",
+    "metadata": {
+      "originalText": "Hello, I am your monster, hear me roar!",
+      "voiceId": "829eb69c-8d2b-11ef-a4f6-00163e0082fe",
+      "voiceSettings": {
+        "pitch": -13,
+        "speed": 0.6,
+        "volume": 14,
+        "emotion": "Angry",
+        "sampleRate": 44100,
+        "bitRate": 128,
+        "outputFormat": "wav",
+        "channels": 1,
+        "languageCode": "en",
+        "provider": "ElevenLabs"
+      },
+      "audioFormat": "wav",
+      "created": "2025-06-28T22:06:20.600Z"
+    },
+    "characterId": null,
+    "format": "wav"
+  },
+  {
+    "id": 134,
+    "name": "Hello, I am your monster, hear me roar!",
+    "filename": "1755998827126-Hello__I_am_your_monster__hear.wav",
+    "file": "1755998827126-Hello__I_am_your_monster__hear.wav",
+    "characterIds": [
+      1
+    ],
+    "type": "voice",
+    "created": "2025-08-24T01:27:07.134Z",
+    "metadata": {
+      "originalText": "Hello, I am your monster, hear me roar!",
+      "voiceId": "829eb69c-8d2b-11ef-a4f6-00163e0082fe",
+      "voiceSettings": {
+        "pitch": -13,
+        "speed": 0.6,
+        "volume": 14,
+        "emotion": "Angry",
+        "sampleRate": 44100,
+        "bitRate": 128,
+        "outputFormat": "wav",
+        "channels": 1,
+        "languageCode": "en",
+        "provider": "ElevenLabs"
+      },
+      "audioFormat": "wav",
+      "created": "2025-08-24T01:27:07.134Z"
+    },
+    "characterId": null,
+    "format": "wav"
+  },
+  {
+    "id": 135,
+    "name": "Hello, I am your monster, hear me roar!",
+    "filename": "1756004846012-Hello__I_am_your_monster__hear.wav",
+    "file": "1756004846012-Hello__I_am_your_monster__hear.wav",
+    "characterIds": [
+      1
+    ],
+    "type": "voice",
+    "created": "2025-08-24T03:07:26.018Z",
+    "metadata": {
+      "originalText": "Hello, I am your monster, hear me roar!",
+      "voiceId": "829eb69c-8d2b-11ef-a4f6-00163e0082fe",
+      "voiceSettings": {
+        "pitch": -13,
+        "speed": 0.6,
+        "volume": 14,
+        "emotion": "Angry",
+        "sampleRate": 44100,
+        "bitRate": 128,
+        "outputFormat": "wav",
+        "channels": 1,
+        "languageCode": "en",
+        "provider": "ElevenLabs"
+      },
+      "audioFormat": "wav",
+      "created": "2025-08-24T03:07:26.018Z"
+    },
+    "characterId": null,
+    "format": "wav"
+  },
+  {
+    "id": 136,
+    "name": "Hello, I am your monster, hear me roar!",
+    "filename": "1756050181268-Hello__I_am_your_monster__hear.wav",
+    "file": "1756050181268-Hello__I_am_your_monster__hear.wav",
+    "characterIds": [
+      4
+    ],
+    "type": "voice",
+    "created": "2025-08-24T15:43:01.274Z",
+    "metadata": {
+      "originalText": "Hello, I am your monster, hear me roar!",
+      "voiceId": "f0ac8c43-7a0f-11ee-a861-00163e2ac61b",
+      "voiceSettings": {
+        "pitch": 0,
+        "speed": 1,
+        "volume": 0,
+        "emotion": "Neutral",
+        "sampleRate": 44100,
+        "bitRate": 128,
+        "outputFormat": "wav",
+        "channels": 1,
+        "languageCode": "en",
+        "provider": "ElevenLabs"
+      },
+      "audioFormat": "wav",
+      "created": "2025-08-24T15:43:01.274Z"
+    },
+    "characterId": null,
+    "format": "wav"
   }
 ]

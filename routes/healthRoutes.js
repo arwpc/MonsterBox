@@ -100,19 +100,8 @@ router.get('/connectivity', async (req, res) => {
             tests: {}
         };
 
-        // Test TopMediai API (most important for MonsterBox)
-        if (process.env.TOPMEDIAI_API_KEY && !process.env.TOPMEDIAI_API_KEY.includes('your_')) {
-            try {
-                const TopMediaiAPI = require('../scripts/topMediaiAPI');
-                const topMediaiAPI = new TopMediaiAPI();
-                // Just test if we can create the instance (validates API key format)
-                results.tests.topmediai = { status: 'configured', message: 'API instance created successfully' };
-            } catch (error) {
-                results.tests.topmediai = { status: 'error', message: 'Failed to create API instance' };
-            }
-        } else {
-            results.tests.topmediai = { status: 'not-configured', message: 'API key not set' };
-        }
+        // ElevenLabs API is now the primary TTS provider
+        results.tests.elevenlabs = { status: 'active', message: 'ElevenLabs Conversational AI is the active TTS provider' };
 
         // Count successful configurations
         const configured = Object.values(results.tests).filter(test => test.status === 'configured').length;

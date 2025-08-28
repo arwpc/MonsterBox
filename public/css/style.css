@@ -154,6 +154,34 @@ footer {
     box-shadow: 0 0 10px #00ff00;
 }
 
+/* Character Image Styling */
+.character-image {
+    width: 200px;
+    height: 200px;
+    object-fit: cover;
+    border: 3px solid #00ff00;
+    border-radius: 50%;
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+    background-color: #001100;
+    display: block;
+    margin: 0 auto;
+}
+
+.character-placeholder {
+    width: 200px;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #001100;
+    border: 3px solid #00ff00;
+    border-radius: 50%;
+    font-size: 4em;
+    color: #00ff00;
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+    margin: 0 auto;
+}
+
 /* Navigation Buttons */
 .nav-button {
     display: inline-block;
@@ -662,6 +690,58 @@ tr:hover {
     color: #ff0000;
 }
 
+/* Compact Header Styles - Global */
+.compact-header {
+    background: #000000;
+    border-bottom: 2px solid #00ff00;
+    padding: 15px 20px;
+    margin: -20px -20px 20px -20px;
+}
+
+.header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.page-title {
+    font-family: 'Creepster', cursive;
+    font-size: 2em;
+    margin: 0;
+    color: #00ff00;
+    text-shadow: 0 0 10px #00ff00;
+}
+
+.compact-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9em;
+}
+
+.nav-link {
+    color: #00ffff;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.nav-link:hover {
+    color: #ffffff;
+    text-shadow: 0 0 5px #00ffff;
+}
+
+.nav-separator {
+    color: #666666;
+    font-weight: bold;
+}
+
+.nav-current {
+    color: #00ff00;
+    font-weight: bold;
+}
+
 /* Navigation Grid Styles */
 .nav-grid {
     display: grid;
@@ -751,6 +831,21 @@ tr:hover {
         grid-template-columns: 1fr;
     }
 
+    /* Compact Header Mobile Styles */
+    .compact-header {
+        padding: 10px 15px;
+        margin: -20px -20px 15px -20px;
+    }
+
+    .page-title {
+        font-size: 1.5em;
+    }
+
+    .compact-nav {
+        font-size: 0.8em;
+        flex-wrap: wrap;
+    }
+
     .form-group {
         flex-direction: column;
         align-items: flex-start;
@@ -781,4 +876,211 @@ tr:hover {
         justify-content: center;
         padding: 5px;
     }
+}
+
+/* Webcam Detection Status Styles */
+.detection-status {
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin: 10px 0;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid;
+}
+
+.detection-status::before {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.detection-success {
+    background-color: #d4edda;
+    color: #155724;
+    border-color: #c3e6cb;
+}
+
+.detection-success::before {
+    content: "✅";
+}
+
+.detection-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border-color: #f5c6cb;
+}
+
+.detection-error::before {
+    content: "❌";
+}
+
+.detection-warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border-color: #ffeaa7;
+}
+
+.detection-warning::before {
+    content: "⚠️";
+}
+
+.detection-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border-color: #bee5eb;
+}
+
+.detection-info::before {
+    content: "ℹ️";
+}
+
+/* Webcam Controls Styles */
+.camera-controls {
+    background: #002200;
+    border: 1px solid #00ff00;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.camera-controls h3 {
+    margin-top: 0;
+    color: #00ff00;
+    border-bottom: 2px solid #00ff00;
+    padding-bottom: 10px;
+}
+
+.range-value {
+    display: inline-block;
+    min-width: 40px;
+    text-align: center;
+    background: #004400;
+    color: #00ff00;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-weight: bold;
+    margin-left: 10px;
+    border: 1px solid #00ff00;
+}
+
+/* Webcam Preview Styles */
+#webcamPreview {
+    min-height: 200px;
+    background: #001100;
+    border: 2px dashed #00ff00;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 15px 0;
+    position: relative;
+    overflow: hidden;
+}
+
+#webcamPreview img {
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 6px;
+}
+
+#webcamPreview span {
+    color: #00ff00;
+    font-style: italic;
+}
+
+/* Stream Status Styles */
+.stream-status {
+    background: #001122;
+    border: 1px solid #0088ff;
+    border-radius: 6px;
+    padding: 15px;
+    margin: 15px 0;
+}
+
+.stream-status h4 {
+    margin-top: 0;
+    color: #0088ff;
+}
+
+.stream-status-item {
+    display: flex;
+    justify-content: space-between;
+    margin: 8px 0;
+    padding: 4px 0;
+    border-bottom: 1px solid #004488;
+}
+
+.stream-status-item:last-child {
+    border-bottom: none;
+}
+
+.stream-status-label {
+    font-weight: 500;
+    color: #00ff00;
+}
+
+.stream-status-value {
+    font-family: monospace;
+    color: #0088ff;
+    font-weight: bold;
+}
+
+/* Button Styles for Webcam */
+.btn-webcam {
+    background: #004400;
+    color: #00ff00;
+    border: 1px solid #00ff00;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    margin: 2px;
+    transition: background-color 0.2s;
+}
+
+.btn-webcam:hover {
+    background: #005500;
+    box-shadow: 0 0 5px #00ff00;
+}
+
+.btn-webcam:disabled {
+    background: #333333;
+    color: #666666;
+    border-color: #666666;
+    cursor: not-allowed;
+}
+
+.btn-success {
+    background: #004400;
+    color: #00ff00;
+    border-color: #00ff00;
+}
+
+.btn-success:hover {
+    background: #005500;
+    box-shadow: 0 0 5px #00ff00;
+}
+
+.btn-danger {
+    background: #440000;
+    color: #ff0000;
+    border-color: #ff0000;
+}
+
+.btn-danger:hover {
+    background: #550000;
+    box-shadow: 0 0 5px #ff0000;
+}
+
+.btn-warning {
+    background: #444400;
+    color: #ffff00;
+    border-color: #ffff00;
+}
+
+.btn-warning:hover {
+    background: #555500;
+    box-shadow: 0 0 5px #ffff00;
 }

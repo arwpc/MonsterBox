@@ -172,9 +172,9 @@ A talking skull with jaw animation, camera, speakers, and attitude. The most adv
 - **Personality:** Gruff pirate captain
 - **Voice Settings:** Rate 0.9, Pitch 0.8, Volume 0.9
 
-#### ChatterPi System Configuration
-- **Jaw Animation:** Enabled with auto-servo detection
-- **Websocket Ports:** 8765 (jaw server), 8766 (AI bridge)
+#### ElevenLabs Conversational AI Configuration
+- **Service Port:** 8771 (ElevenLabs conversational AI)
+- **Agent Management:** Character-specific AI agents
 - **Jaw Calibration:** Closed 50°, Open 30°, Medium speed
 - **Speech Synthesis:** Enabled with character-specific settings
 - **Compatible GPIO Pins:** 18, 19, 20, 21, 22, 23, 24, 25
@@ -252,7 +252,7 @@ The system includes **17 pre-programmed interactive scenes** distributed across 
 
 ### Audio System Specifications
 - **Total Audio Files:** 130+ sound files
-- **Voice Synthesis:** TopMediai TTS integration
+- **Voice Synthesis:** ElevenLabs Conversational AI integration
 - **Concurrent Playback:** Multi-channel audio support
 - **Format Support:** MP3, WAV with various bitrates
 - **Character-Specific Voices:** Unique voice profiles per character

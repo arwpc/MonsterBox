@@ -109,138 +109,9 @@ const getAllCharactersWithWebcams = async () => {
     }
 };
 
-/**
- * Get jaw animation configuration for a character
- * @param {number} characterId - Character ID
- * @returns {Object|null} Jaw animation configuration or null if not found
- */
-const getCharacterJawAnimationConfig = async (characterId) => {
-    try {
-        const character = await getCharacterById(characterId);
-        if (!character) return null;
 
-        return character.jaw_animation_config || null;
-    } catch (error) {
-        console.error('Error getting jaw animation config:', error);
-        return null;
-    }
-};
 
-/**
- * Update jaw animation configuration for a character
- * @param {number} characterId - Character ID
- * @param {Object} jawAnimationConfig - Jaw animation configuration
- * @returns {Object} Updated character
- */
-const updateCharacterJawAnimationConfig = async (characterId, jawAnimationConfig) => {
-    try {
-        const character = await getCharacterById(characterId);
-        if (!character) {
-            throw new Error('Character not found');
-        }
 
-        // Validate jaw animation config structure
-        const validatedConfig = validateJawAnimationConfig(jawAnimationConfig);
-
-        // Update character with jaw animation config
-        const updatedCharacter = {
-            ...character,
-            jaw_animation_config: validatedConfig
-        };
-
-        return await updateCharacter(characterId, updatedCharacter);
-    } catch (error) {
-        console.error('Error updating jaw animation config:', error);
-        throw error;
-    }
-};
-
-/**
- * Validate jaw animation configuration structure
- * @param {Object} config - Configuration to validate
- * @returns {Object} Validated configuration
- */
-const validateJawAnimationConfig = (config) => {
-    const defaultConfig = {
-        enabled: false,
-        servo: {
-            pin: 18,
-            channel: null,
-            closedAngle: 50,
-            openAngle: 30,
-            minPosition: 0,
-            maxPosition: 180,
-            stepThreshold: 0.5
-        },
-        audioAnalysis: {
-            volumeThreshold: 0.01,
-            smoothingFactor: 0.8,
-            attackTime: 0.05,
-            releaseTime: 0.15,
-            sensitivity: 1.0,
-            responseCurve: 'linear'
-        },
-        calibration: {
-            isCalibrated: false,
-            calibratedClosedAngle: null,
-            calibratedOpenAngle: null,
-            calibrationDate: null
-        },
-        preset: 'skeleton',
-        presets: {
-            skeleton: {
-                minPosition: 0,
-                maxPosition: 180,
-                sensitivity: 1.5,
-                volumeThreshold: 0.02,
-                responseCurve: 'exponential'
-            },
-            bear: {
-                minPosition: 10,
-                maxPosition: 170,
-                sensitivity: 1.2,
-                volumeThreshold: 0.015,
-                responseCurve: 'linear'
-            },
-            fish: {
-                minPosition: 20,
-                maxPosition: 160,
-                sensitivity: 2.0,
-                volumeThreshold: 0.01,
-                responseCurve: 'logarithmic'
-            },
-            demon: {
-                minPosition: 0,
-                maxPosition: 180,
-                sensitivity: 1.8,
-                volumeThreshold: 0.025,
-                responseCurve: 'exponential'
-            }
-        }
-    };
-
-    // Merge with defaults
-    return {
-        ...defaultConfig,
-        ...config,
-        servo: {
-            ...defaultConfig.servo,
-            ...(config.servo || {})
-        },
-        audioAnalysis: {
-            ...defaultConfig.audioAnalysis,
-            ...(config.audioAnalysis || {})
-        },
-        calibration: {
-            ...defaultConfig.calibration,
-            ...(config.calibration || {})
-        },
-        presets: {
-            ...defaultConfig.presets,
-            ...(config.presets || {})
-        }
-    };
-};
 
 module.exports = {
     getAllCharacters,
@@ -249,8 +120,5 @@ module.exports = {
     updateCharacter,
     deleteCharacter,
     getCharacterWithWebcam,
-    getAllCharactersWithWebcams,
-    getCharacterJawAnimationConfig,
-    updateCharacterJawAnimationConfig,
-    validateJawAnimationConfig
+    getAllCharactersWithWebcams
 };
