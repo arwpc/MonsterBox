@@ -80,7 +80,7 @@ node scripts/test-voice-interaction-system.js
     ↓
 🔊 TopMediai TTS (topMediaiAPI.js)
     ↓
-🎭 Jaw Animation (ChatterPi system)
+🎭 Jaw Animation (Servo WebSocket system)
 ```
 
 ### **Provider Responsibilities**
@@ -90,7 +90,7 @@ node scripts/test-voice-interaction-system.js
 | Speech-to-Text | OpenAI Whisper | `openai_stt_integration.js` | Convert speech to text |
 | Text-to-Speech | TopMediai | `topMediaiAPI.js` | Convert text to speech |
 | AI Chat | OpenAI GPT | AI integrations | Generate responses |
-| Jaw Animation | ChatterPi | Audio bridge | Animate jaw with speech |
+| Jaw Animation | Servo WebSocket | Hardware service | Animate jaw with speech |
 
 ## 🧪 Test Coverage
 

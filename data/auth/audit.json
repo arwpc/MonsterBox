@@ -4261,6 +4261,86 @@
         "ipAddress": "127.0.0.1",
         "userAgent": "mocha-test"
       }
+    },
+    {
+      "timestamp": "2025-08-28T20:26:57.666Z",
+      "event": "AUTH_SUCCESS",
+      "data": {
+        "username": "admin",
+        "sessionId": "session_1756412817641_nhr6qix3l",
+        "ipAddress": "127.0.0.1",
+        "userAgent": "mocha-test"
+      }
+    },
+    {
+      "timestamp": "2025-08-28T20:26:58.097Z",
+      "event": "AUTH_FAILED",
+      "data": {
+        "username": "admin",
+        "reason": "Invalid password",
+        "ipAddress": "127.0.0.1",
+        "userAgent": "mocha-test"
+      }
+    },
+    {
+      "timestamp": "2025-08-28T20:26:58.660Z",
+      "event": "AUTH_SUCCESS",
+      "data": {
+        "username": "admin",
+        "sessionId": "session_1756412818648_2xf4qjs4l",
+        "ipAddress": "127.0.0.1",
+        "userAgent": "mocha-test"
+      }
+    },
+    {
+      "timestamp": "2025-08-28T20:26:59.227Z",
+      "event": "AUTH_SUCCESS",
+      "data": {
+        "username": "admin",
+        "sessionId": "session_1756412819215_4d5gujhce",
+        "ipAddress": "::ffff:127.0.0.1",
+        "timestamp": "2025-08-28T20:26:58.816Z"
+      }
+    },
+    {
+      "timestamp": "2025-08-28T20:27:11.056Z",
+      "event": "AUTH_FAILED",
+      "data": {
+        "username": "admin",
+        "reason": "Invalid password",
+        "ipAddress": "::ffff:127.0.0.1",
+        "timestamp": "2025-08-28T20:27:10.619Z"
+      }
+    },
+    {
+      "timestamp": "2025-08-28T20:27:11.117Z",
+      "event": "AUTH_FAILED",
+      "data": {
+        "username": "admin",
+        "reason": "Invalid password",
+        "ipAddress": "::ffff:127.0.0.1",
+        "timestamp": "2025-08-28T20:27:10.625Z"
+      }
+    },
+    {
+      "timestamp": "2025-08-28T20:27:11.471Z",
+      "event": "AUTH_FAILED",
+      "data": {
+        "username": "admin",
+        "reason": "Invalid password",
+        "ipAddress": "::ffff:127.0.0.1",
+        "timestamp": "2025-08-28T20:27:10.628Z"
+      }
+    },
+    {
+      "timestamp": "2025-08-28T20:27:11.898Z",
+      "event": "AUTH_SUCCESS",
+      "data": {
+        "username": "admin",
+        "sessionId": "session_1756412831884_0q1rvzrjv",
+        "ipAddress": "127.0.0.1",
+        "userAgent": "mocha-test"
+      }
     }
   ]
 }

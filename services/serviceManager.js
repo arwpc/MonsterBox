@@ -34,23 +34,6 @@ class ServiceManager {
                 script: 'services/audioStreamService.js',
                 type: 'node',
                 critical: true
-            },
-
-            // ChatterPi Services - UNIFIED SERVICE TO PREVENT GPIO CONFLICTS
-            unifiedJawAnimation: {
-                name: 'Unified Jaw Animation Service',
-                port: 8765,
-                script: 'scripts/chatterpi/unified_jaw_animation_service.py',
-                type: 'python',
-                critical: true,
-                description: 'Consolidated jaw animation with audio processing and servo control'
-            },
-            aibridge: {
-                name: 'AI Bridge Service',
-                port: 8766,
-                script: 'scripts/chatterpi/ai_websocket_bridge.py',
-                type: 'python',
-                critical: false
             }
         };
     }

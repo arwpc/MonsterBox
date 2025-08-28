@@ -37,11 +37,7 @@ class MonsterBoxServiceIntegration {
                 'actuatorService',
                 'headTrackingService'
             ],
-            
-            chatterpiServices: [
-                // ChatterPi services disabled - jaw animation functionality removed
-            ],
-            
+
             ...options
         };
         
@@ -108,7 +104,6 @@ class MonsterBoxServiceIntegration {
         const results = {
             core: [],
             hardware: [],
-            chatterpi: [],
             total: { started: 0, failed: 0 }
         };
         
@@ -148,21 +143,6 @@ class MonsterBoxServiceIntegration {
             
             // Wait for hardware services to stabilize
             await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            // Start ChatterPi services
-            logger.info('🔧 Starting ChatterPi services...');
-            for (const serviceName of this.config.chatterpiServices) {
-                try {
-                    const registration = await this.serviceManager.startService(serviceName);
-                    results.chatterpi.push({ serviceName, success: true, registration });
-                    results.total.started++;
-                    logger.info(`✅ ChatterPi service ${serviceName} started on port ${registration.port}`);
-                } catch (error) {
-                    results.chatterpi.push({ serviceName, success: false, error: error.message });
-                    results.total.failed++;
-                    logger.error(`❌ Failed to start ChatterPi service ${serviceName}:`, error.message);
-                }
-            }
             
             const totalServices = results.total.started + results.total.failed;
             logger.info(`✅ Service startup complete: ${results.total.started}/${totalServices} services started successfully`);

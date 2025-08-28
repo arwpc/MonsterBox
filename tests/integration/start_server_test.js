@@ -15,15 +15,15 @@ try {
 
     // Test logger
     console.log('Testing logger...');
-    const logger = require('./scripts/logger');
+    const logger = require('../../scripts/logger');
     logger.info('Logger test successful');
     console.log('✅ Logger loaded');
 
     // Test services
     console.log('Testing services...');
-    const characterService = require('./services/characterService');
-    const webcamService = require('./services/webcamService');
-    const streamingService = require('./services/streamingService');
+    const characterService = require('../../services/characterService');
+    const webcamService = require('../../services/webcamService');
+    const streamingService = require('../../services/streamingService');
     console.log('✅ Services loaded');
 
     // Create simple express app
@@ -40,7 +40,7 @@ try {
     });
     
     // Add streaming routes
-    app.use('/api/streaming', require('./routes/streamingRoutes'));
+    app.use('/api/streaming', require('../../routes/streamingRoutes'));
     
     console.log('✅ Express app configured');
 

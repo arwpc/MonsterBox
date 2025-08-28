@@ -1,7 +1,7 @@
 /**
  * Enhanced Audio Stream Handler for MonsterBox
  * Handles real-time microphone input with simultaneous STT and jaw animation
- * Integrates with the ChatterPi system for comprehensive audio processing
+ * Integrates with the ElevenLabs system for comprehensive audio processing
  */
 
 const WebSocket = require('ws');
@@ -14,8 +14,6 @@ class EnhancedAudioStream {
         this.wss = null;
         this.clients = new Set();
         this.micLockedBy = null;
-        this.chatterPiProcess = null;
-        this.isChatterPiRunning = false;
         this.audioBuffer = [];
         this.processingQueue = [];
         this.sttClients = new Set();
@@ -24,9 +22,6 @@ class EnhancedAudioStream {
 
     startStream(server) {
         this.wss = new WebSocket.Server({ server, path: '/enhanced-audiostream' });
-        
-        // ChatterPi audio bridge disabled - now using ElevenLabs Conversational AI
-        // this.startChatterPiAudioBridge();
 
         this.wss.on('connection', (ws) => {
             logger.info('New enhanced audio stream connection');
@@ -203,17 +198,7 @@ class EnhancedAudioStream {
                 }
             });
 
-            // Also send to ChatterPi bridge if running
-            if (this.isChatterPiRunning && this.chatterPiProcess) {
-                // Send audio data to ChatterPi for STT processing
-                this.sendToChatterPi({
-                    type: 'audio_data',
-                    data: audioData.data,
-                    sample_rate: audioData.sampleRate,
-                    format: audioData.format,
-                    metadata: audioData.metadata
-                });
-            }
+
 
         } catch (error) {
             logger.error('Error processing audio for STT:', error);
@@ -240,16 +225,7 @@ class EnhancedAudioStream {
                 }
             });
 
-            // Also send to ChatterPi bridge for jaw animation
-            if (this.isChatterPiRunning && this.chatterPiProcess) {
-                this.sendToChatterPi({
-                    type: 'audio_stream',
-                    data: audioData.data,
-                    sample_rate: audioData.sampleRate,
-                    character_id: audioData.characterId,
-                    timestamp: audioData.timestamp
-                });
-            }
+
 
         } catch (error) {
             logger.error('Error processing audio for jaw animation:', error);
@@ -294,7 +270,6 @@ class EnhancedAudioStream {
             connectedClients: this.clients.size,
             sttSubscribers: this.sttClients.size,
             jawAnimationSubscribers: this.jawAnimationClients.size,
-            chatterPiRunning: this.isChatterPiRunning,
             queueSize: this.processingQueue.length,
             timestamp: Date.now()
         };
@@ -324,53 +299,10 @@ class EnhancedAudioStream {
         }));
     }
 
-    startChatterPiAudioBridge() {
-        try {
-            const bridgePath = path.join(__dirname, 'chatterpi', 'chatterpi_audio_bridge.py');
-            
-            this.chatterPiProcess = spawn('python3', [bridgePath], {
-                stdio: ['pipe', 'pipe', 'pipe'],
-                cwd: path.dirname(bridgePath)
-            });
 
-            this.chatterPiProcess.stdout.on('data', (data) => {
-                logger.debug(`ChatterPi Bridge: ${data.toString()}`);
-            });
-
-            this.chatterPiProcess.stderr.on('data', (data) => {
-                logger.debug(`ChatterPi Bridge Error: ${data.toString()}`);
-            });
-
-            this.chatterPiProcess.on('close', (code) => {
-                logger.info(`ChatterPi Bridge process exited with code ${code}`);
-                this.isChatterPiRunning = false;
-            });
-
-            this.isChatterPiRunning = true;
-            logger.info('ChatterPi Audio Bridge started');
-
-        } catch (error) {
-            logger.error('Failed to start ChatterPi Audio Bridge:', error);
-            this.isChatterPiRunning = false;
-        }
-    }
-
-    sendToChatterPi(data) {
-        if (this.chatterPiProcess && this.chatterPiProcess.stdin) {
-            try {
-                this.chatterPiProcess.stdin.write(JSON.stringify(data) + '\n');
-            } catch (error) {
-                logger.error('Error sending data to ChatterPi:', error);
-            }
-        }
-    }
 
     // Cleanup method
     cleanup() {
-        if (this.chatterPiProcess) {
-            this.chatterPiProcess.kill();
-        }
-        
         this.clients.clear();
         this.sttClients.clear();
         this.jawAnimationClients.clear();

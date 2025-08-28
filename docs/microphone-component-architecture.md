@@ -66,7 +66,7 @@ class MicrophoneWebSocketService(BaseWebSocketService):
 #### Audio Stream Integration
 - Connect to existing `GenericAudioStreamHandler`
 - Use existing `MicrophoneAdapter` in `audio_source_adapters.py`
-- Integrate with ChatterPi Animation System
+- Integrate with Servo WebSocket Animation System
 
 #### Character System Integration
 - Add microphone to available services in `character_service_manager.py`

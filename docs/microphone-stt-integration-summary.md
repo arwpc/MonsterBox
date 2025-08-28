@@ -189,7 +189,7 @@ await configService.configureMicrophoneForCharacter(4, {
 
 ### Existing Systems
 - ✅ OpenAI Whisper STT integration
-- ✅ ChatterPi Animation System
+- ✅ Servo WebSocket Animation System
 - ✅ Character Service Manager
 - ✅ Hardware WebSocket Services
 - ✅ Character Audio Configuration

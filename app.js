@@ -520,7 +520,7 @@ app.get('/conversational-ai', async (req, res) => {
     }
 });
 
-// Enhanced Test Chat route (formerly ChatterPi test)
+// Enhanced Test Chat route
 app.get('/test-chat', async (req, res) => {
     try {
         const characterService = require('./services/characterService');

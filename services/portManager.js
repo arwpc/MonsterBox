@@ -27,7 +27,6 @@ class PortManager extends EventEmitter {
                 websocket: { start: 8000, end: 8199 },      // Direct WebSocket services
                 proxy: { start: 8200, end: 8399 },          // Browser proxy services
                 hardware: { start: 8400, end: 8599 },       // Hardware-specific services
-                chatterpi: { start: 8600, end: 8699 },      // ChatterPi services
                 testing: { start: 8700, end: 8799 },        // Testing and development
                 reserved: { start: 8800, end: 8999 }        // Reserved for future use
             },
@@ -40,7 +39,6 @@ class PortManager extends EventEmitter {
                 main: 100,
                 hardware: 90,
                 websocket: 80,
-                chatterpi: 70,
                 proxy: 60,
                 testing: 50
             },
