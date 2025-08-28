@@ -83,12 +83,14 @@ module.exports = defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  webServer: {
-    command: 'npm start',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
-  },
+  // Playwright temporarily disabled per migration to Mocha-only tests
+  // Keep config but disable server start to prevent CI blocking
+  // webServer: {
+  //   command: 'npm start',
+  //   url: 'http://localhost:3000',
+  //   reuseExistingServer: !process.env.CI,
+  //   timeout: 120 * 1000,
+  // },
   
   /* Global setup and teardown */
   globalSetup: require.resolve('./tests/global-setup.js'),

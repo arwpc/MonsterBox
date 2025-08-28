@@ -398,25 +398,40 @@ class EnhancedWebcamComponent {
             const deviceId = this.state.selectedCamera;
             const resolution = this.elements.resolution?.value || '1280x720';
             const fps = this.elements.fps?.value || '30';
+            const [width, height] = resolution.split('x');
 
             this.log('info', 'Starting camera test', { deviceId, resolution, fps });
 
-            const response = await this.fetchWithTimeout(
-                `/api/webcam/test?characterId=${this.options.characterId}&deviceId=${deviceId}&resolution=${resolution}&fps=${fps}`
-            );
+            if (!this.elements.webcamPreview) return;
 
-            const data = await response.json();
+            // Use MJPEG test stream endpoint
+            const testUrl = `/api/webcam/test-stream?characterId=${this.options.characterId}&deviceId=${deviceId}&width=${width}&height=${height}&fps=${fps}&t=${Date.now()}`;
 
-            if (data.success) {
-                this.displayTestResult(data);
-                this.log('info', 'Camera test successful', data);
-            } else {
-                throw new Error(data.message || 'Camera test failed');
-            }
+            const img = document.createElement('img');
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'cover';
+            img.src = testUrl;
 
+            img.onload = () => {
+                // Replace preview content with the stream
+                this.elements.webcamPreview.innerHTML = '';
+                this.elements.webcamPreview.appendChild(img);
+                this.log('info', 'Camera test stream started successfully');
+            };
+
+            img.onerror = () => {
+                this.elements.webcamPreview.innerHTML = '<span style="color: #ff0000;">❌ Camera test failed - Check device availability</span>';
+                this.updateUIForTesting(false);
+                this.state.isTesting = false;
+            };
+
+            this.testStream = img;
         } catch (error) {
             this.handleError('camera_test_failed', error);
             this.displayTestError(error.message);
+            this.updateUIForTesting(false);
+            this.state.isTesting = false;
         }
     }
 
@@ -426,15 +441,16 @@ class EnhancedWebcamComponent {
         try {
             this.log('info', 'Stopping camera test');
 
-            // Stop any active test stream
             if (this.testStream) {
-                this.testStream.getTracks().forEach(track => track.stop());
+                try { this.testStream.src = ''; } catch (e) {}
                 this.testStream = null;
             }
 
-            this.updateUIForTesting(false);
-            this.clearTestResult();
+            if (this.elements.webcamPreview) {
+                this.elements.webcamPreview.innerHTML = '<span>No preview available</span>';
+            }
 
+            this.updateUIForTesting(false);
             this.state.isTesting = false;
             this.log('info', 'Camera test stopped');
 

@@ -365,8 +365,8 @@
             const urlParams = new URLSearchParams(window.location.search);
             const characterId = urlParams.get('characterId') || document.getElementById('characterId')?.value;
 
-            // Check if we should use the enhanced component (can be controlled via URL parameter)
-            const useEnhanced = urlParams.get('enhanced') === 'true' || window.location.hostname === 'localhost';
+            // Check if we should use the enhanced component (opt-in via URL parameter)
+            const useEnhanced = urlParams.get('enhanced') === 'true';
 
             if (useEnhanced && window.EnhancedWebcamComponent) {
                 console.log('🚀 Initializing Enhanced Webcam Component');

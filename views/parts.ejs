@@ -83,14 +83,17 @@
                                 <% parts.forEach(function(part) { %>
                                     <tr>
                                         <td>
-                                            <strong>
-                                                <%= part.name %>
-                                            </strong>
+                                            <% let editUrl = '/parts/' + part.id + '/edit'; %>
+                                            <% if (part.type==='linear-actuator') { editUrl = '/parts/linear-actuator/' + part.id + '/edit'; }
+                                               else if (part.type==='servo') { editUrl = '/parts/servo/' + part.id + '/edit'; }
+                                               else if (part.type==='light') { editUrl = '/parts/light/' + part.id + '/edit'; }
+                                               else if (part.type==='webcam') { editUrl = '/parts/webcam/' + part.id + '/edit'; }
+                                               else if (part.type==='microphone') { editUrl = '/parts/microphone/' + part.id + '/edit'; }
+                                               else if (part.type==='motion-sensor') { editUrl = '/parts/motion-sensor/' + part.id + '/edit'; } %>
+                                            <a href="<%= editUrl %>"><strong><%= part.name %></strong></a>
                                             <% if (part.description) { %>
-                                                <br><small>
-                                                    <%= part.description %>
-                                                </small>
-                                                <% } %>
+                                                <br><small><%= part.description %></small>
+                                            <% } %>
                                         </td>
                                         <td>
                                             <span class="part-type-badge <%= part.type %>">
