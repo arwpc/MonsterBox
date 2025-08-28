@@ -456,9 +456,26 @@ router.post('/set-controls', async (req, res) => {
         const result = await webcamService.setCameraControls(parsedCharacterId, parsedDeviceId, controls);
 
         if (result.success) {
+            // Also save the controls to the webcam part configuration
+            try {
+                const webcam = await webcamService.getWebcamByCharacter(parsedCharacterId);
+                if (webcam) {
+                    const partService = require('../../services/partService');
+                    const updatedWebcam = {
+                        ...webcam,
+                        cameraControls: controls
+                    };
+                    await partService.updatePart(webcam.id, updatedWebcam);
+                    logger.info(`Camera controls saved to webcam part ${webcam.id}`);
+                }
+            } catch (saveError) {
+                logger.warn('Failed to save camera controls to part configuration:', saveError);
+                // Don't fail the request if saving to part fails
+            }
+
             res.json({
                 success: true,
-                message: 'Camera controls applied successfully',
+                message: 'Camera controls applied and saved successfully',
                 appliedControls: result.appliedControls,
                 failedControls: result.failedControls
             });

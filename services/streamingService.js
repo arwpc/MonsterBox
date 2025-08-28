@@ -613,8 +613,16 @@ class StreamingService extends EventEmitter {
                 // Clean up any existing camera processes first
                 await this.cleanupRemoteCameraProcesses(host, characterKey);
 
-                // Webcam streaming is now handled by the WebSocket webcam service
-                throw new Error('Webcam streaming migrated to WebSocket service. Use ws://localhost:8774 instead.');
+                // Build remote command to run the same persistent stream script on the RPI
+                const remoteScript = '/home/remote/MonsterBox/scripts/webcam_persistent_stream.py';
+                const remoteArgs = [
+                    `--device-id ${config.deviceId}`,
+                    `--width ${config.width}`,
+                    `--height ${config.height}`,
+                    `--fps ${config.fps}`,
+                    `--quality ${config.quality}`,
+                    '--persistent'
+                ].join(' ');
 
                 const remoteCommand = `python3 ${remoteScript} ${remoteArgs}`;
                 const fullCommand = sshCredentials.buildSSHCommand(characterKey, host, remoteCommand);
