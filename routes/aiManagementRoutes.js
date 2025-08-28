@@ -15,10 +15,19 @@ const logger = require('../scripts/logger');
 // Import services
 const characterService = require('../services/characterService');
 const voiceService = require('../services/voiceService');
-// Configure multer for file uploads
+// Configure multer for file uploads with proper file extension handling
 const upload = multer({
-    dest: 'uploads/',
-    limits: { fileSize: 20 * 1024 * 1024 } // 20MB limit
+    storage: multer.diskStorage({
+        destination: 'uploads/',
+        filename: (req, file, cb) => {
+            // Preserve original extension or default to .webm for browser audio
+            const ext = path.extname(file.originalname) || '.webm';
+            const timestamp = Date.now();
+            const randomSuffix = Math.round(Math.random() * 1E9);
+            cb(null, `audio_${timestamp}_${randomSuffix}${ext}`);
+        }
+    }),
+    limits: { fileSize: 20 * 1024 * 1024 } // 20MB limit (keeping ElevenLabs higher limit)
 });
 
 // Configuration file paths
@@ -826,6 +835,7 @@ router.post('/api/stt/transcribe-legacy', upload.single('audio'), async (req, re
 
         // Clean up uploaded file
         try {
+
             await fs.unlink(req.file.path);
         } catch (e) {
             console.warn('Could not clean up uploaded file:', e.message);

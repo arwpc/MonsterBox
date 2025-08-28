@@ -451,6 +451,7 @@ class EnhancedWebcamComponent {
             }
 
             this.updateUIForTesting(false);
+            this.clearTestResult();
             this.state.isTesting = false;
             this.log('info', 'Camera test stopped');
 
