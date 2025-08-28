@@ -340,6 +340,12 @@ class ElevenLabsConversationalService extends EventEmitter {
                     conversation_config_override: {
                         agent: {
                             language: "en"
+                        },
+                        turn_detection: {
+                            type: this.getVADConfig().vadType || 'server_vad',
+                            threshold: this.getVADConfig().vadThreshold,
+                            prefix_padding_ms: this.getVADConfig().prefixPadding,
+                            silence_duration_ms: this.getVADConfig().silenceDuration
                         }
                     }
                 };
@@ -418,10 +424,17 @@ class ElevenLabsConversationalService extends EventEmitter {
                 connection.characterId = characterId;
                 connection.isActive = true;
 
-                // Send conversation initiation message to ElevenLabs (use pre-configured agent)
+                // Send conversation initiation message to ElevenLabs with live VAD config
                 elevenLabsWs.send(JSON.stringify({
-                    type: 'conversation_initiation_client_data'
-                    // No conversation_config_override - use the pre-configured agent settings
+                    type: 'conversation_initiation_client_data',
+                    conversation_config_override: {
+                        turn_detection: {
+                            type: this.getVADConfig().vadType || 'server_vad',
+                            threshold: this.getVADConfig().vadThreshold,
+                            prefix_padding_ms: this.getVADConfig().prefixPadding,
+                            silence_duration_ms: this.getVADConfig().silenceDuration
+                        }
+                    }
                 }));
 
                 this.sendToClient(sessionId, {

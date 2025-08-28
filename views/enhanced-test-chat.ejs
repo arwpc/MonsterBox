@@ -481,11 +481,13 @@
                     <div class="metric-value" id="voiceOutputTime">--</div>
                 </div>
             </div>
-            
+
             <h1><%= pageTitle %></h1>
             <div class="subtitle">ElevenLabs Conversational AI Interface</div>
-            
+
             <div class="status-indicator" id="connectionStatus">Initializing...</div>
+
+
         </div>
 
         <!-- Character Selection and Voice Controls -->
@@ -550,6 +552,42 @@
                     Welcome to the Enhanced Test Chat Interface! Select a character above to begin your conversation.
                     <div class="message-time" id="welcomeTime"></div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Inline STT Settings (per character) -->
+        <div class="character-selection" style="border-top:1px solid rgba(0,255,65,0.15); margin-top:6px; padding-top:8px;">
+            <div class="selection-group" style="min-width:260px;">
+                <label for="sttLanguageInline">STT Language</label>
+                <select id="sttLanguageInline" class="character-select">
+                    <option value="en">English</option>
+                    <option value="es">Spanish</option>
+                    <option value="fr">French</option>
+                    <option value="de">German</option>
+                    <option value="it">Italian</option>
+                    <option value="pt">Portuguese</option>
+                    <option value="ja">Japanese</option>
+                </select>
+            </div>
+            <div class="selection-group">
+                <label for="confidenceThresholdInline" title="Minimum transcript confidence. Higher = filters out uncertain transcriptions. Lower = accepts more but may include mistakes.">Confidence</label>
+                <input type="range" id="confidenceThresholdInline" min="0" max="1" step="0.05" value="0.7"/>
+            </div>
+            <div class="selection-group">
+                <label for="vadThresholdInline" title="Voice Activity Detection sensitivity. Higher = requires louder/clearer speech. Lower = more sensitive to quiet or background noise.">VAD Threshold</label>
+                <input type="range" id="vadThresholdInline" min="0" max="1" step="0.05" value="0.5"/>
+            </div>
+            <div class="selection-group">
+                <label for="silenceDurationInline" title="Milliseconds of silence to consider speech ended. Higher = waits longer after you stop speaking. Lower = cuts off sooner.">Silence ms</label>
+                <input type="number" id="silenceDurationInline" min="100" max="2000" step="50" value="700"/>
+            </div>
+            <div class="selection-group">
+                <label for="prefixPaddingInline" title="Milliseconds of audio to include before detected speech starts. Higher = captures more lead-in. Lower = tighter start.">Prefix ms</label>
+                <input type="number" id="prefixPaddingInline" min="0" max="1000" step="50" value="300"/>
+            </div>
+            <div class="selection-group">
+                <button id="saveInlineSTT" class="send-button" style="padding:6px 12px;">Save STT</button>
+                <a href="https://skulltalker:8080/ai-management/microphone-stt" target="_blank" class="send-button" style="padding:6px 12px;">STT Config</a>
             </div>
         </div>
 

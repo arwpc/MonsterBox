@@ -67,6 +67,14 @@ class EnhancedTestChat {
         this.agentTime = document.getElementById('agentTime');
         this.voiceOutputTime = document.getElementById('voiceOutputTime');
         this.welcomeTime = document.getElementById('welcomeTime');
+
+        // Inline STT controls
+        this.sttLanguageInline = document.getElementById('sttLanguageInline');
+        this.confidenceThresholdInline = document.getElementById('confidenceThresholdInline');
+        this.vadThresholdInline = document.getElementById('vadThresholdInline');
+        this.silenceDurationInline = document.getElementById('silenceDurationInline');
+        this.prefixPaddingInline = document.getElementById('prefixPaddingInline');
+        this.saveInlineSTT = document.getElementById('saveInlineSTT');
     }
     
     /**
@@ -106,8 +114,138 @@ class EnhancedTestChat {
         this.sendButton.addEventListener('click', () => {
             this.sendMessage();
         });
+
+        // Inline STT save
+        if (this.saveInlineSTT) {
+            this.saveInlineSTT.addEventListener('click', () => this.saveInlineSTTSettings());
+            this.saveInlineSTT.title = 'Save and apply these STT settings immediately';
+        }
     }
     
+    /**
+     * Save inline STT settings (per character) and apply immediately
+     */
+    async saveInlineSTTSettings() {
+        try {
+            if (!this.currentCharacter) {
+                alert('Please select a character first');
+                return;
+            }
+
+            const characterId = this.currentCharacter.id;
+            const settings = {
+                language: this.sttLanguageInline?.value || 'en',
+                confidenceThreshold: parseFloat(this.confidenceThresholdInline?.value || '0.7'),
+                vadThreshold: parseFloat(this.vadThresholdInline?.value || '0.5'),
+                silenceDuration: parseInt(this.silenceDurationInline?.value || '700'),
+                prefixPadding: parseInt(this.prefixPaddingInline?.value || '300'),
+                provider: 'elevenlabs'
+            };
+
+            // Save character STT settings
+            const sttResp = await fetch(`/ai-management/api/stt/character/${characterId}/config`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(settings)
+            });
+            const sttData = await sttResp.json();
+            if (!sttResp.ok || !sttData.success) {
+                throw new Error(sttData.error || 'Failed to save STT settings');
+            }
+
+            // Apply VAD-related settings immediately to ElevenLabs service
+            const vadPayload = {
+                vadType: 'server_vad',
+                vadThreshold: settings.vadThreshold,
+                prefixPadding: settings.prefixPadding,
+                silenceDuration: settings.silenceDuration
+            };
+            const vadResp = await fetch('/ai-management/api/vad/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(vadPayload)
+            });
+            const vadData = await vadResp.json();
+            if (!vadResp.ok || !vadData.success) {
+                console.warn('VAD apply warning:', vadData);
+            }
+
+            // Feedback in chat
+            this.addMessage('system', '✅ STT settings saved. VAD updated and will take effect immediately.', {
+                characterName: 'System',
+                isInfo: true
+            });
+        } catch (error) {
+            console.error('❌ Error saving STT settings:', error);
+            this.addMessage('system', `Error saving STT settings: ${error.message}`, {
+                characterName: 'System',
+                isError: true
+            });
+        }
+    }
+
+    /**
+     * Save inline STT settings (per character) and apply immediately
+     */
+    async saveInlineSTTSettings() {
+        try {
+            if (!this.currentCharacter) {
+                alert('Please select a character first');
+                return;
+            }
+
+            const characterId = this.currentCharacter.id;
+            const settings = {
+                language: this.sttLanguageInline?.value || 'en',
+                confidenceThreshold: parseFloat(this.confidenceThresholdInline?.value || '0.7'),
+                vadThreshold: parseFloat(this.vadThresholdInline?.value || '0.5'),
+                silenceDuration: parseInt(this.silenceDurationInline?.value || '700'),
+                prefixPadding: parseInt(this.prefixPaddingInline?.value || '300'),
+                provider: 'elevenlabs'
+            };
+
+            // Save character STT settings
+            const sttResp = await fetch(`/ai-management/api/stt/character/${characterId}/config`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(settings)
+            });
+            const sttData = await sttResp.json();
+            if (!sttResp.ok || !sttData.success) {
+                throw new Error(sttData.error || 'Failed to save STT settings');
+            }
+
+            // Apply VAD-related settings immediately to ElevenLabs service
+            const vadPayload = {
+                vadType: 'server_vad',
+                vadThreshold: settings.vadThreshold,
+                prefixPadding: settings.prefixPadding,
+                silenceDuration: settings.silenceDuration
+            };
+            const vadResp = await fetch('/ai-management/api/vad/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(vadPayload)
+            });
+            const vadData = await vadResp.json();
+            if (!vadResp.ok || !vadData.success) {
+                console.warn('VAD apply warning:', vadData);
+            }
+
+            // Feedback in chat
+            this.addMessage('system', '✅ STT settings saved. VAD updated and will take effect immediately.', {
+                characterName: 'System',
+                isInfo: true
+            });
+        } catch (error) {
+            console.error('❌ Error saving STT settings:', error);
+            this.addMessage('system', `Error saving STT settings: ${error.message}`, {
+                characterName: 'System',
+                isError: true
+            });
+        }
+    }
+
     /**
      * Initialize the interface
      */
@@ -328,13 +466,8 @@ class EnhancedTestChat {
                 break;
 
             case 'transcript':
-                if (message.role === 'user') {
-                    // User message echo - we already added it
-                    console.log('👤 User message confirmed:', message.text);
-                } else if (message.role === 'assistant') {
-                    // AI response received
-                    this.handleAIResponse(message.text);
-                }
+                // Unified transcript handling for both user and assistant
+                this.handleTranscript({ role: message.role, text: message.text });
                 break;
 
             case 'audio':
@@ -521,6 +654,10 @@ class EnhancedTestChat {
     sendEndOfSpeechToElevenLabs() {
         try {
             if (this.elevenLabsWs && this.elevenLabsWs.readyState === WebSocket.OPEN) {
+                // Mark timers for Live Mode metrics (STT + Agent)
+                this.liveModeSTTStartTime = Date.now();
+                this.liveModeAgentStartTime = Date.now();
+
                 // Send empty audio message to signal end of speech (ElevenLabs format)
                 const endMessage = {
                     user_audio_chunk: '' // Empty audio data signals end of speech
@@ -540,6 +677,8 @@ class EnhancedTestChat {
     async handleElevenLabsAudio(base64Audio) {
         try {
             console.log('🔊 Processing ElevenLabs audio response...');
+            // Mark start of output metric at first arrival of audio
+            this.voiceOutputStartTime = this.voiceOutputStartTime || Date.now();
 
             // Convert base64 to audio blob
             const audioData = atob(base64Audio);
@@ -1391,10 +1530,26 @@ class EnhancedTestChat {
                     this.handleDirectAudioResponse(message);
                     break;
 
-                case 'transcript':
-                    if (message.role === 'assistant') {
-                        this.handleAIResponse(message.text);
+                case 'agent_response':
+                    if (message.agent_response_event?.agent_response) {
+                        this.addMessage('bot', message.agent_response_event.agent_response, {
+                            characterName: this.currentCharacter ? (this.currentCharacter.char_name || this.currentCharacter.name) : 'AI Assistant'
+                        });
                     }
+                    break;
+
+                case 'agent_response_correction':
+                    if (message.agent_response_correction_event?.corrected_agent_response) {
+                        // Append correction as an update message
+                        this.addMessage('bot', message.agent_response_correction_event.corrected_agent_response, {
+                            characterName: this.currentCharacter ? (this.currentCharacter.char_name || this.currentCharacter.name) : 'AI Assistant'
+                        });
+                    }
+                    break;
+
+                case 'transcript':
+                    // Unified transcript handling for direct ElevenLabs connection
+                    this.handleTranscript({ role: message.role, text: message.text });
                     break;
 
                 case 'live_mode_error':
@@ -1713,8 +1868,25 @@ class EnhancedTestChat {
     handleTranscript(message) {
         console.log('📝 Transcript:', message);
 
+        // Update Live Mode performance metrics
+        if (message.role === 'user' && this.liveModeSTTStartTime) {
+            const sttMs = Date.now() - this.liveModeSTTStartTime;
+            this.updatePerformanceMetric('stt', sttMs);
+            this.liveModeSTTStartTime = null;
+        }
+        if ((message.role === 'assistant' || message.role === 'bot') && this.liveModeAgentStartTime) {
+            const aiMs = Date.now() - this.liveModeAgentStartTime;
+            this.updatePerformanceMetric('ai', aiMs);
+            this.liveModeAgentStartTime = null;
+        }
+
         const role = message.role === 'user' ? 'user' : 'bot';
         const characterName = role === 'user' ? 'You' : (this.currentCharacter?.char_name || this.currentCharacter?.name || 'AI');
+
+        // If assistant text arrives before audio, remember this time for Output metric fallback
+        if (role === 'bot') {
+            this.lastAssistantTextTime = Date.now();
+        }
 
         // Add message to chat
         this.addMessage(role, message.text, {
@@ -1758,6 +1930,9 @@ class EnhancedTestChat {
             }
 
             console.log('🔊 Received audio response');
+
+            // Mark start of output metric when audio event arrives (proxy path)
+            this.voiceOutputStartTime = this.voiceOutputStartTime || Date.now();
 
             // Convert base64 to audio and play
             this.playAudioFromBase64(audioBase64);
@@ -1854,6 +2029,21 @@ class EnhancedTestChat {
                 };
 
                 await this.currentAudio.play();
+
+                // When playback finishes, compute Output metric
+                this.currentAudio.onended = () => {
+                    try {
+                        const end = Date.now();
+                        const start = this.voiceOutputStartTime || this.lastAssistantTextTime;
+                        if (start) {
+                            this.updatePerformanceMetric('tts', end - start);
+                        }
+                    } finally {
+                        this.voiceOutputStartTime = null;
+                        // revoke any blob URL already done above
+                    }
+                };
+
                 return;
 
             } catch (directPlaybackError) {
@@ -1871,10 +2061,19 @@ class EnhancedTestChat {
                     this.currentAudio.volume = 0.8;
 
                     this.currentAudio.onended = () => {
-                        if (this.currentAudio?._blobUrl) {
-                            URL.revokeObjectURL(this.currentAudio._blobUrl);
+                        try {
+                            const end = Date.now();
+                            const start = this.voiceOutputStartTime || this.lastAssistantTextTime;
+                            if (start) {
+                                this.updatePerformanceMetric('tts', end - start);
+                            }
+                        } finally {
+                            if (this.currentAudio?._blobUrl) {
+                                URL.revokeObjectURL(this.currentAudio._blobUrl);
+                            }
+                            this.currentAudio = null;
+                            this.voiceOutputStartTime = null;
                         }
-                        this.currentAudio = null;
                     };
 
                     this.currentAudio.onerror = (error) => {
