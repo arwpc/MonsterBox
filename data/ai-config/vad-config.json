@@ -1,6 +1,6 @@
 {
   "vadType": "server_vad",
-  "vadThreshold": "0.6",
-  "prefixPadding": "400",
-  "silenceDuration": "800"
+  "vadThreshold": 0.7,
+  "prefixPadding": 300,
+  "silenceDuration": 450
 }

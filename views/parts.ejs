@@ -35,7 +35,6 @@
             <a href="/parts/webcam/new" class="button">📹 Add Webcam</a>
             <a href="/parts/head-tracking/new" class="button">🎯 Add Head Tracking</a>
             <a href="/parts/new/microphone" class="button">🎤 Add Microphone</a>
-                        <a href="/hardware-monitor.html" class="button secondary-btn">📊 Hardware Monitor</a>
         </div>
 
         <div class="hardware-status">
@@ -323,7 +322,7 @@
         });
 
         function initializeServiceStatus() {
-            // Check WebSocket service status
+            // Check WebSocket service status with reduced frequency
             const services = [
                 { id: 'mainServer', port: 8780, name: 'Main Server' },
                 { id: 'motorService', port: 8771, name: 'Motor Service' },
@@ -331,29 +330,64 @@
                 { id: 'registry', port: 8770, name: 'Registry' }
             ];
 
+            // Check status once on load, then periodically
             services.forEach(service => {
                 checkServiceStatus(service);
             });
+
+            // Check again every 30 seconds instead of continuously
+            setInterval(() => {
+                services.forEach(service => {
+                    checkServiceStatus(service);
+                });
+            }, 30000);
         }
 
         function checkServiceStatus(service) {
-            const ws = new WebSocket(`ws://localhost:${service.port}`);
             const indicator = document.getElementById(`${service.id}Indicator`);
+            if (!indicator) return;
 
-            ws.onopen = function () {
-                indicator.textContent = '🟢';
-                ws.close();
-            };
+            // Don't check if already checking
+            if (indicator.dataset.checking === 'true') return;
+            indicator.dataset.checking = 'true';
 
-            ws.onerror = function () {
-                indicator.textContent = '🔴';
-            };
+            try {
+                const ws = new WebSocket(`ws://localhost:${service.port}`);
 
-            ws.onclose = function () {
-                if (indicator.textContent !== '🟢') {
+                // Set timeout for connection attempt (reduced to 2 seconds)
+                const timeout = setTimeout(() => {
+                    if (ws.readyState === WebSocket.CONNECTING) {
+                        ws.close();
+                        indicator.textContent = '🔴';
+                        indicator.dataset.checking = 'false';
+                    }
+                }, 2000);
+
+                ws.onopen = function () {
+                    clearTimeout(timeout);
+                    indicator.textContent = '🟢';
+                    ws.close();
+                    indicator.dataset.checking = 'false';
+                };
+
+                ws.onerror = function (error) {
+                    clearTimeout(timeout);
                     indicator.textContent = '🔴';
-                }
-            };
+                    indicator.dataset.checking = 'false';
+                    // Suppress error logging to reduce console noise
+                };
+
+                ws.onclose = function () {
+                    clearTimeout(timeout);
+                    if (indicator.textContent !== '🟢') {
+                        indicator.textContent = '🔴';
+                    }
+                    indicator.dataset.checking = 'false';
+                };
+            } catch (error) {
+                indicator.textContent = '🔴';
+                indicator.dataset.checking = 'false';
+            }
         }
 
         function loadCharacterAssignments() {
@@ -373,10 +407,27 @@
         }
 
         function loadPartAssignments(partId, characters) {
-            // This would need to be implemented based on your character-part relationship logic
+            // Find the part data from the server-side rendered data
+            const partData = <% if (parts.length > 0) { %>
+                [<% parts.forEach(function(part, index) { %>
+                    {id: <%= part.id %>, characterId: <%= part.characterId || 'null' %>}<%= index < parts.length - 1 ? ',' : '' %>
+                <% }); %>]
+            <% } else { %>[]<% } %>;
+
+            const part = partData.find(p => p.id == partId);
             const assignedDiv = document.getElementById(`assigned-${partId}`);
-            if (assignedDiv) {
-                assignedDiv.innerHTML = '<small>None</small>';
+
+            if (assignedDiv && part) {
+                if (part.characterId) {
+                    const assignedCharacter = characters.find(c => c.id === part.characterId);
+                    if (assignedCharacter) {
+                        assignedDiv.innerHTML = `<strong>${assignedCharacter.char_name}</strong>`;
+                    } else {
+                        assignedDiv.innerHTML = '<small class="text-warning">Unknown Character</small>';
+                    }
+                } else {
+                    assignedDiv.innerHTML = '<small class="text-muted">Unassigned</small>';
+                }
             }
         }
 

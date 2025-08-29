@@ -49,7 +49,6 @@
                 <p>Create, edit, and manage your animatronic characters.</p>
                 <div class="button-group">
                     <a href="/characters" class="button">Manage Characters</a>
-                    <a href="/character-parts" class="button">Character Parts</a>
                 </div>
             </div>
 
@@ -59,6 +58,7 @@
                 <p>Monitor and control your hardware components.</p>
                 <div class="button-group">
                     <a href="/parts" class="button">Hardware Parts</a>
+                    <a href="/hardware-monitor.html" class="button">📊 Hardware Monitor</a>
                 </div>
             </div>
 
@@ -79,16 +79,16 @@
                 <div class="button-group">
                     <a href="/sounds" class="button">Sounds</a>
                     <a href="/Camera" class="button">Video</a>
-                    <a href="/scenes" class="button">Scenes</a>
                 </div>
             </div>
 
-            <!-- System Control -->
+            <!-- Live Animatronics -->
             <div class="nav-section">
-                <h3 class="font-creepster">⚡ System Control</h3>
-                <p>Live performance control and system monitoring.</p>
+                <h3 class="font-creepster">⚡ Live Animatronics</h3>
+                <p>Live performance control and scene management.</p>
                 <div class="button-group">
                     <a href="/active-mode" class="button">Active Mode</a>
+                    <a href="#" class="button" onclick="openScenes()">Scenes</a>
                 </div>
             </div>
 
@@ -154,6 +154,18 @@
                 }
             }
         });
+
+        // Function to open scenes with selected character
+        function openScenes() {
+            const characterSelect = document.getElementById('character-select');
+            const selectedCharacter = characterSelect ? characterSelect.value : localStorage.getItem('selectedCharacter');
+
+            if (selectedCharacter) {
+                window.location.href = `/scenes?characterId=${selectedCharacter}`;
+            } else {
+                alert('Please select a character first before viewing scenes.');
+            }
+        }
     </script>
 </body>
 </html>
