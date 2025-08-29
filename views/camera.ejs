@@ -153,6 +153,7 @@
                     <option value="">Select Camera...</option>
                 </select>
                 <button onclick="applyCameraSelection()" style="margin-bottom: 5px;">Apply Camera Selection</button>
+                <button onclick="assignCameraToCharacter()" style="margin-bottom: 5px;" id="assignCameraBtn">Assign Camera to Character <span id="characterName">Unknown</span></button>
                 <div class="status" style="margin: 5px 0 0 0; padding: 2px 5px;">
                     <span class="status-dot disconnected"></span>
                     <span id="connectionStatus">Disconnected</span>
@@ -266,15 +267,50 @@
                 const cameras = await response.json();
                 const select = document.getElementById('cameraSelect');
                 select.innerHTML = '<option value="">Select Camera...</option>';
+
+                // Get the selected camera from server-side data
+                const selectedCamera = '<%= selectedCamera %>';
+                let cameraToApply = null;
+
                 cameras.forEach(camera => {
                     camera.devices.forEach(device => {
                         const option = document.createElement('option');
                         option.value = device.id;
                         option.textContent = `${camera.name} (${device.path})`;
+
+                        // Auto-select the character's assigned camera
+                        if (selectedCamera && device.id == selectedCamera) {
+                            option.selected = true;
+                            cameraToApply = device.id;
+                        }
+
                         select.appendChild(option);
                     });
                 });
+
+                // If no character-specific camera was found, select the first available camera
+                if (!cameraToApply && cameras.length > 0 && cameras[0].devices.length > 0) {
+                    const firstDevice = cameras[0].devices[0];
+                    cameraToApply = firstDevice.id;
+                    select.value = firstDevice.id;
+                }
+
                 hideStatus();
+
+                // Auto-apply the camera selection
+                if (cameraToApply !== null) {
+                    // Small delay to ensure UI is ready
+                    setTimeout(async () => {
+                        showStatus('Auto-applying camera selection...', true);
+                        await applyCameraSelection();
+
+                        // Auto-start the stream after applying camera selection
+                        setTimeout(() => {
+                            startStream();
+                        }, 1000);
+                    }, 500);
+                }
+
             } catch (error) {
                 showStatus('Error loading cameras');
                 console.error('Error loading cameras:', error);
@@ -313,7 +349,7 @@
             const img = document.getElementById('cameraStream');
             const [width, height] = document.getElementById('resolutionSelect').value.split('x');
             const fps = document.getElementById('fpsSelect').value;
-            
+
             streamUrl = `/camera/stream?width=${width}&height=${height}&fps=${fps}&t=${Date.now()}`;
             img.src = streamUrl;
             showStatus('Starting stream...', true);
@@ -337,6 +373,13 @@
                     img.src = '/images/no-stream.jpg';
                 }
             };
+        }
+
+        function stopStream() {
+            const img = document.getElementById('cameraStream');
+            img.src = '/images/no-stream.jpg';
+            updateConnectionStatus(false);
+            showStatus('Stream stopped');
         }
 
         async function applySettings() {
@@ -375,11 +418,11 @@
             
             if (!motionDetectionActive) {
                 try {
-                    showStatus('Starting motion detection...', true);
+                    showStatus('Starting motion detection (may take a moment to access camera)...', true);
                     button.textContent = 'Stop Motion Detection';
                     button.classList.add('active');
                     motionData.classList.add('active');
-                    
+
                     // Create AbortController for the fetch
                     motionDetectionController = new AbortController();
                     
@@ -556,9 +599,69 @@
             }
         }
 
+        // Camera assignment functionality
+        async function assignCameraToCharacter() {
+            const cameraSelect = document.getElementById('cameraSelect');
+            const selectedCamera = cameraSelect.value;
+
+            if (!selectedCamera) {
+                alert('Please select a camera first');
+                return;
+            }
+
+            if (!characterId) {
+                alert('No character selected');
+                return;
+            }
+
+            try {
+                showStatus('Assigning camera to character...', true);
+
+                const response = await fetch('/camera/assign', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        characterId: parseInt(characterId),
+                        cameraId: parseInt(selectedCamera)
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showStatus('Camera assigned successfully!');
+                    setTimeout(hideStatus, 3000);
+                } else {
+                    showStatus('Failed to assign camera: ' + result.error);
+                    setTimeout(hideStatus, 5000);
+                }
+            } catch (error) {
+                console.error('Error assigning camera:', error);
+                showStatus('Error assigning camera');
+                setTimeout(hideStatus, 5000);
+            }
+        }
+
+        // Update character name in button
+        function updateCharacterName() {
+            const characterSelect = document.getElementById('characterSelect');
+            const characterNameSpan = document.getElementById('characterName');
+            const selectedOption = characterSelect.options[characterSelect.selectedIndex];
+
+            if (selectedOption && selectedOption.value) {
+                characterNameSpan.textContent = selectedOption.text;
+            } else {
+                characterNameSpan.textContent = 'Unknown';
+            }
+        }
+
         // Load cameras on page load
         document.addEventListener('DOMContentLoaded', () => {
             loadCameras();
+            updateCharacterName();
+
+            // Update character name when selection changes
+            document.getElementById('characterSelect').addEventListener('change', updateCharacterName);
         });
     </script>
 </body>

@@ -316,23 +316,40 @@ class MotionDetector:
 
     def initialize(self) -> bool:
         """Initialize camera with specified settings."""
-        # Verify camera first
-        result = verify_camera_device(self.camera_id)
-        if not result["success"]:
-            print(json.dumps(result))
-            sys.stdout.flush()
-            return False
+        # Try multiple times to handle camera resource conflicts
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                # Verify camera first
+                result = verify_camera_device(self.camera_id)
+                if not result["success"]:
+                    if attempt == max_retries - 1:
+                        print(json.dumps(result))
+                        sys.stdout.flush()
+                        return False
+                    time.sleep(2.0)
+                    continue
 
-        self.cap = initialize_camera(self.camera_id, self.width, self.height, self.fps)
-        if self.cap is not None:
-            time.sleep(2.0)
-            # Print initialization success
-            print(json.dumps({
-                "success": True,
-                "message": "Motion detection initialized"
-            }))
-            sys.stdout.flush()
-            return True
+                self.cap = initialize_camera(self.camera_id, self.width, self.height, self.fps)
+                if self.cap is not None:
+                    time.sleep(1.0)
+                    # Print initialization success
+                    print(json.dumps({
+                        "success": True,
+                        "message": "Motion detection initialized"
+                    }))
+                    sys.stdout.flush()
+                    return True
+                else:
+                    if attempt < max_retries - 1:
+                        logger.info(f"Camera initialization attempt {attempt + 1} failed, retrying...")
+                        time.sleep(2.0)
+
+            except Exception as e:
+                logger.warning(f"Camera initialization attempt {attempt + 1} error: {e}")
+                if attempt < max_retries - 1:
+                    time.sleep(2.0)
+
         return False
 
     def release(self):
@@ -419,15 +436,15 @@ class MotionDetector:
                 # Draw motion box with glow effect
                 cv2.rectangle(display_frame, (x-2, y-2), (x+w+2, y+h+2), (0, 255, 0), 4)
                 cv2.rectangle(display_frame, (x, y), (x+w, y+h), (255, 255, 255), 2)
-                
+
                 # Draw crosshair with glow effect
-                cv2.line(display_frame, (center_x-15, center_y), (center_x+15, center_y), 
+                cv2.line(display_frame, (center_x-15, center_y), (center_x+15, center_y),
                         (0, 255, 0), 3)
-                cv2.line(display_frame, (center_x, center_y-15), (center_x, center_y+15), 
+                cv2.line(display_frame, (center_x, center_y-15), (center_x, center_y+15),
                         (0, 255, 0), 3)
-                cv2.line(display_frame, (center_x-10, center_y), (center_x+10, center_y), 
+                cv2.line(display_frame, (center_x-10, center_y), (center_x+10, center_y),
                         (255, 255, 255), 1)
-                cv2.line(display_frame, (center_x, center_y-10), (center_x, center_y+10), 
+                cv2.line(display_frame, (center_x, center_y-10), (center_x, center_y+10),
                         (255, 255, 255), 1)
 
                 # Calculate normalized position (0-100)
@@ -438,19 +455,19 @@ class MotionDetector:
                 timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
                 motion_text = f"Motion Detected"
                 coords_text = f"Position: ({int(norm_x)}, {int(norm_y)})"
-                
+
                 font = cv2.FONT_HERSHEY_SIMPLEX
-                cv2.putText(display_frame, timestamp, (5, frame.shape[0]-5), font, 
+                cv2.putText(display_frame, timestamp, (5, frame.shape[0]-5), font,
                            0.5, (0, 255, 0), 2)
-                cv2.putText(display_frame, timestamp, (5, frame.shape[0]-5), font, 
+                cv2.putText(display_frame, timestamp, (5, frame.shape[0]-5), font,
                            0.5, (255, 255, 255), 1)
-                cv2.putText(display_frame, motion_text, (5, 20), font, 
+                cv2.putText(display_frame, motion_text, (5, 20), font,
                            0.5, (0, 255, 0), 2)
-                cv2.putText(display_frame, motion_text, (5, 20), font, 
+                cv2.putText(display_frame, motion_text, (5, 20), font,
                            0.5, (255, 255, 255), 1)
-                cv2.putText(display_frame, coords_text, (5, 40), font, 
+                cv2.putText(display_frame, coords_text, (5, 40), font,
                            0.5, (0, 255, 0), 2)
-                cv2.putText(display_frame, coords_text, (5, 40), font, 
+                cv2.putText(display_frame, coords_text, (5, 40), font,
                            0.5, (255, 255, 255), 1)
 
                 return {
@@ -467,13 +484,13 @@ class MotionDetector:
                 # If no motion, just return the frame with timestamp
                 timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
                 font = cv2.FONT_HERSHEY_SIMPLEX
-                cv2.putText(display_frame, "No Motion", (5, 20), font, 
+                cv2.putText(display_frame, "No Motion", (5, 20), font,
                            0.5, (0, 255, 0), 2)
-                cv2.putText(display_frame, "No Motion", (5, 20), font, 
+                cv2.putText(display_frame, "No Motion", (5, 20), font,
                            0.5, (255, 255, 255), 1)
-                cv2.putText(display_frame, timestamp, (5, frame.shape[0]-5), font, 
+                cv2.putText(display_frame, timestamp, (5, frame.shape[0]-5), font,
                            0.5, (0, 255, 0), 2)
-                cv2.putText(display_frame, timestamp, (5, frame.shape[0]-5), font, 
+                cv2.putText(display_frame, timestamp, (5, frame.shape[0]-5), font,
                            0.5, (255, 255, 255), 1)
 
                 return {

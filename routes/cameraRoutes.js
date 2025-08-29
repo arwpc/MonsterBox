@@ -40,6 +40,31 @@ async function loadCameraSettings() {
     }
 }
 
+// Load character-specific camera settings
+async function loadCharacterCameraSettings(characterId) {
+    if (!characterId) {
+        return await loadCameraSettings();
+    }
+
+    try {
+        const characterCameraSettingsPath = path.join(__dirname, '..', 'data', `camera_settings_char_${characterId}.json`);
+        const data = await fs.readFile(characterCameraSettingsPath, 'utf8');
+        const settings = JSON.parse(data);
+        return {
+            selectedCamera: settings.selectedCamera,
+            width: settings.width || DEFAULT_WIDTH,
+            height: settings.height || DEFAULT_HEIGHT,
+            fps: settings.fps || DEFAULT_FPS,
+            characterId: settings.characterId,
+            characterName: settings.characterName,
+            assignedAt: settings.assignedAt
+        };
+    } catch (error) {
+        // Fall back to global settings if character-specific settings don't exist
+        return await loadCameraSettings();
+    }
+}
+
 // Save camera settings
 async function saveCameraSettings(settings) {
     try {
@@ -137,14 +162,6 @@ async function startCameraStream(cameraId, width = DEFAULT_WIDTH, height = DEFAU
                     resolve(process);
                 }
 
-                // If initialized but not frame data, it might be other output
-                if (initialized && !frameReceived) {
-                    try {
-                        res.write(data);
-                    } catch (error) {
-                        logger.error('Failed to write stream data', { error: error.message });
-                    }
-                }
             } catch (e) {
                 // If parsing fails, it might be frame data
                 if (initialized && data.includes('--frame')) {
@@ -202,7 +219,7 @@ async function getServosByCharacter(characterId) {
 router.get('/', async (req, res) => {
     try {
         const characterId = req.query.characterId || req.session.characterId;
-        const settings = await loadCameraSettings();
+        const settings = await loadCharacterCameraSettings(characterId);
         const servos = await getServosByCharacter(characterId);
         const characterService = require('../services/characterService');
         const characters = await characterService.getAllCharacters();
@@ -247,9 +264,20 @@ router.get('/stream', async (req, res) => {
 
         streamProcess.stdout.on('data', (data) => {
             try {
+                // Check if client is still connected
+                if (res.destroyed || res.writableEnded) {
+                    logger.info('Client disconnected, stopping stream');
+                    streamProcess.kill('SIGTERM');
+                    return;
+                }
                 res.write(data);
             } catch (error) {
-                logger.error('Error writing stream data:', error);
+                // Only log if it's not a client disconnect error
+                if (error.code !== 'EPIPE' && error.code !== 'ECONNRESET') {
+                    logger.error('Error writing stream data:', error);
+                }
+                // Kill stream process when client disconnects
+                streamProcess.kill('SIGTERM');
             }
         });
 
@@ -328,8 +356,30 @@ router.get('/list', async (req, res) => {
                 });
             }
 
-            if (cameras.length > 0) {
-                return res.json(cameras);
+            // Filter out Raspberry Pi hardware encoders/decoders and remove duplicates
+            const realCameras = [];
+            const seenNames = new Set();
+
+            for (const camera of cameras) {
+                // Skip Raspberry Pi hardware components
+                if (camera.name.includes('bcm2835') ||
+                    camera.name.includes('rpi-hevc') ||
+                    camera.name.includes('platform:')) {
+                    continue;
+                }
+
+                // Skip duplicates
+                if (seenNames.has(camera.name)) {
+                    continue;
+                }
+
+                seenNames.add(camera.name);
+                realCameras.push(camera);
+            }
+
+            if (realCameras.length > 0) {
+                logger.info(`Found ${realCameras.length} real camera(s): ${realCameras.map(c => c.name).join(', ')}`);
+                return res.json(realCameras);
             }
         } catch (error) {
             // Debug level for fallback message
@@ -472,6 +522,56 @@ router.post('/select', async (req, res) => {
     }
 });
 
+// Assign camera to character
+router.post('/assign', async (req, res) => {
+    try {
+        const { characterId, cameraId } = req.body;
+
+        if (typeof characterId !== 'number' || typeof cameraId !== 'number') {
+            throw new Error('Invalid character ID or camera ID');
+        }
+
+        // Load character service to get character name
+        const characterService = require('../services/characterService');
+        const character = await characterService.getCharacterById(characterId);
+
+        if (!character) {
+            throw new Error('Character not found');
+        }
+
+        // Create character-specific camera settings file
+        const characterCameraSettingsPath = path.join(__dirname, '..', 'data', `camera_settings_char_${characterId}.json`);
+
+        const settings = {
+            characterId: characterId,
+            characterName: character.char_name,
+            selectedCamera: cameraId,
+            width: DEFAULT_WIDTH,
+            height: DEFAULT_HEIGHT,
+            fps: DEFAULT_FPS,
+            assignedAt: new Date().toISOString()
+        };
+
+        await fs.writeFile(characterCameraSettingsPath, JSON.stringify(settings, null, 2));
+
+        logger.info(`Camera ${cameraId} assigned to character ${characterId} (${character.char_name})`);
+
+        res.json({
+            success: true,
+            message: `Camera assigned to ${character.char_name}`,
+            characterId: characterId,
+            cameraId: cameraId
+        });
+
+    } catch (error) {
+        logger.error('Camera assignment error:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
 router.post('/control', async (req, res) => {
     const { command, params = {} } = req.body;
     const controlScript = path.join(__dirname, '..', 'scripts', 'camera_control.py');
@@ -508,15 +608,15 @@ router.post('/control', async (req, res) => {
             args.push('--height', height.toString());
             args.push('--fps', fps.toString());
 
-            // Start motion detection process
-            const process = spawn('python3', args);
+            // Start motion detection process (with visual overlays)
+            const motionProcess = spawn('python3', args);
 
             // Track this process
-            activeProcesses.set('motion', process);
+            activeProcesses.set('motion', motionProcess);
 
             // Handle stdout data (motion detection results)
             let buffer = '';
-            process.stdout.on('data', (data) => {
+            motionProcess.stdout.on('data', (data) => {
                 try {
                     // Append new data to buffer
                     buffer += data.toString();
@@ -541,13 +641,13 @@ router.post('/control', async (req, res) => {
                 }
             });
 
-            process.stderr.on('data', (data) => {
+            motionProcess.stderr.on('data', (data) => {
                 // Debug level for camera control output
-                logger.debug(`Camera control output: ${data}`);
+                logger.debug(`Motion detection output: ${data}`);
             });
 
             // Handle process close
-            process.on('close', (code) => {
+            motionProcess.on('close', (code) => {
                 activeProcesses.delete('motion');
                 res.end();
             });
@@ -555,8 +655,8 @@ router.post('/control', async (req, res) => {
             // Handle client disconnect
             req.on('close', () => {
                 if (activeProcesses.has('motion')) {
-                    const process = activeProcesses.get('motion');
-                    process.kill('SIGTERM');
+                    const motionProcess = activeProcesses.get('motion');
+                    motionProcess.kill('SIGTERM');
                     activeProcesses.delete('motion');
                 }
             });

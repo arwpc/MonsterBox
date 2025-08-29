@@ -42,11 +42,11 @@
             <div class="service-grid">
                 <div class="service-card" id="mainServerCard">
                     <span class="service-indicator" id="mainServerIndicator">🔴</span>
-                    <span>Main Server (8780)</span>
+                    <span>Main Hardware Server (8780)</span>
                 </div>
-                <div class="service-card" id="motorServiceCard">
-                    <span class="service-indicator" id="motorServiceIndicator">🔴</span>
-                    <span>Motor Service (8771)</span>
+                <div class="service-card" id="webcamServiceCard">
+                    <span class="service-indicator" id="webcamServiceIndicator">🔴</span>
+                    <span>Webcam Service (8774)</span>
                 </div>
                 <div class="service-card" id="lightServiceCard">
                     <span class="service-indicator" id="lightServiceIndicator">🔴</span>
@@ -324,10 +324,10 @@
         function initializeServiceStatus() {
             // Check WebSocket service status with reduced frequency
             const services = [
-                { id: 'mainServer', port: 8780, name: 'Main Server' },
-                { id: 'motorService', port: 8771, name: 'Motor Service' },
+                { id: 'mainServer', port: 8780, name: 'Main Hardware Server' },
                 { id: 'lightService', port: 8772, name: 'Light Service' },
-                { id: 'registry', port: 8770, name: 'Registry' }
+                { id: 'webcamService', port: 8774, name: 'Webcam Service' },
+                { id: 'registry', port: 8770, name: 'Service Registry' }
             ];
 
             // Check status once on load, then periodically
