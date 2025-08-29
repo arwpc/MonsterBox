@@ -379,15 +379,13 @@ router.get('/enhanced-test-chat', async (req, res) => {
         // Enhance characters with AI and Voice capability flags
         const enhancedCharacters = characters.map(character => {
             const hasElevenLabsAgent = !!character.elevenLabsAgentId;
-            const hasOpenAIAssistant = !!(character.openaiAssistantId || (character.ai_instances && character.ai_instances.length > 0));
             const hasVoiceCapability = !!(character.elevenLabsAgentId || character.parts?.length > 0 || character.sounds?.length > 0);
 
             return {
                 ...character,
-                hasAI: hasElevenLabsAgent || hasOpenAIAssistant,
+                hasAI: hasElevenLabsAgent,
                 hasVoice: hasVoiceCapability,
-                hasElevenLabs: hasElevenLabsAgent,
-                hasOpenAI: hasOpenAIAssistant
+                hasElevenLabs: hasElevenLabsAgent
             };
         });
 

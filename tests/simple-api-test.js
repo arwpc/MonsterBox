@@ -11,39 +11,7 @@ const axios = require('axios');
 describe('🔑 Simple API Key Tests', function() {
     this.timeout(30000);
 
-    describe('🧠 OpenAI API', function() {
-        it('should have a valid OpenAI API key', async function() {
-            const apiKey = process.env.OPENAI_API_KEY;
 
-            if (!apiKey || apiKey.includes('your_') || apiKey.includes('_here')) {
-                this.skip('OpenAI API key not configured');
-            }
-
-            try {
-                const response = await axios.post('https://api.openai.com/v1/chat/completions', {
-                    model: 'gpt-3.5-turbo',
-                    messages: [{ role: 'user', content: 'Hello, this is a test.' }],
-                    max_tokens: 10
-                }, {
-                    headers: {
-                        'Authorization': `Bearer ${apiKey}`,
-                        'Content-Type': 'application/json'
-                    },
-                    timeout: 15000
-                });
-
-                expect(response.status).to.equal(200);
-                expect(response.data).to.have.property('choices');
-                expect(response.data.choices).to.be.an('array');
-                
-                console.log('✅ OpenAI API key is valid and working');
-                
-            } catch (error) {
-                console.error('❌ OpenAI API test failed:', error.message);
-                throw new Error(`OpenAI API failed: ${error.response?.data?.error?.message || error.message}`);
-            }
-        });
-    });
 
     describe('🎤 ElevenLabs API', function() {
         it('should have a valid ElevenLabs API key', async function() {

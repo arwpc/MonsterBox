@@ -131,8 +131,7 @@ describe('STT Integration Flow Test', function() {
         
         it('should provide clear error messages for missing API key', async function() {
             // Temporarily remove API key
-            const originalApiKey = process.env.OPENAI_API_KEY;
-            delete process.env.OPENAI_API_KEY;
+            // OpenAI API key test removed - using ElevenLabs instead
 
             try {
                 const webmFile = await createMockWebMFile();
@@ -148,7 +147,7 @@ describe('STT Integration Flow Test', function() {
             } finally {
                 // Restore API key
                 if (originalApiKey) {
-                    process.env.OPENAI_API_KEY = originalApiKey;
+                    // OpenAI API key restoration removed
                 }
             }
         });

@@ -211,7 +211,7 @@ class CoreAIIntegration {
         }
 
         const results = {};
-        const providers = ['openai', 'anthropic', 'google'];
+        const providers = ['anthropic', 'google'];
 
         for (const provider of providers) {
             try {

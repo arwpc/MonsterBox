@@ -86,9 +86,7 @@ MonsterBox is a sophisticated animatronic control system built with Node.js/Expr
 ```json
 {
   "task-master-ai": "^0.16.1",    // AI-powered task management
-  "@ai-sdk/openai": "1.3.22",     // OpenAI integration
-  "@anthropic-ai/sdk": "0.39.0",  // Claude AI integration
-  "openai": "^4.104.0"            // OpenAI API client
+  "@anthropic-ai/sdk": "0.39.0"   // Claude AI integration (fallback)
 }
 ```
 

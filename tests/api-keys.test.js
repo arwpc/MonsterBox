@@ -64,50 +64,7 @@ describe('API Keys Integration Tests', function() {
         });
     });
 
-    describe('🧠 OpenAI GPT API', function() {
-        it('should connect to OpenAI API with valid key', async function() {
-            const apiKey = process.env.OPENAI_API_KEY;
-            
-            if (!apiKey || apiKey === 'your_openai_api_key_here') {
-                this.skip('OpenAI API key not configured');
-            }
 
-            try {
-                const response = await axios.post('https://api.openai.com/v1/chat/completions', {
-                    model: 'gpt-3.5-turbo',
-                    messages: [
-                        {
-                            role: 'user',
-                            content: 'Hello'
-                        }
-                    ],
-                    max_tokens: 10
-                }, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${apiKey}`
-                    },
-                    timeout: 15000
-                });
-
-                expect(response.status).to.equal(200);
-                expect(response.data).to.have.property('choices');
-                expect(response.data.choices).to.be.an('array');
-                expect(response.data.choices[0]).to.have.property('message');
-                
-                logger.info('✅ OpenAI API connection successful');
-                console.log('   ✅ OpenAI GPT API - Connected');
-                
-            } catch (error) {
-                logger.error('❌ OpenAI API test failed', { 
-                    error: error.message,
-                    status: error.response?.status,
-                    data: error.response?.data 
-                });
-                throw new Error(`OpenAI API failed: ${error.response?.data?.error?.message || error.message}`);
-            }
-        });
-    });
 
     describe('🔍 Google Gemini API', function() {
         it('should connect to Google Gemini API with valid key', async function() {
@@ -282,7 +239,7 @@ describe('API Keys Integration Tests', function() {
             { name: 'PERPLEXITY_API_KEY', service: 'Perplexity AI' },
             { name: 'MISTRAL_API_KEY', service: 'Mistral AI' },
             { name: 'XAI_API_KEY', service: 'xAI' },
-            { name: 'AZURE_OPENAI_API_KEY', service: 'Azure OpenAI' },
+
             { name: 'OLLAMA_API_KEY', service: 'Ollama' }
         ];
 

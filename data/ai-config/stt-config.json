@@ -1,6 +1,6 @@
 {
   "apiKey": "",
-  "model": "whisper-1",
+  "model": "scribe_v1",
   "language": "en",
   "confidenceThreshold": "0.8",
   "chunkDuration": "2000",

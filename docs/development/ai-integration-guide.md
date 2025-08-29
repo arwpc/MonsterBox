@@ -2,14 +2,14 @@
 
 ## Overview
 
-The Core AI Integration system provides a unified interface for interacting with multiple AI service providers (OpenAI, Anthropic Claude, Google AI) with comprehensive error handling, rate limiting, fallback mechanisms, and performance monitoring.
+The Core AI Integration system provides a unified interface for interacting with multiple AI service providers (ElevenLabs, Anthropic Claude, Google AI) with comprehensive error handling, rate limiting, fallback mechanisms, and performance monitoring.
 
 ## Architecture
 
 ### Components
 
 1. **AIClientManager** - Unified interface for multiple AI providers with automatic fallback
-2. **Individual AI Clients** - Provider-specific implementations (OpenAI, Anthropic, Google)
+2. **Individual AI Clients** - Provider-specific implementations (ElevenLabs, Anthropic, Google)
 3. **APIKeyManager** - Secure API key management with validation and rotation
 4. **AIPerformanceMonitor** - Real-time performance monitoring and alerting
 5. **CoreAIIntegration** - Main orchestration layer
@@ -31,7 +31,7 @@ const { getInstance } = require('./ai/integrations');
 
 // Initialize the AI integration
 const aiIntegration = getInstance({
-    defaultProvider: 'openai',
+    defaultProvider: 'elevenlabs',
     fallbackProviders: ['anthropic', 'google'],
     enableMonitoring: true,
     enableKeyManagement: true
@@ -45,7 +45,7 @@ const response = await aiIntegration.generateResponse(
     {
         maxTokens: 150,
         temperature: 0.7,
-        preferredProvider: 'openai'
+        preferredProvider: 'elevenlabs'
     }
 );
 
@@ -146,27 +146,12 @@ const health = await aiIntegration.healthCheck();
 Tests integration with a simple prompt.
 
 ```javascript
-const test = await aiIntegration.testIntegration('openai');
+const test = await aiIntegration.testIntegration('elevenlabs');
 ```
 
 ### Individual AI Clients
 
-#### OpenAI Client
 
-```javascript
-const OpenAIClient = require('./ai/integrations/OpenAIClient');
-
-const client = new OpenAIClient({
-    apiKey: 'your-api-key',
-    timeout: 30000,
-    enableRateLimiting: true
-});
-
-const response = await client.generateResponse('Hello', {
-    model: 'gpt-3.5-turbo',
-    maxTokens: 150
-});
-```
 
 #### Anthropic Client
 
@@ -206,7 +191,7 @@ const response = await client.generateResponse('Hello', {
 
 ```bash
 # Required API Keys
-OPENAI_API_KEY=your-openai-key
+ELEVENLABS_API_KEY=your-elevenlabs-key
 ANTHROPIC_API_KEY=your-anthropic-key
 GOOGLE_API_KEY=your-google-key
 
@@ -216,10 +201,10 @@ ENCRYPTION_KEY=your-encryption-key
 
 ### Provider-Specific Settings
 
-#### OpenAI
-- **Models**: gpt-4, gpt-3.5-turbo, gpt-3.5-turbo-16k
-- **Rate Limits**: 3,500 requests/minute, 90,000 tokens/minute
-- **Features**: Chat completions, function calling
+#### ElevenLabs
+- **Models**: Conversational AI, Speech-to-Text, Text-to-Speech
+- **Rate Limits**: Varies by plan and feature
+- **Features**: Voice synthesis, speech recognition, conversational AI
 
 #### Anthropic Claude
 - **Models**: claude-3-opus, claude-3-sonnet, claude-3-haiku

@@ -2,11 +2,11 @@
 
 ## Overview
 
-The AI Management Feature provides a comprehensive, centralized interface for configuring and managing all AI systems within MonsterBox. This feature integrates three core AI components to enable complete character interactions:
+The AI Management Feature provides a comprehensive, centralized interface for configuring and managing all AI systems within MonsterBox. This feature integrates core AI components to enable complete character interactions:
 
-1. **Speech-to-Text (STT)** - OpenAI Whisper API
-2. **AI Personalities** - OpenAI GPT models with character-specific configurations
-3. **Text-to-Speech (TTS)** - TopMediaAI voice synthesis with full voice catalog
+1. **Speech-to-Text (STT)** - ElevenLabs Speech-to-Text API
+2. **AI Personalities** - ElevenLabs Conversational AI with character-specific configurations
+3. **Text-to-Speech (TTS)** - ElevenLabs voice synthesis with full voice catalog
 
 ## Features
 

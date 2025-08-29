@@ -33,11 +33,7 @@ test('NODE_ENV should be test', () => {
     assert(process.env.NODE_ENV === 'test', `Expected 'test', got '${process.env.NODE_ENV}'`);
 });
 
-test('OpenAI API key should be configured', () => {
-    assert(process.env.OPENAI_API_KEY, 'OpenAI API key not found');
-    assert(process.env.OPENAI_API_KEY.length > 50, 'OpenAI API key too short');
-    assert(process.env.OPENAI_API_KEY.includes('sk-proj-'), 'OpenAI API key format invalid');
-});
+
 
 test('TopMediai API key should be configured', () => {
     assert(process.env.TOPMEDIAI_API_KEY, 'TopMediai API key not found');

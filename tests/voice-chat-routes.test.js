@@ -19,9 +19,6 @@ describe('Voice Chat Routes', function() {
         sandbox = sinon.createSandbox();
         
         // Mock environment variables if not set
-        if (!process.env.OPENAI_API_KEY) {
-            process.env.OPENAI_API_KEY = 'test-openai-key';
-        }
         if (!process.env.TOPMEDIAI_API_KEY) {
             process.env.TOPMEDIAI_API_KEY = 'test-topmediai-key';
         }

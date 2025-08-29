@@ -231,7 +231,7 @@ describe('Multer Configuration for STT Uploads', function() {
             });
         });
 
-        it('should create filenames compatible with OpenAI Whisper supported formats', function() {
+        it('should create filenames compatible with ElevenLabs STT supported formats', function() {
             const supportedFormats = ['flac', 'm4a', 'mp3', 'mp4', 'mpeg', 'mpga', 'oga', 'ogg', 'wav', 'webm'];
             
             supportedFormats.forEach(format => {
