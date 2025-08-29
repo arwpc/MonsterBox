@@ -280,7 +280,7 @@
                 <i class="fas fa-hdd"></i> Storage
             </button>
             <button class="tab-button" onclick="showTab('hardware-monitor')">
-                <i class="fas fa-microchip"></i> Hardware
+                <i class="fas fa-server"></i> Services
             </button>
             <button class="tab-button" onclick="showTab('system-maintenance')">
                 <i class="fas fa-tools"></i> Maintenance
@@ -530,14 +530,28 @@
             <% } %>
         </div>
 
-        <!-- Hardware Monitor Tab -->
+        <!-- Services Monitor Tab -->
         <div id="hardware-monitor" class="tab-content">
             <div class="config-grid">
+                <!-- Full Services Monitor -->
+                <div class="config-card">
+                    <div class="card-header">
+                        <i class="fas fa-external-link-alt card-icon"></i>
+                        <h3 class="card-title">Full Services Monitor</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>Access the complete services monitoring interface with real-time service status, character selection, and detailed logging.</p>
+                        <a href="/configuration/services-monitor" class="button primary-btn">
+                            <i class="fas fa-external-link-alt"></i> Open Services Monitor
+                        </a>
+                    </div>
+                </div>
+
                 <!-- Service Status -->
                 <div class="config-card">
                     <div class="card-header">
                         <i class="fas fa-server card-icon"></i>
-                        <h3 class="card-title">Service Status</h3>
+                        <h3 class="card-title">Quick Service Status</h3>
                     </div>
 
                     <div class="info-display">
@@ -970,7 +984,7 @@
             }, 3000);
         }
 
-        // Hardware Monitor Functions
+        // Services Monitor Functions
         let monitoringInterval = null;
 
         function refreshServiceStatus() {
@@ -1023,23 +1037,23 @@
                         }
                     })
                     .catch(error => {
-                        logHardwareActivity(`Monitoring error: ${error.message}`);
+                        logHardwareActivity(`Services monitoring error: ${error.message}`);
                         document.getElementById('cpu-usage').textContent = '--';
                         document.getElementById('memory-usage').textContent = '--';
                         document.getElementById('cpu-temp').textContent = '--';
                     });
             }, 2000);
 
-            logHardwareActivity('Hardware monitoring started');
-            showMessage('Hardware monitoring started', 'success');
+            logHardwareActivity('Services monitoring started');
+            showMessage('Services monitoring started', 'success');
         }
 
         function stopMonitoring() {
             if (monitoringInterval) {
                 clearInterval(monitoringInterval);
                 monitoringInterval = null;
-                logHardwareActivity('Hardware monitoring stopped');
-                showMessage('Hardware monitoring stopped', 'info');
+                logHardwareActivity('Services monitoring stopped');
+                showMessage('Services monitoring stopped', 'info');
             }
         }
 

@@ -473,7 +473,14 @@ class HardwareServiceManager {
             const lowerOutput = output.toLowerCase();
             const logMessage = `[${serviceName}] ${output}`;
 
-            if (lowerOutput.includes('error') || lowerOutput.includes('failed') || lowerOutput.includes('exception')) {
+            // Filter out expected connection failures to reduce log spam
+            if (lowerOutput.includes('connection failed') ||
+                lowerOutput.includes('connection closed') ||
+                lowerOutput.includes('400 bad request') ||
+                lowerOutput.includes('connection timeout')) {
+                // These are expected when services aren't running - log at debug level
+                logger.debug(logMessage);
+            } else if (lowerOutput.includes('error') || lowerOutput.includes('failed') || lowerOutput.includes('exception')) {
                 logger.error(logMessage);
             } else if (lowerOutput.includes('warning') || lowerOutput.includes('warn')) {
                 logger.warn(logMessage);

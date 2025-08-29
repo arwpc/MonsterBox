@@ -165,7 +165,7 @@ app.use((req, res, next) => {
         "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; " +
         "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://code.jquery.com https://cdn.jsdelivr.net; " +
         "img-src 'self' data: blob:; " +
-        "connect-src 'self' ws: wss:; " +
+        "connect-src 'self' ws: wss: http://skulltalker:* https://skulltalker:* http://orlok:* https://orlok:* http://pumpkinhead:* https://pumpkinhead:* http://coffin:* https://coffin:*; " +
         "media-src 'self' blob:; " +
         "base-uri 'self'; " +
         "form-action 'self'; " +
@@ -736,10 +736,7 @@ app.get('/api/schema', asyncHandler(async (req, res) => {
     }
 }));
 
-// Redirect old static HTML pages to new EJS-based Configuration system
-app.get('/hardware-monitor.html', (req, res) => {
-    res.redirect('/configuration#hardware-monitor');
-});
+// Legacy redirects removed - all pages now use EJS templates
 
 app.get('/log-collection/dashboard', (req, res) => {
     res.redirect('/configuration#log-collection');

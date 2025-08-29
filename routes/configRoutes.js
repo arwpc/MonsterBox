@@ -172,6 +172,29 @@ router.get('/', async (req, res) => {
     }
 });
 
+// Services Monitor route
+router.get('/services-monitor', (req, res) => {
+    try {
+        res.render('hardware-monitor', {
+            title: 'Services Monitor',
+            pageTitle: 'Services Monitor',
+            pageDescription: 'Monitor all MonsterBox services and system status',
+            breadcrumbs: [
+                { name: 'Home', url: '/', icon: '🏠' },
+                { name: 'Configuration', url: '/configuration', icon: '⚙️' },
+                { name: 'Services Monitor', current: true }
+            ]
+        });
+    } catch (error) {
+        logger.error('Error loading services monitor page:', error);
+        res.status(500).render('error', {
+            title: 'Error',
+            message: 'Failed to load services monitor page',
+            error: error.message
+        });
+    }
+});
+
 // System maintenance section
 router.get('/maintenance', (req, res) => {
     res.render('configuration/maintenance', {
