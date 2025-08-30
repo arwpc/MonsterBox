@@ -458,6 +458,9 @@
                     this.renderCharacterGrid();
                     this.log(`Loaded ${this.characters.length} characters`, 'info');
 
+                    // Phase 3: Load unified hub status
+                    await this.loadHubStatus();
+
                     // Only auto-select if no character is currently selected or if characters changed
                     if (!this.selectedCharacter || charactersChanged) {
                         if (this.characters.length > 0) {
@@ -484,12 +487,71 @@
                 }
             }
 
+            async loadHubStatus() {
+                try {
+                    this.log('Loading unified hub status...', 'info');
+                    const response = await fetch('/api/hub/status');
+                    if (response.ok) {
+                        const hubData = await response.json();
+                        this.log(`Hub status: ${hubData.status}`, 'info');
+                        this.updateHubStatus(hubData);
+
+                        // Load integrated services status
+                        await this.loadIntegratedServices();
+                    } else {
+                        this.log(`Hub status unavailable: ${response.status}`, 'warn');
+                    }
+                } catch (error) {
+                    this.log(`Error loading hub status: ${error.message}`, 'error');
+                }
+            }
+
+            updateHubStatus(hubData) {
+                const statusElement = document.getElementById('overallStatus');
+                if (statusElement) {
+                    const status = hubData.status === 'healthy' ?
+                        `✅ Hub Active (${hubData.services?.registered || 0} services)` :
+                        `⚠️ Hub Status: ${hubData.status}`;
+                    statusElement.innerHTML = status;
+                }
+            }
+
+            async loadIntegratedServices() {
+                try {
+                    // Load microphone service status
+                    const micResponse = await fetch('/api/hub/microphone/status');
+                    if (micResponse.ok) {
+                        const micData = await micResponse.json();
+                        this.log(`Microphone service: ${micData.microphone?.available || 0} devices`, 'info');
+                    }
+
+                    // Load webcam service status
+                    const camResponse = await fetch('/api/hub/webcam/status');
+                    if (camResponse.ok) {
+                        const camData = await camResponse.json();
+                        this.log(`Webcam service: ${camData.webcam?.available || 0} devices`, 'info');
+                    }
+
+                    // Load AI service status
+                    const aiResponse = await fetch('/api/hub/ai/status');
+                    if (aiResponse.ok) {
+                        const aiData = await aiResponse.json();
+                        this.log(`AI service: ${aiData.ai?.available || 0} agents`, 'info');
+                    }
+
+                } catch (error) {
+                    this.log(`Error loading integrated services: ${error.message}`, 'error');
+                }
+            }
+
             loadDefaultServices() {
                 // Show services even if no characters are loaded
                 const servicesSection = document.getElementById('servicesSection');
                 servicesSection.classList.add('active');
 
                 const expectedServices = [
+                    // Phase 1 & 2: Core Services
+                    { name: 'Unified Animatronic Hub', port: 8790, icon: '🎯', type: 'hub' },
                     { name: 'Main Hardware Server', port: 8780, icon: '🔧', type: 'hardware' },
                     { name: 'Motor Service', port: 8771, icon: '🔄', type: 'motor' },
                     { name: 'Light Service', port: 8772, icon: '💡', type: 'light' },
@@ -497,7 +559,11 @@
                     { name: 'Webcam Service', port: 8774, icon: '📹', type: 'webcam' },
                     { name: 'Motion Sensor Service', port: 8777, icon: '🔍', type: 'motion' },
                     { name: 'Head Tracking Service', port: 8778, icon: '🎯', type: 'tracking' },
-                    { name: 'Service Registry', port: 8770, icon: '📋', type: 'registry' }
+                    { name: 'Service Registry', port: 8770, icon: '📋', type: 'registry' },
+                    // Phase 3: Integrated Services
+                    { name: 'ElevenLabs Conversational AI', port: 8600, icon: '🤖', type: 'ai' },
+                    { name: 'Microphone Service', port: 8776, icon: '🎤', type: 'microphone' },
+                    { name: 'Audio Stream Service', port: 8777, icon: '🔊', type: 'audio' }
                 ];
 
                 // Show placeholder message instead of starting polling
@@ -518,8 +584,8 @@
                     card.className = 'character-card';
                     card.dataset.characterId = character.id;
 
-                    // Count expected services (all characters have the same base services)
-                    const expectedServiceCount = 8; // Main, Motor, Light, Sensor, Webcam, Motion, Head Tracking, Registry
+                    // Count expected services (Phase 1-3 services)
+                    const expectedServiceCount = 12; // Hub, Hardware, Motor, Light, Sensor, Webcam, Motion, Head Tracking, Registry, AI, Microphone, Audio
 
                     card.innerHTML = `
                         <div class="character-name">${character.char_name || character.name}</div>

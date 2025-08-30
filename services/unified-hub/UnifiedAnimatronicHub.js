@@ -65,6 +65,9 @@ class UnifiedAnimatronicHub {
 
             await this.hardwareServer.initialize();
 
+            // Phase 3: Initialize integrated services
+            await this.initializeIntegratedServices();
+
             // Start health monitoring if enabled
             if (this.config.enableHealthMonitoring) {
                 this.startHealthMonitoring();
@@ -284,12 +287,130 @@ class UnifiedAnimatronicHub {
     }
 
     /**
+     * Phase 3: Initialize integrated services
+     */
+    async initializeIntegratedServices() {
+        try {
+            logger.info('🔗 Initializing Phase 3 integrated services...');
+
+            // Initialize microphone service integration
+            await this.initializeMicrophoneService();
+
+            // Initialize webcam service integration
+            await this.initializeWebcamService();
+
+            // Initialize AI service integration
+            await this.initializeAIService();
+
+            logger.info('✅ Phase 3 integrated services initialized successfully');
+
+        } catch (error) {
+            logger.error('❌ Failed to initialize integrated services:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Initialize microphone service integration
+     */
+    async initializeMicrophoneService() {
+        try {
+            const MicrophoneService = require('../microphoneService');
+            this.microphoneService = new MicrophoneService();
+
+            // Register microphone service in hub
+            this.services.set('microphone', {
+                instance: this.microphoneService,
+                status: 'active',
+                startTime: Date.now(),
+                type: 'microphone',
+                endpoints: [
+                    '/api/hub/microphone/status',
+                    '/api/hub/microphone/start_recording',
+                    '/api/hub/microphone/stop_recording',
+                    '/api/hub/microphone/live_audio'
+                ]
+            });
+
+            logger.info('🎤 Microphone service integrated into hub');
+
+        } catch (error) {
+            logger.warn('⚠️ Microphone service integration failed:', error.message);
+        }
+    }
+
+    /**
+     * Initialize webcam service integration
+     */
+    async initializeWebcamService() {
+        try {
+            const WebcamService = require('../webcamService');
+            this.webcamService = new WebcamService();
+
+            // Register webcam service in hub
+            this.services.set('webcam', {
+                instance: this.webcamService,
+                status: 'active',
+                startTime: Date.now(),
+                type: 'webcam',
+                endpoints: [
+                    '/api/hub/webcam/status',
+                    '/api/hub/webcam/snapshot',
+                    '/api/hub/webcam/stream',
+                    '/api/hub/webcam/live_video'
+                ]
+            });
+
+            logger.info('📹 Webcam service integrated into hub');
+
+        } catch (error) {
+            logger.warn('⚠️ Webcam service integration failed:', error.message);
+        }
+    }
+
+    /**
+     * Initialize AI service integration
+     */
+    async initializeAIService() {
+        try {
+            const ElevenLabsConversationalService = require('../elevenLabsConversationalService');
+            this.aiService = new ElevenLabsConversationalService();
+
+            // Register AI service in hub
+            this.services.set('ai', {
+                instance: this.aiService,
+                status: 'active',
+                startTime: Date.now(),
+                type: 'ai',
+                endpoints: [
+                    '/api/hub/ai/status',
+                    '/api/hub/ai/chat',
+                    '/api/hub/ai/conversation',
+                    '/api/hub/ai/agents'
+                ]
+            });
+
+            logger.info('🤖 AI service integrated into hub');
+
+        } catch (error) {
+            logger.warn('⚠️ AI service integration failed:', error.message);
+        }
+    }
+
+    /**
      * Get service summary for initialization
      */
     getServiceSummary() {
         return {
             registered: this.services.size,
-            monitoring: this.statusMonitor ? this.statusMonitor.getMonitoredServiceCount() : 0
+            monitoring: this.statusMonitor ? this.statusMonitor.getMonitoredServiceCount() : 0,
+            services: Array.from(this.services.entries()).map(([name, service]) => ({
+                name,
+                status: service.status,
+                uptime: service.startTime ? Date.now() - service.startTime : 0,
+                type: service.type,
+                endpoints: service.endpoints || []
+            }))
         };
     }
 

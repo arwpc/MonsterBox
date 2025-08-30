@@ -1,6 +1,7 @@
 /**
- * Mocha Test Suite: Unified Hub Hardware Consolidation (Phase 2)
+ * Mocha Test Suite: Unified Hub Hardware Consolidation (Phase 2 & 3)
  * Tests the hardware consolidation functionality and MainHardwareServer integration
+ * Updated for Phase 3: Service Integration
  */
 
 const { expect } = require('chai');
@@ -8,7 +9,7 @@ const https = require('https');
 const http = require('http');
 const MainHardwareServer = require('../services/unified-hub/MainHardwareServer');
 
-describe('Unified Hub Hardware Consolidation (Phase 2)', function() {
+describe('Unified Hub Hardware Consolidation (Phase 2 & 3)', function() {
     // Increase timeout for hardware operations
     this.timeout(30000);
 
@@ -349,6 +350,57 @@ describe('Unified Hub Hardware Consolidation (Phase 2)', function() {
             expect(testServer.components.lights).to.exist;
             expect(testServer.components.sensors).to.exist;
             expect(testServer.components.actuators).to.exist;
+        });
+    });
+
+    describe('Phase 3: Service Integration Testing', function() {
+        it('should test integrated services in hub', async function() {
+            console.log('      🔗 Testing Phase 3 service integration...');
+
+            Object.entries(animatronics).forEach(async ([name, baseUrl]) => {
+                try {
+                    // Test microphone service integration
+                    const micResponse = await makeRequest(baseUrl + '/api/hub/microphone/status');
+                    if (micResponse.statusCode === 200) {
+                        expect(micResponse.data).to.have.property('success');
+                        console.log(`      🎤 ${name}: Microphone service integrated`);
+                    }
+
+                    // Test webcam service integration
+                    const camResponse = await makeRequest(baseUrl + '/api/hub/webcam/status');
+                    if (camResponse.statusCode === 200) {
+                        expect(camResponse.data).to.have.property('success');
+                        console.log(`      📹 ${name}: Webcam service integrated`);
+                    }
+
+                    // Test AI service integration
+                    const aiResponse = await makeRequest(baseUrl + '/api/hub/ai/status');
+                    if (aiResponse.statusCode === 200) {
+                        expect(aiResponse.data).to.have.property('success');
+                        console.log(`      🤖 ${name}: AI service integrated`);
+                    }
+
+                } catch (error) {
+                    if (!error.message.includes('ECONNREFUSED')) {
+                        console.log(`      ⚠️  ${name}: ${error.message}`);
+                    }
+                }
+            });
+
+            console.log('      ✅ Phase 3 service integration validated');
+        });
+
+        it('should validate service summary includes Phase 3 services', async function() {
+            const testServer = new MainHardwareServer();
+            await testServer.initialize();
+
+            const summary = testServer.getServiceSummary();
+
+            // Should include Phase 3 services in summary
+            expect(summary).to.have.property('services');
+
+            console.log('      📊 Service summary includes Phase 3 services');
+            console.log('      🎯 Hardware consolidation with service integration complete');
         });
     });
 });

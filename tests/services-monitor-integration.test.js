@@ -1,6 +1,7 @@
 /**
  * Mocha Test Suite: Services Monitor Page Integration
  * Tests that the services-monitor page correctly uses the unified hub endpoints
+ * Updated for Phase 3: Service Integration
  */
 
 const { expect } = require('chai');
@@ -282,6 +283,93 @@ describe('Services Monitor Page Integration', function() {
             
             // Architecture validation
             expect(true).to.be.true; // Placeholder for architectural validation
+        });
+    });
+
+    describe('Phase 3: Integrated Services Testing', function() {
+        Object.entries(animatronics).forEach(([name, baseUrl]) => {
+            it(`should test Phase 3 hub endpoints on ${name}`, async function() {
+                try {
+                    console.log(`      🔗 Testing Phase 3 integration on ${name}...`);
+
+                    // Test hub status endpoint
+                    const hubResponse = await makeRequest(baseUrl + '/api/hub/status');
+                    if (hubResponse.statusCode === 200) {
+                        const hubData = JSON.parse(hubResponse.body);
+                        expect(hubData).to.have.property('success', true);
+                        expect(hubData).to.have.property('services');
+                        console.log(`      ✅ Hub status: ${hubData.services?.registered || 0} services registered`);
+                    }
+
+                    // Test microphone service endpoint
+                    const micResponse = await makeRequest(baseUrl + '/api/hub/microphone/status');
+                    if (micResponse.statusCode === 200) {
+                        const micData = JSON.parse(micResponse.body);
+                        console.log(`      🎤 Microphone service: ${micData.microphone?.available || 0} devices`);
+                    }
+
+                    // Test webcam service endpoint
+                    const camResponse = await makeRequest(baseUrl + '/api/hub/webcam/status');
+                    if (camResponse.statusCode === 200) {
+                        const camData = JSON.parse(camResponse.body);
+                        console.log(`      📹 Webcam service: ${camData.webcam?.available || 0} devices`);
+                    }
+
+                    // Test AI service endpoint
+                    const aiResponse = await makeRequest(baseUrl + '/api/hub/ai/status');
+                    if (aiResponse.statusCode === 200) {
+                        const aiData = JSON.parse(aiResponse.body);
+                        console.log(`      🤖 AI service: ${aiData.ai?.available || 0} agents`);
+                    }
+
+                    console.log(`      ✅ Phase 3 integration validated on ${name}`);
+
+                } catch (error) {
+                    if (error.message.includes('ECONNREFUSED')) {
+                        console.log(`      ⚠️  ${name} not accessible - skipping Phase 3 tests`);
+                        this.skip();
+                    } else {
+                        throw error;
+                    }
+                }
+            });
+        });
+
+        it('should validate Phase 3 services in monitor page', async function() {
+            try {
+                const response = await makeRequest(animatronics['Local (Skulltalker)'] + '/configuration/services-monitor');
+
+                if (response.statusCode === 200) {
+                    const pageContent = response.body;
+
+                    // Check for Phase 3 service references
+                    expect(pageContent).to.include('ElevenLabs Conversational AI');
+                    expect(pageContent).to.include('Microphone Service');
+                    expect(pageContent).to.include('Audio Stream Service');
+                    expect(pageContent).to.include('Unified Animatronic Hub');
+
+                    // Check for updated service count (12 services)
+                    expect(pageContent).to.include('12');
+
+                    // Check for Phase 3 JavaScript integration
+                    expect(pageContent).to.include('loadHubStatus');
+                    expect(pageContent).to.include('loadIntegratedServices');
+
+                    console.log('      ✅ Phase 3 services properly integrated in monitor page');
+                    console.log('      🎯 Updated service count reflects Phase 3 additions');
+                    console.log('      🔗 Hub status integration working');
+
+                } else {
+                    throw new Error(`Failed to load page: ${response.statusCode}`);
+                }
+            } catch (error) {
+                if (error.message.includes('ECONNREFUSED')) {
+                    console.log('      ⚠️  Local server not running - skipping Phase 3 validation');
+                    this.skip();
+                } else {
+                    throw error;
+                }
+            }
         });
     });
 });

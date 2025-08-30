@@ -309,6 +309,160 @@ router.use((error, req, res, next) => {
     });
 });
 
+// ========================================
+// Phase 3: Integrated Service Endpoints
+// ========================================
+
+/**
+ * GET /api/hub/microphone/status
+ * Get microphone service status
+ */
+router.get('/microphone/status', ensureHubAvailable, async (req, res) => {
+    try {
+        if (!hubInstance || !hubInstance.microphoneService) {
+            return res.status(503).json({
+                success: false,
+                error: 'Microphone service not available'
+            });
+        }
+
+        const microphones = await hubInstance.microphoneService.loadMicrophones();
+        const status = {
+            available: microphones.length,
+            active: microphones.filter(m => m.status === 'active').length,
+            microphones: microphones.map(m => ({
+                id: m.id,
+                name: m.name,
+                status: m.status,
+                type: m.type
+            }))
+        };
+
+        res.json({
+            success: true,
+            microphone: status,
+            timestamp: new Date().toISOString()
+        });
+
+    } catch (error) {
+        logger.error('Error getting microphone status:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+/**
+ * POST /api/hub/microphone/start_recording
+ * Start microphone recording
+ */
+router.post('/microphone/start_recording', ensureHubAvailable, async (req, res) => {
+    try {
+        if (!hubInstance || !hubInstance.microphoneService) {
+            return res.status(503).json({
+                success: false,
+                error: 'Microphone service not available'
+            });
+        }
+
+        const { microphoneId } = req.body;
+        const result = await hubInstance.microphoneService.startMonitoring(microphoneId);
+
+        res.json({
+            success: result,
+            message: result ? 'Recording started' : 'Failed to start recording',
+            timestamp: new Date().toISOString()
+        });
+
+    } catch (error) {
+        logger.error('Error starting microphone recording:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+/**
+ * GET /api/hub/webcam/status
+ * Get webcam service status
+ */
+router.get('/webcam/status', ensureHubAvailable, async (req, res) => {
+    try {
+        if (!hubInstance || !hubInstance.webcamService) {
+            return res.status(503).json({
+                success: false,
+                error: 'Webcam service not available'
+            });
+        }
+
+        const webcams = await hubInstance.webcamService.loadWebcams();
+        const status = {
+            available: webcams.length,
+            active: webcams.filter(w => w.status === 'active').length,
+            webcams: webcams.map(w => ({
+                id: w.id,
+                name: w.name,
+                status: w.status,
+                deviceId: w.deviceId
+            }))
+        };
+
+        res.json({
+            success: true,
+            webcam: status,
+            timestamp: new Date().toISOString()
+        });
+
+    } catch (error) {
+        logger.error('Error getting webcam status:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+/**
+ * GET /api/hub/ai/status
+ * Get AI service status
+ */
+router.get('/ai/status', ensureHubAvailable, async (req, res) => {
+    try {
+        if (!hubInstance || !hubInstance.aiService) {
+            return res.status(503).json({
+                success: false,
+                error: 'AI service not available'
+            });
+        }
+
+        const agents = hubInstance.aiService.agents || new Map();
+        const status = {
+            available: agents.size,
+            active: hubInstance.aiService.activeConnections ? hubInstance.aiService.activeConnections.size : 0,
+            agents: Array.from(agents.entries()).map(([id, agent]) => ({
+                id,
+                name: agent.name,
+                voice: agent.voice
+            }))
+        };
+
+        res.json({
+            success: true,
+            ai: status,
+            timestamp: new Date().toISOString()
+        });
+
+    } catch (error) {
+        logger.error('Error getting AI status:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
 /**
  * 404 handler for unknown hub endpoints
  */
@@ -321,7 +475,16 @@ router.use('*', (req, res) => {
             '/api/hub/health',
             '/api/hub/info',
             '/api/hub/services',
-            '/api/hub/refresh'
+            '/api/hub/refresh',
+            // Phase 3 endpoints
+            '/api/hub/microphone/status',
+            '/api/hub/microphone/start_recording',
+            '/api/hub/microphone/stop_recording',
+            '/api/hub/webcam/status',
+            '/api/hub/webcam/snapshot',
+            '/api/hub/webcam/stream',
+            '/api/hub/ai/status',
+            '/api/hub/ai/agents'
         ]
     });
 });
