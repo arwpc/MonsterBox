@@ -129,6 +129,11 @@
             box-shadow: 0 0 8px #ff0000;
         }
 
+        .status-unknown {
+            background: #888888;
+            box-shadow: 0 0 8px #888888;
+        }
+
         .status-checking {
             background: #ffff00;
             box-shadow: 0 0 8px #ffff00;
@@ -330,6 +335,8 @@
                 this.services = [];
                 this.maxLogEntries = 100;
                 this.serviceConnections = {};
+                this.pollingInterval = null;
+                this.lastConnectionsSnapshot = null;
 
                 this.init();
             }
@@ -389,9 +396,9 @@
                     { name: 'Service Registry', port: 8770, icon: '📋', type: 'registry' }
                 ];
 
-                this.renderServices(expectedServices);
-                this.monitorServices(expectedServices);
-                this.log('Loaded default services for current device', 'info');
+                // Start polling for service connections using centralized API
+                this.startPolling();
+                this.log('Started service monitoring using centralized API', 'info');
             }
 
             renderCharacterGrid() {
@@ -451,11 +458,130 @@
                     { name: 'Service Registry', port: 8770, icon: '📋', type: 'registry' }
                 ];
 
-                this.renderServices(expectedServices);
-                this.monitorServices(expectedServices);
+                // Start polling for service connections using centralized API
+                this.startPolling();
             }
 
-            renderServices(services) {
+
+
+            async loadServiceConnections() {
+                try {
+                    const response = await fetch('/api/service-management/connections');
+
+                    if (response.status === 503) {
+                        const errorData = await response.json();
+                        if (errorData.legacy) {
+                            this.handleLegacyFallback();
+                            return;
+                        }
+                    }
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    const connections = await response.json();
+
+                    // Debounce updates - only render if connections have changed
+                    const connectionsSnapshot = JSON.stringify(connections);
+                    if (this.lastConnectionsSnapshot !== connectionsSnapshot) {
+                        this.renderServicesFromConnections(connections);
+                        this.lastConnectionsSnapshot = connectionsSnapshot;
+                        this.log('Service connections updated from centralized API', 'info');
+                    }
+
+                } catch (error) {
+                    console.error('Error loading service connections:', error);
+                    this.log(`Failed to load service connections: ${error.message}`, 'error');
+                    this.handleLegacyFallback();
+                }
+            }
+
+            renderServicesFromConnections(connections) {
+                const grid = document.getElementById('servicesGrid');
+                grid.innerHTML = '';
+
+                // Define service display order and icons
+                const serviceOrder = [
+                    { key: 'hardwareRegistry', name: 'Main Hardware Server', icon: '🔧', type: 'hardware' },
+                    { key: 'motorService', name: 'Motor Service', icon: '🔄', type: 'motor' },
+                    { key: 'lightService', name: 'Light Service', icon: '💡', type: 'light' },
+                    { key: 'sensorService', name: 'Sensor Service', icon: '📡', type: 'sensor' },
+                    { key: 'webcamService', name: 'Webcam Service', icon: '📹', type: 'webcam' },
+                    { key: 'motionSensorService', name: 'Motion Sensor Service', icon: '🔍', type: 'motion' },
+                    { key: 'headTrackingService', name: 'Head Tracking Service', icon: '🎯', type: 'tracking' },
+                    { key: 'serviceRegistry', name: 'Service Registry', icon: '📋', type: 'registry' }
+                ];
+
+                serviceOrder.forEach(serviceConfig => {
+                    const connection = connections[serviceConfig.key];
+                    const card = document.createElement('div');
+                    card.className = 'service-card';
+                    card.dataset.serviceType = serviceConfig.type;
+
+                    let status = 'offline';
+                    let statusText = 'Offline';
+                    let details = 'Service not found';
+                    let port = 'N/A';
+
+                    if (connection) {
+                        status = connection.status === 'running' ? 'online' : 'offline';
+                        statusText = connection.status === 'running' ? 'Online' : 'Offline';
+                        port = connection.port || connection.proxyPort || 'N/A';
+                        details = connection.description || `${connection.type} service`;
+                    }
+
+                    card.innerHTML = `
+                        <div class="service-header">
+                            <div class="service-icon">${serviceConfig.icon}</div>
+                            <div class="service-name">${serviceConfig.name}</div>
+                            <div class="status-indicator status-${status}" id="status-${serviceConfig.type}"></div>
+                        </div>
+                        <div class="service-details" id="details-${serviceConfig.type}">
+                            <div>Port: ${port}</div>
+                            <div id="status-text-${serviceConfig.type}">${statusText}</div>
+                            <div>${details}</div>
+                            <div>Last updated: ${new Date().toLocaleTimeString()}</div>
+                        </div>
+                    `;
+
+                    grid.appendChild(card);
+                });
+
+                // Update overall system status
+                this.updateOverallStatus();
+            }
+
+            handleLegacyFallback() {
+                // Show fallback banner
+                const systemStatus = document.getElementById('systemStatus');
+                if (systemStatus) {
+                    systemStatus.innerHTML = `
+                        <div style="background: #331100; border: 1px solid #ff6600; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
+                            <strong style="color: #ff6600;">⚠️ Centralized service integration not available</strong><br>
+                            <span style="color: #cccccc; font-size: 0.9em;">Showing expected services with unknown status. Direct service monitoring is disabled.</span>
+                        </div>
+                        <strong>System Status:</strong> <span id="overallStatus">Integration unavailable</span>
+                    `;
+                }
+
+                // Render expected services with unknown status
+                const expectedServices = [
+                    { name: 'Main Hardware Server', port: 8780, icon: '🔧', type: 'hardware' },
+                    { name: 'Motor Service', port: 8771, icon: '🔄', type: 'motor' },
+                    { name: 'Light Service', port: 8772, icon: '💡', type: 'light' },
+                    { name: 'Sensor Service', port: 8773, icon: '📡', type: 'sensor' },
+                    { name: 'Webcam Service', port: 8774, icon: '📹', type: 'webcam' },
+                    { name: 'Motion Sensor Service', port: 8777, icon: '🔍', type: 'motion' },
+                    { name: 'Head Tracking Service', port: 8778, icon: '🎯', type: 'tracking' },
+                    { name: 'Service Registry', port: 8770, icon: '📋', type: 'registry' }
+                ];
+
+                this.renderFallbackServices(expectedServices);
+                this.log('Using legacy fallback mode - centralized integration unavailable', 'warning');
+            }
+
+            renderFallbackServices(services) {
                 const grid = document.getElementById('servicesGrid');
                 grid.innerHTML = '';
 
@@ -469,11 +595,13 @@
                         <div class="service-header">
                             <div class="service-icon">${service.icon}</div>
                             <div class="service-name">${service.name}</div>
-                            <div class="status-indicator status-checking" id="status-${service.type}"></div>
+                            <div class="status-indicator status-unknown" id="status-${service.type}"></div>
                         </div>
                         <div class="service-details" id="details-${service.type}">
                             <div>Port: ${service.port}</div>
-                            <div id="status-text-${service.type}">Checking...</div>
+                            <div id="status-text-${service.type}">Unknown</div>
+                            <div>Status monitoring unavailable</div>
+                            <div>Last checked: N/A</div>
                         </div>
                     `;
 
@@ -481,95 +609,28 @@
                 });
             }
 
-            monitorServices(services) {
-                services.forEach(service => {
-                    this.checkServiceStatus(service);
-                });
-
-                // Check services every 30 seconds (reduced frequency to minimize log spam)
-                setInterval(() => {
-                    services.forEach(service => {
-                        this.checkServiceStatus(service);
-                    });
-                }, 30000);
-            }
-
-            async checkServiceStatus(service) {
-                console.log('Checking service:', service);
-                const statusIndicator = document.getElementById(`status-${service.type}`);
-                const statusText = document.getElementById(`status-text-${service.type}`);
-                const details = document.getElementById(`details-${service.type}`);
-
-                // Skip check if service was recently marked as offline to reduce log spam
-                if (service.lastFailTime && (Date.now() - service.lastFailTime) < 60000) {
-                    console.log('Skipping service check due to recent failure:', service.type);
-                    return;
+            startPolling() {
+                // Clear any existing polling interval
+                if (this.pollingInterval) {
+                    clearInterval(this.pollingInterval);
                 }
 
-                try {
-                    // Try HTTP first to see if it's a WebSocket service
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 3000);
+                // Initial load
+                this.loadServiceConnections();
 
-                    try {
-                        // Try HTTP request to detect WebSocket services
-                        const response = await fetch(`http://${window.location.hostname}:${service.port}/`, {
-                            method: 'GET',
-                            signal: controller.signal
-                        });
-                        clearTimeout(timeoutId);
+                // Poll every 10 seconds
+                this.pollingInterval = setInterval(() => {
+                    this.loadServiceConnections();
+                }, 10000);
 
-                        const text = await response.text();
+                this.log('Started polling service connections every 10 seconds', 'info');
+            }
 
-                        // Check if it's a WebSocket service based on response
-                        if (text.includes('WebSocket') || text.includes('Upgrade Required') || response.status === 426) {
-                            // It's a WebSocket service - try WebSocket connection
-                            try {
-                                const ws = new WebSocket(`ws://${window.location.hostname}:${service.port}`);
-
-                                const wsTimeout = setTimeout(() => {
-                                    ws.close();
-                                    service.lastFailTime = Date.now();
-                                    this.updateServiceStatus(service, 'offline', 'WebSocket connection timeout');
-                                }, 3000);
-
-                                ws.onopen = () => {
-                                    clearTimeout(wsTimeout);
-                                    service.lastFailTime = null;
-                                    this.updateServiceStatus(service, 'online', 'WebSocket service online');
-                                    ws.close();
-                                };
-
-                                ws.onerror = (error) => {
-                                    clearTimeout(wsTimeout);
-                                    service.lastFailTime = Date.now();
-                                    this.updateServiceStatus(service, 'offline', 'WebSocket connection failed');
-                                };
-
-                                return;
-                            } catch (wsError) {
-                                service.lastFailTime = Date.now();
-                                this.updateServiceStatus(service, 'offline', 'WebSocket connection error');
-                                return;
-                            }
-                        } else if (response.ok) {
-                            // It's an HTTP service
-                            service.lastFailTime = null;
-                            this.updateServiceStatus(service, 'online', 'HTTP service responding');
-                            return;
-                        }
-                    } catch (httpError) {
-                        clearTimeout(timeoutId);
-                        // HTTP failed completely - service likely offline
-                    }
-
-                    // Service is offline
-                    service.lastFailTime = Date.now();
-                    this.updateServiceStatus(service, 'offline', 'Service unavailable');
-
-                } catch (error) {
-                    service.lastFailTime = Date.now();
-                    this.updateServiceStatus(service, 'offline', `Error: ${error.message}`);
+            stopPolling() {
+                if (this.pollingInterval) {
+                    clearInterval(this.pollingInterval);
+                    this.pollingInterval = null;
+                    this.log('Stopped polling service connections', 'info');
                 }
             }
 
