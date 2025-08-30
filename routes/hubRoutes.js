@@ -385,6 +385,37 @@ router.post('/microphone/start_recording', ensureHubAvailable, async (req, res) 
 });
 
 /**
+ * POST /api/hub/microphone/stop_recording
+ * Stop microphone recording
+ */
+router.post('/microphone/stop_recording', ensureHubAvailable, async (req, res) => {
+    try {
+        if (!hubInstance || !hubInstance.microphoneService) {
+            return res.status(503).json({
+                success: false,
+                error: 'Microphone service not available'
+            });
+        }
+
+        const { microphoneId } = req.body;
+        const result = await hubInstance.microphoneService.stopMonitoring(microphoneId);
+
+        res.json({
+            success: result,
+            message: result ? 'Recording stopped' : 'Failed to stop recording',
+            timestamp: new Date().toISOString()
+        });
+
+    } catch (error) {
+        logger.error('Error stopping microphone recording:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+/**
  * GET /api/hub/webcam/status
  * Get webcam service status
  */
@@ -461,6 +492,36 @@ router.get('/ai/status', ensureHubAvailable, async (req, res) => {
             error: error.message
         });
     }
+});
+
+/**
+ * GET /api/hub/
+ * Hub root endpoint - provides API discovery
+ */
+router.get('/', (req, res) => {
+    res.json({
+        success: true,
+        name: 'Unified Animatronic Hub API',
+        version: '1.0.0',
+        description: 'Phase 3: Service Integration Complete',
+        availableEndpoints: [
+            '/api/hub/status',
+            '/api/hub/health',
+            '/api/hub/info',
+            '/api/hub/services',
+            '/api/hub/refresh',
+            // Phase 3 endpoints
+            '/api/hub/microphone/status',
+            '/api/hub/microphone/start_recording',
+            '/api/hub/microphone/stop_recording',
+            '/api/hub/webcam/status',
+            '/api/hub/webcam/snapshot',
+            '/api/hub/webcam/stream',
+            '/api/hub/ai/status',
+            '/api/hub/ai/agents'
+        ],
+        timestamp: new Date().toISOString()
+    });
 });
 
 /**

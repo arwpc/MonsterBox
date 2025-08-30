@@ -3,15 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Services Monitor - MonsterBox</title>
+    <title>Animatronic Fleet Monitor - MonsterBox</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="/css/style.css?v=<%= Date.now() %>">
     <style>
-        .services-monitor {
-            max-width: 1200px;
+        .fleet-monitor {
+            max-width: 1400px;
             margin: 0 auto;
             padding: 20px;
+        }
+
+        .fleet-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .fleet-stat-card {
+            background: linear-gradient(135deg, #001100, #002200);
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+        }
+
+        .fleet-stat-card h3 {
+            color: #00ff00;
+            margin: 0 0 10px 0;
+            font-size: 1.1em;
+            text-transform: uppercase;
+        }
+
+        .fleet-stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #ffffff;
+            margin: 10px 0;
+        }
+
+        .fleet-stat-label {
+            color: #cccccc;
+            font-size: 0.9em;
         }
         .info-section {
             background: #001100;
@@ -33,20 +68,242 @@
             line-height: 1.4;
         }
 
-        .character-grid, .services-grid {
+        .animatronics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .animatronic-card {
+            background: linear-gradient(135deg, #000800, #001800);
+            border: 2px solid #00ff00;
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .animatronic-card:hover {
+            border-color: #00ffff;
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .animatronic-card.online {
+            border-color: #00ff00;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+        }
+
+        .animatronic-card.offline {
+            border-color: #ff4444;
+            box-shadow: 0 0 15px rgba(255, 68, 68, 0.3);
+            opacity: 0.7;
+        }
+
+        .animatronic-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .animatronic-name {
+            color: #00ff00;
+            font-size: 1.3em;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .animatronic-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-online {
+            background: rgba(0, 255, 0, 0.2);
+            color: #00ff00;
+            border: 1px solid #00ff00;
+        }
+
+        .status-offline {
+            background: rgba(255, 68, 68, 0.2);
+            color: #ff4444;
+            border: 1px solid #ff4444;
+        }
+
+        .animatronic-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .info-item {
+            text-align: center;
+        }
+
+        .info-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 5px;
+        }
+
+        .info-label {
+            color: #cccccc;
+            font-size: 0.9em;
+        }
+
+        .service-status-bar {
+            background: #001100;
+            border-radius: 10px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        .service-status-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .service-count {
+            color: #00ff00;
+            font-weight: bold;
+        }
+
+        .service-indicators {
+            display: flex;
+            gap: 4px;
+        }
+
+        .service-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #333;
+        }
+
+        .service-dot.active {
+            background: #00ff00;
+            box-shadow: 0 0 4px rgba(0, 255, 0, 0.6);
+        }
+
+        .service-dot.error {
+            background: #ff4444;
+            box-shadow: 0 0 4px rgba(255, 68, 68, 0.6);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .section-header h2 {
+            color: #00ff00;
+            margin: 0;
+            font-size: 1.5em;
+        }
+
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #001100, #002200);
+            margin: 5% auto;
+            padding: 0;
+            border: 2px solid #00ff00;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.4);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #00ff00;
+        }
+
+        .modal-header h2 {
+            color: #00ff00;
+            margin: 0;
+        }
+
+        .close {
+            color: #ff4444;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close:hover {
+            color: #ff6666;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .detail-section {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+
+        .detail-section h3 {
+            color: #00ff00;
+            margin: 0 0 15px 0;
+            font-size: 1.2em;
+        }
+
+        .detail-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
         }
 
-        .character-card {
-            background: #000800;
-            border: 1px solid #00ff00;
-            border-radius: 8px;
-            padding: 15px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: center;
+        .detail-item {
+            background: rgba(0, 255, 0, 0.05);
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid rgba(0, 255, 0, 0.2);
+        }
+
+        .detail-label {
+            color: #cccccc;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 1.1em;
         }
 
         .character-card:hover {
@@ -346,50 +603,69 @@
     </style>
 </head>
 <body>
-    <%- include('partials/compact-header', { 
-        title: 'Services Monitor', 
-        icon: '🔧', 
+    <%- include('partials/compact-header', {
+        title: 'Animatronic Fleet Monitor',
+        icon: '🎭',
         breadcrumbs: [
             { name: 'Home', url: '/', icon: '🏠' },
             { name: 'Configuration', url: '/configuration', icon: '⚙️' },
-            { name: 'Services Monitor', current: true }
+            { name: 'Fleet Monitor', current: true }
         ]
     }) %>
 
-    <main class="monitor-container">
-        <div class="info-section">
-            <h2>🔧 Character Services Overview</h2>
-            <p>Monitor all services by character. Select a character to view their specific service status, performance metrics, and detailed information.</p>
-            <div id="systemStatus" style="margin-top: 15px; padding: 10px; border: 1px solid #666; border-radius: 5px; background: #001100;">
-                <strong>System Status:</strong> <span id="overallStatus">Checking...</span>
+    <main class="fleet-monitor">
+        <!-- Fleet Overview Stats -->
+        <div class="fleet-overview">
+            <div class="fleet-stat-card">
+                <h3>🎭 Total Animatronics</h3>
+                <div class="fleet-stat-value" id="totalAnimatronics">-</div>
+                <div class="fleet-stat-label">Managed Characters</div>
+            </div>
+            <div class="fleet-stat-card">
+                <h3>✅ Online</h3>
+                <div class="fleet-stat-value" id="onlineCount">-</div>
+                <div class="fleet-stat-label">Active Systems</div>
+            </div>
+            <div class="fleet-stat-card">
+                <h3>🔧 Total Services</h3>
+                <div class="fleet-stat-value" id="totalServices">-</div>
+                <div class="fleet-stat-label">Running Services</div>
+            </div>
+            <div class="fleet-stat-card">
+                <h3>⚡ System Health</h3>
+                <div class="fleet-stat-value" id="systemHealth">-</div>
+                <div class="fleet-stat-label">Overall Status</div>
             </div>
         </div>
 
-        <div class="character-selector">
-            <h3>📋 Select Character</h3>
-            <div class="character-grid" id="characterGrid">
-                <!-- Characters will be loaded here -->
-            </div>
-            <div class="connection-controls" id="connectionControls" style="margin-top: 15px; display: none;">
-                <button id="connectBtn" class="connection-btn connect-btn">🔌 Connect</button>
-                <button id="disconnectBtn" class="connection-btn disconnect-btn">🔌 Disconnect</button>
-                <div class="connection-status" id="connectionStatus">
-                    <span id="connectionStatusText">No character selected</span>
+        <!-- Animatronics Grid -->
+        <div class="section-header">
+            <h2>🎭 Animatronic Fleet Status</h2>
+            <button id="refreshAllBtn" class="connection-btn">🔄 Refresh All</button>
+        </div>
+
+        <div class="animatronics-grid" id="animatronicsGrid">
+            <!-- Animatronic cards will be loaded here -->
+        </div>
+
+        <!-- Character Detail Modal -->
+        <div id="characterModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modalCharacterName">Character Details</h2>
+                    <span class="close" id="closeModal">&times;</span>
+                </div>
+                <div class="modal-body" id="modalBody">
+                    <!-- Character details will be loaded here -->
                 </div>
             </div>
         </div>
 
-        <div class="services-section" id="servicesSection">
-            <h3>🔧 Character Services</h3>
-            <div class="services-grid" id="servicesGrid">
-                <!-- Services will be loaded here based on selected character -->
-            </div>
-        </div>
-
+        <!-- Activity Log -->
         <div class="activity-log">
-            <h3>📊 Activity Log</h3>
+            <h3>📊 Fleet Activity Log</h3>
             <div class="log-container" id="logContainer">
-                <div class="log-entry log-info">Services monitor initialized...</div>
+                <div class="log-entry log-info">Fleet monitor initialized...</div>
             </div>
         </div>
 
@@ -398,181 +674,393 @@
 
     <script>
         // Cache buster: <%= Date.now() %>
-        class ServicesMonitor {
+        class FleetMonitor {
             constructor() {
-                this.selectedCharacter = null;
-                this.characters = [];
-                this.services = [];
+                this.animatronics = [];
+                this.fleetStats = {
+                    total: 0,
+                    online: 0,
+                    totalServices: 0,
+                    systemHealth: 'Unknown'
+                };
                 this.maxLogEntries = 100;
-                this.serviceConnections = {};
                 this.pollingInterval = null;
-                this.lastConnectionsSnapshot = null;
+                this.selectedCharacter = null;
                 this.isConnected = false;
 
                 this.init().catch(error => {
-                    console.error('Failed to initialize services monitor:', error);
+                    console.error('Failed to initialize fleet monitor:', error);
                     this.log(`Initialization error: ${error.message}`, 'error');
                 });
             }
 
             async init() {
-                this.log('Services monitor initialized...', 'info');
-                await this.loadCharacters();
+                this.log('Fleet monitor initialized...', 'info');
+                await this.loadAnimatronics();
                 this.setupEventListeners();
-                this.startCharacterRefresh();
+                this.startFleetMonitoring();
 
                 // Initial status update
                 setTimeout(() => {
-                    this.updateOverallStatus();
+                    this.updateFleetStats();
                 }, 1000);
             }
 
-            startCharacterRefresh() {
-                // Refresh character list every 30 seconds to detect new characters
-                setInterval(async () => {
+            startFleetMonitoring() {
+                // Refresh fleet status every 15 seconds
+                this.pollingInterval = setInterval(async () => {
                     try {
-                        await this.loadCharacters();
+                        await this.refreshFleetStatus();
                     } catch (error) {
-                        console.error('Error refreshing character list:', error);
+                        console.error('Error refreshing fleet status:', error);
                     }
-                }, 30000);
+                }, 15000);
 
-                this.log('Started periodic character list refresh (every 30 seconds)', 'info');
+                this.log('Started fleet monitoring (every 15 seconds)', 'info');
             }
 
-            async loadCharacters() {
+            async loadAnimatronics() {
                 try {
-                    this.log('Fetching characters from /api/characters...', 'info');
-                    const response = await fetch('/api/characters');
+                    this.log('Loading animatronic fleet data...', 'info');
 
+                    // Load characters from API
+                    const response = await fetch('/api/characters');
                     if (!response.ok) {
                         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                     }
 
-                    const newCharacters = await response.json();
+                    const characters = await response.json();
+                    this.log(`Found ${characters.length} characters in database`, 'info');
 
-                    // Check if characters have changed
-                    const charactersChanged = JSON.stringify(this.characters) !== JSON.stringify(newCharacters);
-                    this.characters = newCharacters;
+                    // Create animatronic objects with network info
+                    this.animatronics = characters.map(character => ({
+                        id: character.id,
+                        name: character.name,
+                        hostname: this.getHostnameForCharacter(character.name),
+                        baseUrl: this.getBaseUrlForCharacter(character.name),
+                        status: 'checking',
+                        services: [],
+                        parts: character.parts || [],
+                        lastSeen: null,
+                        responseTime: null
+                    }));
 
-                    this.renderCharacterGrid();
-                    this.log(`Loaded ${this.characters.length} characters`, 'info');
+                    // Start checking status for each animatronic
+                    await this.refreshFleetStatus();
+                    this.renderAnimatronicsGrid();
 
-                    // Phase 3: Load unified hub status
-                    await this.loadHubStatus();
+                } catch (error) {
+                    this.log(`Failed to load animatronics: ${error.message}`, 'error');
+                    this.animatronics = [];
+                }
+            }
 
-                    // Only auto-select if no character is currently selected or if characters changed
-                    if (!this.selectedCharacter || charactersChanged) {
-                        if (this.characters.length > 0) {
-                            // Try to reselect the same character if it still exists
-                            let characterToSelect = this.characters[0];
-                            if (this.selectedCharacter) {
-                                const existingCharacter = this.characters.find(c => c.id === this.selectedCharacter.id);
-                                if (existingCharacter) {
-                                    characterToSelect = existingCharacter;
-                                }
+            getHostnameForCharacter(characterName) {
+                // Check if this is the current machine
+                const currentHostname = window.location.hostname;
+
+                if (characterName === 'Skulltalker' && currentHostname.includes('skulltalker')) {
+                    return currentHostname; // Use current hostname
+                }
+
+                // For other characters, use their network addresses
+                const hostnames = {
+                    'Orlok': 'orlok.monsterbox.local',
+                    'Coffin Breaker': 'coffinbreaker.monsterbox.local',
+                    'PumpkinHead': 'pumpkinhead.monsterbox.local',
+                    'Skulltalker': 'skulltalker.monsterbox.local'
+                };
+                return hostnames[characterName] || `${characterName.toLowerCase()}.monsterbox.local`;
+            }
+
+            getBaseUrlForCharacter(characterName) {
+                const hostname = this.getHostnameForCharacter(characterName);
+
+                // If this is the current machine, use relative URL
+                if (hostname === window.location.hostname) {
+                    return `${window.location.protocol}//${window.location.host}`;
+                }
+
+                return `https://${hostname}:8080`;
+            }
+
+            async refreshFleetStatus() {
+                this.log('Refreshing fleet status...', 'info');
+
+                const statusPromises = this.animatronics.map(async (animatronic) => {
+                    const startTime = Date.now();
+
+                    try {
+                        // Check if animatronic is online
+                        const healthResponse = await fetch(`${animatronic.baseUrl}/api/hub/status`, {
+                            method: 'GET',
+                            timeout: 5000
+                        });
+
+                        const responseTime = Date.now() - startTime;
+
+                        if (healthResponse.ok) {
+                            const statusData = await healthResponse.json();
+
+                            // Get services information
+                            const servicesResponse = await fetch(`${animatronic.baseUrl}/api/hub/services`);
+                            let services = [];
+
+                            if (servicesResponse.ok) {
+                                const servicesData = await servicesResponse.json();
+                                services = servicesData.services || [];
                             }
-                            this.selectCharacter(characterToSelect);
+
+                            animatronic.status = 'online';
+                            animatronic.services = services;
+                            animatronic.lastSeen = new Date();
+                            animatronic.responseTime = responseTime;
+                            animatronic.hubStatus = statusData;
+
+                            this.log(`${animatronic.name}: Online (${services.length} services, ${responseTime}ms)`, 'success');
+
                         } else {
-                            this.log('No characters found, loading default services', 'warning');
-                            this.hideConnectionControls();
-                            this.loadDefaultServices();
+                            throw new Error(`HTTP ${healthResponse.status}`);
                         }
+
+                    } catch (error) {
+                        animatronic.status = 'offline';
+                        animatronic.services = [];
+                        animatronic.responseTime = Date.now() - startTime;
+                        animatronic.hubStatus = null;
+
+                        this.log(`${animatronic.name}: Offline (${error.message})`, 'warning');
                     }
-                } catch (error) {
-                    this.log('Failed to load characters: ' + error.message, 'error');
-                    // If character loading fails, show services anyway for the current device
-                    this.hideConnectionControls();
-                    this.loadDefaultServices();
+                });
+
+                await Promise.all(statusPromises);
+                this.updateFleetStats();
+                this.renderAnimatronicsGrid();
+            }
+
+            updateFleetStats() {
+                const online = this.animatronics.filter(a => a.status === 'online');
+                const totalServices = online.reduce((sum, a) => sum + a.services.length, 0);
+
+                this.fleetStats = {
+                    total: this.animatronics.length,
+                    online: online.length,
+                    totalServices: totalServices,
+                    systemHealth: online.length === this.animatronics.length ? '100%' :
+                                 online.length > 0 ? `${Math.round((online.length / this.animatronics.length) * 100)}%` : '0%'
+                };
+
+                // Update UI
+                document.getElementById('totalAnimatronics').textContent = this.fleetStats.total;
+                document.getElementById('onlineCount').textContent = this.fleetStats.online;
+                document.getElementById('totalServices').textContent = this.fleetStats.totalServices;
+                document.getElementById('systemHealth').textContent = this.fleetStats.systemHealth;
+
+                this.log(`Fleet Status: ${this.fleetStats.online}/${this.fleetStats.total} online, ${this.fleetStats.totalServices} services`, 'info');
+            }
+
+            renderAnimatronicsGrid() {
+                const grid = document.getElementById('animatronicsGrid');
+                if (!grid) return;
+
+                grid.innerHTML = '';
+
+                this.animatronics.forEach(animatronic => {
+                    const card = document.createElement('div');
+                    card.className = `animatronic-card ${animatronic.status}`;
+                    card.onclick = () => this.showCharacterDetails(animatronic);
+
+                    const serviceCount = animatronic.services.length;
+                    const activeServices = animatronic.services.filter(s => s.status === 'active').length;
+                    const lastSeenText = animatronic.lastSeen ?
+                        `Last seen: ${animatronic.lastSeen.toLocaleTimeString()}` :
+                        'Never contacted';
+
+                    // Create service indicator dots
+                    const maxDots = 12; // Expected max services
+                    const serviceDots = Array.from({length: maxDots}, (_, i) => {
+                        if (i < activeServices) {
+                            return '<div class="service-dot active"></div>';
+                        } else if (i < serviceCount) {
+                            return '<div class="service-dot error"></div>';
+                        } else {
+                            return '<div class="service-dot"></div>';
+                        }
+                    }).join('');
+
+                    card.innerHTML = `
+                        <div class="animatronic-header">
+                            <h3 class="animatronic-name">${animatronic.name}</h3>
+                            <div class="animatronic-status status-${animatronic.status}">
+                                ${animatronic.status.toUpperCase()}
+                            </div>
+                        </div>
+
+                        <div class="animatronic-info">
+                            <div class="info-item">
+                                <div class="info-value">${serviceCount}</div>
+                                <div class="info-label">Services</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-value">${animatronic.parts.length}</div>
+                                <div class="info-label">Parts</div>
+                            </div>
+                        </div>
+
+                        <div class="service-status-bar">
+                            <div class="service-status-header">
+                                <span class="service-count">${activeServices}/${serviceCount} Active</span>
+                                <span style="color: #cccccc; font-size: 0.8em;">
+                                    ${animatronic.responseTime ? `${animatronic.responseTime}ms` : 'N/A'}
+                                </span>
+                            </div>
+                            <div class="service-indicators">
+                                ${serviceDots}
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 10px; font-size: 0.8em; color: #999;">
+                            ${lastSeenText}
+                        </div>
+                    `;
+
+                    grid.appendChild(card);
+                });
+
+                if (this.animatronics.length === 0) {
+                    grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #666; padding: 40px;">No animatronics found</div>';
                 }
             }
 
-            async loadHubStatus() {
+            showCharacterDetails(animatronic) {
+                this.selectedCharacter = animatronic;
+                const modal = document.getElementById('characterModal');
+                const modalName = document.getElementById('modalCharacterName');
+                const modalBody = document.getElementById('modalBody');
+
+                modalName.textContent = `${animatronic.name} Details`;
+
+                // Build detailed information
+                const servicesHtml = animatronic.services.map(service => `
+                    <div class="detail-item">
+                        <div class="detail-label">${service.name || service.type}</div>
+                        <div class="detail-value">
+                            ${service.status === 'active' ? '✅' : '❌'}
+                            Port ${service.port || 'N/A'}
+                        </div>
+                    </div>
+                `).join('');
+
+                const partsHtml = animatronic.parts.map(part => `
+                    <div class="detail-item">
+                        <div class="detail-label">${part.name}</div>
+                        <div class="detail-value">${part.type} - ${part.status || 'Unknown'}</div>
+                    </div>
+                `).join('');
+
+                modalBody.innerHTML = `
+                    <div class="detail-section">
+                        <h3>🌐 Connection Info</h3>
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <div class="detail-label">Hostname</div>
+                                <div class="detail-value">${animatronic.hostname}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Status</div>
+                                <div class="detail-value">
+                                    ${animatronic.status === 'online' ? '✅ Online' : '❌ Offline'}
+                                </div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Response Time</div>
+                                <div class="detail-value">${animatronic.responseTime || 'N/A'}ms</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Last Seen</div>
+                                <div class="detail-value">
+                                    ${animatronic.lastSeen ? animatronic.lastSeen.toLocaleString() : 'Never'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <h3>🔧 Services (${animatronic.services.length})</h3>
+                        <div class="detail-grid">
+                            ${servicesHtml || '<div class="detail-item"><div class="detail-value">No services detected</div></div>'}
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <h3>🔩 Hardware Parts (${animatronic.parts.length})</h3>
+                        <div class="detail-grid">
+                            ${partsHtml || '<div class="detail-item"><div class="detail-value">No parts configured</div></div>'}
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <h3>🎛️ Actions</h3>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button onclick="window.open('${animatronic.baseUrl}', '_blank')" class="connection-btn">
+                                🌐 Open Web Interface
+                            </button>
+                            <button onclick="fleetMonitor.refreshAnimatronic('${animatronic.id}')" class="connection-btn">
+                                🔄 Refresh Status
+                            </button>
+                            <button onclick="window.open('${animatronic.baseUrl}/configuration/services-monitor', '_blank')" class="connection-btn">
+                                🔧 Service Monitor
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                modal.style.display = 'block';
+                this.log(`Opened details for ${animatronic.name}`, 'info');
+            }
+
+            async refreshAnimatronic(animatronicId) {
+                const animatronic = this.animatronics.find(a => a.id === animatronicId);
+                if (!animatronic) return;
+
+                this.log(`Refreshing ${animatronic.name}...`, 'info');
+
+                const startTime = Date.now();
                 try {
-                    this.log('Loading unified hub status...', 'info');
-                    const response = await fetch('/api/hub/status');
+                    const response = await fetch(`${animatronic.baseUrl}/api/hub/status`);
+                    const responseTime = Date.now() - startTime;
+
                     if (response.ok) {
-                        const hubData = await response.json();
-                        this.log(`Hub status: ${hubData.status}`, 'info');
-                        this.updateHubStatus(hubData);
+                        const statusData = await response.json();
+                        animatronic.status = 'online';
+                        animatronic.lastSeen = new Date();
+                        animatronic.responseTime = responseTime;
+                        animatronic.hubStatus = statusData;
 
-                        // Load integrated services status
-                        await this.loadIntegratedServices();
+                        // Refresh services
+                        const servicesResponse = await fetch(`${animatronic.baseUrl}/api/hub/services`);
+                        if (servicesResponse.ok) {
+                            const servicesData = await servicesResponse.json();
+                            animatronic.services = servicesData.services || [];
+                        }
+
+                        this.log(`${animatronic.name} refreshed successfully`, 'success');
                     } else {
-                        this.log(`Hub status unavailable: ${response.status}`, 'warn');
+                        throw new Error(`HTTP ${response.status}`);
                     }
                 } catch (error) {
-                    this.log(`Error loading hub status: ${error.message}`, 'error');
-                }
-            }
-
-            updateHubStatus(hubData) {
-                const statusElement = document.getElementById('overallStatus');
-                if (statusElement) {
-                    const status = hubData.status === 'healthy' ?
-                        `✅ Hub Active (${hubData.services?.registered || 0} services)` :
-                        `⚠️ Hub Status: ${hubData.status}`;
-                    statusElement.innerHTML = status;
-                }
-            }
-
-            async loadIntegratedServices() {
-                try {
-                    // Load microphone service status
-                    const micResponse = await fetch('/api/hub/microphone/status');
-                    if (micResponse.ok) {
-                        const micData = await micResponse.json();
-                        this.log(`Microphone service: ${micData.microphone?.available || 0} devices`, 'info');
-                    }
-
-                    // Load webcam service status
-                    const camResponse = await fetch('/api/hub/webcam/status');
-                    if (camResponse.ok) {
-                        const camData = await camResponse.json();
-                        this.log(`Webcam service: ${camData.webcam?.available || 0} devices`, 'info');
-                    }
-
-                    // Load AI service status
-                    const aiResponse = await fetch('/api/hub/ai/status');
-                    if (aiResponse.ok) {
-                        const aiData = await aiResponse.json();
-                        this.log(`AI service: ${aiData.ai?.available || 0} agents`, 'info');
-                    }
-
-                } catch (error) {
-                    this.log(`Error loading integrated services: ${error.message}`, 'error');
-                }
-            }
-
-            loadDefaultServices() {
-                // Show services even if no characters are loaded
-                const servicesSection = document.getElementById('servicesSection');
-                servicesSection.classList.add('active');
-
-                const expectedServices = [
-                    // Phase 1 & 2: Core Services
-                    { name: 'Unified Animatronic Hub', port: 8790, icon: '🎯', type: 'hub' },
-                    { name: 'Main Hardware Server', port: 8780, icon: '🔧', type: 'hardware' },
-                    { name: 'Motor Service', port: 8771, icon: '🔄', type: 'motor' },
-                    { name: 'Light Service', port: 8772, icon: '💡', type: 'light' },
-                    { name: 'Sensor Service', port: 8773, icon: '📡', type: 'sensor' },
-                    { name: 'Webcam Service', port: 8774, icon: '📹', type: 'webcam' },
-                    { name: 'Motion Sensor Service', port: 8777, icon: '🔍', type: 'motion' },
-                    { name: 'Head Tracking Service', port: 8778, icon: '🎯', type: 'tracking' },
-                    { name: 'Service Registry', port: 8770, icon: '📋', type: 'registry' },
-                    // Phase 3: Integrated Services
-                    { name: 'ElevenLabs Conversational AI', port: 8600, icon: '🤖', type: 'ai' },
-                    { name: 'Microphone Service', port: 8776, icon: '🎤', type: 'microphone' },
-                    { name: 'Audio Stream Service', port: 8777, icon: '🔊', type: 'audio' }
-                ];
-
-                // Show placeholder message instead of starting polling
-                const grid = document.getElementById('servicesGrid');
-                if (grid) {
-                    grid.innerHTML = '<div style="text-align: center; color: #888; padding: 20px;">Select a character and click Connect to monitor services</div>';
+                    animatronic.status = 'offline';
+                    animatronic.responseTime = Date.now() - startTime;
+                    this.log(`${animatronic.name} refresh failed: ${error.message}`, 'error');
                 }
 
-                this.log('Default services loaded - select a character to begin monitoring', 'info');
+                this.updateFleetStats();
+                this.renderAnimatronicsGrid();
+
+                // Update modal if it's open for this character
+                if (this.selectedCharacter && this.selectedCharacter.id === animatronicId) {
+                    this.showCharacterDetails(animatronic);
+                }
             }
 
             renderCharacterGrid() {
@@ -1269,17 +1757,46 @@
             }
 
             setupEventListeners() {
-                // Connection control event listeners
-                const connectBtn = document.getElementById('connectBtn');
-                const disconnectBtn = document.getElementById('disconnectBtn');
-
-                if (connectBtn) {
-                    connectBtn.addEventListener('click', () => this.connectToCharacter());
+                // Refresh all button
+                const refreshAllBtn = document.getElementById('refreshAllBtn');
+                if (refreshAllBtn) {
+                    refreshAllBtn.addEventListener('click', () => this.refreshFleetStatus());
                 }
 
-                if (disconnectBtn) {
-                    disconnectBtn.addEventListener('click', () => this.disconnectFromCharacter());
+                // Modal close button
+                const closeModal = document.getElementById('closeModal');
+                if (closeModal) {
+                    closeModal.addEventListener('click', () => this.closeModal());
                 }
+
+                // Close modal when clicking outside
+                const modal = document.getElementById('characterModal');
+                if (modal) {
+                    modal.addEventListener('click', (e) => {
+                        if (e.target === modal) {
+                            this.closeModal();
+                        }
+                    });
+                }
+
+                // Keyboard shortcuts
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') {
+                        this.closeModal();
+                    }
+                    if (e.key === 'F5' || (e.ctrlKey && e.key === 'r')) {
+                        e.preventDefault();
+                        this.refreshFleetStatus();
+                    }
+                });
+            }
+
+            closeModal() {
+                const modal = document.getElementById('characterModal');
+                if (modal) {
+                    modal.style.display = 'none';
+                }
+                this.selectedCharacter = null;
             }
 
             showConnectionControls() {
@@ -1412,9 +1929,9 @@
             }
         }
 
-        // Initialize the Services Monitor when the page loads
+        // Initialize the Fleet Monitor when the page loads
         document.addEventListener('DOMContentLoaded', function() {
-            window.servicesMonitor = new ServicesMonitor();
+            window.fleetMonitor = new FleetMonitor();
         });
     </script>
 </body>

@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastUpdated": "2025-08-29T20:44:56.984Z",
+  "lastUpdated": "2025-08-30T20:27:08.887Z",
   "characters": {
     "1": {
       "characterId": 1,
@@ -17,6 +17,55 @@
       "audioProcessing": {},
       "characterSpecific": {}
     },
+    "2": {
+      "characterId": 2,
+      "created": "2025-08-30T20:24:02.101Z",
+      "microphone": {
+        "enabled": true,
+        "sensitivity": 1,
+        "echoCancellation": true,
+        "noiseSuppression": true,
+        "autoGainControl": true,
+        "voiceActivation": false,
+        "voiceActivationThreshold": 0.1
+      },
+      "stt": {
+        "enabled": true,
+        "language": "en",
+        "confidenceThreshold": 0.4,
+        "realTimeProcessing": true,
+        "provider": "elevenlabs",
+        "vadThreshold": 0.8,
+        "silenceDuration": 450,
+        "prefixPadding": 250
+      },
+      "microphoneSTTConfigs": {},
+      "jawAnimation": {
+        "enabled": true,
+        "sensitivity": 1.2,
+        "responseCurve": "exponential",
+        "attackTime": 0.03,
+        "releaseTime": 0.1,
+        "minPosition": 45,
+        "maxPosition": 10,
+        "volumeThreshold": 0.005,
+        "smoothingFactor": 0.7
+      },
+      "audioProcessing": {
+        "sampleRate": 16000,
+        "channels": 1,
+        "bufferSize": 1024,
+        "processingDelay": 100,
+        "enableRealTimeEffects": false
+      },
+      "characterSpecific": {
+        "voiceProfile": "default",
+        "emotionalResponse": true,
+        "contextAwareness": true,
+        "personalityAdjustments": true
+      },
+      "lastModified": "2025-08-30T20:24:30.571Z"
+    },
     "4": {
       "characterId": 4,
       "created": "2025-08-27T20:00:48.527Z",
@@ -32,11 +81,11 @@
       "stt": {
         "enabled": true,
         "language": "en",
-        "confidenceThreshold": 0.8,
+        "confidenceThreshold": 0.1,
         "realTimeProcessing": true,
         "provider": "elevenlabs",
-        "vadThreshold": 0.7,
-        "silenceDuration": 450,
+        "vadThreshold": 0.9,
+        "silenceDuration": 300,
         "prefixPadding": 300
       },
       "microphoneSTTConfigs": {
@@ -75,7 +124,7 @@
         "contextAwareness": true,
         "personalityAdjustments": true
       },
-      "lastModified": "2025-08-29T20:44:56.984Z"
+      "lastModified": "2025-08-30T20:27:08.887Z"
     }
   }
 }

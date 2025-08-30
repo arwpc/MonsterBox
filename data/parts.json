@@ -181,7 +181,7 @@
     "id": 17,
     "name": "Test Webcam",
     "type": "webcam",
-    "characterId": null,
+    "characterId": 4,
     "deviceId": 0,
     "devicePath": "/dev/video0",
     "resolution": "640x480",
