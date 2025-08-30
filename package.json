@@ -6,6 +6,13 @@
   "scripts": {
     "postinstall": "node scripts/install-python-deps.js",
     "start": "node --no-deprecation app.js",
+    "start:orlok": "node --no-deprecation app.js orlok",
+    "start:pumpkinhead": "node --no-deprecation app.js pumpkinhead",
+    "start:coffin": "node --no-deprecation app.js coffin",
+    "start:skulltalker": "node --no-deprecation app.js skulltalker",
+    "list": "node scripts/character-cli.js --list",
+    "status": "node scripts/character-cli.js --status",
+    "reload": "node --no-deprecation app.js --reload",
     "cleanup": "node cleanup-gpio.js",
     "dev": "nodemon --trace-deprecation --trace-warnings app.js",
     "test": "npm run test:unit",

@@ -6,11 +6,12 @@
  * and maintains backward compatibility while eliminating port conflicts.
  */
 
-const { getInstance: getPortManager } = require('./portManager');
-const { getInstance: getServiceDiscovery } = require('./serviceDiscovery');
+const { getInstance: getPortManager, resetInstance: resetPortManager } = require('./portManager');
+const { getInstance: getServiceDiscovery, resetInstance: resetServiceDiscovery } = require('./serviceDiscovery');
 const { getInstance: getEnhancedServiceManager } = require('./enhancedServiceManager');
 const { getInstance: getDynamicWebSocketProxy } = require('./dynamicWebSocketProxy');
 const { validateConfig } = require('../config/portConfig');
+const CharacterBasedServiceLoader = require('./characterBasedServiceLoader');
 const logger = require('../scripts/logger');
 
 class MonsterBoxServiceIntegration {
@@ -20,15 +21,16 @@ class MonsterBoxServiceIntegration {
             enableLegacySupport: true,
             autoStartServices: true,
             enableHealthMonitoring: true,
-            
-            // Service startup order
+            enableCharacterBasedLoading: true,
+
+            // Service startup order (will be filtered by character-based loader)
             coreServices: [
                 'hardwareRegistry',
                 'microphone',
                 'audioStream',
                 'elevenLabsConversational'
             ],
-            
+
             hardwareServices: [
                 'motorService',
                 'lightService',
@@ -40,14 +42,16 @@ class MonsterBoxServiceIntegration {
 
             ...options
         };
-        
+
         this.portManager = getPortManager();
         this.serviceDiscovery = getServiceDiscovery();
         this.serviceManager = getEnhancedServiceManager();
         this.proxyManager = getDynamicWebSocketProxy();
-        
+        this.characterLoader = new CharacterBasedServiceLoader(options.dynamicCharacterManager);
+
         this.isInitialized = false;
         this.startupResults = null;
+        this.characterInfo = null;
     }
     
     /**
@@ -56,39 +60,52 @@ class MonsterBoxServiceIntegration {
     async initialize() {
         try {
             logger.info('🚀 Initializing MonsterBox Service Integration...');
-            
-            // Validate configuration first
+
+            // Reset singleton instances to ensure fresh configuration
+            logger.info('🔄 Resetting service singletons for fresh configuration...');
+            resetPortManager();
+            resetServiceDiscovery();
+
+            // Initialize character-based service loading first
+            if (this.config.enableCharacterBasedLoading) {
+                this.characterInfo = await this.characterLoader.initialize();
+                logger.info(`🎭 Character-based loading enabled for character ${this.characterInfo.characterId}`);
+                logger.info(`📋 Will start ${this.characterInfo.requiredServices.length} services based on character parts`);
+            }
+
+            // Validate configuration
             const configValidation = validateConfig();
             if (!configValidation.valid) {
                 logger.error('❌ Port configuration validation failed:');
                 configValidation.errors.forEach(error => logger.error(`  - ${error}`));
                 throw new Error('Invalid port configuration');
             }
-            
+
             logger.info('✅ Port configuration validated successfully');
-            
+
             // Initialize components in order
             await this.portManager.initialize();
             await this.serviceDiscovery.initialize();
             await this.serviceManager.initialize();
             await this.proxyManager.initialize();
-            
+
             // Set up event handlers
             this.setupEventHandlers();
-            
+
             // Auto-start services if enabled
             if (this.config.autoStartServices) {
                 this.startupResults = await this.startAllServices();
             }
-            
+
             this.isInitialized = true;
             logger.info('✅ MonsterBox Service Integration initialized successfully');
-            
+
             return {
                 success: true,
-                startupResults: this.startupResults
+                startupResults: this.startupResults,
+                characterInfo: this.characterInfo
             };
-            
+
         } catch (error) {
             logger.error('❌ Failed to initialize MonsterBox Service Integration:', error);
             throw error;
@@ -108,9 +125,13 @@ class MonsterBoxServiceIntegration {
         };
         
         try {
+            // Filter services based on character requirements
+            const coreServices = this.filterServicesByCharacter(this.config.coreServices);
+            const hardwareServices = this.filterServicesByCharacter(this.config.hardwareServices);
+
             // Start core services first
             logger.info('🔧 Starting core services...');
-            for (const serviceName of this.config.coreServices) {
+            for (const serviceName of coreServices) {
                 try {
                     const registration = await this.serviceManager.startService(serviceName);
                     results.core.push({ serviceName, success: true, registration });
@@ -128,7 +149,7 @@ class MonsterBoxServiceIntegration {
             
             // Start hardware services
             logger.info('🔧 Starting hardware services...');
-            for (const serviceName of this.config.hardwareServices) {
+            for (const serviceName of hardwareServices) {
                 try {
                     const registration = await this.serviceManager.startService(serviceName);
                     results.hardware.push({ serviceName, success: true, registration });
@@ -422,6 +443,48 @@ class MonsterBoxServiceIntegration {
             logger.error('❌ Error during shutdown:', error);
             throw error;
         }
+    }
+
+    /**
+     * Filter services based on character requirements
+     */
+    filterServicesByCharacter(serviceList) {
+        if (!this.config.enableCharacterBasedLoading || !this.characterLoader) {
+            return serviceList; // Return all services if character-based loading is disabled
+        }
+
+        const filteredServices = serviceList.filter(serviceName => {
+            const shouldStart = this.characterLoader.shouldStartService(serviceName);
+            if (!shouldStart) {
+                logger.info(`⏭️ Skipping ${serviceName} - not required for character ${this.characterInfo?.characterId}`);
+            }
+            return shouldStart;
+        });
+
+        logger.info(`🎭 Filtered ${serviceList.length} services to ${filteredServices.length} for character ${this.characterInfo?.characterId}`);
+        return filteredServices;
+    }
+
+    /**
+     * Get character information
+     */
+    getCharacterInfo() {
+        return this.characterInfo;
+    }
+
+    /**
+     * Get service integration status
+     */
+    getStatus() {
+        return {
+            isInitialized: this.isInitialized,
+            startupResults: this.startupResults,
+            characterInfo: this.characterInfo,
+            portManager: this.portManager.getStatus(),
+            serviceDiscovery: this.serviceDiscovery.getStatus(),
+            serviceManager: this.serviceManager.getStatus(),
+            proxyManager: this.proxyManager.getStatus()
+        };
     }
 }
 

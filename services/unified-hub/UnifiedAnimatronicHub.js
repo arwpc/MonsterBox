@@ -32,8 +32,13 @@ class UnifiedAnimatronicHub {
         this.isInitialized = false;
         this.startTime = new Date();
         
-        // Service registry - will be expanded in future phases
+        // Service registry - Phase 3 service integration
         this.services = new Map();
+
+        // Phase 3: Integrated services
+        this.microphoneService = null;
+        this.webcamService = null;
+        this.aiService = null;
         
         logger.info(`🎯 Initializing Unified Animatronic Hub for ${this.config.hostname}`);
     }

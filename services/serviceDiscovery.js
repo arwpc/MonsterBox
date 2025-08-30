@@ -443,4 +443,14 @@ function getInstance(options = {}) {
     return instance;
 }
 
-module.exports = { ServiceDiscovery, getInstance };
+/**
+ * Reset the singleton instance (for testing or configuration reloading)
+ */
+function resetInstance() {
+    if (instance) {
+        instance.removeAllListeners();
+        instance = null;
+    }
+}
+
+module.exports = { ServiceDiscovery, getInstance, resetInstance };

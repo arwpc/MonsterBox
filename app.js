@@ -890,12 +890,28 @@ async function initializeServiceManagement() {
     try {
         logger.info('🚀 Initializing centralized service management system...');
 
-        // Initialize the MonsterBox Service Integration
+        // Initialize Dynamic Character Management
+        const DynamicCharacterManager = require('./services/dynamicCharacterManager');
+        const dynamicCharacterManager = new DynamicCharacterManager();
+        const characterResult = await dynamicCharacterManager.initialize();
+
+        logger.info(`🎭 Dynamic Character Loading: ${characterResult.character.char_name}`);
+        logger.info(`🔧 Capabilities: ${characterResult.capabilities.capabilities.join(', ')}`);
+
+        // Initialize the MonsterBox Service Integration with dynamic character loading
         const { getInstance: getServiceIntegration } = require('./services/monsterBoxServiceIntegration');
+        const ElevenLabsConfigManager = require('./services/elevenLabsConfigManager');
+
+        // Initialize ElevenLabs configuration
+        const elevenLabsConfig = new ElevenLabsConfigManager();
+        await elevenLabsConfig.initialize();
+
         const serviceIntegration = getServiceIntegration({
             autoStartServices: true,
             enableHealthMonitoring: true,
-            enableLegacySupport: true
+            enableLegacySupport: true,
+            enableCharacterBasedLoading: true,
+            dynamicCharacterManager: dynamicCharacterManager
         });
 
         const result = await serviceIntegration.initialize();
@@ -905,12 +921,33 @@ async function initializeServiceManagement() {
 
             // Store service integration globally for access by routes
             global.serviceIntegration = serviceIntegration;
+            global.elevenLabsConfig = elevenLabsConfig;
+            global.dynamicCharacterManager = dynamicCharacterManager;
 
             // Log startup results
             if (result.startupResults) {
                 const { total } = result.startupResults;
                 logger.info(`📊 Service startup summary: ${total.started} started, ${total.failed} failed`);
             }
+
+            // Log character information
+            if (result.characterInfo) {
+                logger.info(`🎭 Character-based loading: Character ${result.characterInfo.characterId} with ${result.characterInfo.characterParts} parts`);
+                logger.info(`📋 Services loaded: ${result.characterInfo.requiredServices.join(', ')}`);
+
+                if (result.characterInfo.dynamicLoading) {
+                    logger.info(`🔄 Dynamic character loading enabled with hot reloading`);
+                }
+            }
+
+            // Set up hot reloading for capability changes
+            dynamicCharacterManager.onCapabilityChange(async (changes, updatedConfig) => {
+                logger.info(`🔄 Capability changes detected: ${changes.length} changes`);
+                changes.forEach(change => logger.info(`   - ${change}`));
+
+                // TODO: Implement service hot reloading based on capability changes
+                logger.info('🔄 Service hot reloading will be implemented in next phase');
+            });
 
             // Perform initial health check
             setTimeout(async () => {

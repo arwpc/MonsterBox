@@ -124,6 +124,7 @@ const portConfig = {
             type: 'hardware',
             tags: ['audio', 'input', 'hardware'],
             dependencies: [],
+            script: 'scripts/hardware/microphone_websocket_service.py',
             metadata: {
                 description: 'Microphone WebSocket Service',
                 protocol: 'websocket'
@@ -133,8 +134,9 @@ const portConfig = {
             type: 'websocket',
             tags: ['audio', 'stream', 'output'],
             dependencies: [],
+            script: null, // No script - handled by main app
             metadata: {
-                description: 'Audio Stream Service',
+                description: 'Audio Stream Service (Built-in)',
                 protocol: 'websocket'
             }
         },
@@ -142,8 +144,9 @@ const portConfig = {
             type: 'elevenlabs',
             tags: ['ai', 'conversation', 'elevenlabs'],
             dependencies: ['audioStream'],
+            script: null, // No script - handled by main app
             metadata: {
-                description: 'ElevenLabs Conversational AI Service',
+                description: 'ElevenLabs Conversational AI Service (Built-in)',
                 protocol: 'websocket'
             }
         },
@@ -151,8 +154,9 @@ const portConfig = {
             type: 'hardware',
             tags: ['registry', 'hardware', 'core'],
             dependencies: [],
+            script: null, // No script - handled by unified hub
             metadata: {
-                description: 'Hardware Registry Service',
+                description: 'Hardware Registry Service (Unified Hub)',
                 protocol: 'websocket'
             }
         },
@@ -160,8 +164,9 @@ const portConfig = {
             type: 'hardware',
             tags: ['motor', 'hardware', 'control'],
             dependencies: ['hardwareRegistry'],
+            script: null, // No script - handled by unified hub
             metadata: {
-                description: 'Motor Control Service',
+                description: 'Motor Control Service (Unified Hub)',
                 protocol: 'websocket'
             }
         },
@@ -169,8 +174,9 @@ const portConfig = {
             type: 'hardware',
             tags: ['light', 'hardware', 'control'],
             dependencies: ['hardwareRegistry'],
+            script: null, // No script - handled by unified hub
             metadata: {
-                description: 'Light Control Service',
+                description: 'Light Control Service (Unified Hub)',
                 protocol: 'websocket'
             }
         },
@@ -178,8 +184,9 @@ const portConfig = {
             type: 'hardware',
             tags: ['sensor', 'hardware', 'input'],
             dependencies: ['hardwareRegistry'],
+            script: null, // No script - handled by unified hub
             metadata: {
-                description: 'Sensor Service',
+                description: 'Sensor Service (Unified Hub)',
                 protocol: 'websocket'
             }
         },
@@ -187,8 +194,9 @@ const portConfig = {
             type: 'hardware',
             tags: ['webcam', 'hardware', 'video'],
             dependencies: ['hardwareRegistry'],
+            script: 'scripts/hardware/webcam_service.py',
             metadata: {
-                description: 'Webcam Service',
+                description: 'Webcam Streaming Service',
                 protocol: 'websocket'
             }
         },
@@ -196,8 +204,9 @@ const portConfig = {
             type: 'hardware',
             tags: ['actuator', 'hardware', 'control'],
             dependencies: ['hardwareRegistry'],
+            script: null, // No script - handled by unified hub
             metadata: {
-                description: 'Linear Actuator Service',
+                description: 'Linear Actuator Service (Unified Hub)',
                 protocol: 'websocket'
             }
         },
@@ -205,6 +214,7 @@ const portConfig = {
             type: 'hardware',
             tags: ['tracking', 'hardware', 'ai'],
             dependencies: ['webcamService'],
+            script: 'scripts/hardware/head_tracking_service.py',
             metadata: {
                 description: 'Head Tracking Service',
                 protocol: 'websocket'

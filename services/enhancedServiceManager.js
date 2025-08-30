@@ -297,8 +297,19 @@ class EnhancedServiceManager extends EventEmitter {
         return new Promise((resolve, reject) => {
             const { script, type = 'node', args = [] } = config;
             
+            // Handle services without scripts (built-in or unified hub services)
             if (!script) {
-                reject(new Error(`No script defined for service ${serviceName}`));
+                logger.info(`⏭️ Skipping ${serviceName} - no script defined (handled by unified hub or built-in)`);
+                // Return a mock process object for consistency
+                const mockProcess = {
+                    pid: null,
+                    killed: false,
+                    on: () => {},
+                    kill: () => {},
+                    stdout: null,
+                    stderr: null
+                };
+                resolve(mockProcess);
                 return;
             }
             

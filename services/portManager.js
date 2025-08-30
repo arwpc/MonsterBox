@@ -14,44 +14,31 @@ const path = require('path');
 const net = require('net');
 const EventEmitter = require('events');
 const logger = require('../scripts/logger');
+const { getEnvironmentConfig } = require('../config/portConfig');
 
 class PortManager extends EventEmitter {
     constructor(options = {}) {
         super();
-        
+
+        // Load configuration from portConfig.js
+        const envConfig = getEnvironmentConfig();
+
         // Configuration
         this.config = {
-            // Port ranges for different service types
-            ranges: {
-                main: { start: 80, end: 81 },           // Main application ports
-                websocket: { start: 8000, end: 8199 },      // Direct WebSocket services
-                proxy: { start: 8200, end: 8399 },          // Browser proxy services
-                hardware: { start: 8400, end: 8599 },       // Hardware-specific services
-                testing: { start: 8700, end: 8799 },        // Testing and development
-                reserved: { start: 8800, end: 8999 }        // Reserved for future use
-            },
-            
-            // Reserved ports that should never be allocated
-            reserved: [22, 80, 443, 3000, 5432, 6379, 27017],
-            
-            // Service priorities (higher = more important)
-            priorities: {
-                main: 100,
-                hardware: 90,
-                websocket: 80,
-                proxy: 60,
-                testing: 50
-            },
+            // Use environment-specific port ranges
+            ranges: envConfig.ranges,
+
+            // Use environment-specific reserved ports
+            reserved: envConfig.reserved,
+
+            // Use environment-specific priorities
+            priorities: envConfig.priorities,
             
             // Registry file location
             registryFile: path.join(__dirname, '../data/port-registry.json'),
             
-            // Health check settings
-            healthCheck: {
-                interval: 30000,    // 30 seconds
-                timeout: 5000,      // 5 seconds
-                retries: 3
-            },
+            // Use environment-specific health check settings
+            healthCheck: envConfig.healthCheck,
             
             ...options
         };
@@ -477,4 +464,14 @@ function getInstance(options = {}) {
     return instance;
 }
 
-module.exports = { PortManager, getInstance };
+/**
+ * Reset the singleton instance (for testing or configuration reloading)
+ */
+function resetInstance() {
+    if (instance) {
+        instance.removeAllListeners();
+        instance = null;
+    }
+}
+
+module.exports = { PortManager, getInstance, resetInstance };
