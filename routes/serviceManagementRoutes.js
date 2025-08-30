@@ -33,13 +33,20 @@ router.get('/status', async (req, res) => {
  */
 router.get('/connections', async (req, res) => {
     try {
+        // Log remote service monitoring connections
+        const clientIP = req.ip || req.connection.remoteAddress || req.socket.remoteAddress ||
+                        (req.connection.socket ? req.connection.socket.remoteAddress : null);
+        const userAgent = req.get('User-Agent') || 'Unknown';
+
+        logger.info(`🔍 Remote Service Monitoring Connected from ${clientIP} (${userAgent})`);
+
         if (!global.serviceIntegration) {
             return res.status(503).json({
                 error: 'Service integration not available',
                 legacy: true
             });
         }
-        
+
         const connections = global.serviceIntegration.getServiceConnections();
         res.json(connections);
     } catch (error) {

@@ -4,6 +4,7 @@
   "description": "A refactored scene builder application for managing scenes and steps.",
   "main": "app.js",
   "scripts": {
+    "postinstall": "node scripts/install-python-deps.js",
     "start": "node --no-deprecation app.js",
     "cleanup": "node cleanup-gpio.js",
     "dev": "nodemon --trace-deprecation --trace-warnings app.js",
@@ -84,7 +85,9 @@
     "test:voice-chat-routes": "cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js tests/voice-chat-routes.test.js",
     "test:voice-all": "cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js tests/voice-interaction-system.test.js tests/topmediai-tts-integration.test.js tests/openai-whisper-stt.test.js tests/voice-chat-routes.test.js",
     "test:microphone": "node tests/microphone-integration-test.js",
-    "test:microphone-stt": "node tests/microphone-integration-test.js"
+    "test:microphone-stt": "node tests/microphone-integration-test.js",
+    "install:python-deps": "node scripts/install-python-deps.js",
+    "install:python-requirements": "pip3 install -r requirements.txt"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.53.0",

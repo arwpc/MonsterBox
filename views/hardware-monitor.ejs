@@ -178,6 +178,7 @@
         .log-info { color: #00ff00; }
         .log-warning { color: #ffff00; }
         .log-error { color: #ff0000; }
+        .log-success { color: #00ff88; }
 
         .info-section {
             background: #001100;
@@ -234,6 +235,67 @@
             background: #00ff00;
             color: #000000;
             box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+        }
+
+        .connection-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            padding: 15px;
+            background: #000800;
+            border: 1px solid #00aa00;
+            border-radius: 8px;
+        }
+
+        .connection-btn {
+            background: #001100;
+            border: 2px solid #00ff00;
+            color: #00ff00;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'VT323', monospace;
+            font-size: 1.1em;
+            min-width: 120px;
+        }
+
+        .connection-btn:hover {
+            background: #00ff00;
+            color: #000000;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.4);
+        }
+
+        .connection-btn:disabled {
+            background: #333333;
+            border-color: #666666;
+            color: #666666;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .connect-btn {
+            border-color: #00ff00;
+            color: #00ff00;
+        }
+
+        .disconnect-btn {
+            border-color: #ff6666;
+            color: #ff6666;
+        }
+
+        .disconnect-btn:hover {
+            background: #ff6666;
+            color: #000000;
+            box-shadow: 0 0 10px rgba(255, 102, 102, 0.4);
+        }
+
+        .connection-status {
+            flex: 1;
+            text-align: right;
+            color: #cccccc;
+            font-family: 'VT323', monospace;
+            font-size: 1.1em;
         }
 
         h1, h2, h3 {
@@ -308,6 +370,13 @@
             <div class="character-grid" id="characterGrid">
                 <!-- Characters will be loaded here -->
             </div>
+            <div class="connection-controls" id="connectionControls" style="margin-top: 15px; display: none;">
+                <button id="connectBtn" class="connection-btn connect-btn">🔌 Connect</button>
+                <button id="disconnectBtn" class="connection-btn disconnect-btn">🔌 Disconnect</button>
+                <div class="connection-status" id="connectionStatus">
+                    <span id="connectionStatusText">No character selected</span>
+                </div>
+            </div>
         </div>
 
         <div class="services-section" id="servicesSection">
@@ -328,6 +397,7 @@
     </main>
 
     <script>
+        // Cache buster: <%= Date.now() %>
         class ServicesMonitor {
             constructor() {
                 this.selectedCharacter = null;
@@ -337,14 +407,19 @@
                 this.serviceConnections = {};
                 this.pollingInterval = null;
                 this.lastConnectionsSnapshot = null;
+                this.isConnected = false;
 
-                this.init();
+                this.init().catch(error => {
+                    console.error('Failed to initialize services monitor:', error);
+                    this.log(`Initialization error: ${error.message}`, 'error');
+                });
             }
 
-            init() {
+            async init() {
                 this.log('Services monitor initialized...', 'info');
-                this.loadCharacters();
+                await this.loadCharacters();
                 this.setupEventListeners();
+                this.startCharacterRefresh();
 
                 // Initial status update
                 setTimeout(() => {
@@ -352,30 +427,59 @@
                 }, 1000);
             }
 
+            startCharacterRefresh() {
+                // Refresh character list every 30 seconds to detect new characters
+                setInterval(async () => {
+                    try {
+                        await this.loadCharacters();
+                    } catch (error) {
+                        console.error('Error refreshing character list:', error);
+                    }
+                }, 30000);
+
+                this.log('Started periodic character list refresh (every 30 seconds)', 'info');
+            }
+
             async loadCharacters() {
                 try {
                     this.log('Fetching characters from /api/characters...', 'info');
                     const response = await fetch('/api/characters');
-                    
+
                     if (!response.ok) {
                         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                     }
-                    
-                    this.characters = await response.json();
+
+                    const newCharacters = await response.json();
+
+                    // Check if characters have changed
+                    const charactersChanged = JSON.stringify(this.characters) !== JSON.stringify(newCharacters);
+                    this.characters = newCharacters;
 
                     this.renderCharacterGrid();
                     this.log(`Loaded ${this.characters.length} characters`, 'info');
-                    
-                    // Auto-select the first character if available
-                    if (this.characters.length > 0) {
-                        this.selectCharacter(this.characters[0]);
-                    } else {
-                        this.log('No characters found, loading default services', 'warning');
-                        this.loadDefaultServices();
+
+                    // Only auto-select if no character is currently selected or if characters changed
+                    if (!this.selectedCharacter || charactersChanged) {
+                        if (this.characters.length > 0) {
+                            // Try to reselect the same character if it still exists
+                            let characterToSelect = this.characters[0];
+                            if (this.selectedCharacter) {
+                                const existingCharacter = this.characters.find(c => c.id === this.selectedCharacter.id);
+                                if (existingCharacter) {
+                                    characterToSelect = existingCharacter;
+                                }
+                            }
+                            this.selectCharacter(characterToSelect);
+                        } else {
+                            this.log('No characters found, loading default services', 'warning');
+                            this.hideConnectionControls();
+                            this.loadDefaultServices();
+                        }
                     }
                 } catch (error) {
                     this.log('Failed to load characters: ' + error.message, 'error');
                     // If character loading fails, show services anyway for the current device
+                    this.hideConnectionControls();
                     this.loadDefaultServices();
                 }
             }
@@ -396,9 +500,13 @@
                     { name: 'Service Registry', port: 8770, icon: '📋', type: 'registry' }
                 ];
 
-                // Start polling for service connections using centralized API
-                this.startPolling();
-                this.log('Started service monitoring using centralized API', 'info');
+                // Show placeholder message instead of starting polling
+                const grid = document.getElementById('servicesGrid');
+                if (grid) {
+                    grid.innerHTML = '<div style="text-align: center; color: #888; padding: 20px;">Select a character and click Connect to monitor services</div>';
+                }
+
+                this.log('Default services loaded - select a character to begin monitoring', 'info');
             }
 
             renderCharacterGrid() {
@@ -424,20 +532,22 @@
             }
 
             selectCharacter(character) {
-                console.log('Selecting character:', character);
-
                 // Update UI to show selected character
                 document.querySelectorAll('.character-card').forEach(card => {
                     card.classList.remove('active');
                 });
 
                 const selectedCard = document.querySelector(`[data-character-id="${character.id}"]`);
-                console.log('Selected card:', selectedCard);
                 if (selectedCard) {
                     selectedCard.classList.add('active');
                 }
 
                 this.selectedCharacter = character;
+                console.log('Character selected:', character);
+                console.log('Character host:', character.animatronic?.rpi_config?.host);
+
+                this.showConnectionControls();
+                this.updateConnectionStatus();
                 this.loadCharacterServices(character);
                 this.log(`Selected character: ${character.char_name || character.name}`, 'info');
             }
@@ -458,15 +568,46 @@
                     { name: 'Service Registry', port: 8770, icon: '📋', type: 'registry' }
                 ];
 
-                // Start polling for service connections using centralized API
-                this.startPolling();
+                // Show placeholder message - user needs to click Connect to start monitoring
+                const grid = document.getElementById('servicesGrid');
+                if (grid) {
+                    const characterName = character.char_name || character.name;
+                    grid.innerHTML = `<div style="text-align: center; color: #888; padding: 20px;">Ready to monitor services for ${characterName}<br>Click Connect to begin</div>`;
+                }
             }
 
 
 
             async loadServiceConnections() {
                 try {
-                    const response = await fetch('/api/service-management/connections');
+                    // Determine which host to query for service connections
+                    let apiUrl = '/api/service-management/connections';
+
+                    // If connected to a remote character, query their services directly
+                    if (this.selectedCharacter && this.selectedCharacter.animatronic &&
+                        this.selectedCharacter.animatronic.rpi_config &&
+                        this.selectedCharacter.animatronic.rpi_config.host) {
+
+                        const characterHost = this.selectedCharacter.animatronic.rpi_config.host;
+                        const characterName = this.selectedCharacter.char_name || this.selectedCharacter.name;
+
+                        // For remote characters, log the connection and use legacy service checking
+                        this.log(`Connecting to ${characterName} at ${characterHost}...`, 'info');
+
+                        // Still call the API to log the remote connection
+                        try {
+                            await fetch(apiUrl);
+                        } catch (error) {
+                            console.log('API call for logging failed, continuing with remote service check:', error.message);
+                        }
+
+                        // Use legacy service checking for remote characters
+                        this.log(`Checking services on remote character ${characterName} (${characterHost})`, 'info');
+                        await this.renderLegacyServices();
+                        return;
+                    }
+
+                    const response = await fetch(apiUrl);
 
                     if (response.status === 503) {
                         const errorData = await response.json();
@@ -485,7 +626,7 @@
                     // Debounce updates - only render if connections have changed
                     const connectionsSnapshot = JSON.stringify(connections);
                     if (this.lastConnectionsSnapshot !== connectionsSnapshot) {
-                        this.renderServicesFromConnections(connections);
+                        await this.renderServicesFromConnections(connections);
                         this.lastConnectionsSnapshot = connectionsSnapshot;
                         this.log('Service connections updated from centralized API', 'info');
                     }
@@ -497,11 +638,20 @@
                 }
             }
 
-            renderServicesFromConnections(connections) {
+            async renderServicesFromConnections(connections) {
                 const grid = document.getElementById('servicesGrid');
                 grid.innerHTML = '';
 
-                // Define service display order and icons
+                // Check if centralized system has services
+                const hasServices = Object.keys(connections).length > 0;
+
+                if (!hasServices) {
+                    // Show legacy services that are actually running
+                    await this.renderLegacyServices();
+                    return;
+                }
+
+                // Define service display order and icons for centralized services
                 const serviceOrder = [
                     { key: 'hardwareRegistry', name: 'Main Hardware Server', icon: '🔧', type: 'hardware' },
                     { key: 'motorService', name: 'Motor Service', icon: '🔄', type: 'motor' },
@@ -579,6 +729,267 @@
 
                 this.renderFallbackServices(expectedServices);
                 this.log('Using legacy fallback mode - centralized integration unavailable', 'warning');
+
+                // Update system status for fallback mode
+                const statusElement = document.getElementById('overallStatus');
+                if (statusElement) {
+                    statusElement.textContent = 'All services offline - Hardware services not running. Services will show as online when hardware processes are started.';
+                    statusElement.style.color = '#ff6b6b';
+                }
+            }
+
+            async renderLegacyServices() {
+                const grid = document.getElementById('servicesGrid');
+                grid.innerHTML = '';
+
+                // Get the currently selected character
+                const selectedCharacter = this.selectedCharacter;
+                const characterName = selectedCharacter ? (selectedCharacter.char_name || selectedCharacter.name) : 'Unknown';
+
+                // Define services to check
+                const allServices = [
+                    { name: 'ElevenLabs Conversational AI', port: 8771, icon: '🤖', type: 'elevenlabs' },
+                    { name: 'ElevenLabs Live STT', port: 8778, icon: '🎤', type: 'stt' },
+                    { name: 'Microphone Service', port: 8776, icon: '🎙️', type: 'microphone' },
+                    { name: 'ElevenLabs SSL Proxy', port: 8872, icon: '🔐', type: 'proxy-ssl' },
+                    { name: 'STT SSL Proxy', port: 8873, icon: '🔐', type: 'proxy-stt' },
+                    { name: 'Main Hardware Server', port: 8780, icon: '🔧', type: 'hardware' },
+                    { name: 'Service Registry', port: 8770, icon: '📋', type: 'registry' },
+                    { name: 'Light Service', port: 8772, icon: '💡', type: 'light' }
+                ];
+
+                // First render services with "checking" status
+                this.renderServicesWithStatus(allServices, 'checking', characterName);
+
+                // Then check each service status
+                const serviceStatuses = await this.checkServiceStatuses(allServices, characterName);
+
+                // Re-render with actual statuses
+                this.renderServicesWithStatus(serviceStatuses, null, characterName);
+            }
+
+            async checkServiceStatuses(services, characterName) {
+                const promises = services.map(service => {
+                    return this.checkServiceStatus(service, characterName)
+                        .then(status => ({
+                            ...service,
+                            status: status.online ? 'online' : 'offline',
+                            lastChecked: new Date().toLocaleTimeString(),
+                            details: status.details
+                        }))
+                        .catch(error => ({
+                            ...service,
+                            status: 'offline',
+                            lastChecked: new Date().toLocaleTimeString(),
+                            details: `Error: ${error.message}`
+                        }));
+                });
+
+                return Promise.all(promises);
+            }
+
+            checkServiceStatus(service, characterName) {
+                // Check services for all characters - services may be available depending on configuration
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+                    // Try WebSocket connection for WebSocket services
+                    if (['elevenlabs', 'stt', 'microphone', 'hardware', 'registry', 'light'].includes(service.type)) {
+                        return this.checkWebSocketService(service.port, controller.signal);
+                    }
+
+                    // Try HTTPS connection for SSL proxy services
+                    if (service.type.includes('proxy')) {
+                        return this.checkHttpsService(service.port, controller.signal);
+                    }
+
+                    clearTimeout(timeoutId);
+                    return Promise.resolve({ online: false, details: 'Unknown service type' });
+
+                } catch (error) {
+                    return Promise.resolve({ online: false, details: error.message });
+                }
+            }
+
+            async checkWebSocketService(port, signal) {
+                return new Promise((resolve) => {
+                    try {
+                        // Use the selected character's host if available, otherwise use current host
+                        let hostname = window.location.hostname;
+                        let isRemoteCharacter = false;
+
+                        if (this.selectedCharacter && this.selectedCharacter.animatronic &&
+                            this.selectedCharacter.animatronic.rpi_config &&
+                            this.selectedCharacter.animatronic.rpi_config.host) {
+
+                            const characterHost = this.selectedCharacter.animatronic.rpi_config.host;
+                            const currentHostname = window.location.hostname;
+
+                            // Check if this is actually the local system
+                            // Compare with current hostname and common local addresses
+                            const isLocalSystem = (
+                                characterHost === currentHostname ||
+                                characterHost === 'localhost' ||
+                                characterHost === '127.0.0.1' ||
+                                (currentHostname === 'skulltalker' && characterHost === '192.168.8.130') ||
+                                (currentHostname === 'orlok' && characterHost === '192.168.8.140') ||
+                                (currentHostname === 'pumpkinhead' && characterHost === '192.168.1.200')
+                            );
+
+                            if (!isLocalSystem) {
+                                hostname = characterHost;
+                                isRemoteCharacter = true;
+                            }
+                            // If it's the local system, keep hostname as window.location.hostname
+                        }
+
+                        console.log(`Checking WebSocket service on ${hostname}:${port} (isRemote: ${isRemoteCharacter})`);
+
+                        // Determine protocols based on page security and character type
+                        let protocols = [];
+                        const isSecurePage = window.location.protocol === 'https:';
+
+                        if (isSecurePage) {
+                            // For HTTPS pages, only use WSS to avoid mixed content issues
+                            protocols = [`wss://${hostname}:${port}`];
+                        } else {
+                            // For HTTP pages, try WSS first, then WS for remote characters
+                            protocols = isRemoteCharacter ? [`wss://${hostname}:${port}`, `ws://${hostname}:${port}`] : [`wss://${hostname}:${port}`];
+                        }
+
+                        let attemptIndex = 0;
+
+                        const tryConnection = () => {
+                            if (attemptIndex >= protocols.length) {
+                                resolve({ online: false, details: `All WebSocket connection attempts failed to ${hostname}:${port}` });
+                                return;
+                            }
+
+                            const wsUrl = protocols[attemptIndex];
+                            const ws = new WebSocket(wsUrl);
+
+                            const timeout = setTimeout(() => {
+                                ws.close();
+                                attemptIndex++;
+                                tryConnection();
+                            }, 2000);
+
+                            ws.onopen = () => {
+                                clearTimeout(timeout);
+                                ws.close();
+                                resolve({ online: true, details: `WebSocket connection successful to ${hostname}:${port}` });
+                            };
+
+                            ws.onerror = () => {
+                                clearTimeout(timeout);
+                                attemptIndex++;
+                                tryConnection();
+                            };
+
+                            if (signal.aborted) {
+                                clearTimeout(timeout);
+                                ws.close();
+                                resolve({ online: false, details: 'Request aborted' });
+                            }
+                        };
+
+                        tryConnection();
+
+                    } catch (error) {
+                        resolve({ online: false, details: `WebSocket error: ${error.message}` });
+                    }
+                });
+            }
+
+            async checkHttpsService(port, signal) {
+                // Use the selected character's host if available, otherwise use current host
+                let hostname = window.location.hostname;
+
+                if (this.selectedCharacter && this.selectedCharacter.animatronic &&
+                    this.selectedCharacter.animatronic.rpi_config &&
+                    this.selectedCharacter.animatronic.rpi_config.host) {
+                    hostname = this.selectedCharacter.animatronic.rpi_config.host;
+                }
+
+                try {
+                    const response = await fetch(`https://${hostname}:${port}`, {
+                        method: 'GET',
+                        signal: signal,
+                        timeout: 2000
+                    });
+
+                    return {
+                        online: true,
+                        details: `HTTPS proxy responding from ${hostname}:${port} (${response.status})`
+                    };
+                } catch (error) {
+                    if (error.name === 'AbortError') {
+                        return { online: false, details: 'Request timeout' };
+                    }
+                    return {
+                        online: false,
+                        details: `HTTPS connection failed to ${hostname}:${port} - ${error.message}`
+                    };
+                }
+            }
+
+            renderServicesWithStatus(services, defaultStatus, characterName) {
+                const grid = document.getElementById('servicesGrid');
+                grid.innerHTML = '';
+
+                services.forEach(service => {
+                    const card = document.createElement('div');
+                    card.className = 'service-card';
+                    card.dataset.serviceType = service.type;
+                    card.dataset.servicePort = service.port;
+
+                    let statusClass, statusText, statusDetail;
+
+                    if (defaultStatus === 'checking') {
+                        statusClass = 'status-unknown';
+                        statusText = 'Checking...';
+                        statusDetail = 'Testing connection';
+                    } else {
+                        statusClass = service.status === 'online' ? 'status-online' : 'status-offline';
+                        statusText = service.status === 'online' ? 'Online' : 'Offline';
+                        statusDetail = service.details || (service.status === 'online' ? 'Service running' : 'Service not found');
+                    }
+
+                    card.innerHTML = `
+                        <div class="service-header">
+                            <div class="service-icon">${service.icon}</div>
+                            <div class="service-name">${service.name}</div>
+                            <div class="status-indicator ${statusClass}" id="status-${service.type}"></div>
+                        </div>
+                        <div class="service-details" id="details-${service.type}">
+                            <div>Port: ${service.port}</div>
+                            <div id="status-text-${service.type}">${statusText}</div>
+                            <div>${statusDetail}</div>
+                            <div>Last checked: ${service.lastChecked || 'N/A'}</div>
+                        </div>
+                    `;
+
+                    grid.appendChild(card);
+                });
+
+                // Update system status (only if not checking)
+                if (defaultStatus !== 'checking') {
+                    const onlineCount = services.filter(s => s.status === 'online').length;
+                    const totalCount = services.length;
+                    const statusElement = document.getElementById('overallStatus');
+                    if (statusElement) {
+                        if (onlineCount > 0) {
+                            statusElement.textContent = `${onlineCount}/${totalCount} services online for ${characterName}`;
+                            statusElement.style.color = '#00ff00';
+                        } else {
+                            statusElement.textContent = `All services offline for ${characterName}`;
+                            statusElement.style.color = '#ff6b6b';
+                        }
+                    }
+
+                    this.log(`Found ${onlineCount} online services for ${characterName}`, 'info');
+                }
             }
 
             renderFallbackServices(services) {
@@ -615,6 +1026,12 @@
                     clearInterval(this.pollingInterval);
                 }
 
+                // Only start polling if connected to a character
+                if (!this.isConnected || !this.selectedCharacter) {
+                    this.log('Not starting polling - no character connected', 'info');
+                    return;
+                }
+
                 // Initial load
                 this.loadServiceConnections();
 
@@ -623,7 +1040,8 @@
                     this.loadServiceConnections();
                 }, 10000);
 
-                this.log('Started polling service connections every 10 seconds', 'info');
+                const characterName = this.selectedCharacter.char_name || this.selectedCharacter.name;
+                this.log(`Started polling service connections for ${characterName} every 10 seconds`, 'info');
             }
 
             stopPolling() {
@@ -685,7 +1103,126 @@
             }
 
             setupEventListeners() {
-                // Add any additional event listeners here
+                // Connection control event listeners
+                const connectBtn = document.getElementById('connectBtn');
+                const disconnectBtn = document.getElementById('disconnectBtn');
+
+                if (connectBtn) {
+                    connectBtn.addEventListener('click', () => this.connectToCharacter());
+                }
+
+                if (disconnectBtn) {
+                    disconnectBtn.addEventListener('click', () => this.disconnectFromCharacter());
+                }
+            }
+
+            showConnectionControls() {
+                const connectionControls = document.getElementById('connectionControls');
+                if (connectionControls) {
+                    connectionControls.style.display = 'flex';
+                }
+            }
+
+            hideConnectionControls() {
+                const connectionControls = document.getElementById('connectionControls');
+                if (connectionControls) {
+                    connectionControls.style.display = 'none';
+                }
+            }
+
+            updateConnectionStatus() {
+                const statusText = document.getElementById('connectionStatusText');
+                const connectBtn = document.getElementById('connectBtn');
+                const disconnectBtn = document.getElementById('disconnectBtn');
+
+                if (!this.selectedCharacter) {
+                    if (statusText) statusText.textContent = 'No character selected';
+                    if (connectBtn) connectBtn.disabled = true;
+                    if (disconnectBtn) disconnectBtn.disabled = true;
+                    return;
+                }
+
+                const characterName = this.selectedCharacter.char_name || this.selectedCharacter.name;
+
+                if (this.isConnected) {
+                    if (statusText) statusText.textContent = `Connected to ${characterName}`;
+                    if (connectBtn) connectBtn.disabled = true;
+                    if (disconnectBtn) disconnectBtn.disabled = false;
+                } else {
+                    if (statusText) statusText.textContent = `Ready to connect to ${characterName}`;
+                    if (connectBtn) connectBtn.disabled = false;
+                    if (disconnectBtn) disconnectBtn.disabled = true;
+                }
+            }
+
+            async connectToCharacter() {
+                if (!this.selectedCharacter) {
+                    this.log('No character selected for connection', 'error');
+                    return;
+                }
+
+                const characterName = this.selectedCharacter.char_name || this.selectedCharacter.name;
+                const characterHost = this.selectedCharacter.animatronic &&
+                                    this.selectedCharacter.animatronic.rpi_config &&
+                                    this.selectedCharacter.animatronic.rpi_config.host
+                                    ? this.selectedCharacter.animatronic.rpi_config.host
+                                    : 'localhost';
+
+                this.log(`Connecting to ${characterName} at ${characterHost}...`, 'info');
+                console.log('Selected character data:', this.selectedCharacter);
+
+                try {
+                    // Reset connections and point to the selected character
+                    this.stopPolling();
+                    this.serviceConnections = {};
+                    this.lastConnectionsSnapshot = null;
+
+                    // Mark as connected
+                    this.isConnected = true;
+                    this.updateConnectionStatus();
+
+                    // Restart service monitoring for the selected character
+                    this.startPolling();
+
+                    this.log(`Successfully connected to ${characterName} at ${characterHost}`, 'success');
+
+                } catch (error) {
+                    this.log(`Failed to connect to ${characterName}: ${error.message}`, 'error');
+                    this.isConnected = false;
+                    this.updateConnectionStatus();
+                }
+            }
+
+            async disconnectFromCharacter() {
+                if (!this.selectedCharacter) {
+                    this.log('No character selected for disconnection', 'error');
+                    return;
+                }
+
+                const characterName = this.selectedCharacter.char_name || this.selectedCharacter.name;
+                this.log(`Disconnecting from ${characterName}...`, 'info');
+
+                try {
+                    // Stop polling and clear connections
+                    this.stopPolling();
+                    this.serviceConnections = {};
+                    this.lastConnectionsSnapshot = null;
+
+                    // Clear services display
+                    const grid = document.getElementById('servicesGrid');
+                    if (grid) {
+                        grid.innerHTML = '<div style="text-align: center; color: #888; padding: 20px;">Disconnected - Click Connect to monitor services</div>';
+                    }
+
+                    // Mark as disconnected
+                    this.isConnected = false;
+                    this.updateConnectionStatus();
+
+                    this.log(`Successfully disconnected from ${characterName}`, 'info');
+
+                } catch (error) {
+                    this.log(`Error during disconnection: ${error.message}`, 'error');
+                }
             }
 
             log(message, type = 'info') {

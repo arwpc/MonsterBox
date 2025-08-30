@@ -23,7 +23,7 @@ const portConfig = {
                 testing: { start: 8700, end: 8799 },
                 reserved: { start: 8800, end: 8999 }
             },
-            reserved: [22, 80, 443, 5432, 6379, 27017],
+            reserved: [22, 443, 5432, 6379, 27017],
             healthCheck: {
                 interval: 30000,
                 timeout: 5000,
@@ -41,7 +41,7 @@ const portConfig = {
                 testing: { start: 8900, end: 8999 },
                 reserved: { start: 9000, end: 9999 }
             },
-            reserved: [22, 80, 443, 5432, 6379, 27017, 8080, 8443],
+            reserved: [22, 443, 5432, 6379, 27017, 8080, 8443],
             healthCheck: {
                 interval: 60000,
                 timeout: 10000,
@@ -59,7 +59,7 @@ const portConfig = {
                 testing: { start: 9700, end: 9799 },
                 reserved: { start: 9800, end: 9999 }
             },
-            reserved: [22, 80, 443],
+            reserved: [22, 443],
             healthCheck: {
                 interval: 10000,
                 timeout: 2000,

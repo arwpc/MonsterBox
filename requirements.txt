@@ -1,0 +1,22 @@
+# MonsterBox Python Dependencies
+# Required packages for hardware services
+
+# Core WebSocket support for hardware communication
+websockets>=10.0
+
+# Hardware control libraries (Raspberry Pi)
+RPi.GPIO>=0.7.0
+gpiozero>=1.6.0
+
+# Adafruit hardware libraries (optional)
+adafruit-circuitpython-motor>=3.0.0
+adafruit-circuitpython-servo>=1.0.0
+
+# Audio processing (optional)
+pyaudio>=0.2.11
+
+# Computer vision (optional)
+opencv-python>=4.5.0
+
+# Serial communication (optional)
+pyserial>=3.5

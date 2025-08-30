@@ -165,7 +165,7 @@ app.use((req, res, next) => {
         "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; " +
         "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://code.jquery.com https://cdn.jsdelivr.net; " +
         "img-src 'self' data: blob:; " +
-        "connect-src 'self' ws: wss: http://skulltalker:* https://skulltalker:* http://orlok:* https://orlok:* http://pumpkinhead:* https://pumpkinhead:* http://coffin:* https://coffin:*; " +
+        "connect-src 'self' ws: wss: http: https: http://skulltalker:* https://skulltalker:* http://orlok:* https://orlok:* http://pumpkinhead:* https://pumpkinhead:* http://coffin:* https://coffin:* http://192.168.0.0/16 https://192.168.0.0/16 http://10.0.0.0/8 https://10.0.0.0/8; " +
         "media-src 'self' blob:; " +
         "base-uri 'self'; " +
         "form-action 'self'; " +
@@ -385,10 +385,13 @@ app.get('/api/characters',
         const characterService = require('./services/characterService');
         const characters = await characterService.getAllCharacters();
 
-        // Format for hardware monitor dropdown
+        // Format for hardware monitor with full character data including animatronic config
         const formattedCharacters = characters.map(char => ({
             id: char.id,
-            name: char.char_name || char.name || `Character ${char.id}`
+            name: char.char_name || char.name || `Character ${char.id}`,
+            char_name: char.char_name,
+            char_description: char.char_description,
+            animatronic: char.animatronic // Include full animatronic config for remote connections
         }));
 
         res.json(formattedCharacters);
