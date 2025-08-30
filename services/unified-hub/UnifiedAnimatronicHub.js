@@ -14,6 +14,7 @@
 const os = require('os');
 const logger = require('../../scripts/logger');
 const StatusMonitor = require('./StatusMonitor');
+const MainHardwareServer = require('./MainHardwareServer');
 
 class UnifiedAnimatronicHub {
     constructor(options = {}) {
@@ -27,6 +28,7 @@ class UnifiedAnimatronicHub {
 
         // Initialize components
         this.statusMonitor = null;
+        this.hardwareServer = null;
         this.isInitialized = false;
         this.startTime = new Date();
         
@@ -51,6 +53,13 @@ class UnifiedAnimatronicHub {
 
             await this.statusMonitor.initialize();
 
+            // Initialize hardware server (Phase 2)
+            this.hardwareServer = new MainHardwareServer({
+                hostname: this.config.hostname
+            });
+
+            await this.hardwareServer.initialize();
+
             // Start health monitoring if enabled
             if (this.config.enableHealthMonitoring) {
                 this.startHealthMonitoring();
@@ -63,7 +72,8 @@ class UnifiedAnimatronicHub {
                 success: true,
                 hostname: this.config.hostname,
                 startTime: this.startTime,
-                services: this.getServiceSummary()
+                services: this.getServiceSummary(),
+                hardware: this.hardwareServer ? this.hardwareServer.getCapabilities() : null
             };
 
         } catch (error) {

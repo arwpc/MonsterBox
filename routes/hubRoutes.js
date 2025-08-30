@@ -159,7 +159,7 @@ router.get('/services', ensureHubAvailable, async (req, res) => {
 router.post('/refresh', ensureHubAvailable, async (req, res) => {
     try {
         logger.info('Manual hub status refresh requested');
-        
+
         if (!hubInstance.statusMonitor) {
             return res.status(503).json({
                 error: 'Status monitor not available'
@@ -182,6 +182,115 @@ router.post('/refresh', ensureHubAvailable, async (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Failed to refresh status',
+            message: error.message
+        });
+    }
+});
+
+/**
+ * POST /api/hub/hardware
+ * Execute hardware commands through unified interface
+ * Phase 2: Hardware Consolidation endpoint
+ */
+router.post('/hardware', ensureHubAvailable, async (req, res) => {
+    try {
+        logger.info('Hardware command received:', req.body);
+
+        if (!hubInstance.hardwareServer) {
+            return res.status(503).json({
+                error: 'Hardware server not available',
+                message: 'MainHardwareServer is not initialized'
+            });
+        }
+
+        const command = req.body;
+        const result = await hubInstance.hardwareServer.executeCommand(command);
+
+        if (result.success) {
+            res.json({
+                success: true,
+                message: 'Hardware command executed',
+                timestamp: new Date().toISOString(),
+                commandId: result.commandId,
+                result: result.result
+            });
+        } else {
+            res.status(400).json({
+                success: false,
+                error: 'Hardware command failed',
+                message: result.error,
+                timestamp: new Date().toISOString()
+            });
+        }
+
+    } catch (error) {
+        logger.error('Error executing hardware command:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Hardware command execution failed',
+            message: error.message
+        });
+    }
+});
+
+/**
+ * GET /api/hub/hardware
+ * Get current hardware status and capabilities
+ */
+router.get('/hardware', ensureHubAvailable, async (req, res) => {
+    try {
+        if (!hubInstance.hardwareServer) {
+            return res.status(503).json({
+                error: 'Hardware server not available'
+            });
+        }
+
+        const status = await hubInstance.hardwareServer.getHardwareStatus();
+        const capabilities = hubInstance.hardwareServer.getCapabilities();
+
+        res.json({
+            success: true,
+            timestamp: new Date().toISOString(),
+            status,
+            capabilities
+        });
+
+    } catch (error) {
+        logger.error('Error getting hardware status:', error);
+        res.status(500).json({
+            error: 'Failed to get hardware status',
+            message: error.message
+        });
+    }
+});
+
+/**
+ * POST /api/hub/hardware/emergency-stop
+ * Emergency stop all hardware
+ */
+router.post('/hardware/emergency-stop', ensureHubAvailable, async (req, res) => {
+    try {
+        logger.warn('🚨 Emergency stop requested');
+
+        if (!hubInstance.hardwareServer) {
+            return res.status(503).json({
+                error: 'Hardware server not available'
+            });
+        }
+
+        await hubInstance.hardwareServer.emergencyStop();
+
+        res.json({
+            success: true,
+            message: 'Emergency stop executed',
+            timestamp: new Date().toISOString()
+        });
+
+    } catch (error) {
+        logger.error('Error executing emergency stop:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Emergency stop failed',
             message: error.message
         });
     }

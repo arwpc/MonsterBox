@@ -772,6 +772,8 @@
                 // Use unified hub endpoint for consolidated status checking
                 try {
                     const hubUrl = this.getHubUrl(characterName);
+                    console.log(`🎯 Hub status check: ${characterName} -> ${hubUrl}`);
+
                     const response = await fetch(`${hubUrl}/api/hub/status`, {
                         method: 'GET',
                         headers: {
@@ -785,11 +787,13 @@
                     }
 
                     const hubData = await response.json();
+                    console.log(`✅ Hub data received for ${characterName}:`, hubData.summary);
 
                     // Convert hub response to expected format
                     return this.convertHubStatusToServiceList(hubData.services, services);
 
                 } catch (error) {
+                    console.log(`❌ Hub status check failed for ${characterName}: ${error.message}`);
                     this.log(`Hub status check failed for ${characterName}: ${error.message}`, 'warning');
 
                     // Fallback to individual service checks
@@ -807,14 +811,27 @@
                 }
 
                 // For remote characters, use their IP addresses
+                // Handle both character names and hostnames
                 const characterIPs = {
                     'PumpkinHead': 'https://192.168.8.150:8080',
+                    'pumpkinhead': 'https://192.168.8.150:8080',
                     'Skulltalker': 'https://10.10.10.78:8080',
+                    'skulltalker': 'https://10.10.10.78:8080',
                     'CoffinBreaker': 'https://192.168.8.140:8080',
-                    'Orlok': 'https://192.168.8.120:8080'
+                    'coffin': 'https://192.168.8.140:8080',
+                    'Orlok': 'https://192.168.8.120:8080',
+                    'orlok': 'https://192.168.8.120:8080'
                 };
 
-                return characterIPs[characterName] || 'http://localhost:3000';
+                // Try exact match first, then lowercase
+                const hubUrl = characterIPs[characterName] || characterIPs[characterName.toLowerCase()];
+
+                // If we're on Skulltalker (localhost), return localhost for local testing
+                if (!hubUrl && window.location.hostname === 'localhost') {
+                    return 'http://localhost:3000';
+                }
+
+                return hubUrl || 'http://localhost:3000';
             }
 
             /**
