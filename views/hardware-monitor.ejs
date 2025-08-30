@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Animatronic Fleet Monitor - MonsterBox</title>
+    <title>Fleet Monitor - MonsterBox</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="/css/style.css?v=<%= Date.now() %>">
@@ -658,7 +658,7 @@
 </head>
 <body>
     <%- include('partials/compact-header', {
-        title: 'Animatronic Fleet Monitor',
+        title: 'Fleet Monitor',
         icon: '🎭',
         breadcrumbs: [
             { name: 'Home', url: '/', icon: '🏠' },
@@ -669,7 +669,7 @@
 
     <main class="fleet-monitor">
         <div class="info-section">
-            <h2>🤖 Animatronic Fleet Monitor</h2>
+            <h2>🎭 Fleet Monitor</h2>
             <p>Real-time monitoring of all MonsterBox animatronic systems across the network</p>
         </div>
 
@@ -792,18 +792,28 @@
                     this.log(`Found ${characters.length} characters in database`, 'info');
 
                     // Create animatronic objects with network info
-                    this.animatronics = characters.map(character => ({
-                        id: character.id,
-                        name: character.name,
-                        hostname: this.getHostnameForCharacter(character.name),
-                        baseUrl: this.getBaseUrlForCharacter(character.name),
-                        status: 'checking',
-                        services: [],
-                        parts: character.animatronic?.animatronic_parts || character.parts || [],
-                        lastSeen: null,
-                        responseTime: null,
-                        isCurrentMachine: this.isCurrentMachine(character.name)
-                    }));
+                    this.animatronics = characters.map(character => {
+                        const animatronic = {
+                            id: character.id,
+                            name: character.name,
+                            rpi_config: character.animatronic?.rpi_config || null,
+                            status: 'checking',
+                            services: [],
+                            parts: character.animatronic?.animatronic_parts || character.parts || [],
+                            lastSeen: null,
+                            responseTime: null,
+                            isCurrentMachine: this.isCurrentMachine(character.name)
+                        };
+
+                        // Set hostname and baseUrl after the object is created
+                        animatronic.hostname = this.getHostnameForCharacter(character.name, character);
+                        animatronic.baseUrl = this.getBaseUrlForCharacter(character.name, character);
+
+                        // Initialize parts from character data
+                        animatronic.parts = this.getCharacterParts(animatronic);
+
+                        return animatronic;
+                    });
 
                     // Start checking status for each animatronic
                     await this.refreshFleetStatus();
@@ -815,7 +825,7 @@
                 }
             }
 
-            getHostnameForCharacter(characterName) {
+            getHostnameForCharacter(characterName, characterData = null) {
                 // Check if this is the current machine
                 const currentHostname = window.location.hostname;
 
@@ -823,21 +833,28 @@
                     return currentHostname; // Use current hostname
                 }
 
-                // Use IP addresses from character data if available, otherwise use hostnames
-                const hostnames = {
-                    'Orlok': 'orlok.monsterbox.local',
-                    'Coffin Breaker': '192.168.8.140', // From character data
-                    'PumpkinHead': '192.168.1.200',    // From character data
-                    'Skulltalker': currentHostname.includes('skulltalker') ? currentHostname : 'skulltalker.monsterbox.local'
+                // Use provided character data or find it
+                const character = characterData || this.animatronics.find(a => a.name === characterName);
+                if (character && character.rpi_config && character.rpi_config.host) {
+                    return character.rpi_config.host;
+                }
+
+                // Fallback to IP addresses from character data, not domain names
+                const ipMappings = {
+                    'Orlok': '192.168.8.120',
+                    'Coffin Breaker': '192.168.8.140',
+                    'PumpkinHead': '192.168.1.200',
+                    'Skulltalker': currentHostname
                 };
-                return hostnames[characterName] || `${characterName.toLowerCase()}.monsterbox.local`;
+
+                return ipMappings[characterName] || currentHostname;
             }
 
-            getBaseUrlForCharacter(characterName) {
-                const hostname = this.getHostnameForCharacter(characterName);
+            getBaseUrlForCharacter(characterName, characterData = null) {
+                const hostname = this.getHostnameForCharacter(characterName, characterData);
 
                 // If this is the current machine, use relative URL
-                if (hostname === window.location.hostname) {
+                if (hostname === window.location.hostname || hostname === 'localhost') {
                     return `${window.location.protocol}//${window.location.host}`;
                 }
 
@@ -848,6 +865,61 @@
                 const currentHostname = window.location.hostname;
                 return (characterName === 'Skulltalker' &&
                        (currentHostname.includes('skulltalker') || currentHostname === 'localhost'));
+            }
+
+            getCharacterParts(animatronic) {
+                // Get parts from the original character data
+                const parts = [];
+
+                if (animatronic.parts && Array.isArray(animatronic.parts) && animatronic.parts.length > 0) {
+                    return animatronic.parts;
+                }
+
+                if (animatronic.parts && typeof animatronic.parts === 'object') {
+                    // Convert parts object to array
+                    const partsArray = Object.entries(animatronic.parts).map(([key, part]) => ({
+                        id: key,
+                        name: part.name || key,
+                        type: part.type || 'unknown',
+                        ...part
+                    }));
+                    if (partsArray.length > 0) return partsArray;
+                }
+
+                // Fallback: extract from capabilities
+                if (animatronic.capabilities && Array.isArray(animatronic.capabilities)) {
+                    return animatronic.capabilities.map(cap => ({
+                        id: cap,
+                        name: cap.charAt(0).toUpperCase() + cap.slice(1),
+                        type: cap
+                    }));
+                }
+
+                // Default parts based on character name and expected capabilities
+                const defaultParts = {
+                    'Skulltalker': [
+                        { id: 'webcam', name: 'Webcam', type: 'webcam' },
+                        { id: 'sensor', name: 'Motion Sensor', type: 'sensor' },
+                        { id: 'servo', name: 'Jaw Servo', type: 'servo' }
+                    ],
+                    'Orlok': [
+                        { id: 'motor', name: 'Head Motor', type: 'motor' },
+                        { id: 'light', name: 'LED Eyes', type: 'light' },
+                        { id: 'sensor', name: 'Motion Sensor', type: 'sensor' }
+                    ],
+                    'Coffin Breaker': [
+                        { id: 'actuator', name: 'Coffin Actuator', type: 'linear-actuator' },
+                        { id: 'light', name: 'LED Strip', type: 'light' },
+                        { id: 'sensor', name: 'Motion Sensor', type: 'sensor' }
+                    ],
+                    'PumpkinHead': [
+                        { id: 'motor', name: 'Head Motor', type: 'motor' },
+                        { id: 'light', name: 'LED Eyes', type: 'light' },
+                        { id: 'sensor', name: 'Motion Sensor', type: 'sensor' }
+                    ]
+                };
+
+                return defaultParts[animatronic.name] || [];
             }
 
             async refreshFleetStatus() {
@@ -899,6 +971,11 @@
                             animatronic.responseTime = responseTime;
                             animatronic.hubStatus = statusData;
 
+                            // Ensure parts are always available
+                            if (!animatronic.parts || animatronic.parts.length === 0) {
+                                animatronic.parts = this.getCharacterParts(animatronic);
+                            }
+
                             this.log(`${animatronic.name}: Online (${services.length} services, ${responseTime}ms)`, 'success');
 
                         } else {
@@ -910,6 +987,11 @@
                         animatronic.services = [];
                         animatronic.responseTime = Date.now() - startTime;
                         animatronic.hubStatus = null;
+
+                        // Still show parts even when offline
+                        if (!animatronic.parts || animatronic.parts.length === 0) {
+                            animatronic.parts = this.getCharacterParts(animatronic);
+                        }
 
                         this.log(`${animatronic.name}: Offline (${error.message})`, 'warning');
                     }
@@ -984,7 +1066,7 @@
                                 <div class="info-label">Services</div>
                             </div>
                             <div class="info-item">
-                                <div class="info-value">${animatronic.parts.length}</div>
+                                <div class="info-value">${(animatronic.parts && animatronic.parts.length) || (animatronic.animatronic_parts && animatronic.animatronic_parts.length) || 0}</div>
                                 <div class="info-label">Parts</div>
                             </div>
                         </div>
@@ -1033,12 +1115,39 @@
                     </div>
                 `).join('');
 
-                const partsHtml = animatronic.parts.map(part => `
-                    <div class="detail-item">
-                        <div class="detail-label">${part.name}</div>
-                        <div class="detail-value">${part.type} - ${part.status || 'Unknown'}</div>
-                    </div>
-                `).join('');
+                // Handle different parts data structures
+                let partsArray = [];
+                if (animatronic.parts && Array.isArray(animatronic.parts)) {
+                    partsArray = animatronic.parts;
+                } else if (animatronic.animatronic_parts && Array.isArray(animatronic.animatronic_parts)) {
+                    partsArray = animatronic.animatronic_parts;
+                }
+
+                const partsHtml = partsArray.length > 0 ? partsArray.map(part => {
+                    // Handle both object and string parts
+                    if (typeof part === 'string') {
+                        return `
+                            <div class="detail-item">
+                                <div class="detail-label">${part}</div>
+                                <div class="detail-value">Hardware Component</div>
+                            </div>
+                        `;
+                    } else if (typeof part === 'object' && part.name) {
+                        return `
+                            <div class="detail-item">
+                                <div class="detail-label">${part.name}</div>
+                                <div class="detail-value">${part.type || 'Hardware'} - ${part.status || 'Unknown'}</div>
+                            </div>
+                        `;
+                    } else {
+                        return `
+                            <div class="detail-item">
+                                <div class="detail-label">Part ${partsArray.indexOf(part) + 1}</div>
+                                <div class="detail-value">Hardware Component</div>
+                            </div>
+                        `;
+                    }
+                }).join('') : '';
 
                 modalBody.innerHTML = `
                     <div class="detail-section">
@@ -1075,7 +1184,7 @@
                     </div>
 
                     <div class="detail-section">
-                        <h3>🔩 Hardware Parts (${animatronic.parts.length})</h3>
+                        <h3>🔩 Hardware Parts (${partsArray.length})</h3>
                         <div class="detail-grid">
                             ${partsHtml || '<div class="detail-item"><div class="detail-value">No parts configured</div></div>'}
                         </div>
@@ -1204,17 +1313,8 @@
                 const servicesSection = document.getElementById('servicesSection');
                 servicesSection.classList.add('active');
 
-                // Define expected services for each character
-                const expectedServices = [
-                    { name: 'Main Hardware Server', port: 8780, icon: '🔧', type: 'hardware' },
-                    { name: 'Motor Service', port: 8771, icon: '🔄', type: 'motor' },
-                    { name: 'Light Service', port: 8772, icon: '💡', type: 'light' },
-                    { name: 'Sensor Service', port: 8773, icon: '📡', type: 'sensor' },
-                    { name: 'Webcam Service', port: 8774, icon: '📹', type: 'webcam' },
-                    { name: 'Motion Sensor Service', port: 8777, icon: '🔍', type: 'motion' },
-                    { name: 'Head Tracking Service', port: 8778, icon: '🎯', type: 'tracking' },
-                    { name: 'Service Registry', port: 8770, icon: '📋', type: 'registry' }
-                ];
+                // Get expected services based on character configuration
+                const expectedServices = this.getExpectedServicesForCharacter(character);
 
                 // Show placeholder message - user needs to click Connect to start monitoring
                 const grid = document.getElementById('servicesGrid');
@@ -1363,17 +1463,9 @@
                     `;
                 }
 
-                // Render expected services with unknown status
-                const expectedServices = [
-                    { name: 'Main Hardware Server', port: 8780, icon: '🔧', type: 'hardware' },
-                    { name: 'Motor Service', port: 8771, icon: '🔄', type: 'motor' },
-                    { name: 'Light Service', port: 8772, icon: '💡', type: 'light' },
-                    { name: 'Sensor Service', port: 8773, icon: '📡', type: 'sensor' },
-                    { name: 'Webcam Service', port: 8774, icon: '📹', type: 'webcam' },
-                    { name: 'Motion Sensor Service', port: 8777, icon: '🔍', type: 'motion' },
-                    { name: 'Head Tracking Service', port: 8778, icon: '🎯', type: 'tracking' },
-                    { name: 'Service Registry', port: 8770, icon: '📋', type: 'registry' }
-                ];
+                // Use the same dynamic service detection logic
+                const character = this.animatronics.find(a => a.name === characterName);
+                const expectedServices = this.getExpectedServicesForCharacter(character);
 
                 this.renderFallbackServices(expectedServices);
                 this.log('Using legacy fallback mode - centralized integration unavailable', 'warning');
@@ -1394,17 +1486,9 @@
                 const selectedCharacter = this.selectedCharacter;
                 const characterName = selectedCharacter ? (selectedCharacter.char_name || selectedCharacter.name) : 'Unknown';
 
-                // Define services to check
-                const allServices = [
-                    { name: 'ElevenLabs Conversational AI', port: 8771, icon: '🤖', type: 'elevenlabs' },
-                    { name: 'ElevenLabs Live STT', port: 8778, icon: '🎤', type: 'stt' },
-                    { name: 'Microphone Service', port: 8776, icon: '🎙️', type: 'microphone' },
-                    { name: 'ElevenLabs SSL Proxy', port: 8872, icon: '🔐', type: 'proxy-ssl' },
-                    { name: 'STT SSL Proxy', port: 8873, icon: '🔐', type: 'proxy-stt' },
-                    { name: 'Main Hardware Server', port: 8780, icon: '🔧', type: 'hardware' },
-                    { name: 'Service Registry', port: 8770, icon: '📋', type: 'registry' },
-                    { name: 'Light Service', port: 8772, icon: '💡', type: 'light' }
-                ];
+                // Get expected services for this character
+                const character = this.animatronics.find(a => a.name === characterName || a.char_name === characterName);
+                const allServices = this.getExpectedServicesForCharacter(character);
 
                 // First render services with "checking" status
                 this.renderServicesWithStatus(allServices, 'checking', characterName);
@@ -1450,6 +1534,62 @@
             }
 
             /**
+             * Get expected services for a character based on configuration
+             */
+            getExpectedServicesForCharacter(character) {
+                const baseServices = [
+                    { name: 'ElevenLabs Conversational AI', port: 8771, icon: '🤖', type: 'elevenlabs' },
+                    { name: 'ElevenLabs Live STT', port: 8778, icon: '🎤', type: 'stt' },
+                    { name: 'Microphone Service', port: 8776, icon: '🎙️', type: 'microphone' },
+                    { name: 'ElevenLabs SSL Proxy', port: 8872, icon: '🔐', type: 'proxy-ssl' },
+                    { name: 'STT SSL Proxy', port: 8873, icon: '🔐', type: 'proxy-stt' }
+                ];
+
+                if (!character) return baseServices;
+
+                const characterName = character.name || character.char_name;
+                const configuredServices = character.animatronic?.services || [];
+
+                // Get parts from our enhanced parts detection
+                const parts = this.getCharacterParts(character);
+                const hasHardwareParts = parts.length > 0;
+
+                let expectedServices = [...baseServices];
+
+                // Always add core hardware services for characters with GPIO control or hardware parts
+                if (hasHardwareParts || configuredServices.includes('gpio-control')) {
+                    expectedServices.push(
+                        { name: 'Service Registry', port: 8770, icon: '📋', type: 'registry' },
+                        { name: 'Main Hardware Server', port: 8780, icon: '🔧', type: 'hardware' }
+                    );
+                }
+
+                // Add specific hardware services based on parts
+                const partTypes = parts.map(p => p.type);
+
+                if (partTypes.includes('motor')) {
+                    expectedServices.push({ name: 'Motor Service', port: 8772, icon: '🔄', type: 'motor' });
+                }
+                if (partTypes.includes('light') || partTypes.includes('led')) {
+                    expectedServices.push({ name: 'Light Service', port: 8772, icon: '💡', type: 'light' });
+                }
+                if (partTypes.includes('sensor')) {
+                    expectedServices.push({ name: 'Sensor Service', port: 8400, icon: '📡', type: 'sensor' });
+                }
+                if (partTypes.includes('webcam')) {
+                    expectedServices.push({ name: 'Webcam Service', port: 8401, icon: '📹', type: 'webcam' });
+                }
+                if (partTypes.includes('servo')) {
+                    expectedServices.push({ name: 'Servo Service', port: 8773, icon: '🦾', type: 'servo' });
+                }
+                if (partTypes.includes('linear-actuator')) {
+                    expectedServices.push({ name: 'Actuator Service', port: 8775, icon: '🔧', type: 'actuator' });
+                }
+
+                return expectedServices;
+            }
+
+            /**
              * Get hub URL for character
              */
             getHubUrl(characterName) {
@@ -1458,18 +1598,11 @@
                     return 'http://localhost:3000';
                 }
 
-                // For remote characters, use their IP addresses
-                // Handle both character names and hostnames
-                const characterIPs = {
-                    'PumpkinHead': 'https://192.168.8.150:8080',
-                    'pumpkinhead': 'https://192.168.8.150:8080',
-                    'Skulltalker': 'https://10.10.10.78:8080',
-                    'skulltalker': 'https://10.10.10.78:8080',
-                    'CoffinBreaker': 'https://192.168.8.140:8080',
-                    'coffin': 'https://192.168.8.140:8080',
-                    'Orlok': 'https://192.168.8.120:8080',
-                    'orlok': 'https://192.168.8.120:8080'
-                };
+                // Find character data and use rpi_config.host if available
+                const character = this.animatronics.find(a => a.name === characterName);
+                if (character && character.rpi_config && character.rpi_config.host) {
+                    return `https://${character.rpi_config.host}:8080`;
+                }
 
                 // Try exact match first, then lowercase
                 const hubUrl = characterIPs[characterName] || characterIPs[characterName.toLowerCase()];

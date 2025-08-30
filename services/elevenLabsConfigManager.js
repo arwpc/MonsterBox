@@ -148,16 +148,13 @@ class ElevenLabsConfigManager {
         if (character.animatronic && character.animatronic.rpi_config && character.animatronic.rpi_config.host) {
             const host = character.animatronic.rpi_config.host;
             
-            // Map IP addresses to hostnames
-            const ipToHostname = {
-                '192.168.8.150': 'pumpkinhead',
-                '192.168.8.140': 'coffin',
-                '192.168.8.120': 'orlok',
-                'localhost': 'skulltalker',
-                '127.0.0.1': 'skulltalker'
-            };
+            // For localhost/127.0.0.1, return skulltalker
+            if (host === 'localhost' || host === '127.0.0.1') {
+                return 'skulltalker';
+            }
 
-            return ipToHostname[host] || host;
+            // For IP addresses, derive hostname from character name
+            return character.char_name.toLowerCase().replace(/\s+/g, '');
         }
 
         // Fallback hostname mapping

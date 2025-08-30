@@ -390,35 +390,48 @@ class MonsterBoxServiceIntegration {
      */
     async performHealthCheck() {
         logger.info('💓 Performing system health check...');
-        
+
         const healthStatus = {
             overall: 'healthy',
             services: {},
             issues: []
         };
-        
+
         const services = this.serviceDiscovery.getAllServices();
-        
-        for (const service of services) {
-            const status = this.serviceManager.getServiceStatus(service.name);
-            healthStatus.services[service.name] = {
-                status: status.status,
-                uptime: status.uptime,
-                lastHealthCheck: service.lastHealthCheck
-            };
-            
-            if (status.status !== 'running') {
-                healthStatus.issues.push(`Service ${service.name} is ${status.status}`);
-                healthStatus.overall = 'degraded';
+
+        // Only check services that are actually registered and expected to be running
+        const runningServices = services.filter(service => {
+            // Check if service is actually registered in port manager
+            const portService = this.portManager.getService(service.name);
+            return portService && portService.status !== 'stopped';
+        });
+
+        for (const service of runningServices) {
+            try {
+                const status = this.serviceManager.getServiceStatus(service.name);
+                healthStatus.services[service.name] = {
+                    status: status.status,
+                    uptime: status.uptime,
+                    lastHealthCheck: service.lastHealthCheck
+                };
+
+                // Only report issues for services that should be running
+                if (status.status !== 'running' && status.status !== 'healthy') {
+                    healthStatus.issues.push(`Service ${service.name} is ${status.status}`);
+                    healthStatus.overall = 'degraded';
+                }
+            } catch (error) {
+                // Service might not be started yet, which is okay
+                logger.debug(`Service ${service.name} not available for health check: ${error.message}`);
             }
         }
-        
+
         if (healthStatus.issues.length > 0) {
             logger.warn(`⚠️ Health check found ${healthStatus.issues.length} issues`);
         } else {
             logger.info('✅ All services healthy');
         }
-        
+
         return healthStatus;
     }
     

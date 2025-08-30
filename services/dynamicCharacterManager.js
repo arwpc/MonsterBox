@@ -214,38 +214,15 @@ class DynamicCharacterManager {
      * Determine network configuration for character
      */
     determineNetworkConfig(character) {
-        // Default network mappings
-        const networkMappings = {
-            'Orlok': {
-                hostname: 'orlok',
-                preferredIP: '192.168.8.120',
-                domain: 'orlok.monsterbox.local'
-            },
-            'PumpkinHead': {
-                hostname: 'pumpkinhead',
-                preferredIP: '192.168.8.150',
-                domain: 'pumpkinhead.monsterbox.local'
-            },
-            'Coffin Breaker': {
-                hostname: 'coffin',
-                preferredIP: '192.168.8.140',
-                domain: 'coffin.monsterbox.local'
-            },
-            'Skulltalker': {
-                hostname: 'skulltalker',
-                preferredIP: '127.0.0.1',
-                domain: 'skulltalker.monsterbox.local'
-            }
-        };
-
-        const mapping = networkMappings[character.char_name] || {
-            hostname: character.char_name.toLowerCase().replace(/\s+/g, ''),
-            preferredIP: '192.168.8.100',
-            domain: `${character.char_name.toLowerCase().replace(/\s+/g, '')}.monsterbox.local`
-        };
+        // Use rpi_config.host if available, otherwise use defaults
+        const hostname = character.char_name.toLowerCase().replace(/\s+/g, '');
+        const preferredIP = character.animatronic?.rpi_config?.host || '192.168.8.100';
+        const domain = `${hostname}.monsterbox.local`;
 
         return {
-            ...mapping,
+            hostname,
+            preferredIP,
+            domain,
             ports: {
                 http: 3000,
                 https: 8080
