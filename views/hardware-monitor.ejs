@@ -927,6 +927,7 @@
 
                 const statusPromises = this.animatronics.map(async (animatronic) => {
                     const startTime = Date.now();
+                    console.log(`🔍 Checking ${animatronic.name} at ${animatronic.baseUrl}`);
 
                     try {
                         // Check if animatronic is online with timeout
@@ -935,34 +936,36 @@
 
                         const healthResponse = await fetch(`${animatronic.baseUrl}/api/hub/status`, {
                             method: 'GET',
-                            signal: controller.signal
+                            signal: controller.signal,
+                            mode: 'cors',
+                            credentials: 'omit'
                         });
 
                         clearTimeout(timeoutId);
 
                         const responseTime = Date.now() - startTime;
+                        console.log(`✅ ${animatronic.name} responded in ${responseTime}ms`);
 
                         if (healthResponse.ok) {
                             const statusData = await healthResponse.json();
+                            console.log(`📦 ${animatronic.name} status data:`, statusData);
 
-                            // Get services information
-                            const servicesResponse = await fetch(`${animatronic.baseUrl}/api/hub/services`);
+                            // Extract services from the hub status response
                             let services = [];
-
-                            if (servicesResponse.ok) {
-                                const servicesData = await servicesResponse.json();
-                                if (servicesData.services && typeof servicesData.services === 'object') {
-                                    // Convert services object to array
-                                    services = Object.entries(servicesData.services).map(([name, service]) => ({
-                                        name: name,
-                                        port: service.port,
-                                        type: service.type,
-                                        icon: service.icon,
-                                        status: service.status === 'online' ? 'active' : 'inactive',
-                                        details: service.details,
-                                        responseTime: service.responseTime
-                                    }));
-                                }
+                            if (statusData.services && typeof statusData.services === 'object') {
+                                // Convert services object to array
+                                services = Object.entries(statusData.services).map(([name, service]) => ({
+                                    name: name,
+                                    port: service.port,
+                                    type: service.type,
+                                    icon: service.icon,
+                                    status: service.status === 'online' ? 'active' : 'inactive',
+                                    details: service.details,
+                                    responseTime: service.responseTime
+                                }));
+                                console.log(`🔧 ${animatronic.name} services processed:`, services);
+                            } else {
+                                console.log(`⚠️ ${animatronic.name} no services found in status data`);
                             }
 
                             animatronic.status = 'online';
@@ -975,6 +978,12 @@
                             if (!animatronic.parts || animatronic.parts.length === 0) {
                                 animatronic.parts = this.getCharacterParts(animatronic);
                             }
+
+                            console.log(`✅ ${animatronic.name} final state:`, {
+                                status: animatronic.status,
+                                serviceCount: animatronic.services.length,
+                                services: animatronic.services.map(s => `${s.name}:${s.status}`)
+                            });
 
                             this.log(`${animatronic.name}: Online (${services.length} services, ${responseTime}ms)`, 'success');
 
@@ -1004,7 +1013,13 @@
 
             updateFleetStats() {
                 const online = this.animatronics.filter(a => a.status === 'online');
-                const totalServices = online.reduce((sum, a) => sum + (a.services ? a.services.length : 0), 0);
+                const totalServices = online.reduce((sum, a) => {
+                    const serviceCount = a.services ? a.services.length : 0;
+                    console.log(`📊 ${a.name}: ${serviceCount} services`);
+                    return sum + serviceCount;
+                }, 0);
+
+                console.log(`📈 Fleet Stats: ${online.length}/${this.animatronics.length} online, ${totalServices} total services`);
 
                 this.fleetStats = {
                     total: this.animatronics.length,

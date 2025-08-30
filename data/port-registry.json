@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2025-08-30T21:57:18.391Z",
+  "lastUpdated": "2025-08-30T22:11:32.199Z",
   "services": {
     "elevenLabsConversational": {
       "name": "elevenLabsConversational",
@@ -9,7 +9,7 @@
       "priority": 70,
       "status": "unhealthy",
       "registeredAt": "2025-08-30T21:49:18.392Z",
-      "lastHealthCheck": "2025-08-30T21:57:18.387Z",
+      "lastHealthCheck": "2025-08-30T22:11:32.194Z",
       "metadata": {
         "pid": 103211,
         "hostname": "skulltalker"
@@ -23,7 +23,7 @@
       "priority": 90,
       "status": "unhealthy",
       "registeredAt": "2025-08-30T21:49:20.409Z",
-      "lastHealthCheck": "2025-08-30T21:57:18.387Z",
+      "lastHealthCheck": "2025-08-30T22:11:32.194Z",
       "metadata": {
         "pid": 103211,
         "hostname": "skulltalker"
