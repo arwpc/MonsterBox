@@ -330,6 +330,10 @@ app.use('/api/character-audio-config', require('./routes/api/characterAudioConfi
 app.use('/api/system', require('./routes/api/systemApiRoutes'));
 app.use('/api/service-management', require('./routes/serviceManagementRoutes'));
 
+// Unified Animatronic Hub routes
+const { router: hubRouter, initializeHubRoutes } = require('./routes/hubRoutes');
+app.use('/api/hub', hubRouter);
+
 // Services restart API endpoint (for microphone management page)
 app.post('/api/services/restart', asyncHandler(async (req, res) => {
     const { serviceType, port } = req.body;
@@ -1156,6 +1160,15 @@ async function initializeApp() {
             await soundController.startSoundPlayer();
             logger.info('Sound player initialized successfully');
         }
+
+        // Initialize Unified Animatronic Hub
+        const UnifiedAnimatronicHub = require('./services/unified-hub/UnifiedAnimatronicHub');
+        const { initializeHubRoutes } = require('./routes/hubRoutes');
+
+        global.unifiedHub = new UnifiedAnimatronicHub();
+        await global.unifiedHub.initialize();
+        initializeHubRoutes(global.unifiedHub);
+        logger.info('✅ Unified Animatronic Hub initialized successfully');
 
         // Start the server
         startServer();

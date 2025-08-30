@@ -769,6 +769,89 @@
             }
 
             async checkServiceStatuses(services, characterName) {
+                // Use unified hub endpoint for consolidated status checking
+                try {
+                    const hubUrl = this.getHubUrl(characterName);
+                    const response = await fetch(`${hubUrl}/api/hub/status`, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        signal: AbortSignal.timeout(5000) // 5 second timeout
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Hub status request failed: ${response.status}`);
+                    }
+
+                    const hubData = await response.json();
+
+                    // Convert hub response to expected format
+                    return this.convertHubStatusToServiceList(hubData.services, services);
+
+                } catch (error) {
+                    this.log(`Hub status check failed for ${characterName}: ${error.message}`, 'warning');
+
+                    // Fallback to individual service checks
+                    return this.checkServiceStatusesIndividually(services, characterName);
+                }
+            }
+
+            /**
+             * Get hub URL for character
+             */
+            getHubUrl(characterName) {
+                // For local character, use localhost
+                if (characterName === 'Local' || !characterName) {
+                    return 'http://localhost:3000';
+                }
+
+                // For remote characters, use their IP addresses
+                const characterIPs = {
+                    'PumpkinHead': 'https://192.168.1.200:8080',
+                    'Skulltalker': 'https://192.168.1.201:8080',
+                    'CoffinBreaker': 'https://192.168.1.202:8080',
+                    'Orlok': 'https://192.168.1.203:8080'
+                };
+
+                return characterIPs[characterName] || 'http://localhost:3000';
+            }
+
+            /**
+             * Convert hub status response to service list format
+             */
+            convertHubStatusToServiceList(hubServices, originalServices) {
+                const convertedServices = [];
+
+                for (const originalService of originalServices) {
+                    const hubService = hubServices[originalService.name];
+
+                    if (hubService) {
+                        convertedServices.push({
+                            ...originalService,
+                            status: hubService.status,
+                            lastChecked: hubService.lastChecked,
+                            details: hubService.details,
+                            responseTime: hubService.responseTime
+                        });
+                    } else {
+                        // Service not found in hub response
+                        convertedServices.push({
+                            ...originalService,
+                            status: 'offline',
+                            lastChecked: new Date().toLocaleTimeString(),
+                            details: 'Service not found in hub response'
+                        });
+                    }
+                }
+
+                return convertedServices;
+            }
+
+            /**
+             * Fallback to individual service checks (original method)
+             */
+            async checkServiceStatusesIndividually(services, characterName) {
                 const promises = services.map(service => {
                     return this.checkServiceStatus(service, characterName)
                         .then(status => ({
