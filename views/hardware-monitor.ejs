@@ -600,6 +600,60 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        /* Breadcrumb Navigation Styling */
+        .breadcrumb-vertical {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
+          margin-bottom: 20px;
+          font-size: 1.1em;
+        }
+
+        .breadcrumb-item {
+          color: #00ffff;
+          text-decoration: none;
+          transition: all 0.3s ease;
+        }
+
+        .breadcrumb-item:hover {
+          color: #ffffff;
+          text-shadow: 0 0 5px #00ffff;
+        }
+
+        .breadcrumb-item.active {
+          color: #00ff00;
+          font-weight: bold;
+        }
+
+        .breadcrumb-item:not(.active):after {
+          content: ' → ';
+          color: #666666;
+          margin-left: 8px;
+        }
+
+        /* Info Section Styling */
+        .info-section {
+            background: #001100;
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .info-section h2 {
+            color: #00ff00;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px #00ff00;
+        }
+
+        .info-section p {
+            color: #cccccc;
+            margin: 0;
+            font-size: 1.1em;
+        }
     </style>
 </head>
 <body>
@@ -614,6 +668,11 @@
     }) %>
 
     <main class="fleet-monitor">
+        <div class="info-section">
+            <h2>🤖 Animatronic Fleet Monitor</h2>
+            <p>Real-time monitoring of all MonsterBox animatronic systems across the network</p>
+        </div>
+
         <!-- Fleet Overview Stats -->
         <div class="fleet-overview">
             <div class="fleet-stat-card">
@@ -740,9 +799,10 @@
                         baseUrl: this.getBaseUrlForCharacter(character.name),
                         status: 'checking',
                         services: [],
-                        parts: character.parts || [],
+                        parts: character.animatronic?.animatronic_parts || character.parts || [],
                         lastSeen: null,
-                        responseTime: null
+                        responseTime: null,
+                        isCurrentMachine: this.isCurrentMachine(character.name)
                     }));
 
                     // Start checking status for each animatronic
@@ -759,16 +819,16 @@
                 // Check if this is the current machine
                 const currentHostname = window.location.hostname;
 
-                if (characterName === 'Skulltalker' && currentHostname.includes('skulltalker')) {
+                if (characterName === 'Skulltalker' && (currentHostname.includes('skulltalker') || currentHostname === 'localhost')) {
                     return currentHostname; // Use current hostname
                 }
 
-                // For other characters, use their network addresses
+                // Use IP addresses from character data if available, otherwise use hostnames
                 const hostnames = {
                     'Orlok': 'orlok.monsterbox.local',
-                    'Coffin Breaker': 'coffinbreaker.monsterbox.local',
-                    'PumpkinHead': 'pumpkinhead.monsterbox.local',
-                    'Skulltalker': 'skulltalker.monsterbox.local'
+                    'Coffin Breaker': '192.168.8.140', // From character data
+                    'PumpkinHead': '192.168.1.200',    // From character data
+                    'Skulltalker': currentHostname.includes('skulltalker') ? currentHostname : 'skulltalker.monsterbox.local'
                 };
                 return hostnames[characterName] || `${characterName.toLowerCase()}.monsterbox.local`;
             }
@@ -784,6 +844,12 @@
                 return `https://${hostname}:8080`;
             }
 
+            isCurrentMachine(characterName) {
+                const currentHostname = window.location.hostname;
+                return (characterName === 'Skulltalker' &&
+                       (currentHostname.includes('skulltalker') || currentHostname === 'localhost'));
+            }
+
             async refreshFleetStatus() {
                 this.log('Refreshing fleet status...', 'info');
 
@@ -791,11 +857,16 @@
                     const startTime = Date.now();
 
                     try {
-                        // Check if animatronic is online
+                        // Check if animatronic is online with timeout
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
                         const healthResponse = await fetch(`${animatronic.baseUrl}/api/hub/status`, {
                             method: 'GET',
-                            timeout: 5000
+                            signal: controller.signal
                         });
+
+                        clearTimeout(timeoutId);
 
                         const responseTime = Date.now() - startTime;
 
@@ -808,7 +879,18 @@
 
                             if (servicesResponse.ok) {
                                 const servicesData = await servicesResponse.json();
-                                services = servicesData.services || [];
+                                if (servicesData.services && typeof servicesData.services === 'object') {
+                                    // Convert services object to array
+                                    services = Object.entries(servicesData.services).map(([name, service]) => ({
+                                        name: name,
+                                        port: service.port,
+                                        type: service.type,
+                                        icon: service.icon,
+                                        status: service.status === 'online' ? 'active' : 'inactive',
+                                        details: service.details,
+                                        responseTime: service.responseTime
+                                    }));
+                                }
                             }
 
                             animatronic.status = 'online';
@@ -840,7 +922,7 @@
 
             updateFleetStats() {
                 const online = this.animatronics.filter(a => a.status === 'online');
-                const totalServices = online.reduce((sum, a) => sum + a.services.length, 0);
+                const totalServices = online.reduce((sum, a) => sum + (a.services ? a.services.length : 0), 0);
 
                 this.fleetStats = {
                     total: this.animatronics.length,
@@ -870,8 +952,8 @@
                     card.className = `animatronic-card ${animatronic.status}`;
                     card.onclick = () => this.showCharacterDetails(animatronic);
 
-                    const serviceCount = animatronic.services.length;
-                    const activeServices = animatronic.services.filter(s => s.status === 'active').length;
+                    const serviceCount = animatronic.services ? animatronic.services.length : 0;
+                    const activeServices = animatronic.services ? animatronic.services.filter(s => s.status === 'active').length : 0;
                     const lastSeenText = animatronic.lastSeen ?
                         `Last seen: ${animatronic.lastSeen.toLocaleTimeString()}` :
                         'Never contacted';
@@ -1041,7 +1123,19 @@
                         const servicesResponse = await fetch(`${animatronic.baseUrl}/api/hub/services`);
                         if (servicesResponse.ok) {
                             const servicesData = await servicesResponse.json();
-                            animatronic.services = servicesData.services || [];
+                            if (servicesData.services && typeof servicesData.services === 'object') {
+                                animatronic.services = Object.entries(servicesData.services).map(([name, service]) => ({
+                                    name: name,
+                                    port: service.port,
+                                    type: service.type,
+                                    icon: service.icon,
+                                    status: service.status === 'online' ? 'active' : 'inactive',
+                                    details: service.details,
+                                    responseTime: service.responseTime
+                                }));
+                            } else {
+                                animatronic.services = [];
+                            }
                         }
 
                         this.log(`${animatronic.name} refreshed successfully`, 'success');

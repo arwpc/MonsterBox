@@ -149,7 +149,9 @@ class StatusMonitor {
             }, this.config.connectionTimeout);
 
             try {
-                const ws = new WebSocket(`ws://${this.config.hostname}:${port}`, {
+                // Use 127.0.0.1 for local service health checks to force IPv4
+                // and avoid issues with hostname resolution (e.g., 127.0.1.1 vs 127.0.0.1 vs ::1)
+                const ws = new WebSocket(`ws://127.0.0.1:${port}`, {
                     timeout: this.config.connectionTimeout
                 });
 
@@ -197,7 +199,7 @@ class StatusMonitor {
             }, this.config.connectionTimeout);
 
             const options = {
-                hostname: this.config.hostname,
+                hostname: '127.0.0.1', // Use 127.0.0.1 to force IPv4 for local service health checks
                 port: port,
                 path: '/',
                 method: 'GET',
