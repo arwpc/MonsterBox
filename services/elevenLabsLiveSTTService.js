@@ -87,7 +87,10 @@ class ElevenLabsLiveSTTService extends EventEmitter {
         const sessionId = this.generateSessionId();
         const clientIP = req.socket.remoteAddress;
         
-        logger.info(`🔗 New live STT client connected: ${sessionId} from ${clientIP}`);
+        // Only log connections in debug mode to reduce spam from health checks
+        if (process.env.DEBUG_CONNECTIONS) {
+            logger.info(`🔗 New live STT client connected: ${sessionId} from ${clientIP}`);
+        }
 
         // Initialize connection data
         const connection = {
@@ -343,7 +346,10 @@ class ElevenLabsLiveSTTService extends EventEmitter {
     handleClientDisconnect(sessionId) {
         const connection = this.activeConnections.get(sessionId);
         if (connection) {
-            logger.info(`🔌 Live STT client disconnected: ${sessionId}`);
+            // Only log disconnections in debug mode to reduce spam from health checks
+            if (process.env.DEBUG_CONNECTIONS) {
+                logger.info(`🔌 Live STT client disconnected: ${sessionId}`);
+            }
             
             // Clear timers
             if (connection.silenceTimer) {

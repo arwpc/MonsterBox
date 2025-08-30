@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2025-08-30T21:01:12.367Z",
+  "lastUpdated": "2025-08-30T21:03:42.350Z",
   "services": {
     "elevenLabsConversational": {
       "name": "elevenLabsConversational",
@@ -7,9 +7,23 @@
       "port": 8600,
       "proxyPort": 8200,
       "priority": 70,
-      "status": "allocated",
+      "status": "unhealthy",
       "registeredAt": "2025-08-30T21:01:12.366Z",
-      "lastHealthCheck": null,
+      "lastHealthCheck": "2025-08-30T21:03:42.345Z",
+      "metadata": {
+        "pid": 89720,
+        "hostname": "skulltalker"
+      }
+    },
+    "sensorService": {
+      "name": "sensorService",
+      "type": "hardware",
+      "port": 8400,
+      "proxyPort": 8201,
+      "priority": 90,
+      "status": "unhealthy",
+      "registeredAt": "2025-08-30T21:01:14.384Z",
+      "lastHealthCheck": "2025-08-30T21:03:42.345Z",
       "metadata": {
         "pid": 89720,
         "hostname": "skulltalker"

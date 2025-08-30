@@ -130,7 +130,10 @@ class ElevenLabsConversationalService extends EventEmitter {
         const sessionId = this.generateSessionId();
         const clientIP = req.socket.remoteAddress;
         
-        console.log(`🔗 New client connected: ${sessionId} from ${clientIP}`);
+        // Only log connections in debug mode to reduce spam from health checks
+        if (process.env.DEBUG_CONNECTIONS) {
+            console.log(`🔗 New client connected: ${sessionId} from ${clientIP}`);
+        }
         
         // Initialize connection data
         const connectionData = {
@@ -832,7 +835,10 @@ class ElevenLabsConversationalService extends EventEmitter {
      * Handle client disconnect
      */
     handleClientDisconnect(sessionId) {
-        console.log(`🔌 Client disconnected: ${sessionId}`);
+        // Only log disconnections in debug mode to reduce spam from health checks
+        if (process.env.DEBUG_CONNECTIONS) {
+            console.log(`🔌 Client disconnected: ${sessionId}`);
+        }
         
         const connection = this.activeConnections.get(sessionId);
         if (connection) {
