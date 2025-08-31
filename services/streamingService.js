@@ -356,8 +356,9 @@ class StreamingService extends EventEmitter {
                 logger.debug(`Local IP addresses: ${localIPs.join(', ')}`);
             }
 
-            // Parse resolution
-            const [width, height] = webcam.resolution.split('x').map(Number);
+            // Parse resolution with fallback
+            const resolution = webcam.resolution || '640x480';
+            const [width, height] = resolution.split('x').map(Number);
 
             // Create stream configuration
             const streamConfig = {

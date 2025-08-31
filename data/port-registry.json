@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2025-08-31T21:02:39.399Z",
+  "lastUpdated": "2025-08-31T21:10:49.341Z",
   "services": {
     "elevenLabsSTT": {
       "name": "elevenLabsSTT",
@@ -9,7 +9,7 @@
       "priority": 50,
       "status": "healthy",
       "registeredAt": "2025-08-31T19:24:06.611Z",
-      "lastHealthCheck": "2025-08-31T21:02:39.395Z",
+      "lastHealthCheck": "2025-08-31T21:10:49.336Z",
       "metadata": {
         "description": "ElevenLabs Live STT Service",
         "protocol": "websocket",
@@ -26,7 +26,7 @@
       "priority": 70,
       "status": "unhealthy",
       "registeredAt": "2025-08-31T20:48:09.401Z",
-      "lastHealthCheck": "2025-08-31T21:02:39.395Z",
+      "lastHealthCheck": "2025-08-31T21:10:49.336Z",
       "metadata": {
         "pid": 136897,
         "hostname": "skulltalker"

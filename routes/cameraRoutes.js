@@ -252,30 +252,54 @@ router.get('/stream', async (req, res) => {
             // Don't redirect to streaming API - it has issues, use legacy camera stream instead
         }
 
-        // Fallback to legacy camera settings
-        let settings;
-        if (characterId) {
-            settings = await loadCharacterCameraSettings(characterId);
-        } else {
-            settings = await loadCameraSettings();
-        }
+        // Get character's webcam configuration if characterId is provided
+        let cameraId = 0;
+        let width = parseInt(req.query.width) || DEFAULT_WIDTH;
+        let height = parseInt(req.query.height) || DEFAULT_HEIGHT;
+        let fps = parseInt(req.query.fps) || DEFAULT_FPS;
 
-        // If no camera is selected, try to use camera 0 as default
-        if (!settings.selectedCamera && settings.selectedCamera !== 0) {
-            logger.warn('No camera selected, defaulting to camera 0');
-            settings.selectedCamera = 0;
+        if (characterId) {
+            try {
+                // Get the character's webcam part
+                const partService = require('../services/partService');
+                const characterService = require('../services/characterService');
+
+                const parts = await partService.getPartsByCharacter(characterId);
+                const webcamPart = parts.find(part => part.type === 'webcam');
+
+                if (webcamPart && webcamPart.status === 'active') {
+                    cameraId = webcamPart.deviceId || 0;
+
+                    // Use webcam part settings if available
+                    if (webcamPart.resolution) {
+                        const [w, h] = webcamPart.resolution.split('x').map(Number);
+                        width = parseInt(req.query.width) || w || DEFAULT_WIDTH;
+                        height = parseInt(req.query.height) || h || DEFAULT_HEIGHT;
+                    }
+                    fps = parseInt(req.query.fps) || webcamPart.fps || DEFAULT_FPS;
+
+                    logger.info(`Using character ${characterId} webcam: camera ${cameraId}, ${width}x${height}@${fps}fps`);
+                } else {
+                    logger.warn(`Character ${characterId} has no active webcam, using default camera 0`);
+                }
+            } catch (error) {
+                logger.warn(`Error getting character ${characterId} webcam config:`, error.message);
+                logger.info('Falling back to default camera settings');
+            }
+        } else {
+            // Fallback to legacy camera settings for non-character requests
+            const settings = await loadCameraSettings();
+            cameraId = settings.selectedCamera || 0;
+            width = parseInt(req.query.width) || settings.width || DEFAULT_WIDTH;
+            height = parseInt(req.query.height) || settings.height || DEFAULT_HEIGHT;
+            fps = parseInt(req.query.fps) || settings.fps || DEFAULT_FPS;
         }
 
         // Kill any existing camera processes and wait
         await killExistingCameraProcesses();
         await cleanupLockFiles();
 
-        // Use saved settings or query parameters
-        const width = parseInt(req.query.width) || settings.width || DEFAULT_WIDTH;
-        const height = parseInt(req.query.height) || settings.height || DEFAULT_HEIGHT;
-        const fps = parseInt(req.query.fps) || settings.fps || DEFAULT_FPS;
-
-        streamProcess = await startCameraStream(settings.selectedCamera, width, height, fps);
+        streamProcess = await startCameraStream(cameraId, width, height, fps);
 
         res.setHeader('Content-Type', 'multipart/x-mixed-replace; boundary=frame');
 
