@@ -44,12 +44,28 @@ function ensureHubAvailable(req, res, next) {
 }
 
 /**
+ * OPTIONS /api/hub/status
+ * Handle preflight requests for CORS
+ */
+router.options('/status', (req, res) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.sendStatus(200);
+});
+
+/**
  * GET /api/hub/status
  * Main monitoring endpoint - returns consolidated status of all services
  * Replaces individual service status checks from hardware-monitor.ejs
  */
 router.get('/status', ensureHubAvailable, async (req, res) => {
     try {
+        // Add CORS headers for fleet monitoring
+        res.header('Access-Control-Allow-Origin', '*');
+        res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+
         logger.debug('Hub status request received');
         await hubInstance.handleStatusRequest(req, res);
     } catch (error) {
