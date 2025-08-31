@@ -381,7 +381,7 @@
           ],
           "animatronic_parts": [],
           "rpi_config": {
-            "host": "192.168.1.200",
+            "host": "192.168.8.150",
             "user": "remote",
             "password": "klrklr89!",
             "ssh_key_path": "~/.ssh/id_rsa",

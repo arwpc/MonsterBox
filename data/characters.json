@@ -3,56 +3,18 @@
     "id": 1,
     "char_name": "Orlok",
     "char_description": "A mysterious nobleman and vampire who lives alone in his ruined castle, who wants to acquire a new property in Germany. He was once a Solomonar who was cursed by the Devil to become a vampire.",
-    "parts": [
-      22
-    ],
+    "parts": [],
     "sounds": [],
     "ai_instances": [],
     "image": "ab623d74c6acf98fb72071d0e176479a",
     "animatronic": {
       "enabled": true,
-      "status": "running",
-      "character_type": "Count Orlok",
-      "description": "Vampire animatronic with moving arms and glowing eyes",
       "rpi_config": {
         "host": "192.168.8.120",
         "user": "remote",
         "password": "klrklr89!",
-        "ssh_key_path": "~/.ssh/id_rsa",
-        "collection_interval": 300,
-        "max_lines": 1000
-      },
-      "services": [
-        "monsterbox",
-        "nginx",
-        "ssh",
-        "systemd-resolved",
-        "bluetooth",
-        "gpio-control",
-        "camera",
-        "head-tracking"
-      ],
-      "log_types": [
-        "system",
-        "auth",
-        "kernel",
-        "daemon",
-        "user"
-      ],
-      "hardware_monitoring": true,
-      "motion_tracking": {
-        "enabled": false,
-        "sensitivity": 50,
-        "min_area": 500,
-        "last_motion": null,
-        "motion_center": null
-      },
-      "animatronic_parts": [
-        "Right Arm of Satan",
-        "Left Arm of Manipulation",
-        "Hand of Azura",
-        "Eye of Orlok"
-      ]
+        "ssh_key_path": "~/.ssh/id_rsa"
+      }
     },
     "chatterpi_config": {
       "ai_characters": [],
@@ -152,7 +114,7 @@
       ],
       "animatronic_parts": [],
       "rpi_config": {
-        "host": "192.168.1.200",
+        "host": "192.168.8.150",
         "user": "remote",
         "password": "klrklr89!",
         "ssh_key_path": "~/.ssh/id_rsa",

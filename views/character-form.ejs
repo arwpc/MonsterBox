@@ -3,25 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title %></title>
+    <title><%= title %> - MonsterBox</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
-    <link rel="stylesheet" href="/css/style.css">
-    <link rel="stylesheet" href="/css/video-configuration.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css?v=<%= Date.now() %>">
     <style>
-        .custom-file-upload {
-            display: inline-block;
-            padding: 8px 16px;
-            cursor: pointer;
-            background-color: #ff0000;
-            color: #00ff00;
+        .character-dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .character-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .character-card {
+            background: #001100;
             border: 2px solid #00ff00;
-            border-radius: 25px;
-            text-align: center;
-            width: 100%;
-            box-sizing: border-box;
-            margin-top: 10px;
-            font-weight: bold;
+            border-radius: 10px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
             transition: all 0.3s ease;
         }
         .custom-file-upload:hover {
@@ -192,37 +198,58 @@
 <body>
     <header>
         <h1 class="landing-title"><%= title %></h1>
+
+        <!-- Breadcrumb Navigation -->
+        <div class="breadcrumb-vertical">
+            <a href="/" class="breadcrumb-item">🏠 Home</a>
+            <a href="/characters" class="breadcrumb-item">🎭 Characters</a>
+            <span class="breadcrumb-item active">✏️ <%= character && character.id !== 'new' ? 'Edit' : 'Add' %> Character</span>
+        </div>
     </header>
 
-    <main>
+    <main class="character-dashboard">
         <form action="<%= action %>" method="POST" enctype="multipart/form-data">
             <% if (character && character.id) { %>
                 <input type="hidden" name="id" value="<%= character.id %>">
             <% } %>
 
-            <div class="character-form-container">
-                <div class="image-preview-container">
-                    <% if (character && character.image) { %>
-                        <img src="/images/characters/<%= character.image %>" alt="Character image" class="image-preview">
-                    <% } else { %>
-                        <div class="image-preview" style="background-color: #002200; display: flex; align-items: center; justify-content: center;">
-                            <span>No Image Selected</span>
-                        </div>
-                    <% } %>
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label for="character_image" class="custom-file-upload">
-                            Upload Picture
-                        </label>
-                        <input type="file" id="character_image" name="character_image" accept="image/*" style="width: 0.1px; height: 0.1px; opacity: 0; overflow: hidden; position: absolute; z-index: -1;">
+            <div class="character-grid">
+                <!-- Character Image Card -->
+                <div class="character-card">
+                    <div class="card-header">
+                        <span class="card-icon">🖼️</span>
+                        <h3 class="card-title">Character Image</h3>
                     </div>
-                    <% if (character && character.id && character.id !== 'new') { %>
-                        <a href="/ai-management/tts?characterId=<%= character.id %>" class="button configure-voice-btn" style="display: block; margin-top: 10px; background-color: #ff0000; color: #00ff00; border: 2px solid #00ff00; border-radius: 25px; text-align: center; padding: 8px; text-decoration: none;">Configure Voice</a>
-                    <% } else if (isNewCharacter) { %>
-                        <div class="note" style="display: block; margin-top: 10px; color: #00ff00; text-align: center;">Voice configuration available after saving</div>
-                    <% } %>
+
+                    <div style="text-align: center;">
+                        <% if (character && character.image) { %>
+                            <img src="/images/characters/<%= character.image %>" alt="Character image" class="image-preview">
+                        <% } else { %>
+                            <div class="image-preview" style="background-color: #002200; display: flex; align-items: center; justify-content: center;">
+                                <span>No Image Selected</span>
+                            </div>
+                        <% } %>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="character_image" class="custom-file-upload">
+                                Upload Picture
+                            </label>
+                            <input type="file" id="character_image" name="character_image" accept="image/*" style="width: 0.1px; height: 0.1px; opacity: 0; overflow: hidden; position: absolute; z-index: -1;">
+                        </div>
+                        <% if (character && character.id && character.id !== 'new') { %>
+                            <a href="/ai-management/tts?characterId=<%= character.id %>" class="button" style="display: block; margin-top: 10px;">🎤 Configure Voice</a>
+                        <% } else if (isNewCharacter) { %>
+                            <div class="text-muted" style="display: block; margin-top: 10px; text-align: center;">Voice configuration available after saving</div>
+                        <% } %>
+                    </div>
                 </div>
 
-                <div class="form-content">
+                <!-- Basic Information Card -->
+                <div class="character-card">
+                    <div class="card-header">
+                        <span class="card-icon">📝</span>
+                        <h3 class="card-title">Basic Information</h3>
+                    </div>
+
                     <div class="form-group">
                         <label for="char_name">Name:</label>
                         <input type="text" id="char_name" name="char_name" value="<%= character ? character.char_name : '' %>" required>
@@ -232,235 +259,174 @@
                         <label for="char_description">Description:</label>
                         <textarea id="char_description" name="char_description" required><%= character ? character.char_description : '' %></textarea>
                     </div>
+                </div>
 
 
-                        <!-- OpenAI Assistant Assignment -->
-                        <div class="form-section">
-                            <h3>🧠 OpenAI Assistant</h3>
-                            <div class="form-group">
-                                <% if (character && character.openaiAssistantId) { %>
-                                    <div class="info-section" style="padding:8px; border:1px solid #00ff00; border-radius:6px; background:#000800;">
-                                        <div><strong>Assigned Assistant ID:</strong> <span class="badge"><%= character.openaiAssistantId %></span></div>
-                                        <div class="button-group" style="margin-top:8px;">
-                                            <a href="/ai-management/assistants" class="button secondary-btn">🔄 Change Assistant</a>
-                                            <button type="button" class="button danger" onclick="unassignAssistant(<%= character.id %>)">❌ Unassign</button>
-                                        </div>
-                                    </div>
-                                <% } else { %>
-                                    <p class="text-muted">No Assistant assigned</p>
-                                    <a href="/ai-management/assistants" class="button">🧠 Assign Assistant</a>
-                                <% } %>
-                            </div>
+                <!-- ElevenLabs Assistant Card -->
+                <div class="character-card">
+                    <div class="card-header">
+                        <span class="card-icon">🧠</span>
+                        <h3 class="card-title">ElevenLabs Assistant</h3>
+                    </div>
+
+                    <% if (character && character.openaiAssistantId) { %>
+                        <div class="info-section">
+                            <div><strong>Currently Assigned Assistant:</strong> <span class="badge"><%= character.openaiAssistantId %></span></div>
                         </div>
-
-                    <!-- Animatronic Configuration Section -->
-                    <div class="form-section">
-                        <h3>🤖 Animatronic Configuration</h3>
-
-                        <div class="form-group">
-                            <label for="animatronic_enabled">
-                                <input type="checkbox" id="animatronic_enabled" name="animatronic_enabled"
-                                       <%= (character && character.animatronic && character.animatronic.enabled) ? 'checked' : '' %>>
-                                Enable Animatronic Features
-                            </label>
+                        <div class="button-group">
+                            <a href="/ai-management/assistants" class="button">🧠 Assign Assistant</a>
                         </div>
-
-                        <div id="animatronic_config" style="<%= (character && character.animatronic && character.animatronic.enabled) ? '' : 'display: none;' %>">
-                            <div class="form-group">
-                                <label for="animatronic_status">Status:</label>
-                                <select id="animatronic_status" name="animatronic_status">
-                                    <option value="running" <%= (character && character.animatronic && character.animatronic.status === 'running') ? 'selected' : '' %>>Running</option>
-                                    <option value="offline" <%= (character && character.animatronic && character.animatronic.status === 'offline') ? 'selected' : '' %>>Offline</option>
-                                    <option value="virtual" <%= (character && character.animatronic && character.animatronic.status === 'virtual') ? 'selected' : '' %>>Virtual</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="character_type">Character Type:</label>
-                                <input type="text" id="character_type" name="character_type"
-                                       value="<%= (character && character.animatronic) ? character.animatronic.character_type || '' : '' %>">
-                            </div>
-
-                            <div class="form-group">
-                                <label for="animatronic_description">Animatronic Description:</label>
-                                <textarea id="animatronic_description" name="animatronic_description"><%= (character && character.animatronic) ? character.animatronic.description || '' : '' %></textarea>
-                            </div>
-
-                            <!-- RPI Configuration -->
-                            <h4>🖥️ RPI4b Configuration</h4>
-
-                            <div class="form-group">
-                                <label for="rpi_host">IP Address:</label>
-                                <input type="text" id="rpi_host" name="rpi_host"
-                                       value="<%= (character && character.animatronic && character.animatronic.rpi_config) ? character.animatronic.rpi_config.host || '' : '' %>"
-                                       placeholder="192.168.x.x">
-                            </div>
-
-                            <div class="form-group">
-                                <label for="rpi_user">SSH User:</label>
-                                <input type="text" id="rpi_user" name="rpi_user"
-                                       value="<%= (character && character.animatronic && character.animatronic.rpi_config) ? character.animatronic.rpi_config.user || 'remote' : 'remote' %>">
-                            </div>
-
-                            <div class="form-group">
-                                <label for="rpi_password">SSH Password:</label>
-                                <input type="password" id="rpi_password" name="rpi_password"
-                                       value="<%= (character && character.animatronic && character.animatronic.rpi_config) ? character.animatronic.rpi_config.password || '' : '' %>"
-                                       placeholder="Enter SSH password">
-                                <small style="color: #888;">Password will be stored securely and used for automated SSH connections</small>
-                            </div>
-
-
-
-                            <div class="form-group">
-                                <label for="hardware_monitoring">
-                                    <input type="checkbox" id="hardware_monitoring" name="hardware_monitoring"
-                                           <%= (character && character.animatronic && character.animatronic.hardware_monitoring) ? 'checked' : '' %>>
-                                    Enable Hardware Monitoring
-                                </label>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="motion_tracking_enabled" title="Enable OpenCV-based motion tracking for head movement control">
-                                    <input type="checkbox" id="motion_tracking_enabled" name="motion_tracking_enabled"
-                                           <%= (character && character.animatronic && character.animatronic.motion_tracking && character.animatronic.motion_tracking.enabled) ? 'checked' : '' %>>
-                                    🎯 Enable Motion Tracking
-                                </label>
-                                <small style="color: #888; display: block; margin-top: 5px;">
-                                    Uses OpenCV to track motion for future servo-based head tracking
-                                </small>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="jaw_animation_enabled" title="Enable real-time jaw animation synchronized with audio">
-                                    <input type="checkbox" id="jaw_animation_enabled" name="jaw_animation_enabled"
-                                           <%= (character && character.jaw_animation_config && character.jaw_animation_config.enabled) ? 'checked' : '' %>>
-                                    🦴 Enable Jaw Animation
-                                </label>
-                                <small style="color: #888; display: block; margin-top: 5px;">
-                                    Real-time jaw movement synchronized with speech and audio playback
-                                </small>
-                                <% if (character && character.id && character.id !== 'new') { %>
-                                    <a href="/characters/<%= character.id %>/jaw-animation" class="button secondary-btn" style="margin-top: 10px; display: inline-block;">
-                                        🦴 Configure Jaw Animation
-                                    </a>
-                                <% } else { %>
-                                    <small style="color: #888; display: block; margin-top: 5px;">
-                                        Detailed configuration available after saving character
-                                    </small>
-                                <% } %>
-                            </div>
-
-
-
-                            <!-- Animatronic Management Buttons -->
-                            <% if (character && character.id && character.id !== 'new' && character.animatronic && character.animatronic.enabled) { %>
-                                <div class="form-group">
-                                    <h4>🤖 Animatronic Management</h4>
-                                    <div class="button-group">
-                                        <button type="button" onclick="testConnection(<%= character.id %>)" class="button secondary-btn">🧪 Test Connection</button>
-                                        <button type="button" onclick="showSystemInfo(<%= character.id %>)" class="button secondary-btn">📊 System Info</button>
-                                        <button type="button" onclick="rebootSystem(<%= character.id %>)" class="button secondary-btn">🔄 Reboot System</button>
-                                    </div>
-                                </div>
-                            <% } %>
+                    <% } else { %>
+                        <p class="text-muted">No Assistant assigned</p>
+                        <div class="button-group">
+                            <a href="/ai-management/assistants" class="button">🧠 Assign Assistant</a>
                         </div>
+                    <% } %>
+                </div>
 
-                        <!-- Character-Specific System Configuration -->
-                        <% if (character && character.id && character.id !== 'new' && character.animatronic && character.animatronic.enabled) { %>
-                            <div class="form-section">
-                                <h3>⚙️ System Configuration</h3>
-                                <p style="color: #888; font-size: 12px;">Configure hardware and system settings specific to this character's RPI4b system.</p>
-
-                                <div class="form-group">
-                                    <button type="button" onclick="manageServos(<%= character.id %>)" class="button secondary-btn">🔧 Manage Servos</button>
-                                    <button type="button" onclick="viewSystemConfig(<%= character.id %>)" class="button secondary-btn">📋 View System Config</button>
-                                </div>
-                            </div>
-                        <% } %>
-
-                        <!-- Video Configuration Section -->
-                        <% if (character && character.id && character.id !== 'new') { %>
-                            <%- include('components/video-configuration', { character: character, webcam: webcam }) %>
-                        <% } %>
+                <!-- RPI Configuration Card -->
+                <div class="character-card">
+                    <div class="card-header">
+                        <span class="card-icon">🖥️</span>
+                        <h3 class="card-title">RPI4b Configuration</h3>
                     </div>
 
                     <div class="form-group">
-                        <label>Parts:</label>
-                        <div class="dual-select">
-                            <div class="select-container">
-                                <label class="select-label">Available Parts</label>
-                                <select id="available-parts" multiple>
+                        <label for="rpi_host">IP Address:</label>
+                        <input type="text" id="rpi_host" name="rpi_host"
+                               value="<%= (character && character.animatronic && character.animatronic.rpi_config) ? character.animatronic.rpi_config.host || '' : '' %>"
+                               placeholder="192.168.x.x">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="rpi_user">SSH User:</label>
+                        <input type="text" id="rpi_user" name="rpi_user"
+                               value="<%= (character && character.animatronic && character.animatronic.rpi_config) ? character.animatronic.rpi_config.user || 'remote' : 'remote' %>">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="rpi_password">SSH Password:</label>
+                        <input type="password" id="rpi_password" name="rpi_password"
+                               value="<%= (character && character.animatronic && character.animatronic.rpi_config) ? character.animatronic.rpi_config.password || '' : '' %>"
+                               placeholder="Enter SSH password">
+                        <small style="color: #888;">Password will be stored securely and used for automated SSH connections</small>
+                    </div>
+                </div>
+
+                <!-- WebCam Configuration Card -->
+                <% if (character && character.id && character.id !== 'new') { %>
+                    <div class="character-card">
+                        <div class="card-header">
+                            <span class="card-icon">📹</span>
+                            <h3 class="card-title">WebCam Configuration</h3>
+                        </div>
+                        <div class="button-group">
+                            <a href="/configuration/webcam" class="button">📹 Configure WebCam</a>
+                        </div>
+                    </div>
+                <% } %>
+
+                <!-- Hardware Parts Card -->
+                <div class="character-card">
+                    <div class="card-header">
+                        <span class="card-icon">🔧</span>
+                        <h3 class="card-title">Hardware Parts</h3>
+                    </div>
+
+                    <div class="dual-select">
+                        <div class="select-container">
+                            <label class="select-label">Available Parts</label>
+                            <select id="available-parts" multiple>
+                                <% parts.forEach(function(part) { %>
+                                    <% if (!part.characterId || (character && character.id && part.characterId !== character.id)) { %>
+                                        <option value="<%= part.id %>"><%= part.name %></option>
+                                    <% } %>
+                                <% }); %>
+                            </select>
+                        </div>
+                        <div class="dual-select-controls">
+                            <button type="button" onclick="moveSelectedOptions('available-parts', 'assigned-parts')">></button>
+                            <button type="button" onclick="moveSelectedOptions('assigned-parts', 'available-parts')"><</button>
+                        </div>
+                        <div class="select-container">
+                            <label class="select-label">Assigned Parts</label>
+                            <select id="assigned-parts" name="parts[]" multiple>
+                                <% if (character && character.id) { %>
                                     <% parts.forEach(function(part) { %>
-                                        <% if (!part.characterId || (character && character.id && part.characterId !== character.id)) { %>
-                                            <option value="<%= part.id %>"><%= part.name %></option>
+                                        <% if (part.characterId === character.id) { %>
+                                            <option value="<%= part.id %>" selected><%= part.name %></option>
                                         <% } %>
                                     <% }); %>
-                                </select>
-                            </div>
-                            <div class="dual-select-controls">
-                                <button type="button" onclick="moveSelectedOptions('available-parts', 'assigned-parts')">></button>
-                                <button type="button" onclick="moveSelectedOptions('assigned-parts', 'available-parts')"><</button>
-                            </div>
-                            <div class="select-container">
-                                <label class="select-label">Assigned Parts</label>
-                                <select id="assigned-parts" name="parts[]" multiple>
-                                    <% if (character && character.id) { %>
-                                        <% parts.forEach(function(part) { %>
-                                            <% if (part.characterId === character.id) { %>
-                                                <option value="<%= part.id %>" selected><%= part.name %></option>
-                                            <% } %>
-                                        <% }); %>
-                                    <% } %>
-                                </select>
-                            </div>
+                                <% } %>
+                            </select>
                         </div>
                     </div>
+                </div>
 
-                    <div class="form-group">
-                        <label>Sounds:</label>
-                        <div class="dual-select">
-                            <div class="select-container">
-                                <label class="select-label">Available Sounds</label>
-                                <select id="available-sounds" multiple>
+                <!-- Sounds Card -->
+                <div class="character-card">
+                    <div class="card-header">
+                        <span class="card-icon">🔊</span>
+                        <h3 class="card-title">Sounds</h3>
+                    </div>
+
+                    <div class="dual-select">
+                        <div class="select-container">
+                            <label class="select-label">Available Sounds</label>
+                            <select id="available-sounds" multiple>
+                                <% sounds.forEach(function(sound) { %>
+                                    <% if (!(sound.characterIds && sound.characterIds.includes(character.id))) { %>
+                                        <option value="<%= sound.id %>"><%= sound.name %></option>
+                                    <% } %>
+                                <% }); %>
+                            </select>
+                        </div>
+                        <div class="dual-select-controls">
+                            <button type="button" onclick="moveSelectedOptions('available-sounds', 'assigned-sounds')">></button>
+                            <button type="button" onclick="moveSelectedOptions('assigned-sounds', 'available-sounds')"><</button>
+                        </div>
+                        <div class="select-container">
+                            <label class="select-label">Assigned Sounds</label>
+                            <select id="assigned-sounds" name="sounds[]" multiple>
+                                <% if (character && character.id) { %>
                                     <% sounds.forEach(function(sound) { %>
-                                        <% if (!(sound.characterIds && sound.characterIds.includes(character.id))) { %>
-                                            <option value="<%= sound.id %>"><%= sound.name %></option>
+                                        <% if (sound.characterIds && sound.characterIds.includes(character.id)) { %>
+                                            <option value="<%= sound.id %>" selected><%= sound.name %></option>
                                         <% } %>
                                     <% }); %>
-                                </select>
-                            </div>
-                            <div class="dual-select-controls">
-                                <button type="button" onclick="moveSelectedOptions('available-sounds', 'assigned-sounds')">></button>
-                                <button type="button" onclick="moveSelectedOptions('assigned-sounds', 'available-sounds')"><</button>
-                            </div>
-                            <div class="select-container">
-                                <label class="select-label">Assigned Sounds</label>
-                                <select id="assigned-sounds" name="sounds[]" multiple>
-                                    <% if (character && character.id) { %>
-                                        <% sounds.forEach(function(sound) { %>
-                                            <% if (sound.characterIds && sound.characterIds.includes(character.id)) { %>
-                                                <option value="<%= sound.id %>" selected><%= sound.name %></option>
-                                            <% } %>
-                                        <% }); %>
-                                    <% } %>
-                                </select>
-                            </div>
+                                <% } %>
+                            </select>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Audio Configuration Section -->
-                    <% if (character && character.id) { %>
-                    <div class="form-section">
-                        <h3>🎤 Audio Configuration</h3>
-                        <div class="audio-config-container">
-                            <div class="audio-settings" id="audioSettings">
-                                <div class="settings-loading">
-                                    <i class="fas fa-spinner fa-spin"></i>
-                                    Loading audio configuration...
-                                </div>
-                            </div>
+                <!-- Audio Configuration Card -->
+                <% if (character && character.id) { %>
+                    <div class="character-card">
+                        <div class="card-header">
+                            <span class="card-icon">🎤</span>
+                            <h3 class="card-title">Audio Configuration</h3>
+                        </div>
+                        <div class="button-group">
+                            <a href="/configuration/microphone" class="button">🎤 Configure Microphone</a>
+                            <a href="/configuration/stt" class="button">🗣️ Speech to Text Settings</a>
+                        </div>
+                    </div>
+                <% } %>
+            </div>
 
+            <!-- Save Button -->
+            <div style="text-align: center; margin: 30px 0;">
+                <button type="submit" class="button primary-btn" style="font-size: 18px; padding: 15px 40px;">
+                    💾 <%= character && character.id !== 'new' ? 'Update Character' : 'Create Character' %>
+                </button>
+            </div>
+
+        </form>
+    </main>
+
+    <script>
+        // Unassign Assistant function
         async function unassignAssistant(characterId){
             try{
                 const res = await fetch(`/characters/${characterId}/ai/remove-all`, { method:'POST', headers:{'Content-Type':'application/json'} });
@@ -468,30 +434,6 @@
                 if (data.success) location.reload(); else alert('Error: '+data.error);
             } catch(e){ alert('Error: '+e.message); }
         }
-
-
-                            <!-- Live Microphone Test -->
-                            <div class="microphone-test-section">
-                                <h4>🎤 Live Microphone Test</h4>
-                                <div id="characterMicrophoneContainer"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <% } %>
-
-                    <div class="button-group">
-                        <button type="submit" class="button primary-btn">Save Character</button>
-                        <a href="/characters" class="button secondary-btn">Cancel</a>
-                    </div>
-                </div>
-            </div>
-        </form>
-    </main>
-
-    <!-- Include Enhanced Microphone Component -->
-    <script src="/js/EnhancedMicrophoneComponent.js"></script>
-
-    <script>
         // Add preview functionality for image upload
         const imageInput = document.getElementById('character_image');
         const imagePreview = document.querySelector('.image-preview');
@@ -529,64 +471,7 @@
             }
         }
 
-        // Animatronic configuration toggle
-        const animatronicEnabled = document.getElementById('animatronic_enabled');
-        const animatronicConfig = document.getElementById('animatronic_config');
 
-        if (animatronicEnabled) {
-            animatronicEnabled.addEventListener('change', function() {
-                if (this.checked) {
-                    animatronicConfig.style.display = 'block';
-                } else {
-                    animatronicConfig.style.display = 'none';
-                }
-            });
-        }
-
-        // Motion tracking toggle functionality
-        const motionTrackingEnabled = document.getElementById('motion_tracking_enabled');
-        if (motionTrackingEnabled) {
-            motionTrackingEnabled.addEventListener('change', function() {
-                const characterId = '<%= character && character.id ? character.id : "" %>';
-                if (characterId) {
-                    updateMotionTrackingStatus(characterId, this.checked);
-                }
-            });
-        }
-
-        function updateMotionTrackingStatus(characterId, enabled) {
-            fetch('/api/motion-tracking/settings/' + characterId, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    enabled: enabled
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    console.log('Motion tracking ' + (enabled ? 'enabled' : 'disabled') + ' for character ' + characterId);
-
-                    // Show visual feedback
-                    const label = document.querySelector('label[for="motion_tracking_enabled"]');
-                    if (label) {
-                        const icon = enabled ? '🎯' : '⭕';
-                        label.innerHTML = label.innerHTML.replace(/^[🎯⭕]\s*/, icon + ' ');
-                    }
-                } else {
-                    console.error('Failed to update motion tracking:', data.message);
-                    // Revert checkbox state on error
-                    motionTrackingEnabled.checked = !enabled;
-                }
-            })
-            .catch(error => {
-                console.error('Error updating motion tracking:', error);
-                // Revert checkbox state on error
-                motionTrackingEnabled.checked = !enabled;
-            });
-        }
 
         // Form submission handling
         const form = document.querySelector('form');

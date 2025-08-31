@@ -63,35 +63,49 @@ router.get('/stream/:characterId', async (req, res) => {
     try {
         const characterId = parseInt(req.params.characterId);
         if (isNaN(characterId)) {
+            logger.error(`Invalid character ID: ${req.params.characterId}`);
             return res.status(400).send('Invalid character ID');
         }
 
+        logger.info(`Stream request for character ${characterId}`);
+
         // Check if stream exists, if not try to start it
         let streamInfo = streamingService.getStreamInfo(characterId);
+        logger.info(`Stream info for character ${characterId}:`, streamInfo ? {
+            status: streamInfo.status,
+            streamId: streamInfo.streamId,
+            hasProcess: !!streamInfo.process
+        } : 'null');
+
         if (!streamInfo || streamInfo.status !== 'active') {
             logger.info(`Starting stream for character ${characterId} on demand`);
             const startResult = await streamingService.startStream(characterId);
             if (!startResult.success) {
+                logger.error(`Failed to start stream for character ${characterId}:`, startResult.error);
                 return res.status(500).send(`Failed to start stream: ${startResult.error}`);
             }
             streamInfo = streamingService.getStreamInfo(characterId);
         }
 
         if (!streamInfo) {
+            logger.error(`Stream not available for character ${characterId}`);
             return res.status(404).send('Stream not available');
         }
+
+        logger.info(`Attempting to pipe stream to client for character ${characterId}`);
 
         // Pipe stream to client
         const success = streamingService.pipeToClient(characterId, res);
         if (!success) {
+            logger.error(`Failed to connect to stream for character ${characterId}`);
             return res.status(500).send('Failed to connect to stream');
         }
 
-        logger.debug(`Client connected to stream for character ${characterId}`);
+        logger.info(`Client successfully connected to stream for character ${characterId}`);
 
     } catch (error) {
         logger.error('Error serving stream:', error);
-        res.status(500).send('Internal server error');
+        res.status(500).send('Internal server error: ' + error.message);
     }
 });
 

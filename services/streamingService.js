@@ -857,12 +857,26 @@ class StreamingService extends EventEmitter {
      */
     addClient(characterId, response, clientInfo = {}) {
         try {
+            logger.info(`addClient called for character ${characterId}`);
+
             const streamInfo = this.activeStreams.get(characterId);
+            logger.info(`Stream info status: ${streamInfo ? streamInfo.status : 'null'}`);
+
             if (!streamInfo || streamInfo.status !== 'active') {
+                logger.error(`Stream not active for character ${characterId}. Status: ${streamInfo ? streamInfo.status : 'null'}`);
                 return false;
             }
 
-            const clients = this.streamClients.get(characterId);
+            let clients = this.streamClients.get(characterId);
+            logger.info(`Clients set exists: ${!!clients}`);
+
+            if (!clients) {
+                // Initialize clients set if it doesn't exist
+                clients = new Set();
+                this.streamClients.set(characterId, clients);
+                logger.info(`Initialized clients set for character ${characterId}`);
+            }
+
             if (clients) {
                 // Generate unique client ID
                 const clientId = `${characterId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -1007,24 +1021,37 @@ class StreamingService extends EventEmitter {
      */
     pipeToClient(characterId, response) {
         try {
+            logger.info(`pipeToClient called for character ${characterId}`);
+
             const streamInfo = this.activeStreams.get(characterId);
+            logger.info(`Stream info exists: ${!!streamInfo}, has process: ${!!(streamInfo && streamInfo.process)}`);
+
             if (!streamInfo || !streamInfo.process) {
+                logger.error(`No stream info or process for character ${characterId}`);
                 return false;
             }
 
+            logger.info(`Attempting to add client for character ${characterId}`);
+
             // Add client to tracking
             if (!this.addClient(characterId, response)) {
+                logger.error(`Failed to add client for character ${characterId}`);
                 return false;
             }
+
+            logger.info(`Client added successfully, setting headers for character ${characterId}`);
 
             // Set response headers for MJPEG stream
             response.setHeader('Content-Type', 'multipart/x-mixed-replace; boundary=frame');
             response.setHeader('Cache-Control', 'no-cache');
             response.setHeader('Connection', 'keep-alive');
 
+            logger.info(`Headers set, piping stream data for character ${characterId}`);
+
             // Pipe stream data to client
             streamInfo.process.stdout.pipe(response, { end: false });
 
+            logger.info(`Stream piped successfully for character ${characterId}`);
             return true;
         } catch (error) {
             logger.error('Error piping stream to client:', error);

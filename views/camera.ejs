@@ -264,7 +264,20 @@
             try {
                 showStatus('Loading cameras...', true);
                 const response = await fetch('/camera/list');
-                const cameras = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const responseText = await response.text();
+                let cameras;
+
+                try {
+                    cameras = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error('Failed to parse camera list response:', responseText);
+                    throw new Error('Invalid camera list response');
+                }
                 const select = document.getElementById('cameraSelect');
                 select.innerHTML = '<option value="">Select Camera...</option>';
 
@@ -334,14 +347,20 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error('Failed to select camera');
+                    const errorText = await response.text();
+                    console.warn('Camera select failed, but continuing with stream:', errorText);
+                    showStatus('Camera selection failed, trying stream anyway...', true);
+                } else {
+                    showStatus('Camera initialized, starting stream...', true);
                 }
 
-                showStatus('Camera initialized, starting stream...', true);
+                // Always try to start the stream, even if camera selection failed
                 startStream();
             } catch (error) {
-                showStatus('Error initializing camera');
-                console.error('Error selecting camera:', error);
+                console.warn('Camera selection error, but trying stream anyway:', error);
+                showStatus('Camera selection error, trying stream...', true);
+                // Still try to start the stream
+                startStream();
             }
         }
 
@@ -349,10 +368,13 @@
             const img = document.getElementById('cameraStream');
             const [width, height] = document.getElementById('resolutionSelect').value.split('x');
             const fps = document.getElementById('fpsSelect').value;
+            const characterId = '<%= characterId %>';
 
-            streamUrl = `/camera/stream?width=${width}&height=${height}&fps=${fps}&t=${Date.now()}`;
+            // Use legacy camera stream for now - streaming API has issues
+            streamUrl = `/camera/stream?characterId=${characterId}&width=${width}&height=${height}&fps=${fps}&t=${Date.now()}`;
+
             img.src = streamUrl;
-            showStatus('Starting stream...', true);
+            showStatus('Loading stream...', true);
 
             img.onload = () => {
                 hideStatus();
@@ -662,6 +684,16 @@
 
             // Update character name when selection changes
             document.getElementById('characterSelect').addEventListener('change', updateCharacterName);
+
+            // Auto-start stream if character is selected
+            const characterId = '<%= characterId %>';
+            if (characterId && characterId !== 'null' && characterId !== '') {
+                console.log('📹 Auto-starting stream for character:', characterId);
+                // Small delay to ensure page is fully loaded
+                setTimeout(() => {
+                    startStream();
+                }, 500);
+            }
         });
     </script>
 </body>

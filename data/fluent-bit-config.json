@@ -57,12 +57,12 @@
     {
       "id": "pumpkinhead",
       "name": "Pumpkinhead RPI4b",
-      "host": "192.168.1.101", 
+      "host": "192.168.8.150",
       "user": "remote",
       "password_env": "PUMPKINHEAD_SSH_PASSWORD",
-      "description": "Pumpkinhead animatronic RPI4b (currently offline)",
-      "status": "offline",
-      "enabled": false,
+      "description": "Pumpkinhead animatronic RPI4b",
+      "status": "running",
+      "enabled": true,
       "fluent_bit": {
         "http_port": 2020,
         "log_export_path": "/home/remote/log_export/",

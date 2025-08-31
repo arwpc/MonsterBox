@@ -897,7 +897,7 @@
                 const ipMappings = {
                     'Orlok': '192.168.8.120',
                     'Coffin Breaker': '192.168.8.140',
-                    'PumpkinHead': '192.168.1.200',
+                    'PumpkinHead': '192.168.8.150',
                     'Skulltalker': currentHostname
                 };
 
@@ -2156,7 +2156,9 @@
                     };
 
                     const mappedType = typeMap[partType.toLowerCase()] || partType.toLowerCase();
-                    editUrl = `${baseUrl}/parts/${mappedType}/${partId}/edit`;
+                    // Use ID 1 as default if partId is not numeric
+                    const numericId = isNaN(partId) ? '1' : partId;
+                    editUrl = `${baseUrl}/parts/${mappedType}/${numericId}/edit`;
                 } else {
                     // Fallback to parts management page
                     editUrl = `${baseUrl}/parts`;

@@ -1,4 +1,50 @@
 {
-  "lastUpdated": "2025-08-31T19:21:42.011Z",
-  "services": {}
+  "lastUpdated": "2025-08-31T21:02:39.399Z",
+  "services": {
+    "elevenLabsSTT": {
+      "name": "elevenLabsSTT",
+      "type": "stt",
+      "port": 8778,
+      "proxyPort": null,
+      "priority": 50,
+      "status": "healthy",
+      "registeredAt": "2025-08-31T19:24:06.611Z",
+      "lastHealthCheck": "2025-08-31T21:02:39.395Z",
+      "metadata": {
+        "description": "ElevenLabs Live STT Service",
+        "protocol": "websocket",
+        "pid": 122106,
+        "hostname": "skulltalker",
+        "legacy": true
+      }
+    },
+    "elevenLabsConversational": {
+      "name": "elevenLabsConversational",
+      "type": "elevenlabs",
+      "port": 8600,
+      "proxyPort": 8200,
+      "priority": 70,
+      "status": "unhealthy",
+      "registeredAt": "2025-08-31T20:48:09.401Z",
+      "lastHealthCheck": "2025-08-31T21:02:39.395Z",
+      "metadata": {
+        "pid": 136897,
+        "hostname": "skulltalker"
+      }
+    },
+    "sensorService": {
+      "name": "sensorService",
+      "type": "hardware",
+      "port": 8400,
+      "proxyPort": 8201,
+      "priority": 90,
+      "status": "allocated",
+      "registeredAt": "2025-08-31T20:48:11.418Z",
+      "lastHealthCheck": null,
+      "metadata": {
+        "pid": 136897,
+        "hostname": "skulltalker"
+      }
+    }
+  }
 }

@@ -28,12 +28,12 @@
     },
     {
       "name": "pumpkinhead",
-      "host": "192.168.1.101",
+      "host": "192.168.8.150",
       "user": "remote",
       "password_env": "PUMPKINHEAD_SSH_PASSWORD",
       "description": "Pumpkinhead animatronic RPI4b",
-      "status": "offline",
-      "enabled": false,
+      "status": "running",
+      "enabled": true,
       "services": [
         "monsterbox",
         "nginx",

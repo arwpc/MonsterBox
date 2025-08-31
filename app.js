@@ -858,6 +858,12 @@ async function startServer() {
         await characterAudioConfigService.initialize();
         logger.info('🎤 Character Audio Config Service initialized');
 
+        // Initialize Webcam Startup Service
+        const WebcamStartupService = require('./services/webcamStartupService');
+        global.webcamStartupService = new WebcamStartupService();
+        await global.webcamStartupService.initialize();
+        logger.info('📹 Webcam Startup Service initialized');
+
         // Start audio cleanup service
         audioCleanupService.start();
         logger.info('🧹 Audio cleanup service started');
@@ -1335,6 +1341,12 @@ async function gracefulShutdown(reason) {
         // Shutdown cache manager
         cacheManager.shutdown();
         logger.info('Cache manager stopped');
+
+        // Shutdown webcam startup service
+        if (global.webcamStartupService) {
+            await global.webcamStartupService.cleanup();
+            logger.info('Webcam streams stopped');
+        }
 
         // Shutdown connection manager
         if (serviceConnectionManager) {
