@@ -264,11 +264,36 @@ router.get('/stream', async (req, res) => {
                 const partService = require('../services/partService');
                 const characterService = require('../services/characterService');
 
+                logger.info(`🔍 Getting webcam configuration for character ${characterId}`);
+
                 const parts = await partService.getPartsByCharacter(characterId);
+                logger.info(`📋 Found ${parts.length} parts for character ${characterId}`);
+
                 const webcamPart = parts.find(part => part.type === 'webcam');
+                logger.info(`📹 Webcam part for character ${characterId}:`, webcamPart ? {
+                    id: webcamPart.id,
+                    name: webcamPart.name,
+                    deviceId: webcamPart.deviceId,
+                    devicePath: webcamPart.devicePath,
+                    status: webcamPart.status,
+                    resolution: webcamPart.resolution,
+                    fps: webcamPart.fps
+                } : 'null');
 
                 if (webcamPart && webcamPart.status === 'active') {
-                    cameraId = webcamPart.deviceId || 0;
+                    // For remote characters, we need to handle camera differently
+                    const character = await characterService.getCharacterById(characterId);
+                    const isRemoteCharacter = character && character.animatronic && character.animatronic.rpi_config;
+
+                    if (isRemoteCharacter) {
+                        // For remote characters, use their configured deviceId but stream from their RPI
+                        cameraId = webcamPart.deviceId || 0;
+                        logger.info(`🌐 Character ${characterId} is remote (${character.animatronic.rpi_config.host}), using deviceId ${cameraId}`);
+                    } else {
+                        // For local characters, use their deviceId directly
+                        cameraId = webcamPart.deviceId || 0;
+                        logger.info(`🏠 Character ${characterId} is local, using deviceId ${cameraId}`);
+                    }
 
                     // Use webcam part settings if available
                     if (webcamPart.resolution) {
@@ -278,13 +303,15 @@ router.get('/stream', async (req, res) => {
                     }
                     fps = parseInt(req.query.fps) || webcamPart.fps || DEFAULT_FPS;
 
-                    logger.info(`Using character ${characterId} webcam: camera ${cameraId}, ${width}x${height}@${fps}fps`);
+                    logger.info(`✅ Using character ${characterId} webcam: camera ${cameraId}, ${width}x${height}@${fps}fps`);
                 } else {
-                    logger.warn(`Character ${characterId} has no active webcam, using default camera 0`);
+                    logger.warn(`⚠️ Character ${characterId} has no active webcam part, using default camera 0`);
+                    cameraId = 0;
                 }
             } catch (error) {
-                logger.warn(`Error getting character ${characterId} webcam config:`, error.message);
-                logger.info('Falling back to default camera settings');
+                logger.error(`❌ Error getting character ${characterId} webcam config:`, error);
+                logger.info('🔄 Falling back to default camera settings');
+                cameraId = 0;
             }
         } else {
             // Fallback to legacy camera settings for non-character requests

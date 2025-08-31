@@ -167,28 +167,6 @@
     "pwmPin": "13"
   },
   {
-    "id": 16,
-    "name": "Test Webcam",
-    "type": "webcam",
-    "characterId": 1,
-    "deviceId": 0,
-    "devicePath": "/dev/video0",
-    "resolution": "640x480",
-    "fps": 30,
-    "status": "active"
-  },
-  {
-    "id": 17,
-    "name": "Test Webcam",
-    "type": "webcam",
-    "characterId": 4,
-    "deviceId": 0,
-    "devicePath": "/dev/video0",
-    "resolution": "640x480",
-    "fps": 30,
-    "status": "active"
-  },
-  {
     "id": 18,
     "name": "Motion Skulltalker",
     "type": "sensor",
@@ -286,10 +264,45 @@
     "voiceActivationThreshold": "0.1"
   },
   {
-    "id": 25,
-    "name": "CoffinCam",
+    "id": 26,
+    "name": "Test Microphone",
+    "deviceId": "test-device",
+    "sensitivity": "0.5",
+    "type": "microphone",
+    "characterId": 1
+  },
+  {
+    "id": 27,
+    "name": "SkullEyes",
     "type": "webcam",
-    "characterId": 2,
+    "characterId": 4,
+    "deviceId": 0,
+    "devicePath": "/dev/video0",
+    "resolution": "1280x720",
+    "fps": 15,
+    "status": "active",
+    "cameraControls": {
+      "brightness": 48,
+      "contrast": 32,
+      "saturation": 64,
+      "hue": 0,
+      "gamma": 100,
+      "gain": 0,
+      "sharpness": 10,
+      "backlight_compensation": 80,
+      "white_balance_temperature": 4600,
+      "exposure_time_absolute": 157,
+      "white_balance_automatic": true,
+      "exposure_dynamic_framerate": false,
+      "auto_exposure": 3,
+      "power_line_frequency": 1
+    }
+  },
+  {
+    "id": 28,
+    "name": "Orlok's Gaze",
+    "type": "webcam",
+    "characterId": 1,
     "deviceId": 0,
     "devicePath": "/dev/video0",
     "resolution": "640x480",
@@ -311,13 +324,5 @@
       "auto_exposure": 3,
       "power_line_frequency": 1
     }
-  },
-  {
-    "id": 26,
-    "name": "Test Microphone",
-    "deviceId": "test-device",
-    "sensitivity": "0.5",
-    "type": "microphone",
-    "characterId": 1
   }
 ]

@@ -446,7 +446,7 @@ class WebcamService {
             }
 
             // Create a public-friendly URL
-            const characterName = character.char_name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+            const characterName = (character.char_name || 'unknown').toLowerCase().replace(/[^a-z0-9]/g, '-');
             return `/public/webcam/${characterName}`;
         } catch (error) {
             logger.error('Error getting public stream URL:', error);

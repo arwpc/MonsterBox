@@ -609,7 +609,7 @@ class StreamingService extends EventEmitter {
                 const user = rpiConfig.user || 'remote';
 
                 // Build SSH command with proper authentication using ssh-credentials
-                const characterKey = config.character.char_name.toLowerCase().replace(/\s+/g, '');
+                const characterKey = (config.character.char_name || 'unknown').toLowerCase().replace(/\s+/g, '');
 
                 // Clean up any existing camera processes first
                 await this.cleanupRemoteCameraProcesses(host, characterKey);
