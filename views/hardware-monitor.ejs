@@ -294,6 +294,28 @@
             border: 1px solid rgba(0, 255, 0, 0.2);
         }
 
+        .clickable-part {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .clickable-part:hover {
+            background: rgba(0, 255, 0, 0.15);
+            border-color: rgba(0, 255, 0, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 255, 0, 0.2);
+        }
+
+        .edit-icon {
+            float: right;
+            opacity: 0.6;
+            transition: opacity 0.3s ease;
+        }
+
+        .clickable-part:hover .edit-icon {
+            opacity: 1;
+        }
+
         .detail-label {
             color: #cccccc;
             font-size: 0.9em;
@@ -601,36 +623,59 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Breadcrumb Navigation Styling */
+        /* Compact Header Styles */
+        .compact-header {
+            background: #000000;
+            border-bottom: 2px solid #00ff00;
+            padding: 15px 20px;
+            margin: -20px -20px 20px -20px;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-title {
+            font-family: 'Creepster', cursive;
+            font-size: 2em;
+            margin: 0;
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+        }
+
         .breadcrumb-vertical {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 12px;
-          margin-bottom: 20px;
-          font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
         }
 
         .breadcrumb-item {
-          color: #00ffff;
-          text-decoration: none;
-          transition: all 0.3s ease;
+            color: #00ffff;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            padding: 4px 8px;
+            border-radius: 4px;
         }
 
         .breadcrumb-item:hover {
-          color: #ffffff;
-          text-shadow: 0 0 5px #00ffff;
+            color: #ffffff;
+            background: rgba(0, 255, 255, 0.1);
         }
 
         .breadcrumb-item.active {
-          color: #00ff00;
-          font-weight: bold;
+            color: #00ff00;
+            font-weight: bold;
         }
 
         .breadcrumb-item:not(.active):after {
-          content: ' → ';
-          color: #666666;
-          margin-left: 8px;
+            content: ' - ';
+            color: #666666;
+            margin-left: 4px;
         }
 
         /* Info Section Styling */
@@ -657,15 +702,15 @@
     </style>
 </head>
 <body>
-    <%- include('partials/compact-header', {
-        title: 'Fleet Monitor',
-        icon: '🎭',
-        breadcrumbs: [
-            { name: 'Home', url: '/', icon: '🏠' },
-            { name: 'Configuration', url: '/configuration', icon: '⚙️' },
-            { name: 'Fleet Monitor', current: true }
-        ]
-    }) %>
+    <header class="compact-header">
+        <div class="header-content">
+            <h1 class="page-title">🎭 Fleet Monitor</h1>
+            <div class="breadcrumb-vertical">
+                <a href="/" class="breadcrumb-item">🏠 Home</a>
+                <span class="breadcrumb-item active">⚙️ Configuration</span>
+            </div>
+        </div>
+    </header>
 
     <main class="fleet-monitor">
         <div class="info-section">
@@ -795,19 +840,26 @@
                     this.animatronics = characters.map(character => {
                         const animatronic = {
                             id: character.id,
-                            name: character.name,
+                            name: character.char_name || character.name, // Use char_name from character data
                             rpi_config: character.animatronic?.rpi_config || null,
                             status: 'checking',
                             services: [],
                             parts: character.animatronic?.animatronic_parts || character.parts || [],
                             lastSeen: null,
                             responseTime: null,
-                            isCurrentMachine: this.isCurrentMachine(character.name)
+                            isCurrentMachine: this.isCurrentMachine(character.char_name || character.name),
+                            characterData: character // Store full character data for reference
                         };
 
+                        console.log(`🎭 Loading character: ${animatronic.name}`, {
+                            hasRpiConfig: !!animatronic.rpi_config,
+                            rpiHost: animatronic.rpi_config?.host,
+                            animatronicEnabled: character.animatronic?.enabled
+                        });
+
                         // Set hostname and baseUrl after the object is created
-                        animatronic.hostname = this.getHostnameForCharacter(character.name, character);
-                        animatronic.baseUrl = this.getBaseUrlForCharacter(character.name, character);
+                        animatronic.hostname = this.getHostnameForCharacter(animatronic.name, character);
+                        animatronic.baseUrl = this.getBaseUrlForCharacter(animatronic.name, character);
 
                         // Initialize parts from character data
                         animatronic.parts = this.getCharacterParts(animatronic);
@@ -836,10 +888,12 @@
                 // Use provided character data or find it
                 const character = characterData || this.animatronics.find(a => a.name === characterName);
                 if (character && character.rpi_config && character.rpi_config.host) {
+                    console.log(`🔍 Using rpi_config.host for ${characterName}: ${character.rpi_config.host}`);
                     return character.rpi_config.host;
                 }
 
                 // Fallback to IP addresses from character data, not domain names
+                // These should match the character data in characters.json
                 const ipMappings = {
                     'Orlok': '192.168.8.120',
                     'Coffin Breaker': '192.168.8.140',
@@ -847,7 +901,9 @@
                     'Skulltalker': currentHostname
                 };
 
-                return ipMappings[characterName] || currentHostname;
+                const fallbackHost = ipMappings[characterName] || currentHostname;
+                console.log(`⚠️ Using fallback host for ${characterName}: ${fallbackHost} (no rpi_config found)`);
+                return fallbackHost;
             }
 
             getBaseUrlForCharacter(characterName, characterData = null) {
@@ -964,8 +1020,20 @@
                                     responseTime: service.responseTime
                                 }));
                                 console.log(`🔧 ${animatronic.name} services processed:`, services);
+                                console.log(`✅ ${animatronic.name} connection successful:`, {
+                                    url: `${animatronic.baseUrl}/api/hub/status`,
+                                    hostname: animatronic.hostname,
+                                    serviceCount: services.length,
+                                    onlineServices: services.filter(s => s.status === 'active').length,
+                                    responseTime: responseTime
+                                });
                             } else {
                                 console.log(`⚠️ ${animatronic.name} no services found in status data`);
+                                console.log(`⚠️ ${animatronic.name} raw status data structure:`, {
+                                    hasServices: !!statusData.services,
+                                    servicesType: typeof statusData.services,
+                                    keys: statusData.services ? Object.keys(statusData.services) : 'N/A'
+                                });
                             }
 
                             animatronic.status = 'online';
@@ -1001,6 +1069,15 @@
                         if (!animatronic.parts || animatronic.parts.length === 0) {
                             animatronic.parts = this.getCharacterParts(animatronic);
                         }
+
+                        // Enhanced error logging for debugging
+                        console.error(`❌ ${animatronic.name} connection failed:`, {
+                            url: `${animatronic.baseUrl}/api/hub/status`,
+                            error: error.message,
+                            hostname: animatronic.hostname,
+                            baseUrl: animatronic.baseUrl,
+                            responseTime: animatronic.responseTime
+                        });
 
                         this.log(`${animatronic.name}: Offline (${error.message})`, 'warning');
                     }
@@ -1142,23 +1219,26 @@
                     // Handle both object and string parts
                     if (typeof part === 'string') {
                         return `
-                            <div class="detail-item">
+                            <div class="detail-item clickable-part" onclick="fleetMonitor.openPartEditor('${animatronic.baseUrl}', '${part}', 'string')">
                                 <div class="detail-label">${part}</div>
-                                <div class="detail-value">Hardware Component</div>
+                                <div class="detail-value">Hardware Component <span class="edit-icon">✏️</span></div>
                             </div>
                         `;
                     } else if (typeof part === 'object' && part.name) {
+                        const partType = part.type || 'hardware';
+                        const partId = part.id || part.name;
                         return `
-                            <div class="detail-item">
+                            <div class="detail-item clickable-part" onclick="fleetMonitor.openPartEditor('${animatronic.baseUrl}', '${partId}', '${partType}', '${part.name}')">
                                 <div class="detail-label">${part.name}</div>
-                                <div class="detail-value">${part.type || 'Hardware'} - ${part.status || 'Unknown'}</div>
+                                <div class="detail-value">${part.type || 'Hardware'} - ${part.status || 'Unknown'} <span class="edit-icon">✏️</span></div>
                             </div>
                         `;
                     } else {
+                        const partIndex = partsArray.indexOf(part) + 1;
                         return `
-                            <div class="detail-item">
-                                <div class="detail-label">Part ${partsArray.indexOf(part) + 1}</div>
-                                <div class="detail-value">Hardware Component</div>
+                            <div class="detail-item clickable-part" onclick="fleetMonitor.openPartEditor('${animatronic.baseUrl}', '${partIndex}', 'unknown')">
+                                <div class="detail-label">Part ${partIndex}</div>
+                                <div class="detail-value">Hardware Component <span class="edit-icon">✏️</span></div>
                             </div>
                         `;
                     }
@@ -2039,6 +2119,51 @@
                     modal.style.display = 'none';
                 }
                 this.selectedCharacter = null;
+            }
+
+            openPartEditor(baseUrl, partId, partType, partName = null) {
+                // Construct the appropriate URL based on part type and available information
+                let editUrl = '';
+
+                if (partType === 'string') {
+                    // For string parts, try to guess the type and create a generic URL
+                    const lowerPart = partId.toLowerCase();
+                    if (lowerPart.includes('motor')) {
+                        editUrl = `${baseUrl}/parts/motor/1/edit`;
+                    } else if (lowerPart.includes('light') || lowerPart.includes('led')) {
+                        editUrl = `${baseUrl}/parts/light/1/edit`;
+                    } else if (lowerPart.includes('servo')) {
+                        editUrl = `${baseUrl}/parts/servo/1/edit`;
+                    } else if (lowerPart.includes('sensor')) {
+                        editUrl = `${baseUrl}/parts/sensor/1/edit`;
+                    } else if (lowerPart.includes('linear') || lowerPart.includes('actuator')) {
+                        editUrl = `${baseUrl}/parts/linear-actuator/1/edit`;
+                    } else {
+                        // Default to parts management page
+                        editUrl = `${baseUrl}/parts`;
+                    }
+                } else if (partType && partId) {
+                    // For object parts with type and ID
+                    const typeMap = {
+                        'motor': 'motor',
+                        'light': 'light',
+                        'led': 'light',
+                        'servo': 'servo',
+                        'sensor': 'sensor',
+                        'linear-actuator': 'linear-actuator',
+                        'actuator': 'linear-actuator',
+                        'hardware': 'hardware'
+                    };
+
+                    const mappedType = typeMap[partType.toLowerCase()] || partType.toLowerCase();
+                    editUrl = `${baseUrl}/parts/${mappedType}/${partId}/edit`;
+                } else {
+                    // Fallback to parts management page
+                    editUrl = `${baseUrl}/parts`;
+                }
+
+                console.log(`🔧 Opening part editor: ${editUrl}`);
+                window.open(editUrl, '_blank');
             }
 
             showConnectionControls() {

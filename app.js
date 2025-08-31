@@ -1022,6 +1022,24 @@ async function initializeConversationalAIServices() {
         // Make service globally available
         global.elevenLabsService = elevenLabsService;
 
+        // Register with port manager if available (for health checks and service discovery)
+        if (global.serviceIntegration && global.serviceIntegration.portManager) {
+            try {
+                await global.serviceIntegration.portManager.registerRunningService({
+                    name: 'elevenLabsConversational',
+                    type: 'elevenlabs',
+                    port: elevenLabsService.port,
+                    metadata: {
+                        description: 'ElevenLabs Conversational AI Service',
+                        protocol: 'websocket'
+                    }
+                });
+                logger.info(`🔌 ElevenLabs service registered with port manager`);
+            } catch (error) {
+                logger.debug(`Could not register ElevenLabs service with port manager: ${error.message}`);
+            }
+        }
+
         // Initialize ElevenLabs Live STT Service
         logger.info('🎤 Initializing ElevenLabs Live STT Service...');
         const ElevenLabsLiveSTTService = require('./services/elevenLabsLiveSTTService');
@@ -1029,6 +1047,24 @@ async function initializeConversationalAIServices() {
         await elevenLabsLiveSTTService.initialize();
         global.elevenLabsLiveSTTService = elevenLabsLiveSTTService;
         logger.info(`✅ ElevenLabs Live STT Service initialized on port ${elevenLabsLiveSTTService.port}`);
+
+        // Register STT service with port manager if available
+        if (global.serviceIntegration && global.serviceIntegration.portManager) {
+            try {
+                await global.serviceIntegration.portManager.registerRunningService({
+                    name: 'elevenLabsSTT',
+                    type: 'stt',
+                    port: elevenLabsLiveSTTService.port,
+                    metadata: {
+                        description: 'ElevenLabs Live STT Service',
+                        protocol: 'websocket'
+                    }
+                });
+                logger.info(`🔌 ElevenLabs STT service registered with port manager`);
+            } catch (error) {
+                logger.debug(`Could not register ElevenLabs STT service with port manager: ${error.message}`);
+            }
+        }
 
         logger.info('✅ ElevenLabs Conversational AI Service initialized successfully');
         logger.info(`🌐 ElevenLabs WebSocket server running on port ${elevenLabsService.port}`);

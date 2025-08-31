@@ -163,27 +163,93 @@ class PortManager extends EventEmitter {
             logger.warn(`Service ${serviceName} not found in registry`);
             return false;
         }
-        
+
         const registration = this.registry.get(serviceName);
-        
+
         logger.info(`🔌 Unregistering service: ${serviceName}`);
-        
+
         // Free ports
         this.allocatedPorts.delete(registration.port);
         if (registration.proxyPort) {
             this.allocatedPorts.delete(registration.proxyPort);
         }
-        
+
         // Remove from registry
         this.registry.delete(serviceName);
-        
+
         // Save registry
         await this.saveRegistry();
-        
+
         logger.info(`✅ Service ${serviceName} unregistered`);
-        
+
         this.emit('serviceUnregistered', registration);
         return true;
+    }
+
+    /**
+     * Register an already-running service (for legacy services started outside the port manager)
+     */
+    async registerRunningService(serviceConfig) {
+        const {
+            name,
+            type = 'websocket',
+            port,
+            proxyPort = null,
+            priority = this.config.priorities[type] || 50,
+            metadata = {}
+        } = serviceConfig;
+
+        if (!name || !port) {
+            throw new Error('Service name and port are required for running service registration');
+        }
+
+        logger.info(`🔌 Registering already-running service: ${name} on port ${port}`);
+
+        try {
+            // Check if service already registered
+            if (this.registry.has(name)) {
+                const existing = this.registry.get(name);
+                // Update status to running if it was just allocated
+                existing.status = 'running';
+                existing.lastHealthCheck = new Date().toISOString();
+                await this.saveRegistry();
+                logger.info(`Service ${name} updated to running status`);
+                return existing;
+            }
+
+            // Create service registration for running service
+            const registration = {
+                name,
+                type,
+                port,
+                proxyPort,
+                priority,
+                status: 'running', // Mark as running since it's already started
+                registeredAt: new Date().toISOString(),
+                lastHealthCheck: new Date().toISOString(),
+                metadata: {
+                    ...metadata,
+                    pid: process.pid,
+                    hostname: require('os').hostname(),
+                    legacy: true // Mark as legacy service
+                }
+            };
+
+            // Store registration (but don't add to allocatedPorts since it's already running)
+            this.registry.set(name, registration);
+
+            // Save registry
+            await this.saveRegistry();
+
+            logger.info(`✅ Running service ${name} registered: port ${port}${proxyPort ? `, proxy ${proxyPort}` : ''}`);
+
+            this.emit('serviceRegistered', registration);
+            return registration;
+
+        } catch (error) {
+            logger.error(`❌ Failed to register running service ${name}:`, error);
+            throw error;
+        }
     }
     
     /**
@@ -355,16 +421,26 @@ class PortManager extends EventEmitter {
 
         for (const [name, registration] of this.registry) {
             try {
+                // Only check services that are marked as 'running' or 'healthy'
+                // Skip services that are just 'allocated' but not actually started
+                if (registration.status === 'allocated' || registration.status === 'stopped') {
+                    logger.debug(`⏭️ Skipping health check for ${name} (status: ${registration.status})`);
+                    continue;
+                }
+
                 const isHealthy = await this.checkServiceHealth(registration);
                 registration.lastHealthCheck = now;
                 registration.status = isHealthy ? 'healthy' : 'unhealthy';
 
                 if (!isHealthy) {
-                    logger.warn(`⚠️ Service ${name} health check failed`);
+                    // Only warn for services that were previously healthy or are expected to be running
+                    if (registration.status !== 'unhealthy') {
+                        logger.debug(`⚠️ Service ${name} health check failed (this may be normal if service is not started)`);
+                    }
                     this.emit('serviceUnhealthy', registration);
                 }
             } catch (error) {
-                logger.error(`❌ Health check error for ${name}:`, error.message);
+                logger.debug(`❌ Health check error for ${name}: ${error.message}`);
                 registration.status = 'error';
                 registration.lastHealthCheck = now;
             }
