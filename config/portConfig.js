@@ -30,7 +30,7 @@ const portConfig = {
                 retries: 3
             }
         },
-        
+
         production: {
             ranges: {
                 main: { start: 80, end: 81 },
@@ -48,7 +48,7 @@ const portConfig = {
                 retries: 5
             }
         },
-        
+
         test: {
             ranges: {
                 main: { start: 3100, end: 3199 },
@@ -67,7 +67,7 @@ const portConfig = {
             }
         }
     },
-    
+
     // Service type priorities (higher = more important)
     priorities: {
         main: 100,
@@ -77,7 +77,7 @@ const portConfig = {
         proxy: 60,
         testing: 50
     },
-    
+
     // Service type definitions
     serviceTypes: {
         main: {
@@ -117,7 +117,7 @@ const portConfig = {
             critical: false
         }
     },
-    
+
     // Default service configurations
     serviceDefaults: {
         microphone: {
@@ -210,6 +210,16 @@ const portConfig = {
                 protocol: 'websocket'
             }
         },
+        servoService: {
+            type: 'hardware',
+            tags: ['servo', 'hardware', 'control'],
+            dependencies: ['hardwareRegistry'],
+            script: 'scripts/hardware/servo_websocket_service.py',
+            metadata: {
+                description: 'Servo Control and Jaw Animation Service',
+                protocol: 'websocket'
+            }
+        },
         headTrackingService: {
             type: 'hardware',
             tags: ['tracking', 'hardware', 'ai'],
@@ -229,11 +239,11 @@ const portConfig = {
 function getEnvironmentConfig() {
     const env = process.env.NODE_ENV || 'development';
     const config = portConfig.environments[env];
-    
+
     if (!config) {
         throw new Error(`Unknown environment: ${env}`);
     }
-    
+
     return {
         ...config,
         environment: env,
@@ -251,10 +261,10 @@ function getServiceConfig(serviceName) {
     if (!defaults) {
         return null;
     }
-    
+
     const envConfig = getEnvironmentConfig();
     const serviceType = envConfig.serviceTypes[defaults.type];
-    
+
     return {
         name: serviceName,
         ...defaults,
@@ -268,11 +278,11 @@ function getServiceConfig(serviceName) {
  */
 function getAllServiceConfigs() {
     const configs = {};
-    
+
     for (const serviceName of Object.keys(portConfig.serviceDefaults)) {
         configs[serviceName] = getServiceConfig(serviceName);
     }
-    
+
     return configs;
 }
 
@@ -282,20 +292,20 @@ function getAllServiceConfigs() {
 function validateConfig() {
     const envConfig = getEnvironmentConfig();
     const errors = [];
-    
+
     // Check for overlapping ranges
     const ranges = Object.entries(envConfig.ranges);
     for (let i = 0; i < ranges.length; i++) {
         for (let j = i + 1; j < ranges.length; j++) {
             const [name1, range1] = ranges[i];
             const [name2, range2] = ranges[j];
-            
+
             if (range1.start <= range2.end && range2.start <= range1.end) {
                 errors.push(`Port ranges overlap: ${name1} (${range1.start}-${range1.end}) and ${name2} (${range2.start}-${range2.end})`);
             }
         }
     }
-    
+
     // Check for reserved ports in ranges
     for (const [rangeName, range] of ranges) {
         for (const reservedPort of envConfig.reserved) {
@@ -304,7 +314,7 @@ function validateConfig() {
             }
         }
     }
-    
+
     // Check service dependencies
     const serviceNames = Object.keys(portConfig.serviceDefaults);
     for (const [serviceName, config] of Object.entries(portConfig.serviceDefaults)) {
@@ -314,7 +324,7 @@ function validateConfig() {
             }
         }
     }
-    
+
     return {
         valid: errors.length === 0,
         errors

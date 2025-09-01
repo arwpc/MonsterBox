@@ -37,6 +37,7 @@ class MonsterBoxServiceIntegration {
                 'sensorService',
                 'webcamService',
                 'actuatorService',
+                'servoService',
                 'headTrackingService'
             ],
 
@@ -53,7 +54,7 @@ class MonsterBoxServiceIntegration {
         this.startupResults = null;
         this.characterInfo = null;
     }
-    
+
     /**
      * Initialize the complete service integration
      */
@@ -111,19 +112,19 @@ class MonsterBoxServiceIntegration {
             throw error;
         }
     }
-    
+
     /**
      * Start all services in the correct order
      */
     async startAllServices() {
         logger.info('🚀 Starting all MonsterBox services...');
-        
+
         const results = {
             core: [],
             hardware: [],
             total: { started: 0, failed: 0 }
         };
-        
+
         try {
             // Filter services based on character requirements
             const coreServices = this.filterServicesByCharacter(this.config.coreServices);
@@ -143,10 +144,10 @@ class MonsterBoxServiceIntegration {
                     logger.error(`❌ Failed to start core service ${serviceName}:`, error.message);
                 }
             }
-            
+
             // Wait a moment for core services to stabilize
             await new Promise(resolve => setTimeout(resolve, 2000));
-            
+
             // Start hardware services
             logger.info('🔧 Starting hardware services...');
             for (const serviceName of hardwareServices) {
@@ -161,47 +162,47 @@ class MonsterBoxServiceIntegration {
                     logger.error(`❌ Failed to start hardware service ${serviceName}:`, error.message);
                 }
             }
-            
+
             // Wait for hardware services to stabilize
             await new Promise(resolve => setTimeout(resolve, 2000));
-            
+
             const totalServices = results.total.started + results.total.failed;
             logger.info(`✅ Service startup complete: ${results.total.started}/${totalServices} services started successfully`);
-            
+
             return results;
-            
+
         } catch (error) {
             logger.error('❌ Error during service startup:', error);
             throw error;
         }
     }
-    
+
     /**
      * Stop all services
      */
     async stopAllServices() {
         logger.info('🛑 Stopping all MonsterBox services...');
-        
+
         try {
             const results = await this.serviceManager.stopAllServices();
-            
+
             const successCount = results.filter(r => r.success).length;
             logger.info(`✅ Service shutdown complete: ${successCount}/${results.length} services stopped successfully`);
-            
+
             return results;
         } catch (error) {
             logger.error('❌ Error during service shutdown:', error);
             throw error;
         }
     }
-    
+
     /**
      * Get service connection information for frontend
      */
     getServiceConnections() {
         const connections = {};
         const services = this.serviceDiscovery.getAllServices();
-        
+
         for (const service of services) {
             connections[service.name] = {
                 name: service.name,
@@ -215,10 +216,10 @@ class MonsterBoxServiceIntegration {
                 tags: Array.from(service.tags || [])
             };
         }
-        
+
         return connections;
     }
-    
+
     /**
      * Get comprehensive system status
      */
@@ -246,7 +247,7 @@ class MonsterBoxServiceIntegration {
             services: this.getServiceConnections()
         };
     }
-    
+
     /**
      * Start a specific service
      */
@@ -261,7 +262,7 @@ class MonsterBoxServiceIntegration {
             throw error;
         }
     }
-    
+
     /**
      * Stop a specific service
      */
@@ -276,7 +277,7 @@ class MonsterBoxServiceIntegration {
             throw error;
         }
     }
-    
+
     /**
      * Restart a specific service
      */
@@ -291,21 +292,21 @@ class MonsterBoxServiceIntegration {
             throw error;
         }
     }
-    
+
     /**
      * Get service information
      */
     getServiceInfo(serviceName) {
         const discoveryInfo = this.serviceDiscovery.findService(serviceName);
         const managerStatus = this.serviceManager.getServiceStatus(serviceName);
-        
+
         return {
             discovery: discoveryInfo,
             manager: managerStatus,
             connection: this.serviceDiscovery.getServiceConnection(serviceName)
         };
     }
-    
+
     /**
      * Setup event handlers
      */
@@ -314,34 +315,34 @@ class MonsterBoxServiceIntegration {
         this.serviceManager.on('serviceStarted', ({ serviceName, registration }) => {
             logger.info(`📡 Service started event: ${serviceName} on port ${registration.port}`);
         });
-        
+
         this.serviceManager.on('serviceStopped', ({ serviceName }) => {
             logger.info(`📡 Service stopped event: ${serviceName}`);
         });
-        
+
         this.serviceManager.on('serviceRestartFailed', ({ serviceName, attempts }) => {
             logger.error(`📡 Service restart failed: ${serviceName} after ${attempts} attempts`);
         });
-        
+
         // Service discovery events
         this.serviceDiscovery.on('serviceRegistered', (service) => {
             logger.debug(`📡 Service registered: ${service.name}`);
         });
-        
+
         this.serviceDiscovery.on('serviceUnregistered', (service) => {
             logger.debug(`📡 Service unregistered: ${service.name}`);
         });
-        
+
         // Proxy manager events
         this.proxyManager.on('proxyCreated', ({ service }) => {
             logger.debug(`📡 Proxy created: ${service.name} (${service.proxyPort} → ${service.port})`);
         });
-        
+
         this.proxyManager.on('proxyRemoved', ({ serviceName }) => {
             logger.debug(`📡 Proxy removed: ${serviceName}`);
         });
     }
-    
+
     /**
      * Legacy compatibility methods
      */
@@ -349,10 +350,10 @@ class MonsterBoxServiceIntegration {
         if (!this.config.enableLegacySupport) {
             return {};
         }
-        
+
         const legacyPorts = {};
         const services = this.serviceDiscovery.getAllServices();
-        
+
         for (const service of services) {
             // Map to legacy port names
             const legacyName = this.mapToLegacyName(service.name);
@@ -360,10 +361,10 @@ class MonsterBoxServiceIntegration {
                 legacyPorts[legacyName] = service.port;
             }
         }
-        
+
         return legacyPorts;
     }
-    
+
     /**
      * Map service names to legacy names for backward compatibility
      */
@@ -381,10 +382,10 @@ class MonsterBoxServiceIntegration {
             'actuatorService': 'ACTUATOR_SERVICE_PORT',
             'headTrackingService': 'HEAD_TRACKING_PORT'
         };
-        
+
         return mapping[serviceName] || null;
     }
-    
+
     /**
      * Health check for all services
      */
@@ -434,23 +435,23 @@ class MonsterBoxServiceIntegration {
 
         return healthStatus;
     }
-    
+
     /**
      * Cleanup and shutdown
      */
     async shutdown() {
         logger.info('🚀 Shutting down MonsterBox Service Integration...');
-        
+
         try {
             // Stop all services
             await this.stopAllServices();
-            
+
             // Shutdown components
             await this.proxyManager.shutdown();
             await this.serviceManager.shutdown();
             await this.serviceDiscovery.shutdown();
             await this.portManager.shutdown();
-            
+
             logger.info('✅ MonsterBox Service Integration shutdown complete');
         } catch (error) {
             logger.error('❌ Error during shutdown:', error);

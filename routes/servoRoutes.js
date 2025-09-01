@@ -103,7 +103,7 @@ router.post('/', async (req, res) => {
             characterId: parseInt(req.body.characterId, 10),
             pin: parseInt(req.body.pin, 10) || 3,
             usePCA9685: req.body.usePCA9685 === 'on',
-            channel: parseInt(req.body.channel, 10) || null,
+            channel: req.body.channel !== undefined && req.body.channel !== '' ? parseInt(req.body.channel, 10) : null,
             pca9685Settings: pca9685Settings,
             servoType: req.body.servoType,
             minPulse: customSettings ? customSettings.minPulse : (selectedServo ? selectedServo.min_pulse_width_us : parseInt(req.body.minPulse, 10)),
@@ -133,6 +133,10 @@ router.post('/test', async (req, res) => {
         // Try WebSocket service first
         try {
             const servoClient = getServoClient();
+
+            if (!servoClient.isConnected) {
+                throw new Error('Servo WebSocket not connected');
+            }
 
             if (servoId) {
                 // Test existing servo by ID
@@ -256,6 +260,14 @@ router.post('/move', async (req, res) => {
         }
 
         const servoClient = getServoClient();
+
+        if (!servoClient.isConnected) {
+            return res.status(503).json({
+                success: false,
+                message: 'Servo WebSocket service not available'
+            });
+        }
+
         const result = await servoClient.moveServo(servoId, angle || 90, duration || 0.5);
 
         res.json({
@@ -366,7 +378,7 @@ router.post('/:id', async (req, res) => {
             characterId: parseInt(req.body.characterId, 10),
             pin: parseInt(req.body.pin, 10) || 3,
             usePCA9685: req.body.usePCA9685 === 'on',
-            channel: parseInt(req.body.channel, 10) || null,
+            channel: req.body.channel !== undefined && req.body.channel !== '' ? parseInt(req.body.channel, 10) : null,
             pca9685Settings: pca9685Settings,
             servoType: req.body.servoType,
             minPulse: customSettings ? customSettings.minPulse : (selectedServo ? selectedServo.min_pulse_width_us : parseInt(req.body.minPulse, 10)),

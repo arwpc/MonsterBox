@@ -251,22 +251,25 @@
     "characterId": 1,
     "pin": 3,
     "usePCA9685": true,
-    "channel": null,
+    "channel": 0,
     "pca9685Settings": {
       "frequency": 50,
       "address": "0x40"
     },
-    "servoType": "Hooyij 40kg DS3240MG",
+    "servoType": "GoBilda Stingray 2 Servo",
     "minPulse": 500,
     "maxPulse": 2500,
     "defaultAngle": 90,
     "mode": [
+      "Feedback",
+      "Continuous",
       "Standard",
-      "Continuous"
+      "Digital"
     ],
-    "feedback": false,
+    "feedback": true,
     "controlType": [
-      "PWM"
+      "PWM",
+      "Digital"
     ],
     "customSettings": null
   }

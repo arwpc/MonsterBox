@@ -6,14 +6,15 @@
 const WebSocket = require('ws');
 const EventEmitter = require('events');
 const logger = require('../scripts/logger');
+const { getInstance: getServiceDiscovery } = require('./serviceDiscovery');
 
 class ServoWebSocketClient extends EventEmitter {
     constructor(options = {}) {
         super();
 
         this.host = options.host || '127.0.0.1';
-        this.port = options.port || 8779;
-        this.url = `ws://${this.host}:${this.port}`;
+        this.port = options.port || null; // Will be discovered dynamically
+        this.url = null; // Will be set after service discovery
 
         this.ws = null;
         this.isConnected = false;
@@ -30,6 +31,12 @@ class ServoWebSocketClient extends EventEmitter {
 
     connect() {
         try {
+            // Discover servo service if URL not set
+            if (!this.url) {
+                this.discoverServoService();
+                return;
+            }
+
             logger.info(`🔌 Connecting to servo WebSocket service at ${this.url}`);
 
             this.ws = new WebSocket(this.url);
@@ -59,12 +66,46 @@ class ServoWebSocketClient extends EventEmitter {
 
             this.ws.on('error', (error) => {
                 logger.error('Servo WebSocket error:', error);
-                this.emit('error', error);
+                this.isConnected = false;
+                // Don't emit error to prevent uncaught exceptions
+                // this.emit('error', error);
             });
 
         } catch (error) {
             logger.error('Failed to create servo WebSocket connection:', error);
             this.scheduleReconnect();
+        }
+    }
+
+    discoverServoService() {
+        try {
+            const serviceDiscovery = getServiceDiscovery();
+            const servoService = serviceDiscovery.findService('servoService');
+
+            if (servoService) {
+                // Use proxy endpoint if available, otherwise direct
+                const connection = serviceDiscovery.getServiceConnection('servoService', false); // Use direct connection
+                if (connection) {
+                    this.url = connection.url;
+                    this.port = connection.port;
+                    logger.info(`🔍 Discovered servo service at ${this.url}`);
+                    this.connect();
+                    return;
+                }
+            }
+
+            // Fallback to default port if service discovery fails
+            logger.warn('⚠️ Could not discover servo service, using fallback port 8779');
+            this.port = 8779;
+            this.url = `ws://${this.host}:${this.port}`;
+            this.connect();
+
+        } catch (error) {
+            logger.error('Error discovering servo service:', error);
+            // Fallback to default port
+            this.port = 8779;
+            this.url = `ws://${this.host}:${this.port}`;
+            this.connect();
         }
     }
 

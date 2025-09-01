@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 const EventEmitter = require('events');
+const os = require('os');
 const logger = require('../scripts/logger');
 
 /**
@@ -42,22 +43,22 @@ class SSHKeyManager extends EventEmitter {
     async initialize() {
         try {
             logger.info('🔑 Initializing SSH Key Manager...');
-            
+
             // Load initial character data
             await this.loadCharacterData();
-            
+
             // Start file watcher
             this.startFileWatcher();
-            
+
             // Verify SSH key deployment script exists
             if (!fs.existsSync(this.deployScriptPath)) {
                 logger.error(`SSH deployment script not found: ${this.deployScriptPath}`);
                 return;
             }
-            
+
             logger.info('✅ SSH Key Manager initialized successfully');
             this.emit('initialized');
-            
+
         } catch (error) {
             logger.error('❌ Failed to initialize SSH Key Manager:', error);
             this.emit('error', error);
@@ -76,7 +77,7 @@ class SSHKeyManager extends EventEmitter {
 
             const charactersData = JSON.parse(fs.readFileSync(this.charactersPath, 'utf8'));
             const currentCharacters = new Map();
-            
+
             // Process enabled animatronic characters
             for (const character of charactersData) {
                 if (character.animatronic && character.animatronic.enabled && character.animatronic.rpi_config) {
@@ -89,13 +90,13 @@ class SSHKeyManager extends EventEmitter {
                     });
                 }
             }
-            
+
             // Detect changes
             await this.detectCharacterChanges(currentCharacters);
-            
+
             // Update cache
             this.lastKnownCharacters = currentCharacters;
-            
+
         } catch (error) {
             logger.error('Error loading character data:', error);
             throw error;
@@ -109,7 +110,7 @@ class SSHKeyManager extends EventEmitter {
         const addedCharacters = [];
         const removedCharacters = [];
         const modifiedCharacters = [];
-        
+
         // Find added characters
         for (const [key, character] of currentCharacters) {
             if (!this.lastKnownCharacters.has(key)) {
@@ -122,25 +123,25 @@ class SSHKeyManager extends EventEmitter {
                 }
             }
         }
-        
+
         // Find removed characters
         for (const [key, character] of this.lastKnownCharacters) {
             if (!currentCharacters.has(key)) {
                 removedCharacters.push(character);
             }
         }
-        
+
         // Process changes
         if (addedCharacters.length > 0) {
             logger.info(`🆕 Detected ${addedCharacters.length} new character(s):`, addedCharacters.map(c => c.name));
             await this.handleAddedCharacters(addedCharacters);
         }
-        
+
         if (removedCharacters.length > 0) {
             logger.info(`🗑️ Detected ${removedCharacters.length} removed character(s):`, removedCharacters.map(c => c.name));
             await this.handleRemovedCharacters(removedCharacters);
         }
-        
+
         if (modifiedCharacters.length > 0) {
             logger.info(`🔄 Detected ${modifiedCharacters.length} modified character(s):`, modifiedCharacters.map(c => c.new.name));
             await this.handleModifiedCharacters(modifiedCharacters);
@@ -198,15 +199,50 @@ class SSHKeyManager extends EventEmitter {
         if (this.isDeploying || this.deploymentQueue.length === 0) {
             return;
         }
-        
+
         this.isDeploying = true;
-        
+
         while (this.deploymentQueue.length > 0) {
             const character = this.deploymentQueue.shift();
             await this.deploySSHKey(character);
         }
-        
+
         this.isDeploying = false;
+    }
+
+    /**
+     * Check if a host is localhost
+     */
+    isLocalHost(host) {
+        if (!host) return false;
+
+        // Check for localhost variations
+        const localhostPatterns = [
+            '127.0.0.1',
+            'localhost',
+            '::1'
+        ];
+
+        if (localhostPatterns.includes(host)) {
+            return true;
+        }
+
+        // Check if host matches any local network interface
+        try {
+            const networkInterfaces = os.networkInterfaces();
+            for (const interfaceName in networkInterfaces) {
+                const addresses = networkInterfaces[interfaceName];
+                for (const addr of addresses) {
+                    if (addr.address === host) {
+                        return true;
+                    }
+                }
+            }
+        } catch (error) {
+            logger.warn('Error checking network interfaces:', error);
+        }
+
+        return false;
     }
 
     /**
@@ -216,6 +252,14 @@ class SSHKeyManager extends EventEmitter {
         if (this.dryRun) {
             logger.info(`🔍 DRY RUN: Would deploy SSH key to ${character.name} (${character.host})`);
             this.updateConnectionRegistry(character, 'dry-run');
+            this.emit('keyDeployed', character);
+            return;
+        }
+
+        // Skip deployment if target is localhost
+        if (this.isLocalHost(character.host)) {
+            logger.info(`⏭️ Skipping SSH key deployment to ${character.name} - target is localhost`);
+            this.updateConnectionRegistry(character, 'localhost');
             this.emit('keyDeployed', character);
             return;
         }
@@ -266,12 +310,12 @@ class SSHKeyManager extends EventEmitter {
      */
     async cleanupCharacterConnections(character) {
         const characterKey = character.name.toLowerCase().replace(/\s+/g, '');
-        
+
         if (this.connectionRegistry.has(characterKey)) {
             logger.info(`🧹 Removing connection registry entry for ${character.name}`);
             this.connectionRegistry.delete(characterKey);
         }
-        
+
         // Emit cleanup event for other services to handle
         this.emit('characterRemoved', character);
     }
@@ -281,7 +325,7 @@ class SSHKeyManager extends EventEmitter {
      */
     updateConnectionRegistry(character, status) {
         const characterKey = character.name.toLowerCase().replace(/\s+/g, '');
-        
+
         this.connectionRegistry.set(characterKey, {
             ...character,
             status: status,
@@ -297,9 +341,9 @@ class SSHKeyManager extends EventEmitter {
         if (this.watcher) {
             this.watcher.close();
         }
-        
+
         logger.info(`👀 Starting file watcher for ${this.charactersPath}`);
-        
+
         this.watcher = fs.watch(this.charactersPath, { persistent: false }, (eventType, filename) => {
             if (eventType === 'change') {
                 logger.info('📝 Characters file changed, reloading...');
@@ -310,7 +354,7 @@ class SSHKeyManager extends EventEmitter {
                 }, 1000); // Debounce file changes
             }
         });
-        
+
         this.watcher.on('error', (error) => {
             logger.error('File watcher error:', error);
             // Restart watcher after a delay
@@ -340,7 +384,7 @@ class SSHKeyManager extends EventEmitter {
      */
     async deployAllKeys() {
         logger.info('🔑 Manually triggering SSH key deployment for all characters...');
-        
+
         for (const [key, character] of this.lastKnownCharacters) {
             await this.queueKeyDeployment(character);
         }
@@ -351,12 +395,12 @@ class SSHKeyManager extends EventEmitter {
      */
     stop() {
         logger.info('🛑 Stopping SSH Key Manager...');
-        
+
         if (this.watcher) {
             this.watcher.close();
             this.watcher = null;
         }
-        
+
         this.removeAllListeners();
         logger.info('✅ SSH Key Manager stopped');
     }
