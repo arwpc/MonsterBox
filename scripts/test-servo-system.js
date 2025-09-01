@@ -54,8 +54,8 @@ class ServoSystemTestRunner {
             {
                 name: 'Servo WebSocket Service',
                 script: 'scripts/hardware/servo_websocket_service.py',
-                port: 8779,
-                args: ['--host', '0.0.0.0', '--port', '8779', '--debug']
+                port: 8404,
+                args: ['--host', '0.0.0.0', '--port', '8404', '--debug']
             }
         ];
 

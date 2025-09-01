@@ -15,7 +15,7 @@ class ServiceManager {
             // Hardware Services
             servoService: {
                 name: 'Unified Servo WebSocket Service',
-                port: 8779,
+                port: 8404,
                 script: 'scripts/hardware/servo_websocket_service.py',
                 type: 'python',
                 critical: true,

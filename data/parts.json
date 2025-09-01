@@ -257,8 +257,8 @@
       "address": "0x40"
     },
     "servoType": "GoBilda Stingray 2 Servo",
-    "minPulse": 500,
-    "maxPulse": 2500,
+    "minPulse": 600,
+    "maxPulse": 2400,
     "defaultAngle": 90,
     "mode": [
       "Feedback",

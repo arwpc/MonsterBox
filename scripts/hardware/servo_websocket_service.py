@@ -85,7 +85,7 @@ class JawAnimationConfig:
 class ServoWebSocketService(BaseHardwareService):
     """WebSocket service for servo control"""
 
-    def __init__(self, port: int = 8779, host: str = "0.0.0.0"):
+    def __init__(self, port: int = 8404, host: str = "0.0.0.0"):
         super().__init__("servo_service", "servo", port, host)
 
         # Servo management
@@ -817,7 +817,7 @@ async def main():
     import argparse
 
     parser = argparse.ArgumentParser(description='MonsterBox Servo WebSocket Service')
-    parser.add_argument('--port', type=int, default=8779, help='WebSocket port')
+    parser.add_argument('--port', type=int, default=8404, help='WebSocket port')
     parser.add_argument('--host', default='0.0.0.0', help='WebSocket host')
     parser.add_argument('--debug', action='store_true', help='Enable debug logging')
 
