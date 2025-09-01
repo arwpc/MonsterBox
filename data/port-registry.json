@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2025-09-01T05:32:38.864Z",
+  "lastUpdated": "2025-09-01T05:33:08.864Z",
   "services": {
     "elevenLabsSTT": {
       "name": "elevenLabsSTT",
@@ -9,7 +9,7 @@
       "priority": 50,
       "status": "healthy",
       "registeredAt": "2025-08-31T19:24:06.611Z",
-      "lastHealthCheck": "2025-09-01T05:32:38.861Z",
+      "lastHealthCheck": "2025-09-01T05:33:08.861Z",
       "metadata": {
         "description": "ElevenLabs Live STT Service",
         "protocol": "websocket",
@@ -26,7 +26,7 @@
       "priority": 70,
       "status": "unhealthy",
       "registeredAt": "2025-09-01T00:53:08.790Z",
-      "lastHealthCheck": "2025-09-01T05:32:38.861Z",
+      "lastHealthCheck": "2025-09-01T05:33:08.861Z",
       "metadata": {
         "pid": 1353,
         "hostname": "orlok"
