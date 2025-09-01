@@ -221,6 +221,7 @@
 
     <script>
         let isTestingServo = false;
+        const currentServoId = <%= (part && part.id) ? part.id : 'null' %>;
 
         // Initialize the page
         document.addEventListener('DOMContentLoaded', function() {
@@ -355,6 +356,24 @@
             showTestResult('Testing servo...');
 
             try {
+                // Prefer WebSocket service when an existing servo ID is available
+                if (currentServoId) {
+                    try {
+                        const wsResp = await axios.post('/parts/servo/move', {
+                            servoId: currentServoId,
+                            angle: parseInt(angle, 10),
+                            duration: 0.8
+                        });
+                        if (wsResp.data?.success) {
+                            showTestResult('Servo moved via hardware service');
+                            updateButtonStates(false);
+                            return;
+                        }
+                    } catch (e) {
+                        console.warn('WS move failed, falling back to legacy test:', e.message);
+                    }
+                }
+
                 const response = await axios.post('/parts/servo/test', testData);
                 console.log('Test response:', response);
 

@@ -24,6 +24,7 @@ from motion_sensor_websocket_service import MotionSensorWebSocketService
 from webcam_websocket_service import WebcamWebSocketService
 from head_tracking_websocket_service import HeadTrackingWebSocketService
 from microphone_websocket_service import MicrophoneWebSocketService
+from servo_websocket_service import ServoWebSocketService
 from service_registry import ServiceRegistry
 
 # Configure logging
@@ -66,8 +67,9 @@ class CharacterServiceManager:
             "actuator": ServiceConfig("actuator", ActuatorWebSocketService, 8775),
             "motion_sensor": ServiceConfig("motion_sensor", MotionSensorWebSocketService, 8777),
             "head_tracking": ServiceConfig("head_tracking", HeadTrackingWebSocketService, 8778),
+            "servo": ServiceConfig("servo", ServoWebSocketService, 8779),
         }
-        
+
     async def initialize(self):
         """Initialize the character service manager"""
         try:
@@ -134,33 +136,47 @@ class CharacterServiceManager:
 
         for character in characters:
             if character.get("id") == character_id:
-                # Check if character has hardware_requirements field
+                # Start with explicit hardware_requirements when present
                 if "hardware_requirements" in character:
-                    return character.get("hardware_requirements", {})
-
-                # Otherwise, derive requirements from animatronic services
-                animatronic = character.get("animatronic", {})
-                if animatronic.get("enabled", False):
-                    services = animatronic.get("services", [])
+                    requirements = character.get("hardware_requirements", {})
+                else:
+                    # Otherwise, derive requirements from animatronic services
+                    animatronic = character.get("animatronic", {})
                     requirements = {}
+                    if animatronic.get("enabled", False):
+                        services = animatronic.get("services", [])
 
-                    # Map services to hardware requirements
-                    if any("servo" in s or "motor" in s for s in services):
-                        requirements["motor"] = {"enabled": True}
-                    if any("gpio" in s or "light" in s or "led" in s for s in services):
-                        requirements["light"] = {"enabled": True}
-                    if "camera" in services:
-                        requirements["webcam"] = {"enabled": True}
-                    if any("microphone" in s or "audio" in s or "stt" in s for s in services):
-                        requirements["microphone"] = {"enabled": True}
-                    if "linear-actuator" in services:
-                        requirements["actuator"] = {"enabled": True}
-                    if any("sensor" in s for s in services):
-                        requirements["sensor"] = {"enabled": True}
-                    if "head-tracking" in services:
-                        requirements["head_tracking"] = {"enabled": True}
+                        # Map services to hardware requirements
+                        if any("servo" in s or "motor" in s for s in services):
+                            requirements["motor"] = {"enabled": True}
+                        if any("gpio" in s or "light" in s or "led" in s for s in services):
+                            requirements["light"] = {"enabled": True}
+                        if "camera" in services:
+                            requirements["webcam"] = {"enabled": True}
+                        if any("microphone" in s or "audio" in s or "stt" in s for s in services):
+                            requirements["microphone"] = {"enabled": True}
+                        if "linear-actuator" in services:
+                            requirements["actuator"] = {"enabled": True}
+                        if any("sensor" in s for s in services):
+                            requirements["sensor"] = {"enabled": True}
+                        if "head-tracking" in services:
+                            requirements["head_tracking"] = {"enabled": True}
 
-                    return requirements
+                # Augment requirements: enable servo service when character has servo parts
+                try:
+                    parts_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "parts.json")
+                    if os.path.exists(parts_path):
+                        with open(parts_path, 'r') as f:
+                            parts = json.load(f)
+                        if any((p.get('type') == 'servo' and int(p.get('characterId', -1)) == int(character_id)) for p in parts):
+                            # Only add if not explicitly present
+                            req = requirements.get("servo") or {}
+                            req["enabled"] = True
+                            requirements["servo"] = req
+                except Exception as e:
+                    logger.warning(f"Failed to augment requirements with servo parts: {e}")
+
+                return requirements
 
         logger.warning(f"⚠️ Character {character_id} not found, using default requirements")
         return {
@@ -171,7 +187,7 @@ class CharacterServiceManager:
             "microphone": {"enabled": False},
             "actuator": {"enabled": False}
         }
-        
+
     async def start_character_services(self, character_id: int) -> bool:
         """Start hardware services for a specific character"""
         try:

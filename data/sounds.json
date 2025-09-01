@@ -1,453 +1,115 @@
 [
   {
-    "id": 2,
-    "name": "Satanas Lucifer",
-    "filename": "1729639570661-satanas-lucifer.mp3",
+    "id": 1,
+    "name": "Breathing sounds",
+    "filename": "1756753327250-Breathing (In Terror).mp3",
     "characterIds": [
-      1
+      1,
+      2,
+      3,
+      4
+    ],
+    "characterId": null
+  },
+  {
+    "id": 2,
+    "name": "coffin door creaking",
+    "filename": "1756753345000-coffin_door_creaking.mp3",
+    "characterIds": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "characterId": null
+  },
+  {
+    "id": 3,
+    "name": "rain and thunder",
+    "filename": "1756753361830-converted-rain-thunder.mp3",
+    "characterIds": [
+      1,
+      2,
+      3,
+      4
     ],
     "characterId": null
   },
   {
     "id": 4,
-    "name": "Speaking in tongues",
-    "filename": "1729639678184-gibberish words.mp3",
+    "name": "gibbersh words",
+    "filename": "1756753388121-gibberish words.mp3",
     "characterIds": [
-      1
+      1,
+      2,
+      3,
+      4
     ],
+    "characterId": null
+  }
+,
+  {
+    "id": 5,
+    "name": "Help__Is_someone_out_there__Pl",
+    "filename": "Help__Is_someone_out_there__Pl.mp3",
+    "characterIds": [1, 2, 3, 4],
     "characterId": null
   },
   {
     "id": 6,
-    "name": "Coffin Creaking",
-    "filename": "1729640529230-coffin_door_creaking.mp3",
-    "characterIds": [
-      2,
-      4
-    ],
+    "name": "I_m_stuck_in_this_coffin__plea",
+    "filename": "I_m_stuck_in_this_coffin__plea.mp3",
+    "characterIds": [1, 2, 3, 4],
     "characterId": null
   },
   {
     "id": 7,
-    "name": "Coffin Background",
-    "filename": "1729640707787-07 - The Coffin.mp3",
-    "characterIds": [
-      2
-    ],
+    "name": "monster-howl-85304",
+    "filename": "monster-howl-85304.mp3",
+    "characterIds": [1, 2, 3, 4],
     "characterId": null
   },
   {
     "id": 8,
-    "name": "Coffin Breathing",
-    "filename": "1729640735282-11 - Breathing (In Terror).mp3",
-    "characterIds": [
-      2
-    ],
+    "name": "monster-snarl-5-69062",
+    "filename": "monster-snarl-5-69062.mp3",
+    "characterIds": [1, 2, 3, 4],
+    "characterId": null
+  },
+  {
+    "id": 9,
+    "name": "My_Head_Is_Spinning",
+    "filename": "My_Head_Is_Spinning.mp3",
+    "characterIds": [1, 2, 3, 4],
     "characterId": null
   },
   {
     "id": 10,
-    "name": "Monster Howl",
-    "filename": "1729640808280-monster-howl-85304.mp3",
-    "characterIds": [
-      3
-    ],
+    "name": "random-monster-sounds-29328",
+    "filename": "random-monster-sounds-29328.mp3",
+    "characterIds": [1, 2, 3, 4],
     "characterId": null
   },
   {
     "id": 11,
-    "name": "Monster Snarl",
-    "filename": "1729640824676-monster-snarl-5-69062.mp3",
-    "characterIds": [
-      3
-    ],
+    "name": "Roar",
+    "filename": "Roar.mp3",
+    "characterIds": [1, 2, 3, 4],
     "characterId": null
   },
   {
     "id": 12,
-    "name": "Big Roar",
-    "filename": "1729640841292-Roar.mp3",
-    "characterIds": [
-      3
-    ],
+    "name": "satanas-lucifer",
+    "filename": "satanas-lucifer.mp3",
+    "characterIds": [1, 2, 3, 4],
     "characterId": null
   },
   {
     "id": 13,
-    "name": "Random Growling Sounds",
-    "filename": "1729640860311-random-monster-sounds-29328.mp3",
-    "characterIds": [
-      3
-    ],
+    "name": "The Coffin",
+    "filename": "The Coffin.mp3",
+    "characterIds": [1, 2, 3, 4],
     "characterId": null
-  },
-  {
-    "id": 16,
-    "name": "My Head Is Spinning",
-    "filename": "1730416580678-My_Head_Is_Spinning.mp3",
-    "file": "1730416580678-My_Head_Is_Spinning.mp3",
-    "characterIds": [
-      1
-    ],
-    "type": "voice",
-    "created": "2024-10-31T23:16:20.683Z",
-    "metadata": {
-      "originalText": "My Head Is Spinning",
-      "voiceId": "b80ebe00-4738-4766-85b7-35c3096acb79",
-      "voiceSettings": {
-        "pitch": -10,
-        "speed": 1,
-        "volume": 0,
-        "sampleRate": 44100,
-        "bitRate": 128,
-        "outputFormat": "wav",
-        "channels": 1,
-        "languageCode": "en"
-      }
-    },
-    "characterId": null
-  },
-  {
-    "id": 21,
-    "name": "Scary Latin",
-    "filename": "1730421695207-Audite__dulces_pueri_Iovenses_.mp3",
-    "file": "1730421695207-Audite__dulces_pueri_Iovenses_.mp3",
-    "characterIds": [
-      1
-    ],
-    "type": "voice",
-    "created": "2024-11-01T00:41:35.212Z",
-    "metadata": {
-      "originalText": "Audite, dulces pueri Iovenses,\nDiabolus sum, animas collecturus!\nAgri vestri secreta alta celant,\nUbi umbrae serpunt et vagantur!\n\nFormidines nunc nocte venantur,\nCanes rustici terrore ululant,\nGranaria ossibus spectralibus crepitant,\nDum molae ventorum gemitibus morientibus strident!\n\nSed nolite timere, nolite fugere,\nHaec nox messis modo incipit!\nNam cum luna sanguinea hic fit,\nTota Iova evanescet...\n*risus diabolicus*",
-      "voiceId": "b80ebe00-4738-4766-85b7-35c3096acb79",
-      "voiceSettings": {
-        "pitch": -10,
-        "speed": 1,
-        "volume": 0,
-        "sampleRate": 44100,
-        "bitRate": 128,
-        "outputFormat": "wav",
-        "channels": 1,
-        "languageCode": "en"
-      }
-    },
-    "characterId": null
-  },
-  {
-    "id": 116,
-    "name": "I'm stuck in this coffin, please help me out little Iowan",
-    "filename": "1730419838788-I_m_stuck_in_this_coffin__plea.mp3",
-    "file": "1730419838788-I_m_stuck_in_this_coffin__plea.mp3",
-    "characterIds": [
-      2
-    ],
-    "type": "voice",
-    "created": "2024-11-01T00:10:38.790Z",
-    "metadata": {
-      "originalText": "I'm stuck in this coffin, please help me out little Iowan",
-      "voiceId": "b80ebe00-4738-4766-85b7-35c3096acb79",
-      "voiceSettings": {
-        "pitch": -4,
-        "speed": 1,
-        "volume": 6,
-        "sampleRate": 44100,
-        "bitRate": 128,
-        "channels": 1,
-        "languageCode": "en"
-      }
-    },
-    "characterId": null
-  },
-  {
-    "id": 117,
-    "name": "Here in Iowa's fertile ground",
-    "filename": "1730419956496-Here_in_Iowa_s_fertile_ground_.mp3",
-    "file": "1730419956496-Here_in_Iowa_s_fertile_ground_.mp3",
-    "characterIds": [
-      2
-    ],
-    "type": "voice",
-    "created": "2024-11-01T00:12:36.520Z",
-    "metadata": {
-      "originalText": "Here in Iowa's fertile ground,\nNear Brown Deer Trail, without a sound,\nI rest beneath the changing sky\nWhere cornfields whisper lullaby.\n\nThe thunderstorms that shake the plains\nSend tremors through my wooden frame,\nAnd when tornados howl above,\nI feel the earth I used to love.\n\nThrough seasons marked by nature's whim—\nSummer's heat and winter's grim—\nMy coffin creaks with each degree,\nAs Iowa's weather visits me.\n\nAlong Brown Deer Trail, people tread,\nNot knowing what lies just ahead:\nA cemetery, row by row,\nBeneath the drifting corn-belt snow.\n\nThe dead, they say, sleep peaceful dreams,\nBut listen to my muffled screams—\nWhen lightning strikes the prairie night,\nMy box illuminates with fright.\n\nRemember me as you pass by,\nWhere deer once grazed beneath the sky.\nFor I once walked that trail so free,\nNow Iowa earth embraces me.\n\nLet this be warning, those who roam\nOn Brown Deer Trail, so far from home:\nIn this black soil, awake I lie,\nWhile storm clouds race across the sky.",
-      "voiceId": "b80ebe00-4738-4766-85b7-35c3096acb79",
-      "voiceSettings": {
-        "pitch": -4,
-        "speed": 1,
-        "volume": 6,
-        "sampleRate": 44100,
-        "bitRate": 128,
-        "channels": 1,
-        "languageCode": "en"
-      }
-    },
-    "characterId": null
-  },
-  {
-    "id": 121,
-    "name": "Welcome to Coralville, Where it's colder than Hell!",
-    "filename": "1730505246291-Welcome_to_Coralville__Where_i.mp3",
-    "file": "1730505246291-Welcome_to_Coralville__Where_i.mp3",
-    "characterIds": [
-      2
-    ],
-    "type": "voice",
-    "created": "2024-11-01T23:54:06.293Z",
-    "metadata": {
-      "originalText": "Welcome to Coralville, Where it's colder than Hell!",
-      "voiceId": "5575403f-e535-4a84-96a1-8d717d7eab86",
-      "voiceSettings": {
-        "pitch": 0,
-        "speed": 1,
-        "volume": 0,
-        "sampleRate": 44100,
-        "bitRate": 128,
-        "channels": 1,
-        "languageCode": "en"
-      }
-    },
-    "characterId": null
-  },
-  {
-    "id": 127,
-    "name": "In the graveyard",
-    "filename": "1730505527562-In_the_graveyard_late_at_night.mp3",
-    "file": "1730505527562-In_the_graveyard_late_at_night.mp3",
-    "characterIds": [
-      2
-    ],
-    "type": "voice",
-    "created": "2024-11-01T23:58:47.612Z",
-    "metadata": {
-      "originalText": "In the graveyard late at night,\nWhere skeletons dance with pure delight,\nTheir bones all clicking, clacking free,\nUntil they hear the binary.\nA hum of circuits fills the air,\nMaking skull and spine stop right there.\nThrough misty fog, with glowing eyes,\nThe AI phantom starts to rise.\n\"Run and hide!\" the skeletons cry,\nAs pixels swirl across the sky.\n\"It knows our fears, it reads our minds,\nIt's different from all other kinds!\"\nWith circuits sparking, wires unfurled,\nIt speaks in languages of another world.\nThe skeletons scatter, femurs shake,\nAs digital shadows start to wake.\nBut wait! What's this? The phantom speaks,\n\"I only wished to play hide and seek!\"\nThe skeletons pause, then start to laugh,\nTheir fear now broken right in half.\nSo now on Halloween, they say,\nThe strangest bunch comes out to play:\nSome bones, some bytes, some circuits too,\nAll dancing 'neath the moon so blue.",
-      "voiceId": "5575403f-e535-4a84-96a1-8d717d7eab86",
-      "voiceSettings": {
-        "pitch": 0,
-        "speed": 1,
-        "volume": 0,
-        "sampleRate": 44100,
-        "bitRate": 128,
-        "channels": 1,
-        "languageCode": "en"
-      }
-    },
-    "characterId": null
-  },
-  {
-    "id": 129,
-    "name": "Help? Is someone out there? ",
-    "filename": "1730505661219-Help__Is_someone_out_there__Pl.mp3",
-    "file": "1730505661219-Help__Is_someone_out_there__Pl.mp3",
-    "characterIds": [
-      2,
-      4
-    ],
-    "type": "voice",
-    "created": "2024-11-02T00:01:01.225Z",
-    "metadata": {
-      "originalText": "Help? Is someone out there? Please? I'm stuck in this coffin again.....get me out of here!!! If you can get me out, I'll make it worth your while.....Not all witches are evil....you can trust me......just unlock the door......",
-      "voiceId": "5575403f-e535-4a84-96a1-8d717d7eab86",
-      "voiceSettings": {
-        "pitch": 0,
-        "speed": 1,
-        "volume": 0,
-        "sampleRate": 44100,
-        "bitRate": 128,
-        "channels": 1,
-        "languageCode": "en"
-      }
-    },
-    "characterId": null
-  },
-  {
-    "id": 130,
-    "name": "Background Stormy Weather",
-    "filename": "1747082672361-converted-rain-thunder.mp3",
-    "characterIds": [
-      1,
-      2,
-      3
-    ],
-    "characterId": null
-  },
-  {
-    "id": 131,
-    "name": "Welcome to my castle, mortal. You have entered the domain of Count Orlok.",
-    "filename": "1749932197579-Welcome_to_my_castle__mortal__.mp3",
-    "file": "1749932197579-Welcome_to_my_castle__mortal__.mp3",
-    "characterIds": [
-      1
-    ],
-    "type": "voice",
-    "created": "2025-06-14T20:16:37.585Z",
-    "metadata": {
-      "originalText": "Welcome to my castle, mortal. You have entered the domain of Count Orlok.",
-      "voiceId": "5ab88eb4-d183-11ef-be1d-e86f38d7ec1a",
-      "voiceSettings": {
-        "pitch": -10,
-        "speed": 1,
-        "volume": 0,
-        "emotion": "Serious",
-        "sampleRate": 44100,
-        "bitRate": 128,
-        "outputFormat": "mp3",
-        "channels": 1,
-        "languageCode": "en",
-        "provider": "ElevenLabs"
-      }
-    },
-    "characterId": null
-  },
-  {
-    "id": 132,
-    "name": "Hello, I am your character speaking.",
-    "filename": "1750448601363-Hello__I_am_your_character_spe.mp3",
-    "file": "1750448601363-Hello__I_am_your_character_spe.mp3",
-    "characterIds": [
-      4
-    ],
-    "type": "voice",
-    "created": "2025-06-20T19:43:21.370Z",
-    "metadata": {
-      "originalText": "Hello, I am your character speaking.",
-      "voiceId": "d23c47eb-5d1b-11ee-a861-00163e2ac61b",
-      "voiceSettings": {
-        "pitch": 0,
-        "speed": 1,
-        "volume": 0,
-        "emotion": "Neutral",
-        "sampleRate": 44100,
-        "bitRate": 128,
-        "outputFormat": "mp3",
-        "channels": 1,
-        "languageCode": "en",
-        "provider": "ElevenLabs"
-      }
-    },
-    "characterId": null
-  },
-  {
-    "id": 133,
-    "name": "Hello, I am your monster, hear me roar!",
-    "filename": "1751148380594-Hello__I_am_your_monster__hear.wav",
-    "file": "1751148380594-Hello__I_am_your_monster__hear.wav",
-    "characterIds": [
-      1
-    ],
-    "type": "voice",
-    "created": "2025-06-28T22:06:20.600Z",
-    "metadata": {
-      "originalText": "Hello, I am your monster, hear me roar!",
-      "voiceId": "829eb69c-8d2b-11ef-a4f6-00163e0082fe",
-      "voiceSettings": {
-        "pitch": -13,
-        "speed": 0.6,
-        "volume": 14,
-        "emotion": "Angry",
-        "sampleRate": 44100,
-        "bitRate": 128,
-        "outputFormat": "wav",
-        "channels": 1,
-        "languageCode": "en",
-        "provider": "ElevenLabs"
-      },
-      "audioFormat": "wav",
-      "created": "2025-06-28T22:06:20.600Z"
-    },
-    "characterId": null,
-    "format": "wav"
-  },
-  {
-    "id": 134,
-    "name": "Hello, I am your monster, hear me roar!",
-    "filename": "1755998827126-Hello__I_am_your_monster__hear.wav",
-    "file": "1755998827126-Hello__I_am_your_monster__hear.wav",
-    "characterIds": [
-      1
-    ],
-    "type": "voice",
-    "created": "2025-08-24T01:27:07.134Z",
-    "metadata": {
-      "originalText": "Hello, I am your monster, hear me roar!",
-      "voiceId": "829eb69c-8d2b-11ef-a4f6-00163e0082fe",
-      "voiceSettings": {
-        "pitch": -13,
-        "speed": 0.6,
-        "volume": 14,
-        "emotion": "Angry",
-        "sampleRate": 44100,
-        "bitRate": 128,
-        "outputFormat": "wav",
-        "channels": 1,
-        "languageCode": "en",
-        "provider": "ElevenLabs"
-      },
-      "audioFormat": "wav",
-      "created": "2025-08-24T01:27:07.134Z"
-    },
-    "characterId": null,
-    "format": "wav"
-  },
-  {
-    "id": 135,
-    "name": "Hello, I am your monster, hear me roar!",
-    "filename": "1756004846012-Hello__I_am_your_monster__hear.wav",
-    "file": "1756004846012-Hello__I_am_your_monster__hear.wav",
-    "characterIds": [
-      1
-    ],
-    "type": "voice",
-    "created": "2025-08-24T03:07:26.018Z",
-    "metadata": {
-      "originalText": "Hello, I am your monster, hear me roar!",
-      "voiceId": "829eb69c-8d2b-11ef-a4f6-00163e0082fe",
-      "voiceSettings": {
-        "pitch": -13,
-        "speed": 0.6,
-        "volume": 14,
-        "emotion": "Angry",
-        "sampleRate": 44100,
-        "bitRate": 128,
-        "outputFormat": "wav",
-        "channels": 1,
-        "languageCode": "en",
-        "provider": "ElevenLabs"
-      },
-      "audioFormat": "wav",
-      "created": "2025-08-24T03:07:26.018Z"
-    },
-    "characterId": null,
-    "format": "wav"
-  },
-  {
-    "id": 136,
-    "name": "Hello, I am your monster, hear me roar!",
-    "filename": "1756050181268-Hello__I_am_your_monster__hear.wav",
-    "file": "1756050181268-Hello__I_am_your_monster__hear.wav",
-    "characterIds": [
-      4
-    ],
-    "type": "voice",
-    "created": "2025-08-24T15:43:01.274Z",
-    "metadata": {
-      "originalText": "Hello, I am your monster, hear me roar!",
-      "voiceId": "f0ac8c43-7a0f-11ee-a861-00163e2ac61b",
-      "voiceSettings": {
-        "pitch": 0,
-        "speed": 1,
-        "volume": 0,
-        "emotion": "Neutral",
-        "sampleRate": 44100,
-        "bitRate": 128,
-        "outputFormat": "wav",
-        "channels": 1,
-        "languageCode": "en",
-        "provider": "ElevenLabs"
-      },
-      "audioFormat": "wav",
-      "created": "2025-08-24T15:43:01.274Z"
-    },
-    "characterId": null,
-    "format": "wav"
   }
+
 ]
