@@ -95,15 +95,15 @@ class ServoWebSocketClient extends EventEmitter {
             }
 
             // Fallback to default port if service discovery fails
-            logger.warn('⚠️ Could not discover servo service, using fallback port 8404');
-            this.port = 8404;
+            logger.warn('⚠️ Could not discover servo service, using fallback port 8779');
+            this.port = 8779;
             this.url = `ws://${this.host}:${this.port}`;
             this.connect();
 
         } catch (error) {
             logger.error('Error discovering servo service:', error);
             // Fallback to default port
-            this.port = 8404;
+            this.port = 8779;
             this.url = `ws://${this.host}:${this.port}`;
             this.connect();
         }
@@ -141,6 +141,56 @@ class ServoWebSocketClient extends EventEmitter {
 
         // Handle broadcast messages
         this.emit('message', message);
+    }
+
+    async sendMessage(message, timeout = 10000) {
+        return new Promise((resolve, reject) => {
+            if (!this.isConnected) {
+                reject(new Error('Servo WebSocket not connected'));
+                return;
+            }
+
+            const requestId = `req_${++this.requestId}`;
+            const messageWithId = {
+                ...message,
+                request_id: requestId
+            };
+
+            // Store the promise handlers
+            this.pendingRequests.set(requestId, { resolve, reject });
+
+            // Set timeout
+            const timeoutId = setTimeout(() => {
+                if (this.pendingRequests.has(requestId)) {
+                    this.pendingRequests.delete(requestId);
+                    reject(new Error('Request timeout'));
+                }
+            }, timeout);
+
+            // Clear timeout when request completes
+            const originalResolve = resolve;
+            const originalReject = reject;
+
+            this.pendingRequests.set(requestId, {
+                resolve: (result) => {
+                    clearTimeout(timeoutId);
+                    originalResolve(result);
+                },
+                reject: (error) => {
+                    clearTimeout(timeoutId);
+                    originalReject(error);
+                }
+            });
+
+            // Send the message
+            try {
+                this.ws.send(JSON.stringify(messageWithId));
+            } catch (error) {
+                this.pendingRequests.delete(requestId);
+                clearTimeout(timeoutId);
+                reject(error);
+            }
+        });
     }
 
     async sendRequest(type, data = {}, timeout = 10000) {

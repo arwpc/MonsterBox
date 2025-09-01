@@ -130,6 +130,51 @@
             margin: 0;
         }
 
+        /* Modal Styles */
+        .modal-monsterbox {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content-monsterbox {
+            background-color: #1a1a1a;
+            margin: 5% auto;
+            padding: 2rem;
+            border: 2px solid #28a745;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-backdrop {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid #333;
+        }
+
         /* Calibration Modal Styles */
         .calibration-methods {
             display: grid;
@@ -401,9 +446,15 @@
     <!-- Servo Calibration Modal -->
     <div id="calibrationModal" class="modal-monsterbox" style="display: none;">
         <div class="modal-content-monsterbox max-w-4xl">
-            <h3 class="font-bold text-lg text-primary mb-4">
-                🎯 Servo Calibration
-            </h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3 class="font-bold text-lg text-primary mb-0">
+                    🎯 Servo Calibration
+                </h3>
+                <button type="button" class="button secondary-btn" onclick="closeCalibrationModal()"
+                    style="padding: 0.5rem 1rem;">
+                    ✕ Close
+                </button>
+            </div>
 
             <div id="calibrationContent">
                 <div class="calibration-type-selection">
@@ -692,11 +743,27 @@
 
         // Close modal when clicking outside
         window.onclick = function (event) {
-            const modal = document.getElementById('customizeModal');
-            if (event.target === modal) {
+            const customizeModal = document.getElementById('customizeModal');
+            const calibrationModal = document.getElementById('calibrationModal');
+
+            if (event.target === customizeModal) {
                 closeCustomizeModal();
             }
+
+            if (event.target === calibrationModal) {
+                closeCalibrationModal();
+            }
         }
+
+        // Prevent modal from closing when clicking inside modal content
+        document.addEventListener('DOMContentLoaded', function () {
+            const modalContent = document.querySelector('.modal-content-monsterbox');
+            if (modalContent) {
+                modalContent.addEventListener('click', function (event) {
+                    event.stopPropagation();
+                });
+            }
+        });
 
         // Calibration Modal Functions
         function openCalibrationModal(servoId) {
