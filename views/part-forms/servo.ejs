@@ -76,6 +76,127 @@
             opacity: 0.5;
             cursor: not-allowed;
         }
+
+        /* Calibration Status Styles */
+        .calibration-status {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .status-dot.calibrated {
+            background-color: #28a745;
+        }
+
+        .status-dot.uncalibrated {
+            background-color: #dc3545;
+        }
+
+        .calibrate-btn {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .calibrate-btn:hover {
+            background: linear-gradient(135deg, #0056b3, #004085);
+        }
+
+        .calibration-note {
+            color: #6c757d;
+            font-style: italic;
+            margin: 0;
+        }
+
+        /* Calibration Modal Styles */
+        .calibration-methods {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .calibration-methods .button {
+            padding: 1rem;
+            text-align: center;
+            border: 2px solid #dee2e6;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .calibration-methods .button:hover {
+            border-color: #007bff;
+            background: #f8f9fa;
+        }
+
+        /* Servo Control Styles */
+        .servo-controls,
+        .extension-controls {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+
+        .control-group {
+            margin-bottom: 1rem;
+        }
+
+        .control-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .button-group .button {
+            flex: 1;
+            min-width: 100px;
+            padding: 0.5rem;
+            text-align: center;
+        }
+
+        /* Test Controls Enhancement */
+        .test-controls {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .test-controls h3 {
+            margin-top: 0;
+            color: #495057;
+        }
     </style>
 </head>
 
@@ -236,18 +357,38 @@
         </div>
 
         <div class="config-section">
-            <h2>Test Servo</h2>
-            <div class="form-group">
-                <label for="testAngle">Angle (0-180):</label>
-                <input type="range" id="testAngle" min="0" max="180" value="90" oninput="updateTestAngleDisplay()">
-                <span id="angleValue">90</span>
+            <h2>Servo Control & Calibration</h2>
+
+            <!-- Calibration Status -->
+            <div id="calibrationStatus" class="calibration-status">
+                <div class="status-indicator">
+                    <span id="calibrationIndicator" class="status-dot uncalibrated"></span>
+                    <span id="calibrationText">Not Calibrated</span>
+                </div>
+                <% if (part && part.id) { %>
+                    <button type="button" onclick="openCalibrationModal('<%= part.id %>')" class="button calibrate-btn">
+                        🎯 Calibrate Servo
+                    </button>
+                    <% } else { %>
+                        <p class="calibration-note">Save the servo first to enable calibration</p>
+                        <% } %>
             </div>
-            <p id="servoDescription"></p>
-            <div class="test-buttons">
-                <button type="button" onclick="testServo()" class="button" id="testButton">Test Servo</button>
-                <button type="button" onclick="stopServo()" class="button" id="stopButton">Stop Test</button>
+
+            <!-- Test Controls -->
+            <div class="test-controls">
+                <h3>Test Servo</h3>
+                <div class="form-group">
+                    <label for="testAngle">Angle (0-180):</label>
+                    <input type="range" id="testAngle" min="0" max="180" value="90" oninput="updateTestAngleDisplay()">
+                    <span id="angleValue">90</span>
+                </div>
+                <p id="servoDescription"></p>
+                <div class="test-buttons">
+                    <button type="button" onclick="testServo()" class="button" id="testButton">Test Servo</button>
+                    <button type="button" onclick="stopServo()" class="button" id="stopButton">Stop Test</button>
+                </div>
+                <div id="testResult"></div>
             </div>
-            <div id="testResult"></div>
         </div>
 
         <div class="button-group">
@@ -256,6 +397,47 @@
             <a href="/system-config/servos" class="button">Manage Servo Configurations</a>
         </div>
     </main>
+
+    <!-- Servo Calibration Modal -->
+    <div id="calibrationModal" class="modal-monsterbox" style="display: none;">
+        <div class="modal-content-monsterbox max-w-4xl">
+            <h3 class="font-bold text-lg text-primary mb-4">
+                🎯 Servo Calibration
+            </h3>
+
+            <div id="calibrationContent">
+                <div class="calibration-type-selection">
+                    <h4>Select Calibration Method:</h4>
+                    <div class="calibration-methods">
+                        <button type="button" class="button" onclick="startContinuousCalibration()">
+                            🎮 Continuous Rotation Servo
+                        </button>
+                        <button type="button" class="button" onclick="startStandardCalibration()">
+                            📐 Standard Position Servo
+                        </button>
+                        <button type="button" class="button" onclick="startExtensionCalibration()">
+                            🦴 Extension/Joint Servo
+                        </button>
+                    </div>
+                </div>
+
+                <div id="calibrationInterface" style="display: none;">
+                    <!-- Calibration interface will be loaded here -->
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="button secondary-btn" onclick="closeCalibrationModal()">
+                    Cancel
+                </button>
+                <button type="button" class="button" id="saveCalibrationBtn" onclick="saveCalibration()"
+                    style="display: none;">
+                    💾 Save Calibration
+                </button>
+            </div>
+        </div>
+        <div class="modal-backdrop" onclick="closeCalibrationModal()"></div>
+    </div>
 
     <script>
         let isTestingServo = false;
@@ -515,6 +697,390 @@
                 closeCustomizeModal();
             }
         }
+
+        // Calibration Modal Functions
+        function openCalibrationModal(servoId) {
+            console.log('Opening calibration modal for servo:', servoId);
+            const modal = document.getElementById('calibrationModal');
+            modal.style.display = 'block';
+
+            // Reset modal state
+            document.querySelector('.calibration-type-selection').style.display = 'block';
+            document.getElementById('calibrationInterface').style.display = 'none';
+            document.getElementById('saveCalibrationBtn').style.display = 'none';
+
+            // Store servo ID for calibration
+            window.currentCalibrationServoId = servoId;
+
+            // Check calibration status
+            checkCalibrationStatus(servoId);
+        }
+
+        function closeCalibrationModal() {
+            document.getElementById('calibrationModal').style.display = 'none';
+        }
+
+        async function checkCalibrationStatus(servoId) {
+            try {
+                const response = await axios.post('/parts/servo/get-positions', {
+                    servo_id: servoId
+                });
+
+                if (response.data.success) {
+                    const hasCalibration = Object.keys(response.data.calibrated_positions || {}).length > 0;
+                    const hasSavedPositions = Object.keys(response.data.saved_positions || {}).length > 0;
+
+                    updateCalibrationStatus(hasCalibration || hasSavedPositions);
+                }
+            } catch (error) {
+                console.warn('Could not check calibration status:', error);
+            }
+        }
+
+        function updateCalibrationStatus(isCalibrated) {
+            const indicator = document.getElementById('calibrationIndicator');
+            const text = document.getElementById('calibrationText');
+
+            if (isCalibrated) {
+                indicator.className = 'status-dot calibrated';
+                text.textContent = 'Calibrated';
+            } else {
+                indicator.className = 'status-dot uncalibrated';
+                text.textContent = 'Not Calibrated';
+            }
+        }
+
+        function startContinuousCalibration() {
+            console.log('Starting continuous servo calibration');
+            loadCalibrationInterface('continuous');
+        }
+
+        function startStandardCalibration() {
+            console.log('Starting standard servo calibration');
+            loadCalibrationInterface('standard');
+        }
+
+        function startExtensionCalibration() {
+            console.log('Starting extension servo calibration');
+            loadCalibrationInterface('extension');
+        }
+
+        function loadCalibrationInterface(type) {
+            const interface = document.getElementById('calibrationInterface');
+            const typeSelection = document.querySelector('.calibration-type-selection');
+
+            typeSelection.style.display = 'none';
+            interface.style.display = 'block';
+            document.getElementById('saveCalibrationBtn').style.display = 'block';
+
+            // Load appropriate calibration interface
+            if (type === 'continuous') {
+                interface.innerHTML = getContinuousCalibrationHTML();
+            } else if (type === 'standard') {
+                interface.innerHTML = getStandardCalibrationHTML();
+            } else if (type === 'extension') {
+                interface.innerHTML = getExtensionCalibrationHTML();
+            }
+
+            window.currentCalibrationType = type;
+        }
+
+        function getContinuousCalibrationHTML() {
+            return `
+                <div class="continuous-calibration">
+                    <h4>🎮 Continuous Rotation Servo Calibration</h4>
+                    <p>Use the controls below to manually position the servo and save key positions.</p>
+
+                    <div class="servo-controls">
+                        <div class="control-group">
+                            <label>Rotation Control:</label>
+                            <div class="button-group">
+                                <button type="button" class="button" onmousedown="startContinuousRotation('ccw', 'slow')" onmouseup="stopContinuousRotation()">↺ Left Slow</button>
+                                <button type="button" class="button" onmousedown="startContinuousRotation('ccw', 'fast')" onmouseup="stopContinuousRotation()">↺↺ Left Fast</button>
+                                <button type="button" class="button" onclick="stopContinuousRotation()">⏹️ Stop</button>
+                                <button type="button" class="button" onmousedown="startContinuousRotation('cw', 'slow')" onmouseup="stopContinuousRotation()">↻ Right Slow</button>
+                                <button type="button" class="button" onmousedown="startContinuousRotation('cw', 'fast')" onmouseup="stopContinuousRotation()">↻↻ Right Fast</button>
+                            </div>
+                        </div>
+
+                        <div class="position-saving">
+                            <h5>Save Positions:</h5>
+                            <div class="position-buttons">
+                                <button type="button" class="button" onclick="saveCalibrationPosition('forward')">💾 Forward (0°)</button>
+                                <button type="button" class="button" onclick="saveCalibrationPosition('right_90')">💾 Right (90°)</button>
+                                <button type="button" class="button" onclick="saveCalibrationPosition('left_90')">💾 Left (-90°)</button>
+                                <button type="button" class="button" onclick="saveCalibrationPosition('backward')">💾 Backward (180°)</button>
+                            </div>
+
+                            <div class="custom-position">
+                                <input type="text" id="customPositionName" placeholder="Custom position name">
+                                <button type="button" class="button" onclick="saveCustomCalibrationPosition()">💾 Save Custom</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="calibrationPositions" class="saved-positions">
+                        <!-- Saved positions will appear here -->
+                    </div>
+                </div>
+            `;
+        }
+
+        function getStandardCalibrationHTML() {
+            return `
+                <div class="standard-calibration">
+                    <h4>📐 Standard Servo Calibration</h4>
+                    <p>Calibrate the servo's minimum, center, and maximum positions.</p>
+
+                    <div class="calibration-steps">
+                        <div class="calibration-step">
+                            <h5>Step 1: Minimum Position (0°)</h5>
+                            <div class="pulse-control">
+                                <label>Pulse Width (µs):</label>
+                                <input type="range" id="minPulseCalibration" min="300" max="1500" value="500" oninput="updatePulseDisplay('min')">
+                                <span id="minPulseValue">500µs</span>
+                                <button type="button" class="button" onclick="testCalibrationPulse('min')">Test</button>
+                            </div>
+                        </div>
+
+                        <div class="calibration-step">
+                            <h5>Step 2: Center Position (90°)</h5>
+                            <div class="pulse-control">
+                                <label>Pulse Width (µs):</label>
+                                <input type="range" id="centerPulseCalibration" min="1000" max="2000" value="1500" oninput="updatePulseDisplay('center')">
+                                <span id="centerPulseValue">1500µs</span>
+                                <button type="button" class="button" onclick="testCalibrationPulse('center')">Test</button>
+                            </div>
+                        </div>
+
+                        <div class="calibration-step">
+                            <h5>Step 3: Maximum Position (180°)</h5>
+                            <div class="pulse-control">
+                                <label>Pulse Width (µs):</label>
+                                <input type="range" id="maxPulseCalibration" min="1500" max="3000" value="2500" oninput="updatePulseDisplay('max')">
+                                <span id="maxPulseValue">2500µs</span>
+                                <button type="button" class="button" onclick="testCalibrationPulse('max')">Test</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getExtensionCalibrationHTML() {
+            return `
+                <div class="extension-calibration">
+                    <h4>🦴 Extension/Joint Servo Calibration</h4>
+                    <p>Calibrate servo for slow, controlled extension and retraction movements.</p>
+
+                    <div class="extension-controls">
+                        <div class="control-group">
+                            <label>Extension Control:</label>
+                            <div class="button-group">
+                                <button type="button" class="button" onclick="testExtensionMovement('retract', 'slow')">⬅️ Retract Slow</button>
+                                <button type="button" class="button" onclick="testExtensionMovement('retract', 'fast')">⬅️⬅️ Retract Fast</button>
+                                <button type="button" class="button" onclick="stopExtensionMovement()">⏹️ Stop</button>
+                                <button type="button" class="button" onclick="testExtensionMovement('extend', 'slow')">➡️ Extend Slow</button>
+                                <button type="button" class="button" onclick="testExtensionMovement('extend', 'fast')">➡️➡️ Extend Fast</button>
+                            </div>
+                        </div>
+
+                        <div class="position-markers">
+                            <h5>Mark Key Positions:</h5>
+                            <div class="marker-buttons">
+                                <button type="button" class="button" onclick="markExtensionPosition('fully_retracted')">📍 Fully Retracted</button>
+                                <button type="button" class="button" onclick="markExtensionPosition('quarter_extended')">📍 25% Extended</button>
+                                <button type="button" class="button" onclick="markExtensionPosition('half_extended')">📍 50% Extended</button>
+                                <button type="button" class="button" onclick="markExtensionPosition('three_quarter_extended')">📍 75% Extended</button>
+                                <button type="button" class="button" onclick="markExtensionPosition('fully_extended')">📍 Fully Extended</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="extensionPositions" class="marked-positions">
+                        <!-- Marked positions will appear here -->
+                    </div>
+                </div>
+            `;
+        }
+
+        // Calibration control functions
+        async function startContinuousRotation(direction, speed) {
+            if (!window.currentCalibrationServoId) return;
+
+            try {
+                await axios.post('/parts/servo/continuous-control', {
+                    servo_id: window.currentCalibrationServoId,
+                    direction: direction,
+                    speed: speed
+                });
+            } catch (error) {
+                console.error('Error controlling continuous servo:', error);
+            }
+        }
+
+        async function stopContinuousRotation() {
+            if (!window.currentCalibrationServoId) return;
+
+            try {
+                await axios.post('/parts/servo/continuous-control', {
+                    servo_id: window.currentCalibrationServoId,
+                    direction: 'stop'
+                });
+            } catch (error) {
+                console.error('Error stopping continuous servo:', error);
+            }
+        }
+
+        async function saveCalibrationPosition(positionName) {
+            if (!window.currentCalibrationServoId) return;
+
+            try {
+                const response = await axios.post('/parts/servo/save-position', {
+                    servo_id: window.currentCalibrationServoId,
+                    position_name: positionName,
+                    description: `${positionName} position for servo calibration`
+                });
+
+                if (response.data.success) {
+                    updateCalibrationPositionsList();
+                    showCalibrationMessage(`Position '${positionName}' saved!`);
+                }
+            } catch (error) {
+                console.error('Error saving position:', error);
+                showCalibrationMessage('Error saving position', true);
+            }
+        }
+
+        async function saveCustomCalibrationPosition() {
+            const positionName = document.getElementById('customPositionName').value.trim();
+            if (!positionName) {
+                showCalibrationMessage('Please enter a position name', true);
+                return;
+            }
+
+            await saveCalibrationPosition(positionName);
+            document.getElementById('customPositionName').value = '';
+        }
+
+        async function testCalibrationPulse(position) {
+            if (!window.currentCalibrationServoId) return;
+
+            const pulseInput = document.getElementById(`${position}PulseCalibration`);
+            const pulseWidth = parseInt(pulseInput.value);
+
+            try {
+                await axios.post('/parts/servo/test-pulse', {
+                    servo_id: window.currentCalibrationServoId,
+                    pulse_width: pulseWidth
+                });
+                showCalibrationMessage(`Testing ${position} position at ${pulseWidth}µs`);
+            } catch (error) {
+                console.error('Error testing pulse:', error);
+                showCalibrationMessage('Error testing pulse', true);
+            }
+        }
+
+        function updatePulseDisplay(position) {
+            const input = document.getElementById(`${position}PulseCalibration`);
+            const display = document.getElementById(`${position}PulseValue`);
+            display.textContent = input.value + 'µs';
+        }
+
+        async function testExtensionMovement(action, speed) {
+            if (!window.currentCalibrationServoId) return;
+
+            try {
+                await axios.post('/parts/servo/extension-control', {
+                    servo_id: window.currentCalibrationServoId,
+                    action: action,
+                    speed: speed
+                });
+                showCalibrationMessage(`${action} ${speed}`);
+            } catch (error) {
+                console.error('Error controlling extension:', error);
+                showCalibrationMessage('Error controlling extension', true);
+            }
+        }
+
+        async function stopExtensionMovement() {
+            if (!window.currentCalibrationServoId) return;
+
+            try {
+                await axios.post('/parts/servo/extension-control', {
+                    servo_id: window.currentCalibrationServoId,
+                    action: 'stop'
+                });
+                showCalibrationMessage('Extension stopped');
+            } catch (error) {
+                console.error('Error stopping extension:', error);
+            }
+        }
+
+        async function markExtensionPosition(positionName) {
+            await saveCalibrationPosition(positionName);
+        }
+
+        function showCalibrationMessage(message, isError = false) {
+            // Create or update message display
+            let messageDiv = document.getElementById('calibrationMessage');
+            if (!messageDiv) {
+                messageDiv = document.createElement('div');
+                messageDiv.id = 'calibrationMessage';
+                messageDiv.className = 'calibration-message';
+                document.getElementById('calibrationInterface').appendChild(messageDiv);
+            }
+
+            messageDiv.textContent = message;
+            messageDiv.className = `calibration-message ${isError ? 'error' : 'success'}`;
+            messageDiv.style.display = 'block';
+
+            // Auto-hide after 3 seconds
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        async function updateCalibrationPositionsList() {
+            if (!window.currentCalibrationServoId) return;
+
+            try {
+                const response = await axios.post('/parts/servo/get-positions', {
+                    servo_id: window.currentCalibrationServoId
+                });
+
+                if (response.data.success) {
+                    const positions = response.data.saved_positions || {};
+                    const positionsDiv = document.getElementById('calibrationPositions');
+
+                    if (positionsDiv && Object.keys(positions).length > 0) {
+                        positionsDiv.innerHTML = '<h5>Saved Positions:</h5>' +
+                            Object.keys(positions).map(name =>
+                                `<div class="saved-position">${name}</div>`
+                            ).join('');
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating positions list:', error);
+            }
+        }
+
+        async function saveCalibration() {
+            showCalibrationMessage('Calibration saved successfully!');
+            updateCalibrationStatus(true);
+
+            // Close modal after short delay
+            setTimeout(() => {
+                closeCalibrationModal();
+            }, 1500);
+        }
+
+        // Initialize calibration status on page load
+        document.addEventListener('DOMContentLoaded', function () {
+            if (currentServoId) {
+                checkCalibrationStatus(currentServoId);
+            }
+        });
     </script>
 </body>
 

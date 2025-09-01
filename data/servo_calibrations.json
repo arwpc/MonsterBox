@@ -1,0 +1,31 @@
+{
+  "29": {
+    "part_id": 29,
+    "part_name": "Orlok Head Servo",
+    "servo_type": "continuous",
+    "channel": 0,
+    "calibrated_date": "2025-09-01T17:04:23.065317",
+    "stop_pulse_us": 1460,
+    "cw_pulse_us": 1200,
+    "ccw_pulse_us": 1800,
+    "positions": {
+      "forward": {
+        "description": "0\u00b0 - Facing directly forward",
+        "calibrated": true
+      },
+      "right_90": {
+        "description": "90\u00b0 - Facing right",
+        "calibrated": true
+      },
+      "left_90": {
+        "description": "-90\u00b0 - Facing left",
+        "calibrated": true
+      },
+      "backward": {
+        "description": "180\u00b0 - Facing backward",
+        "calibrated": true
+      }
+    },
+    "timing_data": {}
+  }
+}

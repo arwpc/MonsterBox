@@ -316,6 +316,216 @@ router.post('/stop', async (req, res) => {
     }
 });
 
+// Calibration API endpoints
+router.post('/continuous-control', async (req, res) => {
+    try {
+        const { servo_id, direction, speed, duration } = req.body;
+
+        if (!servo_id) {
+            return res.status(400).json({
+                success: false,
+                message: 'Servo ID is required'
+            });
+        }
+
+        const servoClient = getServoClient();
+
+        if (!servoClient.isConnected) {
+            return res.status(503).json({
+                success: false,
+                message: 'Servo WebSocket service not available'
+            });
+        }
+
+        const result = await servoClient.sendMessage({
+            type: 'servo_continuous_control',
+            servo_id: servo_id,
+            direction: direction,
+            speed: speed || 'slow',
+            duration: duration || 0
+        });
+
+        res.json({
+            success: true,
+            message: 'Continuous servo control executed',
+            result: result
+        });
+
+    } catch (error) {
+        logger.error('Error controlling continuous servo:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to control continuous servo',
+            error: error.message
+        });
+    }
+});
+
+router.post('/extension-control', async (req, res) => {
+    try {
+        const { servo_id, action, speed, target_position } = req.body;
+
+        if (!servo_id) {
+            return res.status(400).json({
+                success: false,
+                message: 'Servo ID is required'
+            });
+        }
+
+        const servoClient = getServoClient();
+
+        if (!servoClient.isConnected) {
+            return res.status(503).json({
+                success: false,
+                message: 'Servo WebSocket service not available'
+            });
+        }
+
+        const result = await servoClient.sendMessage({
+            type: 'servo_extension_control',
+            servo_id: servo_id,
+            action: action,
+            speed: speed || 'slow',
+            target_position: target_position
+        });
+
+        res.json({
+            success: true,
+            message: 'Extension servo control executed',
+            result: result
+        });
+
+    } catch (error) {
+        logger.error('Error controlling extension servo:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to control extension servo',
+            error: error.message
+        });
+    }
+});
+
+router.post('/save-position', async (req, res) => {
+    try {
+        const { servo_id, position_name, description } = req.body;
+
+        if (!servo_id || !position_name) {
+            return res.status(400).json({
+                success: false,
+                message: 'Servo ID and position name are required'
+            });
+        }
+
+        const servoClient = getServoClient();
+
+        if (!servoClient.isConnected) {
+            return res.status(503).json({
+                success: false,
+                message: 'Servo WebSocket service not available'
+            });
+        }
+
+        const result = await servoClient.sendMessage({
+            type: 'servo_save_position',
+            servo_id: servo_id,
+            position_name: position_name,
+            description: description || `Position: ${position_name}`
+        });
+
+        res.json({
+            success: true,
+            message: 'Position saved successfully',
+            result: result
+        });
+
+    } catch (error) {
+        logger.error('Error saving servo position:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to save servo position',
+            error: error.message
+        });
+    }
+});
+
+router.post('/get-positions', async (req, res) => {
+    try {
+        const { servo_id } = req.body;
+
+        const servoClient = getServoClient();
+
+        if (!servoClient.isConnected) {
+            return res.status(503).json({
+                success: false,
+                message: 'Servo WebSocket service not available'
+            });
+        }
+
+        const result = await servoClient.sendMessage({
+            type: 'servo_get_positions',
+            servo_id: servo_id
+        });
+
+        res.json({
+            success: true,
+            message: 'Positions retrieved successfully',
+            saved_positions: result.saved_positions || {},
+            calibrated_positions: result.calibrated_positions || {}
+        });
+
+    } catch (error) {
+        logger.error('Error getting servo positions:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to get servo positions',
+            error: error.message
+        });
+    }
+});
+
+router.post('/test-pulse', async (req, res) => {
+    try {
+        const { servo_id, pulse_width } = req.body;
+
+        if (!servo_id || !pulse_width) {
+            return res.status(400).json({
+                success: false,
+                message: 'Servo ID and pulse width are required'
+            });
+        }
+
+        const servoClient = getServoClient();
+
+        if (!servoClient.isConnected) {
+            return res.status(503).json({
+                success: false,
+                message: 'Servo WebSocket service not available'
+            });
+        }
+
+        // Send direct pulse width test
+        const result = await servoClient.sendMessage({
+            type: 'servo_test_pulse',
+            servo_id: servo_id,
+            pulse_width: parseInt(pulse_width)
+        });
+
+        res.json({
+            success: true,
+            message: 'Pulse test executed',
+            result: result
+        });
+
+    } catch (error) {
+        logger.error('Error testing servo pulse:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to test servo pulse',
+            error: error.message
+        });
+    }
+});
+
 router.get('/status/:servoId?', async (req, res) => {
     try {
         const { servoId } = req.params;

@@ -10,6 +10,7 @@ import json
 import time
 import threading
 import logging
+import os
 from typing import Dict, Any, Optional, Set
 from dataclasses import dataclass, asdict
 import websockets
@@ -93,6 +94,12 @@ class ServoWebSocketService(BaseHardwareService):
         self.servo_states: Dict[str, ServoState] = {}
         self.jaw_animation_configs: Dict[str, JawAnimationConfig] = {}
 
+        # Calibration system
+        self.servo_calibrations: Dict[str, Dict] = {}
+        self.continuous_servo_positions: Dict[str, Dict] = {}
+        self.calibration_file = "data/servo_calibrations.json"
+        self.continuous_positions_file = "data/continuous_servo_positions.json"
+
         # Hardware interfaces
         self.gpio_handle = None
         self.pca9685_instances: Dict[int, Any] = {}  # Address -> PCA9685 instance
@@ -135,6 +142,9 @@ class ServoWebSocketService(BaseHardwareService):
 
             # Load jaw animation configurations
             await self.load_jaw_animation_configurations()
+
+            # Load servo calibrations
+            await self.load_servo_calibrations()
 
             logger.info(f"🎯 Initialized {len(self.servo_configs)} servo configurations")
             return True
@@ -227,6 +237,28 @@ class ServoWebSocketService(BaseHardwareService):
         except Exception as e:
             logger.error(f"Failed to load jaw animation configurations: {e}")
 
+    async def load_servo_calibrations(self):
+        """Load servo calibrations from calibration files"""
+        try:
+            # Load servo calibrations
+            if os.path.exists(self.calibration_file):
+                with open(self.calibration_file, 'r') as f:
+                    self.servo_calibrations = json.load(f)
+                logger.info(f"📊 Loaded {len(self.servo_calibrations)} servo calibrations")
+            else:
+                logger.info("📊 No servo calibrations file found")
+
+            # Load continuous servo positions
+            if os.path.exists(self.continuous_positions_file):
+                with open(self.continuous_positions_file, 'r') as f:
+                    self.continuous_servo_positions = json.load(f)
+                logger.info(f"📍 Loaded {len(self.continuous_servo_positions)} continuous servo positions")
+            else:
+                logger.info("📍 No continuous servo positions file found")
+
+        except Exception as e:
+            logger.error(f"Failed to load servo calibrations: {e}")
+
     def _angle_to_pulse_width(self, angle: float, config: ServoConfig) -> int:
         """Convert angle to pulse width for servo"""
         # Clamp angle to valid range
@@ -267,6 +299,20 @@ class ServoWebSocketService(BaseHardwareService):
                 response = await self.handle_get_servo_configs(message)
             elif message_type == 'update_servo_config':
                 response = await self.handle_update_servo_config(message)
+            elif message_type == 'servo_move_to_position':
+                response = await self.handle_servo_move_to_position(message)
+            elif message_type == 'servo_continuous_control':
+                response = await self.handle_servo_continuous_control(message)
+            elif message_type == 'servo_extension_control':
+                response = await self.handle_servo_extension_control(message)
+            elif message_type == 'servo_save_position':
+                response = await self.handle_servo_save_position(message)
+            elif message_type == 'servo_get_positions':
+                response = await self.handle_servo_get_positions(message)
+            elif message_type == 'servo_calibrate':
+                response = await self.handle_servo_calibrate(message)
+            elif message_type == 'servo_test_pulse':
+                response = await self.handle_servo_test_pulse(message)
             else:
                 response = {"status": "error", "message": f"Unknown message type: {message_type}"}
 
@@ -738,7 +784,7 @@ class ServoWebSocketService(BaseHardwareService):
             for servo_id, config in self.servo_configs.items():
                 configs[servo_id] = asdict(config)
 
-            return {"status": "success", "configs": configs}
+            return {"status": "success", "servo_configs": configs}
 
         except Exception as e:
             logger.error(f"Error getting servo configs: {e}")
@@ -773,9 +819,411 @@ class ServoWebSocketService(BaseHardwareService):
             logger.error(f"Error updating servo config: {e}")
             return {"status": "error", "message": str(e)}
 
+    async def handle_servo_move_to_position(self, message: Dict[str, Any]) -> Dict[str, Any]:
+        """Move servo to a named calibrated position"""
+        try:
+            servo_id = str(message.get('servo_id'))
+            position_name = message.get('position_name')
+            duration = float(message.get('duration', 2.0))
+
+            if servo_id not in self.servo_configs:
+                return {"status": "error", "message": f"Servo {servo_id} not found"}
+
+            # Check if servo has calibration data
+            calibration = self.servo_calibrations.get(servo_id)
+            if not calibration:
+                return {"status": "error", "message": f"No calibration found for servo {servo_id}"}
+
+            # Handle different servo types
+            if calibration.get('servo_type') == 'continuous':
+                return await self._move_continuous_to_position(servo_id, position_name, duration)
+            else:
+                return await self._move_standard_to_position(servo_id, position_name)
+
+        except Exception as e:
+            logger.error(f"Error moving servo to position: {e}")
+            return {"status": "error", "message": str(e)}
+
+    async def handle_servo_continuous_control(self, message: Dict[str, Any]) -> Dict[str, Any]:
+        """Control continuous rotation servo with direction and speed"""
+        try:
+            servo_id = str(message.get('servo_id'))
+            direction = message.get('direction')  # 'cw', 'ccw', 'stop'
+            speed = message.get('speed', 'slow')  # 'slow', 'fast'
+            duration = float(message.get('duration', 0))  # 0 = continuous until stopped
+
+            if servo_id not in self.servo_configs:
+                return {"status": "error", "message": f"Servo {servo_id} not found"}
+
+            calibration = self.servo_calibrations.get(servo_id)
+            if not calibration or calibration.get('servo_type') != 'continuous':
+                return {"status": "error", "message": f"Servo {servo_id} is not a continuous rotation servo"}
+
+            config = self.servo_configs[servo_id]
+            stop_pulse = calibration.get('stop_pulse_us', 1500)
+
+            # Calculate pulse width based on direction and speed
+            if direction == 'stop':
+                pulse_width = 0  # Turn off PWM
+            elif direction == 'cw':
+                offset = 500 if speed == 'fast' else 200
+                pulse_width = stop_pulse - offset
+            elif direction == 'ccw':
+                offset = 500 if speed == 'fast' else 200
+                pulse_width = stop_pulse + offset
+            else:
+                return {"status": "error", "message": "Invalid direction. Use 'cw', 'ccw', or 'stop'"}
+
+            # Send PWM signal
+            success = await self._send_pwm_pulse(config, pulse_width)
+
+            # If duration specified, schedule stop
+            if duration > 0 and direction != 'stop':
+                asyncio.create_task(self._stop_servo_after_delay(servo_id, duration))
+
+            return {
+                "status": "success" if success else "error",
+                "message": f"Servo {servo_id} {direction} {'for ' + str(duration) + 's' if duration > 0 else 'continuous'}",
+                "pulse_width": pulse_width
+            }
+
+        except Exception as e:
+            logger.error(f"Error controlling continuous servo: {e}")
+            return {"status": "error", "message": str(e)}
+
+    async def handle_servo_extension_control(self, message: Dict[str, Any]) -> Dict[str, Any]:
+        """Control servo extension (for arm joints, etc.) with slow movement and position marking"""
+        try:
+            servo_id = str(message.get('servo_id'))
+            action = message.get('action')  # 'extend', 'retract', 'stop', 'goto'
+            speed = message.get('speed', 'slow')  # 'slow', 'medium', 'fast'
+            target_position = message.get('target_position')  # For 'goto' action
+
+            if servo_id not in self.servo_configs:
+                return {"status": "error", "message": f"Servo {servo_id} not found"}
+
+            config = self.servo_configs[servo_id]
+
+            if action == 'extend':
+                # Move towards maximum extension
+                angle = config.max_angle
+                duration = 3.0 if speed == 'slow' else 1.5 if speed == 'medium' else 0.5
+            elif action == 'retract':
+                # Move towards minimum extension
+                angle = config.min_angle
+                duration = 3.0 if speed == 'slow' else 1.5 if speed == 'medium' else 0.5
+            elif action == 'stop':
+                # Stop at current position (for continuous servos)
+                calibration = self.servo_calibrations.get(servo_id)
+                if calibration and calibration.get('servo_type') == 'continuous':
+                    return await self.handle_servo_continuous_control({
+                        'servo_id': servo_id,
+                        'direction': 'stop'
+                    })
+                else:
+                    return {"status": "success", "message": f"Servo {servo_id} stopped"}
+            elif action == 'goto' and target_position is not None:
+                # Go to specific position
+                angle = float(target_position)
+                duration = 2.0
+            else:
+                return {"status": "error", "message": "Invalid action. Use 'extend', 'retract', 'stop', or 'goto'"}
+
+            # Move servo
+            success = await self._move_servo_hardware(servo_id, angle, duration)
+
+            return {
+                "status": "success" if success else "error",
+                "message": f"Servo {servo_id} {action} to {angle}°",
+                "target_angle": angle,
+                "duration": duration
+            }
+
+        except Exception as e:
+            logger.error(f"Error controlling servo extension: {e}")
+            return {"status": "error", "message": str(e)}
+
+    async def handle_servo_save_position(self, message: Dict[str, Any]) -> Dict[str, Any]:
+        """Save current servo position with a name"""
+        try:
+            servo_id = str(message.get('servo_id'))
+            position_name = message.get('position_name')
+            description = message.get('description', f'Position: {position_name}')
+
+            if not position_name:
+                return {"status": "error", "message": "Position name is required"}
+
+            if servo_id not in self.servo_configs:
+                return {"status": "error", "message": f"Servo {servo_id} not found"}
+
+            # Save position to continuous servo positions
+            if servo_id not in self.continuous_servo_positions:
+                self.continuous_servo_positions[servo_id] = {}
+
+            self.continuous_servo_positions[servo_id][position_name] = {
+                'description': description,
+                'saved_time': time.time()
+            }
+
+            # Save to file
+            try:
+                with open(self.continuous_positions_file, 'w') as f:
+                    json.dump(self.continuous_servo_positions, f, indent=2)
+            except Exception as e:
+                logger.error(f"Failed to save positions to file: {e}")
+
+            return {
+                "status": "success",
+                "message": f"Position '{position_name}' saved for servo {servo_id}",
+                "position_name": position_name,
+                "description": description
+            }
+
+        except Exception as e:
+            logger.error(f"Error saving servo position: {e}")
+            return {"status": "error", "message": str(e)}
+
+    async def handle_servo_get_positions(self, message: Dict[str, Any]) -> Dict[str, Any]:
+        """Get all saved positions for a servo or all servos"""
+        try:
+            servo_id = message.get('servo_id')
+
+            if servo_id:
+                # Get positions for specific servo
+                servo_id = str(servo_id)
+                if servo_id not in self.servo_configs:
+                    return {"status": "error", "message": f"Servo {servo_id} not found"}
+
+                positions = self.continuous_servo_positions.get(servo_id, {})
+                calibration = self.servo_calibrations.get(servo_id, {})
+                calibrated_positions = calibration.get('positions', {})
+
+                return {
+                    "status": "success",
+                    "servo_id": servo_id,
+                    "saved_positions": positions,
+                    "calibrated_positions": calibrated_positions
+                }
+            else:
+                # Get all positions
+                return {
+                    "status": "success",
+                    "all_saved_positions": self.continuous_servo_positions,
+                    "all_calibrations": self.servo_calibrations
+                }
+
+        except Exception as e:
+            logger.error(f"Error getting servo positions: {e}")
+            return {"status": "error", "message": str(e)}
+
+    async def handle_servo_calibrate(self, message: Dict[str, Any]) -> Dict[str, Any]:
+        """Start servo calibration process"""
+        try:
+            servo_id = str(message.get('servo_id'))
+
+            if servo_id not in self.servo_configs:
+                return {"status": "error", "message": f"Servo {servo_id} not found"}
+
+            return {
+                "status": "info",
+                "message": f"Servo calibration for {servo_id} should be done using the calibration scripts",
+                "instructions": [
+                    "Run: python3 scripts/servo_calibration.py",
+                    "Or use: python3 scripts/continuous_servo_manual_control.py",
+                    "Calibration data will be automatically loaded by this service"
+                ]
+            }
+
+        except Exception as e:
+            logger.error(f"Error handling servo calibration: {e}")
+            return {"status": "error", "message": str(e)}
+
+    async def handle_servo_test_pulse(self, message: Dict[str, Any]) -> Dict[str, Any]:
+        """Test servo with specific pulse width"""
+        try:
+            servo_id = str(message.get('servo_id'))
+            pulse_width = int(message.get('pulse_width', 1500))
+
+            if servo_id not in self.servo_configs:
+                return {"status": "error", "message": f"Servo {servo_id} not found"}
+
+            config = self.servo_configs[servo_id]
+            success = await self._send_pwm_pulse(config, pulse_width)
+
+            return {
+                "status": "success" if success else "error",
+                "message": f"Servo {servo_id} test pulse {pulse_width}µs {'sent' if success else 'failed'}",
+                "pulse_width": pulse_width
+            }
+
+        except Exception as e:
+            logger.error(f"Error testing servo pulse: {e}")
+            return {"status": "error", "message": str(e)}
+
     async def get_capabilities(self):
         """Get service capabilities"""
-        return self.capabilities
+        capabilities = self.capabilities.copy()
+        capabilities.update({
+            "calibrated_control": True,
+            "continuous_servo_support": True,
+            "position_saving": True,
+            "extension_control": True,
+            "supported_message_types": [
+                "servo_move", "servo_test", "servo_stop",
+                "servo_move_to_position", "servo_continuous_control",
+                "servo_extension_control", "servo_save_position",
+                "servo_get_positions", "servo_calibrate",
+                "jaw_animation_start", "jaw_animation_stop", "jaw_animation_update",
+                "get_servo_status", "get_servo_configs", "update_servo_config"
+            ]
+        })
+        return capabilities
+
+    # Helper methods for calibrated servo control
+    async def _move_continuous_to_position(self, servo_id: str, position_name: str, duration: float) -> Dict[str, Any]:
+        """Move continuous rotation servo to a named position"""
+        try:
+            calibration = self.servo_calibrations.get(servo_id)
+            if not calibration:
+                return {"status": "error", "message": f"No calibration found for servo {servo_id}"}
+
+            positions = calibration.get('positions', {})
+            if position_name not in positions:
+                return {"status": "error", "message": f"Position '{position_name}' not found"}
+
+            position_data = positions[position_name]
+            if not position_data.get('calibrated', False):
+                return {"status": "error", "message": f"Position '{position_name}' not calibrated"}
+
+            # For continuous servos, we can't automatically go to positions
+            # This would require timing data or external feedback
+            return {
+                "status": "info",
+                "message": f"Position '{position_name}' found but automatic positioning not available for continuous servos",
+                "suggestion": "Use servo_continuous_control with manual timing or external feedback"
+            }
+
+        except Exception as e:
+            logger.error(f"Error moving continuous servo to position: {e}")
+            return {"status": "error", "message": str(e)}
+
+    async def _move_standard_to_position(self, servo_id: str, position_name: str) -> Dict[str, Any]:
+        """Move standard servo to a named position"""
+        try:
+            calibration = self.servo_calibrations.get(servo_id)
+            if not calibration:
+                return {"status": "error", "message": f"No calibration found for servo {servo_id}"}
+
+            positions = calibration.get('positions', {})
+            if position_name not in positions:
+                return {"status": "error", "message": f"Position '{position_name}' not found"}
+
+            position_data = positions[position_name]
+            if not position_data.get('calibrated', False):
+                return {"status": "error", "message": f"Position '{position_name}' not calibrated"}
+
+            pulse_us = position_data.get('pulse_us')
+            if pulse_us is None:
+                return {"status": "error", "message": f"No pulse width data for position '{position_name}'"}
+
+            config = self.servo_configs[servo_id]
+            success = await self._send_pwm_pulse(config, pulse_us)
+
+            return {
+                "status": "success" if success else "error",
+                "message": f"Moved servo {servo_id} to position '{position_name}' ({pulse_us}µs)",
+                "position_name": position_name,
+                "pulse_width": pulse_us
+            }
+
+        except Exception as e:
+            logger.error(f"Error moving standard servo to position: {e}")
+            return {"status": "error", "message": str(e)}
+
+    async def _send_pwm_pulse(self, config: ServoConfig, pulse_width_us: int) -> bool:
+        """Send PWM pulse to servo"""
+        try:
+            if config.control_type == 'pca9685':
+                return await self._send_pca9685_pulse(config, pulse_width_us)
+            elif config.control_type == 'gpio':
+                return await self._send_gpio_pulse(config, pulse_width_us)
+            else:
+                logger.error(f"Unknown control type: {config.control_type}")
+                return False
+        except Exception as e:
+            logger.error(f"Error sending PWM pulse: {e}")
+            return False
+
+    async def _send_pca9685_pulse(self, config: ServoConfig, pulse_width_us: int) -> bool:
+        """Send PWM pulse via PCA9685"""
+        try:
+            if not PCA9685_AVAILABLE:
+                logger.error("PCA9685 libraries not available")
+                return False
+
+            # Get or create PCA9685 instance
+            address = getattr(config, 'pca9685_address', 0x40)
+            if address not in self.pca9685_instances:
+                i2c = busio.I2C(board.SCL, board.SDA)
+                pca = PCA9685(i2c, address=address)
+                pca.frequency = config.frequency
+                self.pca9685_instances[address] = pca
+
+            pca = self.pca9685_instances[address]
+
+            if pulse_width_us == 0:
+                # Turn off PWM
+                pca.channels[config.channel].duty_cycle = 0
+            else:
+                # Set PWM duty cycle
+                duty_cycle = int((pulse_width_us / 20000.0) * 65535)
+                pca.channels[config.channel].duty_cycle = duty_cycle
+
+            return True
+
+        except Exception as e:
+            logger.error(f"Error sending PCA9685 pulse: {e}")
+            return False
+
+    async def _send_gpio_pulse(self, config: ServoConfig, pulse_width_us: int) -> bool:
+        """Send PWM pulse via GPIO"""
+        try:
+            if not LGPIO_AVAILABLE or not self.gpio_handle:
+                logger.error("GPIO not available")
+                return False
+
+            if pulse_width_us == 0:
+                # Stop servo
+                lgpio.tx_servo(self.gpio_handle, config.pin, 0)
+            else:
+                # Send servo pulse
+                lgpio.tx_servo(self.gpio_handle, config.pin, pulse_width_us, config.frequency, 0, 0)
+
+            return True
+
+        except Exception as e:
+            logger.error(f"Error sending GPIO pulse: {e}")
+            return False
+
+    async def _stop_servo_after_delay(self, servo_id: str, delay: float):
+        """Stop servo after specified delay"""
+        try:
+            await asyncio.sleep(delay)
+            config = self.servo_configs.get(servo_id)
+            if config:
+                calibration = self.servo_calibrations.get(servo_id)
+                if calibration and calibration.get('servo_type') == 'continuous':
+                    # Send stop pulse for continuous servo
+                    stop_pulse = calibration.get('stop_pulse_us', 1500)
+                    await self._send_pwm_pulse(config, stop_pulse)
+                else:
+                    # Turn off PWM for standard servo
+                    await self._send_pwm_pulse(config, 0)
+
+                logger.info(f"Servo {servo_id} stopped after {delay}s delay")
+
+        except Exception as e:
+            logger.error(f"Error stopping servo after delay: {e}")
 
     async def start(self):
         """Start the servo WebSocket service"""

@@ -47,7 +47,7 @@ PCA9685_DEFAULT_ADDRESS = 0x40
 def pca9685_init(i2c_address=PCA9685_DEFAULT_ADDRESS):
     """Initialize PCA9685 device"""
     try:
-        bus = smbus.SMBus(20)  # Use bus 20 for this Raspberry Pi
+        bus = smbus.SMBus(1)  # Use bus 1 for Raspberry Pi 4B I2C
         
         # Reset
         bus.write_byte_data(i2c_address, PCA9685_MODE1, 0x00)
@@ -132,9 +132,25 @@ def pca9685_set_angle(channel, angle, i2c_address=PCA9685_DEFAULT_ADDRESS):
         
         # Set PWM
         pca9685_set_pwm(bus, i2c_address, channel, 0, off_value)
-        
+
         # Allow time for servo to move
         time.sleep(0.5)
+
+        # Check if this is a GoBilda servo that needs PWM turned off after positioning
+        # TODO: This should be enhanced to read servo type from parts.json
+        # For now, assume channel 0 is the GoBilda servo based on current configuration
+        if channel == 0:  # Orlok Head Servo (GoBilda)
+            # Give extra time for GoBilda servo to reach position
+            time.sleep(1.0)
+            # Turn off PWM to stop GoBilda servo
+            pca9685_set_pwm(bus, i2c_address, channel, 0, 0)
+            log_message({
+                "status": "info",
+                "message": f"Turned off PWM for GoBilda servo on channel {channel}"
+            })
+
+        # Turn off PWM to stop servo (important for GoBilda servos)
+        pca9685_set_pwm(bus, i2c_address, channel, 0, 0)
         
         log_message({
             "status": "success",
