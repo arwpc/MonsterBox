@@ -40,3 +40,5 @@ tasks/
 # MkDocs generated site
 site/data/last-used-character.json
 data/port-registry.json
+data/last-used-character.json
+data/port-registry.json
