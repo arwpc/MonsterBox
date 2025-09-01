@@ -24,20 +24,20 @@ class ServoSystemTestRunner {
 
     async run() {
         console.log('🧪 Starting Servo System Test Runner...\n');
-        
+
         try {
             // Start required services
             await this.startServices();
-            
+
             // Wait for services to be ready
             await this.waitForServices();
-            
+
             // Run tests
             await this.runTests();
-            
+
             // Display results
             this.displayResults();
-            
+
         } catch (error) {
             console.error('❌ Test runner failed:', error.message);
             process.exit(1);
@@ -49,13 +49,13 @@ class ServoSystemTestRunner {
 
     async startServices() {
         console.log('🚀 Starting required services...\n');
-        
+
         const servicesToStart = [
             {
                 name: 'Servo WebSocket Service',
                 script: 'scripts/hardware/servo_websocket_service.py',
-                port: 8772,
-                args: ['--host', '0.0.0.0', '--port', '8772', '--debug']
+                port: 8779,
+                args: ['--host', '0.0.0.0', '--port', '8779', '--debug']
             }
         ];
 
@@ -66,9 +66,9 @@ class ServoSystemTestRunner {
 
     async startService(serviceConfig) {
         console.log(`🔄 Starting ${serviceConfig.name}...`);
-        
+
         const scriptPath = path.join(process.cwd(), serviceConfig.script);
-        
+
         // Check if script exists
         try {
             await fs.access(scriptPath);
@@ -116,7 +116,7 @@ class ServoSystemTestRunner {
 
     async waitForServices() {
         console.log('\n⏳ Waiting for services to be ready...\n');
-        
+
         const maxWaitTime = 30000; // 30 seconds
         const checkInterval = 1000; // 1 second
         const startTime = Date.now();
@@ -150,7 +150,7 @@ class ServoSystemTestRunner {
 
     async checkServiceHealth(port) {
         return new Promise((resolve, reject) => {
-            const ws = new WebSocket(`ws://localhost:${port}`);
+            const ws = new WebSocket(`ws://127.0.0.1:${port}`);
             const timeout = setTimeout(() => {
                 ws.close();
                 reject(new Error('Health check timeout'));
@@ -171,9 +171,9 @@ class ServoSystemTestRunner {
 
     async runTests() {
         console.log('🧪 Running servo system tests...\n');
-        
+
         const startTime = Date.now();
-        
+
         return new Promise((resolve, reject) => {
             const testProcess = spawn('npm', ['test', '--', 'test/servo-system.test.js'], {
                 stdio: 'inherit',
@@ -183,7 +183,7 @@ class ServoSystemTestRunner {
             testProcess.on('exit', (code) => {
                 const endTime = Date.now();
                 this.testResults.duration = endTime - startTime;
-                
+
                 if (code === 0) {
                     console.log('\n✅ All tests passed!');
                     resolve();
@@ -205,21 +205,21 @@ class ServoSystemTestRunner {
         console.log('\n' + '='.repeat(60));
         console.log('📊 SERVO SYSTEM TEST RESULTS');
         console.log('='.repeat(60));
-        
+
         console.log(`⏱️  Duration: ${(this.testResults.duration / 1000).toFixed(2)}s`);
         console.log(`✅ Passed: ${this.testResults.passed}`);
         console.log(`❌ Failed: ${this.testResults.failed}`);
         console.log(`📈 Total: ${this.testResults.total}`);
-        
+
         if (this.testResults.errors.length > 0) {
             console.log('\n❌ Errors:');
             this.testResults.errors.forEach(error => {
                 console.log(`   - ${error}`);
             });
         }
-        
+
         console.log('\n' + '='.repeat(60));
-        
+
         // Summary
         if (this.testResults.failed === 0) {
             console.log('🎉 All servo system tests completed successfully!');
@@ -231,29 +231,29 @@ class ServoSystemTestRunner {
 
     async cleanup() {
         console.log('\n🧹 Cleaning up services...\n');
-        
+
         for (const [serviceName, serviceInfo] of this.services) {
             try {
                 console.log(`🛑 Stopping ${serviceName}...`);
-                
+
                 if (serviceInfo.process && !serviceInfo.process.killed) {
                     serviceInfo.process.kill('SIGTERM');
-                    
+
                     // Wait for graceful shutdown
                     await new Promise(resolve => setTimeout(resolve, 2000));
-                    
+
                     // Force kill if still running
                     if (!serviceInfo.process.killed) {
                         serviceInfo.process.kill('SIGKILL');
                     }
                 }
-                
+
                 console.log(`✅ ${serviceName} stopped`);
             } catch (error) {
                 console.error(`❌ Error stopping ${serviceName}:`, error.message);
             }
         }
-        
+
         console.log('\n✅ Cleanup completed');
     }
 }
@@ -262,21 +262,21 @@ class ServoSystemTestRunner {
 class TestUtilities {
     static async validateServoConfiguration() {
         console.log('🔍 Validating servo configuration...');
-        
+
         try {
             const partsPath = path.join(process.cwd(), 'data/parts.json');
             const partsData = await fs.readFile(partsPath, 'utf8');
             const parts = JSON.parse(partsData);
-            
+
             // Find Skulltalker servo
-            const skulltalkerServo = parts.find(part => 
+            const skulltalkerServo = parts.find(part =>
                 part.characterId === 4 && part.type === 'servo'
             );
-            
+
             if (!skulltalkerServo) {
                 throw new Error('Skulltalker servo not found in parts.json');
             }
-            
+
             // Validate servo configuration
             const requiredFields = ['pin', 'servoType', 'minPulse', 'maxPulse'];
             for (const field of requiredFields) {
@@ -284,62 +284,62 @@ class TestUtilities {
                     throw new Error(`Missing required field: ${field}`);
                 }
             }
-            
+
             // Validate ChatterPi specific settings
             if (skulltalkerServo.pin !== 18) {
                 throw new Error(`Expected GPIO pin 18, found ${skulltalkerServo.pin}`);
             }
-            
+
             if (skulltalkerServo.servoType !== 'Miuzei MG90S') {
                 console.warn(`⚠️ Expected Miuzei MG90S servo, found ${skulltalkerServo.servoType}`);
             }
-            
+
             console.log('✅ Servo configuration is valid');
             console.log(`   - Servo ID: ${skulltalkerServo.id}`);
             console.log(`   - GPIO Pin: ${skulltalkerServo.pin}`);
             console.log(`   - Servo Type: ${skulltalkerServo.servoType}`);
             console.log(`   - Pulse Range: ${skulltalkerServo.minPulse}-${skulltalkerServo.maxPulse}µs`);
-            
+
             return skulltalkerServo;
-            
+
         } catch (error) {
             console.error('❌ Servo configuration validation failed:', error.message);
             throw error;
         }
     }
-    
+
     static async validateJawAnimationConfig() {
         console.log('🔍 Validating jaw animation configuration...');
-        
+
         try {
             const configPath = path.join(process.cwd(), 'data/jaw-animation-config.json');
             const configData = await fs.readFile(configPath, 'utf8');
             const config = JSON.parse(configData);
-            
+
             // Check for Skulltalker character config
             const skulltalkerConfig = config.characters['4'];
             if (!skulltalkerConfig) {
                 throw new Error('Skulltalker character not found in jaw animation config');
             }
-            
+
             // Validate servo mapping
             const servoMapping = skulltalkerConfig.servoMapping;
             if (!servoMapping) {
                 throw new Error('Missing servo mapping configuration');
             }
-            
+
             // Validate ChatterPi angles
             if (servoMapping.minPosition !== 50 || servoMapping.maxPosition !== 30) {
                 console.warn(`⚠️ Expected angles: closed=50°, open=30°. Found: closed=${servoMapping.minPosition}°, open=${servoMapping.maxPosition}°`);
             }
-            
+
             console.log('✅ Jaw animation configuration is valid');
             console.log(`   - Closed angle: ${servoMapping.minPosition}°`);
             console.log(`   - Open angle: ${servoMapping.maxPosition}°`);
             console.log(`   - Sensitivity: ${servoMapping.sensitivity}`);
-            
+
             return skulltalkerConfig;
-            
+
         } catch (error) {
             console.error('❌ Jaw animation configuration validation failed:', error.message);
             throw error;
@@ -350,20 +350,20 @@ class TestUtilities {
 // Run tests if called directly
 if (require.main === module) {
     const runner = new ServoSystemTestRunner();
-    
+
     // Validate configurations first
     Promise.all([
         TestUtilities.validateServoConfiguration(),
         TestUtilities.validateJawAnimationConfig()
     ])
-    .then(() => {
-        console.log('\n✅ Configuration validation passed\n');
-        return runner.run();
-    })
-    .catch(error => {
-        console.error('❌ Configuration validation failed:', error.message);
-        process.exit(1);
-    });
+        .then(() => {
+            console.log('\n✅ Configuration validation passed\n');
+            return runner.run();
+        })
+        .catch(error => {
+            console.error('❌ Configuration validation failed:', error.message);
+            process.exit(1);
+        });
 }
 
 module.exports = { ServoSystemTestRunner, TestUtilities };

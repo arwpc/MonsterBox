@@ -10,20 +10,20 @@ const logger = require('../scripts/logger');
 class ServoWebSocketClient extends EventEmitter {
     constructor(options = {}) {
         super();
-        
+
         this.host = options.host || '127.0.0.1';
-        this.port = options.port || 8772;
+        this.port = options.port || 8779;
         this.url = `ws://${this.host}:${this.port}`;
-        
+
         this.ws = null;
         this.isConnected = false;
         this.reconnectAttempts = 0;
         this.maxReconnectAttempts = 5;
         this.reconnectDelay = 1000;
-        
+
         this.pendingRequests = new Map();
         this.requestId = 0;
-        
+
         // Auto-connect
         this.connect();
     }
@@ -31,16 +31,16 @@ class ServoWebSocketClient extends EventEmitter {
     connect() {
         try {
             logger.info(`🔌 Connecting to servo WebSocket service at ${this.url}`);
-            
+
             this.ws = new WebSocket(this.url);
-            
+
             this.ws.on('open', () => {
                 logger.info('✅ Connected to servo WebSocket service');
                 this.isConnected = true;
                 this.reconnectAttempts = 0;
                 this.emit('connected');
             });
-            
+
             this.ws.on('message', (data) => {
                 try {
                     const message = JSON.parse(data.toString());
@@ -49,19 +49,19 @@ class ServoWebSocketClient extends EventEmitter {
                     logger.error('Error parsing WebSocket message:', error);
                 }
             });
-            
+
             this.ws.on('close', () => {
                 logger.warn('🔌 Servo WebSocket connection closed');
                 this.isConnected = false;
                 this.emit('disconnected');
                 this.scheduleReconnect();
             });
-            
+
             this.ws.on('error', (error) => {
                 logger.error('Servo WebSocket error:', error);
                 this.emit('error', error);
             });
-            
+
         } catch (error) {
             logger.error('Failed to create servo WebSocket connection:', error);
             this.scheduleReconnect();
@@ -72,9 +72,9 @@ class ServoWebSocketClient extends EventEmitter {
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
             this.reconnectAttempts++;
             const delay = this.reconnectDelay * this.reconnectAttempts;
-            
+
             logger.info(`🔄 Scheduling servo WebSocket reconnect attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${delay}ms`);
-            
+
             setTimeout(() => {
                 this.connect();
             }, delay);
@@ -89,7 +89,7 @@ class ServoWebSocketClient extends EventEmitter {
         if (message.request_id && this.pendingRequests.has(message.request_id)) {
             const { resolve, reject } = this.pendingRequests.get(message.request_id);
             this.pendingRequests.delete(message.request_id);
-            
+
             if (message.status === 'success') {
                 resolve(message);
             } else {
@@ -97,7 +97,7 @@ class ServoWebSocketClient extends EventEmitter {
             }
             return;
         }
-        
+
         // Handle broadcast messages
         this.emit('message', message);
     }
@@ -108,17 +108,17 @@ class ServoWebSocketClient extends EventEmitter {
                 reject(new Error('Servo WebSocket not connected'));
                 return;
             }
-            
+
             const requestId = ++this.requestId;
             const message = {
                 type,
                 request_id: requestId,
                 ...data
             };
-            
+
             // Store pending request
             this.pendingRequests.set(requestId, { resolve, reject });
-            
+
             // Set timeout
             const timeoutId = setTimeout(() => {
                 if (this.pendingRequests.has(requestId)) {
@@ -126,11 +126,11 @@ class ServoWebSocketClient extends EventEmitter {
                     reject(new Error('Request timeout'));
                 }
             }, timeout);
-            
+
             // Clear timeout when request completes
             const originalResolve = resolve;
             const originalReject = reject;
-            
+
             this.pendingRequests.set(requestId, {
                 resolve: (result) => {
                     clearTimeout(timeoutId);
@@ -141,7 +141,7 @@ class ServoWebSocketClient extends EventEmitter {
                     originalReject(error);
                 }
             });
-            
+
             // Send message
             try {
                 this.ws.send(JSON.stringify(message));
@@ -191,11 +191,11 @@ class ServoWebSocketClient extends EventEmitter {
             servo_id: servoId,
             updates: updates
         };
-        
+
         if (jawAnimationUpdates) {
             data.jaw_animation_updates = jawAnimationUpdates;
         }
-        
+
         return this.sendRequest('update_servo_config', data);
     }
 

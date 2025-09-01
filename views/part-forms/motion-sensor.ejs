@@ -276,14 +276,8 @@
             const sensorId = '<%= part.id || "" %>';
             const gpioPin = document.getElementById('gpioPin').value;
 
-            if (!sensorId) {
-                console.error('Cannot stop motion sensor: Invalid sensor ID');
-                updateSensorStatus('Error: Invalid sensor ID');
-                addToMotionLog('Error: Invalid sensor ID');
-                document.getElementById('sensorStart').disabled = false;
-                document.getElementById('sensorStop').disabled = true;
-                return;
-            }
+            // Allow stop even when no persisted ID exists (e.g., unsaved part)
+            // Backend accepts missing ID and returns success to simplify testing flows.
 
             axios.post('/parts/motion-sensor/control', {
                 id: sensorId,

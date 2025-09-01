@@ -145,15 +145,16 @@ router.post('/control', async (req, res) => {
     if (action === 'stop') {
         try {
             if (!id) {
-                logger.warn('Received stop request with missing or invalid sensor ID');
-                return res.status(400).json({ success: false, error: 'Missing or invalid sensor ID' });
+                // Be lenient: allow stopping even without a persisted part ID (e.g., unsaved sensor form)
+                logger.warn('Received stop request with missing or invalid sensor ID - treating as success');
+                return res.json({ success: true, message: 'Stop request received for sensor monitoring' });
             }
 
             logger.info(`Received stop request for sensor monitoring. ID: ${id}, GPIO Pin: ${gpioPin}`);
-            
+
             // We don't need to update the part when stopping the sensor
             // Just log the stop request and send a success response
-            
+
             res.json({ success: true, message: 'Stop request received for sensor monitoring' });
         } catch (error) {
             logger.error('Error handling stop request:', error);

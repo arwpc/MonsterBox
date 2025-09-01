@@ -1044,8 +1044,9 @@ router.post('/motion-sensor/control', async (req, res) => {
     if (action === 'stop') {
         try {
             if (!id) {
-                logger.warn('Received stop request with missing or invalid motion sensor ID');
-                return res.status(400).json({ success: false, error: 'Missing or invalid motion sensor ID' });
+                // Be lenient: allow stopping even without a persisted part ID (e.g., unsaved motion sensor form)
+                logger.warn('Received stop request with missing or invalid motion sensor ID - treating as success');
+                return res.json({ success: true, message: 'Stop request received for motion sensor monitoring' });
             }
 
             logger.info(`Received stop request for motion sensor monitoring. ID: ${id}, GPIO Pin: ${gpioPin}`);
@@ -1422,7 +1423,7 @@ router.post('/api/microphone/:id/test', async (req, res) => {
                 signalToNoise: 20 + Math.random() * 30, // 20-50 dB
                 latency: 5 + Math.random() * 15, // 5-20 ms
                 stability: 85 + Math.random() * 15, // 85-100%
-                frequencyResponse: Array.from({length: 10}, () => Math.random() * 100)
+                frequencyResponse: Array.from({ length: 10 }, () => Math.random() * 100)
             };
         }
 

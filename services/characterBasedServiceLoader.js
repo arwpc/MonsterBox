@@ -24,13 +24,13 @@ class CharacterBasedServiceLoader {
         this.requiredServices = new Set();
         this.availableServices = new Map();
         this.dynamicCharacterManager = dynamicCharacterManager;
-        
+
         // Define service mappings based on part types
         this.serviceMapping = {
             'webcam': {
                 serviceName: 'webcamService',
                 required: true,
-                script: 'scripts/hardware/webcam_service.py',
+                script: 'scripts/hardware/webcam_websocket_service.py',
                 port: 8774
             },
             'microphone': {
@@ -42,38 +42,38 @@ class CharacterBasedServiceLoader {
             'sensor': {
                 serviceName: 'sensorService',
                 required: true,
-                script: 'scripts/hardware/sensor_service.py',
-                port: 8775
+                script: 'scripts/hardware/sensor_websocket_service.py',
+                port: 8773
             },
             'linear-actuator': {
                 serviceName: 'actuatorService',
                 required: true,
-                script: 'scripts/hardware/actuator_service.py',
-                port: 8779
+                script: 'scripts/hardware/actuator_websocket_service.py',
+                port: 8775
             },
             'light': {
                 serviceName: 'lightService',
                 required: true,
-                script: 'scripts/hardware/light_service.py',
+                script: 'scripts/hardware/light_websocket_service.py',
                 port: 8772
             },
             'led': {
                 serviceName: 'lightService', // LEDs use same service as lights
                 required: true,
-                script: 'scripts/hardware/light_service.py',
+                script: 'scripts/hardware/light_websocket_service.py',
                 port: 8772
             },
             'motor': {
                 serviceName: 'motorService',
                 required: true,
-                script: 'scripts/hardware/motor_service.py',
-                port: 8781
+                script: 'scripts/hardware/motor_websocket_service.py',
+                port: 8771
             },
             'servo': {
                 serviceName: 'servoService',
                 required: true,
                 script: 'scripts/hardware/servo_websocket_service.py',
-                port: 8773
+                port: 8779
             }
         };
 
@@ -169,13 +169,13 @@ class CharacterBasedServiceLoader {
 
             // Try to find character by animatronic host configuration
             for (const character of characters) {
-                if (character.animatronic && 
-                    character.animatronic.rpi_config && 
+                if (character.animatronic &&
+                    character.animatronic.rpi_config &&
                     character.animatronic.rpi_config.host) {
-                    
+
                     const host = character.animatronic.rpi_config.host;
                     // Extract hostname from IP or use direct hostname
-                    if (host.includes(this.hostname) || 
+                    if (host.includes(this.hostname) ||
                         hostnameMap[character.char_name.toLowerCase()] === character.id) {
                         return character.id;
                     }
@@ -203,7 +203,7 @@ class CharacterBasedServiceLoader {
 
             // Filter parts for this character
             const characterParts = allParts.filter(part => part.characterId === characterId);
-            
+
             logger.info(`📋 Character ${characterId} has ${characterParts.length} parts:`);
             characterParts.forEach(part => {
                 logger.info(`   - ${part.name} (${part.type})`);
@@ -228,7 +228,7 @@ class CharacterBasedServiceLoader {
 
         // Add services based on parts
         const partTypes = new Set(this.characterParts.map(part => part.type));
-        
+
         for (const partType of partTypes) {
             if (this.serviceMapping[partType]) {
                 services.add(this.serviceMapping[partType].serviceName);
@@ -243,11 +243,11 @@ class CharacterBasedServiceLoader {
      */
     getDefaultServices() {
         const defaultServices = new Set(this.alwaysRequiredServices);
-        
+
         // Add basic hardware services for unknown characters
         defaultServices.add('lightService');
         defaultServices.add('sensorService');
-        
+
         return {
             characterId: null,
             requiredServices: Array.from(defaultServices),

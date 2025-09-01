@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2025-09-01T01:13:06.735Z",
+  "lastUpdated": "2025-09-01T05:32:38.864Z",
   "services": {
     "elevenLabsSTT": {
       "name": "elevenLabsSTT",
@@ -9,41 +9,13 @@
       "priority": 50,
       "status": "healthy",
       "registeredAt": "2025-08-31T19:24:06.611Z",
-      "lastHealthCheck": "2025-09-01T01:13:06.728Z",
+      "lastHealthCheck": "2025-09-01T05:32:38.861Z",
       "metadata": {
         "description": "ElevenLabs Live STT Service",
         "protocol": "websocket",
         "pid": 122106,
         "hostname": "skulltalker",
         "legacy": true
-      }
-    },
-    "lightService": {
-      "name": "lightService",
-      "type": "hardware",
-      "port": 8401,
-      "proxyPort": 8202,
-      "priority": 90,
-      "status": "allocated",
-      "registeredAt": "2025-09-01T00:46:25.176Z",
-      "lastHealthCheck": null,
-      "metadata": {
-        "pid": 39187,
-        "hostname": "skulltalker"
-      }
-    },
-    "actuatorService": {
-      "name": "actuatorService",
-      "type": "hardware",
-      "port": 8402,
-      "proxyPort": 8203,
-      "priority": 90,
-      "status": "allocated",
-      "registeredAt": "2025-09-01T00:46:25.194Z",
-      "lastHealthCheck": null,
-      "metadata": {
-        "pid": 39187,
-        "hostname": "skulltalker"
       }
     },
     "elevenLabsConversational": {
@@ -53,25 +25,53 @@
       "proxyPort": 8200,
       "priority": 70,
       "status": "unhealthy",
-      "registeredAt": "2025-09-01T01:04:06.763Z",
-      "lastHealthCheck": "2025-09-01T01:13:06.728Z",
+      "registeredAt": "2025-09-01T00:53:08.790Z",
+      "lastHealthCheck": "2025-09-01T05:32:38.861Z",
       "metadata": {
-        "pid": 7166,
-        "hostname": "skulltalker"
+        "pid": 1353,
+        "hostname": "orlok"
       }
     },
-    "sensorService": {
-      "name": "sensorService",
+    "lightService": {
+      "name": "lightService",
       "type": "hardware",
       "port": 8400,
       "proxyPort": 8201,
       "priority": 90,
       "status": "allocated",
-      "registeredAt": "2025-09-01T01:04:08.785Z",
+      "registeredAt": "2025-09-01T00:53:10.810Z",
       "lastHealthCheck": null,
       "metadata": {
-        "pid": 7166,
-        "hostname": "skulltalker"
+        "pid": 1353,
+        "hostname": "orlok"
+      }
+    },
+    "sensorService": {
+      "name": "sensorService",
+      "type": "hardware",
+      "port": 8401,
+      "proxyPort": 8202,
+      "priority": 90,
+      "status": "allocated",
+      "registeredAt": "2025-09-01T00:53:10.827Z",
+      "lastHealthCheck": null,
+      "metadata": {
+        "pid": 1353,
+        "hostname": "orlok"
+      }
+    },
+    "actuatorService": {
+      "name": "actuatorService",
+      "type": "hardware",
+      "port": 8402,
+      "proxyPort": 8203,
+      "priority": 90,
+      "status": "allocated",
+      "registeredAt": "2025-09-01T00:53:10.879Z",
+      "lastHealthCheck": null,
+      "metadata": {
+        "pid": 1353,
+        "hostname": "orlok"
       }
     }
   }

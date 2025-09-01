@@ -42,7 +42,7 @@ router.post('/', async (req, res) => {
 router.post('/test', async (req, res) => {
     try {
         const { gpioPin, state } = req.body;
-        
+
         if (!gpioPin || !state) {
             throw new Error('Missing required parameters: gpioPin and state are required');
         }
@@ -69,10 +69,26 @@ router.post('/test', async (req, res) => {
 
         process.on('close', (code) => {
             logger.debug(`Python script exited with code ${code}`);
+            // Try to parse stdout as JSON from light_control.py
+            let parsed;
+            try {
+                parsed = stdout && stdout.trim() ? JSON.parse(stdout.trim()) : null;
+            } catch (e) {
+                parsed = null;
+            }
+
             if (code === 0) {
-                res.json({ success: true, message: 'Light test completed successfully', output: stdout });
+                if (parsed && (parsed.status === 'success')) {
+                    res.json({ success: true, message: parsed.message || 'Light test completed successfully', output: parsed });
+                } else if (parsed && parsed.status === 'error') {
+                    res.status(500).json({ success: false, message: 'Light test failed', error: parsed.message, output: parsed });
+                } else {
+                    // Fallback when script did not return JSON
+                    res.json({ success: true, message: 'Light test completed successfully', output: stdout });
+                }
             } else {
-                res.status(500).json({ success: false, message: 'Light test failed', error: stderr });
+                const errMsg = (parsed && parsed.message) ? parsed.message : (stderr || 'Unknown error');
+                res.status(500).json({ success: false, message: 'Light test failed', error: errMsg, output: stdout });
             }
         });
 

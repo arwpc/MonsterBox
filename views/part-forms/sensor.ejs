@@ -1,9 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title %></title>
+    <title>
+        <%= title %>
+    </title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
     <link rel="stylesheet" href="/css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
@@ -16,9 +19,12 @@
         }
     </style>
 </head>
+
 <body>
     <header>
-        <h1 class="landing-title"><%= title %></h1>
+        <h1 class="landing-title">
+            <%= title %>
+        </h1>
     </header>
 
     <main>
@@ -26,53 +32,54 @@
             <input type="hidden" name="type" value="sensor">
             <% if (part.id) { %>
                 <input type="hidden" name="id" value="<%= part.id %>">
-            <% } %>
-            
-            <div class="form-group">
-                <label for="name">Part Name:</label>
-                <input type="text" id="name" name="name" value="<%= part.name || '' %>" required>
-            </div>
+                <% } %>
 
-            <div class="form-group">
-                <label for="characterId">Character:</label>
-                <select id="characterId" name="characterId" required>
-                    <% characters.forEach(function(character) { %>
-                        <option value="<%= character.id %>" <%= (part.characterId === character.id) ? 'selected' : '' %>>
-                            <%= character.char_name %>
-                        </option>
-                    <% }); %>
-                </select>
-            </div>
+                    <div class="form-group">
+                        <label for="name">Part Name:</label>
+                        <input type="text" id="name" name="name" value="<%= part.name || '' %>" required>
+                    </div>
 
-            <div class="form-group">
-                <label for="sensorType">Sensor Type:</label>
-                <select id="sensorType" name="sensorType" required>
-                    <option value="motion" <%= part.sensorType === 'motion' ? 'selected' : '' %>>Motion</option>
-                    <option value="sound" <%= part.sensorType === 'sound' ? 'selected' : '' %>>Sound</option>
-                </select>
-            </div>
+                    <div class="form-group">
+                        <label for="characterId">Character:</label>
+                        <select id="characterId" name="characterId" required>
+                            <% characters.forEach(function(character) { %>
+                                <option value="<%= character.id %>" <%=(part.characterId===character.id) ? 'selected'
+                                    : '' %>>
+                                    <%= character.char_name %>
+                                </option>
+                                <% }); %>
+                        </select>
+                    </div>
 
-            <div class="form-group">
-                <label for="gpioPin">GPIO Pin:</label>
-                <input type="number" id="gpioPin" name="gpioPin" value="<%= part.gpioPin || '' %>" required>
-            </div>
+                    <div class="form-group">
+                        <label for="sensorType">Sensor Type:</label>
+                        <select id="sensorType" name="sensorType" required>
+                            <option value="motion" <%=part.sensorType==='motion' ? 'selected' : '' %>>Motion</option>
+                            <option value="sound" <%=part.sensorType==='sound' ? 'selected' : '' %>>Sound</option>
+                        </select>
+                    </div>
 
-            <div class="form-group">
-                <label class="checkbox-label" for="active">
-                    <input type="checkbox" id="active" name="active" <%= part.active ? 'checked' : '' %>>
-                    Active
-                </label>
-            </div>
+                    <div class="form-group">
+                        <label for="gpioPin">GPIO Pin:</label>
+                        <input type="number" id="gpioPin" name="gpioPin" value="<%= part.gpioPin || '' %>" required>
+                    </div>
 
-            <div class="button-group">
-                <button type="submit" class="button primary-btn">Save Part</button>
-            </div>
+                    <div class="form-group">
+                        <label class="checkbox-label" for="active">
+                            <input type="checkbox" id="active" name="active" <%=part.active ? 'checked' : '' %>>
+                            Active
+                        </label>
+                    </div>
+
+                    <div class="button-group">
+                        <button type="submit" class="button primary-btn">Save Part</button>
+                    </div>
         </form>
 
         <div id="sensorControl" class="config-section">
             <h2>Sensor Control</h2>
             <p id="statusText">Sensor status: Not active</p>
-            
+
             <div class="button-group">
                 <button id="sensorOn" class="button">Sensor On</button>
                 <button id="sensorOff" class="button" disabled>Sensor Off</button>
@@ -106,7 +113,7 @@
 
             eventSource = new EventSource(`/parts/sensor/control?id=<%= part.id || '' %>&gpioPin=${gpioPin}&sensorType=${sensorType}&action=start`);
 
-            eventSource.onmessage = function(event) {
+            eventSource.onmessage = function (event) {
                 try {
                     const data = JSON.parse(event.data);
                     if (data.status) {
@@ -124,7 +131,7 @@
                 }
             };
 
-            eventSource.onerror = function(event) {
+            eventSource.onerror = function (event) {
                 console.error('EventSource failed:', event);
                 updateSensorStatus('Error: EventSource failed');
                 document.getElementById('testResults').textContent = 'Sensor control failed: EventSource error';
@@ -145,15 +152,8 @@
             const gpioPin = document.getElementById('gpioPin').value;
             const sensorType = document.getElementById('sensorType').value;
 
-            if (!sensorId) {
-                console.error('Cannot stop sensor: Invalid sensor ID');
-                updateSensorStatus('Error: Invalid sensor ID');
-                document.getElementById('testResults').textContent = 'Failed to stop sensor: Invalid sensor ID';
-                document.getElementById('testResults').classList.add('error-message');
-                document.getElementById('sensorOn').disabled = false;
-                document.getElementById('sensorOff').disabled = true;
-                return;
-            }
+            // Allow stop even when no persisted ID exists (e.g., unsaved part)
+            // Backend accepts missing ID and returns success to simplify testing flows.
 
             axios.post('/parts/sensor/control', {
                 id: sensorId,
@@ -161,35 +161,35 @@
                 sensorType: sensorType,
                 action: 'stop'
             })
-            .then(function(response) {
-                console.log('Sensor stop response:', response.data);
-                updateSensorStatus('Sensor stopped');
-                document.getElementById('testResults').textContent = 'Sensor stopped successfully';
-                document.getElementById('testResults').classList.remove('error-message');
-            })
-            .catch(function(error) {
-                console.error('Error stopping sensor:', error);
-                console.error('Error response:', error.response);
-                let errorMessage = 'Failed to stop sensor';
-                if (error.response && error.response.data && error.response.data.error) {
-                    errorMessage += ': ' + error.response.data.error;
-                } else if (error.message) {
-                    errorMessage += ': ' + error.message;
-                }
-                updateSensorStatus('Error stopping sensor');
-                document.getElementById('testResults').textContent = errorMessage;
-                document.getElementById('testResults').classList.add('error-message');
-            })
-            .finally(function() {
-                document.getElementById('sensorOn').disabled = false;
-                document.getElementById('sensorOff').disabled = true;
-            });
+                .then(function (response) {
+                    console.log('Sensor stop response:', response.data);
+                    updateSensorStatus('Sensor stopped');
+                    document.getElementById('testResults').textContent = 'Sensor stopped successfully';
+                    document.getElementById('testResults').classList.remove('error-message');
+                })
+                .catch(function (error) {
+                    console.error('Error stopping sensor:', error);
+                    console.error('Error response:', error.response);
+                    let errorMessage = 'Failed to stop sensor';
+                    if (error.response && error.response.data && error.response.data.error) {
+                        errorMessage += ': ' + error.response.data.error;
+                    } else if (error.message) {
+                        errorMessage += ': ' + error.message;
+                    }
+                    updateSensorStatus('Error stopping sensor');
+                    document.getElementById('testResults').textContent = errorMessage;
+                    document.getElementById('testResults').classList.add('error-message');
+                })
+                .finally(function () {
+                    document.getElementById('sensorOn').disabled = false;
+                    document.getElementById('sensorOff').disabled = true;
+                });
         }
 
         document.getElementById('sensorOn').addEventListener('click', startSensor);
         document.getElementById('sensorOff').addEventListener('click', stopSensor);
 
-        document.getElementById('sensorType').addEventListener('change', function() {
+        document.getElementById('sensorType').addEventListener('change', function () {
             if (this.value === 'sound') {
                 document.getElementById('gpioPin').disabled = true;
             } else {
@@ -214,4 +214,5 @@
         updateSensorControlButtonState();
     </script>
 </body>
+
 </html>

@@ -15,7 +15,7 @@ class ServiceManager {
             // Hardware Services
             servoService: {
                 name: 'Unified Servo WebSocket Service',
-                port: 8773,
+                port: 8779,
                 script: 'scripts/hardware/servo_websocket_service.py',
                 type: 'python',
                 critical: true,
@@ -78,7 +78,7 @@ class ServiceManager {
     async stopService(serviceType, port) {
         try {
             // Kill process using port
-            const killCommand = process.platform === 'win32' 
+            const killCommand = process.platform === 'win32'
                 ? `netstat -ano | findstr :${port} | for /f "tokens=5" %a in ('more') do taskkill /PID %a /F`
                 : `lsof -ti:${port} | xargs kill -9`;
 
@@ -135,7 +135,7 @@ class ServiceManager {
 
                 // Wait for service to start
                 await this.waitForService(serviceConfig.port, 10000);
-                
+
                 logger.info(`🚀 Started ${serviceConfig.name} on port ${serviceConfig.port}`);
                 return true;
             }
@@ -154,11 +154,11 @@ class ServiceManager {
      */
     async waitForService(port, timeout = 10000) {
         const startTime = Date.now();
-        
+
         while (Date.now() - startTime < timeout) {
             try {
-                const ws = new WebSocket(`ws://localhost:${port}`);
-                
+                const ws = new WebSocket(`ws://127.0.0.1:${port}`);
+
                 await new Promise((resolve, reject) => {
                     const timer = setTimeout(() => {
                         ws.close();
@@ -257,7 +257,7 @@ class ServiceManager {
      */
     async startAllServices() {
         logger.info('🚀 Starting all MonsterBox services...');
-        
+
         const results = [];
         for (const [serviceType, config] of Object.entries(this.serviceDefinitions)) {
             if (config.critical) {
@@ -268,7 +268,7 @@ class ServiceManager {
 
         const successCount = results.filter(r => r.started).length;
         logger.info(`✅ Started ${successCount}/${results.length} critical services`);
-        
+
         return results;
     }
 
@@ -277,7 +277,7 @@ class ServiceManager {
      */
     async stopAllServices() {
         logger.info('🛑 Stopping all MonsterBox services...');
-        
+
         for (const [serviceType, config] of Object.entries(this.serviceDefinitions)) {
             await this.stopService(serviceType, config.port);
         }
@@ -293,7 +293,7 @@ class ServiceManager {
         const status = await this.getServicesStatus();
         const criticalServices = Object.values(status).filter(s => s.critical);
         const runningCritical = criticalServices.filter(s => s.running);
-        
+
         return {
             overall: runningCritical.length === criticalServices.length ? 'healthy' : 'degraded',
             criticalServices: criticalServices.length,

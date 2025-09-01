@@ -63,31 +63,48 @@ class ServoState:
     pulse_width: int
     control_active: bool = False
 
+@dataclass
+class JawAnimationConfig:
+    """Jaw animation configuration parameters"""
+    servo_id: str
+    closed_angle: float = 50.0
+    open_angle: float = 30.0
+    smoothing_factor: float = 0.8
+    volume_threshold: float = 0.02
+    attack_time: float = 0.05
+    release_time: float = 0.15
+    sensitivity: float = 1.5
+    # Additional runtime behavior controls
+    step_threshold: float = 0.5        # Minimum angle delta to move (deg)
+    idle_timeout: float = 1.0          # Seconds without audio before idling
+    response_curve: str = "linear"     # Reserved for future use
+
+
 
 
 class ServoWebSocketService(BaseHardwareService):
     """WebSocket service for servo control"""
 
-    def __init__(self, port: int = 8773, host: str = "0.0.0.0"):
+    def __init__(self, port: int = 8779, host: str = "0.0.0.0"):
         super().__init__("servo_service", "servo", port, host)
-        
+
         # Servo management
         self.servo_configs: Dict[str, ServoConfig] = {}
         self.servo_states: Dict[str, ServoState] = {}
         self.jaw_animation_configs: Dict[str, JawAnimationConfig] = {}
-        
+
         # Hardware interfaces
         self.gpio_handle = None
         self.pca9685_instances: Dict[int, Any] = {}  # Address -> PCA9685 instance
-        
+
         # Animation state
         self.active_animations: Dict[str, bool] = {}
         self.animation_tasks: Dict[str, asyncio.Task] = {}
         self.audio_processors: Dict[str, Any] = {}
-        
+
         # Thread safety
         self.servo_lock = threading.Lock()
-        
+
         # Service capabilities
         self.capabilities = {
             "manual_control": True,
@@ -103,7 +120,7 @@ class ServoWebSocketService(BaseHardwareService):
         """Initialize servo hardware interfaces"""
         try:
             logger.info("🔧 Initializing servo hardware...")
-            
+
             # Initialize GPIO if available
             if LGPIO_AVAILABLE:
                 try:
@@ -112,16 +129,16 @@ class ServoWebSocketService(BaseHardwareService):
                 except Exception as e:
                     logger.error(f"Failed to initialize GPIO: {e}")
                     self.gpio_handle = None
-            
+
             # Load servo configurations from MonsterBox parts
             await self.load_servo_configurations()
-            
+
             # Load jaw animation configurations
             await self.load_jaw_animation_configurations()
-            
+
             logger.info(f"🎯 Initialized {len(self.servo_configs)} servo configurations")
             return True
-            
+
         except Exception as e:
             logger.error(f"Failed to initialize servo hardware: {e}")
             return False
@@ -131,11 +148,11 @@ class ServoWebSocketService(BaseHardwareService):
         try:
             import os
             parts_file = os.path.join(os.path.dirname(__file__), '../../data/parts.json')
-            
+
             if os.path.exists(parts_file):
                 with open(parts_file, 'r') as f:
                     parts_data = json.load(f)
-                
+
                 for part in parts_data:
                     if part.get('type') == 'servo':
                         servo_config = ServoConfig(
@@ -151,9 +168,9 @@ class ServoWebSocketService(BaseHardwareService):
                             default_angle=part.get('defaultAngle', 90),
                             frequency=50
                         )
-                        
+
                         self.servo_configs[servo_config.servo_id] = servo_config
-                        
+
                         # Initialize servo state
                         self.servo_states[servo_config.servo_id] = ServoState(
                             servo_id=servo_config.servo_id,
@@ -163,9 +180,9 @@ class ServoWebSocketService(BaseHardwareService):
                             last_update=time.time(),
                             pulse_width=self._angle_to_pulse_width(servo_config.default_angle, servo_config)
                         )
-                        
+
                         logger.info(f"📍 Loaded servo config: {servo_config.name} (ID: {servo_config.servo_id})")
-            
+
         except Exception as e:
             logger.error(f"Failed to load servo configurations: {e}")
 
@@ -173,13 +190,13 @@ class ServoWebSocketService(BaseHardwareService):
         """Load jaw animation configurations"""
         try:
             import os
-            
+
             # Load from jaw-animation-config.json
             config_file = os.path.join(os.path.dirname(__file__), '../../data/jaw-animation-config.json')
             if os.path.exists(config_file):
                 with open(config_file, 'r') as f:
                     config_data = json.load(f)
-                
+
                 characters = config_data.get('characters', {})
                 for char_id, char_config in characters.items():
                     # Find servo for this character
@@ -188,11 +205,11 @@ class ServoWebSocketService(BaseHardwareService):
                         if servo_config.character_id == int(char_id):
                             servo_id = sid
                             break
-                    
+
                     if servo_id:
                         servo_mapping = char_config.get('servoMapping', {})
                         audio_analysis = char_config.get('audioAnalysis', {})
-                        
+
                         jaw_config = JawAnimationConfig(
                             servo_id=servo_id,
                             closed_angle=servo_mapping.get('minPosition', 50.0),
@@ -203,10 +220,10 @@ class ServoWebSocketService(BaseHardwareService):
                             release_time=servo_mapping.get('releaseTime', 0.15),
                             sensitivity=servo_mapping.get('sensitivity', 1.5)
                         )
-                        
+
                         self.jaw_animation_configs[servo_id] = jaw_config
                         logger.info(f"🦷 Loaded jaw animation config for servo {servo_id}")
-            
+
         except Exception as e:
             logger.error(f"Failed to load jaw animation configurations: {e}")
 
@@ -789,7 +806,7 @@ async def main():
     import argparse
 
     parser = argparse.ArgumentParser(description='MonsterBox Servo WebSocket Service')
-    parser.add_argument('--port', type=int, default=8773, help='WebSocket port')
+    parser.add_argument('--port', type=int, default=8779, help='WebSocket port')
     parser.add_argument('--host', default='0.0.0.0', help='WebSocket host')
     parser.add_argument('--debug', action='store_true', help='Enable debug logging')
 
