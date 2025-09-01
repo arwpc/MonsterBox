@@ -38,4 +38,5 @@ __pycache__/
 tasks.json
 tasks/
 # MkDocs generated site
-site/
+site/data/last-used-character.json
+data/port-registry.json
