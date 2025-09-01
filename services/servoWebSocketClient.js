@@ -95,15 +95,15 @@ class ServoWebSocketClient extends EventEmitter {
             }
 
             // Fallback to default port if service discovery fails
-            logger.warn('⚠️ Could not discover servo service, using fallback port 8779');
-            this.port = 8779;
+            logger.warn('⚠️ Could not discover servo service, using fallback port 8404');
+            this.port = 8404;
             this.url = `ws://${this.host}:${this.port}`;
             this.connect();
 
         } catch (error) {
             logger.error('Error discovering servo service:', error);
             // Fallback to default port
-            this.port = 8779;
+            this.port = 8404;
             this.url = `ws://${this.host}:${this.port}`;
             this.connect();
         }

@@ -317,6 +317,49 @@ router.post('/stop', async (req, res) => {
 });
 
 // Calibration API endpoints
+router.post('/move-to-position', async (req, res) => {
+    try {
+        const { servoId, positionName, duration } = req.body;
+
+        if (!servoId || !positionName) {
+            return res.status(400).json({
+                success: false,
+                message: 'Servo ID and position name are required'
+            });
+        }
+
+        const servoClient = getServoClient();
+
+        if (!servoClient.isConnected) {
+            return res.status(503).json({
+                success: false,
+                message: 'Servo WebSocket service not available'
+            });
+        }
+
+        const result = await servoClient.sendMessage({
+            type: 'servo_move_to_position',
+            servo_id: servoId,
+            position_name: positionName,
+            duration: duration || 2.0
+        });
+
+        res.json({
+            success: true,
+            message: 'Servo moved to position successfully',
+            result: result
+        });
+
+    } catch (error) {
+        logger.error('Error moving servo to position:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to move servo to position',
+            error: error.message
+        });
+    }
+});
+
 router.post('/continuous-control', async (req, res) => {
     try {
         const { servo_id, direction, speed, duration } = req.body;

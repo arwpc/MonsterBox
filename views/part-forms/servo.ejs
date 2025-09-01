@@ -79,8 +79,8 @@
 
         /* Calibration Status Styles */
         .calibration-status {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
+            background: #2a2a2a;
+            border: 1px solid #28a745;
             border-radius: 8px;
             padding: 1rem;
             margin-bottom: 1rem;
@@ -186,16 +186,146 @@
         .calibration-methods .button {
             padding: 1rem;
             text-align: center;
-            border: 2px solid #dee2e6;
-            background: white;
+            border: 2px solid #28a745;
+            background: #2a2a2a;
+            color: #28a745;
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s;
         }
 
         .calibration-methods .button:hover {
-            border-color: #007bff;
-            background: #f8f9fa;
+            border-color: #28a745;
+            background: #28a745;
+            color: #000;
+        }
+
+        /* Rotation Control Buttons */
+        .rotation-control-buttons {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .rotation-btn {
+            padding: 12px 16px;
+            background: #2a2a2a;
+            border: 2px solid #28a745;
+            color: #28a745;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .rotation-btn:hover {
+            background: #28a745;
+            color: #000;
+        }
+
+        .rotation-btn:active {
+            background: #1e7e34;
+            border-color: #1e7e34;
+            color: #fff;
+        }
+
+        .stop-btn {
+            background: #dc3545;
+            border-color: #dc3545;
+            color: #fff;
+        }
+
+        .stop-btn:hover {
+            background: #c82333;
+            border-color: #c82333;
+        }
+
+        /* Calibration Interface Styles */
+        .continuous-calibration,
+        .standard-calibration,
+        .extension-calibration {
+            background: #2a2a2a;
+            color: #28a745;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .continuous-calibration h4,
+        .standard-calibration h4,
+        .extension-calibration h4 {
+            color: #28a745;
+            margin-bottom: 15px;
+        }
+
+        .continuous-calibration p,
+        .standard-calibration p,
+        .extension-calibration p {
+            color: #ccc;
+            margin-bottom: 20px;
+        }
+
+        .servo-controls,
+        .calibration-steps,
+        .extension-controls {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+
+        .control-group,
+        .calibration-step {
+            margin-bottom: 15px;
+        }
+
+        .control-group label,
+        .calibration-step h5 {
+            color: #28a745;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .position-saving,
+        .saved-positions {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+        }
+
+        .position-saving h5 {
+            color: #28a745;
+            margin-bottom: 10px;
+        }
+
+        .position-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .custom-position {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .custom-position input {
+            flex: 1;
+            padding: 8px;
+            background: #2a2a2a;
+            border: 1px solid #28a745;
+            color: #28a745;
+            border-radius: 4px;
         }
 
         /* Servo Control Styles */
@@ -232,15 +362,127 @@
 
         /* Test Controls Enhancement */
         .test-controls {
-            background: #f8f9fa;
+            background: #1a1a1a;
+            border: 2px solid #28a745;
             border-radius: 8px;
-            padding: 1rem;
+            padding: 1.5rem;
             margin-top: 1rem;
         }
 
         .test-controls h3 {
             margin-top: 0;
-            color: #495057;
+            color: #28a745;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .test-section {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #333;
+        }
+
+        .test-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .test-section h4 {
+            color: #28a745;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .angle-control {
+            margin-bottom: 1rem;
+        }
+
+        .angle-control label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .angle-slider {
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+
+        #angleValue {
+            color: #28a745;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .test-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .position-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .position-btn {
+            padding: 0.75rem 0.5rem;
+            background: rgba(40, 167, 69, 0.1);
+            border: 1px solid #28a745;
+            color: #28a745;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        .position-btn:hover {
+            background: #28a745;
+            color: white;
+        }
+
+        .rotation-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .rotation-btn {
+            padding: 0.75rem 0.5rem;
+            background: rgba(40, 167, 69, 0.1);
+            border: 1px solid #28a745;
+            color: #28a745;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        .rotation-btn:hover {
+            background: #28a745;
+            color: white;
+        }
+
+        .rotation-btn:active {
+            background: #1e7e34;
+        }
+
+        .stop-btn {
+            background: rgba(220, 53, 69, 0.1) !important;
+            border-color: #dc3545 !important;
+            color: #dc3545 !important;
+        }
+
+        .stop-btn:hover {
+            background: #dc3545 !important;
+            color: white !important;
         }
     </style>
 </head>
@@ -404,6 +646,36 @@
         <div class="config-section">
             <h2>Servo Control & Calibration</h2>
 
+            <!-- Rotation Control Section -->
+            <div class="form-group">
+                <label>Rotation Control</label>
+                <div class="rotation-control-buttons">
+                    <button type="button" class="button rotation-btn"
+                        onmousedown="startContinuousRotation('ccw', 'slow')" onmouseup="stopContinuousRotation()"
+                        onmouseleave="stopContinuousRotation()">
+                        ← Left Slow
+                    </button>
+                    <button type="button" class="button rotation-btn"
+                        onmousedown="startContinuousRotation('ccw', 'fast')" onmouseup="stopContinuousRotation()"
+                        onmouseleave="stopContinuousRotation()">
+                        ←← Left Fast
+                    </button>
+                    <button type="button" class="button rotation-btn stop-btn" onclick="stopContinuousRotation()">
+                        ⏹ STOP
+                    </button>
+                    <button type="button" class="button rotation-btn"
+                        onmousedown="startContinuousRotation('cw', 'slow')" onmouseup="stopContinuousRotation()"
+                        onmouseleave="stopContinuousRotation()">
+                        Right Slow →
+                    </button>
+                    <button type="button" class="button rotation-btn"
+                        onmousedown="startContinuousRotation('cw', 'fast')" onmouseup="stopContinuousRotation()"
+                        onmouseleave="stopContinuousRotation()">
+                        Right Fast →→
+                    </button>
+                </div>
+            </div>
+
             <!-- Calibration Status -->
             <div id="calibrationStatus" class="calibration-status">
                 <div class="status-indicator">
@@ -419,21 +691,7 @@
                         <% } %>
             </div>
 
-            <!-- Test Controls -->
-            <div class="test-controls">
-                <h3>Test Servo</h3>
-                <div class="form-group">
-                    <label for="testAngle">Angle (0-180):</label>
-                    <input type="range" id="testAngle" min="0" max="180" value="90" oninput="updateTestAngleDisplay()">
-                    <span id="angleValue">90</span>
-                </div>
-                <p id="servoDescription"></p>
-                <div class="test-buttons">
-                    <button type="button" onclick="testServo()" class="button" id="testButton">Test Servo</button>
-                    <button type="button" onclick="stopServo()" class="button" id="stopButton">Stop Test</button>
-                </div>
-                <div id="testResult"></div>
-            </div>
+            <!-- Test Servo panel removed -->
         </div>
 
         <div class="button-group">
@@ -586,7 +844,7 @@
         // Handle test angle slider
         function updateTestAngleDisplay() {
             const angle = document.getElementById('testAngle').value;
-            document.getElementById('angleValue').textContent = angle;
+            document.getElementById('angleValue').textContent = angle + '°';
         }
 
         // Show test result with status
@@ -628,38 +886,25 @@
             };
 
             console.log('Test data:', testData);
-            showTestResult('Testing servo...');
 
             try {
-                // Prefer WebSocket service when an existing servo ID is available
-                if (currentServoId) {
-                    try {
-                        const wsResp = await axios.post('/parts/servo/move', {
-                            servoId: currentServoId,
-                            angle: parseInt(angle, 10),
-                            duration: 0.8
-                        });
-                        if (wsResp.data?.success) {
-                            showTestResult('Servo moved via hardware service');
-                            updateButtonStates(false);
-                            return;
-                        }
-                    } catch (e) {
-                        console.warn('WS move failed, falling back to legacy test:', e.message);
-                    }
-                }
+                const response = await makeWebSocketRequest('test_servo', {
+                    angle: parseFloat(angle),
+                    use_pca9685: usePCA9685,
+                    channel: usePCA9685 ? parseInt(channel) : null,
+                    pin: usePCA9685 ? null : parseInt(pin),
+                    servo_type: servoType
+                });
 
-                const response = await axios.post('/parts/servo/test', testData);
-                console.log('Test response:', response);
-
-                if (response.data.success) {
-                    showTestResult(response.data.message);
+                if (response.status === 'success') {
+                    document.getElementById('testResult').innerHTML = `<div class="success">${response.message}</div>`;
                 } else {
-                    showTestResult(response.data.message || 'Test failed', true);
+                    document.getElementById('testResult').innerHTML = `<div class="error">${response.message}</div>`;
                 }
             } catch (error) {
                 console.error('Error testing servo:', error);
-                showTestResult('Error testing servo: ' + (error.response?.data?.message || error.message), true);
+                document.getElementById('testResult').innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            } finally {
                 updateButtonStates(false);
             }
         }
@@ -674,30 +919,23 @@
             const pin = document.getElementById('pin').value;
             const servoType = document.getElementById('servoType').value;
 
-            const stopData = {
-                angle: 90, // Return to neutral position
-                usePCA9685,
-                channel,
-                pin,
-                servoType,
-                duration: '0.0' // Immediate stop
-            };
-
-            console.log('Stop data:', stopData);
-            showTestResult('Stopping servo...');
-
             try {
-                const response = await axios.post('/parts/servo/test', stopData);
-                console.log('Stop response:', response);
+                const response = await makeWebSocketRequest('test_servo', {
+                    angle: 90, // Return to neutral position
+                    use_pca9685: usePCA9685,
+                    channel: usePCA9685 ? parseInt(channel) : null,
+                    pin: usePCA9685 ? null : parseInt(pin),
+                    servo_type: servoType
+                });
 
-                if (response.data.success) {
-                    showTestResult('Servo stopped');
+                if (response.status === 'success') {
+                    document.getElementById('testResult').innerHTML = `<div class="success">Servo stopped</div>`;
                 } else {
-                    showTestResult('Failed to stop servo: ' + response.data.message, true);
+                    document.getElementById('testResult').innerHTML = `<div class="error">Failed to stop servo</div>`;
                 }
             } catch (error) {
                 console.error('Error stopping servo:', error);
-                showTestResult('Error stopping servo: ' + (error.response?.data?.message || error.message), true);
+                document.getElementById('testResult').innerHTML = `<div class="error">Error stopping servo</div>`;
             } finally {
                 updateButtonStates(false);
             }
@@ -1146,8 +1384,160 @@
         document.addEventListener('DOMContentLoaded', function () {
             if (currentServoId) {
                 checkCalibrationStatus(currentServoId);
+                loadSavedPositionsForTesting();
+                checkServoTypeForContinuousControl();
             }
         });
+
+        // Load saved positions for testing
+        async function loadSavedPositionsForTesting() {
+            if (!currentServoId) return;
+
+            try {
+                const response = await axios.post('/parts/servo/get-positions', {
+                    servo_id: currentServoId.toString()
+                });
+
+                if (response.data.success) {
+                    const positions = { ...response.data.saved_positions, ...response.data.calibrated_positions };
+                    populatePositionButtons(positions);
+                }
+            } catch (error) {
+                console.error('Error loading positions for testing:', error);
+            }
+        }
+
+        // Populate position buttons for testing
+        function populatePositionButtons(positions) {
+            const container = document.getElementById('positionButtons');
+            const section = document.getElementById('savedPositionsTest');
+
+            if (!positions || Object.keys(positions).length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+
+            container.innerHTML = '';
+            section.style.display = 'block';
+
+            Object.entries(positions).forEach(([key, position]) => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'position-btn';
+                button.textContent = position.description || key;
+                button.onclick = () => testSavedPosition(key, position);
+                container.appendChild(button);
+            });
+        }
+
+        // Test a saved position - REMOVED FOR NOW
+
+        // Check if servo supports continuous rotation
+        function checkServoTypeForContinuousControl() {
+            const servoTypeSelect = document.getElementById('servoType');
+            const continuousSection = document.getElementById('continuousControlTest');
+
+            if (!servoTypeSelect || !continuousSection) return;
+
+            const selectedOption = servoTypeSelect.options[servoTypeSelect.selectedIndex];
+            const isContinuous = selectedOption && selectedOption.dataset.continuous === 'true';
+
+            continuousSection.style.display = isContinuous ? 'block' : 'none';
+        }
+
+        // Update continuous control visibility when servo type changes
+        function updateServoType() {
+            const select = document.getElementById('servoType');
+            const option = select.options[select.selectedIndex];
+
+            // Update pulse width fields
+            document.getElementById('minPulse').value = option.dataset.minPulse;
+            document.getElementById('maxPulse').value = option.dataset.maxPulse;
+            document.getElementById('defaultAngle').value = option.dataset.defaultAngle;
+
+            // Update continuous control visibility
+            checkServoTypeForContinuousControl();
+        }
+
+        // Continuous rotation control
+        let continuousRotationInterval = null;
+
+        // WebSocket request function
+        async function makeWebSocketRequest(type, data) {
+            return new Promise((resolve, reject) => {
+                const ws = new WebSocket('ws://localhost:8779');
+
+                ws.onopen = function () {
+                    ws.send(JSON.stringify({ type, ...data }));
+                };
+
+                ws.onmessage = function (event) {
+                    const response = JSON.parse(event.data);
+                    ws.close();
+                    resolve(response);
+                };
+
+                ws.onerror = function (error) {
+                    ws.close();
+                    reject(error);
+                };
+
+                ws.onclose = function (event) {
+                    if (event.code !== 1000) {
+                        reject(new Error('WebSocket connection failed'));
+                    }
+                };
+            });
+        }
+
+        // Update test angle display
+        function updateTestAngleDisplay() {
+            const slider = document.getElementById('testAngle');
+            const display = document.getElementById('angleValue');
+            if (slider && display) {
+                display.textContent = slider.value + '°';
+            }
+        }
+
+        // Continuous rotation control functions for main form
+        async function startContinuousRotation(direction, speed) {
+            if (!currentServoId) return;
+
+            try {
+                const response = await axios.post('/parts/servo/continuous-control', {
+                    servo_id: currentServoId,
+                    direction: direction,
+                    speed: speed
+                });
+
+                if (response.data?.success) {
+                    console.log(`Started ${direction} rotation at ${speed} speed`);
+                } else {
+                    console.error('Failed to start rotation:', response.data?.message);
+                }
+            } catch (error) {
+                console.error('Error starting continuous rotation:', error);
+            }
+        }
+
+        async function stopContinuousRotation() {
+            if (!currentServoId) return;
+
+            try {
+                const response = await axios.post('/parts/servo/continuous-control', {
+                    servo_id: currentServoId,
+                    direction: 'stop'
+                });
+
+                if (response.data?.success) {
+                    console.log('Rotation stopped');
+                } else {
+                    console.error('Failed to stop rotation');
+                }
+            } catch (error) {
+                console.error('Error stopping rotation:', error);
+            }
+        }
     </script>
 </body>
 
