@@ -36,58 +36,6 @@
     "sensorType": "motion"
   },
   {
-    "id": 5,
-    "name": "Elbow",
-    "type": "servo",
-    "characterId": 1,
-    "pin": 18,
-    "usePCA9685": false,
-    "channel": 1,
-    "minPulse": 500,
-    "maxPulse": 2500,
-    "defaultAngle": 90,
-    "servoType": "Hooyij 40kg DS3240MG",
-    "mode": [
-      "Standard",
-      "Continuous"
-    ],
-    "feedback": false,
-    "controlType": [
-      "PWM"
-    ],
-    "customSettings": null,
-    "pca9685Settings": {
-      "frequency": 50,
-      "address": "0x40"
-    }
-  },
-  {
-    "id": 6,
-    "name": "Forearm",
-    "type": "servo",
-    "characterId": 1,
-    "pin": 18,
-    "usePCA9685": false,
-    "channel": 2,
-    "minPulse": 500,
-    "maxPulse": 2500,
-    "defaultAngle": 90,
-    "servoType": "Hooyij 40kg DS3240MG",
-    "mode": [
-      "Standard",
-      "Continuous"
-    ],
-    "feedback": false,
-    "controlType": [
-      "PWM"
-    ],
-    "customSettings": null,
-    "pca9685Settings": {
-      "frequency": 50,
-      "address": "0x40"
-    }
-  },
-  {
     "id": 8,
     "name": "Coffin Sensor",
     "type": "sensor",
@@ -104,35 +52,6 @@
     "gpioPin": 16,
     "active": true,
     "sensorType": "motion"
-  },
-  {
-    "id": 11,
-    "name": "Head on a Swivel",
-    "type": "servo",
-    "characterId": 1,
-    "pin": 18,
-    "usePCA9685": false,
-    "channel": null,
-    "servoType": "GoBilda Stingray 2 Servo",
-    "minPulse": 500,
-    "maxPulse": 2500,
-    "defaultAngle": 90,
-    "mode": [
-      "Feedback",
-      "Continuous",
-      "Standard",
-      "Digital"
-    ],
-    "feedback": true,
-    "controlType": [
-      "PWM",
-      "Digital"
-    ],
-    "customSettings": null,
-    "pca9685Settings": {
-      "frequency": 50,
-      "address": "0x40"
-    }
   },
   {
     "id": 12,
@@ -324,5 +243,31 @@
       "auto_exposure": 3,
       "power_line_frequency": 1
     }
+  },
+  {
+    "id": 29,
+    "name": "Orlok Head Servo",
+    "type": "servo",
+    "characterId": 1,
+    "pin": 3,
+    "usePCA9685": true,
+    "channel": null,
+    "pca9685Settings": {
+      "frequency": 50,
+      "address": "0x40"
+    },
+    "servoType": "Hooyij 40kg DS3240MG",
+    "minPulse": 500,
+    "maxPulse": 2500,
+    "defaultAngle": 90,
+    "mode": [
+      "Standard",
+      "Continuous"
+    ],
+    "feedback": false,
+    "controlType": [
+      "PWM"
+    ],
+    "customSettings": null
   }
 ]

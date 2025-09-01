@@ -246,31 +246,42 @@ class ServoWebSocketService(BaseHardwareService):
         """Handle incoming WebSocket messages"""
         try:
             message_type = message.get('type')
+            request_id = message.get('request_id')
 
+            response = None
             if message_type == 'servo_move':
-                return await self.handle_servo_move(message)
+                response = await self.handle_servo_move(message)
             elif message_type == 'servo_test':
-                return await self.handle_servo_test(message)
+                response = await self.handle_servo_test(message)
             elif message_type == 'servo_stop':
-                return await self.handle_servo_stop(message)
+                response = await self.handle_servo_stop(message)
             elif message_type == 'jaw_animation_start':
-                return await self.handle_jaw_animation_start(message)
+                response = await self.handle_jaw_animation_start(message)
             elif message_type == 'jaw_animation_stop':
-                return await self.handle_jaw_animation_stop(message)
+                response = await self.handle_jaw_animation_stop(message)
             elif message_type == 'jaw_animation_update':
-                return await self.handle_jaw_animation_update(message)
+                response = await self.handle_jaw_animation_update(message)
             elif message_type == 'get_servo_status':
-                return await self.handle_get_servo_status(message)
+                response = await self.handle_get_servo_status(message)
             elif message_type == 'get_servo_configs':
-                return await self.handle_get_servo_configs(message)
+                response = await self.handle_get_servo_configs(message)
             elif message_type == 'update_servo_config':
-                return await self.handle_update_servo_config(message)
+                response = await self.handle_update_servo_config(message)
             else:
-                return {"status": "error", "message": f"Unknown message type: {message_type}"}
+                response = {"status": "error", "message": f"Unknown message type: {message_type}"}
+
+            # Include request_id in response if provided
+            if response and request_id:
+                response['request_id'] = request_id
+
+            return response
 
         except Exception as e:
             logger.error(f"Error handling message: {e}")
-            return {"status": "error", "message": str(e)}
+            error_response = {"status": "error", "message": str(e)}
+            if message.get('request_id'):
+                error_response['request_id'] = message.get('request_id')
+            return error_response
 
     async def handle_servo_move(self, message: Dict[str, Any]) -> Dict[str, Any]:
         """Handle servo movement command"""

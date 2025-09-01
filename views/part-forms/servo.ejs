@@ -1,9 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title %></title>
+    <title>
+        <%= title %>
+    </title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
     <link rel="stylesheet" href="/css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
@@ -15,6 +18,7 @@
             margin-top: 10px;
             margin-bottom: 20px;
         }
+
         .channel-button {
             padding: 10px;
             text-align: center;
@@ -24,18 +28,22 @@
             cursor: pointer;
             transition: all 0.3s ease;
         }
+
         .channel-button:hover {
             background-color: #004400;
         }
+
         .channel-button.selected {
             background-color: #00ff00;
             color: #000000;
         }
+
         .servo-type-container {
             display: flex;
             align-items: center;
             gap: 10px;
         }
+
         #testResult {
             margin-top: 10px;
             padding: 10px;
@@ -43,128 +51,155 @@
             border-radius: 4px;
             display: none;
         }
+
         #testResult.success {
             background-color: rgba(0, 255, 0, 0.1);
             color: #00ff00;
         }
+
         #testResult.error {
             background-color: rgba(255, 0, 0, 0.1);
             color: #ff0000;
         }
+
         .test-buttons {
             display: flex;
             gap: 10px;
             margin-top: 10px;
         }
+
         .test-buttons button {
             flex: 1;
         }
+
         .test-buttons button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
     </style>
 </head>
+
 <body>
     <header>
-        <h1 class="landing-title"><%= title %></h1>
+        <h1 class="landing-title">
+            <%= title %>
+        </h1>
     </header>
 
     <main>
-        <form action="<%= action %>?returnTo=/parts?characterId=<%= character ? character.id : (part ? part.characterId : '') %>" method="POST" id="servoForm">
+        <form
+            action="<%= action %>?returnTo=/parts?characterId=<%= character ? character.id : (part ? part.characterId : '') %>"
+            method="POST" id="servoForm">
             <input type="hidden" name="type" value="servo">
             <% if (part && part.id) { %>
                 <input type="hidden" name="id" value="<%= part.id %>">
-            <% } %>
-            
-            <div class="form-group">
-                <label for="name">Part Name:</label>
-                <input type="text" id="name" name="name" value="<%= part ? part.name : '' %>" required>
-            </div>
+                <% } %>
 
-            <div class="form-group">
-                <label for="characterId">Character:</label>
-                <select id="characterId" name="characterId" required>
-                    <% characters.forEach(function(character) { %>
-                        <option value="<%= character.id %>" <%= (part && part.characterId === character.id) ? 'selected' : '' %>>
-                            <%= character.char_name %>
-                        </option>
-                    <% }); %>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="servoType">Servo Type:</label>
-                <div class="servo-type-container">
-                    <select id="servoType" name="servoType" required onchange="updateServoParameters()">
-                        <option value="">Select a Servo Type</option>
-                        <% servoConfigs.forEach(function(servo) { %>
-                            <option value="<%= servo.name %>" 
-                                    data-min-pulse="<%= servo.min_pulse_width_us %>"
-                                    data-max-pulse="<%= servo.max_pulse_width_us %>"
-                                    data-default-angle="<%= servo.default_angle_deg %>"
-                                    data-model="<%= servo.model %>"
-                                    data-manufacturer="<%= servo.manufacturer %>"
-                                    data-modes="<%= servo.mode.join(',') %>"
-                                    data-torque="<%= servo.max_torque_kg_cm %>"
-                                    data-rotation="<%= servo.rotation_range_deg %>"
-                                    data-feedback="<%= servo.feedback %>"
-                                    data-notes="<%= servo.notes || '' %>"
-                                    <%= (part && part.servoType === servo.name) ? 'selected' : '' %>>
-                                <%= servo.name %>
-                            </option>
-                        <% }); %>
-                    </select>
-                    <button type="button" class="button" onclick="openCustomizeModal()">Customize</button>
-                </div>
-            </div>
-
-            <div id="servoInfo" class="config-section">
-                <p id="servoModel"></p>
-                <p id="servoModes"></p>
-                <p id="servoTorque"></p>
-                <p id="servoRotation"></p>
-                <p id="servoFeedback"></p>
-                <p id="servoNotes"></p>
-            </div>
-
-            <div class="form-group">
-                <label class="checkbox-label" for="usePCA9685">
-                    <input type="checkbox" id="usePCA9685" name="usePCA9685" <%= (part && part.usePCA9685) ? 'checked' : '' %> onchange="togglePCA9685()">
-                    Use PCA9685
-                </label>
-            </div>
-
-            <div id="pca9685Fields" class="config-section" style="display: none;">
-                <div class="form-group">
-                    <label for="channel">PCA9685 Channel:</label>
-                    <input type="number" id="channel" name="channel" value="<%= part ? part.channel : 0 %>" min="0" max="15" required>
-                </div>
-                <div class="form-group">
-                    <label>Channel Position:</label>
-                    <div class="channel-grid">
-                        <% for (let i = 0; i < 16; i++) { %>
-                            <div class="channel-button" data-channel="<%= i %>">
-                                <%= i %> (<%= ['Top', 'Top', 'Top', 'Top', 'Upper Mid', 'Upper Mid', 'Upper Mid', 'Upper Mid', 'Lower Mid', 'Lower Mid', 'Lower Mid', 'Lower Mid', 'Bottom', 'Bottom', 'Bottom', 'Bottom'][i] %>)
-                            </div>
-                        <% } %>
+                    <div class="form-group">
+                        <label for="name">Part Name:</label>
+                        <input type="text" id="name" name="name" value="<%= part ? part.name : '' %>" required>
                     </div>
-                </div>
-            </div>
 
-            <div id="gpioField" class="form-group" style="display: none;">
-                <label for="pin">GPIO Pin:</label>
-                <input type="number" id="pin" name="pin" value="<%= part ? part.pin : '' %>" min="0" max="27" required>
-            </div>
+                    <div class="form-group">
+                        <label for="characterId">Character:</label>
+                        <select id="characterId" name="characterId" required>
+                            <% characters.forEach(function(character) { %>
+                                <option value="<%= character.id %>" <%=(part && part.characterId===character.id)
+                                    ? 'selected' : '' %>>
+                                    <%= character.char_name %>
+                                </option>
+                                <% }); %>
+                        </select>
+                    </div>
 
-            <input type="hidden" id="minPulse" name="minPulse" value="<%= part ? part.minPulse : 500 %>">
-            <input type="hidden" id="maxPulse" name="maxPulse" value="<%= part ? part.maxPulse : 2500 %>">
-            <input type="hidden" id="defaultAngle" name="defaultAngle" value="<%= part ? part.defaultAngle : 90 %>">
-            <input type="hidden" id="customSettings" name="customSettings" value="<%= part && part.customSettings ? JSON.stringify(part.customSettings) : '' %>">
+                    <div class="form-group">
+                        <label for="servoType">Servo Type:</label>
+                        <div class="servo-type-container">
+                            <select id="servoType" name="servoType" required onchange="updateServoParameters()">
+                                <option value="">Select a Servo Type</option>
+                                <% servoConfigs.forEach(function(servo) { %>
+                                    <option value="<%= servo.name %>" data-min-pulse="<%= servo.min_pulse_width_us %>"
+                                        data-max-pulse="<%= servo.max_pulse_width_us %>"
+                                        data-default-angle="<%= servo.default_angle_deg %>"
+                                        data-model="<%= servo.model %>" data-manufacturer="<%= servo.manufacturer %>"
+                                        data-modes="<%= servo.mode.join(',') %>"
+                                        data-torque="<%= servo.max_torque_kg_cm %>"
+                                        data-rotation="<%= servo.rotation_range_deg %>"
+                                        data-feedback="<%= servo.feedback %>" data-notes="<%= servo.notes || '' %>"
+                                        <%=(part && part.servoType===servo.name) ? 'selected' : '' %>>
+                                        <%= servo.name %>
+                                    </option>
+                                    <% }); %>
+                            </select>
+                            <button type="button" class="button" onclick="openCustomizeModal()">Customize</button>
+                        </div>
+                    </div>
 
-            <div class="button-group">
-                <button type="submit" class="button primary-btn">Save Part</button>
-            </div>
+                    <div id="servoInfo" class="config-section">
+                        <p id="servoModel"></p>
+                        <p id="servoModes"></p>
+                        <p id="servoTorque"></p>
+                        <p id="servoRotation"></p>
+                        <p id="servoFeedback"></p>
+                        <p id="servoNotes"></p>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="checkbox-label" for="usePCA9685">
+                            <input type="checkbox" id="usePCA9685" name="usePCA9685" <%=(part && part.usePCA9685)
+                                ? 'checked' : '' %> onchange="togglePCA9685()">
+                            Use PCA9685
+                        </label>
+                    </div>
+
+                    <div id="pca9685Fields" class="config-section" style="display: none;">
+                        <div class="form-group">
+                            <label for="channel">PCA9685 Channel:</label>
+                            <input type="number" id="channel" name="channel" value="<%= part ? part.channel : 0 %>"
+                                min="0" max="15" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="pca9685Frequency">PCA9685 Frequency (Hz):</label>
+                            <input type="number" id="pca9685Frequency" name="pca9685Frequency"
+                                value="<%= part && part.pca9685Settings ? part.pca9685Settings.frequency : 50 %>"
+                                min="40" max="1000" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="pca9685Address">PCA9685 I2C Address:</label>
+                            <input type="text" id="pca9685Address" name="pca9685Address"
+                                value="<%= part && part.pca9685Settings ? part.pca9685Settings.address : '0x40' %>"
+                                pattern="0x[0-9A-Fa-f]{2}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Channel Position:</label>
+                            <div class="channel-grid">
+                                <% for (let i=0; i < 16; i++) { %>
+                                    <div class="channel-button" data-channel="<%= i %>">
+                                        <%= i %> (<%= ['Top', 'Top' , 'Top' , 'Top' , 'Upper Mid' , 'Upper Mid'
+                                                , 'Upper Mid' , 'Upper Mid' , 'Lower Mid' , 'Lower Mid' , 'Lower Mid'
+                                                , 'Lower Mid' , 'Bottom' , 'Bottom' , 'Bottom' , 'Bottom' ][i] %>)
+                                    </div>
+                                    <% } %>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="gpioField" class="form-group" style="display: none;">
+                        <label for="pin">GPIO Pin:</label>
+                        <input type="number" id="pin" name="pin" value="<%= part ? part.pin : '' %>" min="0" max="27"
+                            required>
+                    </div>
+
+                    <input type="hidden" id="minPulse" name="minPulse" value="<%= part ? part.minPulse : 500 %>">
+                    <input type="hidden" id="maxPulse" name="maxPulse" value="<%= part ? part.maxPulse : 2500 %>">
+                    <input type="hidden" id="defaultAngle" name="defaultAngle"
+                        value="<%= part ? part.defaultAngle : 90 %>">
+                    <input type="hidden" id="customSettings" name="customSettings"
+                        value="<%= part && part.customSettings ? JSON.stringify(part.customSettings) : '' %>">
+
+                    <div class="button-group">
+                        <button type="submit" class="button primary-btn">Save Part</button>
+                    </div>
         </form>
 
         <!-- Customize Modal -->
@@ -184,11 +219,13 @@
                         </div>
                         <div class="form-group">
                             <label for="customDefaultAngle">Default Angle (degrees):</label>
-                            <input type="number" id="customDefaultAngle" name="customDefaultAngle" min="0" max="180" required>
+                            <input type="number" id="customDefaultAngle" name="customDefaultAngle" min="0" max="180"
+                                required>
                         </div>
                         <div class="form-group">
                             <label for="customRotationRange">Rotation Range (degrees):</label>
-                            <input type="number" id="customRotationRange" name="customRotationRange" min="0" max="360" required>
+                            <input type="number" id="customRotationRange" name="customRotationRange" min="0" max="360"
+                                required>
                         </div>
                     </div>
                     <div class="button-group">
@@ -214,7 +251,8 @@
         </div>
 
         <div class="button-group">
-            <a href="/parts?characterId=<%= character ? character.id : (part ? part.characterId : '') %>" class="button secondary-btn">Back to Parts</a>
+            <a href="/parts?characterId=<%= character ? character.id : (part ? part.characterId : '') %>"
+                class="button secondary-btn">Back to Parts</a>
             <a href="/system-config/servos" class="button">Manage Servo Configurations</a>
         </div>
     </main>
@@ -224,7 +262,7 @@
         const currentServoId = <%= (part && part.id) ? part.id : 'null' %>;
 
         // Initialize the page
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             console.log('Page initialized');
             togglePCA9685();
             updateServoParameters();
@@ -238,16 +276,20 @@
             const usePCA9685 = document.getElementById('usePCA9685').checked;
             const pca9685Fields = document.getElementById('pca9685Fields');
             const gpioField = document.getElementById('gpioField');
-            
+
             if (usePCA9685) {
                 pca9685Fields.style.display = 'block';
                 gpioField.style.display = 'none';
                 document.getElementById('pin').removeAttribute('required');
                 document.getElementById('channel').setAttribute('required', 'required');
+                document.getElementById('pca9685Frequency').setAttribute('required', 'required');
+                document.getElementById('pca9685Address').setAttribute('required', 'required');
             } else {
                 pca9685Fields.style.display = 'none';
                 gpioField.style.display = 'block';
                 document.getElementById('channel').removeAttribute('required');
+                document.getElementById('pca9685Frequency').removeAttribute('required');
+                document.getElementById('pca9685Address').removeAttribute('required');
                 document.getElementById('pin').setAttribute('required', 'required');
             }
         }
@@ -257,7 +299,7 @@
             console.log('Initializing channel buttons');
             const channelInput = document.getElementById('channel');
             const buttons = document.querySelectorAll('.channel-button');
-            
+
             // Set initial selected state
             const currentChannel = parseInt(channelInput.value);
             buttons.forEach(button => {
@@ -269,10 +311,10 @@
 
             // Add click handlers
             buttons.forEach(button => {
-                button.addEventListener('click', function() {
+                button.addEventListener('click', function () {
                     const channel = this.dataset.channel;
                     channelInput.value = channel;
-                    
+
                     // Update visual selection
                     buttons.forEach(b => b.classList.remove('selected'));
                     this.classList.add('selected');
@@ -286,12 +328,12 @@
             const select = document.getElementById('servoType');
             const option = select.options[select.selectedIndex];
             const servoInfo = document.getElementById('servoInfo');
-            
+
             if (option.value) {
                 document.getElementById('minPulse').value = option.dataset.minPulse;
                 document.getElementById('maxPulse').value = option.dataset.maxPulse;
                 document.getElementById('defaultAngle').value = option.dataset.defaultAngle;
-                
+
                 // Update info display
                 document.getElementById('servoModel').textContent = `Model: ${option.dataset.model}`;
                 document.getElementById('servoModes').textContent = `Modes: ${option.dataset.modes}`;
@@ -301,7 +343,7 @@
                 if (option.dataset.notes) {
                     document.getElementById('servoNotes').textContent = `Notes: ${option.dataset.notes}`;
                 }
-                
+
                 servoInfo.style.display = 'block';
             } else {
                 servoInfo.style.display = 'none';
@@ -334,7 +376,7 @@
         // Test servo functionality
         async function testServo() {
             if (isTestingServo) return;
-            
+
             console.log('Testing servo');
             updateButtonStates(true);
             const angle = document.getElementById('testAngle').value;
@@ -392,7 +434,7 @@
         // Stop servo test
         async function stopServo() {
             if (!isTestingServo) return;
-            
+
             console.log('Stopping servo');
             const usePCA9685 = document.getElementById('usePCA9685').checked;
             const channel = document.getElementById('channel').value;
@@ -433,13 +475,13 @@
             const modal = document.getElementById('customizeModal');
             const select = document.getElementById('servoType');
             const option = select.options[select.selectedIndex];
-            
+
             // Pre-fill current values
             document.getElementById('customMinPulse').value = document.getElementById('minPulse').value;
             document.getElementById('customMaxPulse').value = document.getElementById('maxPulse').value;
             document.getElementById('customDefaultAngle').value = document.getElementById('defaultAngle').value;
             document.getElementById('customRotationRange').value = option.dataset.rotation || '180';
-            
+
             modal.style.display = 'block';
         }
 
@@ -449,25 +491,25 @@
 
         function saveCustomSettings(event) {
             event.preventDefault();
-            
+
             const customSettings = {
                 minPulse: parseInt(document.getElementById('customMinPulse').value),
                 maxPulse: parseInt(document.getElementById('customMaxPulse').value),
                 defaultAngle: parseInt(document.getElementById('customDefaultAngle').value),
                 rotationRange: parseInt(document.getElementById('customRotationRange').value)
             };
-            
+
             // Update hidden inputs
             document.getElementById('minPulse').value = customSettings.minPulse;
             document.getElementById('maxPulse').value = customSettings.maxPulse;
             document.getElementById('defaultAngle').value = customSettings.defaultAngle;
             document.getElementById('customSettings').value = JSON.stringify(customSettings);
-            
+
             closeCustomizeModal();
         }
 
         // Close modal when clicking outside
-        window.onclick = function(event) {
+        window.onclick = function (event) {
             const modal = document.getElementById('customizeModal');
             if (event.target === modal) {
                 closeCustomizeModal();
@@ -475,4 +517,5 @@
         }
     </script>
 </body>
+
 </html>

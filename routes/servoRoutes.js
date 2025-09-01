@@ -88,6 +88,15 @@ router.post('/', async (req, res) => {
             logger.error('Error parsing custom settings:', error);
         }
 
+        // Build PCA9685 settings if using PCA9685
+        let pca9685Settings = null;
+        if (req.body.usePCA9685 === 'on') {
+            pca9685Settings = {
+                frequency: parseInt(req.body.pca9685Frequency, 10) || 50,
+                address: req.body.pca9685Address || '0x40'
+            };
+        }
+
         const newServo = {
             name: req.body.name,
             type: 'servo',
@@ -95,6 +104,7 @@ router.post('/', async (req, res) => {
             pin: parseInt(req.body.pin, 10) || 3,
             usePCA9685: req.body.usePCA9685 === 'on',
             channel: parseInt(req.body.channel, 10) || null,
+            pca9685Settings: pca9685Settings,
             servoType: req.body.servoType,
             minPulse: customSettings ? customSettings.minPulse : (selectedServo ? selectedServo.min_pulse_width_us : parseInt(req.body.minPulse, 10)),
             maxPulse: customSettings ? customSettings.maxPulse : (selectedServo ? selectedServo.max_pulse_width_us : parseInt(req.body.maxPulse, 10)),
@@ -233,60 +243,7 @@ router.post('/test', async (req, res) => {
     }
 });
 
-router.post('/:id', async (req, res) => {
-    try {
-        logger.debug('Update Servo Route - Request params:', req.params);
-        logger.debug('Update Servo Route - Request body:', req.body);
-
-        const id = parseInt(req.params.id, 10);
-        logger.debug('Updating Servo with ID:', id, 'Type:', typeof id);
-        if (isNaN(id)) {
-            throw new Error('Invalid part ID');
-        }
-
-        const servoConfigs = getServoConfigs();
-        const selectedServo = servoConfigs.find(s => s.name === req.body.servoType);
-        let customSettings = null;
-
-        try {
-            if (req.body.customSettings) {
-                customSettings = JSON.parse(req.body.customSettings);
-            }
-        } catch (error) {
-            logger.error('Error parsing custom settings:', error);
-        }
-
-        const updatedServo = {
-            id: id,
-            name: req.body.name,
-            type: 'servo',
-            characterId: parseInt(req.body.characterId, 10),
-            pin: parseInt(req.body.pin, 10) || 3,
-            usePCA9685: req.body.usePCA9685 === 'on',
-            channel: parseInt(req.body.channel, 10) || null,
-            servoType: req.body.servoType,
-            minPulse: customSettings ? customSettings.minPulse : (selectedServo ? selectedServo.min_pulse_width_us : parseInt(req.body.minPulse, 10)),
-            maxPulse: customSettings ? customSettings.maxPulse : (selectedServo ? selectedServo.max_pulse_width_us : parseInt(req.body.maxPulse, 10)),
-            defaultAngle: customSettings ? customSettings.defaultAngle : (selectedServo ? selectedServo.default_angle_deg : parseInt(req.body.defaultAngle, 10)),
-            mode: selectedServo ? selectedServo.mode : ['Standard'],
-            feedback: selectedServo ? selectedServo.feedback : false,
-            controlType: selectedServo ? selectedServo.control_type : ['PWM'],
-            customSettings: customSettings
-        };
-
-        logger.debug('Updated Servo data:', updatedServo);
-        const result = await partService.updatePart(id, updatedServo);
-        logger.info('Updated Servo:', result);
-
-        res.redirect(`/parts?characterId=${updatedServo.characterId}`);
-
-    } catch (error) {
-        logger.error('Error updating Servo:', error);
-        res.status(500).send('An error occurred while updating the Servo: ' + error.message);
-    }
-});
-
-// New WebSocket-based servo control routes
+// New WebSocket-based servo control routes (MUST be before /:id route)
 router.post('/move', async (req, res) => {
     try {
         const { servoId, angle, duration } = req.body;
@@ -369,6 +326,68 @@ router.get('/status/:servoId?', async (req, res) => {
     }
 });
 
+// Update servo route (MUST be after specific routes like /move, /stop)
+router.post('/:id', async (req, res) => {
+    try {
+        logger.debug('Update Servo Route - Request params:', req.params);
+        logger.debug('Update Servo Route - Request body:', req.body);
 
+        const id = parseInt(req.params.id, 10);
+        logger.debug('Updating Servo with ID:', id, 'Type:', typeof id);
+        if (isNaN(id)) {
+            throw new Error('Invalid part ID');
+        }
+
+        const servoConfigs = getServoConfigs();
+        const selectedServo = servoConfigs.find(s => s.name === req.body.servoType);
+        let customSettings = null;
+
+        try {
+            if (req.body.customSettings) {
+                customSettings = JSON.parse(req.body.customSettings);
+            }
+        } catch (error) {
+            logger.error('Error parsing custom settings:', error);
+        }
+
+        // Build PCA9685 settings if using PCA9685
+        let pca9685Settings = null;
+        if (req.body.usePCA9685 === 'on') {
+            pca9685Settings = {
+                frequency: parseInt(req.body.pca9685Frequency, 10) || 50,
+                address: req.body.pca9685Address || '0x40'
+            };
+        }
+
+        const updatedServo = {
+            id: id,
+            name: req.body.name,
+            type: 'servo',
+            characterId: parseInt(req.body.characterId, 10),
+            pin: parseInt(req.body.pin, 10) || 3,
+            usePCA9685: req.body.usePCA9685 === 'on',
+            channel: parseInt(req.body.channel, 10) || null,
+            pca9685Settings: pca9685Settings,
+            servoType: req.body.servoType,
+            minPulse: customSettings ? customSettings.minPulse : (selectedServo ? selectedServo.min_pulse_width_us : parseInt(req.body.minPulse, 10)),
+            maxPulse: customSettings ? customSettings.maxPulse : (selectedServo ? selectedServo.max_pulse_width_us : parseInt(req.body.maxPulse, 10)),
+            defaultAngle: customSettings ? customSettings.defaultAngle : (selectedServo ? selectedServo.default_angle_deg : parseInt(req.body.defaultAngle, 10)),
+            mode: selectedServo ? selectedServo.mode : ['Standard'],
+            feedback: selectedServo ? selectedServo.feedback : false,
+            controlType: selectedServo ? selectedServo.control_type : ['PWM'],
+            customSettings: customSettings
+        };
+
+        logger.debug('Updated Servo data:', updatedServo);
+        const result = await partService.updatePart(id, updatedServo);
+        logger.info('Updated Servo:', result);
+
+        res.redirect(`/parts?characterId=${updatedServo.characterId}`);
+
+    } catch (error) {
+        logger.error('Error updating Servo:', error);
+        res.status(500).send('An error occurred while updating the Servo: ' + error.message);
+    }
+});
 
 module.exports = router;

@@ -148,25 +148,36 @@ def pca9685_set_angle(channel, angle, i2c_address=PCA9685_DEFAULT_ADDRESS):
         })
         raise
 
-def set_servo_angle_gpio(pin_or_channel, angle):
+def set_servo_angle_gpio(pin_or_channel, angle, servo_type="MG90S"):
     """
     Set servo angle using lgpio
-    
+
     Args:
         pin_or_channel: GPIO pin number
         angle: Angle in degrees (0-180)
+        servo_type: Type of servo (MG90S, DS3240MG, etc.)
     """
     try:
         # Validate angle
         if not 0 <= angle <= 180:
             raise ValueError("Angle must be between 0 and 180 degrees")
-            
+
         # Validate pin
         pin = validate_pin(pin_or_channel)
-        
-        # Convert angle to pulse width for MG90S servo
-        # MG90S: 0° = 500µs, 180° = 2400µs (from parts.json config)
-        pulse_width = int((angle / 180.0) * (2400 - 500) + 500)
+
+        # Servo specifications
+        servo_specs = {
+            "MG90S": {"min_pulse": 500, "max_pulse": 2400},
+            "DS3240MG": {"min_pulse": 500, "max_pulse": 2500},
+            "SG90": {"min_pulse": 500, "max_pulse": 2500},
+            "Standard": {"min_pulse": 500, "max_pulse": 2400}  # Default fallback
+        }
+
+        # Get servo specifications
+        spec = servo_specs.get(servo_type, servo_specs["Standard"])
+
+        # Convert angle to pulse width based on servo type
+        pulse_width = int((angle / 180.0) * (spec["max_pulse"] - spec["min_pulse"]) + spec["min_pulse"])
         try:
             # Initialize GPIO
             h = lgpio.gpiochip_open(0)
@@ -177,16 +188,17 @@ def set_servo_angle_gpio(pin_or_channel, angle):
             # Use lgpio's dedicated servo function
             # tx_servo(handle, gpio, pulse_width, servo_frequency=50, pulse_offset=0, pulse_cycles=0)
             # pulse_width in microseconds, servo_frequency in Hz
-            lgpio.tx_servo(h, pin, pulse_width, 50, 0, 1)
+            lgpio.tx_servo(h, pin, pulse_width, 50, 0, 0)
 
             # Allow time for servo to move
             time.sleep(0.5)
+
             # Stop servo (pulse_width = 0 stops the servo)
             lgpio.tx_servo(h, pin, 0)
-            
+
             log_message({
                 "status": "success",
-                "message": f"Set servo to {angle} degrees using GPIO PWM"
+                "message": f"Set servo to {angle} degrees using GPIO PWM (pulse: {pulse_width}µs, type: {servo_type})"
             })
             
         finally:
@@ -201,16 +213,17 @@ def set_servo_angle_gpio(pin_or_channel, angle):
         })
         raise
 
-def sweep_servo_gpio(pin_or_channel, start_angle, end_angle, step_size=1, delay=0.01):
+def sweep_servo_gpio(pin_or_channel, start_angle, end_angle, step_size=1, delay=0.01, servo_type="MG90S"):
     """
     Sweep servo between start and end angles using lgpio
-    
+
     Args:
         pin_or_channel: GPIO pin number
         start_angle: Starting angle in degrees
         end_angle: Ending angle in degrees
         step_size: Angle increment per step
         delay: Delay between steps in seconds
+        servo_type: Type of servo (MG90S, DS3240MG, etc.)
     """
     try:
         # Validate angles
@@ -219,21 +232,32 @@ def sweep_servo_gpio(pin_or_channel, start_angle, end_angle, step_size=1, delay=
             
         # Validate pin
         pin = validate_pin(pin_or_channel)
-        
+
+        # Servo specifications
+        servo_specs = {
+            "MG90S": {"min_pulse": 500, "max_pulse": 2400},
+            "DS3240MG": {"min_pulse": 500, "max_pulse": 2500},
+            "SG90": {"min_pulse": 500, "max_pulse": 2500},
+            "Standard": {"min_pulse": 500, "max_pulse": 2400}  # Default fallback
+        }
+
+        # Get servo specifications
+        spec = servo_specs.get(servo_type, servo_specs["Standard"])
+
         # Initialize GPIO
         h = lgpio.gpiochip_open(0)
-        
+
         try:
             # Determine sweep direction
-            step = step_size if end_angle > start_angle else -step_size
+            step = int(step_size) if end_angle > start_angle else -int(step_size)
             angles = range(int(start_angle), int(end_angle) + (1 if step > 0 else -1), step)
-            
+
             for angle in angles:
-                # Convert angle to pulse width for MG90S servo
-                pulse_width = int((angle / 180.0) * (2400 - 500) + 500)
+                # Convert angle to pulse width based on servo type
+                pulse_width = int((angle / 180.0) * (spec["max_pulse"] - spec["min_pulse"]) + spec["min_pulse"])
 
                 # Use lgpio servo function
-                lgpio.tx_servo(h, pin, pulse_width, 50, 0, 1)
+                lgpio.tx_servo(h, pin, pulse_width, 50, 0, 0)
                 time.sleep(delay)
 
             # Stop servo
@@ -259,7 +283,13 @@ if __name__ == "__main__":
     if len(sys.argv) < 3:
         log_message({
             "status": "error",
-            "message": "Usage: python servo_control.py <command> <control_type> <pin/channel> <angle> [duration] [servo_type]"
+            "message": "Usage: python servo_control.py <command> <control_type> <pin/channel> <angle> [duration] [servo_type]\n" +
+                     "Commands: test, sweep\n" +
+                     "Control types: gpio, pca9685\n" +
+                     "Servo types: MG90S, DS3240MG, SG90, Standard\n" +
+                     "Examples:\n" +
+                     "  python servo_control.py test gpio 18 90 1.0 DS3240MG\n" +
+                     "  python servo_control.py sweep gpio 18 0 180 10 0.1 DS3240MG"
         })
         sys.exit(1)
         
@@ -272,9 +302,9 @@ if __name__ == "__main__":
             angle = float(sys.argv[4])
             duration = float(sys.argv[5]) if len(sys.argv) > 5 else 1.0
             servo_type = sys.argv[6] if len(sys.argv) > 6 else "Standard"
-            
+
             if control_type == "gpio":
-                set_servo_angle_gpio(pin_or_channel, angle)
+                set_servo_angle_gpio(pin_or_channel, angle, servo_type)
             elif control_type == "pca9685":
                 i2c_address = PCA9685_DEFAULT_ADDRESS
                 pca9685_set_angle(pin_or_channel, angle, i2c_address)
@@ -287,9 +317,10 @@ if __name__ == "__main__":
             end_angle = float(sys.argv[5])
             step_size = float(sys.argv[6]) if len(sys.argv) > 6 else 1
             delay = float(sys.argv[7]) if len(sys.argv) > 7 else 0.01
-            
+            servo_type = sys.argv[8] if len(sys.argv) > 8 else "Standard"
+
             if control_type == "gpio":
-                sweep_servo_gpio(pin_or_channel, start_angle, end_angle, step_size, delay)
+                sweep_servo_gpio(pin_or_channel, start_angle, end_angle, step_size, delay, servo_type)
             else:
                 raise ValueError(f"Sweep not implemented for control type: {control_type}")
                 
