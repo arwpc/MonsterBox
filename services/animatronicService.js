@@ -59,25 +59,14 @@ class AnimatronicService {
     }
 
     /**
-     * Build SSH command for a character using their stored password or fallback to SSH credentials manager
+     * Build SSH command for a character using key-based authentication only
      */
     buildSSHCommand(character, command) {
         const rpiConfig = character.animatronic.rpi_config;
 
-        // If character has a password stored directly, use it
-        if (rpiConfig.password && rpiConfig.password.trim() !== '') {
-            // Escape special characters for bash
-            const escapedPassword = rpiConfig.password.replace(/'/g, "'\"'\"'");
-            const escapedCommand = command.replace(/'/g, "'\"'\"'");
-
-            // Use sshpass for SSH with password
-            const sshCommand = `ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o PasswordAuthentication=yes -o PubkeyAuthentication=no ${rpiConfig.user}@${rpiConfig.host} '${escapedCommand}'`;
-            return `sshpass -p '${escapedPassword}' ${sshCommand}`;
-        } else {
-            // Fall back to SSH credentials manager (environment variables)
-            const characterKey = character.char_name.toLowerCase().replace(/\s+/g, '');
-            return sshCredentials.buildSSHCommand(characterKey, rpiConfig.host, command);
-        }
+        // Use SSH credentials manager with key-based authentication only
+        const characterKey = character.char_name.toLowerCase().replace(/\s+/g, '');
+        return sshCredentials.buildSSHCommand(characterKey, rpiConfig.host, command);
     }
 
     /**

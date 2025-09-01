@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSH Key Management - MonsterBox</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&family=Creepster&display=swap" as="style">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&family=Creepster&display=swap">
+    
+    <!-- MonsterBox CSS -->
+    <link rel="stylesheet" href="/css/style.css">
+    
+    <!-- Key Management Styles -->
+    <style>
+        .key-management-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .key-status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .key-status-card {
+            background: rgba(0, 255, 0, 0.1);
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+        }
+        
+        .key-status-card.disconnected {
+            background: rgba(255, 0, 0, 0.1);
+            border-color: #ff0000;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
+        }
+        
+        .key-status-card.pending {
+            background: rgba(255, 255, 0, 0.1);
+            border-color: #ffff00;
+            box-shadow: 0 0 20px rgba(255, 255, 0, 0.3);
+        }
+        
+        .character-name {
+            font-family: 'Creepster', cursive;
+            font-size: 1.5em;
+            margin-bottom: 10px;
+            color: #00ff00;
+        }
+        
+        .character-info {
+            margin-bottom: 15px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-connected { background-color: #00ff00; }
+        .status-disconnected { background-color: #ff0000; }
+        .status-pending { background-color: #ffff00; }
+        .status-unknown { background-color: #888888; }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .action-button {
+            padding: 8px 16px;
+            border: 1px solid #00ff00;
+            background: rgba(0, 255, 0, 0.1);
+            color: #00ff00;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .action-button:hover {
+            background: rgba(0, 255, 0, 0.2);
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+        
+        .action-button.danger {
+            border-color: #ff0000;
+            color: #ff0000;
+            background: rgba(255, 0, 0, 0.1);
+        }
+        
+        .action-button.danger:hover {
+            background: rgba(255, 0, 0, 0.2);
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+        }
+        
+        .global-actions {
+            background: rgba(0, 255, 255, 0.1);
+            border: 2px solid #00ffff;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+        }
+        
+        .global-actions h3 {
+            color: #00ffff;
+            margin-bottom: 15px;
+        }
+        
+        .global-button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .global-button {
+            padding: 12px 24px;
+            border: 2px solid #00ffff;
+            background: rgba(0, 255, 255, 0.1);
+            color: #00ffff;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .global-button:hover {
+            background: rgba(0, 255, 255, 0.2);
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+        }
+        
+        .log-output {
+            background: #000;
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            font-family: 'VT323', monospace;
+            font-size: 1.1em;
+            color: #00ff00;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        .key-info-section {
+            background: rgba(128, 0, 128, 0.1);
+            border: 2px solid #800080;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 0 20px rgba(128, 0, 128, 0.3);
+        }
+        
+        .key-info-section h3 {
+            color: #ff00ff;
+            margin-bottom: 15px;
+        }
+        
+        .key-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        
+        .key-detail-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: rgba(255, 0, 255, 0.05);
+            border-radius: 5px;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0, 255, 0, 0.3);
+            border-radius: 50%;
+            border-top-color: #00ff00;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1 class="landing-title" style="text-align: center; margin: 20px 0;">
+                🔐 SSH KEY MANAGEMENT
+            </h1>
+            <p style="text-align: center; margin-bottom: 30px;">
+                Secure Connection Management for MonsterBox Animatronic Network
+            </p>
+            <div style="text-align: center; margin-bottom: 20px;">
+                <a href="/" class="button">← Back to Home</a>
+            </div>
+        </div>
+
+        <div class="key-management-container">
+            <!-- SSH Key Information -->
+            <div class="key-info-section">
+                <h3 class="font-creepster">🔑 SSH Key Information</h3>
+                <div class="key-details">
+                    <div class="key-detail-item">
+                        <span>Private Key:</span>
+                        <span id="private-key-status">Loading...</span>
+                    </div>
+                    <div class="key-detail-item">
+                        <span>Public Key:</span>
+                        <span id="public-key-status">Loading...</span>
+                    </div>
+                    <div class="key-detail-item">
+                        <span>Key Type:</span>
+                        <span>RSA 2048-bit</span>
+                    </div>
+                    <div class="key-detail-item">
+                        <span>Created:</span>
+                        <span id="key-created-date">Loading...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Global Actions -->
+            <div class="global-actions">
+                <h3 class="font-creepster">🚀 Global Actions</h3>
+                <div class="global-button-group">
+                    <button class="global-button" onclick="deployAllKeys()">
+                        🔑 Deploy All Keys
+                    </button>
+                    <button class="global-button" onclick="verifyAllConnections()">
+                        ✅ Verify All Connections
+                    </button>
+                    <button class="global-button" onclick="refreshStatus()">
+                        🔄 Refresh Status
+                    </button>
+                    <button class="global-button" onclick="generateNewKeys()">
+                        🆕 Generate New Keys
+                    </button>
+                    <button class="global-button" onclick="exportKeys()">
+                        📤 Export Keys
+                    </button>
+                    <button class="global-button" onclick="viewLogs()">
+                        📋 View Logs
+                    </button>
+                </div>
+            </div>
+
+            <!-- Character Status Grid -->
+            <div id="character-status-container">
+                <h3 class="font-creepster" style="color: #00ff00; margin-bottom: 20px;">
+                    👥 Animatronic Characters
+                </h3>
+                <div class="key-status-grid" id="key-status-grid">
+                    <!-- Character cards will be populated here -->
+                </div>
+            </div>
+
+            <!-- Log Output -->
+            <div id="log-output" class="log-output hidden">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <strong>Operation Log:</strong>
+                    <button class="action-button" onclick="clearLogs()">Clear</button>
+                </div>
+                <div id="log-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="/js/key-management.js"></script>
+</body>
+</html>

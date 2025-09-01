@@ -31,6 +31,10 @@ class SSHCredentialsManager {
                 userVar: 'COFFIN_SSH_USER',
                 passwordVar: 'COFFIN_SSH_PASSWORD'
             },
+            'coffinbreaker': {
+                userVar: 'COFFIN_SSH_USER',
+                passwordVar: 'COFFIN_SSH_PASSWORD'
+            },
             'skulltalker': {
                 userVar: 'SKULLTALKER_SSH_USER',
                 passwordVar: 'SKULLTALKER_SSH_PASSWORD'
@@ -40,6 +44,71 @@ class SSHCredentialsManager {
         // Legacy fallback credentials
         this.fallbackUser = process.env.RPI_SSH_USER || 'remote';
         this.fallbackPassword = process.env.RPI_SSH_PASSWORD;
+
+        // Cache for character data
+        this.characterCache = null;
+        this.cacheTimestamp = 0;
+        this.cacheTimeout = 30000; // 30 seconds
+    }
+
+    /**
+     * Load character data from characters.json
+     * @returns {Array} Array of character objects
+     */
+    loadCharacterData() {
+        const fs = require('fs');
+        const path = require('path');
+
+        // Use cached data if still valid
+        const now = Date.now();
+        if (this.characterCache && (now - this.cacheTimestamp) < this.cacheTimeout) {
+            return this.characterCache;
+        }
+
+        try {
+            const charactersPath = path.join(__dirname, '..', 'data', 'characters.json');
+            const charactersData = JSON.parse(fs.readFileSync(charactersPath, 'utf8'));
+
+            // Cache the data
+            this.characterCache = charactersData;
+            this.cacheTimestamp = now;
+
+            return charactersData;
+        } catch (error) {
+            console.error('Error loading characters.json:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Get character by name (case-insensitive)
+     * @param {string} characterName - Character name
+     * @returns {Object|null} Character object or null if not found
+     */
+    getCharacterByName(characterName) {
+        const characters = this.loadCharacterData();
+        const normalizedName = characterName.toLowerCase().replace(/\s+/g, '');
+
+        return characters.find(char => {
+            const charName = char.char_name.toLowerCase().replace(/\s+/g, '');
+            return charName === normalizedName;
+        });
+    }
+
+    /**
+     * Get character by host IP
+     * @param {string} host - Host IP address
+     * @returns {Object|null} Character object or null if not found
+     */
+    getCharacterByHost(host) {
+        const characters = this.loadCharacterData();
+
+        return characters.find(char => {
+            return char.animatronic &&
+                   char.animatronic.enabled &&
+                   char.animatronic.rpi_config &&
+                   char.animatronic.rpi_config.host === host;
+        });
     }
 
     /**
@@ -86,17 +155,12 @@ class SSHCredentialsManager {
      * @returns {object} SSH credentials {user, password}
      */
     getCredentialsByHost(host) {
-        // Map known hosts to animatronic IDs
-        const hostMap = {
-            '192.168.8.120': 'orlok',
-            '192.168.1.101': 'pumpkinhead',
-            '192.168.8.140': 'coffin',
-            '192.168.8.130': 'skulltalker'
-        };
+        // Find character by host IP dynamically
+        const character = this.getCharacterByHost(host);
 
-        const animatronicId = hostMap[host];
-        if (animatronicId) {
-            return this.getCredentials(animatronicId);
+        if (character) {
+            const characterKey = character.char_name.toLowerCase().replace(/\s+/g, '');
+            return this.getCredentials(characterKey);
         }
 
         // Unknown host, use fallback credentials
@@ -130,79 +194,67 @@ class SSHCredentialsManager {
     }
 
     /**
-     * Build SSH command for Windows using PowerShell
+     * Build SSH command for Windows using key-based authentication
      */
     buildWindowsSSHCommand(animatronicId, host, command, credentials, options = {}) {
-        const fs = require('fs');
         const path = require('path');
-        const os = require('os');
+        const fs = require('fs');
 
-        // Create a unique temporary script file
-        const tempDir = os.tmpdir();
-        const scriptName = `ssh_${animatronicId}_${Date.now()}.ps1`;
-        const scriptPath = path.join(tempDir, scriptName);
+        // Escape special characters for Windows command line
+        const escapedCommand = command.replace(/"/g, '\\"');
 
-        // Escape special characters for PowerShell
-        const escapedPassword = credentials.password.replace(/'/g, "''");
-        const escapedCommand = command.replace(/'/g, "''");
+        // Use MonsterBox SSH keys (development key for streaming)
+        const keyPath = path.join(__dirname, 'ssh-deployment', 'keys', 'monsterbox-dev');
 
-        // PowerShell script content that uses expect-like functionality
-        const powershellScript = `
-# SSH automation script for ${animatronicId}
-$sshPassword = '${escapedPassword}'
-$securePassword = ConvertTo-SecureString $sshPassword -AsPlainText -Force
+        if (!fs.existsSync(keyPath)) {
+            throw new Error(`SSH private key not found: ${keyPath}. Please run SSH key deployment first.`);
+        }
 
-# Use Start-Process with input redirection
-$psi = New-Object System.Diagnostics.ProcessStartInfo
-$psi.FileName = "ssh"
-$psi.Arguments = "-o ConnectTimeout=10 -o StrictHostKeyChecking=no -o PasswordAuthentication=yes -o PubkeyAuthentication=no ${credentials.user}@${host} '${escapedCommand}'"
-$psi.UseShellExecute = $false
-$psi.RedirectStandardInput = $true
-$psi.RedirectStandardOutput = $true
-$psi.RedirectStandardError = $true
+        // Build SSH command with key-based authentication for Windows
+        const sshOptions = [
+            `-i "${keyPath}"`,
+            '-o ConnectTimeout=10',
+            '-o StrictHostKeyChecking=accept-new',
+            '-o PasswordAuthentication=no',
+            '-o PubkeyAuthentication=yes',
+            '-o BatchMode=yes',
+            '-o UserKnownHostsFile=NUL',
+            '-o LogLevel=ERROR'
+        ].join(' ');
 
-$process = [System.Diagnostics.Process]::Start($psi)
-
-# Send password when prompted
-Start-Sleep -Milliseconds 500
-$process.StandardInput.WriteLine($sshPassword)
-$process.StandardInput.Close()
-
-# Wait for completion and get output
-$output = $process.StandardOutput.ReadToEnd()
-$errorOutput = $process.StandardError.ReadToEnd()
-$process.WaitForExit()
-
-if ($process.ExitCode -eq 0) {
-    Write-Output $output
-} else {
-    Write-Host $errorOutput -ForegroundColor Red
-    exit $process.ExitCode
-}
-
-# Clean up
-Remove-Item -Path $PSCommandPath -Force -ErrorAction SilentlyContinue
-`;
-
-        // Write the script to temp file
-        fs.writeFileSync(scriptPath, powershellScript);
-
-        return `powershell -ExecutionPolicy Bypass -File "${scriptPath}"`;
+        return `ssh ${sshOptions} ${credentials.user}@${host} "${escapedCommand}"`;
     }
 
     /**
-     * Build SSH command for Linux/Unix using sshpass
+     * Build SSH command for Linux/Unix with key-based authentication only
      */
     buildLinuxSSHCommand(animatronicId, host, command, credentials, options = {}) {
+        const path = require('path');
+        const fs = require('fs');
+
         // Escape special characters for bash
-        const escapedPassword = credentials.password.replace(/'/g, "'\"'\"'");
         const escapedCommand = command.replace(/'/g, "'\"'\"'");
 
-        // Use sshpass if available, otherwise fall back to expect
-        const sshCommand = `ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o PasswordAuthentication=yes -o PubkeyAuthentication=no ${credentials.user}@${host} '${escapedCommand}'`;
+        // Use MonsterBox SSH keys (development key for streaming)
+        const keyPath = path.join(__dirname, 'ssh-deployment', 'keys', 'monsterbox-dev');
 
-        // Try sshpass first (most reliable)
-        return `sshpass -p '${escapedPassword}' ${sshCommand}`;
+        if (!fs.existsSync(keyPath)) {
+            throw new Error(`SSH private key not found: ${keyPath}. Please run SSH key deployment first.`);
+        }
+
+        // Build SSH command with key-based authentication only
+        const sshOptions = [
+            `-i ${keyPath}`,
+            '-o ConnectTimeout=10',
+            '-o StrictHostKeyChecking=accept-new',
+            '-o PasswordAuthentication=no',
+            '-o PubkeyAuthentication=yes',
+            '-o BatchMode=yes',
+            '-o UserKnownHostsFile=/dev/null',
+            '-o LogLevel=ERROR'
+        ].join(' ');
+
+        return `ssh ${sshOptions} ${credentials.user}@${host} '${escapedCommand}'`;
     }
 
     /**
@@ -213,16 +265,16 @@ Remove-Item -Path $PSCommandPath -Force -ErrorAction SilentlyContinue
      * @returns {string} Complete SSH command
      */
     buildSSHCommandByHost(host, command, options = {}) {
-        // Map host to animatronic ID for consistent script naming
-        const hostMap = {
-            '192.168.8.120': 'orlok',
-            '192.168.1.101': 'pumpkinhead',
-            '192.168.8.140': 'coffin',
-            '192.168.8.130': 'skulltalker'
-        };
+        // Find character by host IP dynamically
+        const character = this.getCharacterByHost(host);
 
-        const animatronicId = hostMap[host] || 'unknown';
-        return this.buildSSHCommand(animatronicId, host, command, options);
+        if (character) {
+            const animatronicId = character.char_name.toLowerCase().replace(/\s+/g, '');
+            return this.buildSSHCommand(animatronicId, host, command, options);
+        }
+
+        // Unknown host, use fallback
+        return this.buildSSHCommand('unknown', host, command, options);
     }
 
     /**

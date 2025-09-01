@@ -1,15 +1,18 @@
 #!/bin/bash
 
-# SSH Configuration Deployment Script for Raspberry Pi 4B
-# Configures secure SSH server with key-based authentication
-# Designed for MonsterBox deployment across multiple RPi4B devices
+# SSH Key Deployment Script for MonsterBox Animatronic Network
+# Dynamically deploys SSH keys to all animatronics based on characters.json
+# Implements secure key-based authentication for webcam streaming and remote operations
 
 set -euo pipefail
 
 # Configuration variables
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+MONSTERBOX_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+CHARACTERS_JSON="$MONSTERBOX_ROOT/data/characters.json"
 SSH_PORT="${SSH_PORT:-22}"
 SSH_USER="${SSH_USER:-remote}"
+SSH_KEY_PATH="$SCRIPT_DIR/keys/monsterbox-dev"
 BACKUP_DIR="/etc/ssh/backup-$(date +%Y%m%d-%H%M%S)"
 LOG_FILE="/var/log/monsterbox-ssh-deployment.log"
 
@@ -38,295 +41,246 @@ success() {
     echo -e "${GREEN}[SUCCESS]${NC} $1" | tee -a "$LOG_FILE"
 }
 
-# Check if running as root
-check_root() {
-    if [[ $EUID -ne 0 ]]; then
-        error "This script must be run as root. Use: sudo $0"
+# Check if characters.json exists and is readable
+check_characters_json() {
+    if [[ ! -f "$CHARACTERS_JSON" ]]; then
+        error "Characters file not found: $CHARACTERS_JSON"
     fi
+
+    if ! command -v jq >/dev/null 2>&1; then
+        error "jq is required but not installed. Install with: sudo apt-get install jq"
+    fi
+
+    log "Found characters file: $CHARACTERS_JSON"
 }
 
-# Backup existing SSH configuration
-backup_ssh_config() {
-    log "Creating backup of existing SSH configuration..."
-    mkdir -p "$BACKUP_DIR"
-    
-    if [[ -f /etc/ssh/sshd_config ]]; then
-        cp /etc/ssh/sshd_config "$BACKUP_DIR/"
-        log "Backed up sshd_config to $BACKUP_DIR/"
+# Check if SSH key exists
+check_ssh_key() {
+    if [[ ! -f "$SSH_KEY_PATH" ]]; then
+        error "SSH private key not found: $SSH_KEY_PATH"
     fi
-    
-    if [[ -d /etc/ssh/sshd_config.d ]]; then
-        cp -r /etc/ssh/sshd_config.d "$BACKUP_DIR/"
-        log "Backed up sshd_config.d directory to $BACKUP_DIR/"
+
+    if [[ ! -f "$SSH_KEY_PATH.pub" ]]; then
+        error "SSH public key not found: $SSH_KEY_PATH.pub"
     fi
+
+    log "Found SSH keys: $SSH_KEY_PATH"
 }
 
-# Generate SSH host keys if they don't exist
-generate_host_keys() {
-    log "Checking SSH host keys..."
-    
-    local key_types=("rsa" "ecdsa" "ed25519")
-    local regenerate_keys=false
-    
-    for key_type in "${key_types[@]}"; do
-        local key_file="/etc/ssh/ssh_host_${key_type}_key"
-        if [[ ! -f "$key_file" ]]; then
-            log "Generating $key_type host key..."
-            ssh-keygen -t "$key_type" -f "$key_file" -N "" -q
-            regenerate_keys=true
-        fi
-    done
-    
-    if [[ "$regenerate_keys" == true ]]; then
-        success "SSH host keys generated successfully"
+# Get list of animatronic characters with their IP addresses
+get_animatronic_hosts() {
+    jq -r '.[] | select(.animatronic.enabled == true) | "\(.char_name)|\(.animatronic.rpi_config.host)|\(.animatronic.rpi_config.user // "remote")"' "$CHARACTERS_JSON"
+}
+
+# Test SSH connectivity to a host
+test_ssh_connectivity() {
+    local host="$1"
+    local user="$2"
+    local timeout=10
+
+    log "Testing SSH connectivity to $user@$host..."
+
+    if ssh -i "$SSH_KEY_PATH" \
+           -o ConnectTimeout=$timeout \
+           -o StrictHostKeyChecking=accept-new \
+           -o PasswordAuthentication=no \
+           -o PubkeyAuthentication=yes \
+           -o BatchMode=yes \
+           "$user@$host" 'echo "SSH connection successful"' >/dev/null 2>&1; then
+        return 0
     else
-        log "SSH host keys already exist"
+        return 1
     fi
 }
 
-# Create secure SSH configuration
-create_ssh_config() {
-    log "Creating secure SSH configuration..."
-    
-    cat > /etc/ssh/sshd_config << 'EOF'
-# MonsterBox SSH Configuration for Raspberry Pi 4B
-# Secure configuration for remote development environment
+# Deploy SSH key to a single host using ssh-copy-id
+deploy_key_to_host() {
+    local char_name="$1"
+    local host="$2"
+    local user="$3"
 
-# Network settings
-Port 22
-AddressFamily any
-ListenAddress 0.0.0.0
-ListenAddress ::
+    log "Deploying SSH key to $char_name ($user@$host)..."
 
-# Host keys
-HostKey /etc/ssh/ssh_host_rsa_key
-HostKey /etc/ssh/ssh_host_ecdsa_key
-HostKey /etc/ssh/ssh_host_ed25519_key
-
-# Ciphers and keying
-RekeyLimit default none
-
-# Logging
-SyslogFacility AUTH
-LogLevel INFO
-
-# Authentication
-LoginGraceTime 2m
-PermitRootLogin no
-StrictModes yes
-MaxAuthTries 3
-MaxSessions 10
-
-# Public key authentication
-PubkeyAuthentication yes
-AuthorizedKeysFile .ssh/authorized_keys .ssh/authorized_keys2
-
-# Password authentication (disabled for security)
-PasswordAuthentication no
-PermitEmptyPasswords no
-
-# Challenge-response authentication (disabled)
-KbdInteractiveAuthentication no
-
-# Kerberos options (disabled)
-KerberosAuthentication no
-KerberosOrLocalPasswd no
-KerberosTicketCleanup yes
-KerberosGetAFSToken no
-
-# GSSAPI options (disabled)
-GSSAPIAuthentication no
-GSSAPICleanupCredentials yes
-GSSAPIStrictAcceptorCheck yes
-GSSAPIKeyExchange no
-
-# Set this to 'yes' to enable PAM authentication, account processing,
-# and session processing. If this is enabled, PAM authentication will
-# be allowed through the KbdInteractiveAuthentication and
-# PasswordAuthentication.
-UsePAM yes
-
-# Allow client to pass locale environment variables
-AcceptEnv LANG LC_*
-
-# Override default of no subsystems
-Subsystem sftp /usr/lib/openssh/sftp-server
-
-# Security settings
-X11Forwarding no
-X11DisplayOffset 10
-PrintMotd no
-PrintLastLog yes
-TCPKeepAlive yes
-Compression delayed
-ClientAliveInterval 300
-ClientAliveCountMax 2
-
-# Allow specific users only
-AllowUsers remote
-
-# Disable unused features
-AllowAgentForwarding yes
-AllowTcpForwarding yes
-GatewayPorts no
-PermitTunnel no
-PermitUserEnvironment no
-
-# Banner
-Banner /etc/ssh/banner.txt
-EOF
-
-    success "SSH configuration created successfully"
-}
-
-# Create SSH banner
-create_ssh_banner() {
-    log "Creating SSH banner..."
-    
-    cat > /etc/ssh/banner.txt << 'EOF'
-╔══════════════════════════════════════════════════════════════════════════════╗
-║                              MonsterBox System                              ║
-║                         Raspberry Pi 4B Development                         ║
-╠══════════════════════════════════════════════════════════════════════════════╣
-║                                                                              ║
-║  WARNING: This system is for authorized users only.                         ║
-║  All activities are monitored and logged.                                   ║
-║  Unauthorized access is prohibited.                                         ║
-║                                                                              ║
-║  This is a MonsterBox animatronic control system.                          ║
-║  Please follow security protocols and development guidelines.               ║
-║                                                                              ║
-╚══════════════════════════════════════════════════════════════════════════════╝
-
-EOF
-
-    success "SSH banner created successfully"
-}
-
-# Configure firewall for SSH
-configure_firewall() {
-    log "Configuring firewall for SSH..."
-    
-    # Check if ufw is installed
-    if command -v ufw >/dev/null 2>&1; then
-        # Allow SSH through firewall
-        ufw allow ssh
-        ufw allow "$SSH_PORT"/tcp
-        
-        # Enable firewall if not already enabled
-        if ! ufw status | grep -q "Status: active"; then
-            echo "y" | ufw enable
-        fi
-        
-        success "Firewall configured for SSH access"
+    # First try to deploy the key using ssh-copy-id
+    if ssh-copy-id -i "$SSH_KEY_PATH.pub" \
+                   -o ConnectTimeout=10 \
+                   -o StrictHostKeyChecking=accept-new \
+                   "$user@$host" >/dev/null 2>&1; then
+        success "SSH key deployed to $char_name ($host)"
+        return 0
     else
-        warning "UFW firewall not installed, skipping firewall configuration"
+        warning "Failed to deploy SSH key to $char_name ($host) - may require password authentication first"
+        return 1
     fi
 }
 
-# Set up SSH key for specified user
-setup_user_ssh() {
-    local user="$SSH_USER"
-    local user_home
-    
-    if ! id "$user" &>/dev/null; then
-        error "User $user does not exist"
-    fi
-    
-    user_home=$(eval echo "~$user")
-    local ssh_dir="$user_home/.ssh"
-    
-    log "Setting up SSH directory for user $user..."
-    
-    # Create .ssh directory if it doesn't exist
-    if [[ ! -d "$ssh_dir" ]]; then
-        sudo -u "$user" mkdir -p "$ssh_dir"
-        sudo -u "$user" chmod 700 "$ssh_dir"
-    fi
-    
-    # Create authorized_keys file if it doesn't exist
-    local auth_keys="$ssh_dir/authorized_keys"
-    if [[ ! -f "$auth_keys" ]]; then
-        sudo -u "$user" touch "$auth_keys"
-        sudo -u "$user" chmod 600 "$auth_keys"
-        log "Created authorized_keys file for $user"
-    fi
-    
-    success "SSH directory configured for user $user"
+# Clean up old SSH connections for removed characters
+cleanup_removed_characters() {
+    log "Cleaning up connections for removed characters..."
+
+    # This function can be extended to clean up known_hosts entries
+    # and other SSH-related cleanup when characters are removed
+    # For now, we'll just log that cleanup would happen here
+
+    log "SSH cleanup completed (placeholder for future implementation)"
 }
 
-# Test SSH configuration
-test_ssh_config() {
-    log "Testing SSH configuration..."
-    
-    if sshd -t; then
-        success "SSH configuration test passed"
-    else
-        error "SSH configuration test failed"
-    fi
-}
-
-# Restart SSH service
-restart_ssh_service() {
-    log "Restarting SSH service..."
-    
-    systemctl restart ssh
-    
-    if systemctl is-active --quiet ssh; then
-        success "SSH service restarted successfully"
-    else
-        error "Failed to restart SSH service"
-    fi
-}
-
-# Enable SSH service on boot
-enable_ssh_service() {
-    log "Enabling SSH service on boot..."
-    
-    systemctl enable ssh
-    success "SSH service enabled on boot"
-}
-
-# Display connection information
-display_connection_info() {
+# Display deployment summary
+display_deployment_summary() {
     local ip_address
-    ip_address=$(hostname -I | awk '{print $1}')
-    
+    ip_address=$(hostname -I | awk '{print $1}' 2>/dev/null || echo "unknown")
+
     echo ""
-    success "SSH deployment completed successfully!"
+    success "SSH key deployment summary:"
     echo ""
-    echo "Connection Information:"
-    echo "======================"
-    echo "Host: $ip_address"
-    echo "Port: $SSH_PORT"
-    echo "User: $SSH_USER"
-    echo "Authentication: Key-based only"
+    echo "Configuration:"
+    echo "============="
+    echo "SSH Key: $SSH_KEY_PATH"
+    echo "Characters File: $CHARACTERS_JSON"
+    echo "Local IP: $ip_address"
     echo ""
-    echo "To connect from another machine:"
-    echo "ssh -i ~/.ssh/id_ed25519 $SSH_USER@$ip_address"
+    echo "Usage:"
+    echo "======"
+    echo "Deploy keys:  $0 deploy"
+    echo "Verify keys:  $0 verify"
+    echo "List hosts:   $0 list"
     echo ""
-    echo "Configuration backup saved to: $BACKUP_DIR"
-    echo "Deployment log saved to: $LOG_FILE"
+}
+
+
+
+# Deploy SSH keys to all animatronics
+deploy_keys_to_all_animatronics() {
+    log "Deploying SSH keys to all animatronic hosts..."
+
+    local deployment_results=()
+    local successful_deployments=0
+    local failed_deployments=0
+
+    while IFS='|' read -r char_name host user; do
+        if [[ -n "$char_name" && -n "$host" && -n "$user" ]]; then
+            log "Processing $char_name at $host..."
+
+            # Test if key is already deployed
+            if test_ssh_connectivity "$host" "$user"; then
+                success "SSH key already deployed and working for $char_name ($host)"
+                deployment_results+=("✅ $char_name ($host) - Already configured")
+                ((successful_deployments++))
+            else
+                # Try to deploy the key
+                if deploy_key_to_host "$char_name" "$host" "$user"; then
+                    # Verify deployment worked
+                    if test_ssh_connectivity "$host" "$user"; then
+                        deployment_results+=("✅ $char_name ($host) - Successfully deployed")
+                        ((successful_deployments++))
+                    else
+                        deployment_results+=("❌ $char_name ($host) - Deployed but connection test failed")
+                        ((failed_deployments++))
+                    fi
+                else
+                    deployment_results+=("❌ $char_name ($host) - Deployment failed")
+                    ((failed_deployments++))
+                fi
+            fi
+        fi
+    done < <(get_animatronic_hosts)
+
+    # Display results
+    echo ""
+    log "SSH Key Deployment Results:"
+    echo "=========================="
+    for result in "${deployment_results[@]}"; do
+        echo "$result"
+    done
+    echo ""
+    log "Summary: $successful_deployments successful, $failed_deployments failed"
+
+    if [[ $failed_deployments -gt 0 ]]; then
+        warning "Some deployments failed. Check network connectivity and ensure target hosts are accessible."
+        echo "You may need to manually set up password authentication first, then re-run this script."
+        return 1
+    else
+        success "All SSH keys deployed successfully!"
+        return 0
+    fi
+}
+
+# Verify all SSH connections
+verify_all_connections() {
+    log "Verifying SSH connections to all animatronics..."
+
+    local verification_results=()
+    local successful_connections=0
+    local failed_connections=0
+
+    while IFS='|' read -r char_name host user; do
+        if [[ -n "$char_name" && -n "$host" && -n "$user" ]]; then
+            if test_ssh_connectivity "$host" "$user"; then
+                verification_results+=("✅ $char_name ($host) - Connection successful")
+                ((successful_connections++))
+            else
+                verification_results+=("❌ $char_name ($host) - Connection failed")
+                ((failed_connections++))
+            fi
+        fi
+    done < <(get_animatronic_hosts)
+
+    # Display results
+    echo ""
+    log "SSH Connection Verification Results:"
+    echo "==================================="
+    for result in "${verification_results[@]}"; do
+        echo "$result"
+    done
+    echo ""
+    log "Summary: $successful_connections successful, $failed_connections failed"
+
+    return $failed_connections
 }
 
 # Main deployment function
 main() {
-    log "Starting SSH deployment for MonsterBox Raspberry Pi 4B..."
-    
-    check_root
-    backup_ssh_config
-    generate_host_keys
-    create_ssh_config
-    create_ssh_banner
-    setup_user_ssh
-    test_ssh_config
-    configure_firewall
-    restart_ssh_service
-    enable_ssh_service
-    display_connection_info
-    
-    success "SSH deployment completed successfully!"
+    local mode="${1:-deploy}"
+
+    case "$mode" in
+        "deploy")
+            log "Starting SSH key deployment for MonsterBox animatronic network..."
+            check_characters_json
+            check_ssh_key
+            deploy_keys_to_all_animatronics
+            ;;
+        "verify")
+            log "Verifying SSH connections to MonsterBox animatronic network..."
+            check_characters_json
+            check_ssh_key
+            verify_all_connections
+            ;;
+        "list")
+            log "Listing MonsterBox animatronic hosts from characters.json..."
+            check_characters_json
+            echo ""
+            echo "Animatronic Hosts:"
+            echo "=================="
+            while IFS='|' read -r char_name host user; do
+                if [[ -n "$char_name" && -n "$host" && -n "$user" ]]; then
+                    echo "  $char_name: $user@$host"
+                fi
+            done < <(get_animatronic_hosts)
+            echo ""
+            ;;
+        *)
+            echo "Usage: $0 [deploy|verify|list]"
+            echo ""
+            echo "Commands:"
+            echo "  deploy  - Deploy SSH keys to all animatronics (default)"
+            echo "  verify  - Verify SSH connections to all animatronics"
+            echo "  list    - List all animatronic hosts from characters.json"
+            exit 1
+            ;;
+    esac
+
+    success "SSH key management completed successfully!"
 }
 
-# Run main function
+# Run main function with all arguments
 main "$@"

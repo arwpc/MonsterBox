@@ -984,8 +984,8 @@
                     `;
 
                     const [width, height] = resolution.split('x');
-                    // Use character-specific streaming endpoint
-                    const streamUrl = `/api/streaming/stream/${characterId}?width=${width}&height=${height}&fps=${fps}&t=${Date.now()}`;
+                    // Use working camera stream endpoint (fallback from streaming API issues)
+                    const streamUrl = `/camera/stream?characterId=${characterId}&width=${width}&height=${height}&fps=${fps}&t=${Date.now()}`;
 
                     console.log('🎥 Starting webcam with character-specific URL:', streamUrl);
 

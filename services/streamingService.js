@@ -611,6 +611,8 @@ class StreamingService extends EventEmitter {
                 // Build SSH command with proper authentication using ssh-credentials
                 const characterKey = (config.character.char_name || 'unknown').toLowerCase().replace(/\s+/g, '');
 
+                logger.info(`🔑 Building SSH command for character: ${characterKey}, host: ${host}`);
+
                 // Clean up any existing camera processes first
                 await this.cleanupRemoteCameraProcesses(host, characterKey);
 
@@ -626,8 +628,14 @@ class StreamingService extends EventEmitter {
                 ].join(' ');
 
                 const remoteCommand = `python3 ${remoteScript} ${remoteArgs}`;
+                logger.info(`📡 Remote command: ${remoteCommand}`);
+
                 const fullCommand = sshCredentials.buildSSHCommand(characterKey, host, remoteCommand);
+                logger.info(`🔧 Full SSH command: ${fullCommand}`);
+
                 const shellCmd = this.getShellCommand(fullCommand);
+                logger.info(`🐚 Shell command: ${shellCmd.cmd} ${shellCmd.args.join(' ')}`);
+
                 const process = spawn(shellCmd.cmd, shellCmd.args, shellCmd.options);
 
                 let initialized = false;

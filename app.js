@@ -24,6 +24,7 @@ let audioCleanupService;
 let microphoneManagerService;
 let elevenLabsService;
 let elevenLabsWebSocketProxy;
+let sshKeyManager;
 
 // Import error handling middleware
 const { errorHandler, notFoundHandler, asyncHandler } = require('./middleware/errorHandler');
@@ -101,6 +102,7 @@ try {
     healthRoutes = require('./routes/healthRoutes');
     configRoutes = require('./routes/configRoutes');
     headTrackingRoutes = require('./routes/headTrackingRoutes');
+    keyManagementRoutes = require('./routes/keyManagement');
 
     // Import authentication routes
     authRoutes = require('./routes/auth/authRoutes');
@@ -329,6 +331,10 @@ app.use('/api/hardware/head-tracking', require('./routes/api/headTrackingApiRout
 app.use('/api/character-audio-config', require('./routes/api/characterAudioConfigRoutes'));
 app.use('/api/system', require('./routes/api/systemApiRoutes'));
 app.use('/api/service-management', require('./routes/serviceManagementRoutes'));
+
+// SSH Key Management routes
+app.use('/key-management', keyManagementRoutes);
+app.use('/api/key-management', keyManagementRoutes);
 
 // Unified Animatronic Hub routes
 const { router: hubRouter, initializeHubRoutes } = require('./routes/hubRoutes');
@@ -1249,6 +1255,27 @@ async function initializeApp() {
         initializeHubRoutes(global.unifiedHub);
         logger.info('✅ Unified Animatronic Hub initialized successfully');
 
+        // Initialize SSH Key Manager for dynamic character management
+        const SSHKeyManager = require('./services/sshKeyManager');
+        sshKeyManager = new SSHKeyManager({
+            dryRun: false, // Set to true for testing
+            autoDeployOnAdd: true
+        });
+
+        sshKeyManager.on('keyDeployed', (character) => {
+            logger.info(`🔑 SSH key deployed for ${character.name}`);
+        });
+
+        sshKeyManager.on('keyDeploymentFailed', (character, error) => {
+            logger.warn(`⚠️ SSH key deployment failed for ${character.name}: ${error}`);
+        });
+
+        sshKeyManager.on('characterRemoved', (character) => {
+            logger.info(`🗑️ Character removed from SSH registry: ${character.name}`);
+        });
+
+        logger.info('🔑 SSH Key Manager initialized successfully');
+
         // Start the server
         startServer();
     } catch (error) {
@@ -1358,6 +1385,12 @@ async function gracefulShutdown(reason) {
         if (audioCleanupService) {
             audioCleanupService.stop();
             logger.info('Audio cleanup service stopped');
+        }
+
+        // Stop SSH Key Manager
+        if (sshKeyManager) {
+            sshKeyManager.stop();
+            logger.info('SSH Key Manager stopped');
         }
     } catch (error) {
         logger.error('Error stopping services during shutdown:', error);
