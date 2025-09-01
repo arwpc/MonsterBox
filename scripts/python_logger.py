@@ -3,7 +3,7 @@ from logging.handlers import TimedRotatingFileHandler
 import os
 from datetime import datetime
 
-log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'log')
+log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'logs')
 os.makedirs(log_dir, exist_ok=True)
 
 def get_logger(name):
@@ -14,7 +14,7 @@ def get_logger(name):
         filename=os.path.join(log_dir, 'MonsterBox.log'),
         when='midnight',
         interval=1,
-        backupCount=14,
+        backupCount=7,
         encoding='utf-8'
     )
     file_handler.suffix = "%Y-%m-%d"

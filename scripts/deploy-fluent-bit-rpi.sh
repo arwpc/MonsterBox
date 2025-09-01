@@ -10,8 +10,8 @@ ANIMATRONIC_ID=${1:-"orlok"}  # Default to orlok, can be: orlok, coffin, pumpkin
 CONFIG_SOURCE="data/fluent-bit-rpi-config.conf"
 CONFIG_TARGET="/etc/fluent-bit/fluent-bit.conf"
 LOG_EXPORT_DIR="/home/remote/log_export"
-MONSTERBOX_LOG_DIR="/home/remote/MonsterBox/log"
-SCRIPTS_LOG_DIR="/home/remote/MonsterBox/scripts/log"
+MONSTERBOX_LOG_DIR="/home/remote/MonsterBox/logs"
+SCRIPTS_LOG_DIR="/home/remote/MonsterBox/scripts/logs"
 
 echo "🎃 MonsterBox Fluent Bit Deployment for ${ANIMATRONIC_ID}"
 echo "=================================================="

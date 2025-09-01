@@ -18,7 +18,7 @@ class MCPWebcamLogger {
             enableSystemMetrics: true,
             enableHardwareMonitoring: true,
             enablePerformanceTracking: true,
-            logDirectory: path.join(__dirname, '..', 'log', 'mcp-webcam'),
+            logDirectory: path.join(__dirname, '..', 'logs', 'mcp-webcam'),
             maxLogFiles: 50,
             maxLogSizeBytes: 10 * 1024 * 1024, // 10MB
             ...options
@@ -40,7 +40,7 @@ class MCPWebcamLogger {
         try {
             // Ensure log directory exists
             await fs.mkdir(this.options.logDirectory, { recursive: true });
-            
+
             // Start system monitoring if enabled
             if (this.options.enableSystemMetrics) {
                 this.startSystemMonitoring();
@@ -233,14 +233,14 @@ class MCPWebcamLogger {
     async rotateLogsIfNeeded(logFilePath) {
         try {
             const stats = await fs.stat(logFilePath);
-            
+
             if (stats.size > this.options.maxLogSizeBytes) {
                 const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
                 const rotatedPath = logFilePath.replace('.jsonl', `-${timestamp}.jsonl`);
-                
+
                 await fs.rename(logFilePath, rotatedPath);
                 console.log(`📋 Rotated MCP log file: ${rotatedPath}`);
-                
+
                 // Clean up old log files
                 await this.cleanupOldLogs();
             }
@@ -269,9 +269,9 @@ class MCPWebcamLogger {
                 );
 
                 filesWithStats.sort((a, b) => a.stats.mtime - b.stats.mtime);
-                
+
                 const filesToDelete = filesWithStats.slice(0, filesWithStats.length - this.options.maxLogFiles);
-                
+
                 for (const file of filesToDelete) {
                     await fs.unlink(file.path);
                     console.log(`🗑️ Deleted old MCP log file: ${file.name}`);
@@ -287,7 +287,7 @@ class MCPWebcamLogger {
         this.systemMonitorInterval = setInterval(async () => {
             const metrics = await this.getCurrentSystemMetrics();
             this.metrics.systemStats.push(metrics);
-            
+
             // Keep only last 100 system stats in memory
             if (this.metrics.systemStats.length > 100) {
                 this.metrics.systemStats.shift();
@@ -323,7 +323,7 @@ class MCPWebcamLogger {
         };
 
         this.metrics.performanceData.push(perfData);
-        
+
         await this.logOperation('performance_metric', perfData);
     }
 

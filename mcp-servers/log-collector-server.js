@@ -582,7 +582,7 @@ class LogCollectorServer {
                 try {
                     console.log(`Syncing logs from ${system.name}...`);
 
-                    const localDir = path.join(process.cwd(), 'log', 'aggregated', system.id);
+                    const localDir = path.join(process.cwd(), 'logs', 'aggregated', system.id);
                     await fs.mkdir(localDir, { recursive: true });
 
                     // Sync each log type
@@ -714,7 +714,7 @@ class LogCollectorServer {
 
     async collectBrowserLogs(args) {
         const { url = 'http://localhost:3000', duration = 30 } = args;
-        
+
         // Create browser log collection script
         const script = `
             const puppeteer = require('puppeteer');
@@ -763,7 +763,7 @@ class LogCollectorServer {
         try {
             const { stdout } = await execAsync(`node -e "${script.replace(/"/g, '\\"')}"`);
             const logs = JSON.parse(stdout);
-            
+
             return {
                 content: [
                     {
@@ -787,7 +787,7 @@ class LogCollectorServer {
 
     async collectGitHubLogs(args) {
         const { repo = 'MonsterBox', events = ['push', 'pull_request', 'issues'] } = args;
-        
+
         // Use GitHub API to collect logs
         const logs = {
             repository: repo,
@@ -808,7 +808,7 @@ class LogCollectorServer {
 
     async collectRPiConsoleLogs(args) {
         const { host, lines = 100 } = args;
-        
+
         if (!host) {
             return {
                 content: [
@@ -823,10 +823,10 @@ class LogCollectorServer {
 
         // SSH command to collect RPI logs using individual credentials
         const command = sshCredentials.buildSSHCommandByHost(host, `sudo journalctl -n ${lines} --no-pager`, { batchMode: false });
-        
+
         try {
             const { stdout } = await execAsync(command);
-            
+
             return {
                 content: [
                     {
@@ -850,15 +850,15 @@ class LogCollectorServer {
 
     async collectUbuntuSystemLogs(args) {
         const { host, logTypes = ['syslog', 'auth'], since = '1 hour ago' } = args;
-        
+
         const logs = {};
-        
+
         for (const logType of logTypes) {
             try {
                 const command = host
                     ? sshCredentials.buildSSHCommandByHost(host, `sudo journalctl -u ${logType} --since '${since}' --no-pager`, { batchMode: false })
                     : `sudo journalctl -u ${logType} --since '${since}' --no-pager`;
-                
+
                 const { stdout } = await execAsync(command);
                 logs[logType] = stdout;
             } catch (error) {
@@ -878,14 +878,14 @@ class LogCollectorServer {
 
     async collectMonsterBoxLogs(args) {
         const { logLevel = 'info', since } = args;
-        
+
         try {
             const logDir = path.join(process.cwd(), 'log');
             const files = await fs.readdir(logDir);
             const logFiles = files.filter(f => f.endsWith('.log'));
-            
+
             const logs = {};
-            
+
             for (const file of logFiles) {
                 const content = await fs.readFile(path.join(logDir, file), 'utf8');
                 logs[file] = content.split('\n').filter(line => {
@@ -921,7 +921,7 @@ class LogCollectorServer {
 
     async analyzeLogs(args) {
         const { sources = [], pattern } = args;
-        
+
         const analysis = {
             timestamp: new Date().toISOString(),
             sources: sources,

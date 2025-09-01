@@ -2,8 +2,8 @@ const winston = require('winston');
 const path = require('path');
 const fs = require('fs');
 
-// Create logs directory if it doesn't exist
-const logDir = path.resolve(process.cwd(), 'log');
+// Create logs directory if it doesn't exist (consolidated to /logs)
+const logDir = path.resolve(process.cwd(), 'logs');
 if (!fs.existsSync(logDir)) {
     fs.mkdirSync(logDir, { recursive: true });
 }
@@ -16,7 +16,7 @@ const cleanOldLogs = () => {
             const filePath = path.join(logDir, file);
             const stats = fs.statSync(filePath);
             const fileAgeDays = (Date.now() - stats.mtime.getTime()) / (1000 * 60 * 60 * 24);
-            
+
             // Delete files older than 7 days
             if (fileAgeDays > 7) {
                 fs.unlinkSync(filePath);
@@ -34,7 +34,7 @@ cleanOldLogs();
 const logFormat = winston.format.printf(({ level, message, timestamp }) => {
     // Ensure message is a string
     const formattedMessage = typeof message === 'object' ? JSON.stringify(message) : message;
-    
+
     return JSON.stringify({
         timestamp,
         level: level.toUpperCase(),

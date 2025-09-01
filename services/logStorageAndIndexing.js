@@ -19,10 +19,10 @@ const gunzip = promisify(zlib.gunzip);
 class LogStorageAndIndexing extends EventEmitter {
     constructor(config = {}) {
         super();
-        
+
         this.config = {
-            storageDir: config.storageDir || path.join(process.cwd(), 'log', 'storage'),
-            indexDir: config.indexDir || path.join(process.cwd(), 'log', 'indexes'),
+            storageDir: config.storageDir || path.join(process.cwd(), 'logs', 'storage'),
+            indexDir: config.indexDir || path.join(process.cwd(), 'logs', 'indexes'),
             compressionEnabled: config.compressionEnabled !== false,
             maxFileSize: config.maxFileSize || 50 * 1024 * 1024, // 50MB
             indexUpdateInterval: config.indexUpdateInterval || 60000, // 1 minute
@@ -110,10 +110,10 @@ class LogStorageAndIndexing extends EventEmitter {
 
         try {
             const batch = this.writeQueue.splice(0, 100); // Process in batches of 100
-            
+
             // Group by animatronic and service for efficient file writing
             const groups = new Map();
-            
+
             for (const entry of batch) {
                 const key = `${entry.animatronic}_${entry.service}`;
                 if (!groups.has(key)) {
@@ -133,7 +133,7 @@ class LogStorageAndIndexing extends EventEmitter {
             this.logger.error('Error processing write queue', { error: error.message });
         } finally {
             this.isWriting = false;
-            
+
             // Process remaining queue if any
             if (this.writeQueue.length > 0) {
                 setImmediate(() => this.processWriteQueue());
@@ -190,7 +190,7 @@ class LogStorageAndIndexing extends EventEmitter {
     async checkFileRotation(filepath) {
         try {
             const stats = await fs.stat(filepath);
-            
+
             if (stats.size > this.config.maxFileSize) {
                 await this.rotateFile(filepath);
             }
@@ -206,18 +206,18 @@ class LogStorageAndIndexing extends EventEmitter {
         try {
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
             const rotatedPath = filepath.replace('.jsonl', `-${timestamp}.jsonl`);
-            
+
             // Move current file to rotated name
             await fs.rename(filepath, rotatedPath);
-            
+
             // Compress if enabled
             if (this.config.compressionEnabled) {
                 await this.compressFile(rotatedPath);
             }
 
-            this.logger.info('File rotated', { 
-                original: filepath, 
-                rotated: rotatedPath 
+            this.logger.info('File rotated', {
+                original: filepath,
+                rotated: rotatedPath
             });
 
         } catch (error) {
@@ -232,19 +232,19 @@ class LogStorageAndIndexing extends EventEmitter {
         try {
             const data = await fs.readFile(filepath);
             const compressed = await gzip(data);
-            
+
             const compressedPath = path.join(
                 this.config.storageDir,
                 'compressed',
                 path.basename(filepath) + '.gz'
             );
-            
+
             await fs.writeFile(compressedPath, compressed);
             await fs.unlink(filepath); // Remove original
-            
+
             this.statistics.totalSize += data.length;
             this.statistics.compressedSize += compressed.length;
-            
+
             this.logger.info('File compressed', {
                 original: filepath,
                 compressed: compressedPath,
@@ -265,7 +265,7 @@ class LogStorageAndIndexing extends EventEmitter {
         try {
             const [animatronic, service] = key.split('_');
             const indexKey = `${animatronic}_${service}`;
-            
+
             if (!this.indexes.has(indexKey)) {
                 this.indexes.set(indexKey, {
                     animatronic,
@@ -285,7 +285,7 @@ class LogStorageAndIndexing extends EventEmitter {
 
             for (const entry of entries) {
                 index.totalEntries++;
-                
+
                 // Update time bounds
                 if (!index.firstEntry || entry.timestamp < index.firstEntry) {
                     index.firstEntry = entry.timestamp;
@@ -307,7 +307,7 @@ class LogStorageAndIndexing extends EventEmitter {
                     index.hourlyStats[hour] = { total: 0, levels: {} };
                 }
                 index.hourlyStats[hour].total++;
-                index.hourlyStats[hour].levels[entry.level] = 
+                index.hourlyStats[hour].levels[entry.level] =
                     (index.hourlyStats[hour].levels[entry.level] || 0) + 1;
 
                 // Extract keywords for full-text search
@@ -349,15 +349,15 @@ class LogStorageAndIndexing extends EventEmitter {
     async persistIndex(indexKey, index) {
         try {
             const indexPath = path.join(this.config.indexDir, `${indexKey}.json`);
-            
+
             // Convert Map to Object for JSON serialization
             const serializable = {
                 ...index,
                 keywords: Object.fromEntries(index.keywords)
             };
-            
+
             await fs.writeFile(indexPath, JSON.stringify(serializable, null, 2));
-            
+
         } catch (error) {
             this.logger.error('Error persisting index', {
                 indexKey,
@@ -369,23 +369,23 @@ class LogStorageAndIndexing extends EventEmitter {
     async loadIndexes() {
         try {
             const files = await fs.readdir(this.config.indexDir);
-            
+
             for (const file of files) {
                 if (file.endsWith('.json')) {
                     const indexPath = path.join(this.config.indexDir, file);
                     const indexData = await fs.readFile(indexPath, 'utf8');
                     const index = JSON.parse(indexData);
-                    
+
                     // Convert keywords back to Map
                     index.keywords = new Map(Object.entries(index.keywords || {}));
-                    
+
                     const indexKey = file.replace('.json', '');
                     this.indexes.set(indexKey, index);
                 }
             }
 
             this.logger.info('Loaded indexes', { count: this.indexes.size });
-            
+
         } catch (error) {
             this.logger.warn('Error loading indexes', { error: error.message });
         }
@@ -406,7 +406,7 @@ class LogStorageAndIndexing extends EventEmitter {
         try {
             // Find relevant files based on query
             const relevantFiles = await this.findRelevantFiles(query);
-            
+
             const results = [];
             let totalFound = 0;
             let skipped = 0;
@@ -415,16 +415,16 @@ class LogStorageAndIndexing extends EventEmitter {
                 if (results.length >= limit) break;
 
                 const entries = await this.readLogFile(file);
-                
+
                 for (const entry of entries) {
                     if (this.matchesQuery(entry, query)) {
                         totalFound++;
-                        
+
                         if (skipped < offset) {
                             skipped++;
                             continue;
                         }
-                        
+
                         if (results.length < limit) {
                             results.push(entry);
                         }
@@ -451,11 +451,11 @@ class LogStorageAndIndexing extends EventEmitter {
 
     async findRelevantFiles(query) {
         const files = [];
-        
+
         // Check active files
         const activeDir = path.join(this.config.storageDir, 'active');
         const activeFiles = await fs.readdir(activeDir);
-        
+
         for (const file of activeFiles) {
             if (this.fileMatchesQuery(file, query)) {
                 files.push(path.join(activeDir, file));
@@ -467,7 +467,7 @@ class LogStorageAndIndexing extends EventEmitter {
             const compressedDir = path.join(this.config.storageDir, 'compressed');
             try {
                 const compressedFiles = await fs.readdir(compressedDir);
-                
+
                 for (const file of compressedFiles) {
                     if (this.fileMatchesQuery(file, query)) {
                         files.push(path.join(compressedDir, file));
@@ -492,7 +492,7 @@ class LogStorageAndIndexing extends EventEmitter {
         if (query.animatronic && !filename.includes(query.animatronic)) {
             return false;
         }
-        
+
         if (query.service && !filename.includes(query.service)) {
             return false;
         }
@@ -500,11 +500,11 @@ class LogStorageAndIndexing extends EventEmitter {
         // Check date range if specified
         if (query.since || query.until) {
             const fileDate = this.extractDateFromFilename(filename);
-            
+
             if (query.since && fileDate < query.since.split('T')[0]) {
                 return false;
             }
-            
+
             if (query.until && fileDate > query.until.split('T')[0]) {
                 return false;
             }
@@ -521,7 +521,7 @@ class LogStorageAndIndexing extends EventEmitter {
     async readLogFile(filepath) {
         try {
             let data;
-            
+
             if (filepath.endsWith('.gz')) {
                 const compressed = await fs.readFile(filepath);
                 data = await gunzip(compressed);
@@ -559,7 +559,7 @@ class LogStorageAndIndexing extends EventEmitter {
 
         if (query.keywords && query.keywords.length > 0) {
             const message = (entry.message || '').toLowerCase();
-            const hasKeyword = query.keywords.some(keyword => 
+            const hasKeyword = query.keywords.some(keyword =>
                 message.includes(keyword.toLowerCase())
             );
             if (!hasKeyword) {
@@ -599,11 +599,11 @@ class LogStorageAndIndexing extends EventEmitter {
 
             for (const file of files) {
                 const fileDate = this.extractDateFromFilename(file);
-                
+
                 if (fileDate < cutoffString) {
                     const filepath = path.join(compressedDir, file);
                     await fs.unlink(filepath);
-                    
+
                     this.logger.info('Cleaned up old log file', {
                         file: filepath,
                         fileDate
@@ -638,8 +638,8 @@ class LogStorageAndIndexing extends EventEmitter {
             queueSize: this.writeQueue.length,
             activeFiles: this.currentFiles.size,
             indexes: this.indexes.size,
-            compressionRatio: this.statistics.totalSize > 0 ? 
-                (this.statistics.compressedSize / this.statistics.totalSize * 100).toFixed(2) + '%' : 
+            compressionRatio: this.statistics.totalSize > 0 ?
+                (this.statistics.compressedSize / this.statistics.totalSize * 100).toFixed(2) + '%' :
                 'N/A'
         };
     }

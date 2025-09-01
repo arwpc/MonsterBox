@@ -173,7 +173,7 @@ A: Use the web interface under "Characters" and "Parts". Data is saved in the `d
 A: Use the "Sounds" section in the web interface. Place image files in `public/images/` and sounds in `public/sounds/`.
 
 **Q: Where are logs stored?**
-A: Logs are accessible via the web interface and may be saved in the `log/` directory.
+A: Logs are accessible via the web interface and are saved in the consolidated `logs/` directory.
 
 ---
 

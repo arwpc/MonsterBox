@@ -16,7 +16,7 @@
       },
       "log_sources": [
         "monsterbox_app",
-        "monsterbox_errors", 
+        "monsterbox_errors",
         "system_logs",
         "metrics"
       ],
@@ -29,7 +29,7 @@
     },
     {
       "id": "coffin",
-      "name": "Coffin RPI4b", 
+      "name": "Coffin RPI4b",
       "host": "192.168.8.140",
       "user": "remote",
       "password_env": "COFFIN_SSH_PASSWORD",
@@ -44,7 +44,7 @@
       "log_sources": [
         "monsterbox_app",
         "monsterbox_errors",
-        "system_logs", 
+        "system_logs",
         "metrics"
       ],
       "services": [
@@ -76,7 +76,7 @@
       ],
       "services": [
         "monsterbox",
-        "nginx", 
+        "nginx",
         "ssh",
         "fluent-bit"
       ]
@@ -89,7 +89,7 @@
     "timeout_seconds": 30,
     "compress_logs": true,
     "store_raw_logs": true,
-    "local_log_directory": "log/aggregated",
+    "local_log_directory": "logs/aggregated",
     "test_log_retention_days": 7
   },
   "fluent_bit_global": {

@@ -10,7 +10,7 @@ const path = require('path');
 const logger = require('../scripts/logger');
 
 // Ensure error logs directory exists
-const ERROR_LOGS_DIR = path.join(__dirname, '..', 'log', 'browser-errors');
+const ERROR_LOGS_DIR = path.join(__dirname, '..', 'logs', 'browser-errors');
 
 async function ensureErrorLogsDir() {
     try {
@@ -76,7 +76,7 @@ router.post('/browser-errors', async (req, res) => {
         // Save detailed report to file
         const reportFileName = `error-report-${reportId}.json`;
         const reportFilePath = path.join(ERROR_LOGS_DIR, reportFileName);
-        
+
         await fs.writeFile(reportFilePath, JSON.stringify(enrichedReport, null, 2));
 
         // Update error summary statistics
@@ -104,11 +104,11 @@ router.post('/browser-errors', async (req, res) => {
 router.get('/browser-errors/summary', async (req, res) => {
     try {
         const summaryPath = path.join(ERROR_LOGS_DIR, 'error-summary.json');
-        
+
         try {
             const summaryData = await fs.readFile(summaryPath, 'utf8');
             const summary = JSON.parse(summaryData);
-            
+
             res.json({
                 success: true,
                 summary
@@ -144,7 +144,7 @@ router.get('/browser-errors/recent', async (req, res) => {
     try {
         const limit = parseInt(req.query.limit) || 10;
         const files = await fs.readdir(ERROR_LOGS_DIR);
-        
+
         // Filter and sort error report files
         const reportFiles = files
             .filter(file => file.startsWith('error-report-') && file.endsWith('.json'))
@@ -161,7 +161,7 @@ router.get('/browser-errors/recent', async (req, res) => {
                 const filePath = path.join(ERROR_LOGS_DIR, file);
                 const reportData = await fs.readFile(filePath, 'utf8');
                 const report = JSON.parse(reportData);
-                
+
                 // Return summary info only, not full error details
                 reports.push({
                     reportId: report.reportId,
@@ -236,7 +236,7 @@ router.delete('/browser-errors/cleanup', async (req, res) => {
         const cutoffTime = Date.now() - (maxAge * 24 * 60 * 60 * 1000);
 
         const files = await fs.readdir(ERROR_LOGS_DIR);
-        const reportFiles = files.filter(file => 
+        const reportFiles = files.filter(file =>
             file.startsWith('error-report-') && file.endsWith('.json')
         );
 
@@ -273,7 +273,7 @@ router.delete('/browser-errors/cleanup', async (req, res) => {
 async function updateErrorStatistics(errorReport) {
     try {
         const summaryPath = path.join(ERROR_LOGS_DIR, 'error-summary.json');
-        
+
         let summary = {
             totalReports: 0,
             totalErrors: 0,

@@ -25,7 +25,7 @@ async function loadConfig() {
         // Return default config if file doesn't exist
         serviceConfig = {
             port: 8781,
-            storageDir: "./log/aggregated",
+            storageDir: "./logs/aggregated",
             maxBufferSize: 1000,
             flushInterval: 5000,
             retentionDays: 30,
@@ -44,7 +44,7 @@ async function loadConfig() {
                     "enabled": true
                 },
                 "coffin": {
-                    "host": "192.168.8.140", 
+                    "host": "192.168.8.140",
                     "services": ["jaw", "ai", "registry", "motor", "light", "main"],
                     "enabled": true
                 }
@@ -124,9 +124,9 @@ router.post('/start', async (req, res) => {
 
         await loadConfig();
         logAggregationService = new CentralLogAggregationService(serviceConfig);
-        
+
         const started = await logAggregationService.start();
-        
+
         if (started) {
             res.json({ success: true, message: 'Log collection service started' });
         } else {
@@ -163,7 +163,7 @@ router.post('/stop', async (req, res) => {
 
         await logAggregationService.stop();
         logAggregationService = null;
-        
+
         res.json({ success: true, message: 'Log collection service stopped' });
     } catch (error) {
         console.error('Error stopping service:', error);
@@ -187,7 +187,7 @@ router.post('/config', async (req, res) => {
     try {
         const newConfig = { ...serviceConfig, ...req.body };
         const saved = await saveConfig(newConfig);
-        
+
         if (saved) {
             // Restart service if it's running to apply new config
             if (logAggregationService && logAggregationService.isRunning) {
@@ -195,7 +195,7 @@ router.post('/config', async (req, res) => {
                 logAggregationService = new CentralLogAggregationService(newConfig);
                 await logAggregationService.start();
             }
-            
+
             res.json({ success: true, message: 'Configuration saved successfully' });
         } else {
             res.json({ success: false, error: 'Failed to save configuration' });
@@ -211,7 +211,7 @@ router.get('/devices', async (req, res) => {
     try {
         const config = await loadConfig();
         const devices = [];
-        
+
         if (config.sources) {
             for (const [name, source] of Object.entries(config.sources)) {
                 devices.push({
@@ -225,7 +225,7 @@ router.get('/devices', async (req, res) => {
                 });
             }
         }
-        
+
         res.json(devices);
     } catch (error) {
         console.error('Error getting devices:', error);
@@ -237,17 +237,17 @@ router.get('/devices', async (req, res) => {
 router.post('/devices', async (req, res) => {
     try {
         const { name, ip, user = 'remote', services = [] } = req.body;
-        
+
         if (!name || !ip) {
             return res.status(400).json({ success: false, error: 'Name and IP are required' });
         }
 
         const config = await loadConfig();
-        
+
         if (!config.sources) {
             config.sources = {};
         }
-        
+
         config.sources[name] = {
             host: ip,
             user: user,
@@ -255,9 +255,9 @@ router.post('/devices', async (req, res) => {
             enabled: true,
             addedAt: new Date().toISOString()
         };
-        
+
         const saved = await saveConfig(config);
-        
+
         if (saved) {
             res.json({ success: true, message: 'Device added successfully' });
         } else {
@@ -274,11 +274,11 @@ router.delete('/devices/:id', async (req, res) => {
     try {
         const deviceId = req.params.id;
         const config = await loadConfig();
-        
+
         if (config.sources && config.sources[deviceId]) {
             delete config.sources[deviceId];
             const saved = await saveConfig(config);
-            
+
             if (saved) {
                 res.json({ success: true, message: 'Device removed successfully' });
             } else {
@@ -298,16 +298,16 @@ router.post('/devices/:id/test', async (req, res) => {
     try {
         const deviceId = req.params.id;
         const config = await loadConfig();
-        
+
         if (!config.sources || !config.sources[deviceId]) {
             return res.status(404).json({ success: false, error: 'Device not found' });
         }
-        
+
         const device = config.sources[deviceId];
-        
+
         // Test SSH connectivity
         const testResult = await testDeviceConnectivity(device.host, device.user || 'remote');
-        
+
         res.json({
             success: testResult.success,
             message: testResult.message,
@@ -323,10 +323,10 @@ router.post('/devices/:id/test', async (req, res) => {
 router.post('/devices/scan', async (req, res) => {
     try {
         const { network = '192.168.8' } = req.body;
-        
+
         // This is a simplified network scan - in production you'd want more sophisticated discovery
         const discoveredDevices = await scanNetwork(network);
-        
+
         res.json({
             success: true,
             devices: discoveredDevices
@@ -352,7 +352,7 @@ router.get('/logs', async (req, res) => {
         // This would query the actual log storage
         // For now, return empty array
         const logs = [];
-        
+
         res.json({
             logs: logs,
             total: logs.length,
@@ -367,13 +367,13 @@ router.get('/logs', async (req, res) => {
 // Helper functions
 async function getDirectorySize(dirPath) {
     let totalSize = 0;
-    
+
     try {
         const files = await fs.readdir(dirPath, { withFileTypes: true });
-        
+
         for (const file of files) {
             const filePath = path.join(dirPath, file.name);
-            
+
             if (file.isDirectory()) {
                 totalSize += await getDirectorySize(filePath);
             } else {
@@ -385,17 +385,17 @@ async function getDirectorySize(dirPath) {
         // Directory might not exist yet
         return 0;
     }
-    
+
     return totalSize;
 }
 
 function formatBytes(bytes) {
     if (bytes === 0) return '0 B';
-    
+
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    
+
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
@@ -403,10 +403,10 @@ async function testDeviceConnectivity(host, user) {
     return new Promise((resolve) => {
         const sshCredentials = require('../scripts/ssh-credentials');
         const { exec } = require('child_process');
-        
+
         try {
             const command = sshCredentials.buildSSHCommandByHost(host, 'echo "Connection test successful"', { batchMode: true });
-            
+
             exec(command, { timeout: 10000 }, (error, stdout, stderr) => {
                 if (error) {
                     resolve({
@@ -436,13 +436,13 @@ async function scanNetwork(networkBase) {
     // Simplified network scan - ping common IPs
     const devices = [];
     const commonIPs = [120, 140, 101, 102, 103]; // Common MonsterBox device IPs
-    
+
     for (const ip of commonIPs) {
         const fullIP = `${networkBase}.${ip}`;
-        
+
         try {
             const testResult = await testDeviceConnectivity(fullIP, 'remote');
-            
+
             if (testResult.success) {
                 devices.push({
                     ip: fullIP,
@@ -454,7 +454,7 @@ async function scanNetwork(networkBase) {
             // Ignore failed pings
         }
     }
-    
+
     return devices;
 }
 

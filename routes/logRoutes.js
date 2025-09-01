@@ -11,7 +11,7 @@ const sshCredentials = require('../scripts/ssh-credentials');
 // Load environment variables
 require('dotenv').config();
 
-const LOG_DIR = path.join(__dirname, '..', 'log');
+const LOG_DIR = path.join(__dirname, '..', 'logs');
 const LINES_PER_PAGE = 100;
 
 router.get('/', async (req, res) => {
@@ -31,14 +31,14 @@ router.get('/', async (req, res) => {
                 })
                 .map(async file => {
                     const stats = await fs.stat(path.join(LOG_DIR, file));
-                    return { 
-                        name: file, 
+                    return {
+                        name: file,
                         mtime: stats.mtime,
                         type: file.split(/[-\.]/)[0] // Extract log type (combined, error, etc)
                     };
                 })
         );
-        
+
         // Sort files by modification time, most recent first
         logFiles.sort((a, b) => b.mtime - a.mtime);
 
@@ -69,7 +69,7 @@ router.get('/', async (req, res) => {
                         return line.includes('timestamp') ? line : `[LOG] ${line}`;
                     }
                 });
-            
+
             // Add file type header
             allLogs.push(`=== ${file.type.toUpperCase()} LOGS (${file.name}) ===`);
             allLogs = allLogs.concat(lines);

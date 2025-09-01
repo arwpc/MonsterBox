@@ -16,7 +16,7 @@ const sshCredentials = require('./ssh-credentials');
 class FluentBitTester {
     constructor() {
         this.configPath = path.join(process.cwd(), 'data', 'fluent-bit-config.json');
-        this.logDir = path.join(process.cwd(), 'log', 'aggregated');
+        this.logDir = path.join(process.cwd(), 'logs', 'aggregated');
         this.results = {
             timestamp: new Date().toISOString(),
             tests: {},
@@ -26,29 +26,29 @@ class FluentBitTester {
 
     async run() {
         console.log('🧪 MonsterBox Fluent Bit Testing\n');
-        
+
         try {
             // Load configuration
             const config = await this.loadConfig();
             console.log('✅ Fluent Bit configuration loaded');
-            
+
             // Test local log directories
             await this.testLocalDirectories();
-            
+
             // Test Fluent Bit status on each RPI
             await this.testFluentBitStatus(config);
-            
+
             // Test log file generation
             await this.testLogGeneration(config);
-            
+
             // Test log collection
             await this.testLogCollection(config);
-            
+
             // Generate test report
             await this.generateTestReport();
-            
+
             console.log('\n✅ All Fluent Bit tests completed!');
-            
+
         } catch (error) {
             console.error('❌ Fluent Bit testing failed:', error.message);
             process.exit(1);
@@ -86,7 +86,7 @@ class FluentBitTester {
             const testFile = path.join(this.logDir, 'test-write.tmp');
             await fs.writeFile(testFile, 'test');
             await fs.unlink(testFile);
-            
+
             this.recordTest('log_directory_writable', true, 'Log directory is writable');
             console.log('   ✅ Log directory is writable');
         } catch (error) {
@@ -109,11 +109,11 @@ class FluentBitTester {
 
                 // Test Fluent Bit service status
                 const statusCommand = sshCredentials.buildSSHCommand(
-                    system.id, 
-                    system.host, 
+                    system.id,
+                    system.host,
                     'sudo systemctl is-active fluent-bit'
                 );
-                
+
                 try {
                     const { stdout } = await execAsync(statusCommand);
                     if (stdout.trim() === 'active') {
@@ -135,7 +135,7 @@ class FluentBitTester {
                         system.host,
                         'curl -s http://localhost:2020/api/v1/health'
                     );
-                    
+
                     const { stdout } = await execAsync(httpCommand);
                     if (stdout.includes('ok') || stdout.includes('healthy')) {
                         this.recordTest(`fluent_bit_http_${system.id}`, true, `Fluent Bit HTTP API is responding`);
@@ -229,11 +229,11 @@ class FluentBitTester {
 
                 try {
                     await execAsync(scpCommand);
-                    
+
                     // Check if files were copied
                     const files = await fs.readdir(localSystemLogDir);
                     const logFiles = files.filter(f => f.endsWith('.log'));
-                    
+
                     if (logFiles.length > 0) {
                         this.recordTest(`log_collection_${system.id}`, true, `Collected ${logFiles.length} log files from ${system.name}`);
                         console.log(`      ✅ Collected ${logFiles.length} log files`);
@@ -259,7 +259,7 @@ class FluentBitTester {
             message,
             timestamp: new Date().toISOString()
         };
-        
+
         this.results.summary.total++;
         if (passed) {
             this.results.summary.passed++;
@@ -274,7 +274,7 @@ class FluentBitTester {
         console.log(`✅ Passed: ${this.results.summary.passed}`);
         console.log(`❌ Failed: ${this.results.summary.failed}`);
         console.log(`📋 Total:  ${this.results.summary.total}`);
-        
+
         const successRate = Math.round((this.results.summary.passed / this.results.summary.total) * 100);
         console.log(`📈 Success Rate: ${successRate}%`);
 
@@ -302,15 +302,15 @@ class FluentBitTester {
 
     async saveResults() {
         try {
-            const logDir = path.join(process.cwd(), 'log');
+            const logDir = path.join(process.cwd(), 'logs');
             await fs.mkdir(logDir, { recursive: true });
-            
+
             const filename = `fluent-bit-test-${new Date().toISOString().split('T')[0]}.json`;
             const filepath = path.join(logDir, filename);
-            
+
             await fs.writeFile(filepath, JSON.stringify(this.results, null, 2));
             console.log(`\n📄 Test results saved to: ${filename}`);
-            
+
         } catch (error) {
             console.error('Failed to save test results:', error.message);
         }

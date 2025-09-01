@@ -16,10 +16,10 @@ const { spawn } = require('child_process');
 class CentralLogAggregationService extends EventEmitter {
     constructor(config = {}) {
         super();
-        
+
         this.config = {
             port: config.port || 8781,
-            storageDir: config.storageDir || path.join(process.cwd(), 'log', 'aggregated'),
+            storageDir: config.storageDir || path.join(process.cwd(), 'logs', 'aggregated'),
             maxBufferSize: config.maxBufferSize || 10000,
             flushInterval: config.flushInterval || 5000,
             retentionDays: config.retentionDays || 30,
@@ -32,7 +32,7 @@ class CentralLogAggregationService extends EventEmitter {
         this.activeStreams = new Map();
         this.indexCache = new Map();
         this.isRunning = false;
-        
+
         this.setupLogger();
         this.setupWebSocketServer();
         this.setupPeriodicTasks();
@@ -47,7 +47,7 @@ class CentralLogAggregationService extends EventEmitter {
                 winston.format.json()
             ),
             transports: [
-                new winston.transports.File({ 
+                new winston.transports.File({
                     filename: path.join(this.config.storageDir, 'aggregation-service.log'),
                     maxsize: 10485760, // 10MB
                     maxFiles: 5
@@ -60,7 +60,7 @@ class CentralLogAggregationService extends EventEmitter {
     }
 
     setupWebSocketServer() {
-        this.wss = new WebSocket.Server({ 
+        this.wss = new WebSocket.Server({
             port: this.config.port,
             perMessageDeflate: false
         });
@@ -151,7 +151,7 @@ class CentralLogAggregationService extends EventEmitter {
 
     async stop() {
         this.isRunning = false;
-        
+
         // Clear intervals
         if (this.flushInterval) clearInterval(this.flushInterval);
         if (this.cleanupInterval) clearInterval(this.cleanupInterval);
@@ -198,7 +198,7 @@ class CentralLogAggregationService extends EventEmitter {
             if (!this.logBuffer.has(bufferKey)) {
                 this.logBuffer.set(bufferKey, []);
             }
-            
+
             this.logBuffer.get(bufferKey).push(processedEntry);
 
             // Check buffer size and flush if needed
@@ -247,16 +247,16 @@ class CentralLogAggregationService extends EventEmitter {
                 // Clear buffer
                 this.logBuffer.set(key, []);
 
-                this.logger.debug('Flushed log buffer', { 
-                    key, 
-                    entriesCount: entries.length, 
-                    filepath 
+                this.logger.debug('Flushed log buffer', {
+                    key,
+                    entriesCount: entries.length,
+                    filepath
                 });
 
             } catch (error) {
-                this.logger.error('Failed to flush log buffer', { 
-                    key, 
-                    error: error.message 
+                this.logger.error('Failed to flush log buffer', {
+                    key,
+                    error: error.message
                 });
             }
         }
@@ -280,11 +280,11 @@ class CentralLogAggregationService extends EventEmitter {
 
             for (const entry of entries) {
                 index.totalEntries++;
-                
+
                 if (!index.firstEntry || entry.timestamp < index.firstEntry) {
                     index.firstEntry = entry.timestamp;
                 }
-                
+
                 if (!index.lastEntry || entry.timestamp > index.lastEntry) {
                     index.lastEntry = entry.timestamp;
                 }
@@ -304,10 +304,10 @@ class CentralLogAggregationService extends EventEmitter {
             this.indexCache.set(indexKey, index);
 
         } catch (error) {
-            this.logger.error('Failed to update log index', { 
-                animatronic, 
-                service, 
-                error: error.message 
+            this.logger.error('Failed to update log index', {
+                animatronic,
+                service,
+                error: error.message
             });
         }
     }
@@ -316,13 +316,13 @@ class CentralLogAggregationService extends EventEmitter {
         try {
             const indexDir = path.join(this.config.storageDir, 'indexes');
             const files = await fs.readdir(indexDir);
-            
+
             for (const file of files) {
                 if (file.endsWith('.json')) {
                     const indexPath = path.join(indexDir, file);
                     const indexData = await fs.readFile(indexPath, 'utf8');
                     const index = JSON.parse(indexData);
-                    
+
                     const key = file.replace('.json', '');
                     this.indexCache.set(key, index);
                 }
@@ -347,9 +347,9 @@ class CentralLogAggregationService extends EventEmitter {
                     ws.send(JSON.stringify(message));
                     info.lastActivity = Date.now();
                 } catch (error) {
-                    this.logger.error('Failed to broadcast to client', { 
-                        clientId, 
-                        error: error.message 
+                    this.logger.error('Failed to broadcast to client', {
+                        clientId,
+                        error: error.message
                     });
                 }
             }
@@ -364,9 +364,9 @@ class CentralLogAggregationService extends EventEmitter {
                 client.info.lastActivity = Date.now();
                 return true;
             } catch (error) {
-                this.logger.error('Failed to send to client', { 
-                    clientId, 
-                    error: error.message 
+                this.logger.error('Failed to send to client', {
+                    clientId,
+                    error: error.message
                 });
                 return false;
             }
@@ -378,7 +378,7 @@ class CentralLogAggregationService extends EventEmitter {
         try {
             const message = JSON.parse(data.toString());
             const client = this.activeStreams.get(clientId);
-            
+
             if (!client) return;
 
             client.info.lastActivity = Date.now();
@@ -397,9 +397,9 @@ class CentralLogAggregationService extends EventEmitter {
                     this.logger.warn('Unknown message type', { clientId, type: message.type });
             }
         } catch (error) {
-            this.logger.error('Failed to handle client message', { 
-                clientId, 
-                error: error.message 
+            this.logger.error('Failed to handle client message', {
+                clientId,
+                error: error.message
             });
         }
     }
@@ -420,13 +420,13 @@ class CentralLogAggregationService extends EventEmitter {
 
     async handleQuery(clientId, message) {
         try {
-            const { 
-                animatronic, 
-                service, 
-                level, 
-                since, 
-                until, 
-                limit = 100 
+            const {
+                animatronic,
+                service,
+                level,
+                since,
+                until,
+                limit = 100
             } = message.query || {};
 
             const results = await this.queryLogs({
@@ -464,13 +464,13 @@ class CentralLogAggregationService extends EventEmitter {
             const cutoffDate = new Date();
             cutoffDate.setDate(cutoffDate.getDate() - this.config.retentionDays);
 
-            this.logger.info('Starting log cleanup', { 
+            this.logger.info('Starting log cleanup', {
                 cutoffDate: cutoffDate.toISOString(),
-                retentionDays: this.config.retentionDays 
+                retentionDays: this.config.retentionDays
             });
 
             // Implementation for cleanup will be added in next iteration
-            
+
         } catch (error) {
             this.logger.error('Failed to cleanup old logs', { error: error.message });
         }
