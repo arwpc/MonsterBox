@@ -3,5 +3,10 @@
     "characterId": 4,
     "name": "Skulltalker",
     "loadedAt": "2025-09-01T01:04:06.654Z"
+  },
+  "orlok": {
+    "characterId": 1,
+    "name": "Orlok",
+    "loadedAt": "2025-09-01T17:57:09.272Z"
   }
 }
