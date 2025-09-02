@@ -72,9 +72,12 @@ class HardwareServiceManager {
     }
 
     async startHardwareServices() {
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
             try {
                 logger.info('🦾 Starting Python Hardware WebSocket Services...');
+
+                // Start critical individual services first
+                await this.startCriticalServices();
 
                 const hardwareScriptPath = path.join(__dirname, '..', 'scripts', 'hardware', 'start_hardware_services.py');
 
@@ -240,6 +243,143 @@ class HardwareServiceManager {
         } catch (error) {
             logger.error('❌ Failed to start fallback services:', error);
             throw error;
+        }
+    }
+
+    async startCriticalServices() {
+        try {
+            logger.info('🔧 Starting critical hardware services...');
+
+            const criticalServices = [
+                {
+                    name: 'Servo WebSocket Service',
+                    script: 'scripts/hardware/servo_websocket_service.py',
+                    port: 8404,
+                    args: ['--host', '0.0.0.0', '--port', '8404']
+                },
+                {
+                    name: 'Microphone WebSocket Service',
+                    script: 'scripts/hardware/microphone_websocket_service.py',
+                    port: 8776,
+                    args: ['--host', '0.0.0.0', '--port', '8776']
+                },
+                {
+                    name: 'Webcam WebSocket Service',
+                    script: 'scripts/hardware/webcam_websocket_service.py',
+                    port: 8774,
+                    args: ['--host', '0.0.0.0', '--port', '8774']
+                }
+            ];
+
+            for (const service of criticalServices) {
+                await this.startIndividualService(service);
+            }
+
+            logger.info('✅ Critical hardware services started');
+        } catch (error) {
+            logger.error('❌ Error starting critical services:', error);
+        }
+    }
+
+    async startIndividualService(serviceConfig) {
+        try {
+            // Check if service is already running
+            const isRunning = await this.checkServicePort(serviceConfig.port);
+            if (isRunning) {
+                logger.info(`✅ ${serviceConfig.name} already running on port ${serviceConfig.port}`);
+                return true;
+            }
+
+            logger.info(`🚀 Starting ${serviceConfig.name}...`);
+
+            const scriptPath = path.join(__dirname, '..', serviceConfig.script);
+
+            // Check if script exists
+            if (!require('fs').existsSync(scriptPath)) {
+                logger.warn(`⚠️ Script not found: ${scriptPath}`);
+                return false;
+            }
+
+            const process = spawn('python3', [scriptPath, ...serviceConfig.args], {
+                detached: true,
+                stdio: ['ignore', 'pipe', 'pipe']
+            });
+
+            // Store process reference
+            this.services[serviceConfig.name] = {
+                process: process,
+                port: serviceConfig.port,
+                status: 'starting'
+            };
+
+            // Handle process output
+            process.stdout.on('data', (data) => {
+                const output = data.toString().trim();
+                if (output.includes('running on') || output.includes('started')) {
+                    logger.info(`✅ ${serviceConfig.name} started on port ${serviceConfig.port}`);
+                    this.services[serviceConfig.name].status = 'running';
+                }
+            });
+
+            process.stderr.on('data', (data) => {
+                const error = data.toString().trim();
+                if (!error.includes('Warning') && !error.includes('INFO')) {
+                    logger.warn(`${serviceConfig.name}: ${error}`);
+                }
+            });
+
+            process.on('exit', (code) => {
+                if (code !== 0) {
+                    logger.error(`❌ ${serviceConfig.name} exited with code ${code}`);
+                    this.services[serviceConfig.name].status = 'stopped';
+                }
+            });
+
+            process.unref(); // Allow parent to exit independently
+
+            // Wait for service to start
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            // Verify service is responding
+            const isResponding = await this.checkServicePort(serviceConfig.port);
+            if (isResponding) {
+                logger.info(`✅ ${serviceConfig.name} verified running`);
+                return true;
+            } else {
+                logger.warn(`⚠️ ${serviceConfig.name} started but not responding`);
+                return false;
+            }
+
+        } catch (error) {
+            logger.error(`❌ Error starting ${serviceConfig.name}:`, error);
+            return false;
+        }
+    }
+
+    async checkServicePort(port) {
+        try {
+            const WebSocket = require('ws');
+            const ws = new WebSocket(`ws://127.0.0.1:${port}`);
+
+            return new Promise((resolve) => {
+                const timeout = setTimeout(() => {
+                    ws.close();
+                    resolve(false);
+                }, 3000);
+
+                ws.on('open', () => {
+                    clearTimeout(timeout);
+                    ws.close();
+                    resolve(true);
+                });
+
+                ws.on('error', () => {
+                    clearTimeout(timeout);
+                    resolve(false);
+                });
+            });
+        } catch (error) {
+            return false;
         }
     }
 

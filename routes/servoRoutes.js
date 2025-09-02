@@ -528,12 +528,12 @@ router.post('/get-positions', async (req, res) => {
 
 router.post('/test-pulse', async (req, res) => {
     try {
-        const { servo_id, pulse_width } = req.body;
+        const { servo_id, pulse_width, channel, use_pca9685 } = req.body;
 
-        if (!servo_id || !pulse_width) {
+        if (!pulse_width) {
             return res.status(400).json({
                 success: false,
-                message: 'Servo ID and pulse width are required'
+                message: 'Pulse width is required'
             });
         }
 
@@ -546,18 +546,39 @@ router.post('/test-pulse', async (req, res) => {
             });
         }
 
-        // Send direct pulse width test
-        const result = await servoClient.sendMessage({
-            type: 'servo_test_pulse',
-            servo_id: servo_id,
-            pulse_width: parseInt(pulse_width)
-        });
+        // If testing a specific channel without a servo ID, create a temporary test
+        if (use_pca9685 && channel !== undefined && !servo_id) {
+            // Send direct PCA9685 channel test
+            const result = await servoClient.sendMessage({
+                type: 'test_pca9685_channel',
+                channel: parseInt(channel),
+                pulse_width: parseInt(pulse_width)
+            });
 
-        res.json({
-            success: true,
-            message: 'Pulse test executed',
-            result: result
-        });
+            res.json({
+                success: true,
+                message: `PCA9685 channel ${channel} test executed`,
+                result: result
+            });
+        } else if (servo_id) {
+            // Send direct pulse width test for existing servo
+            const result = await servoClient.sendMessage({
+                type: 'servo_test_pulse',
+                servo_id: servo_id,
+                pulse_width: parseInt(pulse_width)
+            });
+
+            res.json({
+                success: true,
+                message: 'Pulse test executed',
+                result: result
+            });
+        } else {
+            return res.status(400).json({
+                success: false,
+                message: 'Either servo_id or (channel + use_pca9685) is required'
+            });
+        }
 
     } catch (error) {
         logger.error('Error testing servo pulse:', error);

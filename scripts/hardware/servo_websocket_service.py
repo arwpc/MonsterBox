@@ -313,6 +313,8 @@ class ServoWebSocketService(BaseHardwareService):
                 response = await self.handle_servo_calibrate(message)
             elif message_type == 'servo_test_pulse':
                 response = await self.handle_servo_test_pulse(message)
+            elif message_type == 'test_pca9685_channel':
+                response = await self.handle_test_pca9685_channel(message)
             elif message_type == 'reload_configurations':
                 response = await self.handle_reload_configurations(message)
             else:
@@ -1062,6 +1064,43 @@ class ServoWebSocketService(BaseHardwareService):
             logger.error(f"Error testing servo pulse: {e}")
             return {"status": "error", "message": str(e)}
 
+    async def handle_test_pca9685_channel(self, message: Dict[str, Any]) -> Dict[str, Any]:
+        """Test a specific PCA9685 channel with pulse width"""
+        try:
+            channel = int(message.get('channel'))
+            pulse_width = int(message.get('pulse_width', 1500))
+
+            if channel < 0 or channel > 15:
+                return {"status": "error", "message": "Channel must be between 0 and 15"}
+
+            # Create a temporary servo config for testing
+            temp_config = ServoConfig(
+                servo_id=f"test_channel_{channel}",
+                character_id=0,
+                name=f"Test Channel {channel}",
+                pin=0,
+                channel=channel,
+                control_type='pca9685',
+                servo_type='Test',
+                min_pulse=500,
+                max_pulse=2500,
+                default_angle=90,
+                frequency=50
+            )
+
+            success = await self._send_pca9685_pulse(temp_config, pulse_width)
+
+            return {
+                "status": "success" if success else "error",
+                "message": f"PCA9685 channel {channel} test pulse {pulse_width}µs {'sent' if success else 'failed'}",
+                "channel": channel,
+                "pulse_width": pulse_width
+            }
+
+        except Exception as e:
+            logger.error(f"Error testing PCA9685 channel: {e}")
+            return {"status": "error", "message": str(e)}
+
     async def handle_reload_configurations(self, message: Dict[str, Any]) -> Dict[str, Any]:
         """Reload servo configurations from parts.json"""
         try:
@@ -1111,10 +1150,10 @@ class ServoWebSocketService(BaseHardwareService):
                 "servo_move", "servo_test", "servo_stop",
                 "servo_move_to_position", "servo_continuous_control",
                 "servo_extension_control", "servo_save_position",
-                "servo_get_positions", "servo_calibrate",
-                "jaw_animation_start", "jaw_animation_stop", "jaw_animation_update",
-                "get_servo_status", "get_servo_configs", "update_servo_config",
-                "reload_configurations"
+                "servo_get_positions", "servo_calibrate", "servo_test_pulse",
+                "test_pca9685_channel", "jaw_animation_start", "jaw_animation_stop",
+                "jaw_animation_update", "get_servo_status", "get_servo_configs",
+                "update_servo_config", "reload_configurations"
             ]
         })
         return capabilities
