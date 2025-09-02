@@ -704,15 +704,14 @@ app.post('/api/cache/clear',
 app.get('/api/docs', asyncHandler(async (req, res) => {
     const fs = require('fs').promises;
     const path = require('path');
-    const marked = require('marked');
 
     try {
         const docPath = path.join(__dirname, 'docs/api/api-documentation.md');
         const markdown = await fs.readFile(docPath, 'utf8');
 
         if (req.headers.accept && req.headers.accept.includes('text/html')) {
-            // Return HTML version
-            const html = marked.parse(markdown);
+            // Return minimal HTML wrapper showing markdown (no marked dependency)
+            const escaped = markdown.replace(/</g, '&lt;').replace(/>/g, '&gt;');
             const fullHtml = `
 <!DOCTYPE html>
 <html lang="en">
@@ -721,21 +720,16 @@ app.get('/api/docs', asyncHandler(async (req, res) => {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MonsterBox API Documentation</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-               line-height: 1.6; max-width: 1200px; margin: 0 auto; padding: 20px; }
-        code { background: #f4f4f4; padding: 2px 4px; border-radius: 3px; }
-        pre { background: #f4f4f4; padding: 15px; border-radius: 5px; overflow-x: auto; }
-        table { border-collapse: collapse; width: 100%; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
-        .endpoint { background: #e8f4fd; padding: 10px; border-left: 4px solid #2196F3; margin: 10px 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; max-width: 1200px; margin: 0 auto; padding: 20px; }
+        pre { background: #f4f4f4; padding: 15px; border-radius: 5px; overflow-x: auto; white-space: pre-wrap; }
     </style>
 </head>
 <body>
-    ${html}
+    <h1>MonsterBox API Documentation (Markdown)</h1>
+    <pre>${escaped}</pre>
 </body>
 </html>`;
-            res.send(fullHtml);
+            res.type('text/html').send(fullHtml);
         } else {
             // Return markdown
             res.type('text/markdown').send(markdown);
