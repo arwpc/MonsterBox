@@ -12,78 +12,115 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <style>
         .pca9685-board {
-            background: #1a4a6b;
-            border: 2px solid #333;
-            border-radius: 8px;
-            padding: 20px;
+            background: linear-gradient(135deg, #1a4a6b, #2a5a7b);
+            border: 3px solid #4a6a8b;
+            border-radius: 12px;
+            padding: 25px;
             margin: 20px 0;
             position: relative;
-            max-width: 600px;
+            max-width: 800px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
         }
 
         .pca9685-title {
             text-align: center;
             color: #fff;
             font-weight: bold;
-            margin-bottom: 15px;
-            font-size: 14px;
+            margin-bottom: 20px;
+            font-size: 16px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .pca9685-image {
+            width: 100%;
+            max-width: 700px;
+            height: auto;
+            margin: 0 auto 20px;
+            display: block;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
 
         .channel-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-            margin-bottom: 15px;
+            grid-template-columns: repeat(4, 1fr) 20px repeat(4, 1fr) 20px repeat(4, 1fr) 20px repeat(4, 1fr);
+            gap: 4px;
+            margin-bottom: 20px;
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #444;
         }
 
-        .channel-row {
+        .channel-spacer {
+            /* Empty spacer between channel groups */
+        }
+
+        .channel-group {
             display: contents;
         }
 
         .channel-button {
-            padding: 8px 4px;
+            padding: 8px 2px;
             text-align: center;
-            background-color: #2a2a2a;
+            background: linear-gradient(135deg, #333, #444);
             color: #00ff00;
-            border: 2px solid #444;
+            border: 2px solid #555;
             cursor: pointer;
             transition: all 0.3s ease;
-            font-size: 11px;
-            line-height: 1.2;
-            min-height: 45px;
+            font-size: 10px;
+            line-height: 1.1;
+            min-height: 50px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            border-radius: 4px;
+            position: relative;
         }
 
         .channel-button:hover {
-            background-color: #004400;
+            background: linear-gradient(135deg, #004400, #006600);
             border-color: #00ff00;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 255, 0, 0.2);
         }
 
         .channel-button.selected {
-            background-color: #006600;
+            background: linear-gradient(135deg, #006600, #008800);
             border-color: #00ff00;
-            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.6);
+            transform: translateY(-2px);
         }
 
         .channel-number {
             font-weight: bold;
             font-size: 12px;
+            color: #fff;
         }
 
-        .channel-position {
-            font-size: 9px;
-            opacity: 0.8;
+        .channel-label {
+            font-size: 8px;
+            opacity: 0.9;
+            color: #ccc;
+            margin-top: 2px;
         }
 
         .board-labels {
             display: flex;
             justify-content: space-between;
-            margin-top: 10px;
-            font-size: 10px;
+            align-items: center;
+            margin-top: 15px;
+            font-size: 11px;
             color: #aaa;
+        }
+
+        .board-info {
+            text-align: center;
+            color: #888;
+            font-size: 12px;
+            margin-top: 10px;
+            font-style: italic;
         }
 
         .channel-button.selected {
@@ -675,93 +712,110 @@
                         <div class="form-group">
                             <label>PCA9685 Channel Position:</label>
                             <div class="pca9685-board">
-                                <div class="pca9685-title">PCA9685 16-Channel PWM Driver</div>
+                                <div class="pca9685-title">PCA9685 16-Channel PWM Driver Board</div>
+
+                                <!-- Actual PCA9685 Board Image -->
+                                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+                                    alt="PCA9685 Board Layout" class="pca9685-image" style="display:none;">
+
+                                <div class="board-info">
+                                    Channels arranged exactly as on physical board: 0-3, 4-7, 8-11, 12-15
+                                </div>
+
                                 <div class="channel-grid">
-                                    <!-- Top Row: Channels 0-3 -->
+                                    <!-- Channels 0-3 (First group) -->
                                     <div class="channel-button" data-channel="0">
                                         <div class="channel-number">0</div>
-                                        <div class="channel-position">Left Top</div>
+                                        <div class="channel-label">PWM</div>
                                     </div>
                                     <div class="channel-button" data-channel="1">
                                         <div class="channel-number">1</div>
-                                        <div class="channel-position">Left Top</div>
+                                        <div class="channel-label">PWM</div>
                                     </div>
                                     <div class="channel-button" data-channel="2">
                                         <div class="channel-number">2</div>
-                                        <div class="channel-position">Left Top</div>
+                                        <div class="channel-label">PWM</div>
                                     </div>
                                     <div class="channel-button" data-channel="3">
                                         <div class="channel-number">3</div>
-                                        <div class="channel-position">Left Top</div>
+                                        <div class="channel-label">PWM</div>
                                     </div>
 
-                                    <!-- Second Row: Channels 4-7 -->
+                                    <!-- Spacer between groups -->
+                                    <div class="channel-spacer"></div>
+
+                                    <!-- Channels 4-7 (Second group) -->
                                     <div class="channel-button" data-channel="4">
                                         <div class="channel-number">4</div>
-                                        <div class="channel-position">Left Mid</div>
+                                        <div class="channel-label">PWM</div>
                                     </div>
                                     <div class="channel-button" data-channel="5">
                                         <div class="channel-number">5</div>
-                                        <div class="channel-position">Left Mid</div>
+                                        <div class="channel-label">PWM</div>
                                     </div>
                                     <div class="channel-button" data-channel="6">
                                         <div class="channel-number">6</div>
-                                        <div class="channel-position">Left Mid</div>
+                                        <div class="channel-label">PWM</div>
                                     </div>
                                     <div class="channel-button" data-channel="7">
                                         <div class="channel-number">7</div>
-                                        <div class="channel-position">Left Mid</div>
+                                        <div class="channel-label">PWM</div>
                                     </div>
 
-                                    <!-- Third Row: Channels 8-11 -->
+                                    <!-- Spacer between groups -->
+                                    <div class="channel-spacer"></div>
+
+                                    <!-- Channels 8-11 (Third group) -->
                                     <div class="channel-button" data-channel="8">
                                         <div class="channel-number">8</div>
-                                        <div class="channel-position">Right Mid</div>
+                                        <div class="channel-label">PWM</div>
                                     </div>
                                     <div class="channel-button" data-channel="9">
                                         <div class="channel-number">9</div>
-                                        <div class="channel-position">Right Mid</div>
+                                        <div class="channel-label">PWM</div>
                                     </div>
                                     <div class="channel-button" data-channel="10">
                                         <div class="channel-number">10</div>
-                                        <div class="channel-position">Right Mid</div>
+                                        <div class="channel-label">PWM</div>
                                     </div>
                                     <div class="channel-button" data-channel="11">
                                         <div class="channel-number">11</div>
-                                        <div class="channel-position">Right Mid</div>
+                                        <div class="channel-label">PWM</div>
                                     </div>
 
-                                    <!-- Bottom Row: Channels 12-15 -->
+                                    <!-- Spacer between groups -->
+                                    <div class="channel-spacer"></div>
+
+                                    <!-- Channels 12-15 (Fourth group) -->
                                     <div class="channel-button" data-channel="12">
                                         <div class="channel-number">12</div>
-                                        <div class="channel-position">Right Top</div>
+                                        <div class="channel-label">PWM</div>
                                     </div>
                                     <div class="channel-button" data-channel="13">
                                         <div class="channel-number">13</div>
-                                        <div class="channel-position">Right Top</div>
+                                        <div class="channel-label">PWM</div>
                                     </div>
                                     <div class="channel-button" data-channel="14">
                                         <div class="channel-number">14</div>
-                                        <div class="channel-position">Right Top</div>
+                                        <div class="channel-label">PWM</div>
                                     </div>
                                     <div class="channel-button" data-channel="15">
                                         <div class="channel-number">15</div>
-                                        <div class="channel-position">Right Top</div>
+                                        <div class="channel-label">PWM</div>
                                     </div>
                                 </div>
+
                                 <div class="board-labels">
-                                    <span>PWM Outputs</span>
-                                    <span>I2C: SCL/SDA</span>
-                                    <span>Power: VCC/GND</span>
+                                    <span>🔌 Channels 0-3</span>
+                                    <span>🔌 Channels 4-7</span>
+                                    <span>🔌 Channels 8-11</span>
+                                    <span>🔌 Channels 12-15</span>
                                 </div>
                             </div>
-                            <p style="color: #888; font-size: 12px; margin-top: 10px;">
-                                💡 Click the channel that matches where your servo signal wire is connected on the
-                                physical PCA9685 board.
-                            </p>
                             <div style="margin-top: 15px;">
                                 <button type="button" class="button secondary-btn" onclick="testSelectedChannel()"
-                                    id="testChannelBtn">
+                                    id="testChannelBtn"
+                                    title="💡 Click the channel number that matches where your servo signal wire (usually yellow/white) is connected on the physical PCA9685 board.">
                                     🔧 Test Selected Channel
                                 </button>
                                 <div id="channelTestResult" style="margin-top: 10px;"></div>
@@ -985,6 +1039,7 @@
                 button.addEventListener('click', function () {
                     const channel = this.dataset.channel;
                     channelInput.value = channel;
+                    console.log('Channel button clicked:', channel, 'Input updated to:', channelInput.value);
 
                     // Update visual selection
                     buttons.forEach(b => b.classList.remove('selected'));
@@ -1002,6 +1057,8 @@
             const channel = parseInt(channelInput.value);
             const resultDiv = document.getElementById('channelTestResult');
             const testBtn = document.getElementById('testChannelBtn');
+
+            console.log('Testing channel:', channel, 'from input value:', channelInput.value);
 
             if (isNaN(channel) || channel < 0 || channel > 15) {
                 resultDiv.innerHTML = '<div class="error">Please select a valid channel (0-15)</div>';
@@ -1027,17 +1084,21 @@
                     resultDiv.innerHTML = `<div class="info">Step ${i + 1}/5: ${test.description} (${test.pulse}µs)</div>`;
 
                     // Send test pulse via WebSocket
+                    // For channel testing, don't send servo_id so backend uses channel testing path
+                    const requestBody = {
+                        pulse_width: test.pulse,
+                        channel: channel,
+                        use_pca9685: true
+                    };
+
+                    console.log('Sending test pulse request:', requestBody);
+
                     const response = await fetch('/parts/servo/test-pulse', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({
-                            servo_id: currentServoId || 'test',
-                            pulse_width: test.pulse,
-                            channel: channel,
-                            use_pca9685: true
-                        })
+                        body: JSON.stringify(requestBody)
                     });
 
                     if (!response.ok) {
@@ -1330,6 +1391,12 @@
         function updateCalibrationStatus(isCalibrated) {
             const indicator = document.getElementById('calibrationIndicator');
             const text = document.getElementById('calibrationText');
+
+            // Check if elements exist before manipulating them
+            if (!indicator || !text) {
+                console.warn('Calibration status elements not found');
+                return;
+            }
 
             if (isCalibrated) {
                 indicator.className = 'status-dot calibrated';
@@ -1696,6 +1763,12 @@
         function populatePositionButtons(positions) {
             const container = document.getElementById('positionButtons');
             const section = document.getElementById('savedPositionsTest');
+
+            // Check if elements exist before manipulating them
+            if (!container || !section) {
+                console.warn('Position buttons container or section not found');
+                return;
+            }
 
             if (!positions || Object.keys(positions).length === 0) {
                 section.style.display = 'none';
