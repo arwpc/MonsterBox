@@ -275,12 +275,12 @@
   },
   {
     "id": 30,
-    "name": "Orloks Elbow",
+    "name": "Elbow of Orlok",
     "type": "servo",
     "characterId": 1,
     "pin": 3,
     "usePCA9685": true,
-    "channel": 2,
+    "channel": 1,
     "pca9685Settings": {
       "frequency": 50,
       "address": "0x40"
@@ -291,12 +291,17 @@
     "defaultAngle": 90,
     "mode": [
       "Standard",
-      "Continuous"
+      "Extension"
     ],
     "feedback": false,
     "controlType": [
       "PWM"
     ],
-    "customSettings": null
+    "customSettings": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "defaultAngle": 90,
+      "rotationRange": 180
+    }
   }
 ]

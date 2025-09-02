@@ -194,9 +194,10 @@ const portConfig = {
             type: 'hardware',
             tags: ['webcam', 'hardware', 'video'],
             dependencies: ['hardwareRegistry'],
-            script: 'scripts/hardware/webcam_service.py',
+            script: 'scripts/hardware/webcam_websocket_service.py',
+            disabled: true, // Temporarily disabled due to restart loop issue
             metadata: {
-                description: 'Webcam Streaming Service',
+                description: 'Webcam WebSocket Service (Disabled)',
                 protocol: 'websocket'
             }
         },

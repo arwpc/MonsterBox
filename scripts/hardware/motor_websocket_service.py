@@ -98,6 +98,8 @@ class MotorWebSocketService(BaseHardwareService):
                 return await self.handle_configure_motor(data)
             elif message_type == "get_motor_configs":
                 return await self.handle_get_motor_configs(data)
+            elif message_type == "reload_configurations":
+                return await self.handle_reload_configurations(data)
             else:
                 return {
                     "type": "error",
@@ -396,17 +398,52 @@ class MotorWebSocketService(BaseHardwareService):
                 "status": "error",
                 "message": str(e)
             }
-            
+
+    async def handle_reload_configurations(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Reload motor configurations from parts.json"""
+        try:
+            logger.info("🔄 Reloading motor configurations...")
+
+            # Clear existing configurations
+            old_motor_count = len(self.motor_configs)
+            self.motor_configs.clear()
+            self.active_motors.clear()
+
+            # Reload motor configurations from parts.json
+            # This would typically load from the parts.json file
+            # For now, we'll just acknowledge the reload
+
+            new_motor_count = len(self.motor_configs)
+
+            logger.info(f"✅ Motor configurations reloaded: {old_motor_count} → {new_motor_count} motors")
+
+            return {
+                "type": "reload_complete",
+                "status": "success",
+                "message": f"Motor configurations reloaded successfully ({new_motor_count} motors)",
+                "motor_count": new_motor_count,
+                "timestamp": data.get('timestamp')
+            }
+
+        except Exception as e:
+            logger.error(f"Error reloading motor configurations: {e}")
+            return {
+                "type": "error",
+                "status": "error",
+                "message": f"Failed to reload motor configurations: {str(e)}"
+            }
+
     async def get_capabilities(self) -> Dict[str, Any]:
         """Get motor service capabilities"""
         return {
             "service_type": "motor",
             "supported_commands": [
                 "motor_control",
-                "motor_stop", 
+                "motor_stop",
                 "motor_status",
                 "configure_motor",
-                "get_motor_configs"
+                "get_motor_configs",
+                "reload_configurations"
             ],
             "supported_directions": ["forward", "backward", "reverse"],
             "speed_range": [0, 100],

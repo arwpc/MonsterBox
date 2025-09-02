@@ -1,9 +1,98 @@
 const fs = require('fs').promises;
 const path = require('path');
 const logger = require('../scripts/logger');
+const WebSocket = require('ws');
 
 const dataPath = path.join(__dirname, '../data/parts.json');
 const headTrackingDataPath = path.join(__dirname, '../data/head_tracking.json');
+
+// Hardware WebSocket service configuration
+// Using hardware port range 8400-8599 to match service management system
+const HARDWARE_SERVICES = {
+    servo: { port: 8404, host: 'localhost', partTypes: ['servo'] },
+    motor: { port: 8405, host: 'localhost', partTypes: ['motor'] },
+    light: { port: 8406, host: 'localhost', partTypes: ['light', 'led'] },
+    sensor: { port: 8407, host: 'localhost', partTypes: ['sensor'] },
+    actuator: { port: 8408, host: 'localhost', partTypes: ['linear-actuator'] },
+    microphone: { port: 8409, host: 'localhost', partTypes: ['microphone'] },
+    webcam: { port: 8410, host: 'localhost', partTypes: ['webcam'] },
+    head_tracking: { port: 8411, host: 'localhost', partTypes: ['head-tracking'] }
+};
+
+/**
+ * Notify hardware WebSocket service to reload configurations
+ */
+const notifyHardwareServiceReload = async (serviceName, serviceConfig) => {
+    try {
+        const ws = new WebSocket(`ws://${serviceConfig.host}:${serviceConfig.port}`);
+
+        ws.on('open', () => {
+            logger.info(`🔄 Notifying ${serviceName} service to reload configurations...`);
+            const message = {
+                type: 'reload_configurations',
+                timestamp: new Date().toISOString()
+            };
+            ws.send(JSON.stringify(message));
+
+            // Close connection after sending message
+            setTimeout(() => {
+                ws.close();
+            }, 1000);
+        });
+
+        ws.on('message', (data) => {
+            try {
+                const response = JSON.parse(data.toString());
+                if (response.type === 'reload_complete') {
+                    logger.info(`✅ ${serviceName} service configurations reloaded successfully`);
+                } else if (response.type === 'error') {
+                    logger.error(`❌ ${serviceName} service reload failed:`, response.message);
+                }
+            } catch (e) {
+                logger.debug(`${serviceName} service response:`, data.toString());
+            }
+        });
+
+        ws.on('error', (error) => {
+            logger.warn(`⚠️ Could not notify ${serviceName} service (service may not be running):`, error.message);
+        });
+
+        ws.on('close', () => {
+            logger.debug(`🔌 ${serviceName} service notification connection closed`);
+        });
+
+    } catch (error) {
+        logger.warn(`⚠️ Could not notify ${serviceName} service:`, error.message);
+    }
+};
+
+/**
+ * Notify all relevant hardware services when parts are modified
+ */
+const notifyHardwareServicesReload = async (partType, oldPartType = null) => {
+    const affectedServices = new Set();
+
+    // Find services that handle this part type
+    for (const [serviceName, serviceConfig] of Object.entries(HARDWARE_SERVICES)) {
+        if (serviceConfig.partTypes.includes(partType)) {
+            affectedServices.add(serviceName);
+        }
+        // Also check old part type for updates
+        if (oldPartType && serviceConfig.partTypes.includes(oldPartType)) {
+            affectedServices.add(serviceName);
+        }
+    }
+
+    // Notify all affected services
+    const notifications = Array.from(affectedServices).map(serviceName =>
+        notifyHardwareServiceReload(serviceName, HARDWARE_SERVICES[serviceName])
+    );
+
+    if (notifications.length > 0) {
+        logger.info(`🔄 Notifying ${notifications.length} hardware service(s) for part type: ${partType}`);
+        await Promise.all(notifications);
+    }
+};
 
 const getAllParts = async () => {
     try {
@@ -111,6 +200,10 @@ const createPart = async (partData) => {
     parts.push(newPart);
     await fs.writeFile(dataPath, JSON.stringify(parts, null, 2));
     logger.info('Created new part:', newPart);
+
+    // Notify relevant hardware services
+    await notifyHardwareServicesReload(newPart.type);
+
     return newPart;
 };
 
@@ -130,6 +223,7 @@ const updatePart = async (id, partData) => {
         logger.warn(`Part not found with id: ${id}`);
         return null;
     }
+    const oldPart = parts[index];
     parts[index] = {
         ...parts[index],
         ...partData,
@@ -138,6 +232,10 @@ const updatePart = async (id, partData) => {
     };
     await fs.writeFile(dataPath, JSON.stringify(parts, null, 2));
     logger.info('Updated part:', parts[index]);
+
+    // Notify relevant hardware services (both old and new part types)
+    await notifyHardwareServicesReload(parts[index].type, oldPart.type);
+
     return parts[index];
 };
 
@@ -163,6 +261,10 @@ const deletePart = async (id) => {
     await fs.writeFile(dataPath, JSON.stringify(parts, null, 2));
     logger.info(`Part with ID ${id} deleted successfully`);
     logger.debug(`All parts after deletion: ${JSON.stringify(parts)}`);
+
+    // Notify relevant hardware services
+    await notifyHardwareServicesReload(deletedPart.type);
+
     return true;
 };
 

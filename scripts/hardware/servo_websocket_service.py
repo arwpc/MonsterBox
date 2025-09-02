@@ -313,6 +313,8 @@ class ServoWebSocketService(BaseHardwareService):
                 response = await self.handle_servo_calibrate(message)
             elif message_type == 'servo_test_pulse':
                 response = await self.handle_servo_test_pulse(message)
+            elif message_type == 'reload_configurations':
+                response = await self.handle_reload_configurations(message)
             else:
                 response = {"status": "error", "message": f"Unknown message type: {message_type}"}
 
@@ -1060,6 +1062,43 @@ class ServoWebSocketService(BaseHardwareService):
             logger.error(f"Error testing servo pulse: {e}")
             return {"status": "error", "message": str(e)}
 
+    async def handle_reload_configurations(self, message: Dict[str, Any]) -> Dict[str, Any]:
+        """Reload servo configurations from parts.json"""
+        try:
+            logger.info("🔄 Reloading servo configurations...")
+
+            # Clear existing configurations
+            old_servo_count = len(self.servo_configs)
+            self.servo_configs.clear()
+            self.servo_states.clear()
+            self.jaw_animation_configs.clear()
+            self.continuous_servo_positions.clear()
+
+            # Reload all configurations
+            await self.load_servo_configurations()
+            await self.load_jaw_animation_configurations()
+            await self.load_servo_calibrations()
+
+            new_servo_count = len(self.servo_configs)
+
+            logger.info(f"✅ Servo configurations reloaded: {old_servo_count} → {new_servo_count} servos")
+
+            return {
+                "type": "reload_complete",
+                "status": "success",
+                "message": f"Configurations reloaded successfully ({new_servo_count} servos)",
+                "servo_count": new_servo_count,
+                "timestamp": message.get('timestamp')
+            }
+
+        except Exception as e:
+            logger.error(f"Error reloading configurations: {e}")
+            return {
+                "type": "error",
+                "status": "error",
+                "message": f"Failed to reload configurations: {str(e)}"
+            }
+
     async def get_capabilities(self):
         """Get service capabilities"""
         capabilities = self.capabilities.copy()
@@ -1074,7 +1113,8 @@ class ServoWebSocketService(BaseHardwareService):
                 "servo_extension_control", "servo_save_position",
                 "servo_get_positions", "servo_calibrate",
                 "jaw_animation_start", "jaw_animation_stop", "jaw_animation_update",
-                "get_servo_status", "get_servo_configs", "update_servo_config"
+                "get_servo_status", "get_servo_configs", "update_servo_config",
+                "reload_configurations"
             ]
         })
         return capabilities

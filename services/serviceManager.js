@@ -23,7 +23,7 @@ class ServiceManager {
             },
             microphone: {
                 name: 'Microphone WebSocket Service',
-                port: 8776,
+                port: 8409,
                 script: 'scripts/hardware/microphone_websocket_service.py',
                 type: 'python',
                 critical: true
