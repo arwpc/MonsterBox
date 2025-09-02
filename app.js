@@ -26,7 +26,7 @@ process.env.NODE_NO_WARNINGS = '1';
 
 let express, path, http, https, logger, app, server, httpsServer, port, audioStream, soundController, fs, os, session;
 let videoStream; // <-- Add videoStream variable
-let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, webcamRoutes, voiceRoutes, cleanupRoutes, healthRoutes, authRoutes, sshRoutes, aiConfigRoutes, aiManagementRoutes, configRoutes, headTrackingRoutes, conversationalAiRoutes;
+let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, webcamRoutes, voiceRoutes, cleanupRoutes, healthRoutes, authRoutes, sshRoutes, aiConfigRoutes, aiManagementRoutes, configRoutes, headTrackingRoutes, conversationalAiRoutes, superPowersRoutes;
 let characterService;
 let authMiddleware, rbacMiddleware;
 
@@ -127,6 +127,9 @@ try {
 
     // Import ElevenLabs Conversational AI routes
     conversationalAiRoutes = require('./routes/conversationalAiRoutes');
+
+    // Super Powers routes
+    superPowersRoutes = require('./routes/superPowersRoutes');
 
 
 
@@ -344,6 +347,7 @@ app.use('/api/hardware/head-tracking', require('./routes/api/headTrackingApiRout
 app.use('/api/character-audio-config', require('./routes/api/characterAudioConfigRoutes'));
 app.use('/api/system', require('./routes/api/systemApiRoutes'));
 app.use('/api/service-management', require('./routes/serviceManagementRoutes'));
+app.use('/api/super-powers', require('./routes/api/superPowersApiRoutes'));
 
 // SSH Key Management routes
 app.use('/key-management', keyManagementRoutes);
@@ -473,6 +477,7 @@ app.use('/api/logs', require('./routes/browserErrorRoutes'));
 app.use('/ai-config', aiConfigRoutes);
 app.use('/ai-management', aiManagementRoutes);
 app.use('/api/ai', aiManagementRoutes);
+app.use('/super-powers', superPowersRoutes);
 
 // ElevenLabs Conversational AI routes
 app.use('/api/conversational-ai', conversationalAiRoutes);
@@ -1112,6 +1117,24 @@ async function initializeConversationalAIServices() {
                 serviceName: 'ElevenLabs Conversational'
             });
             await elevenLabsWebSocketProxy.start();
+
+        // Initialize Super Powers services
+        try {
+            const { getSuperPowersService } = require('./services/superPowersService');
+            const { getJawAnimationService } = require('./services/jawAnimationService');
+            const superPowersService = getSuperPowersService();
+            await superPowersService.initialize();
+            const jawSvc = getJawAnimationService();
+            await jawSvc.initialize();
+            // Attach to ElevenLabs now that it's initialized
+            if (global.elevenLabsService) {
+                jawSvc.attachToElevenLabs(global.elevenLabsService);
+            }
+            global.jawAnimationService = jawSvc;
+            logger.info('🧬 Super Powers (Jaw Animation) initialized');
+        } catch (e) {
+            logger.warn('⚠️ Super Powers services failed to init:', e.message);
+        }
 
             // Make proxy globally available
             global.elevenLabsWebSocketProxy = elevenLabsWebSocketProxy;

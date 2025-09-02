@@ -389,12 +389,25 @@ class ElevenLabsConversationalService extends EventEmitter {
     async startConversation(sessionId, characterId) {
         try {
             console.log(`🎭 Starting conversation for session ${sessionId} with character ${characterId}`);
-            
+
             const connection = this.activeConnections.get(sessionId);
             const agent = this.agents.get(parseInt(characterId));
-            
+
             if (!connection || !agent) {
                 throw new Error(`Invalid session or character: ${sessionId}, ${characterId}`);
+            }
+
+            // If a previous ElevenLabs connection exists for this session, close it first
+            if (connection.elevenLabsWs && connection.elevenLabsWs.readyState === WebSocket.OPEN) {
+                try {
+                    console.log(`🔄 Closing existing ElevenLabs connection for session ${sessionId} before starting new one`);
+                    connection.elevenLabsWs.close();
+                } catch (closeErr) {
+                    console.warn(`⚠️ Error closing previous ElevenLabs connection for ${sessionId}:`, closeErr.message);
+                } finally {
+                    connection.elevenLabsWs = null;
+                    connection.isActive = false;
+                }
             }
 
             // Check if API key is available
@@ -403,7 +416,7 @@ class ElevenLabsConversationalService extends EventEmitter {
                 this.startMockConversation(sessionId, agent);
                 return;
             }
-            
+
             // Get signed URL for ElevenLabs WebSocket
             const signedUrlResponse = await fetch(
                 `${this.baseURL}/convai/conversation/get-signed-url?agent_id=${agent.agentId}`,
@@ -412,16 +425,16 @@ class ElevenLabsConversationalService extends EventEmitter {
                     headers: this.headers
                 }
             );
-            
+
             if (!signedUrlResponse.ok) {
                 throw new Error(`Failed to get signed URL: HTTP ${signedUrlResponse.status}`);
             }
-            
+
             const { signed_url } = await signedUrlResponse.json();
-            
+
             // Connect to ElevenLabs WebSocket
             const elevenLabsWs = new WebSocket(signed_url);
-            
+
             elevenLabsWs.on('open', () => {
                 console.log(`✅ Connected to ElevenLabs agent: ${agent.name}`);
                 connection.elevenLabsWs = elevenLabsWs;
@@ -447,17 +460,17 @@ class ElevenLabsConversationalService extends EventEmitter {
                     characterName: agent.name
                 });
             });
-            
+
             elevenLabsWs.on('message', (data) => {
                 this.handleElevenLabsMessage(sessionId, data);
             });
-            
+
             elevenLabsWs.on('close', () => {
                 console.log(`🔌 ElevenLabs connection closed for session ${sessionId}`);
                 connection.elevenLabsWs = null;
                 connection.isActive = false;
             });
-            
+
             elevenLabsWs.on('error', (error) => {
                 console.error(`❌ ElevenLabs WebSocket error for ${sessionId}:`, error.message);
                 this.sendToClient(sessionId, {
@@ -465,7 +478,7 @@ class ElevenLabsConversationalService extends EventEmitter {
                     message: 'ElevenLabs connection error'
                 });
             });
-            
+
         } catch (error) {
             console.error(`❌ Failed to start conversation for ${sessionId}:`, error.message);
             console.error(`❌ Full error details:`, error);
@@ -540,6 +553,8 @@ class ElevenLabsConversationalService extends EventEmitter {
                         text: message.user_transcription_event.user_transcript,
                         role: 'user'
                     });
+                    // Emit internal transcript event for Super Powers consumers
+                    try { this.emit('transcript', { sessionId, characterId: connection.characterId, role: 'user', text: message.user_transcription_event.user_transcript }); } catch (e) {}
                     break;
 
                 case 'agent_response':
@@ -549,6 +564,8 @@ class ElevenLabsConversationalService extends EventEmitter {
                         text: message.agent_response_event.agent_response,
                         role: 'assistant'
                     });
+                    // Emit internal transcript event for Super Powers consumers
+                    try { this.emit('transcript', { sessionId, characterId: connection.characterId, role: 'assistant', text: message.agent_response_event.agent_response }); } catch (e) {}
                     break;
 
                 case 'agent_response_correction':
@@ -558,6 +575,8 @@ class ElevenLabsConversationalService extends EventEmitter {
                         text: message.agent_response_correction_event.corrected_agent_response,
                         role: 'assistant'
                     });
+                    // Emit internal transcript event for Super Powers consumers
+                    try { this.emit('transcript', { sessionId, characterId: connection.characterId, role: 'assistant', text: message.agent_response_correction_event.corrected_agent_response }); } catch (e) {}
                     break;
 
                 case 'ping':
@@ -568,6 +587,8 @@ class ElevenLabsConversationalService extends EventEmitter {
                 case 'conversation_initiation_metadata':
                     // Handle conversation initialization metadata
                     console.log(`🎯 Conversation initialized for session ${sessionId}:`, message.conversation_initiation_metadata_event);
+                    // Store audio format on connection for downstream consumers (jaw animation, etc.)
+                    connection.audioFormat = message.conversation_initiation_metadata_event.agent_output_audio_format;
                     this.sendToClient(sessionId, {
                         type: 'conversation_metadata',
                         conversationId: message.conversation_initiation_metadata_event.conversation_id,
@@ -654,21 +675,34 @@ class ElevenLabsConversationalService extends EventEmitter {
      */
     triggerJawAnimation(sessionId, audioBase64) {
         try {
-            // Send audio data to jaw animation service (port 8765)
+            // Determine character for this session if available
+            const connection = this.activeConnections ? this.activeConnections.get(sessionId) : null;
+            const characterId = connection && connection.characterId ? connection.characterId : null;
+
+            // Package audio data for jaw animation consumers
             const jawAnimationMessage = {
                 type: 'audio_data',
                 sessionId,
+                characterId,
                 audioData: audioBase64,
-                format: 'base64'
+                format: 'base64',
+                audioFormat: connection && connection.audioFormat ? connection.audioFormat : null
             };
-            
-            // Broadcast to jaw animation clients
+
+            // Emit internal event so other services (jawAnimationService) can forward/process
+            try {
+                this.emit('jaw_audio', jawAnimationMessage);
+            } catch (e) {
+                // Non-fatal
+            }
+
+            // Broadcast to any clients directly registered on this service (legacy path)
             this.jawAnimationClients.forEach(client => {
                 if (client.readyState === WebSocket.OPEN) {
                     client.send(JSON.stringify(jawAnimationMessage));
                 }
             });
-            
+
         } catch (error) {
             console.error(`❌ Error triggering jaw animation for ${sessionId}:`, error.message);
         }

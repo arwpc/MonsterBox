@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastUpdated": "2025-08-30T20:27:08.887Z",
+  "lastUpdated": "2025-09-02T23:40:16.935Z",
   "characters": {
     "1": {
       "characterId": 1,
@@ -98,6 +98,16 @@
           "prefixPadding": 300,
           "provider": "elevenlabs",
           "lastModified": "2025-08-27T20:00:48.527Z"
+        },
+        "33": {
+          "language": "en",
+          "confidenceThreshold": 0.6,
+          "realTimeProcessing": true,
+          "vadThreshold": 0.5,
+          "silenceDuration": 300,
+          "prefixPadding": 300,
+          "provider": "elevenlabs",
+          "lastModified": "2025-09-02T23:40:16.933Z"
         }
       },
       "jawAnimation": {
@@ -124,7 +134,7 @@
         "contextAwareness": true,
         "personalityAdjustments": true
       },
-      "lastModified": "2025-08-30T20:27:08.887Z"
+      "lastModified": "2025-09-02T23:40:16.935Z"
     }
   }
 }

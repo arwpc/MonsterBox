@@ -13,7 +13,7 @@ class EnhancedTestChat {
             assistants: options.assistants || {},
             ...options
         };
-        
+
         // State management
         this.currentCharacter = null;
         this.isElevenLabsActive = false;
@@ -33,13 +33,13 @@ class EnhancedTestChat {
             voiceOutput: null,
             processingTime: null // Total processing time for complete pipeline
         };
-        
+
         // Initialize the interface
         this.initializeElements();
         this.setupEventListeners();
         this.initializeInterface();
     }
-    
+
     /**
      * Initialize DOM elements
      */
@@ -47,7 +47,7 @@ class EnhancedTestChat {
         // Character selection
         this.characterSelect = document.getElementById('characterSelect');
         this.assistantDisplay = document.getElementById('assistantDisplay');
-        
+
         // Voice controls
         this.elevenLabsToggle = document.getElementById('elevenLabsToggle');
         this.ttsToggle = document.getElementById('ttsToggle');
@@ -55,12 +55,15 @@ class EnhancedTestChat {
         this.sttStatus = document.getElementById('sttStatus');
         this.ttsStatus = document.getElementById('ttsStatus');
         this.liveModeStatus = document.getElementById('liveModeStatus');
-        
+
+        this.jawToggle = document.getElementById('jawToggle');
+        this.jawStatus = document.getElementById('jawStatus');
+
         // Chat interface
         this.chatMessages = document.getElementById('chatMessages');
         this.chatInput = document.getElementById('chatInput');
         this.sendButton = document.getElementById('sendButton');
-        
+
         // Status and metrics
         this.connectionStatus = document.getElementById('connectionStatus');
         this.voiceInputTime = document.getElementById('voiceInputTime');
@@ -76,7 +79,7 @@ class EnhancedTestChat {
         this.prefixPaddingInline = document.getElementById('prefixPaddingInline');
         this.saveInlineSTT = document.getElementById('saveInlineSTT');
     }
-    
+
     /**
      * Setup event listeners
      */
@@ -85,7 +88,7 @@ class EnhancedTestChat {
         this.characterSelect.addEventListener('change', (e) => {
             this.handleCharacterSelection(e.target.value);
         });
-        
+
         // Voice controls
         this.elevenLabsToggle.addEventListener('click', () => {
             this.toggleElevenLabs();
@@ -98,19 +101,23 @@ class EnhancedTestChat {
         this.liveModeToggle.addEventListener('click', () => {
             this.toggleLiveMode();
         });
-        
+
+        if (this.jawToggle) {
+            this.jawToggle.addEventListener('click', () => this.toggleJawAnimation());
+        }
+
         // Chat input
         this.chatInput.addEventListener('input', () => {
             this.updateSendButton();
         });
-        
+
         this.chatInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 this.sendMessage();
             }
         });
-        
+
         this.sendButton.addEventListener('click', () => {
             this.sendMessage();
         });
@@ -121,7 +128,7 @@ class EnhancedTestChat {
             this.saveInlineSTT.title = 'Save and apply these STT settings immediately';
         }
     }
-    
+
     /**
      * Save inline STT settings (per character) and apply immediately
      */
@@ -287,6 +294,9 @@ class EnhancedTestChat {
 
             this.updateConnectionStatus('connected', 'Ready');
             console.log('✅ Enhanced Test Chat initialized');
+
+        // Initialize jaw toggle status
+        this.refreshJawStatus().catch(() => {});
 
         } catch (error) {
             console.error('❌ Failed to initialize Enhanced Test Chat:', error);
@@ -468,6 +478,13 @@ class EnhancedTestChat {
             case 'transcript':
                 // Unified transcript handling for both user and assistant
                 this.handleTranscript({ role: message.role, text: message.text });
+                // If this is the assistant's reply to our typed message, clear typing and unlock UI
+                if ((message.role === 'assistant' || message.role === 'bot') && this.pendingMessage) {
+                    if (this.pendingMessage.typingId) {
+                        this.removeTypingIndicator(this.pendingMessage.typingId);
+                    }
+                    this.handleMessageComplete();
+                }
                 break;
 
             case 'audio':
@@ -497,6 +514,13 @@ class EnhancedTestChat {
                     this.addMessage('bot', message.agent_response_event.agent_response, {
                         characterName: this.currentCharacter ? this.currentCharacter.name : 'AI Assistant'
                     });
+                    // Clear typing and unlock UI for typed message flow
+                    if (this.pendingMessage) {
+                        if (this.pendingMessage.typingId) {
+                            this.removeTypingIndicator(this.pendingMessage.typingId);
+                        }
+                        this.handleMessageComplete();
+                    }
                 }
                 break;
 
@@ -513,6 +537,11 @@ class EnhancedTestChat {
                     characterName: 'System',
                     isInfo: true
                 });
+                // Ensure UI is unlocked if a message was in-flight
+                if (this.pendingMessage) {
+                    if (this.pendingMessage.typingId) this.removeTypingIndicator(this.pendingMessage.typingId);
+                    this.handleMessageComplete();
+                }
                 break;
 
             case 'error':
@@ -679,25 +708,15 @@ class EnhancedTestChat {
             console.log('🔊 Processing ElevenLabs audio response...');
             // Mark start of output metric at first arrival of audio
             this.voiceOutputStartTime = this.voiceOutputStartTime || Date.now();
-
-            // Convert base64 to audio blob
-            const audioData = atob(base64Audio);
-            const audioArray = new Uint8Array(audioData.length);
-            for (let i = 0; i < audioData.length; i++) {
-                audioArray[i] = audioData.charCodeAt(i);
-            }
-
-            const audioBlob = new Blob([audioArray], { type: 'audio/wav' });
-            const audioUrl = URL.createObjectURL(audioBlob);
-
-            // Play the audio
-            const audio = new Audio(audioUrl);
-            audio.play();
-
-            console.log('✅ ElevenLabs audio played successfully');
-
+            // Reuse unified audio playback path with proper cleanup and completion handling
+            await this.playAudioFromBase64(base64Audio);
         } catch (error) {
             console.error('❌ Error playing ElevenLabs audio:', error);
+            // Ensure UI doesn't remain locked on audio failure
+            if (this.pendingMessage) {
+                if (this.pendingMessage.typingId) this.removeTypingIndicator(this.pendingMessage.typingId);
+                this.handleMessageComplete();
+            }
         }
     }
 
@@ -710,6 +729,49 @@ class EnhancedTestChat {
         this.updateConnectionStatus('connected', 'Ready');
         this.updateSendButton();
     }
+
+    /**
+     * Reset state safely when switching characters
+     */
+    async resetForCharacterSwitch() {
+        try {
+            // Stop Live Mode if active
+            if (this.isLiveModeActive) {
+                await this.stopLiveMode();
+            }
+
+            // Politely request server to stop current conversation
+            try {
+                const ws = this.elevenLabsConversationWs || this.elevenLabsWs;
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ type: 'stop_conversation' }));
+                }
+            } catch (e) {
+                console.warn('⚠️ stop_conversation send failed (safe to ignore):', e.message);
+            }
+
+            // Stop any audio playback
+            if (typeof this.stopCurrentAudio === 'function') {
+                this.stopCurrentAudio();
+            }
+
+            // Remove typing indicator
+            if (this.pendingMessage && this.pendingMessage.typingId) {
+                this.removeTypingIndicator(this.pendingMessage.typingId);
+            }
+
+            // Clear processing flags
+            this.isProcessing = false;
+            this.pendingMessage = null;
+
+            // Update UI controls
+            this.updateSendButton();
+            this.updateConnectionStatus('connected', 'Ready');
+        } catch (err) {
+            console.warn('⚠️ Error during resetForCharacterSwitch:', err);
+        }
+    }
+
 
     /**
      * Start ElevenLabs conversation
@@ -809,7 +871,7 @@ class EnhancedTestChat {
             checkConnection();
         });
     }
-    
+
     /**
      * Handle character selection
      */
@@ -822,9 +884,9 @@ class EnhancedTestChat {
                 this.updateSendButton();
                 return;
             }
-            
+
             this.updateConnectionStatus('processing', 'Loading character...');
-            
+
             // Find character in local data first
             const character = this.config.characters.find(c => c.id == characterId);
             if (character) {
@@ -850,6 +912,7 @@ class EnhancedTestChat {
                 this.assistantDisplay.value = displayText;
 
                 // Start ElevenLabs conversation if agent is available, or try anyway for testing
+                await this.resetForCharacterSwitch();
                 if (this.config.agentId || character.elevenLabsAgentId || this.elevenLabsWs) {
                     await this.startElevenLabsConversation(character);
                 } else if (character.openaiAssistantId) {
@@ -863,7 +926,7 @@ class EnhancedTestChat {
                     });
                 }
             }
-            
+
             // Fetch detailed configuration
             console.log(`🔍 Fetching character config for ID: ${characterId}`);
             const response = await fetch(`${this.config.apiBaseUrl}/character/${characterId}/config`);
@@ -877,10 +940,13 @@ class EnhancedTestChat {
             } else {
                 console.warn(`⚠️ Character config fetch failed:`, data);
             }
-            
+
             this.updateSendButton();
             this.updateConnectionStatus('connected', 'Ready');
-            
+
+            // Refresh jaw status when character changes
+            await this.refreshJawStatus().catch(() => {});
+
         } catch (error) {
             console.error('❌ Error selecting character:', error);
 
@@ -898,7 +964,7 @@ class EnhancedTestChat {
             this.updateConnectionStatus('disconnected', 'Character load failed');
         }
     }
-    
+
     /**
      * Load character greeting message
      */
@@ -934,7 +1000,7 @@ class EnhancedTestChat {
             console.warn('⚠️ Could not load character greeting:', error);
         }
     }
-    
+
     /**
      * Toggle Speech-to-Text
      */
@@ -961,7 +1027,7 @@ class EnhancedTestChat {
             this.updateSTTStatus(false, 'Error');
         }
     }
-    
+
     /**
      * Start Speech-to-Text
      */
@@ -1033,7 +1099,7 @@ class EnhancedTestChat {
             throw error;
         }
     }
-    
+
     /**
      * Stop Speech-to-Text
      */
@@ -1064,7 +1130,7 @@ class EnhancedTestChat {
             throw error;
         }
     }
-    
+
     /**
      * Process STT audio data
      */
@@ -1119,7 +1185,7 @@ class EnhancedTestChat {
 
             const data = await response.json();
             const sttTime = Date.now() - startTime;
-            
+
             if (data.success && data.data.stt && data.data.stt.text) {
                 // Update input with transcribed text
                 this.chatInput.value = data.data.stt.text;
@@ -1142,7 +1208,7 @@ class EnhancedTestChat {
             }
 
             this.updateSTTStatus(false, 'OFF');
-            
+
         } catch (error) {
             console.error('❌ Error processing STT audio:', error);
             this.updateSTTStatus(false, 'Error');
@@ -1154,7 +1220,7 @@ class EnhancedTestChat {
             });
         }
     }
-    
+
     /**
      * Toggle ElevenLabs Voice
      */
@@ -2038,6 +2104,11 @@ class EnhancedTestChat {
                         if (start) {
                             this.updatePerformanceMetric('tts', end - start);
                         }
+                        // If a typed message was awaiting completion, finish it now
+                        if (this.pendingMessage) {
+                            if (this.pendingMessage.typingId) this.removeTypingIndicator(this.pendingMessage.typingId);
+                            this.handleMessageComplete();
+                        }
                     } finally {
                         this.voiceOutputStartTime = null;
                         // revoke any blob URL already done above
@@ -2067,6 +2138,11 @@ class EnhancedTestChat {
                             if (start) {
                                 this.updatePerformanceMetric('tts', end - start);
                             }
+                            // If a typed message was awaiting completion, finish it now
+                            if (this.pendingMessage) {
+                                if (this.pendingMessage.typingId) this.removeTypingIndicator(this.pendingMessage.typingId);
+                                this.handleMessageComplete();
+                            }
                         } finally {
                             if (this.currentAudio?._blobUrl) {
                                 URL.revokeObjectURL(this.currentAudio._blobUrl);
@@ -2083,6 +2159,11 @@ class EnhancedTestChat {
                         }
                         this.currentAudio = null;
                         this.fallbackToExistingTTS();
+                        // Also unlock UI so user can continue
+                        if (this.pendingMessage) {
+                            if (this.pendingMessage.typingId) this.removeTypingIndicator(this.pendingMessage.typingId);
+                            this.handleMessageComplete();
+                        }
                     };
 
                     this.currentAudio.onloadeddata = () => {
@@ -2101,6 +2182,10 @@ class EnhancedTestChat {
         } catch (error) {
             console.error('❌ Error playing audio from base64:', error);
             this.fallbackToExistingTTS();
+            if (this.pendingMessage) {
+                if (this.pendingMessage.typingId) this.removeTypingIndicator(this.pendingMessage.typingId);
+                this.handleMessageComplete();
+            }
         }
     }
 
@@ -2718,7 +2803,7 @@ class EnhancedTestChat {
 
             // Update performance metrics
             this.performanceMetrics.voiceInput = Date.now() - startTime;
-            
+
         } catch (error) {
             console.error('❌ Error sending message:', error);
             this.addMessage('bot', 'Connection error. Please try again.', {
@@ -2919,6 +3004,67 @@ class EnhancedTestChat {
         }
 
         console.log('🎤 Microphone level indicator stopped');
+    }
+
+    async refreshJawStatus() {
+        try {
+            if (!this.currentCharacter) {
+                this.setJawUI(false);
+                return;
+            }
+            const resp = await fetch(`/api/super-powers/jaw-animation/${this.currentCharacter.id}`);
+            const json = await resp.json();
+            const enabled = !!(json && json.config && json.config.enabled);
+            this.setJawUI(enabled);
+        } catch (e) {
+            this.setJawUI(false);
+        }
+    }
+
+    setJawUI(enabled) {
+        if (!this.jawToggle || !this.jawStatus) return;
+        if (enabled) {
+            this.jawToggle.classList.add('active');
+            this.jawStatus.textContent = 'ON';
+        } else {
+            this.jawToggle.classList.remove('active');
+            this.jawStatus.textContent = 'OFF';
+        }
+    }
+
+    async toggleJawAnimation() {
+        try {
+            if (!this.currentCharacter) {
+                alert('Please select a character first');
+                return;
+            }
+            // Fetch existing to preserve servo/angles
+            const current = await fetch(`/api/super-powers/jaw-animation/${this.currentCharacter.id}`).then(r => r.json()).catch(() => ({}));
+            const cfg = (current && current.config) || {};
+            const payload = {
+                enabled: !(cfg.enabled),
+                servoPartId: cfg.servoPartId || null,
+                minAngle: cfg.minAngle != null ? cfg.minAngle : 60,
+                maxAngle: cfg.maxAngle != null ? cfg.maxAngle : 120,
+                smoothing: cfg.smoothing != null ? cfg.smoothing : 0.6,
+                sensitivity: cfg.sensitivity != null ? cfg.sensitivity : 1.0
+            };
+            const res = await fetch(`/api/super-powers/jaw-animation/${this.currentCharacter.id}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const json = await res.json();
+            const enabled = !!(json && json.config && json.config.enabled);
+            this.setJawUI(enabled);
+            this.addMessage('system', `Jaw Animation ${enabled ? 'enabled' : 'disabled'}.`, {
+                characterName: 'System',
+                isInfo: true
+            });
+        } catch (err) {
+            console.error('Jaw toggle error', err);
+            this.addMessage('system', `Error toggling Jaw Animation: ${err.message}`, { characterName: 'System', isError: true });
+        }
     }
 
     /**

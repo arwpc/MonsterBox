@@ -128,30 +128,6 @@
     "createdAt": "2025-06-22T12:00:00.000Z"
   },
   {
-    "id": 23,
-    "name": "Jaw Servo",
-    "type": "servo",
-    "characterId": 4,
-    "pin": 18,
-    "usePCA9685": false,
-    "channel": null,
-    "servoType": "Miuzei MG90S",
-    "minPulse": 500,
-    "maxPulse": 2400,
-    "defaultAngle": 50,
-    "minAngle": 30,
-    "maxAngle": 50,
-    "mode": [
-      "Standard"
-    ],
-    "feedback": false,
-    "controlType": [
-      "PWM"
-    ],
-    "createdAt": "2025-06-24T01:27:31.334Z",
-    "description": "Servo for character animation - GPIO 18, 30°=open, 50°=closed"
-  },
-  {
     "id": 24,
     "name": "Character Microphone",
     "type": "microphone",
@@ -324,5 +300,54 @@
       "PWM"
     ],
     "customSettings": null
+  },
+  {
+    "id": 32,
+    "name": "Skull Talking Jaw",
+    "type": "servo",
+    "characterId": 4,
+    "pin": 18,
+    "usePCA9685": false,
+    "channel": null,
+    "pca9685Settings": null,
+    "servoType": "Miuzei MG90S",
+    "minPulse": 500,
+    "maxPulse": 2400,
+    "defaultAngle": 90,
+    "mode": [
+      "Standard"
+    ],
+    "feedback": false,
+    "controlType": [
+      "PWM"
+    ],
+    "customSettings": null
+  },
+  {
+    "id": 33,
+    "characterId": 1,
+    "name": "Ears of the Skull",
+    "type": "microphone",
+    "directionPin": "",
+    "pwmPin": "",
+    "gpioPin": [
+      "",
+      "",
+      "",
+      ""
+    ],
+    "sensorType": "motion",
+    "duration": "",
+    "pwmFrequency": "",
+    "dutyCycle": "",
+    "deviceId": "hw:1,0",
+    "sampleRate": "16000",
+    "channels": "1",
+    "sensitivity": "2.7",
+    "echoCancellation": "on",
+    "noiseSuppression": "on",
+    "autoGainControl": "on",
+    "voiceActivation": "on",
+    "voiceActivationThreshold": "0.48"
   }
 ]
