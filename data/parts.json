@@ -272,5 +272,31 @@
       "Digital"
     ],
     "customSettings": null
+  },
+  {
+    "id": 30,
+    "name": "Orloks Elbow",
+    "type": "servo",
+    "characterId": 1,
+    "pin": 3,
+    "usePCA9685": true,
+    "channel": 2,
+    "pca9685Settings": {
+      "frequency": 50,
+      "address": "0x40"
+    },
+    "servoType": "Hooyij 40kg DS3240MG",
+    "minPulse": 500,
+    "maxPulse": 2500,
+    "defaultAngle": 90,
+    "mode": [
+      "Standard",
+      "Continuous"
+    ],
+    "feedback": false,
+    "controlType": [
+      "PWM"
+    ],
+    "customSettings": null
   }
 ]

@@ -328,6 +328,47 @@
             border-radius: 4px;
         }
 
+        /* Calibration Recommendation Styles */
+        .calibration-recommendation {
+            background: #1a4d2e;
+            border: 2px solid #28a745;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            color: #28a745;
+        }
+
+        .calibration-recommendation h5 {
+            color: #28a745;
+            margin: 0 0 10px 0;
+            font-size: 1.1em;
+        }
+
+        .calibration-recommendation p {
+            margin: 0;
+            color: #ccc;
+            font-size: 0.9em;
+        }
+
+        .recommended-btn {
+            position: relative;
+            border: 2px solid #28a745 !important;
+            background: #1a4d2e !important;
+        }
+
+        .recommended-btn::after {
+            content: "⭐ RECOMMENDED";
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #28a745;
+            color: #000;
+            font-size: 0.7em;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
         /* Servo Control Styles */
         .servo-controls,
         .extension-controls {
@@ -717,6 +758,9 @@
             <div id="calibrationContent">
                 <div class="calibration-type-selection">
                     <h4>Select Calibration Method:</h4>
+                    <div id="calibrationRecommendation" class="calibration-recommendation" style="display: none;">
+                        <!-- Recommendation will be inserted here -->
+                    </div>
                     <div class="calibration-methods">
                         <button type="button" class="button" onclick="startContinuousCalibration()">
                             🎮 Continuous Rotation Servo
@@ -724,7 +768,7 @@
                         <button type="button" class="button" onclick="startStandardCalibration()">
                             📐 Standard Position Servo
                         </button>
-                        <button type="button" class="button" onclick="startExtensionCalibration()">
+                        <button type="button" class="button recommended-btn" onclick="startExtensionCalibration()">
                             🦴 Extension/Joint Servo
                         </button>
                     </div>
@@ -1017,12 +1061,45 @@
             // Store servo ID for calibration
             window.currentCalibrationServoId = servoId;
 
+            // Show servo-specific calibration recommendation
+            showCalibrationRecommendation();
+
             // Check calibration status
             checkCalibrationStatus(servoId);
         }
 
         function closeCalibrationModal() {
             document.getElementById('calibrationModal').style.display = 'none';
+        }
+
+        function showCalibrationRecommendation() {
+            const servoType = document.getElementById('servoType').value;
+            const recommendationDiv = document.getElementById('calibrationRecommendation');
+
+            // Servo-specific recommendations
+            const recommendations = {
+                'Hooyij 40kg DS3240MG': {
+                    type: 'Extension/Joint Servo',
+                    reason: 'This high-torque servo is ideal for arm joints and elbow movements. Use Extension calibration for precise positioning.',
+                    icon: '🦴'
+                },
+                'GoBilda 2000 Series': {
+                    type: 'Standard Position Servo',
+                    reason: 'Precision servo best suited for standard position control with accurate angle positioning.',
+                    icon: '📐'
+                }
+            };
+
+            const recommendation = recommendations[servoType];
+            if (recommendation) {
+                recommendationDiv.innerHTML = `
+                    <h5>${recommendation.icon} Recommended: ${recommendation.type}</h5>
+                    <p>${recommendation.reason}</p>
+                `;
+                recommendationDiv.style.display = 'block';
+            } else {
+                recommendationDiv.style.display = 'none';
+            }
         }
 
         async function checkCalibrationStatus(servoId) {

@@ -38,5 +38,11 @@
       "description": "right_90 position for servo calibration",
       "saved_time": 1756770742.582907
     }
+  },
+  "30": {
+    "fully_extended": {
+      "description": "Elbow fully extended position",
+      "saved_time": 1756771601.1433017
+    }
   }
 }
