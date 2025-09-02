@@ -51,6 +51,7 @@ class ServoConfig:
     min_angle: float = 0.0
     max_angle: float = 180.0
     frequency: int = 50
+    pca9685_address: int = 0x40
     enabled: bool = True
 
 @dataclass
@@ -165,6 +166,15 @@ class ServoWebSocketService(BaseHardwareService):
 
                 for part in parts_data:
                     if part.get('type') == 'servo':
+                        # Extract PCA9685 settings
+                        pca9685_settings = part.get('pca9685Settings', {})
+                        pca9685_address = pca9685_settings.get('address', '0x40')
+                        pca9685_frequency = pca9685_settings.get('frequency', 50)
+
+                        # Convert address string to int if needed
+                        if isinstance(pca9685_address, str):
+                            pca9685_address = int(pca9685_address, 16)
+
                         servo_config = ServoConfig(
                             servo_id=str(part['id']),
                             character_id=part['characterId'],
@@ -176,7 +186,8 @@ class ServoWebSocketService(BaseHardwareService):
                             min_pulse=part.get('minPulse', 500),
                             max_pulse=part.get('maxPulse', 2500),
                             default_angle=part.get('defaultAngle', 90),
-                            frequency=50
+                            frequency=pca9685_frequency,
+                            pca9685_address=pca9685_address
                         )
 
                         self.servo_configs[servo_config.servo_id] = servo_config
@@ -504,12 +515,13 @@ class ServoWebSocketService(BaseHardwareService):
                 return True
 
             # Initialize PCA9685 if needed
-            i2c_address = 0x40  # Default PCA9685 address
+            i2c_address = config.pca9685_address
             if i2c_address not in self.pca9685_instances:
                 i2c = busio.I2C(board.SCL, board.SDA)
                 pca = PCA9685(i2c, address=i2c_address)
                 pca.frequency = config.frequency
                 self.pca9685_instances[i2c_address] = pca
+                logger.info(f"🔧 Initialized PCA9685 at address 0x{i2c_address:02X} for servo {config.name}")
 
             pca = self.pca9685_instances[i2c_address]
 
@@ -552,7 +564,7 @@ class ServoWebSocketService(BaseHardwareService):
 
                 elif config.control_type == 'pca9685':
                     if PCA9685_AVAILABLE:
-                        i2c_address = 0x40
+                        i2c_address = config.pca9685_address
                         if i2c_address in self.pca9685_instances:
                             pca = self.pca9685_instances[i2c_address]
                             pca.channels[config.channel].duty_cycle = 0
@@ -1162,12 +1174,13 @@ class ServoWebSocketService(BaseHardwareService):
                 return False
 
             # Get or create PCA9685 instance
-            address = getattr(config, 'pca9685_address', 0x40)
+            address = config.pca9685_address
             if address not in self.pca9685_instances:
                 i2c = busio.I2C(board.SCL, board.SDA)
                 pca = PCA9685(i2c, address=address)
                 pca.frequency = config.frequency
                 self.pca9685_instances[address] = pca
+                logger.info(f"🔧 Initialized PCA9685 at address 0x{address:02X} for servo {config.name}")
 
             pca = self.pca9685_instances[address]
 
