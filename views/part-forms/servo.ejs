@@ -342,6 +342,42 @@
             border-radius: 8px;
         }
 
+        /* Fix white form backgrounds in calibration interface */
+        .extension-controls,
+        .position-markers,
+        .marked-positions,
+        .calibration-steps,
+        .calibration-step,
+        .pulse-control,
+        .control-group,
+        .marker-buttons {
+            background: transparent !important;
+            color: inherit !important;
+        }
+
+        .extension-controls .control-group,
+        .position-markers,
+        .calibration-steps .calibration-step {
+            background: #1a1a1a !important;
+            border: 1px solid #333 !important;
+            border-radius: 6px !important;
+            padding: 15px !important;
+            margin-bottom: 15px !important;
+        }
+
+        .extension-controls .control-group h5,
+        .position-markers h5,
+        .calibration-steps .calibration-step h5 {
+            color: #28a745 !important;
+            margin-bottom: 10px !important;
+        }
+
+        .extension-controls .control-group label,
+        .position-markers label,
+        .calibration-steps .calibration-step label {
+            color: #ccc !important;
+        }
+
         .continuous-calibration h4,
         .standard-calibration h4,
         .extension-calibration h4 {
@@ -1494,10 +1530,11 @@
                             <h5>Step 1: Minimum Position (0°)</h5>
                             <div class="pulse-control">
                                 <label>Pulse Width (µs):</label>
-                                <input type="range" id="minPulseCalibration" min="300" max="1500" value="500" oninput="updatePulseDisplay('min')">
+                                <input type="range" id="minPulseCalibration" min="200" max="1500" value="500" oninput="updatePulseDisplay('min')">
                                 <span id="minPulseValue">500µs</span>
                                 <button type="button" class="button" onclick="testCalibrationPulse('min')">Test</button>
                             </div>
+                            <p class="calibration-note">DS3240MG often works with extended range: try 400-600µs for minimum</p>
                         </div>
 
                         <div class="calibration-step">
@@ -1514,10 +1551,11 @@
                             <h5>Step 3: Maximum Position (180°)</h5>
                             <div class="pulse-control">
                                 <label>Pulse Width (µs):</label>
-                                <input type="range" id="maxPulseCalibration" min="1500" max="3000" value="2500" oninput="updatePulseDisplay('max')">
+                                <input type="range" id="maxPulseCalibration" min="1500" max="3200" value="2500" oninput="updatePulseDisplay('max')">
                                 <span id="maxPulseValue">2500µs</span>
                                 <button type="button" class="button" onclick="testCalibrationPulse('max')">Test</button>
                             </div>
+                            <p class="calibration-note">DS3240MG often works with extended range: try 2400-2800µs for maximum</p>
                         </div>
                     </div>
                 </div>
@@ -1798,9 +1836,18 @@
             if (!servoTypeSelect || !continuousSection) return;
 
             const selectedOption = servoTypeSelect.options[servoTypeSelect.selectedIndex];
-            const isContinuous = selectedOption && selectedOption.dataset.continuous === 'true';
+
+            // Check if servo modes include "Continuous"
+            const modes = selectedOption ? selectedOption.dataset.modes : '';
+            const isContinuous = modes && modes.split(',').includes('Continuous');
 
             continuousSection.style.display = isContinuous ? 'block' : 'none';
+
+            console.log('Servo type check:', {
+                servoName: selectedOption ? selectedOption.value : 'none',
+                modes: modes,
+                isContinuous: isContinuous
+            });
         }
 
         // Update continuous control visibility when servo type changes

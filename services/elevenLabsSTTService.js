@@ -8,17 +8,20 @@ const FormData = require('form-data');
 const fs = require('fs').promises;
 const path = require('path');
 const logger = require('../scripts/logger');
+const { getElevenLabsApiKeySync, getMaskedKey } = require('../utils/elevenlabsKey');
 
 class ElevenLabsSTTService {
     constructor() {
-        this.apiKey = process.env.ELEVENLABS_API_KEY;
+        this.apiKey = getElevenLabsApiKeySync();
         this.baseUrl = 'https://api.elevenlabs.io/v1';
         this.model = 'scribe_v1'; // ElevenLabs STT model
-        
+
         if (!this.apiKey) {
             logger.warn('⚠️ ElevenLabs API key not configured - STT functionality will be limited');
+        } else {
+            logger.info(`🔑 ElevenLabs API key loaded (${getMaskedKey(this.apiKey)})`);
         }
-        
+
         logger.info('🎤 ElevenLabs STT Service initialized');
     }
 
@@ -46,7 +49,7 @@ class ElevenLabsSTTService {
 
             // Prepare form data
             const formData = new FormData();
-            
+
             // Handle different input types
             if (Buffer.isBuffer(audioData)) {
                 // Audio data as buffer
@@ -188,13 +191,12 @@ class ElevenLabsSTTService {
                 };
             }
 
-            // For testing, we'll just validate the API key format
-            // Creating actual test audio would require more complex setup
-            const apiKeyValid = this.apiKey && this.apiKey.startsWith('sk_');
-            
+            // For testing, validate the API key presence and plausible length
+            const apiKeyValid = this.apiKey && String(this.apiKey).trim().length >= 20;
+
             return {
-                success: apiKeyValid,
-                message: apiKeyValid ? 'ElevenLabs STT service ready' : 'Invalid API key format',
+                success: !!apiKeyValid,
+                message: apiKeyValid ? 'ElevenLabs STT service ready' : 'API key missing or invalid length',
                 provider: 'elevenlabs',
                 responseTime: 0
             };

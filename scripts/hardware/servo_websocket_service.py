@@ -908,14 +908,20 @@ class ServoWebSocketService(BaseHardwareService):
 
             config = self.servo_configs[servo_id]
 
+            # Check if this is a high-torque servo that needs longer movement times
+            is_high_torque = 'Hooyij' in config.servo_type or 'DS3240MG' in config.servo_type
+            duration_multiplier = 2.0 if is_high_torque else 1.0
+
             if action == 'extend':
                 # Move towards maximum extension
                 angle = config.max_angle
-                duration = 3.0 if speed == 'slow' else 1.5 if speed == 'medium' else 0.5
+                base_duration = 3.0 if speed == 'slow' else 1.5 if speed == 'medium' else 0.5
+                duration = base_duration * duration_multiplier
             elif action == 'retract':
                 # Move towards minimum extension
                 angle = config.min_angle
-                duration = 3.0 if speed == 'slow' else 1.5 if speed == 'medium' else 0.5
+                base_duration = 3.0 if speed == 'slow' else 1.5 if speed == 'medium' else 0.5
+                duration = base_duration * duration_multiplier
             elif action == 'stop':
                 # Stop at current position (for continuous servos)
                 calibration = self.servo_calibrations.get(servo_id)

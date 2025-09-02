@@ -98,8 +98,9 @@ router.get('/dashboard', dashboardHandler);
 // ElevenLabs Voice Activity Detection Configuration routes
 router.get('/stt', async (req, res) => {
     try {
+        const { getElevenLabsApiKeySync } = require('../utils/elevenlabsKey');
         const config = await loadConfig(STT_CONFIG_FILE, {
-            apiKey: process.env.ELEVENLABS_API_KEY ? '••••••••••••' : '',
+            apiKey: getElevenLabsApiKeySync() ? '••••••••••••' : '',
             vadType: 'server_vad',
             vadThreshold: 0.5,
             prefixPadding: 300,
@@ -1117,7 +1118,7 @@ router.post('/api/personalities/:personalityId', async (req, res) => {
         console.error('Update personality error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
-    });
+});
 
 // DEPRECATED: Personality sync and document upload replaced by ElevenLabs
 router.post('/api/personalities/:personalityId/sync-assistant', (req, res) => {
@@ -1620,13 +1621,15 @@ router.post('/api/vad/config', async (req, res) => {
 // ElevenLabs Voices API
 router.get('/api/elevenlabs/voices', async (req, res) => {
     try {
-        if (!process.env.ELEVENLABS_API_KEY) {
+        const { getElevenLabsApiKeySync } = require('../utils/elevenlabsKey');
+        const apiKey = getElevenLabsApiKeySync();
+        if (!apiKey) {
             return res.json({ success: false, error: 'ElevenLabs API key not configured' });
         }
 
         const response = await fetch('https://api.elevenlabs.io/v1/voices', {
             headers: {
-                'xi-api-key': process.env.ELEVENLABS_API_KEY
+                'xi-api-key': apiKey
             }
         });
 
@@ -1663,14 +1666,16 @@ router.post('/api/elevenlabs/conversation-token', async (req, res) => {
             return res.status(400).json({ success: false, error: 'Agent ID is required' });
         }
 
-        if (!process.env.ELEVENLABS_API_KEY) {
+        const { getElevenLabsApiKeySync } = require('../utils/elevenlabsKey');
+        const apiKey = getElevenLabsApiKeySync();
+        if (!apiKey) {
             return res.status(400).json({ success: false, error: 'ElevenLabs API key not configured' });
         }
 
         // Create a signed token for ElevenLabs API access
         const crypto = require('crypto');
         const timestamp = Date.now();
-        const payload = JSON.stringify({ agentId, timestamp, apiKey: process.env.ELEVENLABS_API_KEY });
+        const payload = JSON.stringify({ agentId, timestamp, apiKey });
         const token = Buffer.from(payload).toString('base64');
 
         res.json({
@@ -1704,7 +1709,9 @@ router.post('/api/elevenlabs/validate-token', async (req, res) => {
         }
 
         // Validate API key
-        if (apiKey !== process.env.ELEVENLABS_API_KEY) {
+        const { getElevenLabsApiKeySync } = require('../utils/elevenlabsKey');
+        const serverKey = getElevenLabsApiKeySync();
+        if (apiKey !== serverKey) {
             return res.status(401).json({ success: false, error: 'Invalid token' });
         }
 
@@ -1877,7 +1884,8 @@ async function getSystemStatus() {
 async function getElevenLabsStatus() {
     try {
         // Check if ElevenLabs service is available
-        const hasApiKey = !!process.env.ELEVENLABS_API_KEY;
+        const { getElevenLabsApiKeySync } = require('../utils/elevenlabsKey');
+        const hasApiKey = !!getElevenLabsApiKeySync();
         const elevenLabsService = global.elevenLabsService;
 
         let status = {

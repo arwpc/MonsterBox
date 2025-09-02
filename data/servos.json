@@ -11,8 +11,8 @@
       "max_torque_kg_cm": 40,
       "waterproof": true,
       "gear_material": "Full Metal",
-      "min_pulse_width_us": 500,
-      "max_pulse_width_us": 2500,
+      "min_pulse_width_us": 400,
+      "max_pulse_width_us": 2800,
       "neutral_pulse_us": 1500,
       "default_angle_deg": 90,
       "rotation_range_deg": 180,
@@ -21,8 +21,8 @@
         "PWM"
       ],
       "recommended_calibration": "extension",
-      "calibration_notes": "Use Extension/Joint calibration for arm/elbow movements. High torque makes it ideal for heavy loads.",
-      "notes": "High torque waterproof servo ideal for arm joints, elbows, and heavy-duty applications requiring precise positioning."
+      "calibration_notes": "Use Extension/Joint calibration for arm/elbow movements. High torque makes it ideal for heavy loads. Extended pulse range: 400-2800µs for full mechanical range.",
+      "notes": "High torque waterproof servo ideal for arm joints, elbows, and heavy-duty applications requiring precise positioning. Supports extended pulse width range for maximum mechanical travel."
     },
     {
       "name": "Miuzei MG90S",

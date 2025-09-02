@@ -193,7 +193,7 @@ class ServoWebSocketClient extends EventEmitter {
         });
     }
 
-    async sendRequest(type, data = {}, timeout = 10000) {
+    async sendRequest(type, data = {}, timeout = 30000) {
         return new Promise((resolve, reject) => {
             if (!this.isConnected) {
                 reject(new Error('Servo WebSocket not connected'));

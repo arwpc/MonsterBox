@@ -352,9 +352,10 @@ class CharacterBasedServiceLoader {
     async validateElevenLabsConfig() {
         try {
             // Check if ElevenLabs API key is available
-            const apiKey = process.env.ELEVENLABS_API_KEY;
+            const { getElevenLabsApiKeySync } = require('../utils/elevenlabsKey');
+            const apiKey = getElevenLabsApiKeySync();
             if (!apiKey) {
-                logger.warn('⚠️ ElevenLabs API key not found in environment variables');
+                logger.warn('⚠️ ElevenLabs API key not available');
                 return false;
             }
 

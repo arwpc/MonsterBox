@@ -272,5 +272,57 @@
       "Digital"
     ],
     "customSettings": null
+  },
+  {
+    "id": 30,
+    "name": "Forearm",
+    "type": "servo",
+    "characterId": 1,
+    "pin": 3,
+    "usePCA9685": true,
+    "channel": 4,
+    "pca9685Settings": {
+      "frequency": 50,
+      "address": "0x40"
+    },
+    "servoType": "Hooyij 40kg DS3240MG",
+    "minPulse": 500,
+    "maxPulse": 2500,
+    "defaultAngle": 90,
+    "mode": [
+      "Standard",
+      "Extension"
+    ],
+    "feedback": false,
+    "controlType": [
+      "PWM"
+    ],
+    "customSettings": null
+  },
+  {
+    "id": 31,
+    "name": "Elbow of Orlok",
+    "type": "servo",
+    "characterId": 1,
+    "pin": 3,
+    "usePCA9685": true,
+    "channel": 8,
+    "pca9685Settings": {
+      "frequency": 50,
+      "address": "0x40"
+    },
+    "servoType": "Hooyij 40kg DS3240MG",
+    "minPulse": 500,
+    "maxPulse": 2500,
+    "defaultAngle": 90,
+    "mode": [
+      "Standard",
+      "Extension"
+    ],
+    "feedback": false,
+    "controlType": [
+      "PWM"
+    ],
+    "customSettings": null
   }
 ]

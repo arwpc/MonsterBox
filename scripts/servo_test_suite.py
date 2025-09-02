@@ -21,7 +21,11 @@ class ServoTester:
         self.servo_specs = {
             "MG90S": {"min_pulse": 500, "max_pulse": 2400, "center": 1500},
             "SG90": {"min_pulse": 500, "max_pulse": 2500, "center": 1500},
-            "DS3240MG": {"min_pulse": 500, "max_pulse": 2500, "center": 1500}
+            "DS3240MG": {"min_pulse": 500, "max_pulse": 2500, "center": 1500},
+            "Hooyij 40kg DS3240MG": {"min_pulse": 500, "max_pulse": 2500, "center": 1500},
+            "GoBilda Stingray 2 Servo": {"min_pulse": 500, "max_pulse": 2500, "center": 1500},
+            "Miuzei MG90S": {"min_pulse": 500, "max_pulse": 2400, "center": 1500},
+            "FITEC FS90R": {"min_pulse": 700, "max_pulse": 2300, "center": 1500}
         }
         
         self.spec = self.servo_specs.get(servo_type, self.servo_specs["MG90S"])

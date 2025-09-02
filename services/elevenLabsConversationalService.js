@@ -8,12 +8,13 @@ const EventEmitter = require('events');
 const fetch = require('node-fetch');
 const fs = require('fs').promises;
 const path = require('path');
+const { getElevenLabsApiKeySync } = require('../utils/elevenlabsKey');
 
 class ElevenLabsConversationalService extends EventEmitter {
     constructor() {
         super();
-        
-        this.apiKey = process.env.ELEVENLABS_API_KEY;
+
+        this.apiKey = getElevenLabsApiKeySync();
         this.baseURL = 'https://api.elevenlabs.io/v1';
         this.headers = {
             'xi-api-key': this.apiKey,

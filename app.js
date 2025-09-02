@@ -5,6 +5,19 @@ process.on('uncaughtException', function (err) {
 
 // Load environment variables first
 require('dotenv').config();
+// Ensure ElevenLabs key is available across all hosts using unified loader
+try {
+    const { getElevenLabsApiKeySync } = require('./utils/elevenlabsKey');
+    if (!process.env.ELEVENLABS_API_KEY) {
+        const resolvedKey = getElevenLabsApiKeySync();
+        if (resolvedKey) {
+            process.env.ELEVENLABS_API_KEY = resolvedKey;
+            console.log('🔑 ELEVENLABS_API_KEY injected from unified key loader');
+        }
+    }
+} catch (e) {
+    // Non-fatal; continue without ELEVENLABS key
+}
 
 // Suppress deprecation warnings
 process.env.NODE_NO_WARNINGS = '1';

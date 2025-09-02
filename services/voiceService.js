@@ -72,7 +72,7 @@ class VoiceService {
 
             const data = await fs.readFile(this.voicesPath, 'utf8');
             const voices = JSON.parse(data).voices;
-            
+
             const normalizedVoice = this.normalizeVoiceData(voiceData);
             const existingIndex = voices.findIndex(v => parseInt(v.characterId) === parseInt(voiceData.characterId));
 
@@ -112,7 +112,7 @@ class VoiceService {
 
             await fs.writeFile(this.voicesPath, JSON.stringify({ voices }, null, 2));
             logger.debug(`Voice settings saved for character ${voiceData.characterId}`);
-            
+
             return existingIndex !== -1 ? voices[existingIndex] : voices[voices.length - 1];
         } catch (error) {
             logger.error(`Error saving voice: ${error.message}`);
@@ -216,8 +216,9 @@ class VoiceService {
             const fetch = require('node-fetch');
             const fs = require('fs').promises;
             const path = require('path');
+            const { getElevenLabsApiKeySync } = require('../utils/elevenlabsKey');
 
-            const apiKey = process.env.ELEVENLABS_API_KEY;
+            const apiKey = getElevenLabsApiKeySync();
             if (!apiKey) {
                 throw new Error('ElevenLabs API key not configured');
             }

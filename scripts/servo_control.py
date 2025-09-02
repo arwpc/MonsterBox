@@ -186,7 +186,11 @@ def set_servo_angle_gpio(pin_or_channel, angle, servo_type="MG90S"):
             "MG90S": {"min_pulse": 500, "max_pulse": 2400},
             "DS3240MG": {"min_pulse": 500, "max_pulse": 2500},
             "SG90": {"min_pulse": 500, "max_pulse": 2500},
-            "Standard": {"min_pulse": 500, "max_pulse": 2400}  # Default fallback
+            "Standard": {"min_pulse": 500, "max_pulse": 2400},  # Default fallback
+            "Hooyij 40kg DS3240MG": {"min_pulse": 500, "max_pulse": 2500},
+            "GoBilda Stingray 2 Servo": {"min_pulse": 500, "max_pulse": 2500},
+            "Miuzei MG90S": {"min_pulse": 500, "max_pulse": 2400},
+            "FITEC FS90R": {"min_pulse": 700, "max_pulse": 2300}
         }
 
         # Get servo specifications
@@ -254,7 +258,11 @@ def sweep_servo_gpio(pin_or_channel, start_angle, end_angle, step_size=1, delay=
             "MG90S": {"min_pulse": 500, "max_pulse": 2400},
             "DS3240MG": {"min_pulse": 500, "max_pulse": 2500},
             "SG90": {"min_pulse": 500, "max_pulse": 2500},
-            "Standard": {"min_pulse": 500, "max_pulse": 2400}  # Default fallback
+            "Standard": {"min_pulse": 500, "max_pulse": 2400},  # Default fallback
+            "Hooyij 40kg DS3240MG": {"min_pulse": 500, "max_pulse": 2500},
+            "GoBilda Stingray 2 Servo": {"min_pulse": 500, "max_pulse": 2500},
+            "Miuzei MG90S": {"min_pulse": 500, "max_pulse": 2400},
+            "FITEC FS90R": {"min_pulse": 700, "max_pulse": 2300}
         }
 
         # Get servo specifications

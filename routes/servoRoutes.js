@@ -424,13 +424,12 @@ router.post('/extension-control', async (req, res) => {
             });
         }
 
-        const result = await servoClient.sendMessage({
-            type: 'servo_extension_control',
+        const result = await servoClient.sendRequest('servo_extension_control', {
             servo_id: servo_id,
             action: action,
             speed: speed || 'slow',
             target_position: target_position
-        });
+        }, 45000); // 45 second timeout for extension operations
 
         res.json({
             success: true,
