@@ -412,46 +412,16 @@ router.get('/enhanced-test-chat', async (req, res) => {
     }
 });
 
-// Microphone and STT Testing Interface
+// Microphone and STT Testing Interface (consolidated)
 router.get('/microphone-stt', async (req, res) => {
     try {
-        // Get available microphones (if any microphone service is available)
-        let microphones = [];
-        try {
-            // Try to get microphones from parts service
-            const partService = require('../services/partService');
-            const allParts = await partService.getAllParts();
-            microphones = allParts.filter(part => part.type === 'microphone');
-        } catch (error) {
-            console.warn('Could not load microphones:', error.message);
-        }
-
-        // Get all characters for character selection
-        const characterService = require('../services/characterService');
-        const characters = await characterService.getAllCharacters();
-
-        // Get character-specific audio configurations
-        const audioConfigService = require('../services/characterAudioConfigService');
-
-        // Add audio config to each character
-        for (let character of characters) {
-            try {
-                character.audioConfig = await audioConfigService.getAudioConfig(character.id);
-            } catch (error) {
-                character.audioConfig = null;
-            }
-        }
-
-        res.render('ai-config/microphone-stt', {
-            title: 'Microphone and STT Testing',
-            microphones: microphones,
-            characters: characters
-        });
+        // Consolidate to Parts-based microphone management
+        return res.redirect('/parts/microphone/management');
     } catch (error) {
-        console.error('Error loading microphone-stt page:', error);
+        console.error('Error redirecting microphone-stt page:', error);
         res.status(500).render('error', {
             title: 'Error',
-            message: 'Failed to load Microphone and STT Testing page',
+            message: 'Failed to redirect to Microphone Management',
             error: error.message
         });
     }

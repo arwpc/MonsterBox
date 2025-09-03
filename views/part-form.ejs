@@ -401,6 +401,7 @@
             // Initialize device detection on page load
             if (document.getElementById('type').value === 'microphone') {
                 detectAudioDevices();
+                // STT config moved to separate forms under /ai-management/stt
                 checkSTTStatus();
             }
         }
@@ -424,7 +425,7 @@
                 }
             } catch (error) {
                 console.error('Error detecting audio devices:', error);
-                showNotification('Failed to detect audio devices', 'error');
+                // non-fatal; keep UI responsive
             }
         }
 
@@ -557,8 +558,8 @@
         }
 
         async function configureSTT() {
-            // Open STT configuration modal or redirect to STT config page
-            window.open(`/ai/stt/configure?characterId=${characterId}`, '_blank');
+            // STT configuration consolidated under AI Management -> STT
+            window.open(`/ai-management/stt?characterId=${characterId}`, '_blank');
         }
 
         async function checkSTTStatus() {

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+  <h1><%= title %></h1>
+  <form action="<%= action %>?characterId=<%= character.id %>" method="POST">
+    <% if (part.id) { %>
+      <input type="hidden" name="id" value="<%= part.id %>">
+    <% } %>
+    <input type="hidden" name="characterId" value="<%= character.id %>">
+    <input type="hidden" name="type" value="speaker">
+
+    <div class="form-section">
+      <h3>🔊 Speaker Configuration</h3>
+      <div class="form-group">
+        <label for="name">Speaker Name:</label>
+        <input type="text" id="name" name="name" value="<%= part.name || '' %>" required>
+      </div>
+      <div class="form-group">
+        <label for="description">Description:</label>
+        <textarea id="description" name="description" rows="3"><%= part.description || '' %></textarea>
+      </div>
+      <div class="form-group">
+        <label for="outputDevice">Output Device:</label>
+        <select id="outputDevice" name="outputDevice">
+          <option value="default" <%= (part.outputDevice||'default')==='default' ? 'selected' : '' %>>Default ALSA Output</option>
+        </select>
+        <button type="button" class="button small-btn" onclick="discoverOutputs()">🔍 Discover Outputs</button>
+        <small>Select ALSA output (USB dongle is recommended and consistent across bots)</small>
+      </div>
+      <div class="form-group">
+        <label for="volume">Volume (%):</label>
+        <input type="number" id="volume" name="volume" min="0" max="100" value="<%= part.volume || 80 %>">
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="button primary-btn">💾 Save Speaker</button>
+      <a href="/parts?characterId=<%= character.id %>" class="button secondary-btn">↩️ Back to Parts</a>
+    </div>
+  </form>
+
+  <div class="form-section">
+    <h3>🧪 Live Output Test</h3>
+    <div class="button-group">
+      <button type="button" class="button" onclick="playTestTone()">▶️ Play Test Tone</button>
+      <button type="button" class="button secondary-btn" onclick="setVolume()">🔊 Apply Volume</button>
+    </div>
+    <pre id="speakerTestOutput"></pre>
+  </div>
+
+  <script>
+    async function discoverOutputs() {
+      try {
+        const res = await axios.get('/parts/api/speaker/devices');
+        const sel = document.getElementById('outputDevice');
+        sel.innerHTML = '<option value="default">Default ALSA Output</option>';
+        if (res.data.success && Array.isArray(res.data.devices)) {
+          res.data.devices.forEach(dev => {
+            const opt = document.createElement('option');
+            opt.value = dev.id;
+            opt.textContent = `${dev.name} (${dev.id})`;
+            if (dev.id === '<%= part.outputDevice || '' %>') opt.selected = true;
+            sel.appendChild(opt);
+          });
+        }
+      } catch (e) {
+        console.error('Discover outputs failed', e);
+      }
+    }
+
+    async function playTestTone() {
+      const out = document.getElementById('speakerTestOutput');
+      out.textContent = 'Playing test tone...';
+      try {
+        const deviceId = document.getElementById('outputDevice').value;
+        const res = await axios.post('/parts/api/speaker/test', { deviceId });
+        out.textContent = res.data.success ? '✅ Test tone played successfully' : ('❌ ' + (res.data.error || 'Failed'));
+      } catch (e) {
+        out.textContent = '❌ ' + e.message;
+      }
+    }
+
+    async function setVolume() {
+      const out = document.getElementById('speakerTestOutput');
+      try {
+        const volume = parseInt(document.getElementById('volume').value || '80', 10);
+        const res = await axios.post('/parts/api/speaker/volume', { volume });
+        out.textContent = res.data.success ? `✅ Volume set to ${volume}%` : ('❌ ' + (res.data.error || 'Failed'));
+      } catch (e) {
+        out.textContent = '❌ ' + e.message;
+      }
+    }
+
+    // Auto-discover on load
+    discoverOutputs();
+  </script>
+
+  <style>
+    .form-section { background: rgba(0,0,0,0.3); border: 1px solid rgba(0,255,0,0.3); border-radius: 8px; padding: 20px; margin: 20px 0; }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display:block; color:#00ff00; font-weight:bold; margin-bottom:6px; }
+    .form-group input, .form-group select, .form-group textarea { width:100%; padding:8px; background:rgba(0,0,0,0.5); border:1px solid rgba(0,255,0,0.5); border-radius:4px; color:#fff; }
+    .form-actions { display:flex; gap:10px; margin-top: 20px; }
+  </style>
+</body>
+</html>
+

@@ -18,7 +18,7 @@
     "cleanup": "node cleanup-gpio.js",
     "dev": "nodemon --trace-deprecation --trace-warnings app.js",
     "test": "npm run test:unit",
-    "test:unit": "timeout 60s cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js tests/**/*.test.js --timeout 30000 || true",
+    "test:unit": "timeout 60s cross-env NODE_ENV=test mocha --reporter ./tests/cleanReporter.js \"tests/**/*.test.js\" \"tests/*.test.js\" --timeout 30000 || true",
     "test:unit-only": "npm run test:unit",
     "test:ci": "npm run test:unit",
     "test:full": "node scripts/test-full.js",

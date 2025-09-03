@@ -35,6 +35,7 @@
             <a href="/parts/webcam/new" class="button">📹 Add Webcam</a>
             <a href="/parts/head-tracking/new" class="button">🎯 Add Head Tracking</a>
             <a href="/parts/new/microphone" class="button">🎤 Add Microphone</a>
+            <a href="/parts/new/speaker" class="button">🔊 Add Speaker</a>
         </div>
 
 
@@ -67,6 +68,7 @@
                                                else if (part.type==='light') { editUrl = '/parts/light/' + part.id + '/edit'; }
                                                else if (part.type==='webcam') { editUrl = '/parts/webcam/' + part.id + '/edit'; }
                                                else if (part.type==='microphone') { editUrl = '/parts/microphone/' + part.id + '/edit'; }
+                                               else if (part.type==='speaker') { editUrl = '/parts/' + part.id + '/edit'; }
                                                else if (part.type==='motion-sensor') { editUrl = '/parts/motion-sensor/' + part.id + '/edit'; } %>
                                             <a href="<%= editUrl %>"><strong><%= part.name %></strong></a>
                                             <% if (part.description) { %>
@@ -79,7 +81,7 @@
                                                     part.type==='motor' ? '🔄' : part.type==='light' ? '💡' :
                                                     part.type==='led' ? '🔆' : part.type==='sensor' ? '📡' :
                                                     part.type==='motion-sensor' ? '🔍' : part.type==='webcam' ? '📹' :
-                                                    part.type==='microphone' ? '🎤' : '🔧' %>
+                                                    part.type==='microphone' ? '🎤' : part.type==='speaker' ? '🔊' : '🔧' %>
                                                     <%= part.type %>
                                             </span>
                                         </td>

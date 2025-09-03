@@ -133,6 +133,8 @@ router.get('/new/:type', async (req, res) => {
         } else {
             res.render(`part-forms/${type}`, renderData);
         }
+        // Speaker defaults handled in template; no extra data needed
+
     } catch (error) {
         logger.error('Error rendering new part form:', error);
         res.status(500).send('An error occurred while loading the new part form');
@@ -167,6 +169,8 @@ router.get('/:id/edit', async (req, res) => {
             const servoConfigPath = path.join(__dirname, '..', 'data', 'servos.json');
             const servoConfigData = await fs.readFile(servoConfigPath, 'utf8');
             renderData.servoConfigs = JSON.parse(servoConfigData).servos;
+        // Route uses dynamic template path; speaker handled by views/part-forms/speaker.ejs
+
             renderData.servoTypes = servoTypes;
             renderData.getServoDefaults = getServoDefaults;
         }
@@ -1175,6 +1179,7 @@ router.post('/api/microphone/:id/assign-service', async (req, res) => {
             return res.status(400).json({ error: 'Service ID is required' });
         }
 
+
         const MicrophoneManagerService = require('../services/microphoneManagerService');
         const microphoneManager = new MicrophoneManagerService();
 
@@ -1685,6 +1690,46 @@ async function performMicrophoneCleanup(microphoneId) {
         // Don't throw error to prevent deletion failure
     }
 }
+
+
+// Speaker API routes (placed at end to avoid interrupting microphone routes)
+router.get('/api/speaker/devices', async (req, res) => {
+    try {
+        const SpeakerService = require('../services/speakerService');
+        const svc = new SpeakerService();
+        const devices = await svc.getAvailableDevices();
+        res.json({ success: true, devices });
+    } catch (err) {
+        logger.error('Error getting speaker devices:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.post('/api/speaker/test', async (req, res) => {
+    try {
+        const { deviceId } = req.body;
+        const SpeakerService = require('../services/speakerService');
+        const svc = new SpeakerService();
+        const result = await svc.playTest(deviceId || 'default');
+        res.json({ success: !!result.success, ...result });
+    } catch (err) {
+        logger.error('Error playing speaker test tone:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.post('/api/speaker/volume', async (req, res) => {
+    try {
+        const { volume } = req.body;
+        const SpeakerService = require('../services/speakerService');
+        const svc = new SpeakerService();
+        const result = await svc.setVolume(parseInt(volume || 80, 10));
+        res.json({ success: !!result.success, ...result });
+    } catch (err) {
+        logger.error('Error setting volume:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
 
 module.exports = {
     router: router,

@@ -349,5 +349,21 @@
     "autoGainControl": "on",
     "voiceActivation": "on",
     "voiceActivationThreshold": "0.48"
+  },
+  {
+    "id": 34,
+    "name": "Test Speaker",
+    "type": "speaker",
+    "outputDevice": "default",
+    "volume": "75",
+    "characterId": 1
+  },
+  {
+    "id": 35,
+    "name": "Test Speaker",
+    "type": "speaker",
+    "outputDevice": "default",
+    "volume": "75",
+    "characterId": 1
   }
 ]
