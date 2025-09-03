@@ -377,16 +377,26 @@ router.get('/enhanced-test-chat', async (req, res) => {
             console.warn('⚠️ Could not load ElevenLabs agents:', error.message);
         }
 
-        // Enhance characters with AI and Voice capability flags
+        // Load parts for each character to get speaker information
+        const partService = require('../services/partService');
+        const allParts = await partService.getAllParts();
+
+        // Enhance characters with AI, Voice capability flags, and speaker parts
         const enhancedCharacters = characters.map(character => {
             const hasElevenLabsAgent = !!character.elevenLabsAgentId;
-            const hasVoiceCapability = !!(character.elevenLabsAgentId || character.parts?.length > 0 || character.sounds?.length > 0);
+            const characterParts = allParts.filter(part => part.characterId === character.id);
+            const speakerParts = characterParts.filter(part => part.type === 'speaker');
+            const microphoneParts = characterParts.filter(part => part.type === 'microphone');
+            const hasVoiceCapability = !!(character.elevenLabsAgentId || characterParts.length > 0 || character.sounds?.length > 0);
 
             return {
                 ...character,
                 hasAI: hasElevenLabsAgent,
                 hasVoice: hasVoiceCapability,
-                hasElevenLabs: hasElevenLabsAgent
+                hasElevenLabs: hasElevenLabsAgent,
+                speakerParts: speakerParts,
+                microphoneParts: microphoneParts,
+                defaultSpeaker: speakerParts.length > 0 ? speakerParts[0] : null
             };
         });
 

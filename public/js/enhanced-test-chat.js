@@ -2029,6 +2029,38 @@ class EnhancedTestChat {
     }
 
     /**
+     * Apply character speaker configuration for audio output
+     */
+    async applyCharacterSpeakerConfig() {
+        try {
+            if (!this.currentCharacter || !this.currentCharacter.defaultSpeaker) {
+                console.log('🔊 No character speaker configuration available, using default audio output');
+                return;
+            }
+
+            const speaker = this.currentCharacter.defaultSpeaker;
+            console.log(`🔊 Applying speaker config for character ${this.currentCharacter.name}:`, speaker);
+
+            // Apply volume setting if available
+            if (speaker.volume !== undefined) {
+                // Set volume for future audio elements
+                this.defaultAudioVolume = speaker.volume / 100; // Convert percentage to 0-1 range
+                console.log(`🔊 Set audio volume to ${speaker.volume}%`);
+            }
+
+            // Apply speaker device if available (this would require Web Audio API for device selection)
+            if (speaker.outputDevice && speaker.outputDevice !== 'default') {
+                console.log(`🔊 Speaker device: ${speaker.outputDevice} (device selection requires user permission)`);
+                // Note: Browser audio device selection requires user interaction and modern Web Audio API
+                // This is a placeholder for future enhancement
+            }
+
+        } catch (error) {
+            console.error('❌ Error applying speaker configuration:', error);
+        }
+    }
+
+    /**
      * Play audio from base64 data (single-stream, interruptible)
      */
     async playAudioFromBase64(audioBase64) {
@@ -2048,6 +2080,9 @@ class EnhancedTestChat {
             this.stopCurrentAudio();
 
             console.log('🔊 Playing audio from base64, length:', audioBase64.length);
+
+            // Apply character speaker configuration if available
+            await this.applyCharacterSpeakerConfig();
 
             // First, try to detect if this is already a complete audio format (MP3, WAV, etc.)
             try {
@@ -2085,7 +2120,7 @@ class EnhancedTestChat {
                 // If we get here, direct playback works
                 console.log('✅ Direct audio playback successful');
                 this.currentAudio = testAudio;
-                this.currentAudio.volume = 0.8;
+                this.currentAudio.volume = this.defaultAudioVolume || 0.8;
 
                 this.currentAudio.onended = () => {
                     if (this.currentAudio?._blobUrl) {
@@ -2129,7 +2164,7 @@ class EnhancedTestChat {
                     this.currentAudio = new Audio(audioUrl);
                     // Track URL for cleanup
                     this.currentAudio._blobUrl = audioUrl;
-                    this.currentAudio.volume = 0.8;
+                    this.currentAudio.volume = this.defaultAudioVolume || 0.8;
 
                     this.currentAudio.onended = () => {
                         try {

@@ -469,7 +469,7 @@
 
             try {
                 const response = await axios.post('/parts/api/microphone/test-levels', {
-                    microphoneId: partId,
+                    microphoneId: partId || 'default',
                     duration: 10
                 });
 
@@ -486,6 +486,11 @@
         }
 
         async function startMonitoring() {
+            if (!partId) {
+                showNotification('Please save the microphone first before starting monitoring', 'error');
+                return;
+            }
+
             try {
                 const response = await axios.post(`/parts/api/microphone/${partId}/start-monitoring`);
 
@@ -503,6 +508,11 @@
         }
 
         async function stopMonitoring() {
+            if (!partId) {
+                showNotification('Please save the microphone first before stopping monitoring', 'error');
+                return;
+            }
+
             try {
                 const response = await axios.post(`/parts/api/microphone/${partId}/stop-monitoring`);
 
@@ -524,7 +534,7 @@
 
             try {
                 const response = await axios.post('/parts/api/microphone/test-stt', {
-                    microphoneId: partId,
+                    microphoneId: partId || 'default',
                     characterId: characterId,
                     duration: 10
                 });
@@ -604,6 +614,11 @@
 
         let audioLevelInterval;
         function startAudioLevelUpdates() {
+            if (!partId) {
+                console.warn('Cannot start audio level updates: microphone not saved yet');
+                return;
+            }
+
             audioLevelInterval = setInterval(async () => {
                 try {
                     const response = await axios.get(`/parts/api/microphone/${partId}/levels`);

@@ -29,9 +29,9 @@
       <div class="form-group">
         <label for="outputDevice">Output Device:</label>
         <select id="outputDevice" name="outputDevice">
-          <option value="default" <%= (part.outputDevice||'default')==='default' ? 'selected' : '' %>>Default ALSA Output</option>
+          <option value="default" <%= (part.outputDevice||'default')==='default' ? 'selected' : '' %>>Loading devices...</option>
         </select>
-        <button type="button" class="button small-btn" onclick="discoverOutputs()">🔍 Discover Outputs</button>
+        <button type="button" class="button small-btn" onclick="discoverOutputs()">🔄 Refresh Devices</button>
         <small>Select ALSA output (USB dongle is recommended and consistent across bots)</small>
       </div>
       <div class="form-group">
@@ -43,6 +43,7 @@
     <div class="form-actions">
       <button type="submit" class="button primary-btn">💾 Save Speaker</button>
       <a href="/parts?characterId=<%= character.id %>" class="button secondary-btn">↩️ Back to Parts</a>
+      <a href="/ai-management/tts" class="button">🔊 Configure TTS</a>
     </div>
   </form>
 
@@ -51,27 +52,74 @@
     <div class="button-group">
       <button type="button" class="button" onclick="playTestTone()">▶️ Play Test Tone</button>
       <button type="button" class="button secondary-btn" onclick="setVolume()">🔊 Apply Volume</button>
+      <button type="button" class="button" onclick="playTestToneWithVU()">📊 Play with VU Meter</button>
     </div>
     <pre id="speakerTestOutput"></pre>
+  </div>
+
+  <div class="form-section">
+    <h3>📊 Live Audio Level Monitor</h3>
+    <div class="audio-level-container">
+      <div class="level-bar-container">
+        <div class="level-bar" id="speakerLevelBar"></div>
+      </div>
+      <div class="level-text" id="speakerLevelText">0%</div>
+    </div>
+    <div class="button-group">
+      <button type="button" class="button" id="vuMeterBtn" onclick="toggleVUMeter()">🎵 Start VU Meter</button>
+    </div>
+    <small>VU meter shows real-time audio levels during test tone playback</small>
   </div>
 
   <script>
     async function discoverOutputs() {
       try {
+        console.log('🔍 Discovering audio output devices...');
         const res = await axios.get('/parts/api/speaker/devices');
         const sel = document.getElementById('outputDevice');
-        sel.innerHTML = '<option value="default">Default ALSA Output</option>';
+        const currentValue = '<%= part.outputDevice || "" %>';
+
+        // Clear existing options
+        sel.innerHTML = '<option value="default">System Default Audio</option>';
+
         if (res.data.success && Array.isArray(res.data.devices)) {
+          console.log(`Found ${res.data.devices.length} audio devices:`, res.data.devices);
+
           res.data.devices.forEach(dev => {
+            // Skip the default option if it's already added
+            if (dev.id === 'default') return;
+
             const opt = document.createElement('option');
             opt.value = dev.id;
-            opt.textContent = `${dev.name} (${dev.id})`;
-            if (dev.id === '<%= part.outputDevice || '' %>') opt.selected = true;
+            opt.textContent = dev.name;
+            opt.title = dev.description; // Add tooltip with full description
+
+            // Select the current device if it matches
+            if (dev.id === currentValue) {
+              opt.selected = true;
+            }
+
             sel.appendChild(opt);
           });
+
+          // If no device was selected and we have a current value, try to select it
+          if (currentValue && currentValue !== 'default' && !sel.querySelector(`option[value="${currentValue}"]`)) {
+            // Add the current device as an option even if not discovered (might be offline)
+            const opt = document.createElement('option');
+            opt.value = currentValue;
+            opt.textContent = `${currentValue} (offline?)`;
+            opt.selected = true;
+            sel.appendChild(opt);
+          }
+
+          console.log(`✅ Loaded ${res.data.devices.length} audio output devices`);
+        } else {
+          console.warn('No devices returned or API call failed');
         }
       } catch (e) {
-        console.error('Discover outputs failed', e);
+        console.error('❌ Discover outputs failed:', e);
+        const sel = document.getElementById('outputDevice');
+        sel.innerHTML = '<option value="default">System Default Audio (discovery failed)</option>';
       }
     }
 
@@ -98,6 +146,111 @@
       }
     }
 
+    // VU Meter functionality
+    let audioContext = null;
+    let analyser = null;
+    let vuMeterActive = false;
+    let vuAnimationFrame = null;
+
+    async function playTestToneWithVU() {
+      await playTestTone();
+      if (!vuMeterActive) {
+        await startVUMeter();
+      }
+    }
+
+    async function toggleVUMeter() {
+      if (vuMeterActive) {
+        stopVUMeter();
+      } else {
+        await startVUMeter();
+      }
+    }
+
+    async function startVUMeter() {
+      try {
+        if (!audioContext) {
+          audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        if (audioContext.state === 'suspended') {
+          await audioContext.resume();
+        }
+
+        // Create a test tone oscillator for VU meter demonstration
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        analyser = audioContext.createAnalyser();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(analyser);
+        analyser.connect(audioContext.destination);
+
+        oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+
+        analyser.fftSize = 256;
+
+        oscillator.start();
+
+        // Stop the oscillator after 3 seconds
+        setTimeout(() => {
+          oscillator.stop();
+        }, 3000);
+
+        vuMeterActive = true;
+        document.getElementById('vuMeterBtn').textContent = '⏹️ Stop VU Meter';
+        updateVUMeter();
+
+      } catch (error) {
+        console.error('Error starting VU meter:', error);
+        document.getElementById('speakerTestOutput').textContent = '❌ VU Meter error: ' + error.message;
+      }
+    }
+
+    function stopVUMeter() {
+      vuMeterActive = false;
+      if (vuAnimationFrame) {
+        cancelAnimationFrame(vuAnimationFrame);
+        vuAnimationFrame = null;
+      }
+      document.getElementById('vuMeterBtn').textContent = '🎵 Start VU Meter';
+      document.getElementById('speakerLevelBar').style.width = '0%';
+      document.getElementById('speakerLevelText').textContent = '0%';
+    }
+
+    function updateVUMeter() {
+      if (!vuMeterActive || !analyser) return;
+
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      analyser.getByteFrequencyData(dataArray);
+
+      // Calculate average level
+      let sum = 0;
+      for (let i = 0; i < bufferLength; i++) {
+        sum += dataArray[i];
+      }
+      const average = sum / bufferLength;
+      const percentage = Math.round((average / 255) * 100);
+
+      // Update UI
+      document.getElementById('speakerLevelBar').style.width = percentage + '%';
+      document.getElementById('speakerLevelText').textContent = percentage + '%';
+
+      // Color coding
+      const levelBar = document.getElementById('speakerLevelBar');
+      if (percentage > 80) {
+        levelBar.style.backgroundColor = '#ff0040';
+      } else if (percentage > 60) {
+        levelBar.style.backgroundColor = '#ffff00';
+      } else {
+        levelBar.style.backgroundColor = '#00ff00';
+      }
+
+      vuAnimationFrame = requestAnimationFrame(updateVUMeter);
+    }
+
     // Auto-discover on load
     discoverOutputs();
   </script>
@@ -108,6 +261,48 @@
     .form-group label { display:block; color:#00ff00; font-weight:bold; margin-bottom:6px; }
     .form-group input, .form-group select, .form-group textarea { width:100%; padding:8px; background:rgba(0,0,0,0.5); border:1px solid rgba(0,255,0,0.5); border-radius:4px; color:#fff; }
     .form-actions { display:flex; gap:10px; margin-top: 20px; }
+
+    /* VU Meter Styles */
+    .audio-level-container {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin: 15px 0;
+    }
+
+    .level-bar-container {
+      flex: 1;
+      height: 30px;
+      background: rgba(0,0,0,0.5);
+      border: 1px solid rgba(0,255,0,0.3);
+      border-radius: 15px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .level-bar {
+      height: 100%;
+      width: 0%;
+      background: #00ff00;
+      transition: width 0.1s ease;
+      border-radius: 15px;
+      box-shadow: 0 0 10px rgba(0,255,0,0.5);
+    }
+
+    .level-text {
+      min-width: 50px;
+      color: #00ff00;
+      font-weight: bold;
+      text-align: center;
+      font-family: 'Courier New', monospace;
+      text-shadow: 0 0 5px rgba(0,255,0,0.5);
+    }
+
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin: 10px 0;
+    }
   </style>
 </body>
 </html>

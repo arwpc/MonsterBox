@@ -10,17 +10,85 @@ class SpeakerService {
   }
 
   async getAvailableDevices() {
-    // Try to discover ALSA output devices using `aplay -l`
+    const devices = [];
+
+    // Try PulseAudio first (includes USB dongles and more devices)
     try {
-      const devices = await this._runCommand('aplay', ['-l']);
-      const list = this._parseAplayList(devices.stdout || '');
-      return list;
+      const pactl = await this._runCommand('pactl', ['list', 'short', 'sinks']);
+      const pulseDevices = this._parsePulseAudioSinks(pactl.stdout || '');
+      devices.push(...pulseDevices);
+      logger.info(`Found ${pulseDevices.length} PulseAudio devices`);
     } catch (err) {
-      logger.warn('aplay not available or failed, falling back to default output device');
-      return [
-        { id: 'default', name: 'Default ALSA Output', description: 'System default audio output' }
-      ];
+      logger.warn('PulseAudio not available or failed:', err.message);
     }
+
+    // Also try ALSA devices as fallback/additional
+    try {
+      const aplay = await this._runCommand('aplay', ['-l']);
+      const alsaDevices = this._parseAplayList(aplay.stdout || '');
+      // Add ALSA devices that aren't already covered by PulseAudio
+      alsaDevices.forEach(alsaDevice => {
+        if (!devices.find(d => d.id === alsaDevice.id)) {
+          devices.push(alsaDevice);
+        }
+      });
+      logger.info(`Found ${alsaDevices.length} ALSA devices`);
+    } catch (err) {
+      logger.warn('ALSA aplay not available or failed:', err.message);
+    }
+
+    // Ensure we always have a default option
+    if (devices.length === 0 || !devices.find(d => d.id === 'default')) {
+      devices.unshift({
+        id: 'default',
+        name: 'System Default Audio',
+        description: 'System default audio output device'
+      });
+    }
+
+    logger.info(`Total audio output devices discovered: ${devices.length}`);
+    return devices;
+  }
+
+  _parsePulseAudioSinks(stdout) {
+    const devices = [];
+    const lines = stdout.split('\n').filter(line => line.trim());
+
+    for (const line of lines) {
+      // PulseAudio sink format: INDEX	NAME	DRIVER	SAMPLE-SPEC	STATE
+      const parts = line.split('\t');
+      if (parts.length >= 2) {
+        const index = parts[0];
+        const name = parts[1];
+        const driver = parts[2] || '';
+        const state = parts[4] || '';
+
+        // Create a more user-friendly name
+        let displayName = name;
+        if (name.includes('usb')) {
+          displayName = `USB Audio Device (${name.split('.').pop()})`;
+        } else if (name.includes('hdmi')) {
+          displayName = `HDMI Audio (${name.split('.').pop()})`;
+        } else if (name.includes('analog')) {
+          displayName = `Analog Audio (${name.split('.').pop()})`;
+        } else if (name.includes('bluez')) {
+          displayName = `Bluetooth Audio (${name.split('.').pop()})`;
+        } else {
+          // Try to extract a meaningful name from the sink name
+          const nameParts = name.split('.');
+          displayName = nameParts[nameParts.length - 1].replace(/_/g, ' ');
+        }
+
+        devices.push({
+          id: name, // Use the full PulseAudio sink name as ID
+          name: displayName,
+          description: `PulseAudio sink: ${driver} (${state})`,
+          type: 'pulseaudio'
+        });
+      }
+    }
+
+    return devices;
   }
 
   _parseAplayList(output) {
@@ -42,7 +110,8 @@ class SpeakerService {
         devices.push({
           id: `hw:${currentCard.id},${deviceNum}`,
           name: `${currentCard.name} - ${label}`,
-          description: `${currentCard.desc}${desc ? ' - ' + desc : ''}`.trim()
+          description: `ALSA: ${currentCard.desc}${desc ? ' - ' + desc : ''}`.trim(),
+          type: 'alsa'
         });
       }
     }
@@ -54,15 +123,34 @@ class SpeakerService {
   }
 
   async playTest(deviceId = 'default', durationSec = this.defaultTestDuration) {
-    // Generate a short WAV file (440 Hz) and play with aplay
     try {
       const wavPath = await this._generateTestWav(durationSec);
-      const args = [];
-      if (deviceId && deviceId !== 'default') {
-        args.push('-D', deviceId);
+      let result;
+
+      // Try PulseAudio first if the device looks like a PulseAudio sink
+      if (deviceId !== 'default' && !deviceId.startsWith('hw:')) {
+        try {
+          // Use paplay for PulseAudio devices
+          const args = ['--device', deviceId, wavPath];
+          result = await this._runCommand('paplay', args, { timeoutMs: durationSec * 1500 + 3000 });
+          logger.info(`Played test tone on PulseAudio device: ${deviceId}`);
+        } catch (paErr) {
+          logger.warn(`PulseAudio playback failed, trying ALSA: ${paErr.message}`);
+          // Fall back to ALSA
+          const args = ['-D', deviceId, wavPath];
+          result = await this._runCommand('aplay', args, { timeoutMs: durationSec * 1500 + 3000 });
+        }
+      } else {
+        // Use ALSA for hw: devices and default
+        const args = [];
+        if (deviceId && deviceId !== 'default') {
+          args.push('-D', deviceId);
+        }
+        args.push(wavPath);
+        result = await this._runCommand('aplay', args, { timeoutMs: durationSec * 1500 + 3000 });
+        logger.info(`Played test tone on ALSA device: ${deviceId}`);
       }
-      args.push(wavPath);
-      const result = await this._runCommand('aplay', args, { timeoutMs: durationSec * 1500 + 3000 });
+
       // Clean up
       try { await fs.unlink(wavPath); } catch (_) {}
       return { success: result.code === 0, stdout: result.stdout, stderr: result.stderr };

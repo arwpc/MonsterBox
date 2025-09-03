@@ -596,7 +596,7 @@ router.get('/microphone/new', async (req, res) => {
         const character = await characterService.getCharacterById(req.characterId);
         const characters = await characterService.getAllCharacters();
         const part = { type: 'microphone', characterId: req.characterId };
-        res.render('part-form', {
+        res.render('part-forms/microphone', {
             title: 'Add Microphone',
             action: `/parts/microphone`,
             part,
@@ -623,9 +623,9 @@ router.get('/microphone/:id/edit', async (req, res) => {
         }
         const character = await characterService.getCharacterById(req.characterId);
         const characters = await characterService.getAllCharacters();
-        res.render('part-form', {
+        res.render('part-forms/microphone', {
             title: 'Edit Microphone',
-            action: `/parts/microphone/${id}/update`,
+            action: `/parts/microphone`,
             part,
             character,
             characters
@@ -696,6 +696,34 @@ router.post('/microphone/:id/update', async (req, res) => {
     }
 });
 
+// Speaker Routes
+router.get('/speaker/:id/edit', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            logger.warn(`Invalid part ID (not a number): ${req.params.id}`);
+            return res.status(404).send('Part not found');
+        }
+        const part = await partService.getPartById(id);
+        if (!part) {
+            logger.warn(`Part not found with id: ${id}`);
+            return res.status(404).send('Part not found');
+        }
+        const character = await characterService.getCharacterById(req.characterId);
+        const characters = await characterService.getAllCharacters();
+        res.render('part-forms/speaker', {
+            title: 'Edit Speaker',
+            action: `/parts/speaker`,
+            part,
+            character,
+            characters
+        });
+    } catch (error) {
+        logger.error('Error fetching speaker for editing:', error);
+        res.status(500).send('An error occurred while fetching the speaker');
+    }
+});
+
 // API Routes for Microphone Management
 router.get('/api/microphone/devices', async (req, res) => {
     try {
@@ -761,47 +789,7 @@ router.post('/api/microphone/test-levels', async (req, res) => {
     }
 });
 
-router.post('/api/microphone/:id/start-monitoring', async (req, res) => {
-    try {
-        const microphoneId = parseInt(req.params.id);
-        const MicrophoneManagerService = require('../services/microphoneManagerService');
-        const microphoneManager = new MicrophoneManagerService();
-
-        const result = await microphoneManager.startMicrophoneSession(microphoneId, 'monitoring');
-
-        res.json({
-            success: result,
-            message: result ? 'Monitoring started' : 'Failed to start monitoring'
-        });
-    } catch (error) {
-        logger.error('Error starting microphone monitoring:', error);
-        res.status(500).json({
-            success: false,
-            error: error.message
-        });
-    }
-});
-
-router.post('/api/microphone/:id/stop-monitoring', async (req, res) => {
-    try {
-        const microphoneId = parseInt(req.params.id);
-        const MicrophoneManagerService = require('../services/microphoneManagerService');
-        const microphoneManager = new MicrophoneManagerService();
-
-        const result = await microphoneManager.stopMicrophoneSession('monitoring');
-
-        res.json({
-            success: result,
-            message: result ? 'Monitoring stopped' : 'Failed to stop monitoring'
-        });
-    } catch (error) {
-        logger.error('Error stopping microphone monitoring:', error);
-        res.status(500).json({
-            success: false,
-            error: error.message
-        });
-    }
-});
+// Removed duplicate monitoring endpoints - using the enhanced ones below
 
 router.get('/api/microphone/:id/levels', async (req, res) => {
     try {

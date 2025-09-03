@@ -14,7 +14,8 @@ describe('Microphone consolidation', function() {
     // After redirect, expect parts page content or redirect following
     res.redirects.should.be.an('array');
     const finalUrl = res.redirects[res.redirects.length - 1] || '';
-    finalUrl.should.include('/parts/microphone/management');
+    // Should redirect through /parts/microphone/management to either new or edit
+    finalUrl.should.match(/\/parts\/microphone\/(new|[^\/]+\/edit)/);
   });
 
   it('microphone part form should link to STT config under /ai-management/stt', async () => {

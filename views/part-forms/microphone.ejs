@@ -147,10 +147,65 @@
                 <div class="form-actions">
                     <button type="submit" class="button primary-btn">💾 Save Microphone</button>
                     <a href="/parts?characterId=<%= character.id %>" class="button secondary-btn">↩️ Back to Parts</a>
+                    <a href="/ai-management/stt?characterId=<%= character.id %>" class="button">🎙️ Configure STT</a>
                 </div>
     </form>
 
+    <!-- Microphone Management Section (only visible for existing microphones) -->
+    <% if (part.id) { %>
+    <div class="form-section">
+        <h3>🎛️ Microphone Management</h3>
+        <div class="management-tabs">
+            <div class="tab-navigation">
+                <button class="tab-button active" data-tab="test">🧪 Test</button>
+                <button class="tab-button" data-tab="monitor">👁️ Monitor</button>
+                <button class="tab-button" data-tab="stt">🎙️ STT Integration</button>
+            </div>
 
+            <!-- Test Tab -->
+            <div class="tab-content active" id="test-tab">
+                <div class="test-section">
+                    <h4>🔊 Audio Test</h4>
+                    <button type="button" class="button" onclick="testMicrophone()">🎤 Test Microphone</button>
+                    <button type="button" class="button" onclick="testAudioLevels()">📊 Test Audio Levels</button>
+                    <div id="testStatus" class="test-status"></div>
+                    <pre id="testOutput" class="test-output"></pre>
+                </div>
+            </div>
+
+            <!-- Monitor Tab -->
+            <div class="tab-content" id="monitor-tab">
+                <div class="monitor-section">
+                    <h4>📊 Live Monitoring</h4>
+                    <div class="audio-level-container">
+                        <div class="level-bar-container">
+                            <div class="level-bar" id="audioLevelBar"></div>
+                        </div>
+                        <div class="level-text" id="audioLevelText">0%</div>
+                    </div>
+                    <div class="button-group">
+                        <button type="button" class="button" onclick="startMonitoring()">▶️ Start Monitoring</button>
+                        <button type="button" class="button secondary-btn" onclick="stopMonitoring()">⏹️ Stop Monitoring</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STT Integration Tab -->
+            <div class="tab-content" id="stt-tab">
+                <div class="stt-section">
+                    <h4>🎙️ Speech-to-Text Integration</h4>
+                    <button type="button" class="button" onclick="testSTTIntegration()">🧪 Test STT</button>
+                    <a href="/ai-management/stt?characterId=<%= character.id %>" class="button">⚙️ Configure STT</a>
+                    <div id="transcriptionOutput" class="transcription-output"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <% } else { %>
+    <div class="form-section">
+        <p class="info-message">💡 Save the microphone first to access monitoring and testing features.</p>
+    </div>
+    <% } %>
 
     <style>
         .form-section {
@@ -299,6 +354,133 @@
             cursor: not-allowed;
         }
 
+        /* Management Tab Styles */
+        .management-tabs {
+            margin-top: 20px;
+        }
+
+        .tab-navigation {
+            display: flex;
+            border-bottom: 1px solid rgba(0, 255, 0, 0.3);
+            margin-bottom: 20px;
+        }
+
+        .tab-button {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            border-bottom: none;
+            color: #00ff00;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 5px;
+        }
+
+        .tab-button:hover {
+            background: rgba(0, 255, 0, 0.1);
+        }
+
+        .tab-button.active {
+            background: rgba(0, 255, 0, 0.2);
+            border-bottom: 2px solid #00ff00;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .test-section, .monitor-section, .stt-section {
+            margin-bottom: 20px;
+        }
+
+        .test-status, .test-output {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            border-radius: 4px;
+            color: #ffffff;
+        }
+
+        .audio-level-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .level-bar-container {
+            flex: 1;
+            height: 30px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .level-bar {
+            height: 100%;
+            width: 0%;
+            background: #00ff00;
+            transition: width 0.1s ease;
+            border-radius: 15px;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+
+        .level-text {
+            min-width: 50px;
+            color: #00ff00;
+            font-weight: bold;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .transcription-output {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            border-radius: 4px;
+            min-height: 100px;
+        }
+
+        .stt-result {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+
+        .stt-result.success {
+            background: rgba(0, 255, 0, 0.2);
+            border: 1px solid #00ff00;
+        }
+
+        .stt-result.error {
+            background: rgba(255, 0, 64, 0.2);
+            border: 1px solid #ff0040;
+        }
+
+        .info-message {
+            color: #00ff00;
+            text-align: center;
+            padding: 20px;
+            font-style: italic;
+        }
 
     </style>
 
@@ -383,6 +565,242 @@
         document.getElementById('refreshDevicesButton').addEventListener('click', loadMicrophoneDevices);
 
 
+
+        // Management functions
+        const characterId = '<%= character.id %>';
+        const partId = '<%= part.id || "" %>';
+
+        // Tab switching
+        function switchTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Remove active class from all tab buttons
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Show selected tab content
+            document.getElementById(tabName + '-tab').classList.add('active');
+
+            // Add active class to selected tab button
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+        }
+
+        // Add event listeners for tab buttons
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    switchTab(this.dataset.tab);
+                });
+            });
+        });
+
+        async function testMicrophone() {
+            const testStatus = document.getElementById('testStatus');
+            const testOutput = document.getElementById('testOutput');
+            testStatus.textContent = 'Testing microphone...';
+            testOutput.textContent = '';
+
+            try {
+                const microphoneConfig = {
+                    deviceId: document.getElementById('deviceId').value,
+                    sampleRate: parseInt(document.getElementById('sampleRate').value),
+                    channels: parseInt(document.getElementById('channels').value),
+                    sensitivity: parseFloat(document.getElementById('sensitivity').value)
+                };
+
+                const response = await axios.post('/parts/api/microphone/test', {
+                    config: microphoneConfig,
+                    duration: 5
+                });
+
+                if (response.data.success) {
+                    testStatus.textContent = 'Microphone test completed successfully';
+                    testOutput.textContent = JSON.stringify(response.data.results, null, 2);
+                } else {
+                    testStatus.textContent = 'Microphone test failed';
+                    testOutput.textContent = response.data.error || 'Unknown error';
+                }
+            } catch (error) {
+                console.error('Error testing microphone:', error);
+                testStatus.textContent = 'Error testing microphone';
+                testOutput.textContent = error.message;
+            }
+        }
+
+        async function testAudioLevels() {
+            const testStatus = document.getElementById('testStatus');
+            testStatus.textContent = 'Testing audio levels...';
+
+            try {
+                const response = await axios.post('/parts/api/microphone/test-levels', {
+                    microphoneId: partId || 'default',
+                    duration: 10
+                });
+
+                if (response.data.success) {
+                    testStatus.textContent = 'Audio level test completed';
+                } else {
+                    testStatus.textContent = 'Audio level test failed';
+                }
+            } catch (error) {
+                console.error('Error testing audio levels:', error);
+                testStatus.textContent = 'Error testing audio levels';
+            }
+        }
+
+        async function startMonitoring() {
+            if (!partId) {
+                showNotification('Please save the microphone first before starting monitoring', 'error');
+                return;
+            }
+
+            try {
+                const response = await axios.post(`/parts/api/microphone/${partId}/start-monitoring`);
+
+                if (response.data.success) {
+                    showNotification('Monitoring started', 'success');
+                    startAudioLevelUpdates();
+                } else {
+                    showNotification('Failed to start monitoring', 'error');
+                }
+            } catch (error) {
+                console.error('Error starting monitoring:', error);
+                showNotification('Error starting monitoring', 'error');
+            }
+        }
+
+        async function stopMonitoring() {
+            if (!partId) {
+                showNotification('Please save the microphone first before stopping monitoring', 'error');
+                return;
+            }
+
+            try {
+                const response = await axios.post(`/parts/api/microphone/${partId}/stop-monitoring`);
+
+                if (response.data.success) {
+                    showNotification('Monitoring stopped', 'success');
+                    stopAudioLevelUpdates();
+                } else {
+                    showNotification('Failed to stop monitoring', 'error');
+                }
+            } catch (error) {
+                console.error('Error stopping monitoring:', error);
+                showNotification('Error stopping monitoring', 'error');
+            }
+        }
+
+        async function testSTTIntegration() {
+            const sttResults = document.getElementById('transcriptionOutput');
+            sttResults.innerHTML = '<div class="loading">Testing STT integration...</div>';
+
+            try {
+                const response = await axios.post('/parts/api/microphone/test-stt', {
+                    microphoneId: partId || 'default',
+                    characterId: characterId,
+                    duration: 10
+                });
+
+                if (response.data.success) {
+                    sttResults.innerHTML = `
+                        <div class="stt-result success">
+                            <h6>STT Test Successful</h6>
+                            <p><strong>Transcription:</strong> ${response.data.transcription}</p>
+                            <p><strong>Confidence:</strong> ${response.data.confidence}%</p>
+                            <p><strong>Language:</strong> ${response.data.language}</p>
+                        </div>
+                    `;
+                } else {
+                    sttResults.innerHTML = `
+                        <div class="stt-result error">
+                            <h6>STT Test Failed</h6>
+                            <p>${response.data.error}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error testing STT integration:', error);
+                sttResults.innerHTML = `
+                    <div class="stt-result error">
+                        <h6>STT Test Error</h6>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Audio level monitoring
+        let audioLevelInterval;
+        function startAudioLevelUpdates() {
+            if (!partId) {
+                console.warn('Cannot start audio level updates: microphone not saved yet');
+                return;
+            }
+
+            audioLevelInterval = setInterval(async () => {
+                try {
+                    const response = await axios.get(`/parts/api/microphone/${partId}/levels`);
+                    if (response.data.success) {
+                        updateAudioLevelDisplay(response.data.levels);
+                    }
+                } catch (error) {
+                    console.error('Error getting audio levels:', error);
+                }
+            }, 100);
+        }
+
+        function stopAudioLevelUpdates() {
+            if (audioLevelInterval) {
+                clearInterval(audioLevelInterval);
+                audioLevelInterval = null;
+            }
+        }
+
+        function updateAudioLevelDisplay(levels) {
+            const levelBar = document.getElementById('audioLevelBar');
+            const levelText = document.getElementById('audioLevelText');
+
+            if (levelBar && levelText) {
+                const percentage = Math.round(levels.average * 100);
+                levelBar.style.width = percentage + '%';
+                levelText.textContent = percentage + '%';
+
+                // Color coding
+                if (percentage > 80) {
+                    levelBar.style.backgroundColor = '#ff0040';
+                } else if (percentage > 60) {
+                    levelBar.style.backgroundColor = '#ffff00';
+                } else {
+                    levelBar.style.backgroundColor = '#00ff00';
+                }
+            }
+        }
+
+        function showNotification(message, type) {
+            // Simple notification - could be enhanced
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 10px 20px;
+                border-radius: 4px;
+                color: white;
+                z-index: 1000;
+                background: ${type === 'success' ? '#00ff00' : '#ff0040'};
+            `;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 3000);
+        }
 
         // Load devices when page loads
         document.addEventListener('DOMContentLoaded', function () {
