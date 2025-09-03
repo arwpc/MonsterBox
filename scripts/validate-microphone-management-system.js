@@ -11,35 +11,36 @@ class MicrophoneManagementValidator {
     constructor() {
         this.requirements = [
             {
-                id: 'CRUD_OPERATIONS',
-                name: 'CRUD Operations for Microphone Parts',
+                id: 'UNIFIED_MICROPHONE_FORM',
+                name: 'Unified Microphone Form System',
                 checks: [
-                    'views/microphone-management.ejs exists',
-                    'Create microphone form implemented',
-                    'Read/view microphone parts functionality',
-                    'Update microphone configurations',
-                    'Delete microphone parts'
+                    'views/part-forms/microphone.ejs exists',
+                    'Unified New/Edit microphone form implemented',
+                    'Real-time device discovery functionality',
+                    'Live audio testing and monitoring',
+                    'Comprehensive configuration options'
                 ]
             },
             {
-                id: 'CONFIGURATION_MANAGEMENT',
-                name: 'Configuration Management',
+                id: 'STT_VAD_INTEGRATION',
+                name: 'STT + VAD Integration System',
                 checks: [
-                    'Centralized microphone settings interface',
-                    'Audio input/output configuration',
-                    'Hardware connection settings',
-                    'Real-time audio level monitoring'
+                    'views/ai-config/stt.ejs enhanced with VAD testing',
+                    'Comprehensive STT + VAD testing suite',
+                    'Real-time VAD visualization and monitoring',
+                    'Integration performance metrics',
+                    'Unified testing interface with tabs'
                 ]
             },
             {
-                id: 'TESTING_INTERFACE',
-                name: 'Testing Interface with Audio Visualization',
+                id: 'SPEAKER_DEVICE_DISCOVERY',
+                name: 'Speaker Device Discovery System',
                 checks: [
-                    'Live microphone testing functionality',
-                    'Audio visualization components',
-                    'Connection status indicators',
-                    'Audio quality assessment tools',
-                    'Ambient sound detection'
+                    'Speaker device discovery API endpoint',
+                    'Real-world USB Audio Device detection',
+                    'Platform audio device enumeration',
+                    'Device selection and configuration',
+                    'Audio output testing capabilities'
                 ]
             },
             {
@@ -126,14 +127,14 @@ class MicrophoneManagementValidator {
 
         // Specific validation logic for each requirement
         switch (requirement.id) {
-            case 'CRUD_OPERATIONS':
-                passed += this.validateCRUDOperations(details);
+            case 'UNIFIED_MICROPHONE_FORM':
+                passed += this.validateUnifiedMicrophoneForm(details);
                 break;
-            case 'CONFIGURATION_MANAGEMENT':
-                passed += this.validateConfigurationManagement(details);
+            case 'STT_VAD_INTEGRATION':
+                passed += this.validateSTTVADIntegration(details);
                 break;
-            case 'TESTING_INTERFACE':
-                passed += this.validateTestingInterface(details);
+            case 'SPEAKER_DEVICE_DISCOVERY':
+                passed += this.validateSpeakerDeviceDiscovery(details);
                 break;
             case 'WEBSOCKET_FIXES':
                 passed += this.validateWebSocketFixes(details);
@@ -163,80 +164,136 @@ class MicrophoneManagementValidator {
         return failed === 0;
     }
 
-    validateCRUDOperations(details) {
+    validateUnifiedMicrophoneForm(details) {
         let passed = 0;
 
-        // Check main management page exists
-        if (this.fileExists('views/microphone-management.ejs')) {
-            details.checks.push({ name: 'Microphone management page exists', status: 'PASSED' });
+        // Check unified microphone form exists
+        if (this.fileExists('views/part-forms/microphone.ejs')) {
+            details.checks.push({ name: 'Unified microphone form exists', status: 'PASSED' });
             passed++;
         } else {
-            details.checks.push({ name: 'Microphone management page exists', status: 'FAILED' });
+            details.checks.push({ name: 'Unified microphone form exists', status: 'FAILED' });
         }
 
-        // Check for CRUD functionality in the page
-        if (this.fileContains('views/microphone-management.ejs', 'createMicrophone')) {
-            details.checks.push({ name: 'Create functionality implemented', status: 'PASSED' });
+        // Check for device discovery functionality
+        if (this.fileContains('views/part-forms/microphone.ejs', 'loadMicrophoneDevices')) {
+            details.checks.push({ name: 'Device discovery implemented', status: 'PASSED' });
             passed++;
         } else {
-            details.checks.push({ name: 'Create functionality implemented', status: 'FAILED' });
+            details.checks.push({ name: 'Device discovery implemented', status: 'FAILED' });
         }
 
-        // Check API routes
-        if (this.fileContains('routes/partRoutes.js', '/api/microphone')) {
-            details.checks.push({ name: 'API routes implemented', status: 'PASSED' });
+        // Check for live testing functionality
+        if (this.fileContains('views/part-forms/microphone.ejs', 'startLiveMonitoring')) {
+            details.checks.push({ name: 'Live testing implemented', status: 'PASSED' });
             passed++;
         } else {
-            details.checks.push({ name: 'API routes implemented', status: 'FAILED' });
+            details.checks.push({ name: 'Live testing implemented', status: 'FAILED' });
         }
 
-        // Check for delete functionality
-        if (this.fileContains('views/microphone-management.ejs', 'deleteMicrophone')) {
-            details.checks.push({ name: 'Delete functionality implemented', status: 'PASSED' });
+        // Check for comprehensive configuration
+        if (this.fileContains('views/part-forms/microphone.ejs', 'config-section')) {
+            details.checks.push({ name: 'Comprehensive configuration sections', status: 'PASSED' });
             passed++;
         } else {
-            details.checks.push({ name: 'Delete functionality implemented', status: 'FAILED' });
+            details.checks.push({ name: 'Comprehensive configuration sections', status: 'FAILED' });
+        }
+
+        // Check for modern styling
+        if (this.fileContains('views/part-forms/microphone.ejs', 'microphone-container')) {
+            details.checks.push({ name: 'Modern two-panel layout', status: 'PASSED' });
+            passed++;
+        } else {
+            details.checks.push({ name: 'Modern two-panel layout', status: 'FAILED' });
         }
 
         return passed;
     }
 
-    validateConfigurationManagement(details) {
+    validateSTTVADIntegration(details) {
         let passed = 0;
 
-        // Check for configuration tab
-        if (this.fileContains('views/microphone-management.ejs', 'configuration-tab')) {
-            details.checks.push({ name: 'Configuration tab exists', status: 'PASSED' });
+        // Check enhanced STT configuration page
+        if (this.fileExists('views/ai-config/stt.ejs')) {
+            details.checks.push({ name: 'STT configuration page exists', status: 'PASSED' });
             passed++;
         } else {
-            details.checks.push({ name: 'Configuration tab exists', status: 'FAILED' });
+            details.checks.push({ name: 'STT configuration page exists', status: 'FAILED' });
         }
 
-        // Check for audio level monitoring
-        if (this.fileContains('views/microphone-management.ejs', 'audio-level')) {
-            details.checks.push({ name: 'Audio level monitoring implemented', status: 'PASSED' });
+        // Check for VAD testing tabs
+        if (this.fileContains('views/ai-config/stt.ejs', 'testing-tabs')) {
+            details.checks.push({ name: 'STT + VAD testing tabs implemented', status: 'PASSED' });
             passed++;
         } else {
-            details.checks.push({ name: 'Audio level monitoring implemented', status: 'FAILED' });
+            details.checks.push({ name: 'STT + VAD testing tabs implemented', status: 'FAILED' });
+        }
+
+        // Check for VAD visualization
+        if (this.fileContains('views/ai-config/stt.ejs', 'vad-visualization')) {
+            details.checks.push({ name: 'VAD visualization implemented', status: 'PASSED' });
+            passed++;
+        } else {
+            details.checks.push({ name: 'VAD visualization implemented', status: 'FAILED' });
+        }
+
+        // Check for integration testing
+        if (this.fileContains('views/ai-config/stt.ejs', 'runIntegrationTest')) {
+            details.checks.push({ name: 'Integration testing implemented', status: 'PASSED' });
+            passed++;
+        } else {
+            details.checks.push({ name: 'Integration testing implemented', status: 'FAILED' });
+        }
+
+        // Check for performance metrics
+        if (this.fileContains('views/ai-config/stt.ejs', 'integration-metrics')) {
+            details.checks.push({ name: 'Performance metrics implemented', status: 'PASSED' });
+            passed++;
+        } else {
+            details.checks.push({ name: 'Performance metrics implemented', status: 'FAILED' });
         }
 
         return passed;
     }
 
-    validateTestingInterface(details) {
+    validateSpeakerDeviceDiscovery(details) {
         let passed = 0;
 
-        // Check for testing tab
-        if (this.fileContains('views/microphone-management.ejs', 'testing-tab')) {
-            details.checks.push({ name: 'Testing tab exists', status: 'PASSED' });
+        // Check speaker device API endpoint
+        if (this.fileContains('routes/partRoutes.js', '/api/speaker/devices')) {
+            details.checks.push({ name: 'Speaker device discovery API exists', status: 'PASSED' });
             passed++;
         } else {
-            details.checks.push({ name: 'Testing tab exists', status: 'FAILED' });
+            details.checks.push({ name: 'Speaker device discovery API exists', status: 'FAILED' });
         }
 
-        // Check for audio visualization
-        if (this.fileContains('views/microphone-management.ejs', 'Chart.js')) {
-            details.checks.push({ name: 'Audio visualization implemented', status: 'PASSED' });
+        // Check speaker service implementation
+        if (this.fileExists('services/speakerService.js')) {
+            details.checks.push({ name: 'Speaker service implemented', status: 'PASSED' });
+            passed++;
+        } else {
+            details.checks.push({ name: 'Speaker service implemented', status: 'FAILED' });
+        }
+
+        // Check device enumeration functionality
+        if (this.fileContains('services/speakerService.js', 'getAvailableDevices')) {
+            details.checks.push({ name: 'Device enumeration implemented', status: 'PASSED' });
+            passed++;
+        } else {
+            details.checks.push({ name: 'Device enumeration implemented', status: 'FAILED' });
+        }
+
+        // Check USB Audio Device detection
+        if (this.fileContains('services/speakerService.js', 'USB Audio Device')) {
+            details.checks.push({ name: 'USB Audio Device detection', status: 'PASSED' });
+            passed++;
+        } else {
+            details.checks.push({ name: 'USB Audio Device detection', status: 'FAILED' });
+        }
+
+        // Check platform audio support
+        if (this.fileContains('services/speakerService.js', 'platform-fe00b840')) {
+            details.checks.push({ name: 'Platform audio device support', status: 'PASSED' });
             passed++;
         } else {
             details.checks.push({ name: 'Audio visualization implemented', status: 'FAILED' });

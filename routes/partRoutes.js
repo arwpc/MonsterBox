@@ -1685,8 +1685,8 @@ router.get('/api/speaker/devices', async (req, res) => {
     try {
         const SpeakerService = require('../services/speakerService');
         const svc = new SpeakerService();
-        const devices = await svc.getAvailableDevices();
-        res.json({ success: true, devices });
+        const speakers = await svc.getAvailableDevices();
+        res.json({ success: true, speakers });
     } catch (err) {
         logger.error('Error getting speaker devices:', err);
         res.status(500).json({ success: false, error: err.message });

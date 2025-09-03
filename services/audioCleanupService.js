@@ -125,14 +125,23 @@ class AudioCleanupService {
 
             let cleaned = 0;
             for (const file of unreferencedFiles) {
-                const filePath = path.join(this.config.soundsDir, file);
-                const stats = await fs.stat(filePath);
-                
-                // Only delete files older than preserve threshold
-                if (Date.now() - stats.mtime.getTime() > this.config.preserveRecentFiles) {
-                    await fs.unlink(filePath);
-                    cleaned++;
-                    logger.debug('Deleted unreferenced audio file:', file);
+                try {
+                    const filePath = path.join(this.config.soundsDir, file);
+                    const stats = await fs.stat(filePath);
+
+                    // Only delete files older than preserve threshold
+                    if (Date.now() - stats.mtime.getTime() > this.config.preserveRecentFiles) {
+                        await fs.unlink(filePath);
+                        cleaned++;
+                        logger.debug('Deleted unreferenced audio file:', file);
+                    }
+                } catch (error) {
+                    if (error.code === 'ENOENT') {
+                        // File already deleted, skip silently
+                        logger.debug('File already deleted during cleanup:', file);
+                    } else {
+                        logger.warn('Error processing unreferenced file:', file, error.message);
+                    }
                 }
             }
 
@@ -157,13 +166,22 @@ class AudioCleanupService {
             const cutoffTime = Date.now() - this.config.maxFileAge;
 
             for (const file of tempFiles) {
-                const filePath = path.join(this.config.soundsDir, file);
-                const stats = await fs.stat(filePath);
-                
-                if (stats.mtime.getTime() < cutoffTime) {
-                    await fs.unlink(filePath);
-                    cleaned++;
-                    logger.debug('Deleted old temp audio file:', file);
+                try {
+                    const filePath = path.join(this.config.soundsDir, file);
+                    const stats = await fs.stat(filePath);
+
+                    if (stats.mtime.getTime() < cutoffTime) {
+                        await fs.unlink(filePath);
+                        cleaned++;
+                        logger.debug('Deleted old temp audio file:', file);
+                    }
+                } catch (error) {
+                    if (error.code === 'ENOENT') {
+                        // File already deleted, skip silently
+                        logger.debug('Temp file already deleted:', file);
+                    } else {
+                        logger.warn('Error processing temp file:', file, error.message);
+                    }
                 }
             }
 
@@ -189,13 +207,22 @@ class AudioCleanupService {
             const cutoffTime = Date.now() - (2 * 60 * 60 * 1000); // 2 hours for test files
 
             for (const file of testFiles) {
-                const filePath = path.join(this.config.soundsDir, file);
-                const stats = await fs.stat(filePath);
-                
-                if (stats.mtime.getTime() < cutoffTime) {
-                    await fs.unlink(filePath);
-                    cleaned++;
-                    logger.debug('Deleted test audio file:', file);
+                try {
+                    const filePath = path.join(this.config.soundsDir, file);
+                    const stats = await fs.stat(filePath);
+
+                    if (stats.mtime.getTime() < cutoffTime) {
+                        await fs.unlink(filePath);
+                        cleaned++;
+                        logger.debug('Deleted test audio file:', file);
+                    }
+                } catch (error) {
+                    if (error.code === 'ENOENT') {
+                        // File already deleted, skip silently
+                        logger.debug('Test file already deleted:', file);
+                    } else {
+                        logger.warn('Error processing test file:', file, error.message);
+                    }
                 }
             }
 

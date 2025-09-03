@@ -46,7 +46,7 @@ router.get('/history/:characterId', voiceController.getVoiceHistory);
 router.get('/stats/:characterId', voiceController.getVoiceStats);
 router.delete('/history/:characterId', voiceController.deleteVoiceHistory);
 
-// TopMediai specific routes
+// Voice generation routes
 router.get('/capabilities/:speaker_id', voiceController.getVoiceCapabilities);
 router.post('/test-connection', voiceController.testVoiceConnection);
 
@@ -213,7 +213,7 @@ router.post('/save-to-sounds', async (req, res) => {
         
         // Determine file extension from the original URL
         const urlPath = new URL(audioUrl).pathname;
-        const originalExtension = path.extname(urlPath) || '.wav'; // Default to WAV for TopMediai
+        const originalExtension = path.extname(urlPath) || '.wav'; // Default to WAV format
 
         // Create the target filename with correct extension
         const targetFileName = `${Date.now()}-${text.slice(0, 30).replace(/[^a-zA-Z0-9]/g, '_')}${originalExtension}`;

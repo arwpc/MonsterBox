@@ -66,7 +66,7 @@ class APIKeyManager extends EventEmitter {
             openai: process.env.OPENAI_API_KEY,
             anthropic: process.env.ANTHROPIC_API_KEY,
             google: process.env.GOOGLE_API_KEY,
-            topmediai: process.env.TOPMEDIAI_API_KEY
+            // topmediai: removed - no longer used
         };
 
         for (const [provider, key] of Object.entries(envKeys)) {

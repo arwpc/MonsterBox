@@ -309,7 +309,7 @@ exports.generateAndSaveForScene = async (req, res) => {
         // Create filename and path with correct extension
         const timestamp = Date.now();
         const sanitizedText = text.substring(0, 30).replace(/[^a-zA-Z0-9]/g, '_');
-        // Use the actual format from TopMediai result (WAV or MP3)
+        // Use the actual format from TTS result (WAV or MP3)
         const extension = result.format === 'wav' ? '.wav' : '.mp3';
         const filename = `${timestamp}-${sanitizedText}${extension}`;
         const filePath = path.join('public', 'sounds', filename);
@@ -371,13 +371,13 @@ exports.generateSpeech = async (req, res) => {
             return handleError(res, new Error('Speaker ID and text are required'), 400);
         }
 
-        // Transform options into generation options for TopMediai
+        // Transform options into generation options for TTS
         const generationOptions = {
             ...options,
             speed: options?.speed || 1.0,
             pitch: options?.pitch || 0,
             volume: options?.volume || 0,
-            emotion: options?.emotion || 'Neutral', // TopMediai emotion parameter
+            emotion: options?.emotion || 'Neutral', // TTS emotion parameter
             bitRate: 128  // Standard MP3 bitrate
         };
 
@@ -608,7 +608,7 @@ exports.testVoiceConnection = async (req, res) => {
             return handleError(res, new Error('Speaker ID is required'), 400);
         }
 
-        // For TopMediai, we can test by generating a short sample
+        // Test by generating a short sample
         const testResult = await voiceService.generateSpeech(
             'Hello, this is a test.',
             speaker_id,
@@ -619,7 +619,7 @@ exports.testVoiceConnection = async (req, res) => {
             success: true,
             message: 'Voice connection test successful',
             testAudio: testResult.url,
-            provider: 'TopMediai'
+            provider: 'ElevenLabs'
         });
     } catch (error) {
         if (error.message.includes('API key is required')) {

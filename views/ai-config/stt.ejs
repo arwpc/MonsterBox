@@ -218,51 +218,503 @@
             </div>
         </div>
 
-        <!-- Live ElevenLabs Voice Testing -->
+        <!-- Comprehensive STT + VAD Testing -->
         <div class="config-section">
             <div class="config-header">
                 <i class="fas fa-microphone config-icon"></i>
-                <h2 class="config-title">🎤 Live ElevenLabs Voice Testing</h2>
+                <h2 class="config-title">🎤 STT + VAD Testing Suite</h2>
             </div>
-            <div class="voice-test-section">
-                <p style="color: #00ff00; margin-bottom: 20px;">Ready to Test</p>
-                <div class="recording-button" id="recordButton" onclick="toggleRecording()">
-                    <i class="fas fa-microphone"></i>
+
+            <!-- Testing Tabs -->
+            <div class="testing-tabs">
+                <div class="tab-navigation">
+                    <button class="tab-button active" data-tab="live-test">🎙️ Live Test</button>
+                    <button class="tab-button" data-tab="vad-test">🎯 VAD Test</button>
+                    <button class="tab-button" data-tab="integration-test">🔗 Integration Test</button>
                 </div>
-                <p style="color: #ffffff; margin-top: 10px;">Click to start recording</p>
-                
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressFill"></div>
-                </div>
-            </div>
-            
-            <div class="test-result" id="testResult">
-                <strong>ElevenLabs Voice Test Result:</strong><br>
-                Audio processed successfully (36869 bytes)<br><br>
-                <strong>Transcribed Text:</strong><br>
-                "No speech detected"<br><br>
-                <em>Provider: ElevenLabs | VAD Status: Enabled | Response Time: 0ms</em>
-                
-                <div class="confidence-bar">
-                    <div class="confidence-label">Confidence:</div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: 25%"></div>
+
+                <!-- Live STT Test Tab -->
+                <div class="tab-content active" id="live-test-tab">
+                    <div class="voice-test-section">
+                        <div class="test-status" id="liveTestStatus">Ready to Test STT + VAD</div>
+
+                        <div class="recording-controls">
+                            <div class="recording-button" id="recordButton" onclick="toggleRecording()">
+                                <i class="fas fa-microphone"></i>
+                            </div>
+                            <p class="recording-instruction">Click to start recording</p>
+                        </div>
+
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+
+                        <!-- VAD Visual Indicator -->
+                        <div class="vad-indicator">
+                            <div class="vad-status" id="vadStatus">
+                                <span class="vad-label">VAD:</span>
+                                <span class="vad-state" id="vadState">Inactive</span>
+                            </div>
+                            <div class="vad-threshold-display">
+                                <span>Threshold: <span id="currentThreshold">0.5</span></span>
+                            </div>
+                        </div>
+
+                        <!-- Results Display -->
+                        <div class="test-results" id="liveTestResults"></div>
                     </div>
-                    <span style="color: #00ff00;">25%</span>
+                </div>
+
+                <!-- VAD-Specific Test Tab -->
+                <div class="tab-content" id="vad-test-tab">
+                    <div class="vad-test-section">
+                        <div class="test-status" id="vadTestStatus">Ready to Test Voice Activation Detection</div>
+
+                        <div class="vad-controls">
+                            <button class="btn" onclick="startVADTest()">🎯 Start VAD Test</button>
+                            <button class="btn-secondary" onclick="stopVADTest()">⏹️ Stop Test</button>
+                        </div>
+
+                        <!-- Real-time VAD Visualization -->
+                        <div class="vad-visualization">
+                            <div class="audio-level-container">
+                                <div class="level-bar-container">
+                                    <div class="level-bar" id="vadAudioLevelBar"></div>
+                                    <div class="threshold-line" id="vadThresholdLine"></div>
+                                </div>
+                                <div class="level-text" id="vadAudioLevelText">0%</div>
+                            </div>
+
+                            <div class="vad-events" id="vadEvents">
+                                <h4>VAD Events:</h4>
+                                <div class="events-list" id="vadEventsList"></div>
+                            </div>
+                        </div>
+
+                        <div class="test-results" id="vadTestResults"></div>
+                    </div>
+                </div>
+
+                <!-- Integration Test Tab -->
+                <div class="tab-content" id="integration-test-tab">
+                    <div class="integration-test-section">
+                        <div class="test-status" id="integrationTestStatus">Ready to Test Full STT + VAD Integration</div>
+
+                        <div class="integration-controls">
+                            <button class="btn" onclick="runIntegrationTest()">🔗 Run Full Integration Test</button>
+                            <button class="btn-secondary" onclick="testConnection()">🔗 Test Connection</button>
+                        </div>
+
+                        <div class="integration-metrics">
+                            <div class="metric-card">
+                                <h4>STT Performance</h4>
+                                <div id="sttMetrics">Not tested</div>
+                            </div>
+                            <div class="metric-card">
+                                <h4>VAD Performance</h4>
+                                <div id="vadMetrics">Not tested</div>
+                            </div>
+                            <div class="metric-card">
+                                <h4>Integration Health</h4>
+                                <div id="integrationMetrics">Not tested</div>
+                            </div>
+                        </div>
+
+                        <div class="test-results" id="integrationTestResults"></div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <style>
+        /* Testing Tabs Styling */
+        .testing-tabs {
+            margin-top: 20px;
+        }
+
+        .tab-navigation {
+            display: flex;
+            border-bottom: 2px solid rgba(0, 255, 0, 0.3);
+            margin-bottom: 20px;
+        }
+
+        .tab-button {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            border-bottom: none;
+            color: #00ff00;
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 5px;
+            font-weight: 600;
+        }
+
+        .tab-button:hover {
+            background: rgba(0, 255, 0, 0.1);
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+        }
+
+        .tab-button.active {
+            background: rgba(0, 255, 0, 0.2);
+            border-bottom: 2px solid #00ff00;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.4);
+        }
+
+        .tab-content {
+            display: none;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            border: 1px solid rgba(0, 255, 0, 0.2);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Test Status Styling */
+        .test-status {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            border-radius: 6px;
+            padding: 15px;
+            color: #00ff00;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 20px;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Recording Controls */
+        .recording-controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .recording-button {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00ff00, #00cc00);
+            border: 3px solid #00ff00;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin: 0 auto 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+        }
+
+        .recording-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.5);
+        }
+
+        .recording-button.recording {
+            background: linear-gradient(135deg, #ff0040, #cc0030);
+            border-color: #ff0040;
+            box-shadow: 0 0 20px rgba(255, 0, 64, 0.3);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .recording-button i {
+            font-size: 2rem;
+            color: #000000;
+        }
+
+        .recording-instruction {
+            color: #ffffff;
+            margin: 10px 0;
+            font-size: 0.9rem;
+        }
+
+        /* VAD Indicator */
+        .vad-indicator {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 255, 0, 0.2);
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .vad-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .vad-label {
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        .vad-state {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .vad-state.active {
+            background: #00ff00;
+            color: #000000;
+        }
+
+        .vad-state.inactive {
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+        }
+
+        .vad-threshold-display {
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* VAD Controls */
+        .vad-controls, .integration-controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .vad-controls button, .integration-controls button {
+            margin: 0 10px;
+        }
+
+        /* VAD Visualization */
+        .vad-visualization {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 255, 0, 0.2);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .audio-level-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .level-bar-container {
+            flex: 1;
+            height: 30px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .level-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #00ff00, #ffff00, #ff0000);
+            transition: width 0.1s ease;
+            border-radius: 15px;
+        }
+
+        .threshold-line {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            width: 2px;
+            background: #ffffff;
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+        }
+
+        .level-text {
+            min-width: 50px;
+            color: #00ff00;
+            font-weight: bold;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* VAD Events */
+        .vad-events h4 {
+            color: #00ff00;
+            margin-bottom: 10px;
+        }
+
+        .events-list {
+            max-height: 200px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            border-radius: 4px;
+            padding: 10px;
+        }
+
+        .vad-event {
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(0, 255, 0, 0.1);
+            color: #ffffff;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .vad-event:last-child {
+            border-bottom: none;
+        }
+
+        .vad-event.detected {
+            color: #00ff00;
+        }
+
+        .vad-event.ended {
+            color: #ffff00;
+        }
+
+        /* Integration Metrics */
+        .integration-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .metric-card {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 255, 0, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .metric-card h4 {
+            color: #00ff00;
+            margin: 0 0 10px 0;
+            font-size: 1rem;
+        }
+
+        .metric-card div {
+            color: #ffffff;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        /* Test Results */
+        .test-results {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 20px;
+            min-height: 100px;
+            color: #ffffff;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            max-height: 300px;
+        }
+
+        .test-results:empty::before {
+            content: "Test results will appear here...";
+            color: #666;
+            font-style: italic;
+        }
+
+        /* Success/Error States */
+        .success {
+            color: #00ff00 !important;
+        }
+
+        .error {
+            color: #ff0040 !important;
+        }
+
+        .warning {
+            color: #ffff00 !important;
+        }
+    </style>
+
     <script>
+        // Global variables
         let isRecording = false;
         let websocket = null;
         let audioContext = null;
         let mediaStream = null;
+        let vadTestInterval = null;
+        let isVADTesting = false;
+        let vadEvents = [];
 
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeTabs();
+            loadCurrentConfiguration();
+        });
+
+        // Tab Management
+        function initializeTabs() {
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    switchTab(this.dataset.tab);
+                });
+            });
+        }
+
+        function switchTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Remove active class from all tab buttons
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Show selected tab content
+            document.getElementById(tabName + '-tab').classList.add('active');
+
+            // Add active class to selected tab button
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+        }
+
+        // Load current configuration
+        async function loadCurrentConfiguration() {
+            try {
+                const response = await fetch('/ai-management/api/vad/config');
+                if (response.ok) {
+                    const config = await response.json();
+                    updateThresholdDisplay(config.vadThreshold || 0.5);
+                }
+            } catch (error) {
+                console.error('Error loading configuration:', error);
+            }
+        }
+
+        function updateThresholdDisplay(threshold) {
+            const thresholdElement = document.getElementById('currentThreshold');
+            if (thresholdElement) {
+                thresholdElement.textContent = threshold;
+            }
+
+            // Update VAD threshold line position
+            const thresholdLine = document.getElementById('vadThresholdLine');
+            if (thresholdLine) {
+                thresholdLine.style.left = (threshold * 100) + '%';
+            }
+        }
+
+        // WebSocket initialization for live testing
         async function initializeWebSocket() {
             try {
-                // Get the correct WebSocket URL from the API
                 const response = await fetch('/ai-management/api/stt/live-transcription-info');
                 const data = await response.json();
 
@@ -270,41 +722,46 @@
                     throw new Error(data.error || 'Failed to get WebSocket info');
                 }
 
-                console.log('WebSocket info:', data);
                 websocket = new WebSocket(data.websocketUrl);
 
                 websocket.onopen = function() {
-                    console.log('ElevenLabs WebSocket connected to:', data.websocketUrl);
+                    console.log('✅ ElevenLabs WebSocket connected');
+                    updateTestStatus('liveTestStatus', 'WebSocket connected - Ready to test');
                 };
 
                 websocket.onmessage = function(event) {
                     const data = JSON.parse(event.data);
-                    updateTestResult(data);
+                    handleWebSocketMessage(data);
                 };
 
                 websocket.onerror = function(error) {
-                    console.error('WebSocket error:', error);
-                    updateTestResult({
-                        transcription: 'Connection error',
-                        confidence: 0,
-                        error: true
-                    });
+                    console.error('❌ WebSocket error:', error);
+                    updateTestStatus('liveTestStatus', 'WebSocket connection error', 'error');
                 };
 
-                websocket.onclose = function(event) {
-                    console.log('WebSocket closed:', event.code, event.reason);
+                websocket.onclose = function() {
+                    console.log('WebSocket connection closed');
+                    updateTestStatus('liveTestStatus', 'WebSocket connection closed', 'warning');
                 };
 
             } catch (error) {
-                console.error('Failed to initialize WebSocket:', error);
-                updateTestResult({
-                    transcription: 'Failed to connect: ' + error.message,
-                    confidence: 0,
-                    error: true
-                });
+                console.error('Error initializing WebSocket:', error);
+                updateTestStatus('liveTestStatus', 'Failed to initialize WebSocket: ' + error.message, 'error');
             }
         }
 
+        function handleWebSocketMessage(data) {
+            // Handle different types of WebSocket messages
+            if (data.type === 'transcription') {
+                displayLiveTestResult(data);
+            } else if (data.type === 'vad_event') {
+                handleVADEvent(data);
+            } else if (data.type === 'audio_level') {
+                updateAudioLevel(data.level);
+            }
+        }
+
+        // Live STT + VAD Testing Functions
         function toggleRecording() {
             if (!isRecording) {
                 startRecording();
@@ -316,143 +773,457 @@
         async function startRecording() {
             try {
                 if (!websocket) {
-                    initializeWebSocket();
+                    await initializeWebSocket();
                 }
 
-                mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                audioContext = new AudioContext();
+                // Get microphone access
+                mediaStream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    }
+                });
 
-                const recordButton = document.getElementById('recordButton');
-                recordButton.classList.add('recording');
-                recordButton.innerHTML = '<i class="fas fa-stop"></i>';
+                // Set up audio context for processing
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const source = audioContext.createMediaStreamSource(mediaStream);
 
+                // Start recording
                 isRecording = true;
+                updateRecordingUI(true);
+                updateTestStatus('liveTestStatus', 'Recording... Speak now to test STT + VAD');
 
-                // Start audio processing and send to WebSocket
-                processAudioStream();
+                // Start progress animation
+                startProgressAnimation();
+
+                // Send audio data via WebSocket
+                if (websocket && websocket.readyState === WebSocket.OPEN) {
+                    websocket.send(JSON.stringify({
+                        type: 'start_recording',
+                        config: {
+                            vadEnabled: true,
+                            vadThreshold: parseFloat(document.getElementById('currentThreshold').textContent),
+                            language: 'en'
+                        }
+                    }));
+                }
 
             } catch (error) {
                 console.error('Error starting recording:', error);
-                updateTestResult({
-                    transcription: 'Microphone access denied',
-                    confidence: 0,
-                    error: true
-                });
+                updateTestStatus('liveTestStatus', 'Error starting recording: ' + error.message, 'error');
             }
         }
 
         function stopRecording() {
-            if (mediaStream) {
-                mediaStream.getTracks().forEach(track => track.stop());
-            }
-            if (audioContext) {
-                audioContext.close();
-            }
+            try {
+                isRecording = false;
+                updateRecordingUI(false);
+                updateTestStatus('liveTestStatus', 'Processing recording...');
 
+                // Stop media stream
+                if (mediaStream) {
+                    mediaStream.getTracks().forEach(track => track.stop());
+                    mediaStream = null;
+                }
+
+                // Close audio context
+                if (audioContext) {
+                    audioContext.close();
+                    audioContext = null;
+                }
+
+                // Stop progress animation
+                stopProgressAnimation();
+
+                // Send stop signal via WebSocket
+                if (websocket && websocket.readyState === WebSocket.OPEN) {
+                    websocket.send(JSON.stringify({
+                        type: 'stop_recording'
+                    }));
+                }
+
+            } catch (error) {
+                console.error('Error stopping recording:', error);
+                updateTestStatus('liveTestStatus', 'Error stopping recording: ' + error.message, 'error');
+            }
+        }
+
+        function updateRecordingUI(recording) {
             const recordButton = document.getElementById('recordButton');
-            recordButton.classList.remove('recording');
-            recordButton.innerHTML = '<i class="fas fa-microphone"></i>';
+            const instruction = document.querySelector('.recording-instruction');
 
-            isRecording = false;
-        }
-
-        function processAudioStream() {
-            // This would implement real-time audio processing
-            // For now, simulate the test result
-            setTimeout(() => {
-                updateTestResult({
-                    transcription: 'Test speech detected successfully',
-                    confidence: 85,
-                    bytes: 36869,
-                    responseTime: 150
-                });
-            }, 2000);
-        }
-
-        function updateTestResult(data) {
-            const resultDiv = document.getElementById('testResult');
-            const progressFill = document.getElementById('progressFill');
-
-            if (data.error) {
-                resultDiv.innerHTML = `
-                    <strong>ElevenLabs Voice Test Result:</strong><br>
-                    <span style="color: #ff0000;">Error: ${data.transcription}</span><br><br>
-                    <em>Provider: ElevenLabs | Status: Error</em>
-                `;
-                progressFill.style.width = '0%';
+            if (recording) {
+                recordButton.classList.add('recording');
+                instruction.textContent = 'Recording... Click to stop';
             } else {
-                resultDiv.innerHTML = `
-                    <strong>ElevenLabs Voice Test Result:</strong><br>
-                    Audio processed successfully (${data.bytes || 36869} bytes)<br><br>
-                    <strong>Transcribed Text:</strong><br>
-                    "${data.transcription}"<br><br>
-                    <em>Provider: ElevenLabs | VAD Status: Enabled | Response Time: ${data.responseTime || 0}ms</em>
-
-                    <div class="confidence-bar">
-                        <div class="confidence-label">Confidence:</div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: ${data.confidence || 0}%"></div>
-                        </div>
-                        <span style="color: #00ff00;">${data.confidence || 0}%</span>
-                    </div>
-                `;
-                progressFill.style.width = `${data.confidence || 0}%`;
+                recordButton.classList.remove('recording');
+                instruction.textContent = 'Click to start recording';
             }
         }
 
-        function saveConfiguration() {
-            const silenceDuration = document.getElementById('silenceDuration').value;
+        function startProgressAnimation() {
+            const progressFill = document.getElementById('progressFill');
+            let progress = 0;
 
-            fetch('/api/elevenlabs/config', {
+            const interval = setInterval(() => {
+                if (!isRecording) {
+                    clearInterval(interval);
+                    progressFill.style.width = '0%';
+                    return;
+                }
+
+                progress = (progress + 1) % 100;
+                progressFill.style.width = progress + '%';
+            }, 100);
+        }
+
+        function stopProgressAnimation() {
+            const progressFill = document.getElementById('progressFill');
+            progressFill.style.width = '100%';
+
+            setTimeout(() => {
+                progressFill.style.width = '0%';
+            }, 1000);
+        }
+
+        // VAD-Specific Testing Functions
+        function startVADTest() {
+            if (isVADTesting) return;
+
+            isVADTesting = true;
+            vadEvents = [];
+            updateTestStatus('vadTestStatus', 'Starting VAD test... Speak to test voice detection');
+            clearVADEvents();
+
+            // Start continuous VAD monitoring
+            vadTestInterval = setInterval(async () => {
+                try {
+                    const response = await fetch('/ai-management/api/vad/test-levels', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ duration: 1 })
+                    });
+
+                    const data = await response.json();
+                    if (data.success) {
+                        updateVADAudioLevel(data.level);
+
+                        if (data.vadDetected) {
+                            handleVADEvent({
+                                type: 'vad_detected',
+                                timestamp: Date.now(),
+                                confidence: data.confidence,
+                                level: data.level
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.error('VAD test error:', error);
+                }
+            }, 200);
+
+            updateTestStatus('vadTestStatus', 'VAD test running - speak to see voice detection in action');
+        }
+
+        function stopVADTest() {
+            if (!isVADTesting) return;
+
+            isVADTesting = false;
+
+            if (vadTestInterval) {
+                clearInterval(vadTestInterval);
+                vadTestInterval = null;
+            }
+
+            updateTestStatus('vadTestStatus', 'VAD test stopped');
+            displayVADTestResults();
+        }
+
+        function updateVADAudioLevel(level) {
+            const levelBar = document.getElementById('vadAudioLevelBar');
+            const levelText = document.getElementById('vadAudioLevelText');
+
+            if (levelBar && levelText) {
+                const percentage = Math.round(level * 100);
+                levelBar.style.width = percentage + '%';
+                levelText.textContent = percentage + '%';
+            }
+        }
+
+        function handleVADEvent(event) {
+            vadEvents.push(event);
+
+            // Update VAD status indicator
+            const vadState = document.getElementById('vadState');
+            if (vadState) {
+                vadState.textContent = event.type === 'vad_detected' ? 'Active' : 'Inactive';
+                vadState.className = 'vad-state ' + (event.type === 'vad_detected' ? 'active' : 'inactive');
+            }
+
+            // Add event to list
+            addVADEventToList(event);
+        }
+
+        function addVADEventToList(event) {
+            const eventsList = document.getElementById('vadEventsList');
+            if (!eventsList) return;
+
+            const eventElement = document.createElement('div');
+            eventElement.className = 'vad-event ' + (event.type === 'vad_detected' ? 'detected' : 'ended');
+
+            const timestamp = new Date(event.timestamp).toLocaleTimeString();
+            eventElement.textContent = `${timestamp} - ${event.type} (confidence: ${event.confidence || 'N/A'})`;
+
+            eventsList.appendChild(eventElement);
+            eventsList.scrollTop = eventsList.scrollHeight;
+        }
+
+        function clearVADEvents() {
+            const eventsList = document.getElementById('vadEventsList');
+            if (eventsList) {
+                eventsList.innerHTML = '';
+            }
+        }
+
+        function displayVADTestResults() {
+            const results = document.getElementById('vadTestResults');
+            if (!results) return;
+
+            const detectedEvents = vadEvents.filter(e => e.type === 'vad_detected');
+            const avgConfidence = detectedEvents.length > 0
+                ? detectedEvents.reduce((sum, e) => sum + (e.confidence || 0), 0) / detectedEvents.length
+                : 0;
+
+            results.textContent = `VAD Test Results:
+Total Events: ${vadEvents.length}
+Voice Detected Events: ${detectedEvents.length}
+Average Confidence: ${avgConfidence.toFixed(2)}
+Test Duration: ${vadEvents.length * 0.2}s`;
+        }
+
+        // Integration Testing Functions
+        async function runIntegrationTest() {
+            updateTestStatus('integrationTestStatus', 'Running comprehensive STT + VAD integration test...');
+            clearIntegrationMetrics();
+
+            try {
+                // Test 1: STT Performance
+                updateTestStatus('integrationTestStatus', 'Testing STT performance...');
+                const sttResult = await testSTTPerformance();
+                updateMetric('sttMetrics', sttResult);
+
+                // Test 2: VAD Performance
+                updateTestStatus('integrationTestStatus', 'Testing VAD performance...');
+                const vadResult = await testVADPerformance();
+                updateMetric('vadMetrics', vadResult);
+
+                // Test 3: Integration Health
+                updateTestStatus('integrationTestStatus', 'Testing integration health...');
+                const integrationResult = await testIntegrationHealth();
+                updateMetric('integrationMetrics', integrationResult);
+
+                // Display comprehensive results
+                displayIntegrationResults({
+                    stt: sttResult,
+                    vad: vadResult,
+                    integration: integrationResult
+                });
+
+                updateTestStatus('integrationTestStatus', '✅ Integration test completed successfully', 'success');
+
+            } catch (error) {
+                console.error('Integration test error:', error);
+                updateTestStatus('integrationTestStatus', '❌ Integration test failed: ' + error.message, 'error');
+            }
+        }
+
+        async function testSTTPerformance() {
+            const response = await fetch('/ai-management/api/test/stt', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    silenceDuration: parseInt(silenceDuration)
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                alert('Configuration saved successfully!');
-            })
-            .catch(error => {
-                console.error('Error saving configuration:', error);
-                alert('Error saving configuration');
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ includePerformanceMetrics: true })
+            });
+
+            const result = await response.json();
+            return {
+                success: result.success,
+                responseTime: result.responseTime,
+                provider: result.provider,
+                accuracy: result.accuracy || 'N/A'
+            };
+        }
+
+        async function testVADPerformance() {
+            const response = await fetch('/ai-management/api/vad/test-performance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            const result = await response.json();
+            return {
+                success: result.success,
+                sensitivity: result.sensitivity || 'N/A',
+                falsePositives: result.falsePositives || 0,
+                responseTime: result.responseTime || 'N/A'
+            };
+        }
+
+        async function testIntegrationHealth() {
+            const response = await fetch('/ai-management/api/health', {
+                method: 'GET'
+            });
+
+            const result = await response.json();
+            return {
+                success: result.success,
+                sttStatus: result.sttStatus || 'Unknown',
+                vadStatus: result.vadStatus || 'Unknown',
+                overallHealth: result.overallHealth || 'Unknown'
+            };
+        }
+
+        // Display and Utility Functions
+        function displayLiveTestResult(data) {
+            const results = document.getElementById('liveTestResults');
+            if (!results) return;
+
+            const timestamp = new Date().toLocaleTimeString();
+            const resultText = `[${timestamp}] STT Result:
+Transcription: "${data.transcription || 'No speech detected'}"
+Confidence: ${data.confidence || 0}%
+Language: ${data.language || 'en'}
+VAD Detected: ${data.vadDetected ? 'Yes' : 'No'}
+Response Time: ${data.responseTime || 'N/A'}ms
+
+`;
+            results.textContent += resultText;
+            results.scrollTop = results.scrollHeight;
+        }
+
+        function displayIntegrationResults(results) {
+            const resultsElement = document.getElementById('integrationTestResults');
+            if (!resultsElement) return;
+
+            resultsElement.textContent = `Integration Test Results:
+
+STT Performance:
+- Success: ${results.stt.success ? 'Yes' : 'No'}
+- Response Time: ${results.stt.responseTime}ms
+- Provider: ${results.stt.provider}
+- Accuracy: ${results.stt.accuracy}
+
+VAD Performance:
+- Success: ${results.vad.success ? 'Yes' : 'No'}
+- Sensitivity: ${results.vad.sensitivity}
+- False Positives: ${results.vad.falsePositives}
+- Response Time: ${results.vad.responseTime}ms
+
+Integration Health:
+- Overall Status: ${results.integration.success ? 'Healthy' : 'Issues Detected'}
+- STT Status: ${results.integration.sttStatus}
+- VAD Status: ${results.integration.vadStatus}
+- Overall Health: ${results.integration.overallHealth}`;
+        }
+
+        function updateTestStatus(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = message;
+                element.className = 'test-status ' + type;
+            }
+        }
+
+        function updateMetric(elementId, data) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                if (data.success) {
+                    element.innerHTML = `<span class="success">✅ Healthy</span><br>Response: ${data.responseTime || 'N/A'}ms`;
+                } else {
+                    element.innerHTML = `<span class="error">❌ Issues</span><br>Check configuration`;
+                }
+            }
+        }
+
+        function clearIntegrationMetrics() {
+            ['sttMetrics', 'vadMetrics', 'integrationMetrics'].forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = 'Testing...';
+                }
             });
         }
 
-        async function testConnection() {
+        function updateAudioLevel(level) {
+            // Update audio level display for live testing
+            const vadState = document.getElementById('vadState');
+            if (vadState && level > 0.5) {
+                vadState.textContent = 'Active';
+                vadState.className = 'vad-state active';
+            } else if (vadState) {
+                vadState.textContent = 'Inactive';
+                vadState.className = 'vad-state inactive';
+            }
+        }
+
+        // Configuration Management Functions
+        async function saveConfiguration() {
+            const config = {
+                vadType: document.getElementById('vadType').value,
+                vadThreshold: parseFloat(document.getElementById('vadThreshold').value),
+                prefixPadding: parseInt(document.getElementById('prefixPadding').value),
+                silenceDuration: parseInt(document.getElementById('silenceDuration').value)
+            };
+
             try {
-                // Test the STT service connection
-                const response = await fetch('/ai-management/api/stt/test', {
+                const response = await fetch('/ai-management/api/vad/config', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
                 });
 
                 const result = await response.json();
 
                 if (result.success) {
-                    alert(`ElevenLabs STT connection successful!\nProvider: ${result.provider}\nResponse Time: ${result.responseTime}ms`);
+                    updateThresholdDisplay(config.vadThreshold);
+                    alert('✅ VAD configuration saved successfully!');
                 } else {
-                    alert(`ElevenLabs STT connection failed!\nError: ${result.error || 'Unknown error'}`);
+                    alert('❌ Failed to save VAD configuration: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Save configuration error:', error);
+                alert('❌ Error saving configuration: ' + error.message);
+            }
+        }
+
+        async function testConnection() {
+            try {
+                updateTestStatus('integrationTestStatus', 'Testing ElevenLabs STT connection...');
+
+                const response = await fetch('/ai-management/api/stt/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    updateTestStatus('integrationTestStatus', '✅ Connection successful', 'success');
+                    alert(`✅ ElevenLabs STT connection successful!\nProvider: ${result.provider}\nResponse Time: ${result.responseTime}ms`);
+                } else {
+                    updateTestStatus('integrationTestStatus', '❌ Connection failed', 'error');
+                    alert(`❌ ElevenLabs STT connection failed!\nError: ${result.error || 'Unknown error'}`);
                 }
             } catch (error) {
                 console.error('Connection test error:', error);
-                alert(`Connection test failed: ${error.message}`);
+                updateTestStatus('integrationTestStatus', '❌ Connection test failed', 'error');
+                alert(`❌ Connection test failed: ${error.message}`);
             }
         }
 
         function backToDashboard() {
             window.location.href = '/ai-management';
         }
-
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeWebSocket();
-        });
     </script>
 </body>
 </html>

@@ -172,7 +172,7 @@ class VoiceSelector {
                     if (voiceSettingsResponse.ok) {
                         const voiceSettings = await voiceSettingsResponse.json();
                         if (voiceSettings && voiceSettings.speaker_id) {
-                            // Find voice by speaker_id (which is uuid for TopMediai)
+                            // Find voice by speaker_id (which is uuid for TTS)
                             this.selectedVoice = this.voices.find(v => v.uuid === voiceSettings.speaker_id || v.speaker_id === voiceSettings.speaker_id);
                         }
                     }
@@ -192,7 +192,7 @@ class VoiceSelector {
     }
 
     getVoiceStyles(voice) {
-        // For TopMediai, use the emotions array if available
+        // Use the emotions array if available
         if (voice.emotions && Array.isArray(voice.emotions)) {
             return voice.emotions;
         }
@@ -314,7 +314,7 @@ class VoiceSelector {
             this.showLoading('Generating preview...');
             const previewText = document.querySelector('#previewText').value;
 
-            // Use the speaker_id from the voice data (TopMediai uses uuid as speaker_id)
+            // Use the speaker_id from the voice data (TTS uses uuid as speaker_id)
             const speakerId = this.currentPreviewVoice.uuid || this.currentPreviewVoice.speaker_id;
             if (!speakerId) {
                 throw new Error('No valid speaker ID found for this voice');
