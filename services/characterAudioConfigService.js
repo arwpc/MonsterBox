@@ -58,6 +58,13 @@ class CharacterAudioConfigService {
                 emotionalResponse: true,
                 contextAwareness: true,
                 personalityAdjustments: true
+            },
+            // Default speaker configuration for all audio output
+            speaker: {
+                defaultSpeakerId: null, // ID of the speaker part to use for all audio
+                outputDevice: 'default', // Audio device ID (fallback if no speaker part)
+                volume: 80, // Default volume level (0-100)
+                enabled: true // Whether audio output is enabled
             }
         };
     }
@@ -151,7 +158,8 @@ class CharacterAudioConfigService {
                 stt: { ...this.defaultConfig.stt, ...characterConfig.stt },
                 jawAnimation: { ...this.defaultConfig.jawAnimation, ...characterConfig.jawAnimation },
                 audioProcessing: { ...this.defaultConfig.audioProcessing, ...characterConfig.audioProcessing },
-                characterSpecific: { ...this.defaultConfig.characterSpecific, ...characterConfig.characterSpecific }
+                characterSpecific: { ...this.defaultConfig.characterSpecific, ...characterConfig.characterSpecific },
+                speaker: { ...this.defaultConfig.speaker, ...characterConfig.speaker }
             };
         } catch (error) {
             logger.error(`Error getting audio config for character ${characterId}:`, error);
@@ -444,6 +452,92 @@ class CharacterAudioConfigService {
         } catch (error) {
             logger.error(`Error deleting STT config for character ${characterId} microphone ${microphoneId}:`, error);
             throw error;
+        }
+    }
+
+    /**
+     * Get character's default speaker configuration
+     */
+    async getCharacterSpeakerConfig(characterId) {
+        try {
+            const config = await this.getCharacterAudioConfig(characterId);
+            return config.speaker;
+        } catch (error) {
+            logger.error(`Error getting speaker config for character ${characterId}:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Set character's default speaker
+     */
+    async setCharacterDefaultSpeaker(characterId, speakerId, outputDevice = null, volume = null, enabled = null) {
+        try {
+            const config = await this.getCharacterAudioConfig(characterId);
+
+            // Update speaker configuration (preserve existing values if not provided)
+            config.speaker = {
+                ...config.speaker,
+                defaultSpeakerId: speakerId,
+                ...(outputDevice ? { outputDevice } : {}),
+                ...(Number.isFinite(volume) ? { volume: Math.max(0, Math.min(100, Math.floor(volume))) } : {}),
+                ...(typeof enabled === 'boolean' ? { enabled } : {})
+            };
+
+            // Save the updated configuration
+            await this.updateCharacterAudioConfig(characterId, config);
+
+            logger.info(`Set default speaker for character ${characterId}: speakerId=${speakerId}, outputDevice=${outputDevice}, volume=${config.speaker.volume}, enabled=${config.speaker.enabled}`);
+            return config.speaker;
+        } catch (error) {
+            logger.error(`Error setting default speaker for character ${characterId}:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get the effective audio output device for a character
+     * Returns the speaker part's output device if available, otherwise the fallback device
+     */
+    async getCharacterAudioOutputDevice(characterId) {
+        try {
+            const speakerConfig = await this.getCharacterSpeakerConfig(characterId);
+
+            // If a speaker part is configured, get its output device
+            if (speakerConfig.defaultSpeakerId) {
+                const partService = require('./partService');
+                const speakerPart = await partService.getPartById(speakerConfig.defaultSpeakerId);
+
+                if (speakerPart && speakerPart.type === 'speaker' && speakerPart.outputDevice) {
+                    logger.info(`Using speaker part ${speakerPart.name} (${speakerPart.outputDevice}) for character ${characterId}`);
+                    return {
+                        device: speakerPart.outputDevice,
+                        volume: speakerPart.volume || speakerConfig.volume || 80,
+                        source: 'speaker_part',
+                        speakerName: speakerPart.name
+                    };
+                }
+            }
+
+            // Fall back to configured output device or system default
+            const device = speakerConfig.outputDevice || 'default';
+            logger.info(`Using fallback audio device ${device} for character ${characterId}`);
+            return {
+                device: device,
+                volume: speakerConfig.volume || 80,
+                source: 'fallback',
+                speakerName: 'System Default'
+            };
+
+        } catch (error) {
+            logger.error(`Error getting audio output device for character ${characterId}:`, error);
+            // Return safe default
+            return {
+                device: 'default',
+                volume: 80,
+                source: 'error_fallback',
+                speakerName: 'System Default'
+            };
         }
     }
 }

@@ -340,27 +340,40 @@
 
             try {
                 showStatus('Initializing camera...', true);
-                const response = await fetch('/camera/select', {
+                const characterId = '<%= characterId %>';
+                const response = await fetch(`/camera/select?characterId=${characterId}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ cameraId })
                 });
 
                 if (!response.ok) {
-                    const errorText = await response.text();
-                    console.warn('Camera select failed, but continuing with stream:', errorText);
-                    showStatus('Camera selection failed, trying stream anyway...', true);
+                    let errorText;
+                    try {
+                        const errorData = await response.json();
+                        errorText = errorData.error || `HTTP ${response.status}`;
+                    } catch (parseError) {
+                        errorText = await response.text() || `HTTP ${response.status}`;
+                    }
+                    console.error('Camera select failed:', { status: response.status, error: errorText });
+                    showStatus(`Camera selection failed: ${errorText}`, false);
+                    return; // Don't start stream if camera selection failed
                 } else {
-                    showStatus('Camera initialized, starting stream...', true);
+                    const result = await response.json();
+                    if (result.success) {
+                        showStatus('Camera initialized, starting stream...', true);
+                        console.log('Camera selection successful:', result);
+                    } else {
+                        showStatus(`Camera selection failed: ${result.error}`, false);
+                        return;
+                    }
                 }
 
-                // Always try to start the stream, even if camera selection failed
+                // Start the stream after successful camera selection
                 startStream();
             } catch (error) {
-                console.warn('Camera selection error, but trying stream anyway:', error);
-                showStatus('Camera selection error, trying stream...', true);
-                // Still try to start the stream
-                startStream();
+                console.error('Camera selection error:', error);
+                showStatus(`Camera selection error: ${error.message}`, false);
             }
         }
 

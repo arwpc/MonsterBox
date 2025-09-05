@@ -420,9 +420,9 @@
       "speaker_id": "Z7RrOqZFTyLpIlzCgfsp",
       "settings": {
         "pitch": 0,
-        "speed": 1.9,
-        "volume": 20,
-        "emotion": "Sad",
+        "speed": 1,
+        "volume": 0,
+        "emotion": "Neutral",
         "sampleRate": 44100,
         "bitRate": 128,
         "outputFormat": "wav",
@@ -437,7 +437,7 @@
         "tags": [],
         "notes": "",
         "created": "2025-05-13T00:35:07.630Z",
-        "lastModified": "2025-08-25T22:22:27.661Z",
+        "lastModified": "2025-09-04T16:50:53.708Z",
         "migratedFrom": "TopMediai",
         "migrationDate": "2025-08-25T00:17:39.322Z",
         "originalSpeakerId": "f0ac8c43-7a0f-11ee-a861-00163e2ac61b",
@@ -447,102 +447,6 @@
         "voiceDescription": "Clear, authoritative voice for Skulltalker"
       },
       "history": [
-        {
-          "timestamp": "2025-08-24T20:25:09.398Z",
-          "type": "settings_update",
-          "settings": {
-            "pitch": 0,
-            "speed": 1,
-            "volume": 0,
-            "emotion": "Neutral",
-            "sampleRate": 44100,
-            "bitRate": 128,
-            "outputFormat": "wav",
-            "channels": 1,
-            "languageCode": "en",
-            "provider": "TopMediai"
-          }
-        },
-        {
-          "timestamp": "2025-08-24T20:28:10.779Z",
-          "type": "settings_update",
-          "settings": {
-            "pitch": 0,
-            "speed": 1,
-            "volume": 0,
-            "emotion": "Neutral",
-            "sampleRate": 44100,
-            "bitRate": 128,
-            "outputFormat": "wav",
-            "channels": 1,
-            "languageCode": "en",
-            "provider": "TopMediai"
-          }
-        },
-        {
-          "timestamp": "2025-08-24T20:29:15.704Z",
-          "type": "settings_update",
-          "settings": {
-            "pitch": 0,
-            "speed": 1,
-            "volume": 0,
-            "emotion": "Neutral",
-            "sampleRate": 44100,
-            "bitRate": 128,
-            "outputFormat": "wav",
-            "channels": 1,
-            "languageCode": "en",
-            "provider": "TopMediai"
-          }
-        },
-        {
-          "timestamp": "2025-08-24T20:43:38.575Z",
-          "type": "settings_update",
-          "settings": {
-            "pitch": 0,
-            "speed": 1,
-            "volume": 0,
-            "emotion": "Neutral",
-            "sampleRate": 44100,
-            "bitRate": 128,
-            "outputFormat": "wav",
-            "channels": 1,
-            "languageCode": "en",
-            "provider": "TopMediai"
-          }
-        },
-        {
-          "timestamp": "2025-08-24T20:47:01.515Z",
-          "type": "settings_update",
-          "settings": {
-            "pitch": 0,
-            "speed": 1,
-            "volume": 0,
-            "emotion": "Neutral",
-            "sampleRate": 44100,
-            "bitRate": 128,
-            "outputFormat": "wav",
-            "channels": 1,
-            "languageCode": "en",
-            "provider": "TopMediai"
-          }
-        },
-        {
-          "timestamp": "2025-08-24T20:47:14.010Z",
-          "type": "settings_update",
-          "settings": {
-            "pitch": 0,
-            "speed": 1,
-            "volume": 0,
-            "emotion": "Neutral",
-            "sampleRate": 44100,
-            "bitRate": 128,
-            "outputFormat": "wav",
-            "channels": 1,
-            "languageCode": "en",
-            "provider": "TopMediai"
-          }
-        },
         {
           "timestamp": "2025-08-24T21:00:03.152Z",
           "type": "settings_update",
@@ -610,6 +514,102 @@
             "speed": 1.9,
             "volume": 20,
             "emotion": "Sad",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "ElevenLabs"
+          }
+        },
+        {
+          "timestamp": "2025-09-03T17:44:36.200Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Neutral",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "ElevenLabs"
+          }
+        },
+        {
+          "timestamp": "2025-09-03T17:44:36.328Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Neutral",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "ElevenLabs"
+          }
+        },
+        {
+          "timestamp": "2025-09-04T02:11:08.149Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Neutral",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "ElevenLabs"
+          }
+        },
+        {
+          "timestamp": "2025-09-04T02:11:08.233Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Neutral",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "ElevenLabs"
+          }
+        },
+        {
+          "timestamp": "2025-09-04T16:50:53.565Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Neutral",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "ElevenLabs"
+          }
+        },
+        {
+          "timestamp": "2025-09-04T16:50:53.708Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Neutral",
             "sampleRate": 44100,
             "bitRate": 128,
             "outputFormat": "wav",

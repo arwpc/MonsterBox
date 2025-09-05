@@ -285,6 +285,40 @@ class VoiceService {
         }
     }
 
+    /**
+     * Generate and play speech using character's configured speaker
+     */
+    async generateAndPlaySpeech(text, speaker_id, options = {}, characterId = null) {
+        try {
+            // Generate the speech audio
+            const speechResult = await this.generateSpeech(text, speaker_id, options, characterId);
+
+            if (!speechResult || !speechResult.filepath) {
+                throw new Error('Speech generation failed');
+            }
+
+            // Play the audio using character's configured speaker
+            const speakerService = require('./speakerService');
+            const playResult = await speakerService.playAudioForCharacter(speechResult.filepath, characterId);
+
+            if (!playResult.success) {
+                logger.warn(`Audio playback failed: ${playResult.error}`);
+                // Don't throw error - the speech was generated successfully
+            } else {
+                logger.info(`Speech played successfully on device: ${playResult.device}`);
+            }
+
+            return {
+                ...speechResult,
+                playback: playResult
+            };
+
+        } catch (error) {
+            logger.error(`Error in generateAndPlaySpeech: ${error.message}`);
+            throw error;
+        }
+    }
+
     async testConnection(speaker_id) {
         try {
             if (!speaker_id) {

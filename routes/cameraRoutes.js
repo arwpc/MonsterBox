@@ -8,6 +8,12 @@ const util = require('util');
 const exec = util.promisify(require('child_process').exec);
 const partService = require('../services/partService');
 
+// Log all camera route requests
+router.use((req, res, next) => {
+    logger.info(`📷 CAMERA ROUTE: ${req.method} ${req.path} - Query: ${JSON.stringify(req.query)}`);
+    next();
+});
+
 // Path to store camera settings
 const CAMERA_SETTINGS_PATH = path.join(__dirname, '..', 'data', 'camera-settings.json');
 
@@ -122,18 +128,71 @@ async function cleanupLockFiles() {
     }
 }
 
-// Start camera stream
-async function startCameraStream(cameraId, width = DEFAULT_WIDTH, height = DEFAULT_HEIGHT, fps = DEFAULT_FPS) {
+// Start camera stream - supports both local and remote characters
+async function startCameraStream(cameraId, width = DEFAULT_WIDTH, height = DEFAULT_HEIGHT, fps = DEFAULT_FPS, character = null) {
+    logger.info(`🚀 STARTCAMERASTREAM CALLED: cameraId=${cameraId}, character=${character ? character.char_name : 'null'}`);
     return new Promise((resolve, reject) => {
         const streamScript = path.join(__dirname, '..', 'scripts', 'camera_stream.py');
 
-        const process = spawn('python3', [
-            streamScript,
-            '--camera-id', cameraId.toString(),
-            '--width', width.toString(),
-            '--height', height.toString(),
-            '--fps', fps.toString()
-        ]);
+        // Check if this is a remote character
+        logger.info(`🔍 Character object for streaming:`, character ? {
+            id: character.id,
+            char_name: character.char_name,
+            hasAnimatronic: !!character.animatronic,
+            hasRpiConfig: !!(character.animatronic && character.animatronic.rpi_config)
+        } : 'null');
+
+        let isRemoteCharacter = character && character.animatronic && character.animatronic.rpi_config;
+
+        // Check if the remote host is actually localhost
+        if (isRemoteCharacter) {
+            const host = character.animatronic.rpi_config.host;
+            const isLocalhost = host === '127.0.0.1' || host === 'localhost' || host === '192.168.8.130';
+            if (isLocalhost) {
+                logger.info(`🏠 Character ${character.char_name} is configured as remote (${host}) but is localhost - using local streaming`);
+                isRemoteCharacter = false;
+            } else {
+                logger.info(`🌐 Character ${character.char_name} is truly remote (${host}) - using SSH streaming`);
+            }
+        }
+
+        logger.info(`🔍 Is remote character: ${isRemoteCharacter}`);
+
+        let process;
+
+        if (isRemoteCharacter) {
+            // For remote characters, run the camera script on their RPI via SSH
+            const rpiConfig = character.animatronic.rpi_config;
+            const host = rpiConfig.host;
+            const username = rpiConfig.username || 'remote';
+            const password = rpiConfig.password || 'klrklr89!';
+
+            logger.info(`🌐 Starting remote camera stream on ${host} for camera ${cameraId}`);
+
+            // Use sshpass to run the camera script remotely
+            const remoteCommand = `python3 /home/remote/MonsterBox/scripts/camera_stream.py --camera-id ${cameraId} --width ${width} --height ${height} --fps ${fps}`;
+
+            process = spawn('sshpass', [
+                '-p', password,
+                'ssh',
+                '-o', 'StrictHostKeyChecking=no',
+                '-o', 'UserKnownHostsFile=/dev/null',
+                '-o', 'LogLevel=ERROR',
+                `${username}@${host}`,
+                remoteCommand
+            ]);
+        } else {
+            // For local characters, run the camera script locally
+            logger.info(`🏠 Starting local camera stream for camera ${cameraId}`);
+
+            process = spawn('python3', [
+                streamScript,
+                '--camera-id', cameraId.toString(),
+                '--width', width.toString(),
+                '--height', height.toString(),
+                '--fps', fps.toString()
+            ]);
+        }
 
         let initOutput = '';
         let initError = '';
@@ -245,18 +304,37 @@ router.get('/stream', async (req, res) => {
     let streamProcess = null;
     try {
         const characterId = req.query.characterId || req.session.characterId;
+        logger.info(`🎬 CAMERA STREAM REQUEST: characterId=${characterId}`);
 
         // Check if webcam startup service has an active stream for this character
         if (characterId && global.webcamStartupService && global.webcamStartupService.isStreamActive(characterId)) {
-            logger.info(`📹 Found active stream for character ${characterId}, but using legacy camera route due to streaming API issues`);
-            // Don't redirect to streaming API - it has issues, use legacy camera stream instead
+            logger.info(`📹 Found active stream for character ${characterId}, attempting to use existing stream`);
+
+            // Try to use the existing stream from webcam startup service
+            try {
+                const streamingService = require('../services/streamingService');
+                const success = await streamingService.addClient(characterId, res);
+                if (success) {
+                    logger.info(`✅ Successfully connected to existing stream for character ${characterId}`);
+                    return; // Response is handled by streaming service
+                } else {
+                    logger.warn(`⚠️ Failed to connect to existing stream, falling back to legacy camera stream`);
+                }
+            } catch (streamError) {
+                logger.warn(`⚠️ Error connecting to existing stream: ${streamError.message}, falling back to legacy camera stream`);
+            }
+        } else {
+            logger.info(`📹 No active stream found for character ${characterId}, using legacy camera stream`);
         }
+
+        logger.info(`🎯 AFTER WEBCAM STARTUP SERVICE CHECK - continuing with legacy stream`);
 
         // Get character's webcam configuration if characterId is provided
         let cameraId = 0;
         let width = parseInt(req.query.width) || DEFAULT_WIDTH;
         let height = parseInt(req.query.height) || DEFAULT_HEIGHT;
         let fps = parseInt(req.query.fps) || DEFAULT_FPS;
+        let character = null; // Character object for remote streaming
 
         if (characterId) {
             try {
@@ -265,6 +343,12 @@ router.get('/stream', async (req, res) => {
                 const characterService = require('../services/characterService');
 
                 logger.info(`🔍 Getting webcam configuration for character ${characterId}`);
+
+                // Load character first for remote detection
+                logger.info(`🎯 ABOUT TO LOAD CHARACTER ${characterId}`);
+                character = await characterService.getCharacterById(characterId);
+                logger.info(`🎯 CHARACTER LOADED: ${character ? character.char_name : 'null'}`);
+                logger.info(`📋 Loaded character: ${character ? character.char_name : 'null'}`);
 
                 const parts = await partService.getPartsByCharacter(characterId);
                 logger.info(`📋 Found ${parts.length} parts for character ${characterId}`);
@@ -282,7 +366,6 @@ router.get('/stream', async (req, res) => {
 
                 if (webcamPart && webcamPart.status === 'active') {
                     // For remote characters, we need to handle camera differently
-                    const character = await characterService.getCharacterById(characterId);
                     const isRemoteCharacter = character && character.animatronic && character.animatronic.rpi_config;
 
                     if (isRemoteCharacter) {
@@ -326,7 +409,11 @@ router.get('/stream', async (req, res) => {
         await killExistingCameraProcesses();
         await cleanupLockFiles();
 
-        streamProcess = await startCameraStream(cameraId, width, height, fps);
+        logger.info(`🎯 REACHED STREAM CREATION SECTION - character: ${character ? character.char_name : 'null'}`);
+
+        // Character is already loaded above in the webcam configuration section
+
+        streamProcess = await startCameraStream(cameraId, width, height, fps, character);
 
         res.setHeader('Content-Type', 'multipart/x-mixed-replace; boundary=frame');
 
@@ -381,9 +468,11 @@ router.get('/stream', async (req, res) => {
     }
 });
 
-router.get('/list', async (req, res) => {
+// Camera list route - REMOVED DUPLICATE (first implementation)
+// This functionality is now handled by the second /list route below
+router.get('/list-DISABLED', async (req, res) => {
     try {
-        // Kill any existing camera processes and wait
+        // DISABLED - Kill any existing camera processes and wait
         await killExistingCameraProcesses();
         await cleanupLockFiles();
 
@@ -516,79 +605,8 @@ router.get('/list', async (req, res) => {
     }
 });
 
-router.post('/select', async (req, res) => {
-    try {
-        const { cameraId } = req.body;
-        if (typeof cameraId !== 'number') {
-            throw new Error('Invalid camera ID');
-        }
-
-        // Kill any existing camera processes and wait
-        await killExistingCameraProcesses();
-        await cleanupLockFiles();
-
-        // Verify camera is accessible
-        const verifyScript = path.join(__dirname, '..', 'scripts', 'camera_control.py');
-
-        const process = spawn('python3', [
-            verifyScript,
-            'settings',
-            '--camera-id', cameraId.toString(),
-            '--width', DEFAULT_WIDTH.toString(),
-            '--height', DEFAULT_HEIGHT.toString(),
-            '--fps', DEFAULT_FPS.toString()
-        ]);
-
-        // Track this process
-        activeProcesses.set('verify', process);
-
-        let output = '';
-        let error = '';
-
-        process.stdout.on('data', (data) => {
-            output += data.toString();
-        });
-
-        process.stderr.on('data', (data) => {
-            error += data.toString();
-        });
-
-        const result = await new Promise((resolve, reject) => {
-            process.on('close', async (code) => {
-                activeProcesses.delete('verify');
-                try {
-                    // Try to parse the last line of output as JSON
-                    const lines = output.trim().split('\n');
-                    const lastLine = lines[lines.length - 1];
-                    const result = JSON.parse(lastLine);
-
-                    if (result.success) {
-                        await saveCameraSettings({
-                            selectedCamera: cameraId,
-                            width: result.width,
-                            height: result.height,
-                            fps: result.fps
-                        });
-                        resolve(result);
-                    } else {
-                        reject(new Error(result.error || 'Camera verification failed'));
-                    }
-                } catch (e) {
-                    reject(new Error(`Invalid camera verification response: ${e.message}`));
-                }
-            });
-
-            process.on('error', (err) => {
-                reject(err);
-            });
-        });
-
-        res.json({ success: true, ...result });
-    } catch (error) {
-        logger.error('Error selecting camera:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
+// Camera selection route - REMOVED DUPLICATE
+// This functionality is now handled by the second /select route below
 
 // Assign camera to character
 router.post('/assign', async (req, res) => {
@@ -923,7 +941,7 @@ router.get('/list', async (req, res) => {
     }
 });
 
-// Camera selection route
+// Camera selection route - Unified implementation
 router.post('/select', async (req, res) => {
     try {
         const { cameraId } = req.body;
@@ -935,59 +953,110 @@ router.post('/select', async (req, res) => {
             return res.status(400).json({ success: false, error: 'Camera ID is required' });
         }
 
-        // Validate that the camera exists
-        try {
-            const cameraPath = `/dev/video${cameraId}`;
-            await fs.access(cameraPath);
-            logger.info(`Camera ${cameraId} validated at ${cameraPath}`);
-        } catch (accessError) {
-            logger.warn(`Camera ${cameraId} not accessible, proceeding anyway for remote cameras`);
+        // Convert to number if it's a string
+        const numericCameraId = typeof cameraId === 'string' ? parseInt(cameraId, 10) : cameraId;
+        if (isNaN(numericCameraId)) {
+            return res.status(400).json({ success: false, error: 'Invalid camera ID format' });
         }
 
-        // Save camera selection to character-specific settings
+        // Kill any existing camera processes to avoid conflicts
+        await killExistingCameraProcesses();
+        await cleanupLockFiles();
+
+        // Validate camera with Python script (but don't fail if it doesn't work)
+        let cameraValidated = false;
+        try {
+            const verifyScript = path.join(__dirname, '..', 'scripts', 'camera_control.py');
+            const verifyProcess = spawn('python3', [
+                verifyScript,
+                'settings',
+                '--camera-id', numericCameraId.toString(),
+                '--width', DEFAULT_WIDTH.toString(),
+                '--height', DEFAULT_HEIGHT.toString(),
+                '--fps', DEFAULT_FPS.toString()
+            ]);
+
+            let output = '';
+            let error = '';
+
+            verifyProcess.stdout.on('data', (data) => {
+                output += data.toString();
+            });
+
+            verifyProcess.stderr.on('data', (data) => {
+                error += data.toString();
+            });
+
+            await new Promise((resolve) => {
+                const timeout = setTimeout(() => {
+                    verifyProcess.kill('SIGTERM');
+                    resolve();
+                }, 5000); // 5 second timeout
+
+                verifyProcess.on('close', (code) => {
+                    clearTimeout(timeout);
+                    try {
+                        if (code === 0 && output.trim()) {
+                            const lines = output.trim().split('\n');
+                            const lastLine = lines[lines.length - 1];
+                            const result = JSON.parse(lastLine);
+                            if (result.success) {
+                                cameraValidated = true;
+                                logger.info(`Camera ${numericCameraId} validated successfully`);
+                            }
+                        }
+                    } catch (parseError) {
+                        logger.debug(`Camera validation parse error: ${parseError.message}`);
+                    }
+                    resolve();
+                });
+
+                verifyProcess.on('error', () => {
+                    clearTimeout(timeout);
+                    resolve();
+                });
+            });
+        } catch (validationError) {
+            logger.debug(`Camera validation error: ${validationError.message}`);
+        }
+
+        // Save camera selection to appropriate settings
         if (characterId) {
             try {
                 const characterCameraSettingsPath = path.join(__dirname, '..', 'data', `camera_settings_char_${characterId}.json`);
                 const settings = await loadCharacterCameraSettings(characterId);
-                settings.selectedCamera = cameraId;
+                settings.selectedCamera = numericCameraId;
 
                 // Ensure data directory exists
                 const dataDir = path.join(__dirname, '..', 'data');
-                try {
-                    await fs.mkdir(dataDir, { recursive: true });
-                } catch (mkdirError) {
-                    // Directory might already exist, ignore error
-                }
+                await fs.mkdir(dataDir, { recursive: true }).catch(() => {});
 
                 await fs.writeFile(characterCameraSettingsPath, JSON.stringify(settings, null, 2));
-                logger.info(`Camera ${cameraId} selected for character ${characterId}`);
+                logger.info(`Camera ${numericCameraId} selected for character ${characterId}`);
             } catch (fileError) {
                 logger.warn(`Failed to save character camera settings: ${fileError.message}`);
-                // Continue anyway - don't fail the request
             }
         } else {
             try {
-                // Save to global settings if no character specified
                 const settings = await loadCameraSettings();
-                settings.selectedCamera = cameraId;
+                settings.selectedCamera = numericCameraId;
 
-                // Ensure data directory exists
                 const dataDir = path.dirname(CAMERA_SETTINGS_PATH);
-                try {
-                    await fs.mkdir(dataDir, { recursive: true });
-                } catch (mkdirError) {
-                    // Directory might already exist, ignore error
-                }
+                await fs.mkdir(dataDir, { recursive: true }).catch(() => {});
 
                 await fs.writeFile(CAMERA_SETTINGS_PATH, JSON.stringify(settings, null, 2));
-                logger.info(`Camera ${cameraId} selected globally`);
+                logger.info(`Camera ${numericCameraId} selected globally`);
             } catch (fileError) {
                 logger.warn(`Failed to save global camera settings: ${fileError.message}`);
-                // Continue anyway - don't fail the request
             }
         }
 
-        res.json({ success: true, message: 'Camera selected successfully' });
+        res.json({
+            success: true,
+            message: 'Camera selected successfully',
+            cameraId: numericCameraId,
+            validated: cameraValidated
+        });
     } catch (error) {
         logger.error('Error selecting camera:', error);
         res.status(500).json({ success: false, error: error.message });

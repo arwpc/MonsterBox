@@ -35,7 +35,7 @@
             <select id="character-select" onchange="updateCharacter(this.value)">
                 <option value="">Choose a character...</option>
                 <% characters.forEach(function(character) { %>
-                <option value="<%= character.id %>"><%= character.char_name || character.name %></option>
+                <option value="<%= character.id %>" <%= currentCharacter && currentCharacter.id === character.id ? 'selected' : '' %>><%= character.char_name || character.name %></option>
                 <% }); %>
             </select>
         </div>
@@ -164,11 +164,17 @@
 
         // Initialize character selection on page load
         document.addEventListener('DOMContentLoaded', function() {
-            const savedCharacter = localStorage.getItem('selectedCharacter');
-            if (savedCharacter) {
-                const characterSelect = document.getElementById('character-select');
-                if (characterSelect) {
-                    characterSelect.value = savedCharacter;
+            const characterSelect = document.getElementById('character-select');
+            if (characterSelect) {
+                // If a character is already selected (from server), save it to localStorage
+                if (characterSelect.value) {
+                    localStorage.setItem('selectedCharacter', characterSelect.value);
+                } else {
+                    // Otherwise, try to restore from localStorage
+                    const savedCharacter = localStorage.getItem('selectedCharacter');
+                    if (savedCharacter) {
+                        characterSelect.value = savedCharacter;
+                    }
                 }
             }
         });

@@ -172,6 +172,54 @@ class SpeakerService {
     }
   }
 
+  /**
+   * Play audio file using character's configured speaker
+   */
+  async playAudioForCharacter(audioFilePath, characterId = null) {
+    try {
+      let deviceId = 'default';
+
+      // Get character's audio output device if character ID is provided
+      if (characterId) {
+        const characterAudioConfigService = require('./characterAudioConfigService');
+        const audioDevice = await characterAudioConfigService.getCharacterAudioOutputDevice(characterId);
+        deviceId = audioDevice.device;
+        logger.info(`Using character ${characterId} audio device: ${deviceId} (${audioDevice.speakerName})`);
+      }
+
+      // Play the audio file using the determined device
+      let result;
+
+      // Try PulseAudio first if the device looks like a PulseAudio sink
+      if (deviceId !== 'default' && !deviceId.startsWith('hw:')) {
+        try {
+          // Use paplay for PulseAudio devices
+          const args = ['--device', deviceId, audioFilePath];
+          result = await this._runCommand('paplay', args, { timeoutMs: 30000 });
+          logger.info(`Played audio on PulseAudio device: ${deviceId}`);
+        } catch (paErr) {
+          logger.warn(`PulseAudio playback failed, trying ALSA: ${paErr.message}`);
+          // Fall back to ALSA
+          const args = ['-D', deviceId, audioFilePath];
+          result = await this._runCommand('aplay', args, { timeoutMs: 30000 });
+        }
+      } else {
+        // Use ALSA for hw: devices and default
+        const args = [];
+        if (deviceId && deviceId !== 'default') {
+          args.push('-D', deviceId);
+        }
+        args.push(audioFilePath);
+        result = await this._runCommand('aplay', args, { timeoutMs: 30000 });
+      }
+
+      return { success: result.code === 0, stdout: result.stdout, stderr: result.stderr, device: deviceId };
+    } catch (err) {
+      logger.error(`Error playing audio for character ${characterId}: ${err.message}`);
+      return { success: false, error: err.message };
+    }
+  }
+
   async _generateTestWav(durationSec = 3, freq = 440, sampleRate = 44100) {
     const samples = Math.floor(durationSec * sampleRate);
     const buffer = Buffer.alloc(44 + samples * 2); // 16-bit mono

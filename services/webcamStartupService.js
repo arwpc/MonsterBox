@@ -126,6 +126,19 @@ class WebcamStartupService {
                 if (streamResult && streamResult.success) {
                     logger.info(`✅ Webcam stream started for character: ${character.char_name}`);
                     this.activeStreams.set(character.id, streamResult.process);
+
+                    // Set up process monitoring
+                    if (streamResult.process) {
+                        streamResult.process.on('exit', (code) => {
+                            logger.warn(`📹 Stream process exited for character ${character.char_name} with code ${code}`);
+                            this.activeStreams.delete(character.id);
+                        });
+
+                        streamResult.process.on('error', (error) => {
+                            logger.error(`📹 Stream process error for character ${character.char_name}:`, error);
+                            this.activeStreams.delete(character.id);
+                        });
+                    }
                 } else {
                     logger.warn(`⚠️ Could not start webcam stream for character: ${character.char_name} - ${streamResult ? streamResult.error : 'No result'}`);
                     logger.info(`📹 Stream will be started on-demand when camera page is accessed`);
@@ -253,6 +266,20 @@ class WebcamStartupService {
     isStreamActive(characterId) {
         const stream = this.activeStreams.get(parseInt(characterId));
         return stream && !stream.killed;
+    }
+
+    /**
+     * Get stream configuration for a character
+     */
+    getStreamConfig(characterId) {
+        return this.streamConfigs.get(parseInt(characterId));
+    }
+
+    /**
+     * Get active stream process for a character
+     */
+    getActiveStream(characterId) {
+        return this.activeStreams.get(parseInt(characterId));
     }
 
     /**

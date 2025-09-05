@@ -51,8 +51,9 @@ const checkCharacterSelected = (req, res, next) => {
         logger.info(`checkCharacterSelected - Updated characterId: ${req.characterId}`);
     }
     if (!req.characterId) {
-        req.characterId = '1'; // Set a default characterId
-        logger.info(`checkCharacterSelected - Set default characterId: ${req.characterId}`);
+        // Instead of defaulting to '1', require explicit character selection
+        logger.warn('No character selected - parts require character context');
+        return res.status(400).send('Character selection required. Please access parts through a character page.');
     }
     logger.info(`checkCharacterSelected - Final characterId: ${req.characterId}`);
     next();
@@ -127,12 +128,8 @@ router.get('/new/:type', async (req, res) => {
             renderData.getServoDefaults = getServoDefaults;
         }
 
-        // Use consolidated part-form for microphones, individual forms for others
-        if (type === 'microphone') {
-            res.render('part-form', renderData);
-        } else {
-            res.render(`part-forms/${type}`, renderData);
-        }
+        // Use individual forms for all types now
+        res.render(`part-forms/${type}`, renderData);
         // Speaker defaults handled in template; no extra data needed
 
     } catch (error) {
@@ -697,6 +694,24 @@ router.post('/microphone/:id/update', async (req, res) => {
 });
 
 // Speaker Routes
+router.get('/speaker/new', async (req, res) => {
+    try {
+        const character = await characterService.getCharacterById(req.characterId);
+        const characters = await characterService.getAllCharacters();
+        const part = { type: 'speaker', characterId: req.characterId };
+        res.render('part-forms/speaker', {
+            title: 'Add Speaker',
+            action: `/parts/speaker`,
+            part,
+            character,
+            characters
+        });
+    } catch (error) {
+        logger.error('Error rendering speaker form:', error);
+        res.status(500).send('An error occurred while loading the form');
+    }
+});
+
 router.get('/speaker/:id/edit', async (req, res) => {
     try {
         const id = parseInt(req.params.id);
@@ -721,6 +736,25 @@ router.get('/speaker/:id/edit', async (req, res) => {
     } catch (error) {
         logger.error('Error fetching speaker for editing:', error);
         res.status(500).send('An error occurred while fetching the speaker');
+    }
+});
+
+router.post('/speaker', checkCharacterSelected, async (req, res) => {
+    try {
+        const partData = req.body;
+        partData.type = 'speaker';
+        partData.characterId = req.characterId;
+
+        // Convert string values to appropriate types
+        if (partData.volume) partData.volume = parseInt(partData.volume);
+
+        logger.info(`Creating speaker with data: ${JSON.stringify(partData)}`);
+        const newPart = await partService.createPart(partData);
+        logger.info(`Created speaker: ${JSON.stringify(newPart)}`);
+        res.redirect(`/parts?characterId=${req.characterId}`);
+    } catch (error) {
+        logger.error('Error creating speaker:', error);
+        res.status(500).send('An error occurred while creating the speaker');
     }
 });
 
@@ -1685,8 +1719,8 @@ router.get('/api/speaker/devices', async (req, res) => {
     try {
         const SpeakerService = require('../services/speakerService');
         const svc = new SpeakerService();
-        const speakers = await svc.getAvailableDevices();
-        res.json({ success: true, speakers });
+        const devices = await svc.getAvailableDevices();
+        res.json({ success: true, devices });
     } catch (err) {
         logger.error('Error getting speaker devices:', err);
         res.status(500).json({ success: false, error: err.message });

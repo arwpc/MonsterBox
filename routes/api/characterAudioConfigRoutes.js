@@ -350,4 +350,111 @@ router.get('/:characterId/test', async (req, res) => {
     }
 });
 
+/**
+ * GET /api/character-audio-config/:characterId/speaker
+ * Get speaker configuration for a character
+ */
+router.get('/:characterId/speaker', async (req, res) => {
+    try {
+        const characterId = req.params.characterId;
+
+        if (!characterId || isNaN(parseInt(characterId))) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid character ID'
+            });
+        }
+
+        const speakerConfig = await characterAudioConfigService.getCharacterSpeakerConfig(characterId);
+        const audioDevice = await characterAudioConfigService.getCharacterAudioOutputDevice(characterId);
+
+        res.json({
+            success: true,
+            data: {
+                speakerConfig,
+                audioDevice
+            }
+        });
+
+    } catch (error) {
+        logger.error('Error getting character speaker config:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get character speaker configuration'
+        });
+    }
+});
+
+/**
+ * PUT /api/character-audio-config/:characterId/speaker
+ * Set character's default speaker
+ */
+router.put('/:characterId/speaker', async (req, res) => {
+    try {
+        const characterId = req.params.characterId;
+        const { speakerId, outputDevice, volume, enabled } = req.body;
+
+        if (!characterId || isNaN(parseInt(characterId))) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid character ID'
+            });
+        }
+
+        const updatedConfig = await characterAudioConfigService.setCharacterDefaultSpeaker(
+            characterId,
+            speakerId,
+            outputDevice,
+            volume,
+            enabled
+        );
+
+        res.json({
+            success: true,
+            data: updatedConfig,
+            message: 'Default speaker updated successfully'
+        });
+
+    } catch (error) {
+        logger.error('Error setting character default speaker:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to set character default speaker'
+        });
+    }
+});
+
+/**
+ * GET /api/character-audio-config/:characterId/speaker-parts
+ * Get available speaker parts for a character
+ */
+router.get('/:characterId/speaker-parts', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.characterId);
+
+        if (!characterId || isNaN(characterId)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid character ID'
+            });
+        }
+
+        const partService = require('../../services/partService');
+        const allParts = await partService.getPartsByCharacter(characterId);
+        const speakerParts = allParts.filter(part => part.type === 'speaker');
+
+        res.json({
+            success: true,
+            data: speakerParts
+        });
+
+    } catch (error) {
+        logger.error('Error getting character speaker parts:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get character speaker parts'
+        });
+    }
+});
+
 module.exports = router;

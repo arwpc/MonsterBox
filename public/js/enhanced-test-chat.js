@@ -24,6 +24,7 @@ class EnhancedTestChat {
         this.audioStream = null;
         this.liveModeState = 'idle'; // idle, listening, processing, speaking
         this.speechDetected = false; // Track speech state for ElevenLabs VAD
+        this.lastSpeechTime = 0; // Timestamp of last detected speech frame
         this.liveModeTimeout = null;
         this.liveModeAudio = null;
         this.liveModeToggleInProgress = false;
@@ -78,6 +79,21 @@ class EnhancedTestChat {
         this.silenceDurationInline = document.getElementById('silenceDurationInline');
         this.prefixPaddingInline = document.getElementById('prefixPaddingInline');
         this.saveInlineSTT = document.getElementById('saveInlineSTT');
+
+        // TTS Config modal elements
+        this.openTTSConfigBtn = document.getElementById('openTTSConfig');
+        this.ttsConfigModal = document.getElementById('ttsConfigModal');
+        this.closeTTSModal = document.getElementById('closeTTSModal');
+        this.cancelTTSConfig = document.getElementById('cancelTTSConfig');
+        this.saveTTSConfig = document.getElementById('saveTTSConfig');
+        this.ttsDefaultSpeaker = document.getElementById('ttsDefaultSpeaker');
+        this.ttsOutputDevice = document.getElementById('ttsOutputDevice');
+        this.refreshTTSDevices = document.getElementById('refreshTTSDevices');
+        this.ttsVolume = document.getElementById('ttsVolume');
+        this.ttsVolumeValue = document.getElementById('ttsVolumeValue');
+        this.ttsEnabled = document.getElementById('ttsEnabled');
+        this.testTTSSpeaker = document.getElementById('testTTSSpeaker');
+        this.testTTSVoice = document.getElementById('testTTSVoice');
     }
 
     /**
@@ -126,6 +142,52 @@ class EnhancedTestChat {
         if (this.saveInlineSTT) {
             this.saveInlineSTT.addEventListener('click', () => this.saveInlineSTTSettings());
             this.saveInlineSTT.title = 'Save and apply these STT settings immediately';
+        }
+
+        // TTS Config modal event listeners
+        if (this.openTTSConfigBtn) {
+            this.openTTSConfigBtn.addEventListener('click', () => this.openTTSConfigModal());
+        }
+
+        if (this.closeTTSModal) {
+            this.closeTTSModal.addEventListener('click', () => this.closeTTSConfigModal());
+        }
+
+        if (this.cancelTTSConfig) {
+            this.cancelTTSConfig.addEventListener('click', () => this.closeTTSConfigModal());
+        }
+
+        if (this.saveTTSConfig) {
+            this.saveTTSConfig.addEventListener('click', () => this.saveTTSConfiguration());
+        }
+
+        if (this.refreshTTSDevices) {
+            this.refreshTTSDevices.addEventListener('click', () => this.refreshAudioDevices());
+        }
+
+        if (this.ttsVolume) {
+            this.ttsVolume.addEventListener('input', (e) => {
+                if (this.ttsVolumeValue) {
+                    this.ttsVolumeValue.textContent = e.target.value + '%';
+                }
+            });
+        }
+
+        if (this.testTTSSpeaker) {
+            this.testTTSSpeaker.addEventListener('click', () => this.testSpeakerOutput());
+        }
+
+        if (this.testTTSVoice) {
+            this.testTTSVoice.addEventListener('click', () => this.testVoiceOutput());
+        }
+
+        // Close modal when clicking outside
+        if (this.ttsConfigModal) {
+            this.ttsConfigModal.addEventListener('click', (e) => {
+                if (e.target === this.ttsConfigModal) {
+                    this.closeTTSConfigModal();
+                }
+            });
         }
     }
 
@@ -451,9 +513,15 @@ class EnhancedTestChat {
      * Handle messages from ElevenLabs WebSocket
      */
     handleElevenLabsMessage(message) {
-        console.log('📥 ElevenLabs message:', message);
+        try {
+            console.log('📥 ElevenLabs message:', message);
 
-        switch (message.type) {
+            if (!message || typeof message !== 'object') {
+                console.warn('⚠️ Invalid message received:', message);
+                return;
+            }
+
+            switch (message.type) {
             case 'connected':
                 console.log('🔗 ElevenLabs service connected, session:', message.sessionId);
                 console.log('🎭 Available characters:', message.availableCharacters);
@@ -545,8 +613,9 @@ class EnhancedTestChat {
                 break;
 
             case 'error':
-                console.error('❌ ElevenLabs error:', message.error);
-                this.addMessage('system', `Error: ${message.error}`, {
+                const errorMsg = message.error || message.message || 'Unknown error';
+                console.error('❌ ElevenLabs error:', errorMsg);
+                this.addMessage('system', `Error: ${errorMsg}`, {
                     characterName: 'System',
                     isError: true
                 });
@@ -554,7 +623,12 @@ class EnhancedTestChat {
                 break;
 
             default:
-                console.log('📥 Unknown ElevenLabs message type:', message.type);
+                console.log('📥 Unknown ElevenLabs message type:', message.type, message);
+                // Don't treat unknown message types as errors, just log them
+                break;
+        }
+        } catch (error) {
+            console.error('❌ Error handling ElevenLabs message:', error, message);
         }
     }
 
@@ -623,15 +697,32 @@ class EnhancedTestChat {
         const activityRatio = nonZeroSamples / int16Data.length;
 
         // Thresholds for speech detection (more sensitive for ElevenLabs server_vad)
-        const energyThreshold = 500000;  // Reduced for better sensitivity
-        const amplitudeThreshold = 300;  // Reduced for better sensitivity
-        const activityThreshold = 0.005; // Reduced to 0.5% for better sensitivity
+        // Adaptive thresholds using current VAD settings for sensitivity
+        const vadThreshold = parseFloat(this.vadThresholdInline?.value || '0.5');
+        // Map VAD threshold (0..1) to amplitude/energy thresholds. Lower vad => lower thresholds (more sensitive)
+        const amplitudeThreshold = Math.max(80, Math.round(600 - 500 * (1 - vadThreshold))); // range ~100..600
+        const energyThreshold = Math.max(120000, Math.round(800000 - 680000 * (1 - vadThreshold))); // range ~120k..800k
+        const activityThreshold = Math.max(0.002, 0.02 - 0.018 * (1 - vadThreshold)); // range ~0.002..0.02
 
         const hasActivity = averageEnergy > energyThreshold ||
                            maxAmplitude > amplitudeThreshold ||
                            activityRatio > activityThreshold;
 
-        console.log(`🎙️ Audio activity: energy=${averageEnergy.toFixed(0)}, max=${maxAmplitude}, activity=${(activityRatio*100).toFixed(1)}%, hasActivity=${hasActivity}`);
+        // Silence cutoff using character's silenceDuration setting (ms)
+        const silenceMs = parseInt(this.silenceDurationInline?.value || '700');
+        if (hasActivity) {
+            this.lastSpeechTime = Date.now();
+        } else if (this.lastSpeechTime && (Date.now() - this.lastSpeechTime > silenceMs)) {
+            // Consider end-of-speech if we've had silence longer than threshold
+            if (this.speechDetected) {
+                console.log('🎙️ End-of-speech by silence timeout, signaling to ElevenLabs');
+                this.speechDetected = false;
+                this.stopCurrentAudio();
+                this.sendEndOfSpeechToElevenLabs();
+            }
+        }
+
+        console.log(`🎙️ Audio activity: energy=${averageEnergy.toFixed(0)}, max=${maxAmplitude}, activity=${(activityRatio*100).toFixed(1)}%, hasActivity=${hasActivity}, ampThr=${amplitudeThreshold}, engThr=${energyThreshold}`);
 
         return hasActivity;
         } catch (error) {
@@ -785,7 +876,12 @@ class EnhancedTestChat {
 
             // Check if WebSocket connection exists and is ready
             if (!this.elevenLabsWs) {
-                throw new Error('ElevenLabs WebSocket not initialized');
+                console.log('🔄 WebSocket not initialized, attempting to reconnect...');
+                this.addMessage('system', 'Initializing ElevenLabs connection...', {
+                    characterName: 'System',
+                    isInfo: true
+                });
+                await this.initializeElevenLabsConnection();
             }
 
             // If connection is not open, wait for it with a shorter timeout
@@ -2371,9 +2467,11 @@ class EnhancedTestChat {
                 return;
             }
 
-            // Skip very small audio blobs (likely silence) - reduced threshold for better sensitivity
-            if (audioBlob.size < 500) {
-                console.log(`🎙️ Audio blob too small (${audioBlob.size} bytes), likely silence - restarting`);
+            // Skip very small audio blobs (likely silence) - dynamic based on VAD threshold
+            const vadThreshold = parseFloat(this.vadThresholdInline?.value || '0.5');
+            const minBlobSize = Math.max(200, Math.round(800 - 600 * (1 - vadThreshold))); // 200..800 bytes
+            if (audioBlob.size < minBlobSize) {
+                console.log(`🎙️ Audio blob too small (${audioBlob.size} bytes < ${minBlobSize}), likely silence - restarting`);
                 if (this.isLiveModeActive) {
                     this.restartContinuousListening();
                 }
@@ -2388,15 +2486,7 @@ class EnhancedTestChat {
             const hasAudio = this.detectAudioActivity(pcmAudio);
             if (!hasAudio) {
                 console.log(`🎙️ Audio chunk contains mostly silence, skipping...`);
-                // Reset speech state if we were previously detecting speech
-                if (this.speechDetected) {
-                    console.log(`🎙️ Speech ended, sending end-of-speech signal to ElevenLabs`);
-                    this.speechDetected = false;
-                    // Client-side barge-in: stop any agent playback as soon as we start (or end) speaking
-                    this.stopCurrentAudio();
-                    // Send empty audio chunk to signal end of speech
-                    this.sendEndOfSpeechToElevenLabs();
-                }
+                // If no audio but recent speech within silence threshold, defer end-of-speech to detector loop
                 if (this.isLiveModeActive) {
                     this.restartContinuousListening();
                 }
@@ -2865,13 +2955,13 @@ class EnhancedTestChat {
             this.analyser = this.audioContext.createAnalyser();
             this.microphone = this.audioContext.createMediaStreamSource(this.audioStream);
 
-            // Configure analyzer for real-time level detection
-            this.analyser.fftSize = 256;
-            this.analyser.smoothingTimeConstant = 0.8;
+            // Configure analyzer for real-time level detection (more responsive)
+            this.analyser.fftSize = 1024; // higher resolution for smoother meter
+            this.analyser.smoothingTimeConstant = 0.5; // less smoothing for faster response
             this.microphone.connect(this.analyser);
 
-            // Create data array for frequency data
-            this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+            // Create data array for time-domain data for better level responsiveness
+            this.timeDomainArray = new Uint8Array(this.analyser.fftSize);
 
             // Start the level monitoring loop
             this.monitorMicrophoneLevel();
@@ -2891,18 +2981,20 @@ class EnhancedTestChat {
             return;
         }
 
-        // Get frequency data
-        this.analyser.getByteFrequencyData(this.dataArray);
+        // Read time domain data for more natural VU-style meter
+        this.analyser.getByteTimeDomainData(this.timeDomainArray);
 
-        // Calculate average volume level
-        let sum = 0;
-        for (let i = 0; i < this.dataArray.length; i++) {
-            sum += this.dataArray[i];
+        // Compute peak-to-peak amplitude
+        let min = 255; let max = 0;
+        for (let i = 0; i < this.timeDomainArray.length; i++) {
+            const v = this.timeDomainArray[i];
+            if (v < min) min = v;
+            if (v > max) max = v;
         }
-        const averageLevel = sum / this.dataArray.length;
+        const peakToPeak = max - min; // 0..255
 
         // Convert to percentage (0-100)
-        const levelPercentage = Math.round((averageLevel / 255) * 100);
+        const levelPercentage = Math.round((peakToPeak / 255) * 100);
 
         // Update visual indicator
         this.updateMicrophoneLevelDisplay(levelPercentage);
@@ -2931,13 +3023,16 @@ class EnhancedTestChat {
             levelBar.style.width = `${levelPercentage}%`;
             levelText.textContent = `${levelPercentage}%`;
 
-            // Color coding based on level
-            if (levelPercentage > 50) {
-                levelBar.style.backgroundColor = '#00ff00'; // Green - good level
-            } else if (levelPercentage > 20) {
-                levelBar.style.backgroundColor = '#ffff00'; // Yellow - moderate level
+            // Color coding based on level with neon glow aesthetic
+            if (levelPercentage > 60) {
+                levelBar.style.backgroundColor = '#39ff14'; // neon green
+                levelBar.style.boxShadow = '0 0 10px #39ff14, 0 0 20px #39ff14';
+            } else if (levelPercentage > 30) {
+                levelBar.style.backgroundColor = '#ffff33'; // neon yellow
+                levelBar.style.boxShadow = '0 0 10px #ffff33, 0 0 20px #ffff33';
             } else {
-                levelBar.style.backgroundColor = '#ff6600'; // Orange - low level
+                levelBar.style.backgroundColor = '#ff33cc'; // neon pink/purple
+                levelBar.style.boxShadow = '0 0 6px #ff33cc, 0 0 12px #ff33cc';
             }
         }
     }
@@ -3276,6 +3371,320 @@ class EnhancedTestChat {
         const element = this[`${mappedType}Time`];
         if (element) {
             element.textContent = `${time}ms`;
+        }
+    }
+
+    /**
+     * Open TTS Configuration Modal
+     */
+    async openTTSConfigModal() {
+        try {
+            if (!this.currentCharacter) {
+                alert('Please select a character first');
+                return;
+            }
+
+            // Load current speaker configuration
+            await this.loadTTSConfiguration();
+
+            // Show the modal
+            this.ttsConfigModal.style.display = 'block';
+
+        } catch (error) {
+            console.error('❌ Error opening TTS config modal:', error);
+            alert('Error loading TTS configuration: ' + error.message);
+        }
+    }
+
+    /**
+     * Close TTS Configuration Modal
+     */
+    closeTTSConfigModal() {
+        if (this.ttsConfigModal) {
+            this.ttsConfigModal.style.display = 'none';
+        }
+    }
+
+    /**
+     * Load TTS Configuration for current character
+     */
+    async loadTTSConfiguration() {
+        try {
+            const characterId = this.currentCharacter.id;
+
+            // Load speaker configuration
+            const speakerResponse = await fetch(`/api/character-audio-config/${characterId}/speaker`);
+            const speakerData = await speakerResponse.json();
+
+            if (speakerData.success) {
+                const { speakerConfig, audioDevice } = speakerData.data;
+
+                // Update form fields
+                if (this.ttsVolume) {
+                    this.ttsVolume.value = speakerConfig.volume || 80;
+                    if (this.ttsVolumeValue) {
+                        this.ttsVolumeValue.textContent = (speakerConfig.volume || 80) + '%';
+                    }
+                }
+
+                if (this.ttsEnabled) {
+                    this.ttsEnabled.checked = speakerConfig.enabled !== false;
+                }
+
+                // Load speaker parts
+                await this.loadSpeakerParts(characterId, speakerConfig.defaultSpeakerId);
+
+                // Load audio devices
+                await this.loadAudioDevices(speakerConfig.outputDevice);
+
+            } else {
+                console.warn('Failed to load speaker configuration:', speakerData.error);
+            }
+
+        } catch (error) {
+            console.error('❌ Error loading TTS configuration:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Load available speaker parts for character
+     */
+    async loadSpeakerParts(characterId, selectedSpeakerId) {
+        try {
+            const response = await fetch(`/api/character-audio-config/${characterId}/speaker-parts`);
+            const data = await response.json();
+
+            if (data.success && this.ttsDefaultSpeaker) {
+                // Clear existing options
+                this.ttsDefaultSpeaker.innerHTML = '<option value="">No Speaker Part (Use Fallback Device)</option>';
+
+                // Add speaker parts
+                data.data.forEach(speaker => {
+                    const option = document.createElement('option');
+                    option.value = speaker.id;
+                    option.textContent = `${speaker.name} (${speaker.outputDevice || 'default'})`;
+                    option.selected = speaker.id == selectedSpeakerId;
+                    this.ttsDefaultSpeaker.appendChild(option);
+                });
+            }
+
+        } catch (error) {
+            console.error('❌ Error loading speaker parts:', error);
+        }
+    }
+
+    /**
+     * Load available audio devices
+     */
+    async loadAudioDevices(selectedDevice) {
+        try {
+            const response = await fetch('/parts/api/speaker/devices');
+            const data = await response.json();
+
+            if (data.success && this.ttsOutputDevice) {
+                // Clear existing options
+                this.ttsOutputDevice.innerHTML = '<option value="default">System Default</option>';
+
+                // Add available devices
+                data.devices.forEach(device => {
+                    if (device.id !== 'default') { // Skip duplicate default
+                        const option = document.createElement('option');
+                        option.value = device.id;
+                        option.textContent = device.name;
+                        option.title = device.description;
+                        option.selected = device.id === selectedDevice;
+                        this.ttsOutputDevice.appendChild(option);
+                    }
+                });
+            }
+
+        } catch (error) {
+            console.error('❌ Error loading audio devices:', error);
+        }
+    }
+
+    /**
+     * Refresh audio devices list
+     */
+    async refreshAudioDevices() {
+        try {
+            const currentDevice = this.ttsOutputDevice?.value;
+            await this.loadAudioDevices(currentDevice);
+
+            this.addMessage('system', '✅ Audio devices refreshed', {
+                characterName: 'System',
+                isInfo: true
+            });
+
+        } catch (error) {
+            console.error('❌ Error refreshing audio devices:', error);
+            this.addMessage('system', `Error refreshing audio devices: ${error.message}`, {
+                characterName: 'System',
+                isError: true
+            });
+        }
+    }
+
+    /**
+     * Save TTS Configuration
+     */
+    async saveTTSConfiguration() {
+        try {
+            if (!this.currentCharacter) {
+                alert('No character selected');
+                return;
+            }
+
+            const characterId = this.currentCharacter.id;
+            const speakerId = this.ttsDefaultSpeaker?.value || null;
+            const outputDevice = this.ttsOutputDevice?.value || 'default';
+            const volume = parseInt(this.ttsVolume?.value || '80');
+            const enabled = !!this.ttsEnabled?.checked;
+
+            // Save speaker configuration
+            const response = await fetch(`/api/character-audio-config/${characterId}/speaker`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    speakerId: speakerId,
+                    outputDevice: outputDevice,
+                    volume: volume,
+                    enabled: enabled
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.addMessage('system', '✅ TTS configuration saved successfully', {
+                    characterName: 'System',
+                    isInfo: true
+                });
+
+                // Close modal
+                this.closeTTSConfigModal();
+
+                // Update character configuration for immediate use
+                await this.updateCharacterSpeakerConfig();
+
+            } else {
+                throw new Error(data.error || 'Failed to save TTS configuration');
+            }
+
+        } catch (error) {
+            console.error('❌ Error saving TTS configuration:', error);
+            alert('Error saving TTS configuration: ' + error.message);
+        }
+    }
+
+    /**
+     * Test speaker output
+     */
+    async testSpeakerOutput() {
+        try {
+            const deviceId = this.ttsOutputDevice?.value || 'default';
+
+            const response = await fetch('/parts/api/speaker/test', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ deviceId })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.addMessage('system', '🔊 Test tone played successfully', {
+                    characterName: 'System',
+                    isInfo: true
+                });
+            } else {
+                throw new Error(data.error || 'Test failed');
+            }
+
+        } catch (error) {
+            console.error('❌ Error testing speaker:', error);
+            this.addMessage('system', `Speaker test failed: ${error.message}`, {
+                characterName: 'System',
+                isError: true
+            });
+        }
+    }
+
+    /**
+     * Update character speaker configuration for immediate use
+     */
+    async updateCharacterSpeakerConfig() {
+        try {
+            if (!this.currentCharacter) return;
+
+            const characterId = this.currentCharacter.id;
+            const response = await fetch(`/api/character-audio-config/${characterId}/speaker`);
+            const data = await response.json();
+
+            if (data.success) {
+                // Update current character with speaker config for immediate use
+                this.currentCharacter.speakerConfig = data.data.speakerConfig;
+                this.currentCharacter.audioDevice = data.data.audioDevice;
+
+                console.log('🔊 Updated character speaker configuration:', data.data);
+            }
+
+        } catch (error) {
+            console.error('❌ Error updating character speaker config:', error);
+        }
+    }
+
+    /**
+     * Test voice output with current character
+     */
+    async testVoiceOutput() {
+        try {
+            if (!this.currentCharacter) {
+                alert('Please select a character first');
+                return;
+            }
+
+            const testText = `Hello! This is ${this.currentCharacter.char_name || this.currentCharacter.name} testing the voice output.`;
+
+            // Use the existing TTS system to test voice
+            const response = await fetch('/voice/speak', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    text: testText,
+                    characterId: this.currentCharacter.id,
+                    character: this.currentCharacter.char_name || this.currentCharacter.name
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success && data.audioUrl) {
+                // Play the test audio
+                const audio = new Audio(data.audioUrl);
+                audio.play();
+
+                this.addMessage('system', '🎤 Voice test completed', {
+                    characterName: 'System',
+                    isInfo: true
+                });
+            } else {
+                throw new Error(data.error || 'Voice test failed');
+            }
+
+        } catch (error) {
+            console.error('❌ Error testing voice:', error);
+            this.addMessage('system', `Voice test failed: ${error.message}`, {
+                characterName: 'System',
+                isError: true
+            });
         }
     }
 }

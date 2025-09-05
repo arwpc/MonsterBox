@@ -262,38 +262,41 @@ router.post('/:id/play', async (req, res) => {
         const rawId = req.params.id;
         if (!rawId || rawId === 'undefined' || rawId === 'null') {
             logger.error(`Invalid sound ID provided in URL: ${rawId}`);
-            return res.status(400).json({ 
-                error: 'Invalid sound ID', 
-                details: `Sound ID is invalid: ${rawId}` 
+            return res.status(400).json({
+                error: 'Invalid sound ID',
+                details: `Sound ID is invalid: ${rawId}`
             });
         }
-        
+
         const soundId = parseInt(rawId, 10);
         if (isNaN(soundId) || soundId <= 0) {
             logger.error(`Sound ID is not a valid number: ${rawId}`);
-            return res.status(400).json({ 
-                error: 'Invalid sound ID', 
-                details: `Sound ID must be a valid number, received: ${rawId}` 
+            return res.status(400).json({
+                error: 'Invalid sound ID',
+                details: `Sound ID must be a valid number, received: ${rawId}`
             });
         }
-        
-        logger.info('Attempting to play sound with ID:', soundId);
+
+        // Get character ID from request body (optional)
+        const characterId = req.body.characterId ? parseInt(req.body.characterId) : null;
+
+        logger.info('Attempting to play sound with ID:', soundId, characterId ? `for character ${characterId}` : '');
 
         const sound = await soundService.getSoundById(soundId);
-        
+
         if (!sound) {
             logger.warn('Sound not found for ID:', soundId);
             return res.status(404).json({ error: 'Sound not found', details: `No sound with id ${soundId}`, soundId });
         }
 
         logger.info('Found sound:', sound);
-        
+
         // Validate that sound has a filename
         if (!sound.filename) {
             logger.error(`Sound ${soundId} has no associated filename`);
-            return res.status(400).json({ 
-                error: 'Invalid sound configuration', 
-                details: `Sound ${soundId} has no associated file` 
+            return res.status(400).json({
+                error: 'Invalid sound configuration',
+                details: `Sound ${soundId} has no associated file`
             });
         }
 
@@ -308,14 +311,43 @@ router.post('/:id/play', async (req, res) => {
             return res.status(404).json({ error: 'Sound file not accessible', details: error.message, filePath });
         }
 
-        // Use soundController to play the sound
-        await soundController.startSoundPlayer();
-        const result = await soundController.playSound(sound.id, filePath);
+        let result;
+        let playbackMethod = 'default';
 
-        res.status(200).json({ 
-            message: 'Playing sound on character',
+        // If character ID is provided, use character-specific speaker configuration
+        if (characterId) {
+            try {
+                const speakerService = require('../services/speakerService');
+                result = await speakerService.playAudioForCharacter(filePath, characterId);
+                playbackMethod = 'character_speaker';
+
+                if (!result.success) {
+                    logger.warn(`Character speaker playback failed, falling back to default: ${result.error}`);
+                    // Fall back to default sound controller
+                    await soundController.startSoundPlayer();
+                    result = await soundController.playSound(sound.id, filePath);
+                    playbackMethod = 'fallback_default';
+                }
+            } catch (error) {
+                logger.warn(`Character speaker playback error, falling back to default: ${error.message}`);
+                // Fall back to default sound controller
+                await soundController.startSoundPlayer();
+                result = await soundController.playSound(sound.id, filePath);
+                playbackMethod = 'fallback_default';
+            }
+        } else {
+            // Use default sound controller
+            await soundController.startSoundPlayer();
+            result = await soundController.playSound(sound.id, filePath);
+            playbackMethod = 'default';
+        }
+
+        res.status(200).json({
+            message: characterId ? `Playing sound on character ${characterId}` : 'Playing sound',
             sound: sound.name,
             file: sound.filename,
+            characterId: characterId,
+            playbackMethod: playbackMethod,
             result: result
         });
 

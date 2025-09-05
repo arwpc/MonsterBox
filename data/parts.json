@@ -264,11 +264,20 @@
   },
   {
     "id": 32,
-    "characterId": 1,
+    "characterId": 2,
     "type": "speaker",
-    "name": "Mouth of Skulltalker",
+    "name": "Sounds of the Skull",
     "description": "",
-    "outputDevice": "default",
+    "outputDevice": "alsa_output.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.analog-stereo",
     "volume": "80"
+  },
+  {
+    "id": 33,
+    "name": "Test Speaker",
+    "description": "Test speaker for Coffin Breaker",
+    "outputDevice": "default",
+    "volume": "75",
+    "characterId": 2,
+    "type": "speaker"
   }
 ]

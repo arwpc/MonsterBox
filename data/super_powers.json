@@ -2,7 +2,7 @@
   "characters": {
     "1": {
       "jawAnimation": {
-        "enabled": true,
+        "enabled": false,
         "servoPartId": null,
         "minAngle": 60,
         "maxAngle": 120,

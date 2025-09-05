@@ -1108,6 +1108,45 @@
                         </div>
                     </div>
 
+                    <!-- Speaker Selection Section -->
+                    <div class="config-section">
+                        <div class="config-header">
+                            <div style="display: flex; align-items: center;">
+                                <i class="fas fa-volume-up config-icon"></i>
+                                <h4>Audio Output Configuration</h4>
+                            </div>
+                        </div>
+
+                        <div class="setting-group">
+                            <label for="modalDefaultSpeaker">Default Speaker Part:</label>
+                            <select id="modalDefaultSpeaker" name="defaultSpeaker">
+                                <option value="">No Speaker Part (Use Fallback Device)</option>
+                            </select>
+                            <small class="help-text">Choose which speaker part to use for all audio output from this character</small>
+                        </div>
+
+                        <div class="setting-group">
+                            <label for="modalOutputDevice">Fallback Audio Device:</label>
+                            <select id="modalOutputDevice" name="outputDevice">
+                                <option value="default">System Default</option>
+                            </select>
+                            <button type="button" class="button small-btn" onclick="refreshModalAudioDevices()">🔄 Refresh</button>
+                            <small class="help-text">Audio device used when no speaker part is selected</small>
+                        </div>
+
+                        <div class="setting-group">
+                            <label for="modalAudioVolume">Audio Volume:</label>
+                            <input type="range" id="modalAudioVolume" min="0" max="100" value="80" class="form-control">
+                            <span id="modalAudioVolumeValue">80%</span>
+                        </div>
+
+                        <div class="test-controls">
+                            <button type="button" class="button secondary-btn" onclick="testModalSpeakerOutput()">
+                                <i class="fas fa-volume-up"></i> Test Speaker
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- Preview Section -->
                     <div class="test-controls">
                         <input type="text" id="previewText" class="test-input" placeholder="Enter text to preview..." value="Hello, I am your character speaking.">
@@ -1503,6 +1542,9 @@
             } catch (error) {
                 console.warn('Could not load current voice configuration:', error);
             }
+
+            // Load speaker configuration for this character
+            await loadCharacterSpeakerConfig(characterId);
         }
 
         async function preselectCurrentVoice(speakerId) {
@@ -1547,6 +1589,171 @@
             if (currentAudioUrl) {
                 URL.revokeObjectURL(currentAudioUrl);
                 currentAudioUrl = null;
+            }
+        }
+
+        // Speaker Configuration Functions
+        async function loadCharacterSpeakerConfig(characterId) {
+            try {
+                // Load speaker configuration
+                const speakerResponse = await fetch(`/api/character-audio-config/${characterId}/speaker`);
+                const speakerData = await speakerResponse.json();
+
+                if (speakerData.success) {
+                    const { speakerConfig, audioDevice } = speakerData.data;
+
+                    // Update form fields
+                    const modalAudioVolume = document.getElementById('modalAudioVolume');
+                    const modalAudioVolumeValue = document.getElementById('modalAudioVolumeValue');
+
+                    if (modalAudioVolume) {
+                        modalAudioVolume.value = speakerConfig.volume || 80;
+                        if (modalAudioVolumeValue) {
+                            modalAudioVolumeValue.textContent = (speakerConfig.volume || 80) + '%';
+                        }
+                    }
+
+                    // Load speaker parts
+                    await loadModalSpeakerParts(characterId, speakerConfig.defaultSpeakerId);
+
+                    // Load audio devices
+                    await loadModalAudioDevices(speakerConfig.outputDevice);
+
+                } else {
+                    console.warn('Failed to load speaker configuration:', speakerData.error);
+                }
+
+            } catch (error) {
+                console.error('❌ Error loading speaker configuration:', error);
+            }
+        }
+
+        async function loadModalSpeakerParts(characterId, selectedSpeakerId) {
+            try {
+                const response = await fetch(`/api/character-audio-config/${characterId}/speaker-parts`);
+                const data = await response.json();
+
+                const modalDefaultSpeaker = document.getElementById('modalDefaultSpeaker');
+                if (data.success && modalDefaultSpeaker) {
+                    // Clear existing options
+                    modalDefaultSpeaker.innerHTML = '<option value="">No Speaker Part (Use Fallback Device)</option>';
+
+                    // Add speaker parts
+                    data.data.forEach(speaker => {
+                        const option = document.createElement('option');
+                        option.value = speaker.id;
+                        option.textContent = `${speaker.name} (${speaker.outputDevice || 'default'})`;
+                        option.selected = speaker.id == selectedSpeakerId;
+                        modalDefaultSpeaker.appendChild(option);
+                    });
+                }
+
+            } catch (error) {
+                console.error('❌ Error loading speaker parts:', error);
+            }
+        }
+
+        async function loadModalAudioDevices(selectedDevice) {
+            try {
+                const response = await fetch('/parts/api/speaker/devices');
+                const data = await response.json();
+
+                const modalOutputDevice = document.getElementById('modalOutputDevice');
+                if (data.success && modalOutputDevice) {
+                    // Clear existing options
+                    modalOutputDevice.innerHTML = '<option value="default">System Default</option>';
+
+                    // Add available devices
+                    data.devices.forEach(device => {
+                        if (device.id !== 'default') { // Skip duplicate default
+                            const option = document.createElement('option');
+                            option.value = device.id;
+                            option.textContent = device.name;
+                            option.title = device.description;
+                            option.selected = device.id === selectedDevice;
+                            modalOutputDevice.appendChild(option);
+                        }
+                    });
+                }
+
+            } catch (error) {
+                console.error('❌ Error loading audio devices:', error);
+            }
+        }
+
+        async function refreshModalAudioDevices() {
+            try {
+                const modalOutputDevice = document.getElementById('modalOutputDevice');
+                const currentDevice = modalOutputDevice?.value;
+                await loadModalAudioDevices(currentDevice);
+
+                showMessage('✅ Audio devices refreshed', 'success');
+
+            } catch (error) {
+                console.error('❌ Error refreshing audio devices:', error);
+                showMessage(`Error refreshing audio devices: ${error.message}`, 'error');
+            }
+        }
+
+        async function testModalSpeakerOutput() {
+            try {
+                const modalOutputDevice = document.getElementById('modalOutputDevice');
+                const deviceId = modalOutputDevice?.value || 'default';
+
+                const response = await fetch('/parts/api/speaker/test', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ deviceId })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage('🔊 Test tone played successfully', 'success');
+                } else {
+                    throw new Error(data.error || 'Test failed');
+                }
+
+            } catch (error) {
+                console.error('❌ Error testing speaker:', error);
+                showMessage(`Speaker test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function saveModalSpeakerConfiguration(characterId) {
+            try {
+                const modalDefaultSpeaker = document.getElementById('modalDefaultSpeaker');
+                const modalOutputDevice = document.getElementById('modalOutputDevice');
+                const modalAudioVolume = document.getElementById('modalAudioVolume');
+
+                const speakerId = modalDefaultSpeaker?.value || null;
+                const outputDevice = modalOutputDevice?.value || 'default';
+                const volume = parseInt(modalAudioVolume?.value || '80');
+
+                const response = await fetch(`/api/character-audio-config/${characterId}/speaker`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        speakerId: speakerId,
+                        outputDevice: outputDevice,
+                        volume: volume
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    console.log('✅ Speaker configuration saved successfully');
+                } else {
+                    console.warn('Failed to save speaker configuration:', data.error);
+                }
+
+            } catch (error) {
+                console.error('❌ Error saving speaker configuration:', error);
             }
         }
 
@@ -1678,6 +1885,9 @@
 
                 if (data.success) {
                     showMessage('Voice assigned successfully!', 'success');
+
+                    // Save speaker configuration
+                    await saveModalSpeakerConfiguration(characterId);
 
                     // Update the voice preview without full page reload (BEFORE closing modal)
                     console.log('🔄 About to call updateVoicePreview with:', characterId, selectedVoice, settings);
@@ -2136,6 +2346,18 @@
                 closeCatalogModal();
             }
         }
+
+        // Initialize volume slider event listener
+        document.addEventListener('DOMContentLoaded', function() {
+            const modalAudioVolume = document.getElementById('modalAudioVolume');
+            const modalAudioVolumeValue = document.getElementById('modalAudioVolumeValue');
+
+            if (modalAudioVolume && modalAudioVolumeValue) {
+                modalAudioVolume.addEventListener('input', function(e) {
+                    modalAudioVolumeValue.textContent = e.target.value + '%';
+                });
+            }
+        });
     </script>
 </body>
 </html>

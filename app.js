@@ -770,6 +770,18 @@ app.get('/log-collection/dashboard', (req, res) => {
 // Root route - must be before error handling middleware
 app.get('/', asyncHandler(async (req, res) => {
     const characters = await characterService.getAllCharacters();
+
+    // Get the current character from Dynamic Character Manager
+    let currentCharacter = null;
+    try {
+        if (global.dynamicCharacterManager && global.dynamicCharacterManager.currentCharacter) {
+            const currentCharacterData = global.dynamicCharacterManager.currentCharacter;
+            currentCharacter = characters.find(c => c.id === currentCharacterData.characterId);
+        }
+    } catch (error) {
+        logger.warn('Could not get current character from Dynamic Character Manager:', error.message);
+    }
+
     res.render('index', {
         title: 'MonsterBox Control Panel',
         pageTitle: 'Welcome to MonsterBox',
@@ -777,7 +789,8 @@ app.get('/', asyncHandler(async (req, res) => {
         breadcrumbs: [
             { name: 'Home', url: '/' }
         ],
-        characters: characters
+        characters: characters,
+        currentCharacter: currentCharacter
     });
 }));
 

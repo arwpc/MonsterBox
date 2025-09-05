@@ -461,6 +461,138 @@
                 width: 100%;
             }
         }
+
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            margin: 5% auto;
+            padding: 0;
+            border: 2px solid #00ff41;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 0 30px rgba(0, 255, 65, 0.3);
+            color: #00ff41;
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 2px solid #00ff41;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+        }
+
+        .close {
+            color: #00ff41;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .close:hover {
+            color: #ff0040;
+            text-shadow: 0 0 10px rgba(255, 0, 64, 0.5);
+        }
+
+        .modal-body {
+            padding: 20px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .modal-footer {
+            padding: 20px;
+            border-top: 2px solid #00ff41;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .form-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid rgba(0, 255, 65, 0.3);
+            border-radius: 8px;
+            background: rgba(0, 255, 65, 0.05);
+        }
+
+        .form-section h4 {
+            margin-bottom: 15px;
+            color: #00ccff;
+            text-shadow: 0 0 5px rgba(0, 204, 255, 0.5);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 8px 12px;
+            border: 2px solid #00ff41;
+            border-radius: 5px;
+            background: rgba(0, 0, 0, 0.7);
+            color: #00ff41;
+            font-family: 'Courier New', monospace;
+        }
+
+        .form-control:focus {
+            outline: none;
+            box-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+        }
+
+        .help-text {
+            display: block;
+            margin-top: 5px;
+            font-size: 12px;
+            color: #888;
+            font-style: italic;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .small-btn {
+            padding: 6px 12px !important;
+            font-size: 12px;
+        }
+
+        .primary-btn {
+            background: linear-gradient(135deg, #00ff41 0%, #00ccff 100%);
+            color: #000;
+        }
+
+        .secondary-btn {
+            background: linear-gradient(135deg, #333 0%, #555 100%);
+            color: #00ff41;
+        }
     </style>
 </head>
 <body>
@@ -594,6 +726,7 @@
             <div class="selection-group">
                 <button id="saveInlineSTT" class="send-button" style="padding:6px 12px;">Save STT</button>
                 <a href="https://skulltalker:8080/ai-management/microphone-stt" target="_blank" class="send-button" style="padding:6px 12px;">STT Config</a>
+                <button id="openTTSConfig" class="send-button" style="padding:6px 12px;">TTS Config</button>
             </div>
         </div>
 
@@ -609,6 +742,62 @@
                     </svg>
                     Send
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TTS Configuration Modal -->
+    <div id="ttsConfigModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🔊 TTS Configuration</h3>
+                <span class="close" id="closeTTSModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-section">
+                    <h4>Speaker Selection</h4>
+                    <div class="form-group">
+                        <label for="ttsDefaultSpeaker">Default Speaker:</label>
+                        <select id="ttsDefaultSpeaker" class="form-control">
+                            <option value="">Select Speaker...</option>
+                        </select>
+                        <small class="help-text">Choose which speaker part to use for all audio output</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="ttsOutputDevice">Audio Output Device:</label>
+                        <select id="ttsOutputDevice" class="form-control">
+                            <option value="default">System Default</option>
+                        </select>
+                        <button type="button" class="button small-btn" id="refreshTTSDevices">🔄 Refresh</button>
+                        <small class="help-text">Fallback audio device if no speaker part is selected</small>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h4>Voice Settings</h4>
+                    <div class="form-group">
+                        <label for="ttsVolume">Volume:</label>
+                        <input type="range" id="ttsVolume" min="0" max="100" value="80" class="form-control">
+                        <span id="ttsVolumeValue">80%</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="ttsEnabled">
+                            <input type="checkbox" id="ttsEnabled" checked> Enable TTS Audio Output
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h4>Test Audio</h4>
+                    <div class="button-group">
+                        <button type="button" class="button" id="testTTSSpeaker">🔊 Test Speaker</button>
+                        <button type="button" class="button secondary-btn" id="testTTSVoice">🎤 Test Voice</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="button secondary-btn" id="cancelTTSConfig">Cancel</button>
+                <button type="button" class="button primary-btn" id="saveTTSConfig">Save Configuration</button>
             </div>
         </div>
     </div>

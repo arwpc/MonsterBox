@@ -122,6 +122,58 @@ router.get('/stt', async (req, res) => {
     }
 });
 
+
+// ElevenLabs VAD config API - persist and apply live
+router.post('/api/vad/config', async (req, res) => {
+    try {
+        const { vadType, vadThreshold, prefixPadding, silenceDuration } = req.body || {};
+
+        // Basic validation
+        const errors = [];
+        const vt = vadType || 'server_vad';
+        const th = parseFloat(vadThreshold);
+        const pp = parseInt(prefixPadding);
+        const sd = parseInt(silenceDuration);
+
+        if (!['server_vad', 'webrtcvad', 'none'].includes(vt)) errors.push('vadType must be server_vad, webrtcvad, or none');
+        if (!Number.isFinite(th) || th < 0 || th > 1) errors.push('vadThreshold must be between 0 and 1');
+        if (!Number.isInteger(pp) || pp < 0 || pp > 3000) errors.push('prefixPadding must be 0..3000 ms');
+        if (!Number.isInteger(sd) || sd < 50 || sd > 5000) errors.push('silenceDuration must be 50..5000 ms');
+
+        if (errors.length) {
+            return res.status(400).json({ success: false, error: 'Invalid VAD configuration', details: errors });
+        }
+
+        // Persist to file (STT_CONFIG_FILE)
+        const existing = await loadConfig(STT_CONFIG_FILE, {
+            vadType: 'server_vad',
+            vadThreshold: 0.5,
+            prefixPadding: 300,
+            silenceDuration: 700
+        });
+        const toSave = {
+            ...existing,
+            vadType: vt,
+            vadThreshold: th,
+            prefixPadding: pp,
+            silenceDuration: sd,
+            updatedAt: new Date().toISOString()
+        };
+        const saved = await saveConfig(STT_CONFIG_FILE, toSave);
+
+        // Apply live to ElevenLabs service if available
+        let applied = null;
+        if (global.elevenLabsService && typeof global.elevenLabsService.updateVADConfig === 'function') {
+            applied = await global.elevenLabsService.updateVADConfig(toSave);
+        }
+
+        return res.json({ success: true, saved: !!saved, config: toSave, applied });
+    } catch (error) {
+        console.error('VAD config apply error:', error);
+        return res.status(500).json({ success: false, error: error.message || 'Failed to apply VAD config' });
+    }
+});
+
 // ElevenLabs Agents Management (replaces assistants)
 router.get('/agents', async (req, res) => {
     console.log('🎭 Agents route hit');
@@ -158,6 +210,7 @@ router.get('/agents', async (req, res) => {
 
         // Temporary: return JSON to debug
         if (req.query.debug === 'json') {
+
             return res.json({
                 title: 'ElevenLabs Agents Management',
                 agents: agents,
