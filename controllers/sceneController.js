@@ -23,11 +23,8 @@ const sceneController = {
             logger.info(`Retrieved ${scenes.length} scenes for character ${characterId}`);
             logger.debug(`Scenes data: ${JSON.stringify(scenes)}`);
 
-            if (process.env.NODE_ENV === 'test') {
-                return res.json({ scenes, character });
-            } else {
-                res.render('scenes', { title: 'Scenes', scenes, character });
-            }
+            // Always render HTML for UI pages; API endpoints return JSON separately
+            res.render('scenes', { title: 'Scenes', scenes, character });
         } catch (error) {
             logger.error(`Error getting scenes for character ${characterId}:`, error);
             res.status(500).json({ error: 'Failed to retrieve scenes' });

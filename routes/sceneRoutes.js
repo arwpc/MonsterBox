@@ -4,14 +4,26 @@ const express = require('express');
 const router = express.Router();
 const sceneController = require('../controllers/sceneController');
 const scenePlayerController = require('../controllers/scenePlayerController');
+const characterService = require('../services/characterService');
 const logger = require('../scripts/logger');
 
 // Middleware to check if a character is selected
-const checkCharacterSelected = (req, res, next) => {
-    const characterId = req.query.characterId || req.body.character_id;
+const checkCharacterSelected = async (req, res, next) => {
+    let characterId = req.query.characterId || req.body.character_id;
     if (!characterId) {
-        logger.warn('No character selected, redirecting to main page');
-        return res.redirect('/');  // Redirect to main page if no character is selected
+        try {
+            const characters = await characterService.getAllCharacters();
+            if (characters && characters.length > 0) {
+                characterId = characters[0].id;
+                logger.info(`Scenes: defaulted to first available characterId: ${characterId}`);
+            } else {
+                logger.warn('No character selected and none available, redirecting to main page');
+                return res.redirect('/');  // Redirect if no characters exist
+            }
+        } catch (e) {
+            logger.error('Error fetching characters for scenes route:', e);
+            return res.redirect('/');
+        }
     }
     req.characterId = characterId;
     logger.debug(`Character selected: ${req.characterId}`);

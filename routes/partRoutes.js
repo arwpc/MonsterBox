@@ -44,16 +44,27 @@ async function getPartDetails(part) {
     }
 }
 
-const checkCharacterSelected = (req, res, next) => {
+const checkCharacterSelected = async (req, res, next) => {
     logger.info(`checkCharacterSelected - Initial characterId: ${req.characterId}`);
     if (!req.characterId) {
         req.characterId = req.query.characterId || req.session.characterId;
         logger.info(`checkCharacterSelected - Updated characterId: ${req.characterId}`);
     }
     if (!req.characterId) {
-        // Instead of defaulting to '1', require explicit character selection
-        logger.warn('No character selected - parts require character context');
-        return res.status(400).send('Character selection required. Please access parts through a character page.');
+        try {
+            const characters = await characterService.getAllCharacters();
+            if (characters && characters.length > 0) {
+                req.characterId = characters[0].id;
+                if (req.session) req.session.characterId = req.characterId;
+                logger.info(`checkCharacterSelected - Defaulted to first available characterId: ${req.characterId}`);
+            } else {
+                logger.warn('No characters available - redirecting to Characters page');
+                return res.redirect('/characters');
+            }
+        } catch (err) {
+            logger.error('Error selecting default character:', err);
+            return res.status(400).send('Character selection required. Please create a character first.');
+        }
     }
     logger.info(`checkCharacterSelected - Final characterId: ${req.characterId}`);
     next();

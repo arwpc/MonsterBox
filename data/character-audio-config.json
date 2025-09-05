@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastUpdated": "2025-09-04T17:04:29.947Z",
+  "lastUpdated": "2025-09-05T18:59:59.846Z",
   "characters": {
     "1": {
       "characterId": 1,
@@ -10,19 +10,53 @@
         "assignedMicrophoneId": 1,
         "sensitivity": 1.5,
         "echoCancellation": true,
-        "noiseSuppression": true
+        "noiseSuppression": true,
+        "autoGainControl": true,
+        "voiceActivation": false,
+        "voiceActivationThreshold": 0.1
       },
-      "lastModified": "2025-09-04T02:31:25.766Z",
-      "stt": {},
-      "audioProcessing": {},
-      "characterSpecific": {},
+      "lastModified": "2025-09-05T18:59:59.846Z",
+      "stt": {
+        "enabled": true,
+        "language": "en",
+        "confidenceThreshold": 0.7,
+        "realTimeProcessing": true,
+        "provider": "elevenlabs",
+        "vadThreshold": 0.8,
+        "silenceDuration": 700,
+        "prefixPadding": 300
+      },
+      "audioProcessing": {
+        "sampleRate": 16000,
+        "channels": 1,
+        "bufferSize": 1024,
+        "processingDelay": 100,
+        "enableRealTimeEffects": false
+      },
+      "characterSpecific": {
+        "voiceProfile": "default",
+        "emotionalResponse": true,
+        "contextAwareness": true,
+        "personalityAdjustments": true
+      },
       "speaker": {
         "defaultSpeakerId": null,
         "outputDevice": "default",
         "volume": 85,
         "enabled": true
       },
-      "jawAnimation": {}
+      "jawAnimation": {
+        "enabled": true,
+        "sensitivity": 1.2,
+        "responseCurve": "exponential",
+        "attackTime": 0.03,
+        "releaseTime": 0.1,
+        "minPosition": 45,
+        "maxPosition": 10,
+        "volumeThreshold": 0.005,
+        "smoothingFactor": 0.7
+      },
+      "microphoneSTTConfigs": {}
     },
     "2": {
       "characterId": 2,
@@ -94,11 +128,11 @@
       "stt": {
         "enabled": true,
         "language": "en",
-        "confidenceThreshold": 0.7,
+        "confidenceThreshold": 0.2,
         "realTimeProcessing": true,
         "provider": "elevenlabs",
-        "vadThreshold": 0.25,
-        "silenceDuration": 800,
+        "vadThreshold": 0.2,
+        "silenceDuration": 500,
         "prefixPadding": 450
       },
       "microphoneSTTConfigs": {
@@ -147,7 +181,13 @@
         "contextAwareness": true,
         "personalityAdjustments": true
       },
-      "lastModified": "2025-09-03T17:51:54.635Z"
+      "lastModified": "2025-09-05T16:30:08.725Z",
+      "speaker": {
+        "defaultSpeakerId": "32",
+        "outputDevice": "default",
+        "volume": 80,
+        "enabled": true
+      }
     }
   }
 }

@@ -95,7 +95,7 @@
                 <p>Manage sounds, videos, and scenes for your shows.</p>
                 <div class="button-group">
                     <a href="/sounds" class="button">Sounds</a>
-                    <a href="/Camera" class="button">Video</a>
+                    <a href="/camera" class="button">Video</a>
                 </div>
             </div>
 
@@ -105,7 +105,7 @@
                 <p>Live performance control and scene management.</p>
                 <div class="button-group">
                     <a href="/active-mode" class="button">Active Mode</a>
-                    <a href="#" class="button" onclick="openScenes()">Scenes</a>
+                    <a href="/scenes" class="button" onclick="return openScenes()">Scenes</a>
                 </div>
             </div>
 
@@ -116,6 +116,7 @@
                 <div class="button-group">
                     <a href="/configuration/services-monitor" class="button">📊 Services</a>
                     <a href="/configuration" class="button">RPi Configuration</a>
+                    <a href="/ai-config" class="button">AI Configuration</a>
                 </div>
             </div>
         </div>
@@ -186,8 +187,10 @@
 
             if (selectedCharacter) {
                 window.location.href = `/scenes?characterId=${selectedCharacter}`;
+                return false;
             } else {
                 alert('Please select a character first before viewing scenes.');
+                return false;
             }
         }
     </script>

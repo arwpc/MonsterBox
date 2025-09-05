@@ -258,7 +258,9 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 // Serve static files with correct MIME types
+// Disable directory redirect to let dynamic routes like /sounds take precedence
 app.use(express.static(path.join(__dirname, 'public'), {
+    redirect: false,
     setHeaders: (res, path) => {
         if (path.endsWith('.css')) {
             res.setHeader('Content-Type', 'text/css');

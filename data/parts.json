@@ -264,20 +264,27 @@
   },
   {
     "id": 32,
-    "characterId": 2,
+    "characterId": 4,
     "type": "speaker",
-    "name": "Sounds of the Skull",
+    "name": "Mouth of Skulltalker",
     "description": "",
     "outputDevice": "alsa_output.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.analog-stereo",
     "volume": "80"
   },
   {
     "id": 33,
-    "name": "Test Speaker",
-    "description": "Test speaker for Coffin Breaker",
-    "outputDevice": "default",
-    "volume": "75",
-    "characterId": 2,
-    "type": "speaker"
+    "characterId": 4,
+    "type": "microphone",
+    "name": "Ears of the Skull",
+    "description": "",
+    "deviceId": "default",
+    "outputDevice": "alsa_output.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.analog-stereo",
+    "sampleRate": "16000",
+    "channels": "1",
+    "sensitivity": "1",
+    "echoCancellation": "on",
+    "noiseSuppression": "on",
+    "autoGainControl": "on",
+    "voiceActivationThreshold": "0.1"
   }
 ]
