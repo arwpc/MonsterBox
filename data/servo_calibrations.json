@@ -4,7 +4,7 @@
     "part_name": "Orlok Head Servo",
     "servo_type": "continuous",
     "channel": 0,
-    "calibrated_date": "2025-09-01T17:04:23.065317",
+    "calibrated_date": "2025-09-05T16:23:33",
     "stop_pulse_us": 1460,
     "cw_pulse_us": 1200,
     "ccw_pulse_us": 1800,
@@ -24,9 +24,20 @@
       "backward": {
         "description": "180\u00b0 - Facing backward",
         "calibrated": true
+      },
+      "neutral": {
+        "pulse_us": 1500,
+        "description": "neutral",
+        "calibrated": true
+      },
+      "test_position": {
+        "pulse_us": 1500,
+        "description": "test_position",
+        "calibrated": true
       }
     },
-    "timing_data": {}
+    "timing_data": {},
+    "functionality_status": "working"
   },
   "30": {
     "part_id": 30,
@@ -52,5 +63,22 @@
       }
     },
     "timing_data": {}
+  },
+  "version": "2.0_backward_compatible",
+  "33": {
+    "part_id": 33,
+    "part_name": "Skull Talking Jaw",
+    "servo_type": "standard",
+    "positions": {
+      "min": {
+        "pulse_us": 1450,
+        "angle": null,
+        "calibrated": true,
+        "verified": false,
+        "description": "min"
+      }
+    },
+    "functionality_status": "needs_calibration",
+    "calibrated_date": "2025-09-05T18:11:15"
   }
 }

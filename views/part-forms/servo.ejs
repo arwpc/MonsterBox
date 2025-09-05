@@ -970,61 +970,13 @@
             </div>
         </div>
 
-        <div class="config-section">
-            <h2>Servo Control & Calibration</h2>
-
-            <!-- Rotation Control Section -->
-            <div class="form-group">
-                <label>Rotation Control</label>
-                <div class="rotation-control-buttons">
-                    <button type="button" class="button rotation-btn"
-                        onmousedown="startContinuousRotation('ccw', 'slow')" onmouseup="stopContinuousRotation()"
-                        onmouseleave="stopContinuousRotation()">
-                        ← Left Slow
-                    </button>
-                    <button type="button" class="button rotation-btn"
-                        onmousedown="startContinuousRotation('ccw', 'fast')" onmouseup="stopContinuousRotation()"
-                        onmouseleave="stopContinuousRotation()">
-                        ←← Left Fast
-                    </button>
-                    <button type="button" class="button rotation-btn stop-btn" onclick="stopContinuousRotation()">
-                        ⏹ STOP
-                    </button>
-                    <button type="button" class="button rotation-btn"
-                        onmousedown="startContinuousRotation('cw', 'slow')" onmouseup="stopContinuousRotation()"
-                        onmouseleave="stopContinuousRotation()">
-                        Right Slow →
-                    </button>
-                    <button type="button" class="button rotation-btn"
-                        onmousedown="startContinuousRotation('cw', 'fast')" onmouseup="stopContinuousRotation()"
-                        onmouseleave="stopContinuousRotation()">
-                        Right Fast →→
-                    </button>
-                </div>
-            </div>
-
-            <!-- Calibration Status -->
-            <div id="calibrationStatus" class="calibration-status">
-                <div class="status-indicator">
-                    <span id="calibrationIndicator" class="status-dot uncalibrated"></span>
-                    <span id="calibrationText">Not Calibrated</span>
-                </div>
-                <% if (part && part.id) { %>
-                    <button type="button" onclick="openCalibrationModal('<%= part.id %>')" class="button calibrate-btn">
-                        🎯 Calibrate Servo
-                    </button>
-                    <% } else { %>
-                        <p class="calibration-note">Save the servo first to enable calibration</p>
-                        <% } %>
-            </div>
-
-            <!-- Test Servo panel removed -->
-        </div>
-
         <div class="button-group">
             <a href="/parts?characterId=<%= character ? character.id : (part ? part.characterId : '') %>"
                 class="button secondary-btn">Back to Parts</a>
             <a href="/system-config/servos" class="button">Manage Servo Configurations</a>
+            <% if (part && part.id) { %>
+                <a href="/system-config/servo-calibration?servoId=<%= part.id %>" class="button primary-btn">🎯 Calibrate Servo</a>
+            <% } %>
         </div>
     </main>
 
@@ -1690,11 +1642,11 @@
                             <h5>Step 1: Minimum Position (0°)</h5>
                             <div class="pulse-control">
                                 <label>Pulse Width (µs):</label>
-                                <input type="range" id="minPulseCalibration" min="200" max="1500" value="500" oninput="updatePulseDisplay('min')">
+                                <input type="range" id="minPulseCalibration" min="500" max="1500" value="500" oninput="updatePulseDisplay('min')">
                                 <span id="minPulseValue">500µs</span>
                                 <button type="button" class="button" onclick="testCalibrationPulse('min')">Test</button>
                             </div>
-                            <p class="calibration-note">DS3240MG often works with extended range: try 400-600µs for minimum</p>
+                            <p class="calibration-note">Valid range: 500-2400µs. Start with 500µs for minimum position.</p>
                         </div>
 
                         <div class="calibration-step">
@@ -1711,11 +1663,11 @@
                             <h5>Step 3: Maximum Position (180°)</h5>
                             <div class="pulse-control">
                                 <label>Pulse Width (µs):</label>
-                                <input type="range" id="maxPulseCalibration" min="1500" max="3200" value="2500" oninput="updatePulseDisplay('max')">
-                                <span id="maxPulseValue">2500µs</span>
+                                <input type="range" id="maxPulseCalibration" min="1500" max="2400" value="2400" oninput="updatePulseDisplay('max')">
+                                <span id="maxPulseValue">2400µs</span>
                                 <button type="button" class="button" onclick="testCalibrationPulse('max')">Test</button>
                             </div>
-                            <p class="calibration-note">DS3240MG often works with extended range: try 2400-2800µs for maximum</p>
+                            <p class="calibration-note">Valid range: 500-2400µs. Try 2400µs for maximum position.</p>
                         </div>
                     </div>
                 </div>
@@ -1934,7 +1886,6 @@
         document.addEventListener('DOMContentLoaded', function () {
             if (currentServoId) {
                 checkCalibrationStatus(currentServoId);
-                loadSavedPositionsForTesting();
                 checkServoTypeForContinuousControl();
             }
         });

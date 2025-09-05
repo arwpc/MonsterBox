@@ -1,0 +1,14 @@
+<footer class="footer-monsterbox">
+  <div class="container-monsterbox">
+    <p class="text-base-content/60" style="margin:0;">
+      © <span id="year"></span> MonsterBox · Spooky neon-themed hacker terminal interface
+    </p>
+  </div>
+  <script>
+    (function(){
+      var y = document.getElementById('year');
+      if (y) y.textContent = new Date().getFullYear();
+    })();
+  </script>
+</footer>
+

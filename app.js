@@ -349,6 +349,8 @@ app.use('/api/hardware/head-tracking', require('./routes/api/headTrackingApiRout
 app.use('/api/character-audio-config', require('./routes/api/characterAudioConfigRoutes'));
 app.use('/api/system', require('./routes/api/systemApiRoutes'));
 app.use('/api/service-management', require('./routes/serviceManagementRoutes'));
+app.use('/api/servo-calibration', require('./routes/api/servoCalibrationRoutes'));
+
 app.use('/api/super-powers', require('./routes/api/superPowersApiRoutes'));
 
 // SSH Key Management routes

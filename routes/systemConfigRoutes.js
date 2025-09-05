@@ -102,10 +102,10 @@ router.get('/', async (req, res) => {
             const servoConfigs = getServoConfigs();
 
             logger.info('Rendering system-config page with system information');
-            res.render('system-config', { 
-                systemInfo, 
-                ipAddress, 
-                wifiSignal, 
+            res.render('system-config', {
+                systemInfo,
+                ipAddress,
+                wifiSignal,
                 power,
                 driveInfo,
                 servoConfigs
@@ -125,6 +125,15 @@ router.get('/port-management', (req, res) => {
 });
 
 // Servo Configuration Routes
+// Servo Calibration UI
+router.get('/servo-calibration', (req, res) => {
+    res.render('system-config/servo-calibration', {
+        title: 'Servo Calibration',
+        pageTitle: 'Servo Calibration',
+        pageDescription: 'Unified, non-destructive calibration for all servo types'
+    });
+});
+
 router.get('/servos', (req, res) => {
     const servoConfigs = getServoConfigs();
     res.render('system-config/servos', { servoConfigs });
@@ -169,7 +178,7 @@ router.put('/servos/:index', (req, res) => {
     try {
         const index = parseInt(req.params.index);
         const servos = getServoConfigs();
-        
+
         if (index >= 0 && index < servos.length) {
             const updatedServo = {
                 ...req.body,
@@ -184,7 +193,7 @@ router.put('/servos/:index', (req, res) => {
                 rotation_range_deg: parseInt(req.body.rotation_range_deg),
                 feedback: req.body.feedback === 'true'
             };
-            
+
             servos[index] = updatedServo;
             saveServoConfigs(servos);
             res.json({ success: true });
@@ -201,7 +210,7 @@ router.delete('/servos/:index', (req, res) => {
     try {
         const index = parseInt(req.params.index);
         const servos = getServoConfigs();
-        
+
         if (index >= 0 && index < servos.length) {
             servos.splice(index, 1);
             saveServoConfigs(servos);

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title || 'Servo Calibration' %></title>
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/input.css">
+    <link rel="stylesheet" href="/css/custom-themes.css">
+    <script src="/js/console-error-monitor.js"></script>
+
+</head>
+<body>
+  <%- include('../partials/header') %>
+  <div class="container-monsterbox py-8">
+    <div class="card-monsterbox">
+      <div class="card-header-monsterbox">
+        <h1 class="font-creepster text-2xl text-primary text-glow" style="margin:0;">🎭 Servo Calibration</h1>
+        <p class="text-base-content/70" style="margin:8px 0 0 0;">Precision servo calibration and testing — neon terminal style</p>
+      </div>
+
+      <div class="card-monsterbox">
+        <div class="flex gap-4 flex-wrap items-center">
+          <div class="form-group" style="min-width:220px;">
+            <label class="label"><span class="label-text">Character</span></label>
+            <select id="characterSelect" class="form-select-monsterbox"></select>
+          </div>
+          <div class="form-group" style="min-width:260px;">
+            <label class="label"><span class="label-text">Servo</span></label>
+            <select id="servoSelect" class="form-select-monsterbox"></select>
+          </div>
+          <div class="form-group">
+            <label class="label"><span class="label-text">&nbsp;</span></label>
+            <button id="refreshBtn" class="btn-monsterbox">Refresh</button>
+          </div>
+        </div>
+
+        <div id="liveStatus" class="alert alert-info">
+          <strong>Live:</strong>
+          <span id="pulseReadout">—</span>
+          <span id="statusMsg" class="text-base-content/70" style="margin-left:8px;">Idle</span>
+          <span id="functionalityBadge" class="badge" style="margin-left:12px;">—</span>
+          <span id="serviceStatusChip" class="badge" style="margin-left:12px;">SERVICE: UNKNOWN</span>
+          <button id="reconnectBtn" class="btn-outline btn-monsterbox" style="margin-left:12px;">Reconnect now</button>
+        </div>
+
+        <div id="hardwareWarning" class="alert alert-error" style="display:none;">
+          <span>Hardware warning</span>
+        </div>
+
+        <div id="servoInfo" class="card-monsterbox" style="display:none;">
+          <div class="flex gap-4 flex-wrap items-center">
+            <div><strong>Type:</strong> <span id="servoType">—</span></div>
+            <div><strong>Model:</strong> <span id="servoModel">—</span></div>
+            <div><strong>Last Calibrated:</strong> <span id="lastCalibrated">—</span></div>
+          </div>
+          <div id="calibrationProgress" style="display:none;">
+            <strong>Calibration Progress:</strong>
+            <div id="progressIndicators" class="flex gap-2 flex-wrap"></div>
+            <p class="text-base-content/60 text-sm" style="margin-top:8px;">
+              • Standard servos: Min, Neutral, Max must be saved. • Continuous servos: Stop, Clockwise Full Speed, Counter-Clockwise Full Speed must be saved.
+            </p>
+          </div>
+        </div>
+
+        <div class="flex gap-4 flex-wrap items-end">
+          <div class="form-group">
+            <label class="label"><span class="label-text">Angle (0–180°)</span></label>
+            <input type="number" id="angleInput" value="90" min="0" max="180" step="1" class="form-input-monsterbox" style="max-width:120px;" />
+          </div>
+          <div class="form-group">
+            <label class="label"><span class="label-text">Pulse (µs)</span></label>
+            <input type="number" id="pulseInput" value="1500" min="500" max="2400" step="1" class="form-input-monsterbox" style="max-width:140px;" />
+          </div>
+          <div class="form-group">
+            <label class="label"><span class="label-text">&nbsp;</span></label>
+            <div class="flex gap-2 flex-wrap">
+              <button id="moveBtn" class="btn-monsterbox">Move</button>
+              <button id="testPulseBtn" class="btn-secondary-monsterbox btn-monsterbox">Test Pulse</button>
+              <button id="autoRangeBtn" class="btn-accent-monsterbox btn-monsterbox">Auto-Range Test</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="guidedCalibration" class="card-monsterbox" style="display:none;">
+        <h3 class="text-primary text-xl">Guided Calibration Workflow</h3>
+        <div id="guidedSteps" class="card-monsterbox">
+          <div id="stepInstructions" class="text-info" style="margin-bottom:12px;"></div>
+          <div class="flex gap-2 flex-wrap">
+            <button id="guidedSaveBtn" class="btn-success btn btn-monsterbox">Save Current Position</button>
+            <button id="guidedNextBtn" class="btn-accent-monsterbox btn-monsterbox">Next Step</button>
+            <button id="guidedSkipBtn" class="btn-outline btn-monsterbox">Skip Step</button>
+            <button id="guidedFinishBtn" class="btn-success btn-monsterbox" style="display:none;">Finish Calibration</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-monsterbox" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:16px;">
+        <div id="standardPositions" class="card-monsterbox">
+          <h3 class="text-primary">Standard Positions</h3>
+          <p class="text-base-content/60 text-sm">Use these for standard 180° servos.</p>
+          <div class="flex gap-2 flex-wrap">
+            <button class="savePosBtn btn-monsterbox" data-pos="min" title="Save minimum angle limit">Save Min</button>
+            <button class="savePosBtn btn-monsterbox" data-pos="neutral" title="Save neutral (center) position">Save Neutral</button>
+            <button class="savePosBtn btn-monsterbox" data-pos="max" title="Save maximum angle limit">Save Max</button>
+          </div>
+          <div class="flex gap-2 flex-wrap">
+            <button class="testPosBtn btn-outline btn-monsterbox" data-pos="min">Test Min</button>
+            <button class="testPosBtn btn-outline btn-monsterbox" data-pos="neutral">Test Neutral</button>
+            <button class="testPosBtn btn-outline btn-monsterbox" data-pos="max">Test Max</button>
+          </div>
+        </div>
+
+        <div id="continuousPositions" class="card-monsterbox">
+          <h3 class="text-secondary">Continuous Positions</h3>
+          <p class="text-base-content/60 text-sm">Use these for continuous-rotation servos.</p>
+          <div class="flex gap-2 flex-wrap">
+            <button class="savePosBtn btn-monsterbox" data-pos="stop" title="Save pulse width where rotation stops">Save Stop</button>
+            <button class="savePosBtn btn-monsterbox" data-pos="cw_full" title="Save pulse width for full clockwise speed">Save Clockwise Full Speed</button>
+            <button class="savePosBtn btn-monsterbox" data-pos="ccw_full" title="Save pulse width for full counter-clockwise speed">Save Counter-Clockwise Full Speed</button>
+          </div>
+          <div class="flex gap-2 flex-wrap">
+            <button class="testPosBtn btn-outline btn-monsterbox" data-pos="stop">Test Stop</button>
+            <button class="testPosBtn btn-outline btn-monsterbox" data-pos="cw_full">Test Clockwise Full Speed</button>
+            <button class="testPosBtn btn-outline btn-monsterbox" data-pos="ccw_full">Test Counter-Clockwise Full Speed</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex gap-2 flex-wrap" style="margin-top:8px;">
+        <button id="startGuidedBtn" class="btn-success btn-monsterbox">Start Guided Calibration</button>
+        <button id="resetCalibrationBtn" class="btn-danger-monsterbox btn-monsterbox">Reset Calibration</button>
+      </div>
+
+      <pre id="results" class="card-monsterbox scrollbar-monsterbox" style="max-height:260px; overflow:auto;"></pre>
+    </div>
+  </div>
+
+  <script src="/js/servo-calibration.js"></script>
+  <%- include('../partials/footer') %>
+</body>
+</html>

@@ -319,6 +319,14 @@ class ServoWebSocketService(BaseHardwareService):
                 response = await self.handle_test_pca9685_channel(message)
             elif message_type == 'reload_configurations':
                 response = await self.handle_reload_configurations(message)
+            elif message_type == 'get_current_pulse_width':
+                response = await self.handle_get_current_pulse_width(message)
+            elif message_type == 'save_calibration_position':
+                response = await self.handle_save_calibration_position(message)
+            elif message_type == 'test_calibrated_position':
+                response = await self.handle_test_calibrated_position(message)
+            elif message_type == 'get_calibration_status':
+                response = await self.handle_get_calibration_status(message)
             else:
                 response = {"status": "error", "message": f"Unknown message type: {message_type}"}
 
@@ -1166,9 +1174,164 @@ class ServoWebSocketService(BaseHardwareService):
 
             return {
                 "status": "success" if success else "error",
-                "message": f"Servo {servo_id} test pulse {pulse_width}µs {'sent' if success else 'failed'}",
+                "message": f"Servo {servo_id} test pulse {pulse_width}\u00b5s {'sent' if success else 'failed'}",
                 "pulse_width": pulse_width
             }
+        except Exception as e:
+            logger.error(f"Error in handle_servo_test_pulse: {e}")
+            return {"status": "error", "message": str(e)}
+
+    async def handle_get_current_pulse_width(self, message: Dict[str, Any]) -> Dict[str, Any]:
+        """Return the most recent pulse width for the specified servo (live monitor surrogate)."""
+        try:
+            servo_id = str(message.get('servo_id'))
+            if servo_id not in self.servo_states:
+                return {"status": "error", "message": f"Servo {servo_id} not found"}
+            state = self.servo_states[servo_id]
+            return {"status": "success", "servo_id": servo_id, "pulse_width": state.pulse_width, "timestamp": time.time()}
+        except Exception as e:
+            logger.error(f"Error in handle_get_current_pulse_width: {e}")
+            return {"status": "error", "message": str(e)}
+
+    async def handle_save_calibration_position(self, message: Dict[str, Any]) -> Dict[str, Any]:
+        """Save current pulse width as a named calibration position (automated)."""
+        try:
+            servo_id = str(message.get('servo_id'))
+            position = message.get('position')  # e.g., 'min'|'neutral'|'max' for standard; 'stop'|'cw_full'|'ccw_full' for continuous
+            description = message.get('description')
+            if not servo_id or not position:
+                return {"status": "error", "message": "servo_id and position are required"}
+            if servo_id not in self.servo_configs or servo_id not in self.servo_states:
+                return {"status": "error", "message": f"Servo {servo_id} not found"}
+
+            config = self.servo_configs[servo_id]
+            state = self.servo_states[servo_id]
+            pulse_us = int(message.get('pulse_us', state.pulse_width))
+
+            # Initialize calibration entry if missing
+            cal = self.servo_calibrations.get(servo_id)
+            if not cal:
+                cal = {
+                    "part_id": int(servo_id),
+                    "part_name": config.name,
+                    "servo_type": "continuous" if self._is_continuous_servo(servo_id) else "standard",
+                    "positions": {}
+                }
+                self.servo_calibrations[servo_id] = cal
+
+            cal["functionality_status"] = cal.get("functionality_status", "needs_calibration")
+            cal["calibrated_date"] = time.strftime('%Y-%m-%dT%H:%M:%S')
+
+            # Save by type/position
+            if cal.get("servo_type") == "continuous" or position in ("stop", "cw_full", "ccw_full"):
+                # Top-level keys for continuous
+                if position in ("stop", "stop_pulse"):
+                    cal["stop_pulse_us"] = pulse_us
+                elif position in ("cw_full", "cw"):
+                    cal["cw_pulse_us"] = pulse_us
+                elif position in ("ccw_full", "ccw"):
+                    cal["ccw_pulse_us"] = pulse_us
+                else:
+                    # Fallback into positions bag
+                    cal.setdefault("positions", {})[position] = {"pulse_us": pulse_us, "description": description or position, "calibrated": True}
+            else:
+                # Standard servo named positions
+                cal.setdefault("positions", {})[position] = {
+                    "pulse_us": pulse_us,
+                    "angle": message.get('angle'),
+                    "calibrated": True,
+                    "verified": False,
+                    "description": description or position
+                }
+
+            # Mark as working if we have core points
+            if cal.get("servo_type") == "standard":
+                pos = cal.get("positions", {})
+                if all(k in pos and pos[k].get("calibrated") for k in ("min", "neutral", "max")):
+                    cal["functionality_status"] = "working"
+            else:
+                if all(k in cal for k in ("stop_pulse_us", "cw_pulse_us", "ccw_pulse_us")):
+                    cal["functionality_status"] = "working"
+
+            # Ensure top-level version tag (backward-compatible)
+            if "version" not in self.servo_calibrations:
+                self.servo_calibrations["version"] = "2.0_backward_compatible"
+
+            # Persist to disk
+            try:
+                with open(self.calibration_file, 'w') as f:
+                    json.dump(self.servo_calibrations, f, indent=2)
+            except Exception as e:
+                logger.error(f"Failed saving calibration file: {e}")
+
+            return {"status": "success", "message": f"Saved calibration for {servo_id}:{position}", "pulse_us": pulse_us}
+        except Exception as e:
+            logger.error(f"Error in handle_save_calibration_position: {e}")
+            return {"status": "error", "message": str(e)}
+
+    async def handle_test_calibrated_position(self, message: Dict[str, Any]) -> Dict[str, Any]:
+        """Move to a previously saved calibrated position by name."""
+        try:
+            servo_id = str(message.get('servo_id'))
+            position = message.get('position')
+            duration = float(message.get('duration', 1.0))
+            if servo_id not in self.servo_configs:
+                return {"status": "error", "message": f"Servo {servo_id} not found"}
+            cal = self.servo_calibrations.get(servo_id)
+            if not cal:
+                return {"status": "error", "message": f"No calibration data for servo {servo_id}"}
+
+            config = self.servo_configs[servo_id]
+
+            if cal.get("servo_type") == "continuous" or position in ("stop", "cw_full", "ccw_full"):
+                # Determine pulse for continuous
+                if position in ("stop", "stop_pulse"):
+                    pulse = int(cal.get("stop_pulse_us", 1500))
+                elif position in ("cw_full", "cw"):
+                    pulse = int(cal.get("cw_pulse_us", 1300))
+                elif position in ("ccw_full", "ccw"):
+                    pulse = int(cal.get("ccw_pulse_us", 1700))
+                else:
+                    return {"status": "error", "message": f"Unknown position '{position}' for continuous servo"}
+                ok = await self._send_pwm_pulse(config, pulse)
+                if ok:
+                    # Let it run briefly unless stop
+                    await asyncio.sleep(0.2 if position != 'stop' else 0.5)
+                return {"status": "success" if ok else "error", "pulse_us": pulse}
+            else:
+                # Standard: lookup pulse or angle
+                pos = cal.get("positions", {}).get(position)
+                if not pos:
+                    return {"status": "error", "message": f"Position '{position}' not found"}
+                pulse = int(pos.get('pulse_us', self._angle_to_pulse_width(pos.get('angle', 90), config)))
+                # Convert pulse to angle for our internal move call
+                angle = self._pulse_to_angle(pulse, config)
+                ok = await self._move_servo_hardware(servo_id, angle, duration)
+                return {"status": "success" if ok else "error", "angle": angle, "pulse_us": pulse}
+        except Exception as e:
+            logger.error(f"Error in handle_test_calibrated_position: {e}")
+            return {"status": "error", "message": str(e)}
+
+    async def handle_get_calibration_status(self, message: Dict[str, Any]) -> Dict[str, Any]:
+        """Return combined calibration + live status for a servo."""
+        try:
+            servo_id = str(message.get('servo_id'))
+            if servo_id not in self.servo_configs:
+                return {"status": "error", "message": f"Servo {servo_id} not found"}
+            state = self.servo_states.get(servo_id)
+            cal = self.servo_calibrations.get(servo_id, {})
+            return {
+                "status": "success",
+                "servo_id": servo_id,
+                "pulse_width": state.pulse_width if state else None,
+                "calibration": cal,
+                "timestamp": time.time()
+            }
+        except Exception as e:
+            logger.error(f"Error in handle_get_calibration_status: {e}")
+            return {"status": "error", "message": str(e)}
+
+
 
         except Exception as e:
             logger.error(f"Error testing servo pulse: {e}")

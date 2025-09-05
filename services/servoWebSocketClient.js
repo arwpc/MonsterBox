@@ -19,8 +19,9 @@ class ServoWebSocketClient extends EventEmitter {
         this.ws = null;
         this.isConnected = false;
         this.reconnectAttempts = 0;
-        this.maxReconnectAttempts = 5;
+        this.maxReconnectAttempts = 10;
         this.reconnectDelay = 1000;
+        this.reconnectJitter = 0.4; // 40% jitter
 
         this.pendingRequests = new Map();
         this.requestId = 0;
@@ -112,7 +113,9 @@ class ServoWebSocketClient extends EventEmitter {
     scheduleReconnect() {
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
             this.reconnectAttempts++;
-            const delay = this.reconnectDelay * this.reconnectAttempts;
+            const base = this.reconnectDelay * this.reconnectAttempts;
+            const jitter = base * this.reconnectJitter * (Math.random() - 0.5) * 2; // ±jitter
+            const delay = Math.max(500, Math.min(30000, Math.floor(base + jitter)));
 
             logger.info(`🔄 Scheduling servo WebSocket reconnect attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${delay}ms`);
 
