@@ -589,6 +589,47 @@ router.post('/test-pulse', async (req, res) => {
     }
 });
 
+router.post('/auto-range-test', async (req, res) => {
+    try {
+        const { servo_id } = req.body;
+
+        if (!servo_id) {
+            return res.status(400).json({
+                success: false,
+                message: 'Servo ID is required'
+            });
+        }
+
+        const servoClient = getServoClient();
+
+        if (!servoClient.isConnected) {
+            return res.status(503).json({
+                success: false,
+                message: 'Servo WebSocket service not available'
+            });
+        }
+
+        const result = await servoClient.sendMessage({
+            type: 'servo_auto_range_test',
+            servo_id: servo_id
+        });
+
+        res.json({
+            success: true,
+            message: 'Auto range test completed',
+            result: result
+        });
+
+    } catch (error) {
+        logger.error('Error running auto range test:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to run auto range test',
+            error: error.message
+        });
+    }
+});
+
 router.get('/status/:servoId?', async (req, res) => {
     try {
         const { servoId } = req.params;

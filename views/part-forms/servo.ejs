@@ -220,6 +220,66 @@
             margin: 0;
         }
 
+        .auto-range-test {
+            padding: 20px;
+        }
+
+        .test-progress {
+            margin: 20px 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #333;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .results-summary {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        .pulse-list {
+            margin: 10px 0;
+        }
+
+        .pulse-success {
+            background: #00ff00;
+            color: #000;
+            padding: 2px 6px;
+            margin: 2px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            display: inline-block;
+        }
+
+        .pulse-failed {
+            background: #ff4444;
+            color: #fff;
+            padding: 2px 6px;
+            margin: 2px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            display: inline-block;
+        }
+
+        .recommendations {
+            background: #1a4a6b;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        .recommendations ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
         /* Modal Styles */
         .modal-monsterbox {
             display: none;
@@ -988,6 +1048,9 @@
                         <!-- Recommendation will be inserted here -->
                     </div>
                     <div class="calibration-methods">
+                        <button type="button" class="button" onclick="startAutoRangeTest()">
+                            🔍 Auto Range Test
+                        </button>
                         <button type="button" class="button" onclick="startContinuousCalibration()">
                             🎮 Continuous Rotation Servo
                         </button>
@@ -1456,6 +1519,103 @@
         function startExtensionCalibration() {
             console.log('Starting extension servo calibration');
             loadCalibrationInterface('extension');
+        }
+
+        async function startAutoRangeTest() {
+            if (!window.currentCalibrationServoId) return;
+
+            console.log('Starting auto range test');
+
+            const interface = document.getElementById('calibrationInterface');
+            const typeSelection = document.querySelector('.calibration-type-selection');
+
+            typeSelection.style.display = 'none';
+            interface.style.display = 'block';
+
+            interface.innerHTML = `
+                <div class="auto-range-test">
+                    <h4>🔍 Automatic Servo Range Test</h4>
+                    <p>Testing servo response across pulse width range to determine optimal settings...</p>
+
+                    <div class="test-progress">
+                        <div id="testStatus">Initializing test...</div>
+                        <div class="progress-bar">
+                            <div id="progressFill" style="width: 0%; background: #00ff00; height: 20px; transition: width 0.3s;"></div>
+                        </div>
+                    </div>
+
+                    <div id="testResults" style="display: none;">
+                        <h5>Test Results:</h5>
+                        <div id="resultsContent"></div>
+                    </div>
+                </div>
+            `;
+
+            try {
+                document.getElementById('testStatus').textContent = 'Running automatic range test...';
+
+                const response = await axios.post('/parts/servo/auto-range-test', {
+                    servo_id: window.currentCalibrationServoId
+                });
+
+                if (response.data?.success) {
+                    const results = response.data.result.results;
+                    displayAutoRangeResults(results);
+                } else {
+                    document.getElementById('testStatus').textContent = 'Test failed: ' + (response.data?.message || 'Unknown error');
+                }
+            } catch (error) {
+                console.error('Error running auto range test:', error);
+                document.getElementById('testStatus').textContent = 'Test failed: ' + error.message;
+            }
+        }
+
+        function displayAutoRangeResults(results) {
+            document.getElementById('testStatus').textContent = 'Test completed!';
+            document.getElementById('progressFill').style.width = '100%';
+
+            const resultsDiv = document.getElementById('testResults');
+            const contentDiv = document.getElementById('resultsContent');
+
+            const successfulTests = results.test_results.filter(r => r.success);
+            const failedTests = results.test_results.filter(r => !r.success);
+
+            contentDiv.innerHTML = `
+                <div class="results-summary">
+                    <p><strong>Servo:</strong> ${results.servo_name} (${results.servo_type})</p>
+                    <p><strong>Successful Tests:</strong> ${successfulTests.length}/${results.test_results.length}</p>
+                    <p><strong>Recommended Range:</strong> ${results.recommended_min}µs - ${results.recommended_max}µs</p>
+                    <p><strong>Appears Continuous:</strong> ${results.appears_continuous ? 'Yes' : 'No'}</p>
+                </div>
+
+                <div class="test-details">
+                    <h6>Successful Pulse Widths:</h6>
+                    <div class="pulse-list">
+                        ${successfulTests.map(t => `<span class="pulse-success">${t.pulse_us}µs</span>`).join(' ')}
+                    </div>
+
+                    ${failedTests.length > 0 ? `
+                        <h6>Failed Pulse Widths:</h6>
+                        <div class="pulse-list">
+                            ${failedTests.map(t => `<span class="pulse-failed">${t.pulse_us}µs</span>`).join(' ')}
+                        </div>
+                    ` : ''}
+                </div>
+
+                <div class="recommendations">
+                    <h6>Recommendations:</h6>
+                    <ul>
+                        ${results.appears_continuous ?
+                            '<li>This servo appears to support continuous rotation</li>' :
+                            '<li>This servo appears to be a standard positioning servo</li>'
+                        }
+                        <li>Use pulse range: ${results.recommended_min}µs - ${results.recommended_max}µs</li>
+                        <li>Center position: 1500µs</li>
+                    </ul>
+                </div>
+            `;
+
+            resultsDiv.style.display = 'block';
         }
 
         function loadCalibrationInterface(type) {

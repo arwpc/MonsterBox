@@ -313,6 +313,8 @@ class ServoWebSocketService(BaseHardwareService):
                 response = await self.handle_servo_calibrate(message)
             elif message_type == 'servo_test_pulse':
                 response = await self.handle_servo_test_pulse(message)
+            elif message_type == 'servo_auto_range_test':
+                response = await self.handle_servo_auto_range_test(message)
             elif message_type == 'test_pca9685_channel':
                 response = await self.handle_test_pca9685_channel(message)
             elif message_type == 'reload_configurations':
@@ -848,6 +850,35 @@ class ServoWebSocketService(BaseHardwareService):
             logger.error(f"Error moving servo to position: {e}")
             return {"status": "error", "message": str(e)}
 
+    def _is_continuous_servo(self, servo_id: str) -> bool:
+        """Check if servo supports continuous rotation based on configuration"""
+        if servo_id not in self.servo_configs:
+            return False
+
+        config = self.servo_configs[servo_id]
+
+        # Check if servo type supports continuous rotation
+        # Look up servo specs from servos.json data
+        servo_type = config.servo_type
+
+        # Known continuous rotation servos
+        continuous_servos = ['FITEC FS90R', 'FS90R']
+
+        # Known servos that support multiple modes including continuous
+        multi_mode_servos = ['GoBilda Stingray 2 Servo', 'Stingray 2']
+
+        # Check if it's a known continuous servo
+        if servo_type in continuous_servos:
+            return True
+
+        # Check if it's a multi-mode servo and has been calibrated for continuous
+        if servo_type in multi_mode_servos:
+            calibration = self.servo_calibrations.get(servo_id)
+            return calibration and calibration.get('servo_type') == 'continuous'
+
+        # Default: most servos are standard positioning servos
+        return False
+
     async def handle_servo_continuous_control(self, message: Dict[str, Any]) -> Dict[str, Any]:
         """Control continuous rotation servo with direction and speed"""
         try:
@@ -859,8 +890,8 @@ class ServoWebSocketService(BaseHardwareService):
             if servo_id not in self.servo_configs:
                 return {"status": "error", "message": f"Servo {servo_id} not found"}
 
-            calibration = self.servo_calibrations.get(servo_id)
-            if not calibration or calibration.get('servo_type') != 'continuous':
+            # Check if servo supports continuous rotation
+            if not self._is_continuous_servo(servo_id):
                 return {"status": "error", "message": f"Servo {servo_id} is not a continuous rotation servo"}
 
             config = self.servo_configs[servo_id]
@@ -1048,6 +1079,79 @@ class ServoWebSocketService(BaseHardwareService):
             logger.error(f"Error handling servo calibration: {e}")
             return {"status": "error", "message": str(e)}
 
+    async def handle_servo_auto_range_test(self, message: Dict[str, Any]) -> Dict[str, Any]:
+        """Automatically test servo range to determine limits and type"""
+        try:
+            servo_id = str(message.get('servo_id'))
+
+            if servo_id not in self.servo_configs:
+                return {"status": "error", "message": f"Servo {servo_id} not found"}
+
+            config = self.servo_configs[servo_id]
+
+            # Test pulse widths from 500µs to 2500µs in steps
+            test_pulses = [
+                500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500,
+                1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500
+            ]
+
+            results = {
+                "servo_id": servo_id,
+                "servo_name": config.name,
+                "servo_type": config.servo_type,
+                "test_results": [],
+                "recommended_min": 500,
+                "recommended_max": 2500,
+                "appears_continuous": False
+            }
+
+            logger.info(f"Starting automatic range test for servo {servo_id}")
+
+            # Test each pulse width
+            for pulse_us in test_pulses:
+                logger.info(f"Testing pulse width: {pulse_us}µs")
+
+                # Send test pulse
+                success = await self._send_pwm_pulse(config, pulse_us)
+
+                test_result = {
+                    "pulse_us": pulse_us,
+                    "success": success,
+                    "timestamp": time.time()
+                }
+
+                results["test_results"].append(test_result)
+
+                # Wait between tests to allow servo to move
+                await asyncio.sleep(0.5)
+
+            # Analyze results to determine servo characteristics
+            successful_pulses = [r["pulse_us"] for r in results["test_results"] if r["success"]]
+
+            if successful_pulses:
+                results["recommended_min"] = min(successful_pulses)
+                results["recommended_max"] = max(successful_pulses)
+
+                # Check if servo appears to be continuous rotation
+                # Continuous servos typically respond to the full range
+                if len(successful_pulses) > 15 and 1500 in successful_pulses:
+                    results["appears_continuous"] = True
+
+            # Stop servo after testing
+            await self._send_pwm_pulse(config, 0)
+
+            logger.info(f"Auto range test completed for servo {servo_id}: {len(successful_pulses)} successful pulses")
+
+            return {
+                "status": "success",
+                "message": f"Auto range test completed for servo {servo_id}",
+                "results": results
+            }
+
+        except Exception as e:
+            logger.error(f"Error in auto range test: {e}")
+            return {"status": "error", "message": str(e)}
+
     async def handle_servo_test_pulse(self, message: Dict[str, Any]) -> Dict[str, Any]:
         """Test servo with specific pulse width"""
         try:
@@ -1225,9 +1329,31 @@ class ServoWebSocketService(BaseHardwareService):
             logger.error(f"Error moving standard servo to position: {e}")
             return {"status": "error", "message": str(e)}
 
+    def _validate_pulse_width(self, config: ServoConfig, pulse_width_us: int) -> bool:
+        """Validate pulse width is within safe servo limits"""
+        if pulse_width_us == 0:
+            return True  # 0 means stop/off
+
+        # General servo pulse width limits (most servos work in this range)
+        min_safe_pulse = 500
+        max_safe_pulse = 2500
+
+        # Use servo-specific limits if available
+        if hasattr(config, 'min_pulse') and config.min_pulse:
+            min_safe_pulse = max(config.min_pulse, 500)  # Never go below 500µs
+        if hasattr(config, 'max_pulse') and config.max_pulse:
+            max_safe_pulse = min(config.max_pulse, 2500)  # Never go above 2500µs
+
+        return min_safe_pulse <= pulse_width_us <= max_safe_pulse
+
     async def _send_pwm_pulse(self, config: ServoConfig, pulse_width_us: int) -> bool:
         """Send PWM pulse to servo"""
         try:
+            # Validate pulse width before sending
+            if not self._validate_pulse_width(config, pulse_width_us):
+                logger.error(f"Invalid pulse width {pulse_width_us}µs for servo {config.servo_id}. Valid range: {config.min_pulse}-{config.max_pulse}µs")
+                return False
+
             if config.control_type == 'pca9685':
                 return await self._send_pca9685_pulse(config, pulse_width_us)
             elif config.control_type == 'gpio':

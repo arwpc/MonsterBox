@@ -21,6 +21,7 @@
         </div>
 
         <div class="button-group">
+            <a href="/parts" class="button">🔧 Add Part</a>
             <a href="/characters/<%= character.id %>/edit" class="button">✏️ Edit Character</a>
             <a href="/ai-management/personalities" class="button">🧠 Configure AI</a>
             <a href="/characters" class="button secondary-btn">Back to Characters</a>
@@ -63,6 +64,33 @@
                                         <% } %>
                                     </td>
                                     <td>
+                                        <%
+                                            let editUrl = '/parts/' + part.id + '/edit';
+                                            if (part.type === 'linear-actuator') {
+                                                editUrl = '/parts/linear-actuator/' + part.id + '/edit';
+                                            } else if (part.type === 'servo') {
+                                                editUrl = '/parts/servo/' + part.id + '/edit';
+                                            } else if (part.type === 'light') {
+                                                editUrl = '/parts/light/' + part.id + '/edit';
+                                            } else if (part.type === 'led') {
+                                                editUrl = '/parts/led/' + part.id + '/edit';
+                                            } else if (part.type === 'motor') {
+                                                editUrl = '/parts/motor/' + part.id + '/edit';
+                                            } else if (part.type === 'sensor') {
+                                                editUrl = '/parts/sensor/' + part.id + '/edit';
+                                            } else if (part.type === 'motion-sensor') {
+                                                editUrl = '/parts/motion-sensor/' + part.id + '/edit';
+                                            } else if (part.type === 'webcam') {
+                                                editUrl = '/parts/webcam/' + part.id + '/edit';
+                                            } else if (part.type === 'head-tracking') {
+                                                editUrl = '/parts/head-tracking/' + part.id + '/edit';
+                                            } else if (part.type === 'microphone') {
+                                                editUrl = '/parts/microphone/' + part.id + '/edit';
+                                            } else if (part.type === 'speaker') {
+                                                editUrl = '/parts/speaker/' + part.id + '/edit';
+                                            }
+                                        %>
+                                        <a href="<%= editUrl %>" class="button">✏️ Edit Part</a>
                                         <button class="button danger-btn" onclick="unassignPart(<%= part.id %>)">
                                             🗑️ Unassign
                                         </button>

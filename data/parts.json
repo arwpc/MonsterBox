@@ -86,15 +86,6 @@
     "pwmPin": "13"
   },
   {
-    "id": 18,
-    "name": "Motion Skulltalker",
-    "type": "sensor",
-    "characterId": 4,
-    "gpioPin": "17",
-    "active": "on",
-    "sensorType": "motion"
-  },
-  {
     "id": 22,
     "name": "Orlok Head Tracking System",
     "type": "head-tracking",
@@ -126,33 +117,6 @@
       "servo_update_rate": 10
     },
     "createdAt": "2025-06-22T12:00:00.000Z"
-  },
-  {
-    "id": 27,
-    "name": "SkullEyes",
-    "type": "webcam",
-    "characterId": 4,
-    "deviceId": 0,
-    "devicePath": "/dev/video0",
-    "resolution": "1280x720",
-    "fps": 15,
-    "status": "active",
-    "cameraControls": {
-      "brightness": 48,
-      "contrast": 32,
-      "saturation": 64,
-      "hue": 0,
-      "gamma": 100,
-      "gain": 0,
-      "sharpness": 10,
-      "backlight_compensation": 80,
-      "white_balance_temperature": 4600,
-      "exposure_time_absolute": 157,
-      "white_balance_automatic": true,
-      "exposure_dynamic_framerate": false,
-      "auto_exposure": 3,
-      "power_line_frequency": 1
-    }
   },
   {
     "id": 28,
@@ -264,27 +228,35 @@
   },
   {
     "id": 32,
-    "characterId": 4,
-    "type": "speaker",
-    "name": "Mouth of Skulltalker",
-    "description": "",
-    "outputDevice": "alsa_output.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.analog-stereo",
-    "volume": "80"
+    "type": "motion-sensor",
+    "name": "Motion Skulltalker",
+    "characterId": 1,
+    "gpioPin": "17",
+    "sensitivity": "0.1",
+    "detectionRange": "7",
+    "triggerDelay": "500",
+    "active": "on"
   },
   {
     "id": 33,
+    "name": "Jaw Servo Skulltalker",
+    "type": "servo",
     "characterId": 4,
-    "type": "microphone",
-    "name": "Ears of the Skull",
-    "description": "",
-    "deviceId": "default",
-    "outputDevice": "alsa_output.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.analog-stereo",
-    "sampleRate": "16000",
-    "channels": "1",
-    "sensitivity": "1",
-    "echoCancellation": "on",
-    "noiseSuppression": "on",
-    "autoGainControl": "on",
-    "voiceActivationThreshold": "0.1"
+    "pin": 26,
+    "usePCA9685": false,
+    "channel": null,
+    "pca9685Settings": null,
+    "servoType": "Miuzei MG90S",
+    "minPulse": 500,
+    "maxPulse": 2400,
+    "defaultAngle": 90,
+    "mode": [
+      "Standard"
+    ],
+    "feedback": false,
+    "controlType": [
+      "PWM"
+    ],
+    "customSettings": null
   }
 ]
