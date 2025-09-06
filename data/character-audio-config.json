@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastUpdated": "2025-09-06T00:48:19.927Z",
+  "lastUpdated": "2025-09-06T00:57:13.437Z",
   "characters": {
     "1": {
       "characterId": 1,
@@ -181,7 +181,7 @@
         "contextAwareness": true,
         "personalityAdjustments": true
       },
-      "lastModified": "2025-09-06T00:48:19.927Z",
+      "lastModified": "2025-09-06T00:57:13.436Z",
       "speaker": {
         "defaultSpeakerId": "35",
         "outputDevice": "alsa_output.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.analog-stereo",

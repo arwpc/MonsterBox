@@ -262,7 +262,8 @@
     "echoCancellation": "on",
     "noiseSuppression": "on",
     "autoGainControl": "on",
-    "voiceActivationThreshold": "0.1"
+    "voiceActivationThreshold": "0.42",
+    "voiceActivation": "on"
   },
   {
     "id": 35,

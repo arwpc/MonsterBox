@@ -442,7 +442,7 @@
         "tags": [],
         "notes": "",
         "created": "2025-05-13T00:35:07.630Z",
-        "lastModified": "2025-09-06T00:47:41.297Z",
+        "lastModified": "2025-09-06T00:57:13.422Z",
         "migratedFrom": "TopMediai",
         "migrationDate": "2025-08-25T00:17:39.322Z",
         "originalSpeakerId": "f0ac8c43-7a0f-11ee-a861-00163e2ac61b",
@@ -452,33 +452,6 @@
         "voiceDescription": "Clear, authoritative voice for Skulltalker"
       },
       "history": [
-        {
-          "timestamp": "2025-08-25T00:17:39.322Z",
-          "type": "migration",
-          "settings": {
-            "fromProvider": "TopMediai",
-            "toProvider": "ElevenLabs",
-            "fromSpeakerId": "f0ac8c43-7a0f-11ee-a861-00163e2ac61b",
-            "toSpeakerId": "onwK4e9ZLuTAKqWW03F9",
-            "voiceName": "Daniel"
-          }
-        },
-        {
-          "timestamp": "2025-08-25T22:22:27.506Z",
-          "type": "settings_update",
-          "settings": {
-            "pitch": 0,
-            "speed": 1.9,
-            "volume": 20,
-            "emotion": "Sad",
-            "sampleRate": 44100,
-            "bitRate": 128,
-            "outputFormat": "wav",
-            "channels": 1,
-            "languageCode": "en",
-            "provider": "ElevenLabs"
-          }
-        },
         {
           "timestamp": "2025-08-25T22:22:27.661Z",
           "type": "settings_update",
@@ -609,6 +582,38 @@
         },
         {
           "timestamp": "2025-09-06T00:47:41.297Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Neutral",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "ElevenLabs"
+          }
+        },
+        {
+          "timestamp": "2025-09-06T00:57:13.305Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Neutral",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "ElevenLabs"
+          }
+        },
+        {
+          "timestamp": "2025-09-06T00:57:13.422Z",
           "type": "settings_update",
           "settings": {
             "pitch": 0,
