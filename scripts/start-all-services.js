@@ -13,29 +13,9 @@ const fs = require('fs');
 class MonsterBoxServiceStarter {
     constructor() {
         this.services = new Map();
-        this.requiredServices = [
-            {
-                name: 'Servo WebSocket Service',
-                script: 'scripts/hardware/servo_websocket_service.py',
-                port: 8404,
-                args: ['--host', '0.0.0.0', '--port', '8404'],
-                critical: true
-            },
-            {
-                name: 'Microphone WebSocket Service',
-                script: 'scripts/hardware/microphone_websocket_service.py',
-                port: 8776,
-                args: ['--host', '0.0.0.0', '--port', '8776'],
-                critical: true
-            },
-            {
-                name: 'Webcam WebSocket Service',
-                script: 'scripts/hardware/webcam_websocket_service.py',
-                port: 8774,
-                args: ['--host', '0.0.0.0', '--port', '8774'],
-                critical: false // Not critical - system can work without webcam
-            }
-        ];
+        // Centralized service manager now starts required services based on the active character.
+        // To avoid duplicate processes and port contention, we no longer pre-start WebSocket services here.
+        this.requiredServices = [];
     }
 
     async startAllServices() {
@@ -56,22 +36,13 @@ class MonsterBoxServiceStarter {
         }
 
         try {
-            // Step 1: Start WebSocket services
-            console.log('\n📡 Starting WebSocket Services...');
-            await this.startWebSocketServices();
-
-            // Step 2: Wait for services to be ready
-            console.log('\n⏳ Waiting for services to be ready...');
-            await this.waitForAllServices();
-
-            // Step 3: Start main application
+            // Start main app directly; centralized manager will start services as needed
             console.log('\n🌐 Starting main MonsterBox application...');
             await this.startMainApplication();
 
-            console.log('\n✅ All MonsterBox services started successfully!');
+            console.log('\n✅ MonsterBox application started');
             console.log('🌐 Web interface: http://localhost:3000');
-            console.log('🔧 Servo interface: https://orlok:8080/parts/servo/30/edit');
-            console.log('📹 Webcam interface: https://orlok:8080/parts/webcam');
+            console.log('ℹ️ Services are managed by the centralized service manager (no duplicates).');
 
         } catch (error) {
             console.error('❌ Failed to start services:', error.message);
@@ -98,115 +69,15 @@ class MonsterBoxServiceStarter {
             }
         }
 
-        const successCount = results.filter(r => r.started).length;
-        const criticalCount = this.requiredServices.filter(s => s.critical).length;
-
-        console.log(`📊 Service Status: ${successCount}/${this.requiredServices.length} services running`);
-
-        if (successCount < criticalCount) {
-            throw new Error(`Only ${successCount}/${criticalCount} critical services started`);
-        }
-
-        return results;
+        // Deprecated: centralized manager is SoT; nothing to start here
+        return [];
     }
 
-    async startService(serviceConfig) {
-        console.log(`🔄 Starting ${serviceConfig.name}...`);
+    // Deprecated: centralized manager owns service lifecycle
+    async startService() { return true; }
 
-        const scriptPath = path.join(process.cwd(), serviceConfig.script);
-
-        // Check if script exists
-        if (!fs.existsSync(scriptPath)) {
-            console.warn(`⚠️ Script not found: ${scriptPath}`);
-            return false;
-        }
-
-        const childProcess = spawn('python3', [scriptPath, ...serviceConfig.args], {
-            detached: true,
-            stdio: ['ignore', 'pipe', 'pipe']
-        });
-
-        // Store process reference
-        this.services.set(serviceConfig.name, {
-            process: childProcess,
-            port: serviceConfig.port,
-            config: serviceConfig
-        });
-
-        // Handle process output
-        childProcess.stdout.on('data', (data) => {
-            const output = data.toString().trim();
-            if (output.includes('running on') || output.includes('started')) {
-                console.log(`✅ ${serviceConfig.name} started on port ${serviceConfig.port}`);
-            }
-        });
-
-        childProcess.stderr.on('data', (data) => {
-            const error = data.toString().trim();
-            // Filter out common non-critical messages
-            const ignoredPatterns = [
-                'Warning', 'INFO', 'ALSA lib', 'Cannot connect to server socket',
-                'jack server is not running', 'JackShmReadWritePtr', 'Cannot open device /dev/dsp',
-                'Unknown PCM', 'Cannot get card index', 'Invalid field card'
-            ];
-
-            const shouldIgnore = ignoredPatterns.some(pattern => error.includes(pattern));
-            if (!shouldIgnore && error.length > 0) {
-                console.warn(`${serviceConfig.name}: ${error}`);
-            }
-        });
-
-        childProcess.on('exit', (code) => {
-            if (code !== 0) {
-                console.error(`❌ ${serviceConfig.name} exited with code ${code}`);
-            }
-            this.services.delete(serviceConfig.name);
-        });
-
-        childProcess.unref(); // Allow parent to exit independently
-
-        // Wait for service to start
-        await new Promise(resolve => setTimeout(resolve, 3000));
-
-        // Verify service is responding
-        const isResponding = await this.checkServiceStatus(serviceConfig.port);
-        if (isResponding) {
-            console.log(`✅ ${serviceConfig.name} verified running`);
-            return true;
-        } else {
-            console.warn(`⚠️ ${serviceConfig.name} started but not responding`);
-            return false;
-        }
-    }
-
-    async waitForAllServices() {
-        const maxWait = 30000; // 30 seconds
-        const startTime = Date.now();
-
-        while (Date.now() - startTime < maxWait) {
-            let allReady = true;
-
-            for (const service of this.requiredServices) {
-                if (service.critical) {
-                    const isReady = await this.checkServiceStatus(service.port);
-                    if (!isReady) {
-                        allReady = false;
-                        break;
-                    }
-                }
-            }
-
-            if (allReady) {
-                console.log('✅ All critical services are ready');
-                return true;
-            }
-
-            console.log('⏳ Waiting for services to be ready...');
-            await new Promise(resolve => setTimeout(resolve, 2000));
-        }
-
-        throw new Error('Timeout waiting for services to be ready');
-    }
+    // Deprecated: rely on in-app health checks
+    async waitForAllServices() { return true; }
 
     async checkServiceStatus(port) {
         try {

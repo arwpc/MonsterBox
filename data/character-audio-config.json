@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastUpdated": "2025-09-05T18:59:59.846Z",
+  "lastUpdated": "2025-09-06T00:48:19.927Z",
   "characters": {
     "1": {
       "characterId": 1,
@@ -105,9 +105,9 @@
         "contextAwareness": true,
         "personalityAdjustments": true
       },
-      "lastModified": "2025-09-04T17:04:29.946Z",
+      "lastModified": "2025-09-06T00:43:31.688Z",
       "speaker": {
-        "defaultSpeakerId": 33,
+        "defaultSpeakerId": null,
         "outputDevice": "default",
         "volume": 80,
         "enabled": true
@@ -128,12 +128,12 @@
       "stt": {
         "enabled": true,
         "language": "en",
-        "confidenceThreshold": 0.2,
+        "confidenceThreshold": 0.7,
         "realTimeProcessing": true,
         "provider": "elevenlabs",
-        "vadThreshold": 0.2,
-        "silenceDuration": 500,
-        "prefixPadding": 450
+        "vadThreshold": 0.5,
+        "silenceDuration": 700,
+        "prefixPadding": 300
       },
       "microphoneSTTConfigs": {
         "24": {
@@ -181,10 +181,10 @@
         "contextAwareness": true,
         "personalityAdjustments": true
       },
-      "lastModified": "2025-09-05T16:30:08.725Z",
+      "lastModified": "2025-09-06T00:48:19.927Z",
       "speaker": {
-        "defaultSpeakerId": "32",
-        "outputDevice": "default",
+        "defaultSpeakerId": "35",
+        "outputDevice": "alsa_output.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.analog-stereo",
         "volume": 80,
         "enabled": true
       }

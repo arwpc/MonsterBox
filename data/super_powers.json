@@ -22,7 +22,7 @@
     },
     "4": {
       "jawAnimation": {
-        "enabled": false,
+        "enabled": true,
         "servoPartId": 32,
         "minAngle": 60,
         "maxAngle": 120,

@@ -26,6 +26,39 @@ class ServoWebSocketClient extends EventEmitter {
         this.pendingRequests = new Map();
         this.requestId = 0;
 
+        // Discovery grace period to allow central manager to register services
+        this.discoveryGraceMs = options.discoveryGraceMs || 3000;
+        this.discoveryGraceStart = null;
+
+        // Keep reference to service discovery to subscribe to events
+        try {
+            this.serviceDiscovery = getServiceDiscovery();
+            // If servo service registers later, switch over to the discovered endpoint
+            this.serviceDiscovery.on('serviceRegistered', (registration) => {
+                if (registration && registration.name === 'servoService') {
+                    const connection = this.serviceDiscovery.getServiceConnection('servoService', false);
+                    if (connection && connection.url !== this.url) {
+                        logger.info(`🔁 Switching to discovered servo service at ${connection.url}`);
+                        this.url = connection.url;
+                        this.port = connection.port;
+                        // Reconnect to the preferred endpoint
+                        this.disconnect();
+                        this.connect();
+                    }
+                }
+            });
+            this.serviceDiscovery.on('serviceUnregistered', (registration) => {
+                if (registration && registration.name === 'servoService') {
+                    logger.warn('⚠️ Discovered servo service was unregistered; scheduling reconnect');
+                    this.url = null; // Force re-discovery
+                    this.scheduleReconnect();
+                }
+            });
+        } catch (e) {
+            // Service discovery might not be initialized yet; fallback behavior handled below
+            this.serviceDiscovery = null;
+        }
+
         // Auto-discover and connect
         this.discoverServoService();
     }
@@ -80,12 +113,12 @@ class ServoWebSocketClient extends EventEmitter {
 
     discoverServoService() {
         try {
-            const serviceDiscovery = getServiceDiscovery();
-            const servoService = serviceDiscovery.findService('servoService');
+            const serviceDiscovery = this.serviceDiscovery || getServiceDiscovery();
 
+            // Try discovery first
+            const servoService = serviceDiscovery.findService('servoService');
             if (servoService) {
-                // Use proxy endpoint if available, otherwise direct
-                const connection = serviceDiscovery.getServiceConnection('servoService', false); // Use direct connection
+                const connection = serviceDiscovery.getServiceConnection('servoService', false); // direct preferred
                 if (connection) {
                     this.url = connection.url;
                     this.port = connection.port;
@@ -93,6 +126,19 @@ class ServoWebSocketClient extends EventEmitter {
                     this.connect();
                     return;
                 }
+            }
+
+            // If discovery not ready yet, try graceful wait before falling back
+            if (this.discoveryGraceStart === null) {
+                this.discoveryGraceStart = Date.now();
+            }
+            const elapsed = Date.now() - this.discoveryGraceStart;
+            const remaining = this.discoveryGraceMs - elapsed;
+
+            if (remaining > 0) {
+                logger.warn(`⚠️ Servo service not yet discovered; waiting ${remaining}ms before fallback`);
+                setTimeout(() => this.discoverServoService(), Math.min(remaining, 500));
+                return;
             }
 
             // Fallback to default port if service discovery fails

@@ -227,17 +227,6 @@
     "customSettings": null
   },
   {
-    "id": 32,
-    "type": "motion-sensor",
-    "name": "Motion Skulltalker",
-    "characterId": 1,
-    "gpioPin": "17",
-    "sensitivity": "0.1",
-    "detectionRange": "7",
-    "triggerDelay": "500",
-    "active": "on"
-  },
-  {
     "id": 33,
     "name": "Skull Talking Jaw",
     "type": "servo",
@@ -258,5 +247,30 @@
       "PWM"
     ],
     "customSettings": null
+  },
+  {
+    "id": 34,
+    "characterId": 4,
+    "type": "microphone",
+    "name": "Ears of the Skull",
+    "description": "",
+    "deviceId": "default",
+    "outputDevice": "alsa_output.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.analog-stereo",
+    "sampleRate": "8000",
+    "channels": "1",
+    "sensitivity": "1",
+    "echoCancellation": "on",
+    "noiseSuppression": "on",
+    "autoGainControl": "on",
+    "voiceActivationThreshold": "0.1"
+  },
+  {
+    "id": 35,
+    "characterId": 4,
+    "type": "speaker",
+    "name": "Mouth of Skulltalker",
+    "description": "",
+    "outputDevice": "alsa_output.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.analog-stereo",
+    "volume": "80"
   }
 ]

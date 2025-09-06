@@ -1768,15 +1768,17 @@ router.post('/api/elevenlabs/preview', async (req, res) => {
             return res.status(400).json({ success: false, error: 'Voice ID and text are required' });
         }
 
-        if (!process.env.ELEVENLABS_API_KEY) {
+        const { getElevenLabsApiKeySync } = require('../utils/elevenlabsKey');
+        const apiKey = getElevenLabsApiKeySync();
+        if (!apiKey) {
             return res.status(400).json({ success: false, error: 'ElevenLabs API key not configured' });
         }
 
-        // Generate speech using ElevenLabs API
+        // Generate speech using ElevenLabs API (use live-resolved key to avoid stale env)
         const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
             method: 'POST',
             headers: {
-                'xi-api-key': process.env.ELEVENLABS_API_KEY,
+                'xi-api-key': apiKey,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({

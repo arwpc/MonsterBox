@@ -215,9 +215,9 @@
       "speaker_id": "hkk1bPcdsxSQCLzLFMT2",
       "settings": {
         "pitch": 0,
-        "speed": 1.9,
-        "volume": 20,
-        "emotion": "Sad",
+        "speed": 1,
+        "volume": 0,
+        "emotion": "Neutral",
         "sampleRate": 44100,
         "bitRate": 128,
         "outputFormat": "wav",
@@ -232,7 +232,7 @@
         "tags": [],
         "notes": "",
         "created": "2024-10-31T23:03:22.275Z",
-        "lastModified": "2025-08-25T22:21:50.654Z",
+        "lastModified": "2025-09-06T00:43:31.663Z",
         "migratedFrom": "TopMediai",
         "migrationDate": "2025-08-25T00:17:39.322Z",
         "originalSpeakerId": "72dd057e-c1ce-11ef-a432-00163e0649ac",
@@ -242,33 +242,6 @@
         "voiceDescription": "Mysterious female voice for Coffin Breaker"
       },
       "history": [
-        {
-          "timestamp": "2025-08-25T00:17:39.322Z",
-          "type": "migration",
-          "settings": {
-            "fromProvider": "TopMediai",
-            "toProvider": "ElevenLabs",
-            "fromSpeakerId": "72dd057e-c1ce-11ef-a432-00163e0649ac",
-            "toSpeakerId": "EXAVITQu4vr4xnSDxMaL",
-            "voiceName": "Bella"
-          }
-        },
-        {
-          "timestamp": "2025-08-25T21:46:20.151Z",
-          "type": "settings_update",
-          "settings": {
-            "pitch": 0,
-            "speed": 1,
-            "volume": 0,
-            "emotion": "Neutral",
-            "sampleRate": 44100,
-            "bitRate": 128,
-            "outputFormat": "wav",
-            "channels": 1,
-            "languageCode": "en",
-            "provider": "ElevenLabs"
-          }
-        },
         {
           "timestamp": "2025-08-25T21:46:20.283Z",
           "type": "settings_update",
@@ -412,6 +385,38 @@
             "languageCode": "en",
             "provider": "ElevenLabs"
           }
+        },
+        {
+          "timestamp": "2025-09-06T00:43:31.526Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Neutral",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "ElevenLabs"
+          }
+        },
+        {
+          "timestamp": "2025-09-06T00:43:31.663Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Neutral",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "ElevenLabs"
+          }
         }
       ]
     },
@@ -437,7 +442,7 @@
         "tags": [],
         "notes": "",
         "created": "2025-05-13T00:35:07.630Z",
-        "lastModified": "2025-09-04T16:50:53.708Z",
+        "lastModified": "2025-09-06T00:47:41.297Z",
         "migratedFrom": "TopMediai",
         "migrationDate": "2025-08-25T00:17:39.322Z",
         "originalSpeakerId": "f0ac8c43-7a0f-11ee-a861-00163e2ac61b",
@@ -447,38 +452,6 @@
         "voiceDescription": "Clear, authoritative voice for Skulltalker"
       },
       "history": [
-        {
-          "timestamp": "2025-08-24T21:00:03.152Z",
-          "type": "settings_update",
-          "settings": {
-            "pitch": 0,
-            "speed": 1,
-            "volume": 0,
-            "emotion": "Neutral",
-            "sampleRate": 44100,
-            "bitRate": 128,
-            "outputFormat": "wav",
-            "channels": 1,
-            "languageCode": "en",
-            "provider": "TopMediai"
-          }
-        },
-        {
-          "timestamp": "2025-08-24T21:00:20.023Z",
-          "type": "settings_update",
-          "settings": {
-            "pitch": 0,
-            "speed": 1,
-            "volume": 0,
-            "emotion": "Neutral",
-            "sampleRate": 44100,
-            "bitRate": 128,
-            "outputFormat": "wav",
-            "channels": 1,
-            "languageCode": "en",
-            "provider": "TopMediai"
-          }
-        },
         {
           "timestamp": "2025-08-25T00:17:39.322Z",
           "type": "migration",
@@ -604,6 +577,38 @@
         },
         {
           "timestamp": "2025-09-04T16:50:53.708Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Neutral",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "ElevenLabs"
+          }
+        },
+        {
+          "timestamp": "2025-09-06T00:47:41.174Z",
+          "type": "settings_update",
+          "settings": {
+            "pitch": 0,
+            "speed": 1,
+            "volume": 0,
+            "emotion": "Neutral",
+            "sampleRate": 44100,
+            "bitRate": 128,
+            "outputFormat": "wav",
+            "channels": 1,
+            "languageCode": "en",
+            "provider": "ElevenLabs"
+          }
+        },
+        {
+          "timestamp": "2025-09-06T00:47:41.297Z",
           "type": "settings_update",
           "settings": {
             "pitch": 0,
