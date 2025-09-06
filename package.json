@@ -89,7 +89,7 @@
     "ai:health-check": "node -e \"const {getInstance} = require('./ai/integrations'); getInstance().initialize().then(ai => ai.healthCheck()).then(console.log)\"",
     "ai:test": "node -e \"const {getInstance} = require('./ai/integrations'); getInstance().initialize().then(ai => ai.testIntegration()).then(console.log)\"",
     "ai:status": "node -e \"const {getInstance} = require('./ai/integrations'); getInstance().initialize().then(ai => ai.getStatus()).then(console.log)\"",
-    "test:e2e": "echo 'Playwright tests temporarily disabled' && exit 0",
+    "test:e2e": "playwright test",
     "test:e2e-headed": "echo 'Playwright tests temporarily disabled' && exit 0",
     "ai:config": "echo 'AI Configuration UI available at http://localhost:3000/ai-config'",
     "ai:validate": "node -e \"const {getInstance} = require('./ai/integrations'); getInstance().initialize().then(ai => ai.validateAPIKeys()).then(console.log)\"",
