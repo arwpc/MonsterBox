@@ -53,71 +53,78 @@ router.post('/test-connection', voiceController.testVoiceConnection);
 // Audio integrity testing
 router.post('/test-audio-integrity', voiceController.testAudioIntegrity);
 
-// Live TTS endpoint for Enhanced Test Chat
+// Live TTS endpoint for Enhanced Test Chat (returns URL for client-side playback)
 router.post('/speak', async (req, res) => {
     try {
         const startTime = Date.now();
         const { text, character, characterId, voiceConfig } = req.body;
 
         if (!text || !text.trim()) {
-            return res.status(400).json({
-                success: false,
-                error: 'Text is required for speech generation'
-            });
+            return res.status(400).json({ success: false, error: 'Text is required for speech generation' });
         }
 
-        console.log(`🎤 TTS request: "${text}" (Character: ${character || 'default'})`);
-
-        // Get voice service
         const voiceService = require('../services/voiceService');
 
-        // Get character's voice settings
+        // Resolve character voice
         let voiceSettings = null;
         if (characterId) {
-            try {
-                voiceSettings = await voiceService.getVoiceByCharacterId(characterId);
-            } catch (error) {
-                console.warn(`⚠️ Could not get voice settings for character ${characterId}:`, error.message);
-            }
+            try { voiceSettings = await voiceService.getVoiceByCharacterId(characterId); } catch (e) { console.warn(`⚠️ Voice settings unavailable for character ${characterId}:`, e.message); }
         }
 
-        // Use default voice if no character voice found
         const speakerId = voiceSettings?.speaker_id || 'en-US-AriaNeural';
-        const options = {
-            ...voiceSettings?.settings,
-            ...voiceConfig
-        };
+        const options = { ...voiceSettings?.settings, ...voiceConfig };
 
-        // Generate speech
         const result = await voiceService.generateSpeech(text, speakerId, options, characterId);
         const processingTime = Date.now() - startTime;
 
-        console.log('🔍 Result keys:', result ? Object.keys(result) : 'null');
-
         if (result && result.url) {
-            res.json({
+            return res.json({
                 success: true,
                 audioUrl: result.url,
-                text: text,
+                text,
                 character: character || 'default',
                 provider: result.provider || 'ElevenLabs',
                 duration: result.duration,
-                processingTime: processingTime,
+                processingTime,
                 timestamp: new Date().toISOString()
             });
-        } else {
-            throw new Error('Failed to generate audio');
+        }
+        throw new Error('Failed to generate audio');
+    } catch (error) {
+        const processingTime = typeof startTime !== 'undefined' ? (Date.now() - startTime) : undefined;
+        console.error('❌ Error in TTS speak:', error);
+        return res.status(500).json({ success: false, error: 'Failed to process speech request', details: error.message, processingTime });
+    }
+});
+
+// Server-side preview that PLAYS audio on the character's configured speaker hardware
+router.post('/preview-and-play', async (req, res) => {
+    try {
+        const { text, characterId, voiceId, voiceConfig } = req.body;
+        if (!text || !text.trim() || !characterId) {
+            return res.status(400).json({ success: false, error: 'text and characterId are required' });
+        }
+        const voiceService = require('../services/voiceService');
+
+        // Resolve character voice if not provided
+        let speakerId = voiceId;
+        let settings = voiceConfig || {};
+        try {
+            const voiceSettings = await voiceService.getVoiceByCharacterId(characterId);
+            if (!speakerId) speakerId = voiceSettings?.speaker_id;
+            settings = { ...voiceSettings?.settings, ...settings };
+        } catch (e) {
+            // No voice settings available; continue if voiceId provided
+        }
+        if (!speakerId) {
+            return res.status(404).json({ success: false, error: 'No voice configured for this character' });
         }
 
+        const result = await voiceService.generateAndPlaySpeech(text, speakerId, settings, characterId);
+        return res.json({ success: true, played: !!result?.playback?.success, device: result?.playback?.device, provider: result?.provider || 'ElevenLabs', url: result?.url });
     } catch (error) {
-        const processingTime = Date.now() - startTime;
-        console.error('❌ Error in TTS speak:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to process speech request',
-            details: error.message,
-            processingTime: processingTime
-        });
+        console.error('❌ Error in preview-and-play:', error);
+        return res.status(500).json({ success: false, error: 'Failed preview-and-play', details: error.message });
     }
 });
 

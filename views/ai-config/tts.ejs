@@ -1370,13 +1370,14 @@
         }
 
         async function testWithSettings(settings, description) {
-            const response = await fetch('/ai-management/api/elevenlabs/preview', {
+            const response = await fetch('/voice/preview-and-play', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
+                    characterId: parseInt(document.getElementById('selectedCharacterId').value),
                     voiceId: selectedVoice.voice_id || selectedVoice.uuid || selectedVoice.speaker_id,
                     text: `${description}: This is a test with different ElevenLabs voice settings.`,
-                    settings: {
+                    voiceConfig: {
                         stability: settings.stability || 0.5,
                         similarity: settings.similarity || 0.75,
                         style: settings.style || 0.0,
@@ -1386,19 +1387,9 @@
             });
 
             const data = await response.json();
-            if (data.success && data.audioData) {
-                // Create audio from base64 data
-                const audioBlob = new Blob([Uint8Array.from(atob(data.audioData), c => c.charCodeAt(0))], { type: 'audio/mpeg' });
-                const audioUrl = URL.createObjectURL(audioBlob);
-                const audio = new Audio(audioUrl);
-
-                await new Promise((resolve) => {
-                    audio.onended = () => {
-                        URL.revokeObjectURL(audioUrl);
-                        resolve();
-                    };
-                    audio.play();
-                });
+            if (data.success) {
+                // Audio is already played server-side via character's speaker device
+                return;
             }
         }
 
@@ -1782,13 +1773,14 @@
                 console.log('🎤 Preview with settings:', settings);
                 showMessage(`Generating preview with Speed: ${settings.speed}x, Pitch: ${settings.pitch}, Volume: ${settings.volume}, Emotion: ${settings.emotion}`, 'info');
 
-                const response = await fetch('/ai-management/api/elevenlabs/preview', {
+                const response = await fetch('/voice/preview-and-play', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
+                        characterId: parseInt(document.getElementById('selectedCharacterId').value),
                         voiceId: selectedVoice.voice_id || selectedVoice.uuid || selectedVoice.speaker_id,
                         text: text,
-                        settings: {
+                        voiceConfig: {
                             stability: settings.stability || 0.5,
                             similarity: settings.similarity || 0.75,
                             style: settings.style || 0.0,
@@ -1799,22 +1791,10 @@
 
                 const data = await response.json();
 
-                if (data.success && data.audioData) {
-                    // Create audio from base64 data
-                    const audioBlob = new Blob([Uint8Array.from(atob(data.audioData), c => c.charCodeAt(0))], { type: 'audio/mpeg' });
-                    const audioUrl = URL.createObjectURL(audioBlob);
-
-                    const audio = document.getElementById('previewAudio');
-                    audio.src = audioUrl;
-                    document.getElementById('modalAudioPlayer').style.display = 'block';
-
-                    // Clean up previous URL
-                    if (currentAudioUrl) {
-                        URL.revokeObjectURL(currentAudioUrl);
-                    }
-                    currentAudioUrl = audioUrl;
-
-                    showMessage('ElevenLabs preview generated successfully!', 'success');
+                if (data.success) {
+                    // Audio is played on the character's configured speaker device
+                    const device = data.device || 'default';
+                    showMessage(`Preview playing on character speaker (${device})`, 'success');
                 } else {
                     showMessage(`Preview failed: ${data.error}`, 'error');
                 }
@@ -1980,13 +1960,14 @@
                     console.warn('Could not load character settings, using defaults:', error);
                 }
 
-                const response = await fetch('/ai-management/api/elevenlabs/preview', {
+                const response = await fetch('/voice/preview-and-play', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
+                        characterId: parseInt(document.getElementById('selectedCharacterId').value),
                         voiceId: speakerId,
                         text: 'Hello, I am your character speaking with ElevenLabs voice synthesis.',
-                        settings: {
+                        voiceConfig: {
                             stability: characterSettings.stability || 0.5,
                             similarity: characterSettings.similarity || 0.75,
                             style: characterSettings.style || 0.0,

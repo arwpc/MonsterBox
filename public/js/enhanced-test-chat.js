@@ -3666,12 +3666,9 @@ class EnhancedTestChat {
 
             const data = await response.json();
 
-            if (data.success && data.audioUrl) {
-                // Play the test audio
-                const audio = new Audio(data.audioUrl);
-                audio.play();
-
-                this.addMessage('system', '🎤 Voice test completed', {
+            if (data.success) {
+                // Audio is played on the character's speaker via server-side
+                this.addMessage('system', `🎤 Voice test sent to character speaker (${data.provider || 'ElevenLabs'})`, {
                     characterName: 'System',
                     isInfo: true
                 });

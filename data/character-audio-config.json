@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastUpdated": "2025-09-06T00:57:13.437Z",
+  "lastUpdated": "2025-09-06T18:56:35.619Z",
   "characters": {
     "1": {
       "characterId": 1,
@@ -15,14 +15,14 @@
         "voiceActivation": false,
         "voiceActivationThreshold": 0.1
       },
-      "lastModified": "2025-09-05T18:59:59.846Z",
+      "lastModified": "2025-09-06T03:48:34.259Z",
       "stt": {
         "enabled": true,
         "language": "en",
         "confidenceThreshold": 0.7,
         "realTimeProcessing": true,
         "provider": "elevenlabs",
-        "vadThreshold": 0.8,
+        "vadThreshold": 0.5,
         "silenceDuration": 700,
         "prefixPadding": 300
       },
@@ -181,7 +181,7 @@
         "contextAwareness": true,
         "personalityAdjustments": true
       },
-      "lastModified": "2025-09-06T00:57:13.436Z",
+      "lastModified": "2025-09-06T18:56:35.619Z",
       "speaker": {
         "defaultSpeakerId": "35",
         "outputDevice": "alsa_output.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.analog-stereo",

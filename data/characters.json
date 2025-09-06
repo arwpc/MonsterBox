@@ -179,5 +179,30 @@
       "default_character": "Calvin"
     },
     "elevenLabsAgentId": "skulltalker"
+  },
+  {
+    "id": 5,
+    "char_name": "PlaywrightBot",
+    "char_description": "E2E test character",
+    "parts": [],
+    "sounds": [],
+    "image": null,
+    "animatronic": {
+      "enabled": false,
+      "status": "virtual",
+      "character_type": "Virtual Character",
+      "description": "Software-only character",
+      "rpi_config": null,
+      "services": [
+        "monsterbox"
+      ],
+      "log_types": [
+        "system",
+        "application"
+      ],
+      "hardware_monitoring": false,
+      "animatronic_parts": []
+    },
+    "elevenLabsAgentId": "agent_0801k3f1dw7xe2g8r4jkbxk0gt2n"
   }
 ]
