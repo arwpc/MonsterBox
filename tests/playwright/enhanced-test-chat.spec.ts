@@ -29,13 +29,10 @@ async function createCharacterViaUI(page) {
   await page.goto('/characters/new');
   await page.fill('#char_name', BOT_NAME);
   await page.fill('#char_description', 'E2E test character');
+  // Submit the form and wait for navigation back to /characters
   await Promise.all([
-    page.waitForNavigation(),
-    page.click('button:has-text("Save")').catch(async () => {
-      // Alternate layout: look for primary save button
-      const btn = page.locator('button:has-text("Save")');
-      if (await btn.count()) await btn.first().click();
-    })
+    page.waitForNavigation({ waitUntil: 'load' }),
+    page.click('button[type="submit"].primary-btn')
   ]);
   // Fetch ID
   return await getCharacterId(page);
