@@ -3652,7 +3652,7 @@ class EnhancedTestChat {
             const testText = `Hello! This is ${this.currentCharacter.char_name || this.currentCharacter.name} testing the voice output.`;
 
             // Use the existing TTS system to test voice
-            const response = await fetch('/voice/speak', {
+            const response = await fetch('/api/voice/speak', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
