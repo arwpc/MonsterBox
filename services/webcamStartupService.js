@@ -18,6 +18,10 @@ class WebcamStartupService {
         this.activeStreams = new Map(); // characterId -> streamProcess
         this.streamConfigs = new Map(); // characterId -> config
         this.initialized = false;
+        this.healthCheckInterval = null;
+        this.restartAttempts = new Map(); // characterId -> attempt count
+        this.maxRestartAttempts = 5;
+        this.healthCheckIntervalMs = 30000; // 30 seconds
     }
 
     /**
@@ -26,10 +30,10 @@ class WebcamStartupService {
     async initialize() {
         try {
             logger.info('📹 Initializing Webcam Startup Service...');
-            
+
             // Get all characters with webcams
             const charactersWithWebcams = await this.getCharactersWithWebcams();
-            
+
             if (charactersWithWebcams.length === 0) {
                 logger.info('📹 No characters with webcams found, skipping webcam startup');
                 this.initialized = true;
@@ -51,12 +55,125 @@ class WebcamStartupService {
 
             logger.info(`📹 Webcam startup completed: ${successCount}/${charactersWithWebcams.length} streams started successfully`);
 
+            // Start health monitoring for persistent streams
+            this.startHealthMonitoring();
+
             this.initialized = true;
             logger.info('✅ Webcam Startup Service initialized successfully');
             return true;
 
         } catch (error) {
             logger.error('❌ Failed to initialize Webcam Startup Service:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Start health monitoring for persistent streams
+     */
+    startHealthMonitoring() {
+        if (this.healthCheckInterval) {
+            clearInterval(this.healthCheckInterval);
+        }
+
+        logger.info('📹 Starting webcam stream health monitoring...');
+
+        this.healthCheckInterval = setInterval(async () => {
+            await this.performHealthCheck();
+        }, this.healthCheckIntervalMs);
+    }
+
+    /**
+     * Perform health check on all active streams
+     */
+    async performHealthCheck() {
+        try {
+            logger.debug('📹 Performing webcam stream health check...');
+
+            for (const [characterId, streamConfig] of this.streamConfigs) {
+                const isHealthy = await this.checkStreamHealth(characterId);
+
+                if (!isHealthy) {
+                    logger.warn(`📹 Stream for character ${characterId} is unhealthy, attempting restart...`);
+                    await this.restartStream(characterId);
+                }
+            }
+        } catch (error) {
+            logger.error('Error during health check:', error);
+        }
+    }
+
+    /**
+     * Check if a stream is healthy
+     */
+    async checkStreamHealth(characterId) {
+        try {
+            const streamProcess = this.activeStreams.get(characterId);
+
+            if (!streamProcess || streamProcess.killed) {
+                logger.debug(`📹 Stream process for character ${characterId} is not running`);
+                return false;
+            }
+
+            // Check if streaming service has this stream active
+            if (streamingService && typeof streamingService.isStreamActive === 'function') {
+                const isActive = streamingService.isStreamActive(characterId);
+                if (!isActive) {
+                    logger.debug(`📹 Streaming service reports character ${characterId} stream as inactive`);
+                    return false;
+                }
+            }
+
+            return true;
+        } catch (error) {
+            logger.error(`Error checking stream health for character ${characterId}:`, error);
+            return false;
+        }
+    }
+
+    /**
+     * Restart a failed stream
+     */
+    async restartStream(characterId) {
+        try {
+            const attempts = this.restartAttempts.get(characterId) || 0;
+
+            if (attempts >= this.maxRestartAttempts) {
+                logger.error(`📹 Max restart attempts (${this.maxRestartAttempts}) reached for character ${characterId}, giving up`);
+                return false;
+            }
+
+            this.restartAttempts.set(characterId, attempts + 1);
+
+            logger.info(`📹 Restarting stream for character ${characterId} (attempt ${attempts + 1}/${this.maxRestartAttempts})`);
+
+            // Stop existing stream
+            await this.stopCharacterStream(characterId);
+
+            // Wait a moment before restarting
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            // Get stream configuration
+            const streamConfig = this.streamConfigs.get(characterId);
+            if (!streamConfig) {
+                logger.error(`📹 No stream config found for character ${characterId}`);
+                return false;
+            }
+
+            // Restart stream
+            const success = await this.startCharacterWebcamStream(streamConfig.character, streamConfig.webcam);
+
+            if (success) {
+                logger.info(`📹 Successfully restarted stream for character ${characterId}`);
+                this.restartAttempts.set(characterId, 0); // Reset attempts on success
+                return true;
+            } else {
+                logger.error(`📹 Failed to restart stream for character ${characterId}`);
+                return false;
+            }
+
+        } catch (error) {
+            logger.error(`Error restarting stream for character ${characterId}:`, error);
             return false;
         }
     }
@@ -73,7 +190,7 @@ class WebcamStartupService {
                 // Get parts for this character
                 const parts = await partService.getPartsByCharacter(character.id);
                 const webcam = parts.find(part => part.type === 'webcam' && part.status === 'active');
-                
+
                 if (webcam) {
                     charactersWithWebcams.push({ character, webcam });
                 }
@@ -158,11 +275,11 @@ class WebcamStartupService {
      * Check if character is remote (has RPI configuration)
      */
     isRemoteCharacter(character) {
-        return character.animatronic && 
-               character.animatronic.rpi_config && 
-               character.animatronic.rpi_config.host &&
-               character.animatronic.rpi_config.host !== 'localhost' &&
-               character.animatronic.rpi_config.host !== '127.0.0.1';
+        return character.animatronic &&
+            character.animatronic.rpi_config &&
+            character.animatronic.rpi_config.host &&
+            character.animatronic.rpi_config.host !== 'localhost' &&
+            character.animatronic.rpi_config.host !== '127.0.0.1';
     }
 
     /**
@@ -172,11 +289,11 @@ class WebcamStartupService {
         try {
             // Try to detect available cameras
             const { spawn } = require('child_process');
-            
+
             return new Promise((resolve) => {
                 const detectScript = path.join(__dirname, '..', 'scripts', 'webcam_detect.py');
                 const process = spawn('python3', [detectScript]);
-                
+
                 let output = '';
                 process.stdout.on('data', (data) => {
                     output += data.toString();
@@ -305,7 +422,7 @@ class WebcamStartupService {
     async restartCharacterStream(characterId) {
         try {
             await this.stopCharacterStream(characterId);
-            
+
             const character = await characterService.getCharacterById(characterId);
             if (character) {
                 await this.startWebcamForCharacterWithFallback(character);
@@ -316,21 +433,63 @@ class WebcamStartupService {
     }
 
     /**
+     * Stop a character's webcam stream
+     */
+    async stopCharacterStream(characterId) {
+        try {
+            const streamProcess = this.activeStreams.get(characterId);
+
+            if (streamProcess && !streamProcess.killed) {
+                logger.info(`📹 Stopping webcam stream for character ${characterId}`);
+
+                // Kill the process gracefully
+                streamProcess.kill('SIGTERM');
+
+                // Wait a moment for graceful shutdown
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                // Force kill if still running
+                if (!streamProcess.killed) {
+                    streamProcess.kill('SIGKILL');
+                }
+
+                // Clean up tracking
+                this.activeStreams.delete(characterId);
+
+                logger.info(`📹 Webcam stream stopped for character ${characterId}`);
+                return true;
+            }
+
+            return false;
+        } catch (error) {
+            logger.error(`Error stopping webcam stream for character ${characterId}:`, error);
+            return false;
+        }
+    }
+
+    /**
      * Cleanup all streams
      */
     async cleanup() {
         try {
             logger.info('📹 Cleaning up webcam streams...');
-            
+
+            // Stop health monitoring
+            if (this.healthCheckInterval) {
+                clearInterval(this.healthCheckInterval);
+                this.healthCheckInterval = null;
+            }
+
             for (const [characterId, stream] of this.activeStreams) {
                 if (stream && !stream.killed) {
                     stream.kill();
                 }
             }
-            
+
             this.activeStreams.clear();
             this.streamConfigs.clear();
-            
+            this.restartAttempts.clear();
+
             logger.info('✅ Webcam streams cleanup complete');
         } catch (error) {
             logger.error('Error during webcam streams cleanup:', error);

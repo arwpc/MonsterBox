@@ -83,8 +83,8 @@
     "characterId": 1,
     "deviceId": 0,
     "devicePath": "/dev/video0",
-    "resolution": "640x480",
-    "fps": 15,
+    "resolution": "1280x720",
+    "fps": 30,
     "status": "active",
     "cameraControls": {
       "brightness": 0,

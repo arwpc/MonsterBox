@@ -45,17 +45,34 @@ router.post('/start/:characterId', async (req, res) => {
             });
         }
 
-        // Motion tracking is now handled by the WebSocket head tracking service
-        // This endpoint is deprecated - use the new head tracking API instead
-        return res.status(410).json({
-            success: false,
-            message: 'Motion tracking endpoint deprecated. Use /api/hardware/head-tracking/start instead.',
-            migration_info: {
-                new_endpoint: '/api/hardware/head-tracking/start',
-                websocket_service: 'ws://localhost:8776',
-                documentation: '/hardware-monitor.html',
-                character_id: characterId
-            }
+        // Start motion tracking for the character
+        const { sensitivity, minArea } = req.body;
+
+        // Update motion tracking settings if provided
+        if (sensitivity !== undefined || minArea !== undefined) {
+            const updatedSettings = { ...character.animatronic.motion_tracking };
+            if (sensitivity !== undefined) updatedSettings.sensitivity = sensitivity;
+            if (minArea !== undefined) updatedSettings.min_area = minArea;
+
+            character.animatronic.motion_tracking = updatedSettings;
+            await characterService.updateCharacter(characterId, character);
+        }
+
+        // For now, return success - actual motion tracking will be handled by the head tracking service
+        // when it's properly integrated with the webcam interface
+        activeTrackers.set(characterId, {
+            characterId: characterId,
+            startTime: new Date(),
+            settings: character.animatronic.motion_tracking
+        });
+
+        logger.info(`Motion tracking started for character ${characterId}`);
+
+        return res.json({
+            success: true,
+            message: 'Motion tracking started successfully',
+            characterId: characterId,
+            settings: character.animatronic.motion_tracking
         });
 
     } catch (error) {

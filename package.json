@@ -130,6 +130,7 @@
     "ws": "^8.18.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.55.0",
     "axios": "^1.9.0",
     "chai": "^4.5.0",
     "chai-http": "^4.3.0",

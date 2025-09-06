@@ -274,7 +274,9 @@ async function getServosByCharacter(characterId) {
     }
 }
 
-// Camera routes
+// DEPRECATED: Standalone camera route - functionality moved to webcam parts management
+// Use /parts/webcam/:id/edit instead for consolidated webcam interface
+/*
 router.get('/', async (req, res) => {
     try {
         const characterId = req.query.characterId || req.session.characterId;
@@ -293,6 +295,37 @@ router.get('/', async (req, res) => {
         });
     } catch (error) {
         logger.error('Failed to render camera view', { error: error.message });
+        res.status(500).render('error', {
+            error: 'Failed to load camera interface',
+            details: error.message
+        });
+    }
+});
+*/
+
+// Redirect standalone camera requests to parts management
+router.get('/', async (req, res) => {
+    try {
+        const characterId = req.query.characterId || req.session.characterId;
+        if (characterId) {
+            // Try to find existing webcam part for this character
+            const partService = require('../services/partService');
+            const parts = await partService.getPartsByCharacter(characterId);
+            const webcamPart = parts.find(part => part.type === 'webcam');
+
+            if (webcamPart) {
+                // Redirect to existing webcam part edit page
+                return res.redirect(`/parts/webcam/${webcamPart.id}/edit`);
+            } else {
+                // Redirect to create new webcam part
+                return res.redirect(`/parts/webcam/new?characterId=${characterId}`);
+            }
+        } else {
+            // No character selected, redirect to parts list
+            return res.redirect('/parts');
+        }
+    } catch (error) {
+        logger.error('Failed to redirect camera request', { error: error.message });
         res.status(500).render('error', {
             error: 'Failed to load camera interface',
             details: error.message
@@ -855,11 +888,33 @@ router.get('/list', async (req, res) => {
     try {
         logger.info('Camera list request received');
 
-        // Try to detect available cameras
+        // Get character ID from query parameters to determine if we need remote detection
+        const characterId = req.query.characterId;
+
+        if (characterId) {
+            // Use webcam service for proper remote/local detection
+            const webcamService = require('../services/webcamService');
+            const service = new webcamService();
+
+            try {
+                const detectionResult = await service.detectCameras(characterId, true); // Use remote detection
+
+                if (detectionResult.success && detectionResult.cameras && detectionResult.cameras.length > 0) {
+                    logger.info(`📹 Found ${detectionResult.cameras.length} camera groups for character ${characterId}`);
+                    return res.json(detectionResult.cameras);
+                } else {
+                    logger.warn(`No cameras found for character ${characterId}: ${detectionResult.message}`);
+                }
+            } catch (serviceError) {
+                logger.error('Webcam service detection failed:', serviceError);
+            }
+        }
+
+        // Fallback to local detection if no character ID or remote detection fails
         const cameras = [];
 
         try {
-            // Check for available video devices
+            // Check for available video devices on local system
             const { stdout } = await exec('ls /dev/video* 2>/dev/null || echo ""');
             const videoDevices = stdout.trim().split('\n').filter(device => device.length > 0);
 
@@ -1029,7 +1084,7 @@ router.post('/select', async (req, res) => {
 
                 // Ensure data directory exists
                 const dataDir = path.join(__dirname, '..', 'data');
-                await fs.mkdir(dataDir, { recursive: true }).catch(() => {});
+                await fs.mkdir(dataDir, { recursive: true }).catch(() => { });
 
                 await fs.writeFile(characterCameraSettingsPath, JSON.stringify(settings, null, 2));
                 logger.info(`Camera ${numericCameraId} selected for character ${characterId}`);
@@ -1042,7 +1097,7 @@ router.post('/select', async (req, res) => {
                 settings.selectedCamera = numericCameraId;
 
                 const dataDir = path.dirname(CAMERA_SETTINGS_PATH);
-                await fs.mkdir(dataDir, { recursive: true }).catch(() => {});
+                await fs.mkdir(dataDir, { recursive: true }).catch(() => { });
 
                 await fs.writeFile(CAMERA_SETTINGS_PATH, JSON.stringify(settings, null, 2));
                 logger.info(`Camera ${numericCameraId} selected globally`);

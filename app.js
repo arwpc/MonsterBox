@@ -844,11 +844,16 @@ async function startServer() {
         await characterAudioConfigService.initialize();
         logger.info('🎤 Character Audio Config Service initialized');
 
-        // Initialize Webcam Startup Service
+        // Initialize Webcam Startup Service - DISABLED to prevent camera conflicts
+        // The service automatically starts streams for all characters which conflicts with manual control
+        // TODO: Re-enable with proper coordination when implementing persistent streaming
+        /*
         const WebcamStartupService = require('./services/webcamStartupService');
         global.webcamStartupService = new WebcamStartupService();
         await global.webcamStartupService.initialize();
         logger.info('📹 Webcam Startup Service initialized');
+        */
+        logger.info('📹 Webcam Startup Service disabled - using manual webcam control');
 
         // Start audio cleanup service
         audioCleanupService.start();
@@ -1080,23 +1085,23 @@ async function initializeConversationalAIServices() {
             });
             await elevenLabsWebSocketProxy.start();
 
-        // Initialize Super Powers services
-        try {
-            const { getSuperPowersService } = require('./services/superPowersService');
-            const { getJawAnimationService } = require('./services/jawAnimationService');
-            const superPowersService = getSuperPowersService();
-            await superPowersService.initialize();
-            const jawSvc = getJawAnimationService();
-            await jawSvc.initialize();
-            // Attach to ElevenLabs now that it's initialized
-            if (global.elevenLabsService) {
-                jawSvc.attachToElevenLabs(global.elevenLabsService);
+            // Initialize Super Powers services
+            try {
+                const { getSuperPowersService } = require('./services/superPowersService');
+                const { getJawAnimationService } = require('./services/jawAnimationService');
+                const superPowersService = getSuperPowersService();
+                await superPowersService.initialize();
+                const jawSvc = getJawAnimationService();
+                await jawSvc.initialize();
+                // Attach to ElevenLabs now that it's initialized
+                if (global.elevenLabsService) {
+                    jawSvc.attachToElevenLabs(global.elevenLabsService);
+                }
+                global.jawAnimationService = jawSvc;
+                logger.info('🧬 Super Powers (Jaw Animation) initialized');
+            } catch (e) {
+                logger.warn('⚠️ Super Powers services failed to init:', e.message);
             }
-            global.jawAnimationService = jawSvc;
-            logger.info('🧬 Super Powers (Jaw Animation) initialized');
-        } catch (e) {
-            logger.warn('⚠️ Super Powers services failed to init:', e.message);
-        }
 
             // Make proxy globally available
             global.elevenLabsWebSocketProxy = elevenLabsWebSocketProxy;

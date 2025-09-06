@@ -6,6 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const logger = require('../../scripts/logger');
+const partService = require('../../services/partService');
 
 let hardwareServiceManager = null;
 
@@ -57,7 +58,7 @@ router.get('/services', (req, res) => {
         }
 
         const status = hardwareServiceManager.getServiceStatus();
-        
+
         const serviceDetails = Object.entries(status.services).map(([name, service]) => ({
             name,
             port: service.port,
@@ -73,7 +74,7 @@ router.get('/services', (req, res) => {
             processId: status.processId,
             services: serviceDetails
         });
-        
+
     } catch (error) {
         logger.error('Error getting service details:', error);
         res.status(500).json({
@@ -87,7 +88,7 @@ router.get('/services', (req, res) => {
 router.post('/character/:id/start', async (req, res) => {
     try {
         const characterId = parseInt(req.params.id);
-        
+
         if (!hardwareServiceManager) {
             return res.status(503).json({
                 error: 'Hardware service manager not initialized'
@@ -95,7 +96,7 @@ router.post('/character/:id/start', async (req, res) => {
         }
 
         const success = await hardwareServiceManager.startCharacterServices(characterId);
-        
+
         if (success) {
             res.json({
                 success: true,
@@ -108,7 +109,7 @@ router.post('/character/:id/start', async (req, res) => {
                 characterId
             });
         }
-        
+
     } catch (error) {
         logger.error('Error starting character services:', error);
         res.status(500).json({
@@ -496,6 +497,30 @@ function getServiceDescription(serviceName) {
 
     return descriptions[serviceName] || `${serviceName} service`;
 }
+
+// Get servos for a specific character (for head tracking, etc.)
+router.get('/servos/character/:characterId', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.characterId);
+        if (isNaN(characterId)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid character ID'
+            });
+        }
+
+        const servos = await partService.getServosByCharacter(characterId);
+
+        res.json(servos);
+    } catch (error) {
+        logger.error('Error getting servos for character:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to get servos for character',
+            error: error.message
+        });
+    }
+});
 
 module.exports = {
     router,
