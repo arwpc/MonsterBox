@@ -7,6 +7,7 @@ const fs = require('fs').promises;
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
 const partService = require('../services/partService');
+const webcamService = require('../services/webcamService');
 
 // Log all camera route requests
 router.use((req, res, next) => {
@@ -893,11 +894,9 @@ router.get('/list', async (req, res) => {
 
         if (characterId) {
             // Use webcam service for proper remote/local detection
-            const webcamService = require('../services/webcamService');
-            const service = new webcamService();
 
             try {
-                const detectionResult = await service.detectCameras(characterId, true); // Use remote detection
+                const detectionResult = await webcamService.detectCameras(characterId, true); // Use remote detection
 
                 if (detectionResult.success && detectionResult.cameras && detectionResult.cameras.length > 0) {
                     logger.info(`📹 Found ${detectionResult.cameras.length} camera groups for character ${characterId}`);

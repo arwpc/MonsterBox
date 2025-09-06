@@ -17,8 +17,8 @@
       },
       "motion_tracking": {
         "enabled": true,
-        "sensitivity": 75,
-        "min_area": 600,
+        "sensitivity": 50,
+        "min_area": 500,
         "last_motion": null,
         "motion_center": null
       }

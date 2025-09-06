@@ -1844,10 +1844,13 @@
             }
 
             try {
-                const response = await fetch(`/api/head-tracking/start/${characterId}`, {
+                const response = await fetch(`/api/hardware/head-tracking/start`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ servoId: servoId })
+                    body: JSON.stringify({
+                        character_id: parseInt(characterId),
+                        config: { servo_id: parseInt(servoId) }
+                    })
                 });
 
                 const data = await response.json();
@@ -1870,8 +1873,10 @@
             const characterId = document.getElementById('characterId').value;
 
             try {
-                const response = await fetch(`/api/head-tracking/stop/${characterId}`, {
-                    method: 'POST'
+                const response = await fetch(`/api/hardware/head-tracking/stop`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ character_id: parseInt(characterId) })
                 });
 
                 const data = await response.json();
@@ -1897,15 +1902,10 @@
             const minArea = document.getElementById('motionMinArea').value;
 
             try {
-                // Add cache-busting parameter to prevent cached 410 responses
-                const timestamp = Date.now();
-                const response = await fetch(`/api/motion-tracking/start/${characterId}?t=${timestamp}`, {
+                const response = await fetch(`/api/motion-tracking/start/${characterId}`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Cache-Control': 'no-cache, no-store, must-revalidate',
-                        'Pragma': 'no-cache',
-                        'Expires': '0'
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         sensitivity: parseInt(sensitivity),
