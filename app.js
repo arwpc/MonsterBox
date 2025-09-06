@@ -26,7 +26,7 @@ process.env.NODE_NO_WARNINGS = '1';
 
 let express, path, http, https, logger, app, server, httpsServer, port, audioStream, soundController, fs, os, session;
 let videoStream; // <-- Add videoStream variable
-let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, webcamRoutes, voiceRoutes, cleanupRoutes, healthRoutes, authRoutes, sshRoutes, aiConfigRoutes, aiManagementRoutes, configRoutes, headTrackingRoutes, conversationalAiRoutes, superPowersRoutes;
+let ledRoutes, lightRoutes, servoRoutes, sensorRoutes, partRoutes, sceneRoutes, characterRoutes, soundRoutes, linearActuatorRoutes, activeModeRoutes, systemConfigRoutes, logRoutes, cameraRoutes, webcamRoutes, voiceRoutes, cleanupRoutes, healthRoutes, authRoutes, sshRoutes, aiConfigRoutes, aiManagementRoutes, configRoutes, headTrackingRoutes, conversationalAiRoutes, superPowersRoutes, keyManagementRoutes;
 let characterService;
 let authMiddleware, rbacMiddleware;
 
