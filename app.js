@@ -491,85 +491,10 @@ app.get('/conversational-ai', (req, res) => {
     const query = req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : '';
     return res.redirect(301, '/ai-management/enhanced-test-chat' + query);
 });
-// Conversational AI Interface route
-app.get('/conversational-ai', async (req, res) => {
-    try {
-        const characterService = require('./services/characterService');
-        const fs = require('fs').promises;
-        const path = require('path');
 
-        // Get all characters
-        const characters = await characterService.getAllCharacters();
 
-        // Get voice service to check for voice configurations
-        const voiceService = require('./services/voiceService');
-
-        // Get ElevenLabs agent mapping
-        let elevenLabsAgents = {};
-        if (global.elevenLabsService) {
-            try {
-                const serviceStatus = global.elevenLabsService.getStatus();
-                const agents = serviceStatus.agents || [];
-                // Create mapping from character ID to actual agent ID
-                agents.forEach(agent => {
-                    if (agent.characterId) {
-                        elevenLabsAgents[agent.characterId] = agent.agentId;
-                    }
-                });
-                console.log(`🎭 Loaded ${agents.length} ElevenLabs agents for conversational AI interface`);
-            } catch (error) {
-                console.warn('⚠️ Could not load ElevenLabs agents:', error.message);
-            }
-        }
-
-        // Filter characters that have voice configurations and ElevenLabs agents
-        const availableCharacters = [];
-        for (const char of characters) {
-            try {
-                const voiceConfig = await voiceService.getVoiceByCharacterId(char.id);
-                const actualAgentId = elevenLabsAgents[char.id];
-
-                if (voiceConfig && voiceConfig.speaker_id && actualAgentId) {
-                    // Character has both voice configuration and ElevenLabs agent
-                    availableCharacters.push({
-                        ...char,
-                        hasVoice: true,
-                        hasAI: true,
-                        elevenLabsAgentId: actualAgentId
-                    });
-                }
-            } catch (error) {
-                console.warn(`⚠️ Could not check config for character ${char.id}:`, error.message);
-            }
-        }
-
-        console.log(`🎭 Loaded ${availableCharacters.length} characters with ElevenLabs AI for conversational interface`);
-
-        res.render('enhanced-test-chat', {
-            title: 'ElevenLabs Conversational AI',
-            characterId: req.query.characterId || (availableCharacters.length > 0 ? availableCharacters[0].id : null),
-            agentId: req.query.agentId || null,
-            selectedAgent: null,
-            pageTitle: 'ElevenLabs Conversational AI',
-            characters: availableCharacters,
-            assistants: {}
-        });
-    } catch (error) {
-        console.error('❌ Error rendering conversational AI interface:', error);
-// Redirect legacy test chat path to the new Enhanced Test Chat under AI Management
-app.get('/test-chat', (req, res, next) => {
-    // Only redirect GET UI requests; API routes under /api remain unaffected
-    if (req.accepts('html')) {
-        const query = req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : '';
-        return res.redirect(301, '/ai-management/enhanced-test-chat' + query);
-    }
-    return next();
-});
-        res.status(500).send('Failed to load conversational AI interface: ' + error.message);
-    }
-});
-
-// Enhanced Test Chat route
+// Enhanced Test Chat route (legacy handler — kept for API compatibility but redirected below)
+/*
 app.get('/test-chat', async (req, res) => {
     try {
         const characterService = require('./services/characterService');
@@ -652,18 +577,30 @@ app.get('/test-chat', async (req, res) => {
         res.render('enhanced-test-chat', {
             title: 'Enhanced Test Chat - AI Conversation Interface',
             characterId: req.query.characterId || (availableCharacters.length > 0 ? availableCharacters[0].id : null),
+
             agentId: req.query.agentId || null,
             selectedAgent: selectedAgent,
             pageTitle: selectedAgent ? `Test Chat - ${selectedAgent.name}` : 'Enhanced Test Chat',
             characters: availableCharacters,
             assistants: assistants
         });
+
+// Redirect legacy test chat path to the new Enhanced Test Chat under AI Management
+app.get('/test-chat', (req, res) => {
+    const query = req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : '';
+    return res.redirect(301, '/ai-management/enhanced-test-chat' + query);
+});
     } catch (error) {
         console.error('❌ Error rendering enhanced test page:', error);
         res.status(500).send('Failed to load test page: ' + error.message);
     }
-});
+});*/
 
+// Final legacy redirect for test chat UI
+app.get('/test-chat', (req, res) => {
+    const query = req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : '';
+    return res.redirect(301, '/ai-management/enhanced-test-chat' + query);
+});
 
 
 // Connection monitoring endpoint
