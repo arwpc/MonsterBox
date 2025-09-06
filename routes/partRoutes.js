@@ -76,7 +76,17 @@ router.get('/', async (req, res) => {
     try {
         // Get ALL parts (hardware-centric approach)
         const allParts = await partService.getAllParts();
-        const partsWithDetails = await Promise.all(allParts.map(async part => ({
+
+        // Apply character filter if specified
+        const filterCharacterId = req.query.filterCharacterId;
+        let filteredParts = allParts;
+
+        if (filterCharacterId && filterCharacterId !== 'all') {
+            const characterIdNum = parseInt(filterCharacterId);
+            filteredParts = allParts.filter(part => part.characterId === characterIdNum);
+        }
+
+        const partsWithDetails = await Promise.all(filteredParts.map(async part => ({
             ...part,
             details: await getPartDetails(part)
         })));
@@ -89,7 +99,8 @@ router.get('/', async (req, res) => {
             title: 'Hardware Parts Management',
             parts: partsWithDetails,
             character,
-            characters
+            characters,
+            filterCharacterId: filterCharacterId || 'all'
         });
     } catch (error) {
         logger.error('Error fetching parts:', error);
@@ -598,57 +609,68 @@ router.get('/api/parts', async (req, res) => {
     }
 });
 
-// Microphone routes
-router.get('/microphone/new', async (req, res) => {
+// Consolidated Microphone Management Route
+router.get('/microphone/manage/:id?', async (req, res) => {
     try {
-        const character = await characterService.getCharacterById(req.characterId);
         const characters = await characterService.getAllCharacters();
-        const part = { type: 'microphone', characterId: req.characterId };
+        let part = { type: 'microphone' };
+        let character = null;
+        let title = 'Add Microphone';
+        let action = '/parts/microphone';
+
+        // If ID is provided, we're editing
+        if (req.params.id) {
+            const id = parseInt(req.params.id);
+            if (isNaN(id)) {
+                logger.warn(`Invalid part ID (not a number): ${req.params.id}`);
+                return res.status(404).send('Part not found');
+            }
+            part = await partService.getPartById(id);
+            if (!part) {
+                logger.warn(`Part not found with id: ${id}`);
+                return res.status(404).send('Part not found');
+            }
+            title = 'Edit Microphone';
+            character = await characterService.getCharacterById(part.characterId);
+        } else {
+            // For new microphones, use selected character if available
+            if (req.characterId) {
+                character = await characterService.getCharacterById(req.characterId);
+                part.characterId = req.characterId;
+            }
+        }
+
         res.render('part-forms/microphone', {
-            title: 'Add Microphone',
-            action: `/parts/microphone`,
+            title,
+            action,
             part,
             character,
             characters
         });
     } catch (error) {
-        logger.error('Error rendering microphone form:', error);
+        logger.error('Error rendering microphone management form:', error);
         res.status(500).send('An error occurred while loading the form');
     }
 });
 
-router.get('/microphone/:id/edit', async (req, res) => {
-    try {
-        const id = parseInt(req.params.id);
-        if (isNaN(id)) {
-            logger.warn(`Invalid part ID (not a number): ${req.params.id}`);
-            return res.status(404).send('Part not found');
-        }
-        const part = await partService.getPartById(id);
-        if (!part) {
-            logger.warn(`Part not found with id: ${id}`);
-            return res.status(404).send('Part not found');
-        }
-        const character = await characterService.getCharacterById(req.characterId);
-        const characters = await characterService.getAllCharacters();
-        res.render('part-forms/microphone', {
-            title: 'Edit Microphone',
-            action: `/parts/microphone`,
-            part,
-            character,
-            characters
-        });
-    } catch (error) {
-        logger.error('Error fetching part for editing:', error);
-        res.status(500).send('An error occurred while fetching the part');
-    }
+// Legacy routes for backward compatibility
+router.get('/microphone/new', (req, res) => {
+    res.redirect('/parts/microphone/manage');
 });
 
-router.post('/microphone', checkCharacterSelected, async (req, res) => {
+router.get('/microphone/:id/edit', (req, res) => {
+    res.redirect(`/parts/microphone/manage/${req.params.id}`);
+});
+
+router.post('/microphone', async (req, res) => {
     try {
         const partData = req.body;
         partData.type = 'microphone';
-        partData.characterId = req.characterId;
+
+        // Validate character selection
+        if (!partData.characterId) {
+            return res.status(400).send('Character selection is required');
+        }
 
         // Convert string values to appropriate types
         if (partData.sampleRate) partData.sampleRate = parseInt(partData.sampleRate);
@@ -662,13 +684,22 @@ router.post('/microphone', checkCharacterSelected, async (req, res) => {
         partData.autoGainControl = partData.autoGainControl === 'on';
         partData.voiceActivation = partData.voiceActivation === 'on';
 
-        logger.info(`Creating microphone with data: ${JSON.stringify(partData)}`);
-        const newPart = await partService.createPart(partData);
-        logger.info(`Created microphone: ${JSON.stringify(newPart)}`);
-        res.redirect(`/parts?characterId=${req.characterId}`);
+        if (partData.id) {
+            // Update existing microphone
+            logger.info(`Updating microphone ${partData.id} with data: ${JSON.stringify(partData)}`);
+            const updatedPart = await partService.updatePart(partData.id, partData);
+            logger.info(`Updated microphone: ${JSON.stringify(updatedPart)}`);
+        } else {
+            // Create new microphone
+            logger.info(`Creating microphone with data: ${JSON.stringify(partData)}`);
+            const newPart = await partService.createPart(partData);
+            logger.info(`Created microphone: ${JSON.stringify(newPart)}`);
+        }
+
+        res.redirect(`/parts?characterId=${partData.characterId}`);
     } catch (error) {
-        logger.error('Error creating microphone:', error);
-        res.status(500).send('An error occurred while creating the microphone');
+        logger.error('Error saving microphone:', error);
+        res.status(500).send('An error occurred while saving the microphone');
     }
 });
 
@@ -704,68 +735,88 @@ router.post('/microphone/:id/update', async (req, res) => {
     }
 });
 
-// Speaker Routes
-router.get('/speaker/new', async (req, res) => {
+// Consolidated Speaker Management Route
+router.get('/speaker/manage/:id?', async (req, res) => {
     try {
-        const character = await characterService.getCharacterById(req.characterId);
         const characters = await characterService.getAllCharacters();
-        const part = { type: 'speaker', characterId: req.characterId };
+        let part = { type: 'speaker' };
+        let character = null;
+        let title = 'Add Speaker';
+        let action = '/parts/speaker';
+
+        // If ID is provided, we're editing
+        if (req.params.id) {
+            const id = parseInt(req.params.id);
+            if (isNaN(id)) {
+                logger.warn(`Invalid part ID (not a number): ${req.params.id}`);
+                return res.status(404).send('Part not found');
+            }
+            part = await partService.getPartById(id);
+            if (!part) {
+                logger.warn(`Part not found with id: ${id}`);
+                return res.status(404).send('Part not found');
+            }
+            title = 'Edit Speaker';
+            character = await characterService.getCharacterById(part.characterId);
+        } else {
+            // For new speakers, use selected character if available
+            if (req.characterId) {
+                character = await characterService.getCharacterById(req.characterId);
+                part.characterId = req.characterId;
+            }
+        }
+
         res.render('part-forms/speaker', {
-            title: 'Add Speaker',
-            action: `/parts/speaker`,
+            title,
+            action,
             part,
             character,
             characters
         });
     } catch (error) {
-        logger.error('Error rendering speaker form:', error);
+        logger.error('Error rendering speaker management form:', error);
         res.status(500).send('An error occurred while loading the form');
     }
 });
 
-router.get('/speaker/:id/edit', async (req, res) => {
-    try {
-        const id = parseInt(req.params.id);
-        if (isNaN(id)) {
-            logger.warn(`Invalid part ID (not a number): ${req.params.id}`);
-            return res.status(404).send('Part not found');
-        }
-        const part = await partService.getPartById(id);
-        if (!part) {
-            logger.warn(`Part not found with id: ${id}`);
-            return res.status(404).send('Part not found');
-        }
-        const character = await characterService.getCharacterById(req.characterId);
-        const characters = await characterService.getAllCharacters();
-        res.render('part-forms/speaker', {
-            title: 'Edit Speaker',
-            action: `/parts/speaker`,
-            part,
-            character,
-            characters
-        });
-    } catch (error) {
-        logger.error('Error fetching speaker for editing:', error);
-        res.status(500).send('An error occurred while fetching the speaker');
-    }
+// Legacy routes for backward compatibility
+router.get('/speaker/new', (req, res) => {
+    res.redirect('/parts/speaker/manage');
 });
 
-router.post('/speaker', checkCharacterSelected, async (req, res) => {
+router.get('/speaker/:id/edit', (req, res) => {
+    res.redirect(`/parts/speaker/manage/${req.params.id}`);
+});
+
+router.post('/speaker', async (req, res) => {
     try {
         const partData = req.body;
         partData.type = 'speaker';
-        partData.characterId = req.characterId;
+
+        // Validate character selection
+        if (!partData.characterId) {
+            return res.status(400).send('Character selection is required');
+        }
 
         // Convert string values to appropriate types
         if (partData.volume) partData.volume = parseInt(partData.volume);
 
-        logger.info(`Creating speaker with data: ${JSON.stringify(partData)}`);
-        const newPart = await partService.createPart(partData);
-        logger.info(`Created speaker: ${JSON.stringify(newPart)}`);
-        res.redirect(`/parts?characterId=${req.characterId}`);
+        if (partData.id) {
+            // Update existing speaker
+            logger.info(`Updating speaker ${partData.id} with data: ${JSON.stringify(partData)}`);
+            const updatedPart = await partService.updatePart(partData.id, partData);
+            logger.info(`Updated speaker: ${JSON.stringify(updatedPart)}`);
+        } else {
+            // Create new speaker
+            logger.info(`Creating speaker with data: ${JSON.stringify(partData)}`);
+            const newPart = await partService.createPart(partData);
+            logger.info(`Created speaker: ${JSON.stringify(newPart)}`);
+        }
+
+        res.redirect(`/parts?characterId=${partData.characterId}`);
     } catch (error) {
-        logger.error('Error creating speaker:', error);
-        res.status(500).send('An error occurred while creating the speaker');
+        logger.error('Error saving speaker:', error);
+        res.status(500).send('An error occurred while saving the speaker');
     }
 });
 
@@ -903,7 +954,7 @@ router.get('/api/microphone/stt-status', async (req, res) => {
     }
 });
 
-// Redirect microphone management to the consolidated edit page
+// Redirect microphone management to the consolidated management page
 router.get('/microphone/management', async (req, res) => {
     try {
         // Find the first microphone for this character, or redirect to create new one
@@ -914,10 +965,10 @@ router.get('/microphone/management', async (req, res) => {
 
         if (microphoneParts.length > 0) {
             // Redirect to edit the first microphone
-            res.redirect(`/parts/microphone/${microphoneParts[0].id}/edit`);
+            res.redirect(`/parts/microphone/manage/${microphoneParts[0].id}`);
         } else {
             // Redirect to create a new microphone
-            res.redirect('/parts/microphone/new');
+            res.redirect('/parts/microphone/manage');
         }
     } catch (error) {
         logger.error('Error rendering microphone management:', error);

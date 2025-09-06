@@ -3,29 +3,52 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= title %></title>
+  <title><%= title %> - MonsterBox</title>
   <link rel="stylesheet" href="/css/style.css">
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 <body>
-  <h1><%= title %></h1>
-  <form action="<%= action %>?characterId=<%= character.id %>" method="POST">
-    <% if (part.id) { %>
-      <input type="hidden" name="id" value="<%= part.id %>">
-    <% } %>
-    <input type="hidden" name="characterId" value="<%= character.id %>">
-    <input type="hidden" name="type" value="speaker">
+  <div class="container">
+    <div class="header">
+      <h1><%= title %></h1>
+      <p class="subtitle">Configure speaker settings</p>
+    </div>
 
-    <div class="form-section">
-      <h3>🔊 Speaker Configuration</h3>
-      <div class="form-group">
-        <label for="name">Speaker Name:</label>
-        <input type="text" id="name" name="name" value="<%= part.name || '' %>" required>
+    <form action="<%= action %>" method="POST" class="form">
+      <% if (part.id) { %>
+        <input type="hidden" name="id" value="<%= part.id %>">
+      <% } %>
+      <input type="hidden" name="type" value="speaker">
+
+      <div class="form-section">
+        <h3>📝 Basic Information</h3>
+
+        <div class="form-group">
+          <label for="characterId">Character:</label>
+          <select id="characterId" name="characterId" required>
+            <option value="">Select a character...</option>
+            <% characters.forEach(char => { %>
+              <option value="<%= char.id %>" <%= (part.characterId && part.characterId == char.id) || (character && character.id == char.id) ? 'selected' : '' %>>
+                <%= char.char_name || char.name %>
+              </option>
+            <% }); %>
+          </select>
+          <small>Select which character this speaker belongs to</small>
+        </div>
+
+        <div class="form-group">
+          <label for="name">Speaker Name:</label>
+          <input type="text" id="name" name="name" value="<%= part.name || '' %>" required>
+        </div>
+
+        <div class="form-group">
+          <label for="description">Description:</label>
+          <textarea id="description" name="description" rows="3"><%= part.description || '' %></textarea>
+        </div>
       </div>
-      <div class="form-group">
-        <label for="description">Description:</label>
-        <textarea id="description" name="description" rows="3"><%= part.description || '' %></textarea>
-      </div>
+
+      <div class="form-section">
+        <h3>🔊 Speaker Configuration</h3>
       <div class="form-group">
         <label for="outputDevice">Output Device:</label>
         <select id="outputDevice" name="outputDevice">
@@ -40,12 +63,12 @@
       </div>
     </div>
 
-    <div class="form-actions">
-      <button type="submit" class="button primary-btn">💾 Save Speaker</button>
-      <a href="/parts?characterId=<%= character.id %>" class="button secondary-btn">↩️ Back to Parts</a>
-      <a href="/ai-management/tts" class="button">🔊 Configure TTS</a>
-    </div>
-  </form>
+      <div class="form-actions">
+        <button type="submit" class="button primary-btn">💾 Save Speaker</button>
+        <a href="/parts" class="button secondary-btn">↩️ Back to Parts</a>
+        <button type="button" id="configureTTS" class="button">🔊 Configure TTS</button>
+      </div>
+    </form>
 
   <div class="form-section">
     <h3>🧪 Live Output Test</h3>
@@ -251,6 +274,16 @@
       vuAnimationFrame = requestAnimationFrame(updateVUMeter);
     }
 
+    // Configure TTS button functionality
+    document.getElementById('configureTTS').addEventListener('click', function() {
+      const characterId = document.getElementById('characterId').value;
+      if (characterId) {
+        window.location.href = `/ai-management/tts?characterId=${characterId}`;
+      } else {
+        alert('Please select a character first');
+      }
+    });
+
     // Auto-discover on load
     discoverOutputs();
   </script>
@@ -304,6 +337,7 @@
       margin: 10px 0;
     }
   </style>
+  </div>
 </body>
 </html>
 

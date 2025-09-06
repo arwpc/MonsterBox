@@ -11,19 +11,31 @@
     <div class="container">
         <div class="header">
             <h1><%= title %></h1>
-            <p class="subtitle">Configure microphone settings for <%= character.char_name || character.name %></p>
+            <p class="subtitle">Configure microphone settings</p>
         </div>
 
-        <form action="<%= action %>?characterId=<%= character.id %>" method="POST" class="form">
+        <form action="<%= action %>" method="POST" class="form">
             <% if (part.id) { %>
                 <input type="hidden" name="id" value="<%= part.id %>">
             <% } %>
-            <input type="hidden" name="characterId" value="<%= character.id %>">
             <input type="hidden" name="type" value="microphone">
 
             <!-- Basic Information -->
             <div class="form-section">
                 <h3>📝 Basic Information</h3>
+
+                <div class="form-group">
+                    <label for="characterId">Character:</label>
+                    <select id="characterId" name="characterId" required>
+                        <option value="">Select a character...</option>
+                        <% characters.forEach(char => { %>
+                            <option value="<%= char.id %>" <%= (part.characterId && part.characterId == char.id) || (character && character.id == char.id) ? 'selected' : '' %>>
+                                <%= char.char_name || char.name %>
+                            </option>
+                        <% }); %>
+                    </select>
+                    <small>Select which character this microphone belongs to</small>
+                </div>
 
                 <div class="form-group">
                     <label for="name">Microphone Name:</label>
@@ -153,8 +165,8 @@
             <!-- Form Actions -->
             <div class="form-actions">
                 <button type="submit" class="button primary-btn">💾 Save Microphone</button>
-                <a href="/parts?characterId=<%= character.id %>" class="button secondary-btn">↩️ Back to Parts</a>
-                <a href="/ai-management/stt?characterId=<%= character.id %>" class="button">🎙️ Configure STT</a>
+                <a href="/parts" class="button secondary-btn">↩️ Back to Parts</a>
+                <button type="button" id="configureSTT" class="button">🎙️ Configure STT</button>
                 <button type="button" id="testMicrophone" class="button">🧪 Test Microphone</button>
             </div>
         </form>
@@ -233,6 +245,16 @@
         // Event listeners for device refresh buttons
         document.getElementById('refreshInputDevices').addEventListener('click', loadInputDevices);
         document.getElementById('refreshOutputDevices').addEventListener('click', loadOutputDevices);
+
+        // Configure STT button functionality
+        document.getElementById('configureSTT').addEventListener('click', function() {
+            const characterId = document.getElementById('characterId').value;
+            if (characterId) {
+                window.location.href = `/ai-management/stt?characterId=${characterId}`;
+            } else {
+                alert('Please select a character first');
+            }
+        });
 
         // Test microphone functionality
         document.getElementById('testMicrophone').addEventListener('click', async function() {

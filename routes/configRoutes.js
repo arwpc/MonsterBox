@@ -195,6 +195,11 @@ router.get('/services-monitor', (req, res) => {
     }
 });
 
+// Redirect legacy microphone configuration to parts management
+router.get('/microphone', (req, res) => {
+    res.redirect('/parts/microphone/management');
+});
+
 // System maintenance section
 router.get('/maintenance', (req, res) => {
     res.render('configuration/maintenance', {
