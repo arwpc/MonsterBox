@@ -486,6 +486,11 @@ app.use('/super-powers', superPowersRoutes);
 // ElevenLabs Conversational AI routes
 app.use('/api/conversational-ai', conversationalAiRoutes);
 
+// Redirect legacy conversational UI paths to the new Enhanced Test Chat
+app.get('/conversational-ai', (req, res) => {
+    const query = req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : '';
+    return res.redirect(301, '/ai-management/enhanced-test-chat' + query);
+});
 // Conversational AI Interface route
 app.get('/conversational-ai', async (req, res) => {
     try {
@@ -551,6 +556,15 @@ app.get('/conversational-ai', async (req, res) => {
         });
     } catch (error) {
         console.error('❌ Error rendering conversational AI interface:', error);
+// Redirect legacy test chat path to the new Enhanced Test Chat under AI Management
+app.get('/test-chat', (req, res, next) => {
+    // Only redirect GET UI requests; API routes under /api remain unaffected
+    if (req.accepts('html')) {
+        const query = req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : '';
+        return res.redirect(301, '/ai-management/enhanced-test-chat' + query);
+    }
+    return next();
+});
         res.status(500).send('Failed to load conversational AI interface: ' + error.message);
     }
 });
