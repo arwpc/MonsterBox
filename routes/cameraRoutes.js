@@ -133,7 +133,10 @@ async function cleanupLockFiles() {
 async function startCameraStream(cameraId, width = DEFAULT_WIDTH, height = DEFAULT_HEIGHT, fps = DEFAULT_FPS, character = null) {
     logger.info(`🚀 STARTCAMERASTREAM CALLED: cameraId=${cameraId}, character=${character ? character.char_name : 'null'}`);
     return new Promise((resolve, reject) => {
-        const streamScript = path.join(__dirname, '..', 'scripts', 'camera_stream.py');
+        // Use motion-enabled stream script if character is provided
+        const streamScript = character ?
+            path.join(__dirname, '..', 'scripts', 'camera_stream_with_motion.py') :
+            path.join(__dirname, '..', 'scripts', 'camera_stream.py');
 
         // Check if this is a remote character
         logger.info(`🔍 Character object for streaming:`, character ? {
@@ -171,7 +174,9 @@ async function startCameraStream(cameraId, width = DEFAULT_WIDTH, height = DEFAU
             logger.info(`🌐 Starting remote camera stream on ${host} for camera ${cameraId}`);
 
             // Use sshpass to run the camera script remotely
-            const remoteCommand = `python3 /home/remote/MonsterBox/scripts/camera_stream.py --camera-id ${cameraId} --width ${width} --height ${height} --fps ${fps}`;
+            const scriptName = character ? 'camera_stream_with_motion.py' : 'camera_stream.py';
+            const characterArg = character ? ` --character-id ${character.id}` : '';
+            const remoteCommand = `python3 /home/remote/MonsterBox/scripts/${scriptName} --camera-id ${cameraId} --width ${width} --height ${height} --fps ${fps}${characterArg}`;
 
             process = spawn('sshpass', [
                 '-p', password,

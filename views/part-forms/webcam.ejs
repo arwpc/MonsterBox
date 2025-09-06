@@ -1101,25 +1101,21 @@
                     deviceSelect.innerHTML = '<option value="">Select a camera device...</option>';
 
                     // Add detected cameras
-                    cameras.forEach(cameraGroup => {
-                        if (cameraGroup.devices && cameraGroup.devices.length > 0) {
-                            cameraGroup.devices.forEach(camera => {
-                                console.log('📹 Adding camera option:', camera);
-                                const option = document.createElement('option');
-                                option.value = camera.id;
+                    cameras.forEach(camera => {
+                        console.log('📹 Adding camera option:', camera);
+                        const option = document.createElement('option');
+                        option.value = camera.id;
 
-                                let cameraInfo = camera.name || `Camera ${camera.id}`;
-                                if (camera.path) {
-                                    cameraInfo += ` (${camera.path})`;
-                                }
-
-                                option.textContent = cameraInfo;
-                                option.dataset.path = camera.path || `/dev/video${camera.id}`;
-                                option.dataset.name = camera.name || `Camera ${camera.id}`;
-
-                                deviceSelect.appendChild(option);
-                            });
+                        let cameraInfo = camera.name || `Camera ${camera.id}`;
+                        if (camera.path) {
+                            cameraInfo += ` (${camera.path})`;
                         }
+
+                        option.textContent = cameraInfo;
+                        option.dataset.path = camera.path || `/dev/video${camera.id}`;
+                        option.dataset.name = camera.name || `Camera ${camera.id}`;
+
+                        deviceSelect.appendChild(option);
                     });
 
                     // Update device path when selection changes
