@@ -13,7 +13,7 @@ class ElevenLabsWebSocketProxy {
     constructor(options = {}) {
         this.proxyServer = null;
         this.proxyPort = options.proxyPort || 8872; // Secure proxy port for ElevenLabs
-        this.targetPort = options.targetPort || 8771; // ElevenLabs service port
+        this.targetPort = options.targetPort || 8671; // ElevenLabs service port
         this.serviceName = options.serviceName || 'ElevenLabs Conversational';
         this.activeConnections = new Map();
         this.isRunning = false;
@@ -22,7 +22,7 @@ class ElevenLabsWebSocketProxy {
         this.sslConfig = null;
         this.loadSSLConfig();
     }
-    
+
     /**
      * Load SSL configuration
      */
@@ -40,7 +40,7 @@ class ElevenLabsWebSocketProxy {
             logger.error('❌ Failed to load SSL configuration:', error.message);
         }
     }
-    
+
     /**
      * Start the secure WebSocket proxy
      */
@@ -49,44 +49,44 @@ class ElevenLabsWebSocketProxy {
             logger.warn('ElevenLabs WebSocket proxy is already running');
             return;
         }
-        
+
         if (!this.sslConfig) {
             logger.warn(`⚠️ SSL not configured, skipping ${this.serviceName} secure proxy`);
             return;
         }
-        
+
         try {
             // Load SSL certificates
             const privateKey = fs.readFileSync(this.sslConfig.certificates.key, 'utf8');
             const certificate = fs.readFileSync(this.sslConfig.certificates.cert, 'utf8');
-            
+
             const credentials = {
                 key: privateKey,
                 cert: certificate
             };
-            
+
             // Create HTTPS server
             const httpsServer = https.createServer(credentials, (req, res) => {
                 res.writeHead(200, { 'Content-Type': 'text/plain' });
                 res.end(`${this.serviceName} WebSocket SSL Proxy Server`);
             });
-            
+
             // Create secure WebSocket server
             this.proxyServer = new WebSocket.Server({
                 server: httpsServer,
                 perMessageDeflate: false,
                 clientTracking: true
             });
-            
+
             // Handle WebSocket connections
             this.proxyServer.on('connection', (browserWs, request) => {
                 this.handleBrowserConnection(browserWs, request);
             });
-            
+
             this.proxyServer.on('error', (error) => {
                 logger.error('❌ ElevenLabs proxy WebSocket server error:', error);
             });
-            
+
             // Start listening
             await new Promise((resolve, reject) => {
                 httpsServer.listen(this.proxyPort, () => {
@@ -95,32 +95,32 @@ class ElevenLabsWebSocketProxy {
                     logger.info(`🔗 Proxy: wss://localhost:${this.proxyPort} → ws://localhost:${this.targetPort}`);
                     resolve();
                 });
-                
+
                 httpsServer.on('error', (error) => {
                     logger.error('❌ ElevenLabs proxy HTTPS server error:', error);
                     reject(error);
                 });
             });
-            
+
         } catch (error) {
             logger.error('❌ Failed to start ElevenLabs WebSocket proxy:', error);
             throw error;
         }
     }
-    
+
     /**
      * Handle browser WebSocket connection
      */
     handleBrowserConnection(browserWs, request) {
         const connectionId = `elevenlabs_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        
+
         logger.debug(`🔌 Browser connected to ElevenLabs proxy: ${connectionId}`);
-        
+
         // Create connection to ElevenLabs service
         const targetWs = new WebSocket(`ws://127.0.0.1:${this.targetPort}`, {
             perMessageDeflate: false
         });
-        
+
         const connectionInfo = {
             browserWs,
             targetWs,
@@ -128,9 +128,9 @@ class ElevenLabsWebSocketProxy {
             connectedAt: new Date(),
             messageCount: 0
         };
-        
+
         this.activeConnections.set(connectionId, connectionInfo);
-        
+
         // Set up connection timeout
         const connectionTimeout = setTimeout(() => {
             if (targetWs.readyState === WebSocket.CONNECTING) {
@@ -139,20 +139,20 @@ class ElevenLabsWebSocketProxy {
                 browserWs.close(1008, 'Connection timeout');
             }
         }, 10000);
-        
+
         // Handle target WebSocket events
         targetWs.on('open', () => {
             clearTimeout(connectionTimeout);
             logger.debug(`✅ Connected to ElevenLabs service: ${connectionId}`);
         });
-        
+
         targetWs.on('message', (data) => {
             if (browserWs.readyState === WebSocket.OPEN) {
                 browserWs.send(data);
                 connectionInfo.messageCount++;
             }
         });
-        
+
         targetWs.on('close', (code, reason) => {
             logger.debug(`🔌 ElevenLabs service connection closed: ${connectionId} (${code})`);
             if (browserWs.readyState === WebSocket.OPEN) {
@@ -160,7 +160,7 @@ class ElevenLabsWebSocketProxy {
             }
             this.activeConnections.delete(connectionId);
         });
-        
+
         targetWs.on('error', (error) => {
             logger.error(`❌ ElevenLabs service connection error: ${connectionId}`, error);
             if (browserWs.readyState === WebSocket.OPEN) {
@@ -168,14 +168,14 @@ class ElevenLabsWebSocketProxy {
             }
             this.activeConnections.delete(connectionId);
         });
-        
+
         // Handle browser WebSocket events
         browserWs.on('message', (data) => {
             if (targetWs.readyState === WebSocket.OPEN) {
                 targetWs.send(data);
             }
         });
-        
+
         browserWs.on('close', (code, reason) => {
             logger.debug(`🔌 Browser connection closed: ${connectionId} (${code})`);
             if (targetWs.readyState === WebSocket.OPEN) {
@@ -183,7 +183,7 @@ class ElevenLabsWebSocketProxy {
             }
             this.activeConnections.delete(connectionId);
         });
-        
+
         browserWs.on('error', (error) => {
             logger.error(`❌ Browser connection error: ${connectionId}`, error);
             if (targetWs.readyState === WebSocket.OPEN) {
@@ -192,7 +192,7 @@ class ElevenLabsWebSocketProxy {
             this.activeConnections.delete(connectionId);
         });
     }
-    
+
     /**
      * Stop the proxy server
      */
@@ -200,9 +200,9 @@ class ElevenLabsWebSocketProxy {
         if (!this.isRunning) {
             return;
         }
-        
+
         logger.info('🛑 Stopping ElevenLabs WebSocket proxy...');
-        
+
         // Close all active connections
         for (const [connectionId, connection] of this.activeConnections) {
             try {
@@ -213,17 +213,17 @@ class ElevenLabsWebSocketProxy {
             }
         }
         this.activeConnections.clear();
-        
+
         // Close proxy server
         if (this.proxyServer) {
             this.proxyServer.close();
             this.proxyServer = null;
         }
-        
+
         this.isRunning = false;
         logger.info('✅ ElevenLabs WebSocket proxy stopped');
     }
-    
+
     /**
      * Get proxy status
      */

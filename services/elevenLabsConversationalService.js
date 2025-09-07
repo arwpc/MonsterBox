@@ -27,21 +27,21 @@ class ElevenLabsConversationalService extends EventEmitter {
         } else {
             console.log(`🔑 ElevenLabs API key loaded (length: ${this.apiKey.length})`);
         }
-        
+
         // Agent management
         this.agents = new Map(); // Character ID -> Agent data
         this.activeConnections = new Map(); // Session ID -> Connection data
-        
+
         // WebSocket server for MonsterBox integration
         this.wsServer = null;
-        this.port = 8771; // New port for ElevenLabs service
-        
+        this.port = 8671; // ElevenLabs service port (avoiding hardware service conflicts)
+
         // Jaw animation integration
         this.jawAnimationClients = new Set();
-        
+
         // Audio processing
         this.audioBuffer = new Map(); // Session ID -> Audio chunks
-        
+
         console.log('🤖 ElevenLabs Conversational Service initialized');
     }
 
@@ -51,15 +51,15 @@ class ElevenLabsConversationalService extends EventEmitter {
     async initialize() {
         try {
             console.log('🚀 Initializing ElevenLabs Conversational Service...');
-            
+
             // Load agent configurations
             await this.loadAgentConfigurations();
-            
+
             // Start WebSocket server
             await this.startWebSocketServer();
-            
+
             console.log('✅ ElevenLabs Conversational Service ready');
-            
+
         } catch (error) {
             console.error('❌ Failed to initialize ElevenLabs service:', error.message);
             throw error;
@@ -74,7 +74,7 @@ class ElevenLabsConversationalService extends EventEmitter {
             const agentsPath = path.join(__dirname, '../data/elevenlabs-agents.json');
             const data = await fs.readFile(agentsPath, 'utf8');
             const agentsData = JSON.parse(data);
-            
+
             // Map agents by character ID
             agentsData.agents.forEach(agent => {
                 this.agents.set(agent.originalCharacterId, {
@@ -85,9 +85,9 @@ class ElevenLabsConversationalService extends EventEmitter {
                     hardwareConfig: agent.hardwareConfig
                 });
             });
-            
+
             console.log(`📂 Loaded ${this.agents.size} ElevenLabs agents`);
-            
+
         } catch (error) {
             throw new Error(`Failed to load agent configurations: ${error.message}`);
         }
@@ -99,7 +99,7 @@ class ElevenLabsConversationalService extends EventEmitter {
     async startWebSocketServer() {
         return new Promise((resolve, reject) => {
             try {
-                this.wsServer = new WebSocket.Server({ 
+                this.wsServer = new WebSocket.Server({
                     port: this.port,
                     perMessageDeflate: false
                 });
@@ -130,12 +130,12 @@ class ElevenLabsConversationalService extends EventEmitter {
     handleClientConnection(ws, req) {
         const sessionId = this.generateSessionId();
         const clientIP = req.socket.remoteAddress;
-        
+
         // Only log connections in debug mode to reduce spam from health checks
         if (process.env.DEBUG_CONNECTIONS) {
             console.log(`🔗 New client connected: ${sessionId} from ${clientIP}`);
         }
-        
+
         // Initialize connection data
         const connectionData = {
             sessionId,
@@ -147,25 +147,25 @@ class ElevenLabsConversationalService extends EventEmitter {
             audioBuffer: [],
             connectedAt: new Date()
         };
-        
+
         this.activeConnections.set(sessionId, connectionData);
-        
+
         // Handle messages from MonsterBox client
         ws.on('message', (data) => {
             this.handleClientMessage(sessionId, data);
         });
-        
+
         // Handle client disconnect
         ws.on('close', () => {
             this.handleClientDisconnect(sessionId);
         });
-        
+
         // Handle errors
         ws.on('error', (error) => {
             console.error(`❌ Client WebSocket error for ${sessionId}:`, error.message);
             this.handleClientDisconnect(sessionId);
         });
-        
+
         // Send welcome message
         this.sendToClient(sessionId, {
             type: 'connected',
@@ -554,7 +554,7 @@ class ElevenLabsConversationalService extends EventEmitter {
                         role: 'user'
                     });
                     // Emit internal transcript event for Super Powers consumers
-                    try { this.emit('transcript', { sessionId, characterId: connection.characterId, role: 'user', text: message.user_transcription_event.user_transcript }); } catch (e) {}
+                    try { this.emit('transcript', { sessionId, characterId: connection.characterId, role: 'user', text: message.user_transcription_event.user_transcript }); } catch (e) { }
                     break;
 
                 case 'agent_response':
@@ -565,7 +565,7 @@ class ElevenLabsConversationalService extends EventEmitter {
                         role: 'assistant'
                     });
                     // Emit internal transcript event for Super Powers consumers
-                    try { this.emit('transcript', { sessionId, characterId: connection.characterId, role: 'assistant', text: message.agent_response_event.agent_response }); } catch (e) {}
+                    try { this.emit('transcript', { sessionId, characterId: connection.characterId, role: 'assistant', text: message.agent_response_event.agent_response }); } catch (e) { }
                     break;
 
                 case 'agent_response_correction':
@@ -576,7 +576,7 @@ class ElevenLabsConversationalService extends EventEmitter {
                         role: 'assistant'
                     });
                     // Emit internal transcript event for Super Powers consumers
-                    try { this.emit('transcript', { sessionId, characterId: connection.characterId, role: 'assistant', text: message.agent_response_correction_event.corrected_agent_response }); } catch (e) {}
+                    try { this.emit('transcript', { sessionId, characterId: connection.characterId, role: 'assistant', text: message.agent_response_correction_event.corrected_agent_response }); } catch (e) { }
                     break;
 
                 case 'ping':
@@ -613,7 +613,7 @@ class ElevenLabsConversationalService extends EventEmitter {
                     // Forward other messages as-is
                     this.sendToClient(sessionId, message);
             }
-            
+
         } catch (error) {
             console.error(`❌ Error handling ElevenLabs message for ${sessionId}:`, error.message);
         }
@@ -874,14 +874,14 @@ class ElevenLabsConversationalService extends EventEmitter {
         if (process.env.DEBUG_CONNECTIONS) {
             console.log(`🔌 Client disconnected: ${sessionId}`);
         }
-        
+
         const connection = this.activeConnections.get(sessionId);
         if (connection) {
             // Close ElevenLabs connection if active
             if (connection.elevenLabsWs) {
                 connection.elevenLabsWs.close();
             }
-            
+
             // Remove from active connections
             this.activeConnections.delete(sessionId);
         }
@@ -978,7 +978,7 @@ class ElevenLabsConversationalService extends EventEmitter {
      */
     async shutdown() {
         console.log('🛑 Shutting down ElevenLabs Conversational Service...');
-        
+
         // Close all active connections
         this.activeConnections.forEach((connection, sessionId) => {
             if (connection.elevenLabsWs) {
@@ -988,12 +988,12 @@ class ElevenLabsConversationalService extends EventEmitter {
                 connection.ws.close();
             }
         });
-        
+
         // Close WebSocket server
         if (this.wsServer) {
             this.wsServer.close();
         }
-        
+
         console.log('✅ ElevenLabs Conversational Service shutdown complete');
     }
 }
