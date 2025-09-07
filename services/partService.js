@@ -9,8 +9,8 @@ const headTrackingDataPath = path.join(__dirname, '../data/head_tracking.json');
 // Hardware WebSocket service configuration
 // Using hardware port range 8400-8599 to match service management system
 const HARDWARE_SERVICES = {
-    servo: { port: 8404, host: 'localhost', partTypes: ['servo'] },
-    motor: { port: 8405, host: 'localhost', partTypes: ['motor'] },
+    servo: { port: 8405, host: 'localhost', partTypes: ['servo'] },
+    motor: { port: 8404, host: 'localhost', partTypes: ['motor'] },
     light: { port: 8406, host: 'localhost', partTypes: ['light', 'led'] },
     sensor: { port: 8407, host: 'localhost', partTypes: ['sensor'] },
     actuator: { port: 8408, host: 'localhost', partTypes: ['linear-actuator'] },

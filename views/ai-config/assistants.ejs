@@ -7,6 +7,10 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
   <link rel="stylesheet" href="/css/style.css?v=<%= Date.now() %>">
   <style>
+  <style>
+    .page-title { color: #00ff00; text-shadow: 0 0 10px rgba(0,255,0,0.4); margin: 20px 0 10px; }
+  </style>
+
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); max-width: 100%; gap: 16px; }
 
     /* Limit to maximum 3 columns */
@@ -233,6 +237,8 @@
 </head>
 <body>
   <%- include('../components/universal-header') %>
+
+    <h1 class="page-title">Assistants Management</h1>
 
   <main class="container">
     <div class="info-section">

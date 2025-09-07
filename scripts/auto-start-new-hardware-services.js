@@ -16,10 +16,10 @@ class AutoHardwareServiceStarter {
         this.partsFile = 'data/parts.json';
         this.currentPartTypes = new Set();
         this.serviceMap = {
-            'servo': { port: 8404, script: 'scripts/hardware/servo_websocket_service.py', args: ['--host', '0.0.0.0', '--port', '8404', '--debug'] },
+            'servo': { port: 8405, script: 'scripts/hardware/servo_websocket_service.py', args: ['--host', '0.0.0.0', '--port', '8405', '--debug'] },
             'microphone': { port: 8776, script: 'scripts/hardware/microphone_websocket_service.py', args: ['--host', '0.0.0.0', '--port', '8776'] },
             'webcam': { port: 8410, script: 'scripts/hardware/webcam_websocket_service.py', args: ['--host', '0.0.0.0', '--port', '8410'] },
-            'motor': { port: 8405, script: 'scripts/hardware/motor_websocket_service.py', args: ['--host', '0.0.0.0', '--port', '8405'] },
+            'motor': { port: 8404, script: 'scripts/hardware/motor_websocket_service.py', args: ['--host', '0.0.0.0', '--port', '8404'] },
             'light': { port: 8406, script: 'scripts/hardware/light_websocket_service.py', args: ['--host', '0.0.0.0', '--port', '8406'] },
             'led': { port: 8406, script: 'scripts/hardware/light_websocket_service.py', args: ['--host', '0.0.0.0', '--port', '8406'] }, // LEDs use light service
             'sensor': { port: 8407, script: 'scripts/hardware/sensor_websocket_service.py', args: ['--host', '0.0.0.0', '--port', '8407'] },

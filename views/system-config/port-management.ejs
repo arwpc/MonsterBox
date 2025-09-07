@@ -1,4 +1,6 @@
-<%- include('../partials/header', { 
+<%- include('../components/universal-header') %>
+
+<%- include('../partials/header', {
     title: 'Port Management System',
     pageTitle: 'Port Management System',
     pageDescription: 'Centralized management and monitoring of WebSocket services and port allocation'
@@ -108,7 +110,7 @@
                                     </button>
                                 </div>
                             </div>
-                            
+
                             <!-- Service Filters -->
                             <div class="row mb-3">
                                 <div class="col-md-4">
@@ -173,7 +175,7 @@
                                     <div id="portTypeChart" style="height: 300px;"></div>
                                 </div>
                             </div>
-                            
+
                             <div class="row mt-4">
                                 <div class="col-12">
                                     <h6>Port Range Details</h6>
@@ -222,7 +224,7 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="row mt-3">
                                 <div class="col-12">
                                     <div class="card">
@@ -281,17 +283,17 @@
                                                     </select>
                                                     <small class="text-muted">Environment is set by NODE_ENV</small>
                                                 </div>
-                                                
+
                                                 <div class="mb-3">
                                                     <label class="form-label">Health Check Interval (ms)</label>
                                                     <input type="number" class="form-control" id="healthCheckInterval" min="5000" max="300000" step="1000">
                                                 </div>
-                                                
+
                                                 <div class="mb-3">
                                                     <label class="form-label">Connection Timeout (ms)</label>
                                                     <input type="number" class="form-control" id="connectionTimeout" min="1000" max="60000" step="1000">
                                                 </div>
-                                                
+
                                                 <button type="button" class="btn btn-primary" onclick="saveConfiguration()">
                                                     <i class="fas fa-save"></i> Save Configuration
                                                 </button>
@@ -299,7 +301,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="col-md-6">
                                     <div class="card">
                                         <div class="card-header">
@@ -331,7 +333,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="col-md-6">
                                     <div class="card">
                                         <div class="card-header">
@@ -346,7 +348,7 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="row mt-3">
                                 <div class="col-12">
                                     <div class="card">
@@ -400,7 +402,7 @@
                                                     <option value="/api/service-management/ports">Port Information</option>
                                                 </select>
                                             </div>
-                                            
+
                                             <div class="mb-3">
                                                 <label class="form-label">Method</label>
                                                 <select class="form-select" id="apiMethodSelect">
@@ -408,19 +410,19 @@
                                                     <option value="POST">POST</option>
                                                 </select>
                                             </div>
-                                            
+
                                             <div class="mb-3" id="apiBodySection" style="display: none;">
                                                 <label class="form-label">Request Body (JSON)</label>
                                                 <textarea class="form-control" id="apiRequestBody" rows="4" placeholder='{"key": "value"}'></textarea>
                                             </div>
-                                            
+
                                             <button class="btn btn-primary" onclick="testApiEndpoint()">
                                                 <i class="fas fa-play"></i> Test Endpoint
                                             </button>
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="col-md-6">
                                     <div class="card">
                                         <div class="card-header">

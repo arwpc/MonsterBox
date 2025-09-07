@@ -37,8 +37,8 @@ test.describe('AI Management', () => {
   test('AI Management main page loads', async ({ page }) => {
     await page.goto('/ai-management');
     
-    // Check page title - use first() to handle multiple headings
-    await expect(page.locator('h1, h2, .page-title').first()).toContainText(/AI/i);
+    // Check page title - look for page-title class specifically
+    await expect(page.locator('.page-title')).toContainText(/AI/i);
     
     // Check for main AI sections
     const aiSections = [
@@ -57,7 +57,7 @@ test.describe('AI Management', () => {
     await page.goto('/ai-management/stt');
     
     // Check STT page loads
-    await expect(page.locator('h1, h2, .page-title')).toContainText(/STT|Speech/i);
+    await expect(page.locator('.page-title')).toContainText(/STT|Speech/i);
     
     // Check for character selection
     const characterSelect = page.locator('select[name*="character"], #characterSelect');
@@ -75,10 +75,10 @@ test.describe('AI Management', () => {
       }
     }
     
-    // Check for test recording button
+    // Check for test recording button - use first() to avoid strict mode violation
     const testButton = page.locator('button:has-text("Test"), button:has-text("Record"), .btn-test');
     if (await testButton.count() > 0) {
-      await testButton.click();
+      await testButton.first().click();
       await page.waitForTimeout(3000);
       
       // Check for audio level indicator
@@ -93,7 +93,7 @@ test.describe('AI Management', () => {
     await page.goto('/ai-management/tts');
     
     // Check TTS page loads
-    await expect(page.locator('h1, h2, .page-title')).toContainText(/TTS|Text.*Speech/i);
+    await expect(page.locator('.page-title')).toContainText(/TTS|Text.*Speech/i);
     
     // Check for character selection
     const characterSelect = page.locator('select[name*="character"], #characterSelect');
@@ -127,7 +127,7 @@ test.describe('AI Management', () => {
       
       const testButton = page.locator('button:has-text("Test"), button:has-text("Speak"), .btn-test');
       if (await testButton.count() > 0) {
-        await testButton.click();
+        await testButton.first().click();
         await page.waitForTimeout(3000);
       }
     }
@@ -137,7 +137,7 @@ test.describe('AI Management', () => {
     await page.goto('/ai-management/assistants');
     
     // Check Assistants page loads
-    await expect(page.locator('h1, h2, .page-title')).toContainText(/Assistant/i);
+    await expect(page.locator('.page-title')).toContainText(/Assistant/i);
     
     // Check for assistants list
     const assistantsList = page.locator('table, .assistants-list, .assistant-grid');
@@ -180,8 +180,8 @@ test.describe('AI Management', () => {
   test('Enhanced Test Chat page', async ({ page }) => {
     await page.goto('/ai-management/enhanced-test-chat');
     
-    // Check chat page loads
-    await expect(page.locator('h1, h2, .page-title')).toContainText(/Chat|Test/i);
+    // Check chat page loads - Enhanced Test Chat doesn't have page-title class, use h1
+    await expect(page.locator('h1')).toContainText(/Chat|Test/i);
     
     // Check for character selection
     const characterSelect = page.locator('select[name*="character"], #characterSelect');
@@ -228,8 +228,8 @@ test.describe('AI Management', () => {
   test('Conversational AI page', async ({ page }) => {
     await page.goto('/ai-management/conversation');
     
-    // Check conversation page loads
-    await expect(page.locator('h1, h2, .page-title')).toContainText(/Conversation/i);
+    // Check conversation page loads - look for AI Conversation Interface
+    await expect(page.locator('h1')).toContainText(/Conversation|AI.*Conversation/i);
     
     // Check for character selection
     const characterSelect = page.locator('select[name*="character"], #characterSelect');
@@ -309,10 +309,10 @@ test.describe('AI Management', () => {
   test('AI error handling and validation', async ({ page }) => {
     await page.goto('/ai-management/tts');
     
-    // Test empty form submission
+    // Test empty form submission - use first() to avoid strict mode violation
     const testButton = page.locator('button:has-text("Test"), .btn-test');
     if (await testButton.count() > 0) {
-      await testButton.click();
+      await testButton.first().click();
       
       // Check for error messages
       const errorMessage = page.locator('.error, .alert, .warning');

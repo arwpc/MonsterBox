@@ -1,7 +1,7 @@
 [
   {
     "id": 1,
-    "name": "Right Arm of Satan",
+    "name": "Updated Part Name",
     "type": "linear-actuator",
     "characterId": 1,
     "directionPin": 23,
@@ -327,5 +327,73 @@
     "noiseSuppression": "on",
     "autoGainControl": "on",
     "voiceActivationThreshold": "0.1"
+  },
+  {
+    "id": 60,
+    "type": "microphone",
+    "characterId": 1,
+    "name": "Test Microphone",
+    "description": "",
+    "deviceId": "default",
+    "outputDevice": "default",
+    "sampleRate": "16000",
+    "channels": "1",
+    "sensitivity": "1",
+    "echoCancellation": "on",
+    "noiseSuppression": "on",
+    "autoGainControl": "on",
+    "voiceActivationThreshold": "0.1"
+  },
+  {
+    "id": 61,
+    "type": "microphone",
+    "characterId": 1,
+    "name": "PlaywrightBot microphone",
+    "description": "Auto-created microphone for PlaywrightBot",
+    "deviceId": "default",
+    "outputDevice": "default",
+    "sampleRate": "16000",
+    "channels": "1",
+    "sensitivity": "1",
+    "echoCancellation": "on",
+    "noiseSuppression": "on",
+    "autoGainControl": "on",
+    "voiceActivation": "on",
+    "voiceActivationThreshold": "0.1"
+  },
+  {
+    "id": 62,
+    "type": "speaker",
+    "characterId": 1,
+    "name": "PlaywrightBot speaker",
+    "description": "Auto-created speaker for PlaywrightBot",
+    "outputDevice": "default",
+    "volume": "80"
+  },
+  {
+    "id": 63,
+    "type": "microphone",
+    "characterId": 1,
+    "name": "PlaywrightBot microphone",
+    "description": "Auto-created microphone for PlaywrightBot",
+    "deviceId": "default",
+    "outputDevice": "default",
+    "sampleRate": "16000",
+    "channels": "1",
+    "sensitivity": "1",
+    "echoCancellation": "on",
+    "noiseSuppression": "on",
+    "autoGainControl": "on",
+    "voiceActivation": "on",
+    "voiceActivationThreshold": "0.1"
+  },
+  {
+    "id": 64,
+    "type": "speaker",
+    "characterId": 1,
+    "name": "PlaywrightBot speaker",
+    "description": "Auto-created speaker for PlaywrightBot",
+    "outputDevice": "default",
+    "volume": "80"
   }
 ]

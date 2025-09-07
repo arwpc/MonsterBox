@@ -208,6 +208,105 @@ router.post('/api/vad/config', async (req, res) => {
     }
 });
 
+// TTS Configuration page - REMOVED DUPLICATE (see line 756 for the correct implementation)
+
+// Assistants Management page (OpenAI Assistants)
+router.get('/assistants', async (req, res) => {
+    try {
+        // Assistants may be managed by an external service; render page with empty list when unavailable
+        const characters = await characterService.getAllCharacters();
+        const assistants = [];
+        res.render('ai-config/assistants', {
+            title: 'Assistants Management',
+            assistants,
+            characters
+        });
+    } catch (error) {
+        logger.error('Assistants page error:', error);
+        res.status(500).render('error', {
+            title: 'Error',
+            message: 'Failed to load Assistants page',
+            error: error.message
+        });
+    }
+});
+
+// Enhanced Test Chat page (primary conversational UI)
+router.get('/enhanced-test-chat', async (req, res) => {
+    try {
+        const characters = await characterService.getAllCharacters();
+        const assistants = {};
+        const pageTitle = 'Enhanced Test Chat';
+        const selectedAgent = null;
+        const characterId = req.query.characterId ? parseInt(req.query.characterId, 10) : (characters[0]?.id || null);
+        const agentId = '';
+
+        res.render('enhanced-test-chat', {
+            title: pageTitle,
+            pageTitle,
+            characters,
+            assistants,
+            selectedAgent,
+            characterId,
+            agentId
+        });
+    } catch (error) {
+        logger.error('Enhanced Test Chat error:', error);
+        res.status(500).render('error', {
+            title: 'Error',
+            message: 'Failed to load Enhanced Test Chat',
+            error: error.message
+        });
+    }
+});
+
+// Conversational AI page (renders Enhanced Test Chat with different title)
+router.get('/conversation', async (req, res) => {
+    try {
+        const pageTitle = 'AI Conversation Interface';
+        const characters = await characterService.getAllCharacters();
+
+        // Get ElevenLabs agents instead of OpenAI assistants
+        let assistants = {};
+        if (global.elevenLabsService) {
+            const status = global.elevenLabsService.getStatus();
+            const agents = status.agents || [];
+
+            // Convert agents to assistants format for compatibility
+            agents.forEach(agent => {
+                assistants[agent.agentId] = {
+                    id: agent.agentId,
+                    name: agent.name,
+                    description: 'ElevenLabs Conversational AI Agent',
+                    conversationStarters: []
+                };
+            });
+        }
+
+        const selectedAgent = null;
+        const characterId = req.query.characterId ? parseInt(req.query.characterId, 10) : (characters[0]?.id || null);
+        const agentId = '';
+
+        res.render('enhanced-test-chat', {
+            title: pageTitle,
+            pageTitle,
+            characters,
+            assistants,
+            selectedAgent,
+            characterId,
+            agentId
+        });
+    } catch (error) {
+        logger.error('Conversation page error:', error);
+        res.status(500).render('error', {
+            title: 'Error',
+            message: 'Failed to load Conversation page',
+            error: error.message
+        });
+    }
+});
+
+
 // ElevenLabs Agents Management (replaces assistants)
 router.get('/agents', async (req, res) => {
     console.log('🎭 Agents route hit');

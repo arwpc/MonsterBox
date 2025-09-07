@@ -73,7 +73,7 @@ class CharacterBasedServiceLoader {
                 serviceName: 'servoService',
                 required: true,
                 script: 'scripts/hardware/servo_websocket_service.py',
-                port: 8404 // Fixed: use consistent port 8404
+                port: 8405 // Fixed: use consistent port 8405
             }
         };
 
