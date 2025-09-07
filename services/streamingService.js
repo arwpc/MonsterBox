@@ -471,6 +471,7 @@ class StreamingService extends EventEmitter {
                 const args = [
                     streamScript,
                     '--device-id', config.deviceId.toString(),
+                    '--character-id', config.characterId.toString(),
                     '--width', config.width.toString(),
                     '--height', config.height.toString(),
                     '--fps', config.fps.toString(),

@@ -35,29 +35,56 @@ def initialize_camera(device_id, width=1280, height=720, fps=30):
     """Initialize camera with specified settings"""
     try:
         logger.info(f"Initializing camera {device_id} with {width}x{height} @ {fps}fps")
-        
-        # Create VideoCapture object with V4L2 backend
-        cap = cv2.VideoCapture(device_id, cv2.CAP_V4L2)
-        
-        if not cap.isOpened():
-            logger.error(f"Failed to open camera {device_id}")
+
+        # Check if device exists
+        device_path = f"/dev/video{device_id}"
+        if not os.path.exists(device_path):
+            logger.error(f"Camera device {device_path} does not exist")
             return None
-            
+
+        # Check if device is accessible
+        try:
+            with open(device_path, 'rb') as f:
+                pass
+        except PermissionError:
+            logger.error(f"Permission denied accessing {device_path}")
+            return None
+        except Exception as e:
+            logger.error(f"Cannot access {device_path}: {e}")
+            return None
+
+        # Create VideoCapture object with V4L2 backend
+        logger.info(f"Opening camera device {device_path}")
+        cap = cv2.VideoCapture(device_id, cv2.CAP_V4L2)
+
+        if not cap.isOpened():
+            logger.error(f"Failed to open camera {device_id} - device may be in use by another process")
+            return None
+
         # Set camera properties
+        logger.info(f"Setting camera properties: {width}x{height} @ {fps}fps")
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
         cap.set(cv2.CAP_PROP_FPS, fps)
         cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
-        
+
+        # Test frame capture to ensure camera is working
+        logger.info("Testing frame capture...")
+        ret, frame = cap.read()
+        if not ret or frame is None:
+            logger.error("Failed to capture test frame - camera may be malfunctioning")
+            cap.release()
+            return None
+
         # Verify settings
         actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         actual_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         actual_fps = cap.get(cv2.CAP_PROP_FPS)
-        
-        logger.info(f"Camera initialized: {actual_width}x{actual_height} @ {actual_fps}fps")
-        
+
+        logger.info(f"Camera initialized successfully: {actual_width}x{actual_height} @ {actual_fps}fps")
+
         return cap
-        
+
     except Exception as e:
         logger.error(f"Error initializing camera: {e}")
         return None

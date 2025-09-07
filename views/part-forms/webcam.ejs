@@ -516,11 +516,12 @@
                         <h3>📺 Live Preview & Advanced Features</h3>
 
                         <div style="display: flex; justify-content: center; width: 100%;">
-                            <div class="webcam-preview" id="webcamPreview">
+                            <div class="webcam-preview" id="webcamPreview" style="cursor: pointer;"
+                                title="Click to toggle webcam on/off">
                                 <div style="text-align: center; color: #00ff00;">
                                     <div style="font-size: 3em; margin-bottom: 10px;">📹</div>
                                     <div>No preview available</div>
-                                    <small>Click "Webcam On" to start preview</small>
+                                    <small>Click here or "Webcam On" to start preview</small>
                                 </div>
                             </div>
                         </div>
@@ -869,6 +870,9 @@
             // Initialize motion tracking controls
             initializeMotionTrackingControls();
 
+            // Set up preview area click toggle
+            setupPreviewAreaClickToggle();
+
             // Set up periodic status updates
             setInterval(checkStreamingStatus, 10000); // Check every 10 seconds
         });
@@ -1033,26 +1037,53 @@
             if (streamStatusInterval) {
                 clearInterval(streamStatusInterval);
             }
-        });
+        }
+
+        // Setup preview area click toggle functionality
+        function setupPreviewAreaClickToggle() {
+                const previewArea = document.getElementById('webcamPreview');
+                if (!previewArea) {
+                    console.warn('⚠️ Preview area not found for click toggle setup');
+                    return;
+                }
+
+                previewArea.addEventListener('click', function (event) {
+                    // Prevent event bubbling
+                    event.stopPropagation();
+
+                    console.log('🖱️ Preview area clicked - toggling webcam');
+
+                    // Get the webcam toggle button and trigger its click
+                    const toggleBtn = document.getElementById('webcamToggleBtn');
+                    if (toggleBtn && !toggleBtn.disabled) {
+                        toggleBtn.click();
+                    } else {
+                        console.warn('⚠️ Webcam toggle button not available or disabled');
+                        showAlert('Please select a camera device first', 'warning');
+                    }
+                });
+
+                console.log('✅ Preview area click toggle setup complete');
+            }
 
         // Camera detection functionality
         async function detectCameras(isRefresh = false) {
-            const btn = document.getElementById('refreshCamerasBtn');
-            const status = document.getElementById('detectionStatus');
-            const deviceSelect = document.getElementById('deviceId');
-            const devicePath = document.getElementById('devicePath');
+                const btn = document.getElementById('refreshCamerasBtn');
+                const status = document.getElementById('detectionStatus');
+                const deviceSelect = document.getElementById('deviceId');
+                const devicePath = document.getElementById('devicePath');
 
-            console.log('🔍 Starting modern camera detection...', { isRefresh });
+                console.log('🔍 Starting modern camera detection...', { isRefresh });
 
-            if (btn) {
-                btn.disabled = true;
-                btn.textContent = isRefresh ? '🔄 Refreshing...' : '🔍 Detecting...';
-            }
+                if (btn) {
+                    btn.disabled = true;
+                    btn.textContent = isRefresh ? '🔄 Refreshing...' : '🔍 Detecting...';
+                }
 
-            // Show modern progress indicator
-            status.style.display = 'block';
-            status.className = 'detection-status';
-            status.innerHTML = `
+                // Show modern progress indicator
+                status.style.display = 'block';
+                status.className = 'detection-status';
+                status.innerHTML = `
                 <div style="display: flex; align-items: center; gap: 12px; justify-content: center;">
                     <div style="width: 20px; height: 20px; border: 3px solid #00ff00; border-top: 3px solid transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
                     <span style="font-weight: bold;">🔍 Scanning for camera devices...</span>
@@ -1065,109 +1096,130 @@
                 </style>
             `;
 
-            try {
-                const characterId = document.getElementById('characterId').value;
-                console.log('📡 Character ID:', characterId);
+                try {
+                    const characterId = document.getElementById('characterId').value;
+                    console.log('📡 Character ID:', characterId);
 
-                // Use the new camera list endpoint
-                status.innerHTML = `
+                    // Use the new camera list endpoint
+                    status.innerHTML = `
                     <div style="display: flex; align-items: center; gap: 12px; justify-content: center;">
                         <div style="width: 20px; height: 20px; border: 3px solid #00ff00; border-top: 3px solid transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
                         <span style="font-weight: bold;">🌐 Detecting available cameras...</span>
                     </div>
                 `;
 
-                console.log('🔍 Using modern camera detection...');
-                const response = await fetch(`/camera/list?characterId=${characterId}`);
+                    console.log('🔍 Using modern camera detection...');
+                    const response = await fetch(`/camera/list?characterId=${characterId}`);
 
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
 
-                const cameras = await response.json();
-                console.log('📹 Camera detection response:', cameras);
+                    const cameras = await response.json();
+                    console.log('📹 Camera detection response:', cameras);
 
-                if (cameras && cameras.length > 0) {
-                    console.log('✅ Cameras found:', cameras);
-                    status.className = 'detection-status detection-success';
-                    status.innerHTML = `
+                    if (cameras && cameras.length > 0) {
+                        console.log('✅ Cameras found:', cameras);
+                        status.className = 'detection-status detection-success';
+                        status.innerHTML = `
                         <div style="text-align: center;">
                             <div style="font-size: 1.2em; margin-bottom: 8px;">✅ Found ${cameras.length} camera(s)</div>
                             <small>Select a camera device below to configure</small>
                         </div>
                     `;
 
-                    // Clear existing options except the first one
-                    deviceSelect.innerHTML = '<option value="">Select a camera device...</option>';
+                        // Clear existing options except the first one
+                        deviceSelect.innerHTML = '<option value="">Select a camera device...</option>';
 
-                    // Add detected cameras
-                    cameras.forEach(camera => {
-                        console.log('📹 Adding camera option:', camera);
-                        const option = document.createElement('option');
-                        option.value = camera.id;
+                        // Remove existing event listeners to prevent duplicates
+                        const newDeviceSelect = deviceSelect.cloneNode(true);
+                        deviceSelect.parentNode.replaceChild(newDeviceSelect, deviceSelect);
 
-                        let cameraInfo = camera.name || `Camera ${camera.id}`;
-                        if (camera.path) {
-                            cameraInfo += ` (${camera.path})`;
-                        }
+                        // Update reference to the new element
+                        const updatedDeviceSelect = document.getElementById('deviceId');
 
-                        option.textContent = cameraInfo;
-                        option.dataset.path = camera.path || `/dev/video${camera.id}`;
-                        option.dataset.name = camera.name || `Camera ${camera.id}`;
+                        // Add detected cameras
+                        cameras.forEach(camera => {
+                            console.log('📹 Adding camera option:', camera);
+                            const option = document.createElement('option');
+                            option.value = camera.id;
 
-                        deviceSelect.appendChild(option);
-                    });
+                            let cameraInfo = camera.name || `Camera ${camera.id}`;
+                            if (camera.path) {
+                                cameraInfo += ` (${camera.path})`;
+                            }
 
-                    // Update device path when selection changes
-                    deviceSelect.addEventListener('change', function () {
-                        const selectedOption = this.options[this.selectedIndex];
-                        if (selectedOption && selectedOption.dataset.path) {
-                            devicePath.value = selectedOption.dataset.path;
+                            option.textContent = cameraInfo;
+                            option.dataset.path = camera.path || `/dev/video${camera.id}`;
+                            option.dataset.name = camera.name || `Camera ${camera.id}`;
 
-                            // Show success message for selected camera
-                            status.className = 'detection-status detection-success';
-                            status.innerHTML = `
+                            updatedDeviceSelect.appendChild(option);
+                        });
+
+                        // Add single event listener for device selection changes
+                        updatedDeviceSelect.addEventListener('change', function () {
+                            console.log('📹 Device selection changed to:', this.value);
+                            const selectedOption = this.options[this.selectedIndex];
+
+                            if (selectedOption && selectedOption.dataset.path) {
+                                devicePath.value = selectedOption.dataset.path;
+
+                                console.log('✅ Device path updated:', selectedOption.dataset.path);
+
+                                // Show success message for selected camera
+                                status.className = 'detection-status detection-success';
+                                status.innerHTML = `
                                 <div style="text-align: center;">
                                     <div style="font-size: 1.1em; margin-bottom: 5px;">✅ Camera ${this.value} selected</div>
                                     <small>Device: ${selectedOption.dataset.path}</small>
                                 </div>
                             `;
-                        }
-                    });
-                } else {
-                    console.log('❌ No cameras found');
-                    status.className = 'detection-status detection-warning';
-                    status.innerHTML = `
+                            } else if (this.value === '') {
+                                // Reset when no device selected
+                                devicePath.value = '';
+                                status.className = 'detection-status detection-info';
+                                status.innerHTML = `
+                                <div style="text-align: center;">
+                                    <div style="font-size: 1.1em; margin-bottom: 5px;">📹 Select a camera device</div>
+                                    <small>Choose from the detected cameras above</small>
+                                </div>
+                            `;
+                            }
+                        });
+                    } else {
+                        console.log('❌ No cameras found');
+                        status.className = 'detection-status detection-warning';
+                        status.innerHTML = `
                         <div style="text-align: center;">
                             <div style="font-size: 1.2em; margin-bottom: 8px;">⚠️ No cameras detected</div>
                             <small>Check camera connections or try refreshing</small>
                         </div>
                     `;
+                    }
+                } catch (error) {
+                    console.error('💥 Camera detection error:', error);
+                    if (window.reportWebcamError) {
+                        window.reportWebcamError('camera_detection', error, {
+                            characterId,
+                            isRefresh,
+                            useRemote: true
+                        });
+                    }
+                    status.className = 'detection-status detection-error';
+                    status.textContent = 'Error detecting cameras: ' + error.message;
+                } finally {
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.textContent = '🔄 Refresh Camera List';
+                    }
+                    console.log('🏁 Camera detection completed');
                 }
-            } catch (error) {
-                console.error('💥 Camera detection error:', error);
-                if (window.reportWebcamError) {
-                    window.reportWebcamError('camera_detection', error, {
-                        characterId,
-                        isRefresh,
-                        useRemote: true
-                    });
-                }
-                status.className = 'detection-status detection-error';
-                status.textContent = 'Error detecting cameras: ' + error.message;
-            } finally {
-                if (btn) {
-                    btn.disabled = false;
-                    btn.textContent = '🔄 Refresh Camera List';
-                }
-                console.log('🏁 Camera detection completed');
             }
-        }
 
         // Add event listener for refresh button
         document.getElementById('refreshCamerasBtn').addEventListener('click', function () {
-            detectCameras(true);
-        });
+                detectCameras(true);
+            });
 
         // Update resolution options based on camera capabilities
         function updateResolutionOptions(resolutions) {
@@ -1344,34 +1396,99 @@
 
                     img.onerror = () => {
                         clearTimeout(loadTimeout);
+
+                        // Provide specific troubleshooting guidance
+                        const troubleshootingSteps = [
+                            '1. Check if camera is connected and powered',
+                            '2. Verify no other applications are using the camera',
+                            '3. Try refreshing the page to reset connections',
+                            '4. Check hardware services are running properly'
+                        ];
+
                         preview.innerHTML = `
-                            <div style="text-align: center; color: #ff0000;">
-                                <div style="font-size: 2em; margin-bottom: 10px;">❌</div>
-                                <div style="font-weight: bold;">Webcam failed to start</div>
-                                <small>Check device availability and connections</small>
+                            <div style="text-align: center; color: #ff4444; padding: 20px;">
+                                <div style="font-size: 3em; margin-bottom: 15px;">📹❌</div>
+                                <div style="font-weight: bold; font-size: 1.2em; margin-bottom: 10px;">Camera Stream Failed</div>
+                                <div style="margin-bottom: 15px; color: #ffaa44;">
+                                    <strong>Possible causes:</strong><br>
+                                    • Camera device is busy or in use<br>
+                                    • Hardware services are starting up<br>
+                                    • Network connection issues<br>
+                                    • Camera permissions problem
+                                </div>
+                                <div style="margin-bottom: 15px;">
+                                    <button onclick="location.reload()" style="background: #004444; color: #00ff00; border: 1px solid #00ff00; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin-right: 10px;">
+                                        🔄 Refresh Page
+                                    </button>
+                                    <button onclick="detectCameras(true)" style="background: #440044; color: #ff00ff; border: 1px solid #ff00ff; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
+                                        🔍 Re-detect Cameras
+                                    </button>
+                                </div>
+                                <small style="color: #888;">If problem persists, check the hardware monitor for service status</small>
                             </div>
                         `;
                         toggleBtn.textContent = '📹 Webcam On';
                         toggleBtn.disabled = false;
 
-                        showAlert('Webcam failed to start - Check device availability', 'error');
+                        showAlert('Camera stream failed - Try refreshing or re-detecting cameras', 'error');
                     };
 
                     img.src = streamUrl;
 
                 } catch (error) {
                     console.error('Webcam start error:', error);
+
+                    // Report error for monitoring
+                    if (window.reportWebcamError) {
+                        window.reportWebcamError('webcam_start_error', error, {
+                            deviceId,
+                            characterId,
+                            resolution,
+                            fps
+                        });
+                    }
+
+                    // Determine error type and provide specific guidance
+                    let errorTitle = 'Webcam Configuration Error';
+                    let errorDetails = error.message;
+                    let actionButtons = '';
+
+                    if (error.message.includes('device') || error.message.includes('camera')) {
+                        errorTitle = 'Camera Device Error';
+                        actionButtons = `
+                            <button onclick="detectCameras(true)" style="background: #004444; color: #00ff00; border: 1px solid #00ff00; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-right: 8px;">
+                                🔍 Re-detect Cameras
+                            </button>
+                        `;
+                    } else if (error.message.includes('network') || error.message.includes('connection')) {
+                        errorTitle = 'Network Connection Error';
+                        actionButtons = `
+                            <button onclick="location.reload()" style="background: #004444; color: #00ff00; border: 1px solid #00ff00; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-right: 8px;">
+                                🔄 Refresh Page
+                            </button>
+                        `;
+                    }
+
                     preview.innerHTML = `
-                        <div style="text-align: center; color: #ff0000;">
-                            <div style="font-size: 2em; margin-bottom: 10px;">💥</div>
-                            <div style="font-weight: bold;">Error: ${error.message}</div>
-                            <small>Check console for details</small>
+                        <div style="text-align: center; color: #ff4444; padding: 20px;">
+                            <div style="font-size: 3em; margin-bottom: 15px;">⚠️</div>
+                            <div style="font-weight: bold; font-size: 1.2em; margin-bottom: 10px;">${errorTitle}</div>
+                            <div style="margin-bottom: 15px; color: #ffaa44; font-family: monospace; font-size: 0.9em;">
+                                ${errorDetails}
+                            </div>
+                            <div style="margin-bottom: 15px;">
+                                ${actionButtons}
+                                <button onclick="window.open('/hardware-monitor.html', '_blank')" style="background: #444400; color: #ffff00; border: 1px solid #ffff00; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+                                    🔧 Hardware Monitor
+                                </button>
+                            </div>
+                            <small style="color: #888;">Check browser console for detailed error information</small>
                         </div>
                     `;
                     toggleBtn.textContent = '📹 Webcam On';
                     toggleBtn.disabled = false;
 
-                    showAlert('Webcam error: ' + error.message, 'error');
+                    showAlert(`${errorTitle}: ${errorDetails}`, 'error');
                 }
             } else {
                 // Turn webcam OFF

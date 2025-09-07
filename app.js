@@ -844,16 +844,11 @@ async function startServer() {
         await characterAudioConfigService.initialize();
         logger.info('🎤 Character Audio Config Service initialized');
 
-        // Initialize Webcam Startup Service - DISABLED to prevent camera conflicts
-        // The service automatically starts streams for all characters which conflicts with manual control
-        // TODO: Re-enable with proper coordination when implementing persistent streaming
-        /*
+        // Initialize Webcam Startup Service for continuous streaming
         const WebcamStartupService = require('./services/webcamStartupService');
         global.webcamStartupService = new WebcamStartupService();
         await global.webcamStartupService.initialize();
         logger.info('📹 Webcam Startup Service initialized');
-        */
-        logger.info('📹 Webcam Startup Service disabled - using manual webcam control');
 
         // Start audio cleanup service
         audioCleanupService.start();

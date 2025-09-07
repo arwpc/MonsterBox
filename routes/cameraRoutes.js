@@ -23,6 +23,10 @@ const DEFAULT_WIDTH = 1280;
 const DEFAULT_HEIGHT = 720;
 const DEFAULT_FPS = 30;
 
+// Track active camera streams and clients
+const activeCameraStreams = new Map();
+const cameraStreamClients = new Map();
+
 // Keep track of active camera processes
 let activeProcesses = new Map();
 
@@ -88,9 +92,12 @@ async function saveCameraSettings(settings) {
 
 // Kill any existing camera processes
 async function killExistingCameraProcesses() {
+    logger.info('🔄 Killing existing camera processes...');
+
     // First kill any processes we're tracking
     for (const [key, process] of activeProcesses.entries()) {
         try {
+            logger.info(`Killing tracked process: ${key}`);
             process.kill('SIGTERM');
             activeProcesses.delete(key);
         } catch (error) {
@@ -98,32 +105,82 @@ async function killExistingCameraProcesses() {
         }
     }
 
-    // Then use pkill as a backup
+    // Kill webcam startup service streams
     try {
-        await exec('pkill -f "(camera_stream|camera_control|head_track).py"');
+        if (global.webcamStartupService) {
+            logger.info('Stopping webcam startup service streams...');
+            await global.webcamStartupService.cleanup();
+        }
     } catch (error) {
-        // Ignore pkill errors as they might mean no processes were found
+        logger.error('Error stopping webcam startup service:', error);
+    }
+
+    // Use comprehensive pkill commands
+    const killCommands = [
+        'pkill -f "(camera_stream|camera_control|head_track).py"',
+        'pkill -f "webcam_persistent_stream.py"',
+        'pkill -f "cv2.VideoCapture"',
+        'lsof /dev/video* 2>/dev/null | awk \'NR>1 {print $2}\' | xargs -r kill -9 2>/dev/null || true'
+    ];
+
+    for (const command of killCommands) {
+        try {
+            logger.debug(`Running cleanup command: ${command}`);
+            await exec(command);
+        } catch (error) {
+            // Ignore errors as they might mean no processes were found
+            logger.debug(`Cleanup command completed: ${command}`);
+        }
     }
 
     // Add delay after killing processes
+    logger.info('Waiting for processes to terminate...');
     await new Promise(resolve => setTimeout(resolve, 3000));
+    logger.info('✅ Camera process cleanup complete');
 }
 
 // Clean up lock files
 async function cleanupLockFiles() {
+    logger.info('🔄 Cleaning up camera lock files...');
+
     try {
-        const files = await fs.readdir('/tmp');
-        for (const file of files) {
-            if (file.startsWith('camera_') && file.endsWith('.lock')) {
-                try {
-                    await fs.unlink(`/tmp/${file}`);
-                } catch (error) {
-                    logger.error(`Failed to remove lock file ${file}`, { error: error.message });
+        // Clean up various lock file locations
+        const lockDirectories = ['/tmp', '/var/lock', '/run/lock'];
+        const lockPatterns = ['camera_', 'webcam_', 'video_', 'cv2_'];
+
+        for (const dir of lockDirectories) {
+            try {
+                const files = await fs.readdir(dir);
+                for (const file of files) {
+                    const shouldDelete = lockPatterns.some(pattern =>
+                        file.startsWith(pattern) && (file.endsWith('.lock') || file.endsWith('.pid'))
+                    );
+
+                    if (shouldDelete) {
+                        try {
+                            const filePath = `${dir}/${file}`;
+                            await fs.unlink(filePath);
+                            logger.debug(`Removed lock file: ${filePath}`);
+                        } catch (error) {
+                            logger.debug(`Failed to remove lock file ${file}: ${error.message}`);
+                        }
+                    }
                 }
+            } catch (error) {
+                logger.debug(`Cannot access lock directory ${dir}: ${error.message}`);
             }
         }
+
+        // Also clean up any camera device locks in /dev
+        try {
+            await exec('fuser -k /dev/video* 2>/dev/null || true');
+        } catch (error) {
+            logger.debug('fuser command completed');
+        }
+
         // Add delay after cleanup
         await new Promise(resolve => setTimeout(resolve, 1000));
+        logger.info('✅ Lock file cleanup complete');
     } catch (error) {
         logger.error('Failed to cleanup lock files', { error: error.message });
     }
@@ -151,7 +208,7 @@ async function startCameraStream(cameraId, width = DEFAULT_WIDTH, height = DEFAU
         // Check if the remote host is actually localhost
         if (isRemoteCharacter) {
             const host = character.animatronic.rpi_config.host;
-            const isLocalhost = host === '127.0.0.1' || host === 'localhost' || host === '192.168.8.130';
+            const isLocalhost = host === '127.0.0.1' || host === 'localhost' || host === '192.168.8.120' || host === '192.168.8.130';
             if (isLocalhost) {
                 logger.info(`🏠 Character ${character.char_name} is configured as remote (${host}) but is localhost - using local streaming`);
                 isRemoteCharacter = false;
@@ -191,13 +248,20 @@ async function startCameraStream(cameraId, width = DEFAULT_WIDTH, height = DEFAU
             // For local characters, run the camera script locally
             logger.info(`🏠 Starting local camera stream for camera ${cameraId}`);
 
-            process = spawn('python3', [
+            const args = [
                 streamScript,
                 '--camera-id', cameraId.toString(),
                 '--width', width.toString(),
                 '--height', height.toString(),
                 '--fps', fps.toString()
-            ]);
+            ];
+
+            // Add character ID if using motion-enabled script
+            if (character) {
+                args.push('--character-id', character.id.toString());
+            }
+
+            process = spawn('python3', args);
         }
 
         let initOutput = '';
