@@ -11,7 +11,7 @@ const fetch = require('node-fetch');
 class ElevenLabsIntegrationTest {
     constructor() {
         this.baseURL = 'http://localhost:3000';
-        this.wsURL = 'ws://localhost:8771';
+        this.wsURL = 'ws://localhost:8671'; // Fixed: service runs on 8671
         this.testResults = {
             passed: 0,
             failed: 0,

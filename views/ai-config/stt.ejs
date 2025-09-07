@@ -196,6 +196,41 @@
     <%- include('../partials/header') %>
     
     <div class="voice-test-container">
+        <!-- Character Selection -->
+        <div class="config-section">
+            <div class="config-header">
+                <i class="fas fa-user config-icon"></i>
+                <h2 class="config-title">🎭 Character Selection</h2>
+            </div>
+            <div class="form-group">
+                <label for="characterSelect">Select Character:</label>
+                <select id="characterSelect" onchange="onCharacterChange()">
+                    <option value="">Select a character...</option>
+                    <% if (typeof characters !== 'undefined' && characters) { %>
+                        <% characters.forEach(char => { %>
+                            <option value="<%= char.id %>" <%= selectedCharacterId == char.id ? 'selected' : '' %>>
+                                <%= char.char_name || char.name %>
+                            </option>
+                        <% }); %>
+                    <% } %>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="microphoneSelect">Assigned Microphone:</label>
+                <select id="microphoneSelect">
+                    <option value="">No microphone assigned</option>
+                    <% if (typeof microphoneParts !== 'undefined' && microphoneParts) { %>
+                        <% microphoneParts.forEach(mic => { %>
+                            <option value="<%= mic.id %>">
+                                <%= mic.name %> (<%= mic.deviceId || 'default' %>)
+                            </option>
+                        <% }); %>
+                    <% } %>
+                </select>
+                <small>Microphone parts assigned to this character</small>
+            </div>
+        </div>
+
         <!-- Silence Duration Configuration -->
         <div class="config-section">
             <div class="config-header">
@@ -657,7 +692,68 @@
         document.addEventListener('DOMContentLoaded', function() {
             initializeTabs();
             loadCurrentConfiguration();
+            checkCharacterSelected();
         });
+
+        // Character selection handling
+        function checkCharacterSelected() {
+            const characterId = getSelectedCharacterId();
+            console.log('checkCharacterSelected - Initial characterId:', characterId);
+
+            if (!characterId) {
+                // Auto-select first character if none selected
+                const characterSelect = document.getElementById('characterSelect');
+                if (characterSelect && characterSelect.options.length > 1) {
+                    characterSelect.selectedIndex = 1; // Select first actual character (skip "Select a character...")
+                    onCharacterChange();
+                }
+            }
+
+            console.log('checkCharacterSelected - Final characterId:', getSelectedCharacterId());
+        }
+
+        function getSelectedCharacterId() {
+            const characterSelect = document.getElementById('characterSelect');
+            return characterSelect ? characterSelect.value : null;
+        }
+
+        async function onCharacterChange() {
+            const characterId = getSelectedCharacterId();
+            console.log('checkCharacterSelected - Updated characterId:', characterId);
+
+            if (characterId) {
+                await loadMicrophonesForCharacter(characterId);
+            } else {
+                // Clear microphone dropdown
+                const microphoneSelect = document.getElementById('microphoneSelect');
+                if (microphoneSelect) {
+                    microphoneSelect.innerHTML = '<option value="">No microphone assigned</option>';
+                }
+            }
+        }
+
+        async function loadMicrophonesForCharacter(characterId) {
+            try {
+                const response = await fetch(`/api/character-audio-config/${characterId}/microphone-parts`);
+                const data = await response.json();
+
+                const microphoneSelect = document.getElementById('microphoneSelect');
+                if (microphoneSelect && data.success) {
+                    microphoneSelect.innerHTML = '<option value="">No microphone assigned</option>';
+
+                    if (data.data && data.data.length > 0) {
+                        data.data.forEach(mic => {
+                            const option = document.createElement('option');
+                            option.value = mic.id;
+                            option.textContent = `${mic.name} (${mic.deviceId || 'default'})`;
+                            microphoneSelect.appendChild(option);
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading microphones for character:', error);
+            }
+        }
 
         // Tab Management
         function initializeTabs() {

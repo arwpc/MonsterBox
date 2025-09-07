@@ -1072,10 +1072,10 @@ async function initializeConversationalAIServices() {
         try {
             const ElevenLabsWebSocketProxy = require('./services/elevenLabsWebSocketProxy');
 
-            // Conversational Service Proxy (8771 → 8872)
+            // Conversational Service Proxy (8671 → 8872)
             elevenLabsWebSocketProxy = new ElevenLabsWebSocketProxy({
                 proxyPort: 8872,
-                targetPort: 8771,
+                targetPort: 8671, // Fixed: service runs on 8671, not 8771
                 serviceName: 'ElevenLabs Conversational'
             });
             await elevenLabsWebSocketProxy.start();

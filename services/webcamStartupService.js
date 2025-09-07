@@ -14,14 +14,22 @@ const { spawn } = require('child_process');
 const path = require('path');
 
 class WebcamStartupService {
-    constructor() {
+    constructor(options = {}) {
         this.activeStreams = new Map(); // characterId -> streamProcess
         this.streamConfigs = new Map(); // characterId -> config
         this.initialized = false;
         this.healthCheckInterval = null;
         this.restartAttempts = new Map(); // characterId -> attempt count
         this.maxRestartAttempts = 5;
-        this.healthCheckIntervalMs = 30000; // 30 seconds
+        this.healthCheckIntervalMs = 120000; // 2 minutes - reduced frequency for RPi4b stability
+
+        // Character isolation support
+        this.targetCharacterId = options.targetCharacterId || null;
+        this.isolationMode = options.isolationMode || false;
+
+        if (this.isolationMode && this.targetCharacterId) {
+            logger.info(`📹 Webcam service running in isolation mode for character ${this.targetCharacterId}`);
+        }
     }
 
     /**
@@ -42,9 +50,15 @@ class WebcamStartupService {
 
             logger.info(`📹 Found ${charactersWithWebcams.length} characters with webcams`);
 
-            // Start streams for each character
+            // Start streams for each character (or just target character in isolation mode)
             let successCount = 0;
             for (const { character, webcam } of charactersWithWebcams) {
+                // Skip characters not matching target in isolation mode
+                if (this.isolationMode && this.targetCharacterId && character.id !== this.targetCharacterId) {
+                    logger.debug(`📹 Skipping character ${character.char_name} (ID: ${character.id}) - not target character ${this.targetCharacterId}`);
+                    continue;
+                }
+
                 try {
                     await this.startCharacterWebcamStream(character, webcam);
                     successCount++;

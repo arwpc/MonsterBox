@@ -108,9 +108,26 @@ router.get('/stt', async (req, res) => {
             timeout: 30000
         });
 
+        // Get character information for microphone management
+        const characterService = require('../services/characterService');
+        const partService = require('../services/partService');
+
+        const characters = await characterService.getAllCharacters();
+        const selectedCharacterId = req.query.characterId ? parseInt(req.query.characterId) : (characters.length > 0 ? characters[0].id : null);
+
+        // Get microphone parts for the selected character
+        let microphoneParts = [];
+        if (selectedCharacterId) {
+            const allParts = await partService.getPartsByCharacter(selectedCharacterId);
+            microphoneParts = allParts.filter(part => part.type === 'microphone');
+        }
+
         res.render('ai-config/stt', {
             title: 'Voice Activity Detection Configuration',
-            config
+            config,
+            characters,
+            selectedCharacterId,
+            microphoneParts
         });
     } catch (error) {
         console.error('VAD config error:', error);

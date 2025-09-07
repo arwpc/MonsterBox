@@ -954,8 +954,16 @@ class MicrophoneService extends EventEmitter {
      */
     async getAvailableDevices() {
         try {
-            // This would typically interface with the system's audio subsystem
-            // For now, return some common device options
+            // Use the Python script to discover actual devices
+            const devices = await this.discoverDevices();
+            if (devices && devices.length > 0) {
+                return devices.map(device => ({
+                    id: device.id || device.index || 'default',
+                    name: device.name || 'Unknown Device'
+                }));
+            }
+
+            // Fallback to common device options if discovery fails
             return [
                 { id: 'default', name: 'Default Audio Device' },
                 { id: 'hw:0,0', name: 'Built-in Audio (hw:0,0)' },
@@ -1168,16 +1176,69 @@ class MicrophoneService extends EventEmitter {
      */
     async discoverDevices() {
         try {
-            // This would typically interface with the hardware service
-            // For now, return mock data
-            return [
-                { id: 'default', name: 'Default Audio Device', type: 'system' },
-                { id: 'usb-mic-1', name: 'USB Microphone', type: 'usb' },
-                { id: 'built-in', name: 'Built-in Microphone', type: 'internal' }
-            ];
+            const { spawn } = require('child_process');
+            const path = require('path');
+
+            return new Promise((resolve, reject) => {
+                const scriptPath = path.join(__dirname, '..', 'scripts', 'microphone_test.py');
+                const pythonProcess = spawn('python3', [scriptPath, 'discover'], {
+                    stdio: ['pipe', 'pipe', 'pipe']
+                });
+
+                let stdout = '';
+                let stderr = '';
+
+                pythonProcess.stdout.on('data', (data) => {
+                    stdout += data.toString();
+                });
+
+                pythonProcess.stderr.on('data', (data) => {
+                    stderr += data.toString();
+                });
+
+                pythonProcess.on('close', (code) => {
+                    try {
+                        if (code === 0 && stdout.trim()) {
+                            const result = JSON.parse(stdout);
+                            if (result.success && result.microphones) {
+                                // Convert to expected format
+                                const devices = result.microphones.map(mic => ({
+                                    id: `hw:${mic.index}`,
+                                    name: mic.name,
+                                    index: mic.index,
+                                    type: 'microphone',
+                                    channels: mic.max_input_channels,
+                                    sampleRate: mic.default_sample_rate
+                                }));
+
+                                // Always include default option
+                                devices.unshift({ id: 'default', name: 'Default System Microphone', type: 'system' });
+
+                                logger.info(`🎤 Discovered ${devices.length - 1} microphone devices`);
+                                resolve(devices);
+                            } else {
+                                logger.warn('No microphones found in discovery result');
+                                resolve([{ id: 'default', name: 'Default System Microphone', type: 'system' }]);
+                            }
+                        } else {
+                            logger.warn(`Microphone discovery failed with code ${code}: ${stderr}`);
+                            resolve([{ id: 'default', name: 'Default System Microphone', type: 'system' }]);
+                        }
+                    } catch (parseError) {
+                        logger.error('Error parsing microphone discovery result:', parseError);
+                        resolve([{ id: 'default', name: 'Default System Microphone', type: 'system' }]);
+                    }
+                });
+
+                // Timeout after 10 seconds
+                setTimeout(() => {
+                    pythonProcess.kill();
+                    resolve([{ id: 'default', name: 'Default System Microphone', type: 'system' }]);
+                }, 10000);
+            });
         } catch (error) {
             logger.error('Error discovering audio devices:', error);
-            return [];
+            return [{ id: 'default', name: 'Default System Microphone', type: 'system' }];
         }
     }
 }

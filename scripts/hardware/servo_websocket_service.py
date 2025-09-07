@@ -86,7 +86,7 @@ class JawAnimationConfig:
 class ServoWebSocketService(BaseHardwareService):
     """WebSocket service for servo control"""
 
-    def __init__(self, port: int = 8779, host: str = "0.0.0.0"):
+    def __init__(self, port: int = 8404, host: str = "0.0.0.0"): # Fixed: use consistent port 8404
         super().__init__("servo_service", "servo", port, host)
 
         # Servo management

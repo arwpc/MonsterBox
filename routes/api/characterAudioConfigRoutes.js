@@ -457,4 +457,36 @@ router.get('/:characterId/speaker-parts', async (req, res) => {
     }
 });
 
+/**
+ * GET /api/character-audio-config/:characterId/microphone-parts
+ * Get available microphone parts for a character
+ */
+router.get('/:characterId/microphone-parts', async (req, res) => {
+    try {
+        const characterId = parseInt(req.params.characterId);
+
+        if (!characterId || isNaN(characterId)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid character ID'
+            });
+        }
+
+        const partService = require('../../services/partService');
+        const allParts = await partService.getPartsByCharacter(characterId);
+        const microphoneParts = allParts.filter(part => part.type === 'microphone');
+
+        res.json({
+            success: true,
+            data: microphoneParts
+        });
+    } catch (error) {
+        logger.error('Error getting character microphone parts:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get character microphone parts'
+        });
+    }
+});
+
 module.exports = router;

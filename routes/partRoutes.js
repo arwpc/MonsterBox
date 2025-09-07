@@ -662,10 +662,15 @@ router.get('/microphone/:id/edit', (req, res) => {
     res.redirect(`/parts/microphone/manage/${req.params.id}`);
 });
 
-router.post('/microphone', async (req, res) => {
+router.post('/microphone', checkCharacterSelected, async (req, res) => {
     try {
         const partData = req.body;
         partData.type = 'microphone';
+
+        // Ensure character ID is set (fallback to middleware-selected character)
+        if (!partData.characterId) {
+            partData.characterId = req.characterId;
+        }
 
         // Validate character selection
         if (!partData.characterId) {
@@ -788,10 +793,15 @@ router.get('/speaker/:id/edit', (req, res) => {
     res.redirect(`/parts/speaker/manage/${req.params.id}`);
 });
 
-router.post('/speaker', async (req, res) => {
+router.post('/speaker', checkCharacterSelected, async (req, res) => {
     try {
         const partData = req.body;
         partData.type = 'speaker';
+
+        // Ensure character ID is set (fallback to middleware-selected character)
+        if (!partData.characterId) {
+            partData.characterId = req.characterId;
+        }
 
         // Validate character selection
         if (!partData.characterId) {

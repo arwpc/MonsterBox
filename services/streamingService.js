@@ -490,7 +490,7 @@ class StreamingService extends EventEmitter {
                             error: 'Stream initialization timeout'
                         });
                     }
-                }, 10000);
+                }, 30000); // Increased from 10s to 30s for RPi4b hardware
 
                 let logBuffer = '';
 
@@ -648,7 +648,7 @@ class StreamingService extends EventEmitter {
                             error: 'Remote stream initialization timeout'
                         });
                     }
-                }, 15000);
+                }, 45000); // Increased from 15s to 45s for remote RPi4b connections
 
                 let logBuffer = '';
 

@@ -371,9 +371,9 @@ class EnhancedTestChat {
      */
     async initializeElevenLabsConnection() {
         try {
-            // Use secure WebSocket proxy (wss://8872) if page is loaded over HTTPS, otherwise direct connection (ws://8771)
+            // Use secure WebSocket proxy (wss://8872) if page is loaded over HTTPS, otherwise direct connection (ws://8671)
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const port = window.location.protocol === 'https:' ? '8872' : '8771'; // 8872 is the secure proxy port
+            const port = window.location.protocol === 'https:' ? '8872' : '8671'; // 8872 is the secure proxy port, 8671 is the direct service port
             const wsUrl = `${protocol}//${window.location.hostname}:${port}`;
 
             console.log('🔗 Connecting to ElevenLabs WebSocket:', wsUrl);

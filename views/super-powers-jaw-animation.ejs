@@ -103,7 +103,7 @@
     let ws;
     function connectLive(){
       try{
-        ws = new WebSocket('ws://'+window.location.hostname+':8771');
+        ws = new WebSocket('ws://'+window.location.hostname+':8671'); // Fixed: service runs on 8671
         ws.onopen = ()=>{ /* no auth required for just showcasing level visuals if available */ };
         ws.onmessage = (ev)=>{
           try{
