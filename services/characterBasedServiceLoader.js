@@ -82,7 +82,9 @@ class CharacterBasedServiceLoader {
             'elevenLabsConversational',
             'elevenLabsSTT',
             'elevenLabsSSLProxy',
-            'sttSSLProxy'
+            'sttSSLProxy',
+            'servoService',  // Always start servo service - it handles empty configs gracefully
+            'webcamService'  // Always start webcam service - all characters should have cameras
         ];
     }
 
