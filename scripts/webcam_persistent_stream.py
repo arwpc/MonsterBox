@@ -366,7 +366,6 @@ def main():
         fps=args.fps,
         quality=args.quality,
         character_id=args.character_id
-        quality=args.quality
     )
     
     logger.info(f"Starting webcam stream: device={args.device_id}, resolution={args.width}x{args.height}, fps={args.fps}, quality={args.quality}")
