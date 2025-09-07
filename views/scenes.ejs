@@ -14,11 +14,7 @@
 </head>
 
 <body>
-    <header>
-        <h1 class="landing-title">
-            <%= title %> for <%= character ? (character.char_name || 'Unknown Character' ) : 'Unknown Character' %>
-        </h1>
-    </header>
+    <%- include('components/universal-header') %>
 
     <main>
         <div class="button-group">

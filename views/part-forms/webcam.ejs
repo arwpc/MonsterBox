@@ -1131,12 +1131,15 @@
                     // Clear existing options except the first one
                     deviceSelect.innerHTML = '<option value="">Select a camera device...</option>';
 
-                    // Remove existing event listeners to prevent duplicates
-                    const newDeviceSelect = deviceSelect.cloneNode(true);
-                    deviceSelect.parentNode.replaceChild(newDeviceSelect, deviceSelect);
-
-                    // Update reference to the new element
-                    const updatedDeviceSelect = document.getElementById('deviceId');
+                    // Remove existing event listeners to prevent duplicates - safely check parent
+                    let updatedDeviceSelect = deviceSelect;
+                    if (deviceSelect && deviceSelect.parentNode) {
+                        const newDeviceSelect = deviceSelect.cloneNode(true);
+                        deviceSelect.parentNode.replaceChild(newDeviceSelect, deviceSelect);
+                        updatedDeviceSelect = document.getElementById('deviceId');
+                    } else {
+                        console.warn('⚠️ Device select parent not found, using existing element');
+                    }
 
                     // Add detected cameras
                     cameras.forEach(camera => {

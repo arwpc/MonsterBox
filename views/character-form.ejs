@@ -196,16 +196,7 @@
     <script src="/js/shared-streaming-service.js"></script>
 </head>
 <body>
-    <header>
-        <h1 class="landing-title"><%= title %></h1>
-
-        <!-- Breadcrumb Navigation -->
-        <div class="breadcrumb-vertical">
-            <a href="/" class="breadcrumb-item">🏠 Home</a>
-            <a href="/characters" class="breadcrumb-item">🎭 Characters</a>
-            <span class="breadcrumb-item active">✏️ <%= character && character.id !== 'new' ? 'Edit' : 'Add' %> Character</span>
-        </div>
-    </header>
+    <%- include('components/universal-header') %>
 
     <main class="character-dashboard">
         <form action="<%= action %>" method="POST" enctype="multipart/form-data">

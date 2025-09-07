@@ -8,6 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 <body>
+  <%- include('../components/universal-header') %>
   <div class="container">
     <div class="header">
       <h1><%= title %></h1>
@@ -286,6 +287,19 @@
 
     // Auto-discover on load
     discoverOutputs();
+
+    // Set character ID from universal header on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      // Get character ID from universal header
+      const currentCharacterId = sessionStorage.getItem('selectedCharacterId') ||
+                                localStorage.getItem('selectedCharacterId');
+
+      const characterSelect = document.getElementById('characterId');
+      if (currentCharacterId && characterSelect && !characterSelect.value) {
+        characterSelect.value = currentCharacterId;
+        console.log('🎭 Set character ID from universal header:', currentCharacterId);
+      }
+    });
   </script>
 
   <style>

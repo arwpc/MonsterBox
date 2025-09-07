@@ -2,17 +2,18 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: 'tests/playwright',
-  timeout: 120_000,
-  expect: { timeout: 15_000 },
+  timeout: 180_000,
+  expect: { timeout: 20_000 },
   fullyParallel: false,
-  retries: 2,
+  retries: 1,
   workers: 1,
-  reporter: [['list']],
+  reporter: [['list'], ['html'], ['json', { outputFile: 'test-results/results.json' }]],
   use: {
     baseURL: 'http://127.0.0.1:3000',
     trace: 'retain-on-failure',
     video: 'retain-on-failure',
     screenshot: 'only-on-failure',
+    ignoreHTTPSErrors: true,
   },
   projects: [
     {

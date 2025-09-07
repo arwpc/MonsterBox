@@ -1,0 +1,585 @@
+<!-- Universal MonsterBox Header with Character Selection -->
+<style>
+    .monsterbox-universal-header {
+        background: linear-gradient(135deg, #000000 0%, #001100 50%, #000000 100%);
+        border-bottom: 3px solid #00ff00;
+        padding: 15px 0;
+        box-shadow: 0 4px 20px rgba(0, 255, 0, 0.3);
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+    }
+
+    .header-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+        text-align: center;
+    }
+
+    .header-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 15px;
+        position: relative;
+    }
+
+    .monsterbox-logo {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        text-decoration: none;
+        color: inherit;
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    .halloween-left, .halloween-right {
+        font-size: 2.5em;
+        color: #00ff00;
+        text-shadow: 0 0 10px #00ff00;
+        animation: skull-glow 2s ease-in-out infinite alternate;
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    .halloween-left {
+        left: 0;
+    }
+
+    .halloween-right {
+        right: 0;
+    }
+
+    .logo-text {
+        font-family: 'Courier New', 'Monaco', 'Lucida Console', monospace;
+        font-size: 3.2em;
+        color: #00ff00;
+        text-shadow:
+            0 0 5px #00ff00,
+            0 0 10px #00ff00,
+            0 0 15px #00ff00,
+            0 0 20px #00ff00;
+        letter-spacing: 4px;
+        margin: 0;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+
+    @keyframes skull-glow {
+        0% { text-shadow: 0 0 10px #00ff00; }
+        100% { text-shadow: 0 0 20px #00ff00, 0 0 30px #00ff00; }
+    }
+
+    .breadcrumb-nav {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        justify-content: center;
+        margin: 0;
+        background: linear-gradient(135deg, #000000 0%, #001100 50%, #000000 100%);
+        padding: 8px 0;
+        margin-top: 10px;
+    }
+
+    .breadcrumb-item {
+        color: #cccccc;
+        text-decoration: none;
+        padding: 0;
+        transition: all 0.3s ease;
+        font-weight: normal;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9em;
+    }
+
+    .breadcrumb-item:hover {
+        color: #00ff00;
+        text-shadow: 0 0 5px #00ff00;
+    }
+
+    .breadcrumb-item.active {
+        color: #00ff00;
+        font-weight: bold;
+        text-shadow: 0 0 5px #00ff00;
+    }
+
+    .breadcrumb-separator {
+        color: #666666;
+        font-size: 0.8em;
+        margin: 0 8px;
+    }
+
+    .character-selector {
+        position: absolute;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    .current-character-badge {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: rgba(0, 255, 0, 0.1);
+        border: 2px solid #00ff00;
+        border-radius: 25px;
+        padding: 8px 15px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .current-character-badge:hover {
+        background: rgba(0, 255, 0, 0.2);
+        border-color: #00ff00;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 255, 0, 0.3);
+    }
+
+    .character-avatar-small {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #001100;
+        border: 2px solid #00ff00;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2em;
+        color: #00ff00;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+
+    .character-avatar-small img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+    }
+
+    .character-name {
+        color: #00ff00;
+        font-weight: bold;
+        font-size: 1em;
+    }
+
+    .character-dropdown-arrow {
+        color: #00ff00;
+        font-size: 0.8em;
+        margin-left: 5px;
+    }
+
+    /* Character Selection Modal */
+    .character-selection-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 2000;
+        backdrop-filter: blur(5px);
+    }
+
+    .modal-content {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: linear-gradient(135deg, #000000 0%, #001100 50%, #000000 100%);
+        border: 3px solid #00ff00;
+        border-radius: 15px;
+        padding: 30px;
+        max-width: 600px;
+        width: 90%;
+        box-shadow: 0 10px 30px rgba(0, 255, 0, 0.5);
+    }
+
+    .modal-header {
+        text-align: center;
+        margin-bottom: 25px;
+    }
+
+    .modal-title {
+        color: #00ff00;
+        font-size: 1.8em;
+        margin: 0 0 10px 0;
+        font-family: 'Creepster', cursive;
+        text-shadow: 0 0 10px #00ff00;
+    }
+
+    .modal-subtitle {
+        color: #cccccc;
+        margin: 0;
+    }
+
+    .character-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .character-option {
+        background: rgba(0, 255, 0, 0.05);
+        border: 2px solid rgba(0, 255, 0, 0.3);
+        border-radius: 10px;
+        padding: 15px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: center;
+    }
+
+    .character-option:hover {
+        background: rgba(0, 255, 0, 0.1);
+        border-color: #00ff00;
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0, 255, 0, 0.3);
+    }
+
+    .character-option.current {
+        background: rgba(0, 255, 0, 0.2);
+        border-color: #00ff00;
+    }
+
+    .character-avatar-large {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: #001100;
+        border: 2px solid #00ff00;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2em;
+        color: #00ff00;
+        margin: 0 auto 10px;
+        overflow: hidden;
+    }
+
+    .character-avatar-large img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+    }
+
+    .character-option-name {
+        color: #00ff00;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+
+    .character-option-desc {
+        color: #888;
+        font-size: 0.8em;
+        line-height: 1.3;
+    }
+
+    .modal-close {
+        position: absolute;
+        top: 15px;
+        right: 20px;
+        background: none;
+        border: none;
+        color: #00ff00;
+        font-size: 1.5em;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 50%;
+        width: 35px;
+        height: 35px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+
+    .modal-close:hover {
+        background: rgba(0, 255, 0, 0.2);
+        transform: rotate(90deg);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .header-container {
+            padding: 0 15px;
+        }
+
+        .halloween-left, .halloween-right {
+            font-size: 1.8em;
+        }
+
+        .logo-text {
+            font-size: 2.4em;
+        }
+
+        .breadcrumb-item {
+            padding: 6px 12px;
+            font-size: 0.9em;
+        }
+
+        .character-selector {
+            position: static;
+            transform: none;
+            margin-top: 10px;
+        }
+
+        .header-top {
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .monsterbox-logo {
+            position: static;
+            transform: none;
+        }
+    }
+</style>
+
+<header class="monsterbox-universal-header">
+    <div class="header-container">
+        <!-- Top row with Halloween decorations, MonsterBox logo, and character selector -->
+        <div class="header-top">
+            <!-- Skull left -->
+            <div class="halloween-left">💀</div>
+
+            <!-- MonsterBox Logo (centered) -->
+            <a href="/" class="monsterbox-logo">
+                <h1 class="logo-text">MonsterBox</h1>
+            </a>
+
+            <!-- Skull right -->
+            <div class="halloween-right">💀</div>
+
+            <!-- Character Selector -->
+            <div class="character-selector">
+                <div class="current-character-badge" id="currentCharacterBadge" onclick="openCharacterSelector()">
+                    <div class="character-avatar-small" id="currentCharacterAvatar">
+                        <!-- Character avatar will be populated by JavaScript -->
+                    </div>
+                    <div class="character-name" id="currentCharacterName">
+                        <!-- Character name will be populated by JavaScript -->
+                    </div>
+                    <div class="character-dropdown-arrow">▼</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Breadcrumb Navigation (underneath) -->
+        <nav class="breadcrumb-nav" id="breadcrumbNav">
+            <!-- Breadcrumbs will be populated by JavaScript -->
+        </nav>
+    </div>
+</header>
+
+<!-- Character Selection Modal -->
+<div class="character-selection-modal" id="characterSelectionModal">
+    <div class="modal-content">
+        <button class="modal-close" onclick="closeCharacterSelector()">✕</button>
+        
+        <div class="modal-header">
+            <h2 class="modal-title">🎭 Select Character</h2>
+            <p class="modal-subtitle">Choose which animatronic character to control</p>
+        </div>
+
+        <div class="character-grid" id="characterGrid">
+            <!-- Character options will be populated by JavaScript -->
+        </div>
+    </div>
+</div>
+
+<script>
+// Universal Header JavaScript
+(function() {
+    let characters = [];
+    let currentCharacterId = null;
+
+    // Initialize header on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeUniversalHeader();
+    });
+
+    async function initializeUniversalHeader() {
+        try {
+            // Load characters data
+            await loadCharacters();
+            
+            // Get current character from URL or session
+            getCurrentCharacter();
+            
+            // Update character display
+            updateCurrentCharacterDisplay();
+            
+            // Generate breadcrumbs
+            generateBreadcrumbs();
+            
+            console.log('🎭 Universal header initialized');
+        } catch (error) {
+            console.error('Error initializing universal header:', error);
+        }
+    }
+
+    async function loadCharacters() {
+        try {
+            const response = await fetch('/api/characters');
+            if (response.ok) {
+                characters = await response.json();
+                console.log('📋 Loaded characters:', characters.length);
+            }
+        } catch (error) {
+            console.error('Error loading characters:', error);
+        }
+    }
+
+    function getCurrentCharacter() {
+        // Check URL parameters first
+        const urlParams = new URLSearchParams(window.location.search);
+        currentCharacterId = urlParams.get('characterId') || 
+                           urlParams.get('filterCharacterId') ||
+                           sessionStorage.getItem('selectedCharacterId') ||
+                           localStorage.getItem('selectedCharacterId');
+        
+        // Convert to number if it exists
+        if (currentCharacterId) {
+            currentCharacterId = parseInt(currentCharacterId);
+        }
+        
+        console.log('🎯 Current character ID:', currentCharacterId);
+    }
+
+    function updateCurrentCharacterDisplay() {
+        const character = characters.find(c => c.id === currentCharacterId);
+        const avatarEl = document.getElementById('currentCharacterAvatar');
+        const nameEl = document.getElementById('currentCharacterName');
+        
+        if (character) {
+            // Update avatar
+            if (character.image) {
+                avatarEl.innerHTML = `<img src="/images/characters/${character.image}" alt="${character.char_name}">`;
+            } else {
+                avatarEl.innerHTML = character.char_name ? character.char_name.charAt(0).toUpperCase() : '?';
+            }
+            
+            // Update name
+            nameEl.textContent = character.char_name || 'Unknown Character';
+        } else {
+            // No character selected
+            avatarEl.innerHTML = '🎭';
+            nameEl.textContent = 'Select Character';
+        }
+    }
+
+    function generateBreadcrumbs() {
+        const breadcrumbNav = document.getElementById('breadcrumbNav');
+        const path = window.location.pathname;
+        const pathParts = path.split('/').filter(part => part);
+        
+        let breadcrumbs = [];
+        
+        // Add home
+        breadcrumbs.push({ name: '🏠 Home', url: '/', active: pathParts.length === 0 });
+        
+        // Generate breadcrumbs based on path
+        let currentPath = '';
+        pathParts.forEach((part, index) => {
+            currentPath += '/' + part;
+            const isLast = index === pathParts.length - 1;
+            
+            let name = part.charAt(0).toUpperCase() + part.slice(1);
+            let icon = '';
+            
+            // Add icons for known sections
+            switch (part) {
+                case 'characters': icon = '🎭'; break;
+                case 'parts': icon = '⚙️'; break;
+                case 'ai-management': icon = '🧠'; break;
+                case 'sounds': icon = '🔊'; break;
+                case 'scenes': icon = '🎬'; break;
+                case 'system-config': icon = '⚙️'; name = 'Configuration'; break;
+                case 'camera': icon = '📹'; break;
+                case 'new': icon = '➕'; name = 'New'; break;
+                case 'edit': icon = '✏️'; name = 'Edit'; break;
+            }
+            
+            breadcrumbs.push({
+                name: `${icon} ${name}`,
+                url: currentPath + (currentCharacterId ? `?characterId=${currentCharacterId}` : ''),
+                active: isLast
+            });
+        });
+        
+        // Render breadcrumbs
+        breadcrumbNav.innerHTML = breadcrumbs.map((crumb, index) => {
+            const separator = index > 0 ? '<span class="breadcrumb-separator">🦇</span>' : '';
+            const activeClass = crumb.active ? 'active' : '';
+            return `${separator}<a href="${crumb.url}" class="breadcrumb-item ${activeClass}">${crumb.name}</a>`;
+        }).join('');
+    }
+
+    // Global functions for modal
+    window.openCharacterSelector = function() {
+        const modal = document.getElementById('characterSelectionModal');
+        const grid = document.getElementById('characterGrid');
+        
+        // Populate character grid
+        grid.innerHTML = characters.map(character => {
+            const isCurrentClass = character.id === currentCharacterId ? 'current' : '';
+            const avatarContent = character.image 
+                ? `<img src="/images/characters/${character.image}" alt="${character.char_name}">`
+                : (character.char_name ? character.char_name.charAt(0).toUpperCase() : '?');
+            
+            return `
+                <div class="character-option ${isCurrentClass}" onclick="selectCharacter(${character.id})">
+                    <div class="character-avatar-large">${avatarContent}</div>
+                    <div class="character-option-name">${character.char_name || 'Unnamed Character'}</div>
+                    <div class="character-option-desc">${character.char_description || 'No description'}</div>
+                </div>
+            `;
+        }).join('');
+        
+        modal.style.display = 'block';
+    };
+
+    window.closeCharacterSelector = function() {
+        document.getElementById('characterSelectionModal').style.display = 'none';
+    };
+
+    window.selectCharacter = function(characterId) {
+        if (characterId === currentCharacterId) {
+            closeCharacterSelector();
+            return;
+        }
+        
+        // Store selection
+        sessionStorage.setItem('selectedCharacterId', characterId);
+        localStorage.setItem('selectedCharacterId', characterId);
+        
+        // Reload page with new character
+        const url = new URL(window.location);
+        url.searchParams.set('characterId', characterId);
+        window.location.href = url.toString();
+    };
+
+    // Close modal when clicking outside
+    document.addEventListener('click', function(event) {
+        const modal = document.getElementById('characterSelectionModal');
+        if (event.target === modal) {
+            closeCharacterSelector();
+        }
+    });
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeCharacterSelector();
+        }
+    });
+})();
+</script>

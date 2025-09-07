@@ -46,11 +46,36 @@ async function getPartDetails(part) {
 
 const checkCharacterSelected = async (req, res, next) => {
     logger.info(`checkCharacterSelected - Initial characterId: ${req.characterId}`);
+
+    // Check for character ID in multiple places, prioritizing explicit selections
     if (!req.characterId) {
-        req.characterId = req.query.characterId || req.session.characterId;
-        logger.info(`checkCharacterSelected - Updated characterId: ${req.characterId}`);
+        req.characterId = req.body.characterId ||
+                         req.query.characterId ||
+                         req.query.filterCharacterId ||
+                         req.params.characterId ||
+                         req.session.characterId;
+        logger.info(`checkCharacterSelected - Updated characterId from request: ${req.characterId}`);
     }
-    if (!req.characterId) {
+
+    // Convert to integer if it's a string
+    if (req.characterId) {
+        req.characterId = parseInt(req.characterId, 10);
+        if (isNaN(req.characterId)) {
+            req.characterId = null;
+        }
+    }
+
+    // For POST requests (like creating speakers), require explicit character selection
+    if (!req.characterId && req.method === 'POST') {
+        logger.error('POST request without character selection - this should not happen with universal header');
+        return res.status(400).json({
+            success: false,
+            error: 'Character selection is required. Please select a character from the header.'
+        });
+    }
+
+    // Only default to first character for GET requests (viewing pages)
+    if (!req.characterId && req.method !== 'POST') {
         try {
             const characters = await characterService.getAllCharacters();
             if (characters && characters.length > 0) {
@@ -66,6 +91,7 @@ const checkCharacterSelected = async (req, res, next) => {
             return res.status(400).send('Character selection required. Please create a character first.');
         }
     }
+
     logger.info(`checkCharacterSelected - Final characterId: ${req.characterId}`);
     next();
 };

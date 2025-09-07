@@ -11,35 +11,30 @@
 
     <!-- Original MonsterBox CSS -->
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/main.css">
+
+    <!-- External JavaScript Libraries -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
 </head>
 
 <body>
+    <!-- Universal MonsterBox Header -->
+    <%- include('components/universal-header') %>
+
     <div class="container">
-        <!-- Header -->
+        <!-- Welcome Section -->
         <div class="header">
-            <h1 class="landing-title" style="text-align: center; margin: 20px 0;">
-                🎭 MONSTERBOX
-            </h1>
-            <p style="text-align: center; margin-bottom: 30px;">
-                System - Choose a character and navigate to get started.
+            <p style="text-align: center; margin: 30px 0; font-size: 1.2em; color: #cccccc;">
+                🎃 Welcome to the MonsterBox Control System 🎃<br>
+                <span style="color: #00ff00;">Choose a character above and navigate to get started!</span>
             </p>
         </div>
 
-        <!-- Character Selection -->
-        <% if (characters && characters.length > 0) { %>
-        <div class="form-group">
-            <label for="character-select">Select Character:</label>
-            <select id="character-select" onchange="updateCharacter(this.value)">
-                <option value="">Choose a character...</option>
-                <% characters.forEach(function(character) { %>
-                <option value="<%= character.id %>" <%= currentCharacter && currentCharacter.id === character.id ? 'selected' : '' %>><%= character.char_name || character.name %></option>
-                <% }); %>
-            </select>
-        </div>
-        <% } %>
+
 
         <!-- Navigation Grid -->
         <div class="nav-grid">
@@ -139,57 +134,16 @@
     </div>
 
     <script>
-        // Character selection management
-        function updateCharacter(characterId) {
-            localStorage.setItem('selectedCharacter', characterId);
-
-            fetch('/set-character', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ characterId: characterId }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    console.log('Character updated successfully');
-                } else {
-                    console.error('Failed to update character');
-                }
-            })
-            .catch((error) => {
-                console.error('Error:', error);
-            });
-        }
-
-        // Initialize character selection on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            const characterSelect = document.getElementById('character-select');
-            if (characterSelect) {
-                // If a character is already selected (from server), save it to localStorage
-                if (characterSelect.value) {
-                    localStorage.setItem('selectedCharacter', characterSelect.value);
-                } else {
-                    // Otherwise, try to restore from localStorage
-                    const savedCharacter = localStorage.getItem('selectedCharacter');
-                    if (savedCharacter) {
-                        characterSelect.value = savedCharacter;
-                    }
-                }
-            }
-        });
-
-        // Function to open scenes with selected character
+        // Function to open scenes with current character from universal header
         function openScenes() {
-            const characterSelect = document.getElementById('character-select');
-            const selectedCharacter = characterSelect ? characterSelect.value : localStorage.getItem('selectedCharacter');
+            const selectedCharacter = sessionStorage.getItem('selectedCharacterId') ||
+                                    localStorage.getItem('selectedCharacterId');
 
             if (selectedCharacter) {
                 window.location.href = `/scenes?characterId=${selectedCharacter}`;
                 return false;
             } else {
-                alert('Please select a character first before viewing scenes.');
+                alert('Please select a character from the header first before viewing scenes.');
                 return false;
             }
         }

@@ -61,5 +61,8 @@
             "args": ["-l"]
         }
     },
-    "terminal.integrated.cwd": "/home/remote/MonsterBox"
+    "terminal.integrated.cwd": "/home/remote/MonsterBox",
+    "augment.nextEdit.enableGlobalBackgroundSuggestions": true,
+    "augment.nextEdit.showDiffInHover": false,
+    "augment.nextEdit.highlightSuggestionsInTheEditor": true
 }

@@ -8,6 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 <body>
+    <%- include('../components/universal-header') %>
     <div class="container">
         <div class="header">
             <h1><%= title %></h1>
@@ -191,34 +192,44 @@
         // Load input devices
         async function loadInputDevices() {
             try {
-                const response = await axios.get('/parts/api/microphone/devices');
+                console.log('🎤 Loading microphone input devices...');
+                const response = await axios.get('/api/microphone/devices');
                 const deviceSelect = document.getElementById('deviceId');
                 const currentValue = '<%= part.deviceId || "" %>';
 
                 deviceSelect.innerHTML = '<option value="default">Default System Microphone</option>';
 
-                if (response.data.success && response.data.microphones) {
-                    response.data.microphones.forEach(mic => {
-                        if (mic.id !== 'default') {
+                console.log('🎤 Microphone devices response:', response.data);
+
+                if (response.data.success && response.data.devices) {
+                    console.log(`🎤 Found ${response.data.devices.length} microphone devices`);
+                    response.data.devices.forEach(device => {
+                        if (device.id !== 'default') {
                             const option = document.createElement('option');
-                            option.value = mic.id;
-                            option.textContent = mic.name;
-                            if (mic.id === currentValue) {
+                            option.value = device.id;
+                            option.textContent = device.name;
+                            if (device.id === currentValue) {
                                 option.selected = true;
                             }
                             deviceSelect.appendChild(option);
+                            console.log(`🎤 Added device: ${device.name} (${device.id})`);
                         }
                     });
+                } else {
+                    console.warn('🎤 No microphone devices found or invalid response format');
                 }
             } catch (error) {
-                console.error('Error loading input devices:', error);
+                console.error('🎤 Error loading input devices:', error);
+                // Show error in UI
+                const deviceSelect = document.getElementById('deviceId');
+                deviceSelect.innerHTML = '<option value="default">Error loading devices - using default</option>';
             }
         }
 
         // Load output devices
         async function loadOutputDevices() {
             try {
-                const response = await axios.get('/parts/api/speaker/devices');
+                const response = await axios.get('/api/speaker/devices');
                 const deviceSelect = document.getElementById('outputDevice');
                 const currentValue = '<%= part.outputDevice || "" %>';
 
@@ -260,7 +271,7 @@
         document.getElementById('testMicrophone').addEventListener('click', async function() {
             try {
                 const deviceId = document.getElementById('deviceId').value;
-                const response = await axios.post('/parts/api/microphone/test', { deviceId });
+                const response = await axios.post('/api/microphone/test', { deviceId });
 
                 if (response.data.success) {
                     alert('✅ Microphone test successful!');
@@ -275,6 +286,16 @@
 
         // Load devices on page load
         document.addEventListener('DOMContentLoaded', function() {
+            // Set character ID from universal header
+            const currentCharacterId = sessionStorage.getItem('selectedCharacterId') ||
+                                      localStorage.getItem('selectedCharacterId');
+
+            const characterSelect = document.getElementById('characterId');
+            if (currentCharacterId && characterSelect && !characterSelect.value) {
+                characterSelect.value = currentCharacterId;
+                console.log('🎭 Set character ID from universal header:', currentCharacterId);
+            }
+
             loadInputDevices();
             loadOutputDevices();
         });
