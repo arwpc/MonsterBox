@@ -1037,53 +1037,53 @@
             if (streamStatusInterval) {
                 clearInterval(streamStatusInterval);
             }
-        }
+        });
 
         // Setup preview area click toggle functionality
         function setupPreviewAreaClickToggle() {
-                const previewArea = document.getElementById('webcamPreview');
-                if (!previewArea) {
-                    console.warn('⚠️ Preview area not found for click toggle setup');
-                    return;
-                }
-
-                previewArea.addEventListener('click', function (event) {
-                    // Prevent event bubbling
-                    event.stopPropagation();
-
-                    console.log('🖱️ Preview area clicked - toggling webcam');
-
-                    // Get the webcam toggle button and trigger its click
-                    const toggleBtn = document.getElementById('webcamToggleBtn');
-                    if (toggleBtn && !toggleBtn.disabled) {
-                        toggleBtn.click();
-                    } else {
-                        console.warn('⚠️ Webcam toggle button not available or disabled');
-                        showAlert('Please select a camera device first', 'warning');
-                    }
-                });
-
-                console.log('✅ Preview area click toggle setup complete');
+            const previewArea = document.getElementById('webcamPreview');
+            if (!previewArea) {
+                console.warn('⚠️ Preview area not found for click toggle setup');
+                return;
             }
+
+            previewArea.addEventListener('click', function (event) {
+                // Prevent event bubbling
+                event.stopPropagation();
+
+                console.log('🖱️ Preview area clicked - toggling webcam');
+
+                // Get the webcam toggle button and trigger its click
+                const toggleBtn = document.getElementById('webcamToggleBtn');
+                if (toggleBtn && !toggleBtn.disabled) {
+                    toggleBtn.click();
+                } else {
+                    console.warn('⚠️ Webcam toggle button not available or disabled');
+                    showAlert('Please select a camera device first', 'warning');
+                }
+            });
+
+            console.log('✅ Preview area click toggle setup complete');
+        }
 
         // Camera detection functionality
         async function detectCameras(isRefresh = false) {
-                const btn = document.getElementById('refreshCamerasBtn');
-                const status = document.getElementById('detectionStatus');
-                const deviceSelect = document.getElementById('deviceId');
-                const devicePath = document.getElementById('devicePath');
+            const btn = document.getElementById('refreshCamerasBtn');
+            const status = document.getElementById('detectionStatus');
+            const deviceSelect = document.getElementById('deviceId');
+            const devicePath = document.getElementById('devicePath');
 
-                console.log('🔍 Starting modern camera detection...', { isRefresh });
+            console.log('🔍 Starting modern camera detection...', { isRefresh });
 
-                if (btn) {
-                    btn.disabled = true;
-                    btn.textContent = isRefresh ? '🔄 Refreshing...' : '🔍 Detecting...';
-                }
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = isRefresh ? '🔄 Refreshing...' : '🔍 Detecting...';
+            }
 
-                // Show modern progress indicator
-                status.style.display = 'block';
-                status.className = 'detection-status';
-                status.innerHTML = `
+            // Show modern progress indicator
+            status.style.display = 'block';
+            status.className = 'detection-status';
+            status.innerHTML = `
                 <div style="display: flex; align-items: center; gap: 12px; justify-content: center;">
                     <div style="width: 20px; height: 20px; border: 3px solid #00ff00; border-top: 3px solid transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
                     <span style="font-weight: bold;">🔍 Scanning for camera devices...</span>
@@ -1096,130 +1096,130 @@
                 </style>
             `;
 
-                try {
-                    const characterId = document.getElementById('characterId').value;
-                    console.log('📡 Character ID:', characterId);
+            try {
+                const characterId = document.getElementById('characterId').value;
+                console.log('📡 Character ID:', characterId);
 
-                    // Use the new camera list endpoint
-                    status.innerHTML = `
+                // Use the new camera list endpoint
+                status.innerHTML = `
                     <div style="display: flex; align-items: center; gap: 12px; justify-content: center;">
                         <div style="width: 20px; height: 20px; border: 3px solid #00ff00; border-top: 3px solid transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
                         <span style="font-weight: bold;">🌐 Detecting available cameras...</span>
                     </div>
                 `;
 
-                    console.log('🔍 Using modern camera detection...');
-                    const response = await fetch(`/camera/list?characterId=${characterId}`);
+                console.log('🔍 Using modern camera detection...');
+                const response = await fetch(`/camera/list?characterId=${characterId}`);
 
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                    }
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
 
-                    const cameras = await response.json();
-                    console.log('📹 Camera detection response:', cameras);
+                const cameras = await response.json();
+                console.log('📹 Camera detection response:', cameras);
 
-                    if (cameras && cameras.length > 0) {
-                        console.log('✅ Cameras found:', cameras);
-                        status.className = 'detection-status detection-success';
-                        status.innerHTML = `
+                if (cameras && cameras.length > 0) {
+                    console.log('✅ Cameras found:', cameras);
+                    status.className = 'detection-status detection-success';
+                    status.innerHTML = `
                         <div style="text-align: center;">
                             <div style="font-size: 1.2em; margin-bottom: 8px;">✅ Found ${cameras.length} camera(s)</div>
                             <small>Select a camera device below to configure</small>
                         </div>
                     `;
 
-                        // Clear existing options except the first one
-                        deviceSelect.innerHTML = '<option value="">Select a camera device...</option>';
+                    // Clear existing options except the first one
+                    deviceSelect.innerHTML = '<option value="">Select a camera device...</option>';
 
-                        // Remove existing event listeners to prevent duplicates
-                        const newDeviceSelect = deviceSelect.cloneNode(true);
-                        deviceSelect.parentNode.replaceChild(newDeviceSelect, deviceSelect);
+                    // Remove existing event listeners to prevent duplicates
+                    const newDeviceSelect = deviceSelect.cloneNode(true);
+                    deviceSelect.parentNode.replaceChild(newDeviceSelect, deviceSelect);
 
-                        // Update reference to the new element
-                        const updatedDeviceSelect = document.getElementById('deviceId');
+                    // Update reference to the new element
+                    const updatedDeviceSelect = document.getElementById('deviceId');
 
-                        // Add detected cameras
-                        cameras.forEach(camera => {
-                            console.log('📹 Adding camera option:', camera);
-                            const option = document.createElement('option');
-                            option.value = camera.id;
+                    // Add detected cameras
+                    cameras.forEach(camera => {
+                        console.log('📹 Adding camera option:', camera);
+                        const option = document.createElement('option');
+                        option.value = camera.id;
 
-                            let cameraInfo = camera.name || `Camera ${camera.id}`;
-                            if (camera.path) {
-                                cameraInfo += ` (${camera.path})`;
-                            }
+                        let cameraInfo = camera.name || `Camera ${camera.id}`;
+                        if (camera.path) {
+                            cameraInfo += ` (${camera.path})`;
+                        }
 
-                            option.textContent = cameraInfo;
-                            option.dataset.path = camera.path || `/dev/video${camera.id}`;
-                            option.dataset.name = camera.name || `Camera ${camera.id}`;
+                        option.textContent = cameraInfo;
+                        option.dataset.path = camera.path || `/dev/video${camera.id}`;
+                        option.dataset.name = camera.name || `Camera ${camera.id}`;
 
-                            updatedDeviceSelect.appendChild(option);
-                        });
+                        updatedDeviceSelect.appendChild(option);
+                    });
 
-                        // Add single event listener for device selection changes
-                        updatedDeviceSelect.addEventListener('change', function () {
-                            console.log('📹 Device selection changed to:', this.value);
-                            const selectedOption = this.options[this.selectedIndex];
+                    // Add single event listener for device selection changes
+                    updatedDeviceSelect.addEventListener('change', function () {
+                        console.log('📹 Device selection changed to:', this.value);
+                        const selectedOption = this.options[this.selectedIndex];
 
-                            if (selectedOption && selectedOption.dataset.path) {
-                                devicePath.value = selectedOption.dataset.path;
+                        if (selectedOption && selectedOption.dataset.path) {
+                            devicePath.value = selectedOption.dataset.path;
 
-                                console.log('✅ Device path updated:', selectedOption.dataset.path);
+                            console.log('✅ Device path updated:', selectedOption.dataset.path);
 
-                                // Show success message for selected camera
-                                status.className = 'detection-status detection-success';
-                                status.innerHTML = `
+                            // Show success message for selected camera
+                            status.className = 'detection-status detection-success';
+                            status.innerHTML = `
                                 <div style="text-align: center;">
                                     <div style="font-size: 1.1em; margin-bottom: 5px;">✅ Camera ${this.value} selected</div>
                                     <small>Device: ${selectedOption.dataset.path}</small>
                                 </div>
                             `;
-                            } else if (this.value === '') {
-                                // Reset when no device selected
-                                devicePath.value = '';
-                                status.className = 'detection-status detection-info';
-                                status.innerHTML = `
+                        } else if (this.value === '') {
+                            // Reset when no device selected
+                            devicePath.value = '';
+                            status.className = 'detection-status detection-info';
+                            status.innerHTML = `
                                 <div style="text-align: center;">
                                     <div style="font-size: 1.1em; margin-bottom: 5px;">📹 Select a camera device</div>
                                     <small>Choose from the detected cameras above</small>
                                 </div>
                             `;
-                            }
-                        });
-                    } else {
-                        console.log('❌ No cameras found');
-                        status.className = 'detection-status detection-warning';
-                        status.innerHTML = `
+                        }
+                    });
+                } else {
+                    console.log('❌ No cameras found');
+                    status.className = 'detection-status detection-warning';
+                    status.innerHTML = `
                         <div style="text-align: center;">
                             <div style="font-size: 1.2em; margin-bottom: 8px;">⚠️ No cameras detected</div>
                             <small>Check camera connections or try refreshing</small>
                         </div>
                     `;
-                    }
-                } catch (error) {
-                    console.error('💥 Camera detection error:', error);
-                    if (window.reportWebcamError) {
-                        window.reportWebcamError('camera_detection', error, {
-                            characterId,
-                            isRefresh,
-                            useRemote: true
-                        });
-                    }
-                    status.className = 'detection-status detection-error';
-                    status.textContent = 'Error detecting cameras: ' + error.message;
-                } finally {
-                    if (btn) {
-                        btn.disabled = false;
-                        btn.textContent = '🔄 Refresh Camera List';
-                    }
-                    console.log('🏁 Camera detection completed');
                 }
+            } catch (error) {
+                console.error('💥 Camera detection error:', error);
+                if (window.reportWebcamError) {
+                    window.reportWebcamError('camera_detection', error, {
+                        characterId,
+                        isRefresh,
+                        useRemote: true
+                    });
+                }
+                status.className = 'detection-status detection-error';
+                status.textContent = 'Error detecting cameras: ' + error.message;
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = '🔄 Refresh Camera List';
+                }
+                console.log('🏁 Camera detection completed');
             }
+        }
 
         // Add event listener for refresh button
         document.getElementById('refreshCamerasBtn').addEventListener('click', function () {
-                detectCameras(true);
-            });
+            detectCameras(true);
+        });
 
         // Update resolution options based on camera capabilities
         function updateResolutionOptions(resolutions) {
