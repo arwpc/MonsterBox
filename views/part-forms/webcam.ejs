@@ -428,16 +428,7 @@
 </head>
 
 <body>
-    <header>
-        <h1>
-            <%= title %>
-        </h1>
-        <nav>
-            <a href="/parts?characterId=<%= character ? character.id : '' %>">← Back to Parts</a>
-            <a href="/characters/<%= character ? character.id : '' %>/edit">📝 Edit Character</a>
-            <a href="/">🏠 Home</a>
-        </nav>
-    </header>
+    <%- include('../components/universal-header') %>
 
     <main>
         <form action="<%= action %>" method="POST" id="webcamForm">
