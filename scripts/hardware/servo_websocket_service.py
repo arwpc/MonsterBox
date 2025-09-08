@@ -261,17 +261,23 @@ class ServoWebSocketService(BaseHardwareService):
 
     def _angle_to_pulse_width(self, angle: float, config: ServoConfig) -> int:
         """Convert angle to pulse width for servo"""
+        # Use safe defaults if config values are None
+        min_angle = config.min_angle if config.min_angle is not None else 0.0
+        max_angle = config.max_angle if config.max_angle is not None else 180.0
+        min_pulse = config.min_pulse if config.min_pulse is not None else 1000
+        max_pulse = config.max_pulse if config.max_pulse is not None else 2000
+
         # Clamp angle to valid range
-        angle = max(config.min_angle, min(config.max_angle, angle))
+        angle = max(min_angle, min(max_angle, angle))
 
         # Linear interpolation between min and max pulse widths
-        pulse_range = config.max_pulse - config.min_pulse
-        angle_range = config.max_angle - config.min_angle
+        pulse_range = max_pulse - min_pulse
+        angle_range = max_angle - min_angle
 
         if angle_range == 0:
-            return config.min_pulse
+            return min_pulse
 
-        pulse_width = config.min_pulse + (angle / angle_range) * pulse_range
+        pulse_width = min_pulse + (angle / angle_range) * pulse_range
         return int(pulse_width)
 
     async def handle_message(self, websocket, message: Dict[str, Any]) -> Dict[str, Any]:
@@ -499,15 +505,21 @@ class ServoWebSocketService(BaseHardwareService):
 
     def _pulse_to_angle(self, pulse_width: int, config: ServoConfig) -> float:
         """Convert pulse width back to angle"""
-        pulse_range = config.max_pulse - config.min_pulse
-        angle_range = config.max_angle - config.min_angle
+        # Use safe defaults if config values are None
+        min_angle = config.min_angle if config.min_angle is not None else 0.0
+        max_angle = config.max_angle if config.max_angle is not None else 180.0
+        min_pulse = config.min_pulse if config.min_pulse is not None else 1000
+        max_pulse = config.max_pulse if config.max_pulse is not None else 2000
+
+        pulse_range = max_pulse - min_pulse
+        angle_range = max_angle - min_angle
 
         if pulse_range == 0:
-            return config.min_angle
+            return min_angle
 
-        normalized = (pulse_width - config.min_pulse) / pulse_range
-        angle = config.min_angle + (normalized * angle_range)
-        return max(config.min_angle, min(config.max_angle, angle))
+        normalized = (pulse_width - min_pulse) / pulse_range
+        angle = min_angle + (normalized * angle_range)
+        return max(min_angle, min(max_angle, angle))
 
     async def _move_servo_pca9685(self, config: ServoConfig, pulse_width: int, duration: float) -> bool:
         """Move servo using PCA9685 control"""
@@ -1501,10 +1513,10 @@ class ServoWebSocketService(BaseHardwareService):
         min_safe_pulse = 500
         max_safe_pulse = 2500
 
-        # Use servo-specific limits if available
-        if hasattr(config, 'min_pulse') and config.min_pulse:
+        # Use servo-specific limits if available and not None
+        if hasattr(config, 'min_pulse') and config.min_pulse is not None:
             min_safe_pulse = max(config.min_pulse, 500)  # Never go below 500µs
-        if hasattr(config, 'max_pulse') and config.max_pulse:
+        if hasattr(config, 'max_pulse') and config.max_pulse is not None:
             max_safe_pulse = min(config.max_pulse, 2500)  # Never go above 2500µs
 
         return min_safe_pulse <= pulse_width_us <= max_safe_pulse

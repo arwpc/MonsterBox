@@ -16,7 +16,10 @@
     <div class="card-monsterbox">
       <div class="card-header-monsterbox">
         <h1 class="font-creepster text-2xl text-primary text-glow" style="margin:0;">🎭 Servo Calibration</h1>
-        <p class="text-base-content/70" style="margin:8px 0 0 0;">Precision servo calibration and testing — neon terminal style</p>
+        <p class="text-base-content/70" style="margin:8px 0 0 0;">Precision servo calibration and testing for GPIO-controlled servos</p>
+        <div class="text-sm text-base-content/60" style="margin-top:8px;">
+          <strong>Quick Start:</strong> Select your character and servo, then use the guided calibration workflow for best results.
+        </div>
       </div>
 
       <div class="card-monsterbox">
@@ -66,32 +69,35 @@
         <div class="flex gap-4 flex-wrap items-end">
           <div class="form-group">
             <label class="label"><span class="label-text">Angle (0–180°)</span></label>
-            <input type="number" id="angleInput" value="90" min="0" max="180" step="1" class="form-input-monsterbox" style="max-width:120px;" />
+            <input type="number" id="angleInput" value="90" min="0" max="180" step="1" class="form-input-monsterbox" style="max-width:120px;" title="Target angle for standard servos" />
           </div>
           <div class="form-group">
-            <label class="label"><span class="label-text">Pulse (µs)</span></label>
-            <input type="number" id="pulseInput" value="1500" min="500" max="2400" step="1" class="form-input-monsterbox" style="max-width:140px;" />
+            <label class="label"><span class="label-text">Pulse Width (µs)</span></label>
+            <input type="number" id="pulseInput" value="1500" min="500" max="2400" step="1" class="form-input-monsterbox" style="max-width:140px;" title="PWM pulse width in microseconds" />
           </div>
           <div class="form-group">
-            <label class="label"><span class="label-text">&nbsp;</span></label>
+            <label class="label"><span class="label-text">Manual Control</span></label>
             <div class="flex gap-2 flex-wrap">
-              <button id="moveBtn" class="btn-monsterbox">Move</button>
-              <button id="testPulseBtn" class="btn-secondary-monsterbox btn-monsterbox">Test Pulse</button>
-              <button id="autoRangeBtn" class="btn-accent-monsterbox btn-monsterbox">Auto-Range Test</button>
+              <button id="moveBtn" class="btn-monsterbox" title="Move servo to specified angle">🎯 Move to Angle</button>
+              <button id="testPulseBtn" class="btn-secondary-monsterbox btn-monsterbox" title="Send raw pulse width command">⚡ Test Pulse</button>
+              <button id="autoRangeBtn" class="btn-accent-monsterbox btn-monsterbox" title="Automatically find servo's full range">🔍 Auto-Range Test</button>
             </div>
           </div>
         </div>
       </div>
 
       <div id="guidedCalibration" class="card-monsterbox" style="display:none;">
-        <h3 class="text-primary text-xl">Guided Calibration Workflow</h3>
+        <h3 class="text-primary text-xl">🎯 Guided Calibration Workflow</h3>
+        <div class="text-sm text-base-content/70" style="margin-bottom:12px;">
+          Follow the step-by-step process to safely calibrate your servo's full range of motion.
+        </div>
         <div id="guidedSteps" class="card-monsterbox">
-          <div id="stepInstructions" class="text-info" style="margin-bottom:12px;"></div>
+          <div id="stepInstructions" class="text-info" style="margin-bottom:12px; padding:8px; background:rgba(0,255,255,0.1); border-radius:4px;"></div>
           <div class="flex gap-2 flex-wrap">
-            <button id="guidedSaveBtn" class="btn-success btn btn-monsterbox">Save Current Position</button>
-            <button id="guidedNextBtn" class="btn-accent-monsterbox btn-monsterbox">Next Step</button>
-            <button id="guidedSkipBtn" class="btn-outline btn-monsterbox">Skip Step</button>
-            <button id="guidedFinishBtn" class="btn-success btn-monsterbox" style="display:none;">Finish Calibration</button>
+            <button id="guidedSaveBtn" class="btn-success btn btn-monsterbox" title="Save the current servo position">💾 Save Position</button>
+            <button id="guidedNextBtn" class="btn-accent-monsterbox btn-monsterbox" title="Continue to next calibration step">➡️ Next Step</button>
+            <button id="guidedSkipBtn" class="btn-outline btn-monsterbox" title="Skip this calibration step">⏭️ Skip Step</button>
+            <button id="guidedFinishBtn" class="btn-success btn-monsterbox" style="display:none;" title="Complete the calibration process">✅ Finish Calibration</button>
           </div>
         </div>
       </div>
@@ -128,12 +134,15 @@
         </div>
       </div>
 
-      <div class="flex gap-2 flex-wrap" style="margin-top:8px;">
-        <button id="startGuidedBtn" class="btn-success btn-monsterbox">Start Guided Calibration</button>
-        <button id="resetCalibrationBtn" class="btn-danger-monsterbox btn-monsterbox">Reset Calibration</button>
+      <div class="flex gap-2 flex-wrap justify-center" style="margin-top:16px; padding:12px; background:rgba(0,255,65,0.05); border-radius:8px;">
+        <button id="startGuidedBtn" class="btn-success btn-monsterbox" title="Begin step-by-step calibration process">🚀 Start Guided Calibration</button>
+        <button id="resetCalibrationBtn" class="btn-danger-monsterbox btn-monsterbox" title="Clear all saved calibration data">🔄 Reset Calibration</button>
       </div>
 
-      <pre id="results" class="card-monsterbox scrollbar-monsterbox" style="max-height:260px; overflow:auto;"></pre>
+      <div class="card-monsterbox" style="margin-top:16px;">
+        <h4 class="text-primary" style="margin-bottom:8px;">📊 Calibration Results</h4>
+        <pre id="results" class="scrollbar-monsterbox" style="max-height:260px; overflow:auto; background:rgba(0,0,0,0.3); padding:12px; border-radius:4px; font-size:12px;"></pre>
+      </div>
     </div>
   </div>
 

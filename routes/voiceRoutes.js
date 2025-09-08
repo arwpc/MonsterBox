@@ -128,6 +128,67 @@ router.post('/preview-and-play', async (req, res) => {
     }
 });
 
+// Play base64 audio data through character's configured speaker
+router.post('/play-audio', async (req, res) => {
+    try {
+        const { audioData, characterId, format = 'mp3' } = req.body;
+
+        if (!audioData || !characterId) {
+            return res.status(400).json({
+                success: false,
+                error: 'audioData and characterId are required'
+            });
+        }
+
+        const fs = require('fs').promises;
+        const path = require('path');
+        const os = require('os');
+
+        // Create temporary file from base64 data
+        const tempDir = os.tmpdir();
+        const tempFileName = `audio_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${format}`;
+        const tempFilePath = path.join(tempDir, tempFileName);
+
+        // Convert base64 to buffer and write to temp file
+        const audioBuffer = Buffer.from(audioData, 'base64');
+        await fs.writeFile(tempFilePath, audioBuffer);
+
+        // Play audio through character's configured speaker
+        const speakerService = require('../services/speakerService');
+        const result = await speakerService.playAudioForCharacter(tempFilePath, characterId);
+
+        // Clean up temp file
+        try {
+            await fs.unlink(tempFilePath);
+        } catch (cleanupError) {
+            console.warn('⚠️ Failed to clean up temp audio file:', cleanupError.message);
+        }
+
+        if (result.success) {
+            return res.json({
+                success: true,
+                played: true,
+                device: result.device,
+                message: `Audio played on character ${characterId} speaker`
+            });
+        } else {
+            return res.status(500).json({
+                success: false,
+                error: 'Failed to play audio',
+                details: result.error
+            });
+        }
+
+    } catch (error) {
+        console.error('❌ Error playing base64 audio:', error);
+        return res.status(500).json({
+            success: false,
+            error: 'Failed to play audio',
+            details: error.message
+        });
+    }
+});
+
 // STT endpoint for Enhanced Test Chat
 router.post('/transcribe', async (req, res) => {
     try {

@@ -10,9 +10,7 @@
     "grep": {},
     "grepInvert": null,
     "maxFailures": 0,
-    "metadata": {
-      "actualWorkers": 1
-    },
+    "metadata": {},
     "preserveOutput": "always",
     "reporter": [
       [
@@ -40,9 +38,7 @@
         "outputDir": "/home/remote/MonsterBox/test-results",
         "repeatEach": 1,
         "retries": 1,
-        "metadata": {
-          "actualWorkers": 1
-        },
+        "metadata": {},
         "id": "chromium",
         "name": "chromium",
         "testDir": "/home/remote/MonsterBox/tests/playwright",
@@ -65,112 +61,18 @@
       "timeout": 120000
     }
   },
-  "suites": [
+  "suites": [],
+  "errors": [
     {
-      "title": "04-ai-management.spec.ts",
-      "file": "04-ai-management.spec.ts",
-      "column": 0,
-      "line": 0,
-      "specs": [],
-      "suites": [
-        {
-          "title": "AI Management",
-          "file": "04-ai-management.spec.ts",
-          "line": 8,
-          "column": 6,
-          "specs": [
-            {
-              "title": "TTS Configuration page",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 180000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "interrupted",
-                      "duration": 121850,
-                      "error": {
-                        "message": "Error: locator.click: Test ended.\nCall log:\n\u001b[2m  - waiting for locator('button:has-text(\"Test\"), button:has-text(\"Speak\"), .btn-test').first()\u001b[22m\n\u001b[2m    - locator resolved to <button class=\"button secondary-btn\" onclick=\"testAudioIntegrity()\">…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    187 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m        - element is not visible\u001b[22m\n\u001b[2m      - retrying click action\u001b[22m\n\u001b[2m        - waiting 500ms\u001b[22m\n",
-                        "stack": "Error: locator.click: Test ended.\nCall log:\n\u001b[2m  - waiting for locator('button:has-text(\"Test\"), button:has-text(\"Speak\"), .btn-test').first()\u001b[22m\n\u001b[2m    - locator resolved to <button class=\"button secondary-btn\" onclick=\"testAudioIntegrity()\">…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    187 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m        - element is not visible\u001b[22m\n\u001b[2m      - retrying click action\u001b[22m\n\u001b[2m        - waiting 500ms\u001b[22m\n\n    at /home/remote/MonsterBox/tests/playwright/04-ai-management.spec.ts:130:34",
-                        "location": {
-                          "file": "/home/remote/MonsterBox/tests/playwright/04-ai-management.spec.ts",
-                          "column": 34,
-                          "line": 130
-                        },
-                        "snippet": "\u001b[0m \u001b[90m 128 |\u001b[39m       \u001b[36mconst\u001b[39m testButton \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'button:has-text(\"Test\"), button:has-text(\"Speak\"), .btn-test'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 129 |\u001b[39m       \u001b[36mif\u001b[39m (\u001b[36mawait\u001b[39m testButton\u001b[33m.\u001b[39mcount() \u001b[33m>\u001b[39m \u001b[35m0\u001b[39m) {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 130 |\u001b[39m         \u001b[36mawait\u001b[39m testButton\u001b[33m.\u001b[39mfirst()\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                  \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 131 |\u001b[39m         \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForTimeout(\u001b[35m3000\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 132 |\u001b[39m       }\n \u001b[90m 133 |\u001b[39m     }\u001b[0m"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "/home/remote/MonsterBox/tests/playwright/04-ai-management.spec.ts",
-                            "column": 34,
-                            "line": 130
-                          },
-                          "message": "Error: locator.click: Test ended.\nCall log:\n\u001b[2m  - waiting for locator('button:has-text(\"Test\"), button:has-text(\"Speak\"), .btn-test').first()\u001b[22m\n\u001b[2m    - locator resolved to <button class=\"button secondary-btn\" onclick=\"testAudioIntegrity()\">…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    187 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m        - element is not visible\u001b[22m\n\u001b[2m      - retrying click action\u001b[22m\n\u001b[2m        - waiting 500ms\u001b[22m\n\n\n\u001b[0m \u001b[90m 128 |\u001b[39m       \u001b[36mconst\u001b[39m testButton \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'button:has-text(\"Test\"), button:has-text(\"Speak\"), .btn-test'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 129 |\u001b[39m       \u001b[36mif\u001b[39m (\u001b[36mawait\u001b[39m testButton\u001b[33m.\u001b[39mcount() \u001b[33m>\u001b[39m \u001b[35m0\u001b[39m) {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 130 |\u001b[39m         \u001b[36mawait\u001b[39m testButton\u001b[33m.\u001b[39mfirst()\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                  \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 131 |\u001b[39m         \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForTimeout(\u001b[35m3000\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 132 |\u001b[39m       }\n \u001b[90m 133 |\u001b[39m     }\u001b[0m\n\u001b[2m    at /home/remote/MonsterBox/tests/playwright/04-ai-management.spec.ts:130:34\u001b[22m"
-                        }
-                      ],
-                      "stdout": [
-                        {
-                          "text": "🚨 AI Management Errors:\n"
-                        },
-                        {
-                          "text": "  - Console Error: Failed to load resource: the server responded with a status of 404 (Not Found)\n"
-                        }
-                      ],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2025-09-07T20:26:35.070Z",
-                      "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "/home/remote/MonsterBox/test-results/04-ai-management-AI-Management-TTS-Configuration-page-chromium/test-failed-1.png"
-                        },
-                        {
-                          "name": "video",
-                          "contentType": "video/webm",
-                          "path": "/home/remote/MonsterBox/test-results/04-ai-management-AI-Management-TTS-Configuration-page-chromium/video.webm"
-                        },
-                        {
-                          "name": "trace",
-                          "contentType": "application/zip",
-                          "path": "/home/remote/MonsterBox/test-results/04-ai-management-AI-Management-TTS-Configuration-page-chromium/trace.zip"
-                        }
-                      ],
-                      "errorLocation": {
-                        "file": "/home/remote/MonsterBox/tests/playwright/04-ai-management.spec.ts",
-                        "column": 34,
-                        "line": 130
-                      }
-                    }
-                  ],
-                  "status": "skipped"
-                }
-              ],
-              "id": "567c9c476ce4cd6aeadd-be31e0ea70f250a8c8bb",
-              "file": "04-ai-management.spec.ts",
-              "line": 92,
-              "column": 7
-            }
-          ]
-        }
-      ]
+      "message": "Error: No tests found.\nMake sure that arguments are regular expressions matching test files.\nYou may need to escape symbols like \"$\" or \"*\" and quote the arguments.",
+      "stack": "Error: No tests found.\nMake sure that arguments are regular expressions matching test files.\nYou may need to escape symbols like \"$\" or \"*\" and quote the arguments."
     }
   ],
-  "errors": [],
   "stats": {
-    "startTime": "2025-09-07T20:26:31.770Z",
-    "duration": 129991.76399999998,
+    "startTime": "2025-09-08T01:14:44.585Z",
+    "duration": 122.25599999999986,
     "expected": 0,
-    "skipped": 1,
+    "skipped": 0,
     "unexpected": 0,
     "flaky": 0
   }

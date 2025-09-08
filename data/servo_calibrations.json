@@ -76,9 +76,23 @@
         "calibrated": true,
         "verified": false,
         "description": "min"
+      },
+      "neutral": {
+        "pulse_us": 1450,
+        "angle": null,
+        "calibrated": true,
+        "verified": false,
+        "description": "neutral"
+      },
+      "max": {
+        "pulse_us": 1450,
+        "angle": null,
+        "calibrated": true,
+        "verified": false,
+        "description": "max"
       }
     },
-    "functionality_status": "needs_calibration",
-    "calibrated_date": "2025-09-05T18:11:15"
+    "functionality_status": "working",
+    "calibrated_date": "2025-09-07T16:52:06"
   }
 }

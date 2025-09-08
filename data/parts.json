@@ -185,75 +185,12 @@
     "customSettings": null
   },
   {
-    "id": 33,
-    "name": "Skull Talking Jaw",
-    "type": "servo",
-    "characterId": 4,
-    "pin": 26,
-    "usePCA9685": false,
-    "channel": null,
-    "pca9685Settings": null,
-    "servoType": "Miuzei MG90S",
-    "minPulse": 500,
-    "maxPulse": 2400,
-    "defaultAngle": 90,
-    "mode": [
-      "Standard"
-    ],
-    "feedback": false,
-    "controlType": [
-      "PWM"
-    ],
-    "customSettings": null
-  },
-  {
-    "id": 34,
-    "characterId": 4,
-    "type": "microphone",
-    "name": "Ears of the Skull",
-    "description": "",
-    "deviceId": "default",
-    "outputDevice": "alsa_output.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.analog-stereo",
-    "sampleRate": "8000",
-    "channels": "1",
-    "sensitivity": "1",
-    "echoCancellation": "on",
-    "noiseSuppression": "on",
-    "autoGainControl": "on",
-    "voiceActivationThreshold": "0.42",
-    "voiceActivation": "on"
-  },
-  {
-    "id": 54,
-    "name": "SkullTalker Vision",
-    "type": "webcam",
-    "characterId": 4,
-    "deviceId": 0,
-    "devicePath": "/dev/video0",
-    "resolution": "1280x720",
-    "fps": 30,
-    "status": "active",
-    "cameraControls": {
-      "brightness": 0,
-      "contrast": 32,
-      "saturation": 64,
-      "hue": 0,
-      "gamma": 100,
-      "gain": 0,
-      "sharpness": 2,
-      "backlight_compensation": 1,
-      "exposure_auto": 3,
-      "exposure_absolute": 250,
-      "focus_auto": 1
-    }
-  },
-  {
     "id": 55,
     "name": "Coffin Breaker Vision",
     "type": "webcam",
     "characterId": 2,
-    "deviceId": 0,
-    "devicePath": "/dev/video0",
+    "deviceId": 1,
+    "devicePath": "/dev/video1",
     "resolution": "1280x720",
     "fps": 30,
     "status": "active",
@@ -276,8 +213,8 @@
     "name": "PumpkinHead Vision",
     "type": "webcam",
     "characterId": 3,
-    "deviceId": 0,
-    "devicePath": "/dev/video0",
+    "deviceId": 2,
+    "devicePath": "/dev/video2",
     "resolution": "1280x720",
     "fps": 30,
     "status": "active",
@@ -395,5 +332,91 @@
     "description": "Auto-created speaker for PlaywrightBot",
     "outputDevice": "default",
     "volume": "80"
+  },
+  {
+    "id": 66,
+    "type": "speaker",
+    "characterId": 4,
+    "name": "Skulltalker Speaker",
+    "description": "USB Dongle speaker for Skulltalker audio output",
+    "outputDevice": "alsa_output.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.analog-stereo",
+    "volume": "80"
+  },
+  {
+    "id": 67,
+    "type": "microphone",
+    "characterId": 4,
+    "name": "Skulltalker Microphone",
+    "description": "USB WebCam audio input for Skulltalker voice detection",
+    "deviceId": "default",
+    "outputDevice": "alsa_output.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.analog-stereo",
+    "sampleRate": "16000",
+    "channels": "1",
+    "sensitivity": "1",
+    "echoCancellation": "on",
+    "noiseSuppression": "on",
+    "autoGainControl": "on",
+    "voiceActivation": "on",
+    "voiceActivationThreshold": "0.3"
+  },
+  {
+    "id": 68,
+    "type": "motion-sensor",
+    "characterId": 4,
+    "name": "Skulltalker PIR Sensor",
+    "description": "Motion detection sensor for Skulltalker activation",
+    "gpioPin": 26,
+    "sensorType": "PIR",
+    "sensitivity": 50,
+    "triggerDelay": 1000,
+    "enabled": true
+  },
+  {
+    "id": 69,
+    "type": "servo",
+    "characterId": 4,
+    "name": "Skulltalker Jaw Servo",
+    "description": "Miuzei MG90S servo for jaw animation",
+    "pin": 16,
+    "usePCA9685": false,
+    "channel": null,
+    "pca9685Settings": null,
+    "servoType": "Miuzei MG90S",
+    "minPulse": 500,
+    "maxPulse": 2400,
+    "defaultAngle": 90,
+    "mode": [
+      "Standard"
+    ],
+    "feedback": false,
+    "controlType": [
+      "PWM"
+    ],
+    "customSettings": null
+  },
+  {
+    "id": 70,
+    "type": "webcam",
+    "characterId": 4,
+    "name": "Skulltalker Vision",
+    "description": "USB WebCam for Skulltalker video streaming",
+    "deviceId": 3,
+    "devicePath": "/dev/video3",
+    "resolution": "640x480",
+    "fps": 30,
+    "status": "active",
+    "cameraControls": {
+      "brightness": 0,
+      "contrast": 32,
+      "saturation": 64,
+      "hue": 0,
+      "gamma": 100,
+      "gain": 0,
+      "sharpness": 2,
+      "backlight_compensation": 1,
+      "exposure_auto": 3,
+      "exposure_absolute": 250,
+      "focus_auto": 1
+    }
   }
 ]

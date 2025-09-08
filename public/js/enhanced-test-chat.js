@@ -2129,25 +2129,33 @@ class EnhancedTestChat {
      */
     async applyCharacterSpeakerConfig() {
         try {
-            if (!this.currentCharacter || !this.currentCharacter.defaultSpeaker) {
-                console.log('🔊 No character speaker configuration available, using default audio output');
+            if (!this.currentCharacter || !this.currentCharacter.id) {
+                console.log('🔊 No character selected, using default audio output');
                 return;
             }
 
-            const speaker = this.currentCharacter.defaultSpeaker;
-            console.log(`🔊 Applying speaker config for character ${this.currentCharacter.name}:`, speaker);
+            // Load character speaker configuration from server
+            const response = await fetch(`/api/character-audio-config/${this.currentCharacter.id}/speaker`);
+            const data = await response.json();
 
-            // Apply volume setting if available
-            if (speaker.volume !== undefined) {
-                // Set volume for future audio elements
-                this.defaultAudioVolume = speaker.volume / 100; // Convert percentage to 0-1 range
-                console.log(`🔊 Set audio volume to ${speaker.volume}%`);
+            if (data.success && data.data.audioDevice) {
+                const audioDevice = data.data.audioDevice;
+                console.log(`🔊 Character ${this.currentCharacter.id} speaker config:`, audioDevice);
+
+                // Store speaker configuration for reference
+                this.currentCharacter.speakerConfig = data.data.speakerConfig;
+                this.currentCharacter.audioDevice = audioDevice;
+
+                // Set default volume for browser fallback
+                if (audioDevice.volume !== undefined) {
+                    this.defaultAudioVolume = audioDevice.volume / 100;
+                    console.log(`🔊 Set fallback audio volume to ${audioDevice.volume}%`);
+                }
+
+                console.log(`🔊 Character speaker: ${audioDevice.speakerName} (${audioDevice.device})`);
+            } else {
+                console.log('🔊 No character speaker configuration available, using server-side routing');
             }
-
-            // Apply speaker device if available (this would require Web Audio API for device selection)
-            if (speaker.outputDevice && speaker.outputDevice !== 'default') {
-                console.log(`🔊 Speaker device: ${speaker.outputDevice} (device selection requires user permission)`);
-                // Note: Browser audio device selection requires user interaction and modern Web Audio API
                 // This is a placeholder for future enhancement
             }
 
@@ -2157,7 +2165,7 @@ class EnhancedTestChat {
     }
 
     /**
-     * Play audio from base64 data (single-stream, interruptible)
+     * Play audio from base64 data through character's configured speaker
      */
     async playAudioFromBase64(audioBase64) {
         try {
@@ -2172,143 +2180,18 @@ class EnhancedTestChat {
                 return;
             }
 
-            // Ensure only one audio stream at a time
-            this.stopCurrentAudio();
+            console.log('🔊 Playing audio through character speaker, length:', audioBase64.length);
 
-            console.log('🔊 Playing audio from base64, length:', audioBase64.length);
-
-            // Apply character speaker configuration if available
-            await this.applyCharacterSpeakerConfig();
-
-            // First, try to detect if this is already a complete audio format (MP3, WAV, etc.)
-            try {
-                // Try direct playback first using blob URL (avoids CSP issues)
-                const audioBytes = atob(audioBase64);
-                const audioArray = new Uint8Array(audioBytes.length);
-                for (let i = 0; i < audioBytes.length; i++) {
-                    audioArray[i] = audioBytes.charCodeAt(i);
-                }
-
-                const audioBlob = new Blob([audioArray], { type: 'audio/mpeg' });
-                const audioUrl = URL.createObjectURL(audioBlob);
-                const testAudio = new Audio(audioUrl);
-                // Track URL for cleanup
-                testAudio._blobUrl = audioUrl;
-
-                await new Promise((resolve, reject) => {
-                    const timeout = setTimeout(() => {
-                        reject(new Error('Audio load timeout'));
-                    }, 2000);
-
-                    testAudio.oncanplaythrough = () => {
-                        clearTimeout(timeout);
-                        resolve();
-                    };
-
-                    testAudio.onerror = () => {
-                        clearTimeout(timeout);
-                        reject(new Error('Direct audio playback failed'));
-                    };
-
-                    testAudio.load();
-                });
-
-                // If we get here, direct playback works
-                console.log('✅ Direct audio playback successful');
-                this.currentAudio = testAudio;
-                this.currentAudio.volume = this.defaultAudioVolume || 0.8;
-
-                this.currentAudio.onended = () => {
-                    if (this.currentAudio?._blobUrl) {
-                        URL.revokeObjectURL(this.currentAudio._blobUrl);
-                    }
-                    this.currentAudio = null;
-                };
-
-                await this.currentAudio.play();
-
-                // When playback finishes, compute Output metric
-                this.currentAudio.onended = () => {
-                    try {
-                        const end = Date.now();
-                        const start = this.voiceOutputStartTime || this.lastAssistantTextTime;
-                        if (start) {
-                            this.updatePerformanceMetric('tts', end - start);
-                        }
-                        // If a typed message was awaiting completion, finish it now
-                        if (this.pendingMessage) {
-                            if (this.pendingMessage.typingId) this.removeTypingIndicator(this.pendingMessage.typingId);
-                            this.handleMessageComplete();
-                        }
-                    } finally {
-                        this.voiceOutputStartTime = null;
-                        // revoke any blob URL already done above
-                    }
-                };
-
-                return;
-
-            } catch (directPlaybackError) {
-                console.log('🔄 Direct playback failed, trying PCM conversion:', directPlaybackError.message);
-
-                // Try PCM to WAV conversion
-                try {
-                    const pcmData = atob(audioBase64);
-                    const wavBlob = this.convertPCMToWAV(pcmData, 16000, 1); // 16kHz, mono
-                    const audioUrl = URL.createObjectURL(wavBlob);
-
-                    this.currentAudio = new Audio(audioUrl);
-                    // Track URL for cleanup
-                    this.currentAudio._blobUrl = audioUrl;
-                    this.currentAudio.volume = this.defaultAudioVolume || 0.8;
-
-                    this.currentAudio.onended = () => {
-                        try {
-                            const end = Date.now();
-                            const start = this.voiceOutputStartTime || this.lastAssistantTextTime;
-                            if (start) {
-                                this.updatePerformanceMetric('tts', end - start);
-                            }
-                            // If a typed message was awaiting completion, finish it now
-                            if (this.pendingMessage) {
-                                if (this.pendingMessage.typingId) this.removeTypingIndicator(this.pendingMessage.typingId);
-                                this.handleMessageComplete();
-                            }
-                        } finally {
-                            if (this.currentAudio?._blobUrl) {
-                                URL.revokeObjectURL(this.currentAudio._blobUrl);
-                            }
-                            this.currentAudio = null;
-                            this.voiceOutputStartTime = null;
-                        }
-                    };
-
-                    this.currentAudio.onerror = (error) => {
-                        console.error('❌ PCM audio playback error:', error);
-                        if (this.currentAudio?._blobUrl) {
-                            URL.revokeObjectURL(this.currentAudio._blobUrl);
-                        }
-                        this.currentAudio = null;
-                        this.fallbackToExistingTTS();
-                        // Also unlock UI so user can continue
-                        if (this.pendingMessage) {
-                            if (this.pendingMessage.typingId) this.removeTypingIndicator(this.pendingMessage.typingId);
-                            this.handleMessageComplete();
-                        }
-                    };
-
-                    this.currentAudio.onloadeddata = () => {
-                        console.log('✅ PCM audio converted to WAV and loaded successfully');
-                    };
-
-                    await this.currentAudio.play();
-                    console.log('✅ Playing converted PCM audio');
-
-                } catch (pcmError) {
-                    console.error('❌ Error converting PCM to WAV:', pcmError);
-                    this.fallbackToExistingTTS();
-                }
+            // Use server-side audio playback through character's configured speaker
+            if (this.currentCharacter && this.currentCharacter.id) {
+                await this.playAudioThroughCharacterSpeaker(audioBase64);
+            } else {
+                console.warn('⚠️ No character selected, falling back to browser audio');
+                await this.playAudioInBrowser(audioBase64);
             }
+
+            // Handle completion metrics
+            this.handleAudioPlaybackComplete();
 
         } catch (error) {
             console.error('❌ Error playing audio from base64:', error);
@@ -2317,6 +2200,116 @@ class EnhancedTestChat {
                 if (this.pendingMessage.typingId) this.removeTypingIndicator(this.pendingMessage.typingId);
                 this.handleMessageComplete();
             }
+        }
+    }
+
+    /**
+     * Play audio through character's configured speaker (server-side)
+     */
+    async playAudioThroughCharacterSpeaker(audioBase64) {
+        try {
+            console.log(`🔊 Playing audio through character ${this.currentCharacter.id} speaker`);
+
+            const response = await fetch('/voice/play-audio', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    audioData: audioBase64,
+                    characterId: this.currentCharacter.id,
+                    format: 'mp3'
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                console.log(`✅ Audio played successfully on ${data.device}`);
+                this.addMessage('system', `🔊 Audio played on character speaker: ${data.device}`, {
+                    characterName: 'System',
+                    isInfo: true
+                });
+            } else {
+                console.error('❌ Server-side audio playback failed:', data.error);
+                console.log('🔄 Falling back to browser audio playback');
+                await this.playAudioInBrowser(audioBase64);
+            }
+
+        } catch (error) {
+            console.error('❌ Error with server-side audio playback:', error);
+            console.log('🔄 Falling back to browser audio playback');
+            await this.playAudioInBrowser(audioBase64);
+        }
+    }
+
+    /**
+     * Play audio in browser (fallback method)
+     */
+    async playAudioInBrowser(audioBase64) {
+        try {
+            console.log('🔊 Playing audio in browser (fallback)');
+
+            // Ensure only one audio stream at a time
+            this.stopCurrentAudio();
+
+            // Try direct playback using blob URL
+            const audioBytes = atob(audioBase64);
+            const audioArray = new Uint8Array(audioBytes.length);
+            for (let i = 0; i < audioBytes.length; i++) {
+                audioArray[i] = audioBytes.charCodeAt(i);
+            }
+
+            const audioBlob = new Blob([audioArray], { type: 'audio/mpeg' });
+            const audioUrl = URL.createObjectURL(audioBlob);
+
+            this.currentAudio = new Audio(audioUrl);
+            this.currentAudio._blobUrl = audioUrl;
+            this.currentAudio.volume = this.defaultAudioVolume || 0.8;
+
+            this.currentAudio.onended = () => {
+                if (this.currentAudio?._blobUrl) {
+                    URL.revokeObjectURL(this.currentAudio._blobUrl);
+                }
+                this.currentAudio = null;
+            };
+
+            this.currentAudio.onerror = (error) => {
+                console.error('❌ Browser audio playback error:', error);
+                if (this.currentAudio?._blobUrl) {
+                    URL.revokeObjectURL(this.currentAudio._blobUrl);
+                }
+                this.currentAudio = null;
+            };
+
+            await this.currentAudio.play();
+            console.log('✅ Browser audio playback started');
+
+        } catch (error) {
+            console.error('❌ Browser audio playback failed:', error);
+        }
+    }
+
+    /**
+     * Handle audio playback completion metrics
+     */
+    handleAudioPlaybackComplete() {
+        try {
+            const end = Date.now();
+            const start = this.voiceOutputStartTime || this.lastAssistantTextTime;
+            if (start) {
+                this.updatePerformanceMetric('tts', end - start);
+            }
+
+            // If a typed message was awaiting completion, finish it now
+            if (this.pendingMessage) {
+                if (this.pendingMessage.typingId) {
+                    this.removeTypingIndicator(this.pendingMessage.typingId);
+                }
+                this.handleMessageComplete();
+            }
+        } finally {
+            this.voiceOutputStartTime = null;
         }
     }
 

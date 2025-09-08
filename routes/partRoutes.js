@@ -103,14 +103,9 @@ router.get('/', async (req, res) => {
         // Get ALL parts (hardware-centric approach)
         const allParts = await partService.getAllParts();
 
-        // Apply character filter if specified
-        const filterCharacterId = req.query.filterCharacterId;
-        let filteredParts = allParts;
-
-        if (filterCharacterId && filterCharacterId !== 'all') {
-            const characterIdNum = parseInt(filterCharacterId);
-            filteredParts = allParts.filter(part => part.characterId === characterIdNum);
-        }
+        // Auto-filter by currently selected character (remove manual filter dropdown)
+        // Only show parts belonging to the currently selected character
+        const filteredParts = allParts.filter(part => part.characterId === req.characterId);
 
         const partsWithDetails = await Promise.all(filteredParts.map(async part => ({
             ...part,
@@ -126,7 +121,8 @@ router.get('/', async (req, res) => {
             parts: partsWithDetails,
             character,
             characters,
-            filterCharacterId: filterCharacterId || 'all'
+            // Remove filterCharacterId since we're auto-filtering
+            autoFiltered: true
         });
     } catch (error) {
         logger.error('Error fetching parts:', error);

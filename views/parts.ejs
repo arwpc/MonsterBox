@@ -22,30 +22,7 @@
                 settings, and safety limits. Parts can then be assigned to characters in the Characters menu.</p>
         </div>
 
-        <!-- Character Filter Section -->
-        <div class="filter-section">
-            <h3>🎭 Filter by Character</h3>
-            <div class="filter-controls">
-                <label for="characterFilter">Show parts for:</label>
-                <select id="characterFilter" onchange="applyCharacterFilter()">
-                    <option value="all" <%= filterCharacterId === 'all' ? 'selected' : '' %>>All Characters</option>
-                    <% characters.forEach(function(char) { %>
-                        <option value="<%= char.id %>" <%= filterCharacterId == char.id ? 'selected' : '' %>>
-                            <%= char.char_name || char.name %>
-                        </option>
-                    <% }); %>
-                </select>
-                <button type="button" class="button small-btn" onclick="clearFilter()">🔄 Show All</button>
-            </div>
-            <div class="filter-info">
-                <% if (filterCharacterId && filterCharacterId !== 'all') { %>
-                    <% const selectedCharacter = characters.find(c => c.id == filterCharacterId); %>
-                    <small>Showing parts assigned to: <strong><%= selectedCharacter ? (selectedCharacter.char_name || selectedCharacter.name) : 'Unknown Character' %></strong></small>
-                <% } else { %>
-                    <small>Showing all parts from all characters</small>
-                <% } %>
-            </div>
-        </div>
+
 
         <div class="button-group">
             <a href="/parts/new/motor" class="button">🔄 Add Motor</a>
@@ -180,49 +157,7 @@
             margin-bottom: 10px;
         }
 
-        .filter-section {
-            background: rgba(0, 100, 255, 0.1);
-            border: 1px solid #0066ff;
-            border-radius: 5px;
-            padding: 15px;
-            margin: 20px 0;
-        }
 
-        .filter-section h3 {
-            color: #0066ff;
-            margin-bottom: 10px;
-        }
-
-        .filter-controls {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-
-        .filter-controls label {
-            color: #0066ff;
-            font-weight: bold;
-            white-space: nowrap;
-        }
-
-        .filter-controls select {
-            background: rgba(0, 0, 0, 0.5);
-            border: 1px solid #0066ff;
-            border-radius: 4px;
-            color: #fff;
-            padding: 8px 12px;
-            min-width: 200px;
-        }
-
-        .filter-info {
-            color: #888;
-            font-size: 12px;
-        }
-
-        .filter-info strong {
-            color: #0066ff;
-        }
 
 
 
@@ -345,28 +280,8 @@
             }
         }
 
-        // Character filter functions
-        function applyCharacterFilter() {
-            const filterSelect = document.getElementById('characterFilter');
-            const selectedCharacterId = filterSelect.value;
-
-            // Update URL with filter parameter
-            const currentUrl = new URL(window.location);
-            if (selectedCharacterId === 'all') {
-                currentUrl.searchParams.delete('filterCharacterId');
-            } else {
-                currentUrl.searchParams.set('filterCharacterId', selectedCharacterId);
-            }
-
-            // Reload page with new filter
-            window.location.href = currentUrl.toString();
-        }
-
-        function clearFilter() {
-            const currentUrl = new URL(window.location);
-            currentUrl.searchParams.delete('filterCharacterId');
-            window.location.href = currentUrl.toString();
-        }
+        // Character filtering is now automatic based on selected character
+        // No manual filter functions needed
 
 
     </script>

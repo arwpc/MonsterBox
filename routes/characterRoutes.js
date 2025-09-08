@@ -606,7 +606,7 @@ router.delete('/:id/servos/:servoId', async (req, res) => {
     }
 });
 
-// Character-Part Assignment Routes
+// Character-Part Assignment Routes - Redirect to main parts page with character context
 router.get('/:id/parts', async (req, res) => {
     try {
         const characterId = parseInt(req.params.id);
@@ -615,17 +615,9 @@ router.get('/:id/parts', async (req, res) => {
             return res.status(404).send('Character not found');
         }
 
-        // Get all parts and filter by character assignment
-        const allParts = await partService.getAllParts();
-        const assignedParts = allParts.filter(part => part.characterId === characterId);
-        const availableParts = allParts.filter(part => !part.characterId || part.characterId === characterId);
-
-        res.render('character-parts', {
-            title: `${character.char_name} - Hardware Parts`,
-            character,
-            assignedParts,
-            availableParts
-        });
+        // Redirect to main parts page with character selection
+        // The universal header will handle character persistence
+        res.redirect(`/parts?characterId=${characterId}`);
     } catch (error) {
         logger.error('Error fetching character parts:', error);
         res.status(500).send('An error occurred while fetching character parts');
