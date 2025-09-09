@@ -418,5 +418,53 @@
       "exposure_absolute": 250,
       "focus_auto": 1
     }
+  },
+  {
+    "id": "59",
+    "type": "microphone",
+    "characterId": 1,
+    "name": "testasdasd",
+    "description": "",
+    "deviceId": "hw:1",
+    "outputDevice": "alsa_output.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.analog-stereo",
+    "sampleRate": "8000",
+    "channels": "1",
+    "sensitivity": "1",
+    "echoCancellation": "on",
+    "noiseSuppression": "on",
+    "autoGainControl": "on",
+    "voiceActivationThreshold": "0.1"
+  },
+  {
+    "id": "59",
+    "type": "microphone",
+    "characterId": 4,
+    "name": "testasdasd",
+    "description": "",
+    "deviceId": "hw:1",
+    "outputDevice": "alsa_output.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.analog-stereo",
+    "sampleRate": "8000",
+    "channels": "1",
+    "sensitivity": "1",
+    "echoCancellation": "on",
+    "noiseSuppression": "on",
+    "autoGainControl": "on",
+    "voiceActivationThreshold": "0.1"
+  },
+  {
+    "id": "59",
+    "type": "microphone",
+    "characterId": 4,
+    "name": "testasdasd",
+    "description": "",
+    "deviceId": "hw:1",
+    "outputDevice": "alsa_output.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.analog-stereo",
+    "sampleRate": "8000",
+    "channels": "1",
+    "sensitivity": "1",
+    "echoCancellation": "on",
+    "noiseSuppression": "on",
+    "autoGainControl": "on",
+    "voiceActivationThreshold": "0.1"
   }
 ]

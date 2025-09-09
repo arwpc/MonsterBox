@@ -933,25 +933,30 @@
           return;
         }
 
-        // Generate preview using character's voice settings
-        const generateResponse = await fetch('/api/voice/generate', {
+        // Generate and play preview using character's speaker
+        const previewResponse = await fetch('/api/voice/preview-and-play', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            speaker_id: voiceConfig.speaker_id,
             text: 'Hello, this is a voice preview for the assistant.',
-            options: voiceConfig.settings || {},
-            characterId: characterId
+            characterId: parseInt(characterId),
+            voiceId: voiceConfig.speaker_id,
+            voiceConfig: {
+              stability: voiceConfig.settings?.stability || 0.5,
+              similarity: voiceConfig.settings?.similarity || 0.75,
+              style: voiceConfig.settings?.style || 0.0,
+              modelId: 'eleven_multilingual_v2'
+            }
           })
         });
 
-        const data = await generateResponse.json();
+        const data = await previewResponse.json();
 
-        if (data.success && data.url) {
-          const audio = new Audio(data.url);
-          audio.play();
+        if (data.success) {
+          const device = data.device || 'default';
+          alert(`Voice preview played successfully on character speaker (${device})`);
         } else {
           alert('Voice preview failed: ' + (data.error || 'Unknown error'));
         }

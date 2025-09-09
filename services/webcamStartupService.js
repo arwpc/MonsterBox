@@ -90,6 +90,12 @@ class WebcamStartupService {
             clearInterval(this.healthCheckInterval);
         }
 
+        // Skip health monitoring if no streams are active
+        if (this.activeStreams.size === 0) {
+            logger.info('📹 No active webcam streams, skipping health monitoring');
+            return;
+        }
+
         logger.info('📹 Starting webcam stream health monitoring...');
 
         this.healthCheckInterval = setInterval(async () => {
@@ -102,6 +108,11 @@ class WebcamStartupService {
      */
     async performHealthCheck() {
         try {
+            // Skip if no active streams
+            if (this.activeStreams.size === 0) {
+                return;
+            }
+
             logger.debug('📹 Performing webcam stream health check...');
 
             for (const [characterId, streamConfig] of this.streamConfigs) {

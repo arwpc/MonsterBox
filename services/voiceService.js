@@ -298,7 +298,8 @@ class VoiceService {
             }
 
             // Play the audio using character's configured speaker
-            const speakerService = require('./speakerService');
+            const SpeakerService = require('./speakerService');
+            const speakerService = new SpeakerService();
             const playResult = await speakerService.playAudioForCharacter(speechResult.filepath, characterId);
 
             if (!playResult.success) {

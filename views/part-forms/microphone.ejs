@@ -193,7 +193,7 @@
         async function loadInputDevices() {
             try {
                 console.log('🎤 Loading microphone input devices...');
-                const response = await axios.get('/api/microphone/devices');
+                const response = await axios.get('/parts/api/microphone/devices');
                 const deviceSelect = document.getElementById('deviceId');
                 const currentValue = '<%= part.deviceId || "" %>';
 
@@ -229,7 +229,7 @@
         // Load output devices
         async function loadOutputDevices() {
             try {
-                const response = await axios.get('/api/speaker/devices');
+                const response = await axios.get('/parts/api/speaker/devices');
                 const deviceSelect = document.getElementById('outputDevice');
                 const currentValue = '<%= part.outputDevice || "" %>';
 
@@ -271,7 +271,7 @@
         document.getElementById('testMicrophone').addEventListener('click', async function() {
             try {
                 const deviceId = document.getElementById('deviceId').value;
-                const response = await axios.post('/api/microphone/test', { deviceId });
+                const response = await axios.post('/parts/api/microphone/test', { deviceId });
 
                 if (response.data.success) {
                     alert('✅ Microphone test successful!');

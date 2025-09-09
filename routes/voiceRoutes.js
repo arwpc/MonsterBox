@@ -154,7 +154,8 @@ router.post('/play-audio', async (req, res) => {
         await fs.writeFile(tempFilePath, audioBuffer);
 
         // Play audio through character's configured speaker
-        const speakerService = require('../services/speakerService');
+        const SpeakerService = require('../services/speakerService');
+        const speakerService = new SpeakerService();
         const result = await speakerService.playAudioForCharacter(tempFilePath, characterId);
 
         // Clean up temp file

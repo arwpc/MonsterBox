@@ -12,16 +12,16 @@ console.log('===================================================');
 // Test MonsterBox is running
 function testMonsterBox() {
   return new Promise((resolve) => {
-    const req = http.get('http://localhost:3000/', (res) => {
+    const req = http.get('http://localhost:3003/', (res) => {
       console.log(`✅ MonsterBox running: HTTP ${res.statusCode}`);
       resolve(res.statusCode === 200);
     });
-    
+
     req.on('error', (error) => {
       console.log(`❌ MonsterBox not accessible: ${error.message}`);
       resolve(false);
     });
-    
+
     req.setTimeout(5000, () => {
       console.log('❌ MonsterBox request timeout');
       req.destroy();
@@ -33,7 +33,7 @@ function testMonsterBox() {
 // Test Enhanced Test Chat page
 function testEnhancedTestChat() {
   return new Promise((resolve) => {
-    const req = http.get('http://localhost:3000/enhanced-test-chat?characterId=4', (res) => {
+    const req = http.get('http://localhost:3003/enhanced-test-chat?characterId=4', (res) => {
       let data = '';
       res.on('data', chunk => data += chunk);
       res.on('end', () => {
@@ -67,7 +67,7 @@ function testAudioEndpoint() {
     
     const options = {
       hostname: 'localhost',
-      port: 3000,
+      port: 3003,
       path: '/voice/play-audio',
       method: 'POST',
       headers: {
@@ -101,7 +101,7 @@ function testAudioEndpoint() {
 // Test speaker config API
 function testSpeakerConfigAPI() {
   return new Promise((resolve) => {
-    const req = http.get('http://localhost:3000/api/character-audio-config/4/speaker', (res) => {
+    const req = http.get('http://localhost:3003/api/character-audio-config/4/speaker', (res) => {
       let data = '';
       res.on('data', chunk => data += chunk);
       res.on('end', () => {

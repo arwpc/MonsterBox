@@ -190,6 +190,23 @@ class ElevenLabsLiveSTTService extends EventEmitter {
                 });
                 break;
 
+            case 'audioData':
+                // Handle base64 audio data from JSON messages
+                if (message.data) {
+                    try {
+                        // Set character ID if provided
+                        if (message.characterId) {
+                            connection.characterId = message.characterId;
+                        }
+
+                        const audioBuffer = Buffer.from(message.data, 'base64');
+                        await this.handleAudioData(sessionId, audioBuffer);
+                    } catch (error) {
+                        logger.error(`❌ Error processing base64 audio data: ${error.message}`);
+                    }
+                }
+                break;
+
             default:
                 logger.warn(`Unknown control message type: ${message.type}`);
         }

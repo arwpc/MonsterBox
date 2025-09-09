@@ -2156,8 +2156,6 @@ class EnhancedTestChat {
             } else {
                 console.log('🔊 No character speaker configuration available, using server-side routing');
             }
-                // This is a placeholder for future enhancement
-            }
 
         } catch (error) {
             console.error('❌ Error applying speaker configuration:', error);
@@ -2210,7 +2208,7 @@ class EnhancedTestChat {
         try {
             console.log(`🔊 Playing audio through character ${this.currentCharacter.id} speaker`);
 
-            const response = await fetch('/voice/play-audio', {
+            const response = await fetch('/api/voice/play-audio', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

@@ -265,7 +265,7 @@ class APIKeyManager extends EventEmitter {
                 }
             },
             google: {
-                url: `https://generativelanguage.googleapis.com/v1beta/models?key=${key}`,
+                url: `https://generativelanguage.googleapis.com/v1/models?key=${key}`,
                 headers: {}
             }
         };

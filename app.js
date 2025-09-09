@@ -353,6 +353,33 @@ app.use('/api/servo-calibration', require('./routes/api/servoCalibrationRoutes')
 
 app.use('/api/super-powers', require('./routes/api/superPowersApiRoutes'));
 
+// Microphone and Speaker Device API routes (for compatibility)
+app.get('/api/microphone/devices', async (req, res) => {
+    try {
+        logger.info('🎤 API proxy: Getting microphone devices');
+        const MicrophoneService = require('./services/microphoneService');
+        const microphoneService = new MicrophoneService();
+        const devices = await microphoneService.discoverDevices();
+        res.json({ success: true, devices: devices });
+    } catch (error) {
+        logger.error('Error getting microphone devices via API proxy:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.get('/api/speaker/devices', async (req, res) => {
+    try {
+        logger.info('🔊 API proxy: Getting speaker devices');
+        const SpeakerService = require('./services/speakerService');
+        const speakerService = new SpeakerService();
+        const devices = await speakerService.getAvailableDevices();
+        res.json({ success: true, devices: devices });
+    } catch (error) {
+        logger.error('Error getting speaker devices via API proxy:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // SSH Key Management routes
 app.use('/key-management', keyManagementRoutes);
 app.use('/api/key-management', keyManagementRoutes);

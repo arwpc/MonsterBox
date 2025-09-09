@@ -466,7 +466,7 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        showModal('STT Test Result', `<p><strong>Success!</strong></p><p>STT System Status: ${data.sttSystemStatus}</p><p>VAD Status: ${data.vadStatus}</p><p>Response Time: ${data.responseTime}ms</p>`);
+                        showModal('STT Test Result', `<p><strong>Success!</strong></p><p>Provider: ${data.provider}</p><p>Status: ${data.status}</p><p>Response Time: ${data.responseTime}ms</p><p>Accuracy: ${data.accuracy}%</p>`);
                     } else {
                         showModal('STT Test Failed', `<p><strong>Error:</strong> ${data.error}</p>`);
                     }

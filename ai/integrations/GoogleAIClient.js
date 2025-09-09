@@ -15,7 +15,7 @@ class GoogleAIClient extends EventEmitter {
         
         this.config = {
             apiKey: options.apiKey || process.env.GOOGLE_API_KEY,
-            baseURL: options.baseURL || 'https://generativelanguage.googleapis.com/v1beta',
+            baseURL: options.baseURL || 'https://generativelanguage.googleapis.com/v1',
             timeout: options.timeout || 30000,
             maxRetries: options.maxRetries || 3,
             retryDelay: options.retryDelay || 1000,
@@ -141,7 +141,7 @@ class GoogleAIClient extends EventEmitter {
         try {
             await this.checkRateLimit();
 
-            const model = options.model || 'gemini-pro';
+            const model = options.model || 'gemini-1.5-flash';
             const requestBody = {
                 contents: this.buildContents(prompt, options),
                 generationConfig: {
@@ -291,7 +291,7 @@ class GoogleAIClient extends EventEmitter {
     async healthCheck() {
         try {
             const response = await this.axiosInstance.post(
-                `/models/gemini-pro:generateContent?key=${this.config.apiKey}`,
+                `/models/gemini-1.5-flash:generateContent?key=${this.config.apiKey}`,
                 {
                     contents: [{
                         role: 'user',
