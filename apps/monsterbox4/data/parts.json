@@ -160,5 +160,991 @@
     },
     "created": "2025-09-13T19:43:54.163Z",
     "enabled": true
+  },
+  {
+    "id": "15",
+    "name": "Test Motor",
+    "type": "motor",
+    "pin": 18,
+    "description": "Test DC motor for movement",
+    "config": {
+      "direction": "forward",
+      "speed": 255,
+      "enablePin": 19
+    },
+    "created": "2025-09-13T20:02:58.482Z",
+    "enabled": true
+  },
+  {
+    "id": "16",
+    "name": "Test Servo",
+    "type": "servo",
+    "pin": 12,
+    "description": "Test servo for precise angle control",
+    "config": {
+      "servoType": "standard",
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "minAngle": 0,
+      "maxAngle": 180
+    },
+    "created": "2025-09-13T20:02:58.504Z",
+    "enabled": true
+  },
+  {
+    "id": "17",
+    "name": "Test LED",
+    "type": "led",
+    "pin": 13,
+    "description": "PWM-controlled LED with brightness",
+    "config": {
+      "brightness": 128,
+      "pwmFrequency": 1000,
+      "color": "white"
+    },
+    "created": "2025-09-13T20:02:58.522Z",
+    "enabled": true
+  },
+  {
+    "id": "18",
+    "name": "Test Sensor",
+    "type": "sensor",
+    "pin": 14,
+    "description": "Digital/analog sensor",
+    "config": {
+      "sensorType": "digital",
+      "pullUp": true,
+      "threshold": 512
+    },
+    "created": "2025-09-13T20:02:58.550Z",
+    "enabled": true
+  },
+  {
+    "id": "19",
+    "name": "Test Motor",
+    "type": "motor",
+    "pin": 18,
+    "description": "Test DC motor for movement",
+    "config": {
+      "direction": "forward",
+      "speed": 255,
+      "enablePin": 19
+    },
+    "created": "2025-09-13T20:04:16.537Z",
+    "enabled": true
+  },
+  {
+    "id": "20",
+    "name": "Test Servo",
+    "type": "servo",
+    "pin": 12,
+    "description": "Test servo for precise angle control",
+    "config": {
+      "servoType": "standard",
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "minAngle": 0,
+      "maxAngle": 180
+    },
+    "created": "2025-09-13T20:04:16.554Z",
+    "enabled": true
+  },
+  {
+    "id": "21",
+    "name": "Test LED",
+    "type": "led",
+    "pin": 13,
+    "description": "PWM-controlled LED with brightness",
+    "config": {
+      "brightness": 128,
+      "pwmFrequency": 1000,
+      "color": "white"
+    },
+    "created": "2025-09-13T20:04:16.577Z",
+    "enabled": true
+  },
+  {
+    "id": "22",
+    "name": "Test Sensor",
+    "type": "sensor",
+    "pin": 14,
+    "description": "Digital/analog sensor",
+    "config": {
+      "sensorType": "digital",
+      "pullUp": true,
+      "threshold": 512
+    },
+    "created": "2025-09-13T20:04:16.595Z",
+    "enabled": true
+  },
+  {
+    "id": "23",
+    "name": "Test Motor",
+    "type": "motor",
+    "pin": 18,
+    "description": "Test DC motor for movement",
+    "config": {
+      "direction": "forward",
+      "speed": 255,
+      "enablePin": 19
+    },
+    "created": "2025-09-13T20:28:42.605Z",
+    "enabled": true
+  },
+  {
+    "id": "24",
+    "name": "Test Servo",
+    "type": "servo",
+    "pin": 12,
+    "description": "Test servo for precise angle control",
+    "config": {
+      "servoType": "standard",
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "minAngle": 0,
+      "maxAngle": 180
+    },
+    "created": "2025-09-13T20:28:42.631Z",
+    "enabled": true
+  },
+  {
+    "id": "25",
+    "name": "Test LED",
+    "type": "led",
+    "pin": 13,
+    "description": "PWM-controlled LED with brightness",
+    "config": {
+      "brightness": 128,
+      "pwmFrequency": 1000,
+      "color": "white"
+    },
+    "created": "2025-09-13T20:28:42.653Z",
+    "enabled": true
+  },
+  {
+    "id": "26",
+    "name": "Test Sensor",
+    "type": "sensor",
+    "pin": 14,
+    "description": "Digital/analog sensor",
+    "config": {
+      "sensorType": "digital",
+      "pullUp": true,
+      "threshold": 512
+    },
+    "created": "2025-09-13T20:28:42.676Z",
+    "enabled": true
+  },
+  {
+    "id": "27",
+    "name": "Test Motor",
+    "type": "motor",
+    "pin": 18,
+    "description": "Test DC motor for movement",
+    "config": {
+      "direction": "forward",
+      "speed": 255,
+      "enablePin": 19
+    },
+    "created": "2025-09-13T20:40:27.161Z",
+    "enabled": true
+  },
+  {
+    "id": "28",
+    "name": "Test Servo",
+    "type": "servo",
+    "pin": 12,
+    "description": "Test servo for precise angle control",
+    "config": {
+      "servoType": "standard",
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "minAngle": 0,
+      "maxAngle": 180
+    },
+    "created": "2025-09-13T20:40:27.175Z",
+    "enabled": true
+  },
+  {
+    "id": "29",
+    "name": "Test LED",
+    "type": "led",
+    "pin": 13,
+    "description": "PWM-controlled LED with brightness",
+    "config": {
+      "brightness": 128,
+      "pwmFrequency": 1000,
+      "color": "white"
+    },
+    "created": "2025-09-13T20:40:27.189Z",
+    "enabled": true
+  },
+  {
+    "id": "30",
+    "name": "Test Sensor",
+    "type": "sensor",
+    "pin": 14,
+    "description": "Digital/analog sensor",
+    "config": {
+      "sensorType": "digital",
+      "pullUp": true,
+      "threshold": 512
+    },
+    "created": "2025-09-13T20:40:27.204Z",
+    "enabled": true
+  },
+  {
+    "id": "31",
+    "name": "Test Motor",
+    "type": "motor",
+    "pin": 18,
+    "description": "Test DC motor for movement",
+    "config": {
+      "direction": "forward",
+      "speed": 255,
+      "enablePin": 19
+    },
+    "created": "2025-09-13T20:50:42.847Z",
+    "enabled": true
+  },
+  {
+    "id": "32",
+    "name": "Test Servo",
+    "type": "servo",
+    "pin": 12,
+    "description": "Test servo for precise angle control",
+    "config": {
+      "servoType": "standard",
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "minAngle": 0,
+      "maxAngle": 180
+    },
+    "created": "2025-09-13T20:50:42.860Z",
+    "enabled": true
+  },
+  {
+    "id": "33",
+    "name": "Test LED",
+    "type": "led",
+    "pin": 13,
+    "description": "PWM-controlled LED with brightness",
+    "config": {
+      "brightness": 128,
+      "pwmFrequency": 1000,
+      "color": "white"
+    },
+    "created": "2025-09-13T20:50:42.874Z",
+    "enabled": true
+  },
+  {
+    "id": "34",
+    "name": "Test Sensor",
+    "type": "sensor",
+    "pin": 14,
+    "description": "Digital/analog sensor",
+    "config": {
+      "sensorType": "digital",
+      "pullUp": true,
+      "threshold": 512
+    },
+    "created": "2025-09-13T20:50:42.887Z",
+    "enabled": true
+  },
+  {
+    "id": "35",
+    "name": "Test Motor",
+    "type": "motor",
+    "pin": 18,
+    "description": "Test DC motor for movement",
+    "config": {
+      "direction": "forward",
+      "speed": 255,
+      "enablePin": 19
+    },
+    "created": "2025-09-13T20:58:07.872Z",
+    "enabled": true
+  },
+  {
+    "id": "36",
+    "name": "Test Servo",
+    "type": "servo",
+    "pin": 12,
+    "description": "Test servo for precise angle control",
+    "config": {
+      "servoType": "standard",
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "minAngle": 0,
+      "maxAngle": 180
+    },
+    "created": "2025-09-13T20:58:07.889Z",
+    "enabled": true
+  },
+  {
+    "id": "37",
+    "name": "Test LED",
+    "type": "led",
+    "pin": 13,
+    "description": "PWM-controlled LED with brightness",
+    "config": {
+      "brightness": 128,
+      "pwmFrequency": 1000,
+      "color": "white"
+    },
+    "created": "2025-09-13T20:58:07.917Z",
+    "enabled": true
+  },
+  {
+    "id": "38",
+    "name": "Test Sensor",
+    "type": "sensor",
+    "pin": 14,
+    "description": "Digital/analog sensor",
+    "config": {
+      "sensorType": "digital",
+      "pullUp": true,
+      "threshold": 512
+    },
+    "created": "2025-09-13T20:58:07.937Z",
+    "enabled": true
+  },
+  {
+    "id": "39",
+    "name": "Test Motor",
+    "type": "motor",
+    "pin": 18,
+    "description": "Test DC motor for movement",
+    "config": {
+      "direction": "forward",
+      "speed": 255,
+      "enablePin": 19
+    },
+    "created": "2025-09-13T21:02:10.145Z",
+    "enabled": true
+  },
+  {
+    "id": "40",
+    "name": "Test Servo",
+    "type": "servo",
+    "pin": 12,
+    "description": "Test servo for precise angle control",
+    "config": {
+      "servoType": "standard",
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "minAngle": 0,
+      "maxAngle": 180
+    },
+    "created": "2025-09-13T21:02:10.162Z",
+    "enabled": true
+  },
+  {
+    "id": "41",
+    "name": "Test LED",
+    "type": "led",
+    "pin": 13,
+    "description": "PWM-controlled LED with brightness",
+    "config": {
+      "brightness": 128,
+      "pwmFrequency": 1000,
+      "color": "white"
+    },
+    "created": "2025-09-13T21:02:10.176Z",
+    "enabled": true
+  },
+  {
+    "id": "42",
+    "name": "Test Sensor",
+    "type": "sensor",
+    "pin": 14,
+    "description": "Digital/analog sensor",
+    "config": {
+      "sensorType": "digital",
+      "pullUp": true,
+      "threshold": 512
+    },
+    "created": "2025-09-13T21:02:10.190Z",
+    "enabled": true
+  },
+  {
+    "id": "43",
+    "name": "Test Motor",
+    "type": "motor",
+    "pin": 18,
+    "description": "Test DC motor for movement",
+    "config": {
+      "direction": "forward",
+      "speed": 255,
+      "enablePin": 19
+    },
+    "created": "2025-09-13T21:06:51.648Z",
+    "enabled": true
+  },
+  {
+    "id": "44",
+    "name": "Test Servo",
+    "type": "servo",
+    "pin": 12,
+    "description": "Test servo for precise angle control",
+    "config": {
+      "servoType": "standard",
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "minAngle": 0,
+      "maxAngle": 180
+    },
+    "created": "2025-09-13T21:06:51.661Z",
+    "enabled": true
+  },
+  {
+    "id": "45",
+    "name": "Test LED",
+    "type": "led",
+    "pin": 13,
+    "description": "PWM-controlled LED with brightness",
+    "config": {
+      "brightness": 128,
+      "pwmFrequency": 1000,
+      "color": "white"
+    },
+    "created": "2025-09-13T21:06:51.673Z",
+    "enabled": true
+  },
+  {
+    "id": "46",
+    "name": "Test Sensor",
+    "type": "sensor",
+    "pin": 14,
+    "description": "Digital/analog sensor",
+    "config": {
+      "sensorType": "digital",
+      "pullUp": true,
+      "threshold": 512
+    },
+    "created": "2025-09-13T21:06:51.685Z",
+    "enabled": true
+  },
+  {
+    "id": "47",
+    "name": "Test Motor",
+    "type": "motor",
+    "pin": 18,
+    "description": "Test DC motor for movement",
+    "config": {
+      "direction": "forward",
+      "speed": 255,
+      "enablePin": 19
+    },
+    "created": "2025-09-13T21:20:28.108Z",
+    "enabled": true
+  },
+  {
+    "id": "48",
+    "name": "Test Servo",
+    "type": "servo",
+    "pin": 12,
+    "description": "Test servo for precise angle control",
+    "config": {
+      "servoType": "standard",
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "minAngle": 0,
+      "maxAngle": 180
+    },
+    "created": "2025-09-13T21:20:28.125Z",
+    "enabled": true
+  },
+  {
+    "id": "49",
+    "name": "Test LED",
+    "type": "led",
+    "pin": 13,
+    "description": "PWM-controlled LED with brightness",
+    "config": {
+      "brightness": 128,
+      "pwmFrequency": 1000,
+      "color": "white"
+    },
+    "created": "2025-09-13T21:20:28.138Z",
+    "enabled": true
+  },
+  {
+    "id": "50",
+    "name": "Test Sensor",
+    "type": "sensor",
+    "pin": 14,
+    "description": "Digital/analog sensor",
+    "config": {
+      "sensorType": "digital",
+      "pullUp": true,
+      "threshold": 512
+    },
+    "created": "2025-09-13T21:20:28.152Z",
+    "enabled": true
+  },
+  {
+    "id": "51",
+    "name": "Test Motor",
+    "type": "motor",
+    "pin": 18,
+    "description": "Test DC motor for movement",
+    "config": {
+      "direction": "forward",
+      "speed": 255,
+      "enablePin": 19
+    },
+    "created": "2025-09-13T22:07:22.602Z",
+    "enabled": true
+  },
+  {
+    "id": "52",
+    "name": "Test Servo",
+    "type": "servo",
+    "pin": 12,
+    "description": "Test servo for precise angle control",
+    "config": {
+      "servoType": "standard",
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "minAngle": 0,
+      "maxAngle": 180
+    },
+    "created": "2025-09-13T22:07:22.619Z",
+    "enabled": true
+  },
+  {
+    "id": "53",
+    "name": "Test LED",
+    "type": "led",
+    "pin": 13,
+    "description": "PWM-controlled LED with brightness",
+    "config": {
+      "brightness": 128,
+      "pwmFrequency": 1000,
+      "color": "white"
+    },
+    "created": "2025-09-13T22:07:22.641Z",
+    "enabled": true
+  },
+  {
+    "id": "54",
+    "name": "Test Sensor",
+    "type": "sensor",
+    "pin": 14,
+    "description": "Digital/analog sensor",
+    "config": {
+      "sensorType": "digital",
+      "pullUp": true,
+      "threshold": 512
+    },
+    "created": "2025-09-13T22:07:22.655Z",
+    "enabled": true
+  },
+  {
+    "id": "55",
+    "name": "Test Motor",
+    "type": "motor",
+    "pin": 18,
+    "description": "Test DC motor for movement",
+    "config": {
+      "direction": "forward",
+      "speed": 255,
+      "enablePin": 19
+    },
+    "created": "2025-09-13T22:10:18.009Z",
+    "enabled": true
+  },
+  {
+    "id": "56",
+    "name": "Test Servo",
+    "type": "servo",
+    "pin": 12,
+    "description": "Test servo for precise angle control",
+    "config": {
+      "servoType": "standard",
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "minAngle": 0,
+      "maxAngle": 180
+    },
+    "created": "2025-09-13T22:10:18.025Z",
+    "enabled": true
+  },
+  {
+    "id": "57",
+    "name": "Test LED",
+    "type": "led",
+    "pin": 13,
+    "description": "PWM-controlled LED with brightness",
+    "config": {
+      "brightness": 128,
+      "pwmFrequency": 1000,
+      "color": "white"
+    },
+    "created": "2025-09-13T22:10:18.039Z",
+    "enabled": true
+  },
+  {
+    "id": "58",
+    "name": "Test Sensor",
+    "type": "sensor",
+    "pin": 14,
+    "description": "Digital/analog sensor",
+    "config": {
+      "sensorType": "digital",
+      "pullUp": true,
+      "threshold": 512
+    },
+    "created": "2025-09-13T22:10:18.051Z",
+    "enabled": true
+  },
+  {
+    "id": "59",
+    "name": "Test Motor",
+    "type": "motor",
+    "pin": 18,
+    "description": "Test DC motor for movement",
+    "config": {
+      "direction": "forward",
+      "speed": 255,
+      "enablePin": 19
+    },
+    "created": "2025-09-13T22:30:07.642Z",
+    "enabled": true
+  },
+  {
+    "id": "60",
+    "name": "Test Servo",
+    "type": "servo",
+    "pin": 12,
+    "description": "Test servo for precise angle control",
+    "config": {
+      "servoType": "standard",
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "minAngle": 0,
+      "maxAngle": 180
+    },
+    "created": "2025-09-13T22:30:07.660Z",
+    "enabled": true
+  },
+  {
+    "id": "61",
+    "name": "Test LED",
+    "type": "led",
+    "pin": 13,
+    "description": "PWM-controlled LED with brightness",
+    "config": {
+      "brightness": 128,
+      "pwmFrequency": 1000,
+      "color": "white"
+    },
+    "created": "2025-09-13T22:30:07.682Z",
+    "enabled": true
+  },
+  {
+    "id": "62",
+    "name": "Test Sensor",
+    "type": "sensor",
+    "pin": 14,
+    "description": "Digital/analog sensor",
+    "config": {
+      "sensorType": "digital",
+      "pullUp": true,
+      "threshold": 512
+    },
+    "created": "2025-09-13T22:30:07.704Z",
+    "enabled": true
+  },
+  {
+    "id": "63",
+    "name": "Test Motor",
+    "type": "motor",
+    "pin": 18,
+    "description": "Test DC motor for movement",
+    "config": {
+      "direction": "forward",
+      "speed": 255,
+      "enablePin": 19
+    },
+    "created": "2025-09-13T22:48:01.470Z",
+    "enabled": true
+  },
+  {
+    "id": "64",
+    "name": "Test Servo",
+    "type": "servo",
+    "pin": 12,
+    "description": "Test servo for precise angle control",
+    "config": {
+      "servoType": "standard",
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "minAngle": 0,
+      "maxAngle": 180
+    },
+    "created": "2025-09-13T22:48:01.486Z",
+    "enabled": true
+  },
+  {
+    "id": "65",
+    "name": "Test LED",
+    "type": "led",
+    "pin": 13,
+    "description": "PWM-controlled LED with brightness",
+    "config": {
+      "brightness": 128,
+      "pwmFrequency": 1000,
+      "color": "white"
+    },
+    "created": "2025-09-13T22:48:01.504Z",
+    "enabled": true
+  },
+  {
+    "id": "66",
+    "name": "Test Sensor",
+    "type": "sensor",
+    "pin": 14,
+    "description": "Digital/analog sensor",
+    "config": {
+      "sensorType": "digital",
+      "pullUp": true,
+      "threshold": 512
+    },
+    "created": "2025-09-13T22:48:01.523Z",
+    "enabled": true
+  },
+  {
+    "id": "67",
+    "name": "Test Motor",
+    "type": "motor",
+    "pin": 18,
+    "description": "Test DC motor for movement",
+    "config": {
+      "direction": "forward",
+      "speed": 255,
+      "enablePin": 19
+    },
+    "created": "2025-09-13T23:00:41.048Z",
+    "enabled": true
+  },
+  {
+    "id": "68",
+    "name": "Test Servo",
+    "type": "servo",
+    "pin": 12,
+    "description": "Test servo for precise angle control",
+    "config": {
+      "servoType": "standard",
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "minAngle": 0,
+      "maxAngle": 180
+    },
+    "created": "2025-09-13T23:00:41.060Z",
+    "enabled": true
+  },
+  {
+    "id": "69",
+    "name": "Test LED",
+    "type": "led",
+    "pin": 13,
+    "description": "PWM-controlled LED with brightness",
+    "config": {
+      "brightness": 128,
+      "pwmFrequency": 1000,
+      "color": "white"
+    },
+    "created": "2025-09-13T23:00:41.072Z",
+    "enabled": true
+  },
+  {
+    "id": "70",
+    "name": "Test Sensor",
+    "type": "sensor",
+    "pin": 14,
+    "description": "Digital/analog sensor",
+    "config": {
+      "sensorType": "digital",
+      "pullUp": true,
+      "threshold": 512
+    },
+    "created": "2025-09-13T23:00:41.084Z",
+    "enabled": true
+  },
+  {
+    "id": "71",
+    "name": "Test Motor",
+    "type": "motor",
+    "pin": 18,
+    "description": "Test DC motor for movement",
+    "config": {
+      "direction": "forward",
+      "speed": 255,
+      "enablePin": 19
+    },
+    "created": "2025-09-13T23:03:32.336Z",
+    "enabled": true
+  },
+  {
+    "id": "72",
+    "name": "Test Servo",
+    "type": "servo",
+    "pin": 12,
+    "description": "Test servo for precise angle control",
+    "config": {
+      "servoType": "standard",
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "minAngle": 0,
+      "maxAngle": 180
+    },
+    "created": "2025-09-13T23:03:32.348Z",
+    "enabled": true
+  },
+  {
+    "id": "73",
+    "name": "Test LED",
+    "type": "led",
+    "pin": 13,
+    "description": "PWM-controlled LED with brightness",
+    "config": {
+      "brightness": 128,
+      "pwmFrequency": 1000,
+      "color": "white"
+    },
+    "created": "2025-09-13T23:03:32.360Z",
+    "enabled": true
+  },
+  {
+    "id": "74",
+    "name": "Test Sensor",
+    "type": "sensor",
+    "pin": 14,
+    "description": "Digital/analog sensor",
+    "config": {
+      "sensorType": "digital",
+      "pullUp": true,
+      "threshold": 512
+    },
+    "created": "2025-09-13T23:03:32.373Z",
+    "enabled": true
+  },
+  {
+    "id": "75",
+    "name": "Test Motor",
+    "type": "motor",
+    "pin": 18,
+    "description": "Test DC motor for movement",
+    "config": {
+      "direction": "forward",
+      "speed": 255,
+      "enablePin": 19
+    },
+    "created": "2025-09-13T23:09:32.948Z",
+    "enabled": true
+  },
+  {
+    "id": "76",
+    "name": "Test Servo",
+    "type": "servo",
+    "pin": 12,
+    "description": "Test servo for precise angle control",
+    "config": {
+      "servoType": "standard",
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "minAngle": 0,
+      "maxAngle": 180
+    },
+    "created": "2025-09-13T23:09:32.965Z",
+    "enabled": true
+  },
+  {
+    "id": "77",
+    "name": "Test LED",
+    "type": "led",
+    "pin": 13,
+    "description": "PWM-controlled LED with brightness",
+    "config": {
+      "brightness": 128,
+      "pwmFrequency": 1000,
+      "color": "white"
+    },
+    "created": "2025-09-13T23:09:32.979Z",
+    "enabled": true
+  },
+  {
+    "id": "78",
+    "name": "Test Sensor",
+    "type": "sensor",
+    "pin": 14,
+    "description": "Digital/analog sensor",
+    "config": {
+      "sensorType": "digital",
+      "pullUp": true,
+      "threshold": 512
+    },
+    "created": "2025-09-13T23:09:32.996Z",
+    "enabled": true
+  },
+  {
+    "id": "79",
+    "name": "Test Motor",
+    "type": "motor",
+    "pin": 18,
+    "description": "Test DC motor for movement",
+    "config": {
+      "direction": "forward",
+      "speed": 255,
+      "enablePin": 19
+    },
+    "created": "2025-09-13T23:14:38.685Z",
+    "enabled": true
+  },
+  {
+    "id": "80",
+    "name": "Test Servo",
+    "type": "servo",
+    "pin": 12,
+    "description": "Test servo for precise angle control",
+    "config": {
+      "servoType": "standard",
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "minAngle": 0,
+      "maxAngle": 180
+    },
+    "created": "2025-09-13T23:14:38.700Z",
+    "enabled": true
+  },
+  {
+    "id": "81",
+    "name": "Test LED",
+    "type": "led",
+    "pin": 13,
+    "description": "PWM-controlled LED with brightness",
+    "config": {
+      "brightness": 128,
+      "pwmFrequency": 1000,
+      "color": "white"
+    },
+    "created": "2025-09-13T23:14:38.713Z",
+    "enabled": true
+  },
+  {
+    "id": "82",
+    "name": "Test Sensor",
+    "type": "sensor",
+    "pin": 14,
+    "description": "Digital/analog sensor",
+    "config": {
+      "sensorType": "digital",
+      "pullUp": true,
+      "threshold": 512
+    },
+    "created": "2025-09-13T23:14:38.731Z",
+    "enabled": true
   }
 ]

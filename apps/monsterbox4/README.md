@@ -77,6 +77,63 @@ Endpoints:
 - GET /setup/characters/api/current → current selected id
 - POST /setup/characters/api/select { id } → set current character
 
+
+### Characters API Examples
+
+```bash
+# List characters
+curl -s http://localhost:3000/setup/characters/api/characters | jq
+
+# Get one character
+curl -s http://localhost:3000/setup/characters/api/characters/1 | jq
+
+# Create character (success)
+curl -s -X POST http://localhost:3000/setup/characters/api/characters \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Nosferatu"}' | jq
+
+# Create character (validation error: empty name -> 400)
+curl -i -s -X POST http://localhost:3000/setup/characters/api/characters \
+  -H 'Content-Type: application/json' -d '{}'
+# Expected: HTTP/1.1 400 Bad Request
+# Body: { "success": false, "error": "Name is required" }
+
+# Update character name (success)
+curl -s -X PUT http://localhost:3000/setup/characters/api/characters/1 \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Orlok Prime"}' | jq
+
+# Update character (validation error: empty name -> 400)
+curl -i -s -X PUT http://localhost:3000/setup/characters/api/characters/1 \
+  -H 'Content-Type: application/json' -d '{"name":""}'
+# Expected: HTTP/1.1 400 Bad Request
+# Body: { "success": false, "error": "Name is required" }
+
+# Get current selection
+curl -s http://localhost:3000/setup/characters/api/current | jq
+
+# Set current selection
+curl -s -X POST http://localhost:3000/setup/characters/api/select \
+  -H 'Content-Type: application/json' -d '{"id":1}' | jq
+
+# Attempt to delete the currently selected character -> 400
+curl -i -s -X DELETE http://localhost:3000/setup/characters/api/characters/1
+# Expected: HTTP/1.1 400 Bad Request
+# Body: { "success": false, "error": "Cannot delete the currently selected character" }
+```
+
+## 📦 Data Path Convention
+
+- Default data lives inside the app: `apps/monsterbox4/data/*.json`
+- Characters file default: `apps/monsterbox4/data/characters.json`
+- You can override the data folder via `apps/monsterbox4/config/app-config.json`:
+  - `dataPath` is resolved relative to the app root (`apps/monsterbox4`), not the working directory
+  - Examples:
+    - `"data"` → `apps/monsterbox4/data/`
+    - `"../../data"` → repository-level `data/` (i.e., `apps/monsterbox4/../../data`)
+- Selected character is persisted in `config/app-config.json` (`selectedCharacter`), not in `characters.json`.
+- The app no longer attempts to use paths like `/home/remote/data/characters.json`.
+
 ## 📁 Directory Structure
 
 ```
@@ -215,6 +272,21 @@ GET /poses/templates
 ```
 
 ## 🧪 Testing
+
+Important: The Mocha tests call the running HTTP server at http://localhost:3000. Start the server in a separate terminal before running tests.
+
+```bash
+# Terminal 1: start the server
+cd apps/monsterbox4
+npm start
+
+# Terminal 2: run tests against the running server
+cd apps/monsterbox4
+npm run test:unit
+```
+
+Tip: After making server-side code changes, restart the server before re-running tests.
+
 
 ```bash
 # Run all Mocha unit/integration tests (fast)

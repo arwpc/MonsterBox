@@ -1,11 +1,26 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { readConfig } from './configService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const CHARACTERS_FILE = path.resolve(__dirname, '../data/characters.json');
+// Resolve characters.json path with optional override from config.dataPath.
+// dataPath is resolved relative to the app root (apps/monsterbox4), not process.cwd().
+async function resolveCharactersPath() {
+  try {
+    const cfg = await readConfig();
+    const appRoot = path.resolve(__dirname, '..');
+    if (cfg && cfg.dataPath) {
+      return path.resolve(appRoot, cfg.dataPath, 'characters.json');
+    }
+    return path.resolve(appRoot, 'data', 'characters.json');
+  } catch (e) {
+    const appRoot = path.resolve(__dirname, '..');
+    return path.resolve(appRoot, 'data', 'characters.json');
+  }
+}
 
 function getDefaultCharacters() {
   return [
@@ -16,7 +31,8 @@ function getDefaultCharacters() {
 
 export async function loadCharacters() {
   try {
-    const data = await fs.readFile(CHARACTERS_FILE, 'utf8');
+    const file = await resolveCharactersPath();
+    const data = await fs.readFile(file, 'utf8');
     const characters = JSON.parse(data);
     if (Array.isArray(characters)) return characters;
     return getDefaultCharacters();
@@ -27,8 +43,11 @@ export async function loadCharacters() {
 }
 
 export async function saveCharacters(characters) {
+  const file = await resolveCharactersPath();
   const json = JSON.stringify(characters, null, 2);
-  await fs.writeFile(CHARACTERS_FILE, json, 'utf8');
+  // Ensure directory exists
+  await fs.mkdir(path.dirname(file), { recursive: true });
+  await fs.writeFile(file, json, 'utf8');
 }
 
 export async function getCharacterById(id) {
@@ -83,4 +102,3 @@ export default {
   updateCharacter,
   deleteCharacter
 };
-

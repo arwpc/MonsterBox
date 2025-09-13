@@ -42,3 +42,19 @@ site/data/last-used-character.json
 data/port-registry.json
 data/last-used-character.json
 data/port-registry.json
+
+
+# Playwright/UI test artifacts (large files) - ignore
+playwright-report/
+test-results/
+.playwright/
+
+# App-scoped Playwright artifacts
+apps/monsterbox4/playwright-report/
+apps/monsterbox4/test-results/
+apps/monsterbox4/.playwright/
+
+# Optional artifact subfolders (if configured)
+apps/monsterbox4/tests/ui/screenshots/
+apps/monsterbox4/tests/ui/videos/
+apps/monsterbox4/tests/ui/traces/

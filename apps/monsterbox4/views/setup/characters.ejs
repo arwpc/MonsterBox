@@ -35,6 +35,8 @@
           <li class="nav-item"><a class="nav-link" href="/scenes"><i class="bi bi-film"></i> Scenes</a></li>
         </ul>
       </div>
+      <%- include('../partials/characterMenu') %>
+
     </div>
   </nav>
 
@@ -50,6 +52,8 @@
 
     <div class="card">
       <div class="card-body">
+        <div id="alertBox" class="alert alert-warning d-none" role="alert"></div>
+
         <div id="charactersContainer" class="table-responsive">
           <div class="text-center text-muted py-4">
             <div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span>
@@ -107,10 +111,29 @@
         });
       }
 
+      function showAlert(msg, type) {
+        var el = document.getElementById('alertBox');
+        if (!el) return;
+        el.className = 'alert alert-' + (type || 'warning');
+        el.textContent = String(msg || '');
+        el.classList.remove('d-none');
+      }
+
+      function clearAlert() {
+        var el = document.getElementById('alertBox');
+        if (!el) return;
+        el.classList.add('d-none');
+        el.textContent = '';
+      }
+
       function create() {
         var name = window.prompt('Character name:');
-        if (!name) return;
+        if (name === null) return;
+        name = String(name).trim();
+        if (!name) { showAlert('Name is required', 'warning'); return; }
+        clearAlert();
         fetch('/setup/characters/api/characters', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name }) })
+          .then(function (r) { if (!r.ok) { showAlert('Failed to create character', 'danger'); } return r; })
           .then(function () { load(); });
       }
 
@@ -120,9 +143,14 @@
         if (!c) return;
         var name = window.prompt('Edit name:', c.name || '');
         if (name === null) return;
+        name = String(name).trim();
+        if (!name) { showAlert('Name cannot be empty', 'warning'); return; }
+        clearAlert();
         fetch('/setup/characters/api/characters/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name }) })
+          .then(function (r) { if (!r.ok) { showAlert('Failed to update character', 'danger'); } return r; })
           .then(function () { load(); });
       }
+
 
       function remove(id) {
         if (!window.confirm('Delete character #' + id + '?')) return;
@@ -131,7 +159,10 @@
       }
 
       function select(id) {
-        fetch('/setup/characters/api/select', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id }) })
+        fetch('/setup/characters/api/select', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body:
+            JSON.stringify({ id: id })
+        })
           .then(function (r) { return r.json(); })
           .then(function (data) { if (data && data.success) { state.selected = data.selectedCharacter; render(); } });
       }
@@ -142,6 +173,8 @@
       document.addEventListener('DOMContentLoaded', function () { load(); });
     })();
   </script>
+  <script src="/js/character-menu.js"></script>
+
 </body>
 
 </html>

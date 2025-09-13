@@ -42,6 +42,8 @@
                         <a class="nav-link" href="/scenes"><i class="bi bi-film"></i> Scenes</a>
                     </li>
                 </ul>
+                <%- include('../partials/characterMenu') %>
+
             </div>
         </div>
     </nav>
@@ -88,7 +90,7 @@
                             <div class="flex-shrink-0"><i class="bi bi-person-circle fs-4 me-3"></i></div>
                             <div class="flex-grow-1">
                                 <div class="fw-bold">Character</div>
-                                <span class="badge bg-info">None Selected</span>
+                                <span class="badge bg-info" id="systemCharBadge">Loading...</span>
                             </div>
                         </div>
                     </div>
@@ -113,6 +115,7 @@
                         .catch(function () {
                             document.getElementById('posesContainer').innerHTML = '<div class="alert alert-danger">Failed to load poses</div>';
                         });
+
                 },
                 renderPoses: function () {
                     var container = document.getElementById('posesContainer');
@@ -122,9 +125,9 @@
                     }
                     var html = '<div class="row g-3">';
                     for (var i = 0; i < this.poses.length; i++) {
-                        var pose = this.poses[i];
-                        html += '<div class="col-md-6">';
-                        html += '<button class="btn btn-outline-primary w-100" onclick="alert(\'Executing pose: ' + (pose.name || pose.id) + '\')">';
+                        var pose = this.poses[i]; html += '<div class="col-md-6">'; html
+                            += '<button class="btn btn-outline-primary w-100" onclick="alert(\' Executing
+                        pose: ' + (pose.name || pose.id) + ' \')">';
                         html += '<i class="bi bi-play-fill"></i> ' + (pose.name || ('Pose ' + pose.id));
                         html += '</button>';
                         html += '</div>';
@@ -136,6 +139,8 @@
             document.addEventListener('DOMContentLoaded', function () { liveDashboard.init(); });
         })();
     </script>
+    <script src="/js/character-menu.js"></script>
+
 </body>
 
 </html>
