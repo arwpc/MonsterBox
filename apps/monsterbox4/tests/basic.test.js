@@ -124,12 +124,49 @@ describe('MonsterBox 4.0 Basic Tests', () => {
         });
 
         it('should set selected character', async () => {
-            // pick an id from the list if possible
             const list = await request(BASE_URL).get('/setup/characters/api/characters').expect(200);
             const id = list.body.characters && list.body.characters.length ? list.body.characters[0].id : 1;
             const sel = await request(BASE_URL).post('/setup/characters/api/select').send({ id }).expect(200);
             expect(sel.body).to.have.property('success', true);
             expect(sel.body).to.have.property('selectedCharacter', id);
+        });
+
+        it('should reject creating character without name', async () => {
+            await request(BASE_URL)
+                .post('/setup/characters/api/characters')
+                .send({})
+                .expect(400);
+        });
+
+        it('should reject updating character name to empty', async () => {
+            // create a temp character
+            const created = await request(BASE_URL)
+                .post('/setup/characters/api/characters')
+                .send({ name: 'Temp' })
+                .expect(201);
+            const tempId = created.body && created.body.character ? created.body.character.id : null;
+            expect(tempId).to.be.a('number');
+
+            // attempt to update to empty name
+            await request(BASE_URL)
+                .put('/setup/characters/api/characters/' + tempId)
+                .send({ name: '' })
+                .expect(400);
+
+            // cleanup
+            await request(BASE_URL)
+                .delete('/setup/characters/api/characters/' + tempId)
+                .expect(200);
+        });
+
+        it('should prevent deleting the currently selected character', async () => {
+            const cur = await request(BASE_URL)
+                .get('/setup/characters/api/current')
+                .expect(200);
+            const selectedId = cur.body.selectedCharacter;
+            await request(BASE_URL)
+                .delete('/setup/characters/api/characters/' + selectedId)
+                .expect(400);
         });
     });
 

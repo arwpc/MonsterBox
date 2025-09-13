@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const CHARACTERS_FILE = path.resolve(__dirname, '../../../data/characters.json');
+const CHARACTERS_FILE = path.resolve(__dirname, '../data/characters.json');
 
 function getDefaultCharacters() {
   return [

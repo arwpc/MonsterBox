@@ -53,6 +53,7 @@ The application will be available at:
 - Setup Hub: http://localhost:3000/setup
 - Parts: http://localhost:3000/setup/parts
 - Poses: http://localhost:3000/setup/poses
+- Characters: http://localhost:3000/setup/characters
 - Calibration: http://localhost:3000/setup/calibration
 - Audio: http://localhost:3000/setup/audio
 - Webcam: http://localhost:3000/setup/webcam
@@ -69,6 +70,10 @@ MonsterBox 4.0 lets you manage multiple characters and pick which one is active.
 
 Endpoints:
 - GET /setup/characters/api/characters → list characters
+- GET /setup/characters/api/characters/:id → get one character
+- POST /setup/characters/api/characters { name } → create character
+- PUT /setup/characters/api/characters/:id { name? } → update character
+- DELETE /setup/characters/api/characters/:id → delete character
 - GET /setup/characters/api/current → current selected id
 - POST /setup/characters/api/select { id } → set current character
 
