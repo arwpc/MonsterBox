@@ -19,6 +19,7 @@ import setupWebcamRoutes from './routes/setup/webcam.js';
 import setupSuperPowersRoutes from './routes/setup/superPowers.js';
 import setupSystemRoutes from './routes/setup/system.js';
 import setupPosesRoutes from './routes/setup/poses.js';
+import setupCharactersRoutes from './routes/setup/characters.js';
 import liveDashboardRoutes from './routes/live/dashboard.js';
 import scenesRoutes from './routes/scenes/index.js';
 import posesRoutes from './routes/poses/index.js';
@@ -44,6 +45,7 @@ app.set('views', path.join(__dirname, 'views'));
 // Global template variables
 app.use((req, res, next) => {
     res.locals.config = config;
+    req.app.locals.config = config;
     res.locals.currentCharacter = config.selectedCharacter || null;
     next();
 });
@@ -56,6 +58,7 @@ app.use('/setup/webcam', setupWebcamRoutes);
 app.use('/setup/super-powers', setupSuperPowersRoutes);
 app.use('/setup/system', setupSystemRoutes);
 app.use('/setup/poses', setupPosesRoutes);
+app.use('/setup/characters', setupCharactersRoutes);
 app.use('/live', liveDashboardRoutes);
 app.use('/scenes', scenesRoutes);
 app.use('/poses', posesRoutes);

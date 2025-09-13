@@ -37,6 +37,14 @@ describe('MonsterBox 4.0 Basic Tests', () => {
         });
     });
 
+    it('should serve the setup parts page', async () => {
+        const response = await request(BASE_URL)
+            .get('/setup/parts')
+            .expect(200);
+        expect(response.text).to.include('Setup Parts');
+    });
+
+
     describe('Poses API', () => {
         it('should return poses data', async () => {
             const response = await request(BASE_URL)
@@ -98,4 +106,59 @@ describe('MonsterBox 4.0 Basic Tests', () => {
                 .expect(404);
         });
     });
+
+    describe('Characters', () => {
+        it('should serve the characters setup page', async () => {
+            const res = await request(BASE_URL).get('/setup/characters').expect(200);
+            expect(res.text).to.include('Setup Characters');
+        });
+
+        it('should list characters and current selection', async () => {
+            const list = await request(BASE_URL).get('/setup/characters/api/characters').expect(200);
+            expect(list.body).to.have.property('success', true);
+            expect(list.body.characters).to.be.an('array');
+
+            const cur = await request(BASE_URL).get('/setup/characters/api/current').expect(200);
+            expect(cur.body).to.have.property('success', true);
+            expect(cur.body).to.have.property('selectedCharacter');
+        });
+
+        it('should set selected character', async () => {
+            // pick an id from the list if possible
+            const list = await request(BASE_URL).get('/setup/characters/api/characters').expect(200);
+            const id = list.body.characters && list.body.characters.length ? list.body.characters[0].id : 1;
+            const sel = await request(BASE_URL).post('/setup/characters/api/select').send({ id }).expect(200);
+            expect(sel.body).to.have.property('success', true);
+            expect(sel.body).to.have.property('selectedCharacter', id);
+        });
+    });
+
+    describe('Setup Placeholder Pages', () => {
+        it('should serve the system setup page', async () => {
+            const res = await request(BASE_URL).get('/setup/system').expect(200);
+            expect(res.text).to.include('Setup System');
+        });
+
+        it('should serve the audio setup page', async () => {
+            const res = await request(BASE_URL).get('/setup/audio').expect(200);
+            expect(res.text).to.include('Setup Audio');
+        });
+
+        it('should serve the webcam setup page', async () => {
+            const res = await request(BASE_URL).get('/setup/webcam').expect(200);
+            expect(res.text).to.include('Setup Webcam');
+        });
+
+        it('should serve the super powers setup page', async () => {
+            const res = await request(BASE_URL).get('/setup/super-powers').expect(200);
+            expect(res.text).to.include('Setup Super Powers');
+        });
+
+        it('should serve the calibration setup page', async () => {
+            const res = await request(BASE_URL).get('/setup/calibration').expect(200);
+            expect(res.text).to.include('Setup Calibration');
+        });
+
+    });
+
 });

@@ -25,7 +25,7 @@ MonsterBox 4.0 is a clean, single-node, single-character application designed to
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+ 
+- Node.js 18+
 - Python 3.8+
 - Raspberry Pi 4B (for hardware control)
 
@@ -46,6 +46,31 @@ The application will be available at:
 - **Dashboard**: http://localhost:3000
 - **Setup**: http://localhost:3000/setup
 - **Live Mode**: http://localhost:3000/live
+
+
+## 🧩 Setup Pages
+
+- Setup Hub: http://localhost:3000/setup
+- Parts: http://localhost:3000/setup/parts
+- Poses: http://localhost:3000/setup/poses
+- Calibration: http://localhost:3000/setup/calibration
+- Audio: http://localhost:3000/setup/audio
+- Webcam: http://localhost:3000/setup/webcam
+- Super Powers: http://localhost:3000/setup/super-powers
+- System: http://localhost:3000/setup/system
+
+## 👥 Characters Management
+
+MonsterBox 4.0 lets you manage multiple characters and pick which one is active. The active character is used throughout the app for parts and poses.
+
+- Manage at Setup → Characters (http://localhost:3000/setup/characters)
+- Current selection is shown in the navbar dropdown and can be changed from any page
+- Persisted in data/characters.json; current selection is also stored in app config
+
+Endpoints:
+- GET /setup/characters/api/characters → list characters
+- GET /setup/characters/api/current → current selected id
+- POST /setup/characters/api/select { id } → set current character
 
 ## 📁 Directory Structure
 
@@ -104,7 +129,7 @@ In the Templates panel, click any option button to instantly create a pose with 
 ### Executing Poses
 
 #### Live Dashboard
-- Go to **Live Mode** 
+- Go to **Live Mode**
 - Click any pose button to execute immediately
 - View execution status and results
 
@@ -120,7 +145,7 @@ curl -X POST http://localhost:3000/poses/1/execute \
 
 #### Elbow Templates
 - **Slight Bend** (20°)
-- **Half Bend** (45°) 
+- **Half Bend** (45°)
 - **Full Bend** (90°)
 - **Extend Fully** (0°)
 
@@ -151,7 +176,7 @@ Poses use calibration data from `data/servo_calibrations.json` to ensure safe op
 
 ### Safety Features
 - **Angle clamping** to calibrated min/max ranges
-- **Pulse width validation** 
+- **Pulse width validation**
 - **Timeout protection** on hardware commands
 - **Graceful fallback** to simulation mode
 
@@ -174,7 +199,7 @@ POST /poses/:id/execute
 POST /poses/from-template
 Body: {
   "templateName": "elbow",
-  "option": "Half Bend", 
+  "option": "Half Bend",
   "partId": "30"
 }
 ```
@@ -187,14 +212,17 @@ GET /poses/templates
 ## 🧪 Testing
 
 ```bash
-# Run basic tests
-npm test
+# Run all Mocha unit/integration tests (fast)
+npm run test:unit
 
-# Test hardware services
-npm run test:hardware
+# Run all Playwright UI tests
+npm run test:ui
 
-# Test poses specifically  
-npm run test:poses
+# Headed UI tests (visible browser)
+npm run test:ui-headed
+
+# Everything (unit + UI)
+npm run test:all
 ```
 
 ## 🔄 Migration from Legacy MonsterBox
