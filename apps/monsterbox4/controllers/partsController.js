@@ -1,0 +1,343 @@
+/**
+ * Parts Controller for MonsterBox 4.0
+ * Handles all 11 Part types with direct local function calls
+ */
+
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import hardwareService from '../services/hardwareService/index.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Part types with their configurations
+const PART_TYPES = {
+    motor: { icon: '🔄', description: 'DC motors for movement', requiresPin: true },
+    linear_actuator: { icon: '🦴', description: 'extending/retracting movements', requiresPin: true },
+    light: { icon: '💡', description: 'basic on/off lighting', requiresPin: true },
+    led: { icon: '🔆', description: 'PWM-controlled with brightness', requiresPin: true },
+    servo: { icon: '🦷', description: 'precise angle control: standard, continuous, feedback', requiresPin: true },
+    sensor: { icon: '📡', description: 'digital/analog sensors', requiresPin: true },
+    motion_sensor: { icon: '🔍', description: 'PIR motion detection', requiresPin: true },
+    webcam: { icon: '📹', description: 'video capture devices', requiresPin: false },
+    microphone: { icon: '🎤', description: 'audio input devices', requiresPin: false },
+    speaker: { icon: '🔊', description: 'audio output devices', requiresPin: false },
+    head_tracking: { icon: '🎯', description: 'computer vision tracking', requiresPin: false }
+};
+
+// Servo types supported
+const SERVO_TYPES = {
+    standard: { description: 'Standard position servo (0-180°)', pulseRange: [500, 2500] },
+    continuous: { description: 'Continuous rotation servo', pulseRange: [700, 2300] },
+    feedback: { description: 'Feedback servo with position sensing', pulseRange: [500, 2500] }
+};
+
+// Get parts data file path
+const getPartsFilePath = () => {
+    return path.resolve(__dirname, '../data/parts.json');
+};
+
+// Load parts from file
+const loadParts = async () => {
+    try {
+        const filePath = getPartsFilePath();
+        const data = await fs.readFile(filePath, 'utf8');
+        return JSON.parse(data);
+    } catch (error) {
+        if (error.code === 'ENOENT') {
+            // File doesn't exist, return empty array
+            return [];
+        }
+        throw error;
+    }
+};
+
+// Save parts to file
+const saveParts = async (parts) => {
+    const filePath = getPartsFilePath();
+
+    // Ensure data directory exists
+    const dataDir = path.dirname(filePath);
+    await fs.mkdir(dataDir, { recursive: true });
+
+    await fs.writeFile(filePath, JSON.stringify(parts, null, 2));
+};
+
+// Generate unique ID for new parts
+const generatePartId = (parts) => {
+    const maxId = parts.reduce((max, part) => Math.max(max, parseInt(part.id) || 0), 0);
+    return String(maxId + 1);
+};
+
+/**
+ * Get all parts
+ */
+export const getAllParts = async (req, res) => {
+    try {
+        const parts = await loadParts();
+        res.json({
+            success: true,
+            parts: parts,
+            partTypes: PART_TYPES,
+            servoTypes: SERVO_TYPES
+        });
+    } catch (error) {
+        console.error('Error loading parts:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to load parts',
+            message: error.message
+        });
+    }
+};
+
+/**
+ * Get part by ID
+ */
+export const getPartById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const parts = await loadParts();
+        const part = parts.find(p => p.id === id);
+
+        if (!part) {
+            return res.status(404).json({
+                success: false,
+                error: 'Part not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            part: part
+        });
+    } catch (error) {
+        console.error('Error getting part:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get part',
+            message: error.message
+        });
+    }
+};
+
+/**
+ * Create new part
+ */
+export const createPart = async (req, res) => {
+    try {
+        const { name, type, pin, description, config } = req.body;
+
+        // Validate part type
+        if (!PART_TYPES[type]) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid part type',
+                validTypes: Object.keys(PART_TYPES)
+            });
+        }
+
+        // Validate required fields
+        if (!name || !type) {
+            return res.status(400).json({
+                success: false,
+                error: 'Name and type are required'
+            });
+        }
+
+        // Validate pin for parts that require it
+        if (PART_TYPES[type].requiresPin && !pin) {
+            return res.status(400).json({
+                success: false,
+                error: `Pin is required for ${type} parts`
+            });
+        }
+
+        const parts = await loadParts();
+        const newPart = {
+            id: generatePartId(parts),
+            name,
+            type,
+            pin: pin || null,
+            description: description || PART_TYPES[type].description,
+            config: config || {},
+            created: new Date().toISOString(),
+            enabled: true
+        };
+
+        parts.push(newPart);
+        await saveParts(parts);
+
+        res.status(201).json({
+            success: true,
+            part: newPart,
+            message: `${PART_TYPES[type].icon} ${name} created successfully`
+        });
+    } catch (error) {
+        console.error('Error creating part:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to create part',
+            message: error.message
+        });
+    }
+};
+
+/**
+ * Update part
+ */
+export const updatePart = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = req.body;
+
+        const parts = await loadParts();
+        const partIndex = parts.findIndex(p => p.id === id);
+
+        if (partIndex === -1) {
+            return res.status(404).json({
+                success: false,
+                error: 'Part not found'
+            });
+        }
+
+        // Update part with new data
+        parts[partIndex] = {
+            ...parts[partIndex],
+            ...updates,
+            id, // Ensure ID doesn't change
+            updated: new Date().toISOString()
+        };
+
+        await saveParts(parts);
+
+        res.json({
+            success: true,
+            part: parts[partIndex],
+            message: `Part ${parts[partIndex].name} updated successfully`
+        });
+    } catch (error) {
+        console.error('Error updating part:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to update part',
+            message: error.message
+        });
+    }
+};
+
+/**
+ * Delete part
+ */
+export const deletePart = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const parts = await loadParts();
+        const partIndex = parts.findIndex(p => p.id === id);
+
+        if (partIndex === -1) {
+            return res.status(404).json({
+                success: false,
+                error: 'Part not found'
+            });
+        }
+
+        const deletedPart = parts.splice(partIndex, 1)[0];
+        await saveParts(parts);
+
+        res.json({
+            success: true,
+            message: `Part ${deletedPart.name} deleted successfully`
+        });
+    } catch (error) {
+        console.error('Error deleting part:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to delete part',
+            message: error.message
+        });
+    }
+};
+
+/**
+ * Test part functionality
+ */
+export const testPart = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { testParams } = req.body;
+
+        const parts = await loadParts();
+        const part = parts.find(p => p.id === id);
+
+        if (!part) {
+            return res.status(404).json({
+                success: false,
+                error: 'Part not found'
+            });
+        }
+
+        // Get available actions for this part type
+        const availableActions = hardwareService.getAvailableActions(part.type);
+
+        if (availableActions.length === 0) {
+            return res.json({
+                success: true,
+                message: `No test actions available for ${part.type} parts`,
+                testResult: {
+                    partId: id,
+                    partName: part.name,
+                    partType: part.type,
+                    result: 'NO_ACTIONS_AVAILABLE',
+                    timestamp: new Date().toISOString()
+                }
+            });
+        }
+
+        // Use the first available action as a basic test
+        const testAction = availableActions[0];
+        const actionParams = testParams || {};
+
+        console.log(`🧪 Testing ${part.type} part: ${part.name} with action: ${testAction}`);
+
+        // Perform hardware test
+        const testResult = await hardwareService.controlPart(id, testAction, actionParams);
+
+        res.json({
+            success: testResult.success,
+            message: testResult.success ?
+                `✅ Test completed for ${part.name}: ${testResult.message}` :
+                `❌ Test failed for ${part.name}: ${testResult.error}`,
+            testResult: {
+                partId: id,
+                partName: part.name,
+                partType: part.type,
+                action: testAction,
+                testParams: actionParams,
+                result: testResult.success ? 'HARDWARE_SUCCESS' : 'HARDWARE_ERROR',
+                details: testResult,
+                availableActions: availableActions,
+                timestamp: new Date().toISOString()
+            }
+        });
+    } catch (error) {
+        console.error('Error testing part:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to test part',
+            message: error.message
+        });
+    }
+};
+
+export default {
+    getAllParts,
+    getPartById,
+    createPart,
+    updatePart,
+    deletePart,
+    testPart,
+    PART_TYPES,
+    SERVO_TYPES
+};

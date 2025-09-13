@@ -1,0 +1,232 @@
+{
+  "characterId": 4,
+  "poses": [
+    {
+      "id": 1,
+      "name": "Bend Elbow - Half",
+      "description": "Half bend elbow position for natural movement",
+      "parts": [
+        {
+          "partId": 30,
+          "type": "servo",
+          "target": {
+            "angleDeg": 45
+          }
+        }
+      ],
+      "notes": "Safe half bend position",
+      "category": "elbow",
+      "concurrent": false,
+      "created": "2025-09-13T00:00:00Z"
+    },
+    {
+      "id": 2,
+      "name": "Bend Elbow - Full",
+      "description": "Full bend elbow position for dramatic effect",
+      "parts": [
+        {
+          "partId": 30,
+          "type": "servo",
+          "target": {
+            "angleDeg": 90
+          }
+        }
+      ],
+      "notes": "Maximum safe bend position",
+      "category": "elbow",
+      "concurrent": false,
+      "created": "2025-09-13T00:00:00Z"
+    },
+    {
+      "id": 3,
+      "name": "Extend Arm Fully",
+      "description": "Fully extended arm position",
+      "parts": [
+        {
+          "partId": 30,
+          "type": "servo",
+          "target": {
+            "angleDeg": 0
+          }
+        }
+      ],
+      "notes": "Neutral extended position",
+      "category": "elbow",
+      "concurrent": false,
+      "created": "2025-09-13T00:00:00Z"
+    },
+    {
+      "id": 4,
+      "name": "Look Forward",
+      "description": "Head facing directly forward",
+      "parts": [
+        {
+          "partId": 29,
+          "type": "servo",
+          "target": {
+            "continuous": {
+              "direction": "stop",
+              "durationMs": 100
+            }
+          }
+        }
+      ],
+      "notes": "Neutral head position",
+      "category": "head",
+      "concurrent": false,
+      "created": "2025-09-13T00:00:00Z"
+    },
+    {
+      "id": 5,
+      "name": "Random Head Movement",
+      "description": "Small random head movements for lifelike behavior",
+      "parts": [
+        {
+          "partId": 29,
+          "type": "servo",
+          "target": {
+            "continuous": {
+              "direction": "random",
+              "durationMs": 3000,
+              "pattern": "wiggle"
+            }
+          }
+        }
+      ],
+      "notes": "Subtle random movements",
+      "category": "head",
+      "concurrent": false,
+      "created": "2025-09-13T00:00:00Z"
+    },
+    {
+      "id": 6,
+      "name": "elbow - Slight Bend",
+      "description": "Slight Bend pose created from elbow template",
+      "parts": [
+        {
+          "partId": 30,
+          "type": "servo",
+          "target": {
+            "angleDeg": 20
+          }
+        }
+      ],
+      "category": "elbow",
+      "concurrent": false,
+      "notes": "Generated from elbow template",
+      "created": "2025-09-13T18:44:18.082Z"
+    },
+    {
+      "id": 7,
+      "name": "elbow - Half Bend",
+      "description": "Half Bend pose created from elbow template",
+      "parts": [
+        {
+          "partId": 30,
+          "type": "servo",
+          "target": {
+            "angleDeg": 45
+          }
+        }
+      ],
+      "category": "elbow",
+      "concurrent": false,
+      "notes": "Generated from elbow template",
+      "created": "2025-09-13T19:25:11.334Z"
+    },
+    {
+      "id": 8,
+      "name": "elbow - Half Bend",
+      "description": "Half Bend pose created from elbow template",
+      "parts": [
+        {
+          "partId": 30,
+          "type": "servo",
+          "target": {
+            "angleDeg": 45
+          }
+        }
+      ],
+      "category": "elbow",
+      "concurrent": false,
+      "notes": "Generated from elbow template",
+      "created": "2025-09-13T19:33:26.280Z"
+    },
+    {
+      "id": 9,
+      "name": "elbow - Half Bend",
+      "description": "Half Bend pose created from elbow template",
+      "parts": [
+        {
+          "partId": 30,
+          "type": "servo",
+          "target": {
+            "angleDeg": 45
+          }
+        }
+      ],
+      "category": "elbow",
+      "concurrent": false,
+      "notes": "Generated from elbow template",
+      "created": "2025-09-13T19:35:51.760Z"
+    },
+    {
+      "id": 10,
+      "name": "elbow - Half Bend",
+      "description": "Half Bend pose created from elbow template",
+      "parts": [
+        {
+          "partId": 30,
+          "type": "servo",
+          "target": {
+            "angleDeg": 45
+          }
+        }
+      ],
+      "category": "elbow",
+      "concurrent": false,
+      "notes": "Generated from elbow template",
+      "created": "2025-09-13T19:43:54.013Z"
+    }
+  ],
+  "templates": {
+    "elbow": {
+      "name": "Bend Elbow",
+      "options": [
+        {
+          "name": "Slight Bend",
+          "angleDeg": 20
+        },
+        {
+          "name": "Half Bend",
+          "angleDeg": 45
+        },
+        {
+          "name": "Full Bend",
+          "angleDeg": 90
+        },
+        {
+          "name": "Extend Fully",
+          "angleDeg": 0
+        }
+      ]
+    },
+    "head": {
+      "name": "Head Movement",
+      "options": [
+        {
+          "name": "Look Forward",
+          "action": "stop"
+        },
+        {
+          "name": "Random Movement",
+          "action": "random"
+        },
+        {
+          "name": "Full Rotation",
+          "action": "rotate_360"
+        }
+      ]
+    }
+  }
+}

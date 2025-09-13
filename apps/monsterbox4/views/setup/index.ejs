@@ -1,0 +1,93 @@
+<%- include('../components/layout', { 
+    title: 'Setup - MonsterBox 4.0', 
+    page: 'setup',
+    config: { theme: 'dark' }, 
+    currentCharacter: null, 
+    body: `<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-gear"></i> Setup</h1>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-cpu display-4 text-primary mb-3"></i>
+                <h5 class="card-title">Parts</h5>
+                <p class="card-text">Configure animatronic parts, servos, and hardware components.</p>
+                <a href="/setup/parts" class="btn btn-primary">
+                    <i class="bi bi-arrow-right"></i> Configure Parts
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-person-arms-up display-4 text-success mb-3"></i>
+                <h5 class="card-title">Poses</h5>
+                <p class="card-text">Create and manage poses for your animatronic character.</p>
+                <a href="/setup/poses" class="btn btn-success">
+                    <i class="bi bi-arrow-right"></i> Manage Poses
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-sliders display-4 text-warning mb-3"></i>
+                <h5 class="card-title">Calibration</h5>
+                <p class="card-text">Calibrate servo positions and movement ranges.</p>
+                <a href="/setup/calibration" class="btn btn-warning">
+                    <i class="bi bi-arrow-right"></i> Calibrate
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-volume-up display-4 text-info mb-3"></i>
+                <h5 class="card-title">Audio</h5>
+                <p class="card-text">Configure audio settings and sound effects.</p>
+                <a href="/setup/audio" class="btn btn-info">
+                    <i class="bi bi-arrow-right"></i> Audio Settings
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-camera-video display-4 text-secondary mb-3"></i>
+                <h5 class="card-title">Webcam</h5>
+                <p class="card-text">Configure webcam and vision settings.</p>
+                <a href="/setup/webcam" class="btn btn-secondary">
+                    <i class="bi bi-arrow-right"></i> Webcam Setup
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-pc-display display-4 text-dark mb-3"></i>
+                <h5 class="card-title">System</h5>
+                <p class="card-text">System preferences and advanced settings.</p>
+                <a href="/setup/system" class="btn btn-dark">
+                    <i class="bi bi-arrow-right"></i> System Settings
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+` }) %>

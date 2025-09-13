@@ -1,0 +1,127 @@
+<%- include('../components/layout', { title: 'Live Dashboard - MonsterBox 4.0' , page: 'live-dashboard' , config: {
+    theme: 'dark' }, currentCharacter: null, body: `<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-play-circle"></i> Live Dashboard</h1>
+            <div class="d-flex gap-2">
+                <span class="badge bg-success fs-6">Live Mode Active</span>
+                <button class="btn btn-outline-secondary" onclick="location.reload()">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-person-arms-up"></i> Quick Poses
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="posesContainer">
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-hourglass-split fs-1"></i>
+                            <p class="mt-2">Loading poses...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-activity"></i> System Status
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-person-circle fs-4 me-3"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="fw-bold">Character</div>
+                                    <span class="badge bg-info">None Selected</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var liveDashboard = {
+            poses: [],
+            executionCount: 0,
+            lastPoseTime: null,
+
+            init: function () {
+                this.loadPoses();
+                this.updateStats();
+            },
+
+            loadPoses: function () {
+                var self = this;
+                fetch('/live/api/poses')
+                    .then(function (response) { return response.json(); })
+                    .then(function (data) {
+                        self.poses = data;
+                        self.renderPoses();
+                    })
+                    .catch(function (error) {
+                        console.error('Error loading poses:', error);
+                        document.getElementById('posesContainer').innerHTML =
+                            '<div class="alert alert-danger">Failed to load poses</div>';
+                    });
+            },
+
+            renderPoses: function () {
+                var container = document.getElementById('posesContainer');
+                if (this.poses.length === 0) {
+                    container.innerHTML = '<div class="text-center text-muted py-4">No poses available</div>';
+                    return;
+                }
+
+                var html = '<div class="row g-3">';
+                for (var i = 0; i < this.poses.length; i++) {
+                    var pose = this.poses[i];
+                    html += '<div class="col-md-6">';
+                    html += '<button class="btn btn-outline-primary w-100" onclick="liveDashboard.executePose(\'' + pose.id + '\')">';
+                    html += '<i class="bi bi-play-fill"></i> ' + pose.name;
+                    html += '</button>';
+                    html += '</div>';
+                }
+                html += '</div>';
+                container.innerHTML = html;
+            },
+
+            executePose: function (poseId) {
+                var pose = this.poses.find(function (p) { return p.id === poseId; });
+                if (!pose) return;
+
+                alert('Executing pose: ' + pose.name);
+                this.executionCount++;
+                this.lastPoseTime = new Date();
+                this.updateStats();
+            },
+
+            updateStats: function () {
+                // Update stats display if needed
+            }
+        };
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function () {
+            liveDashboard.init();
+        });
+    </script>
+    ` }) %>

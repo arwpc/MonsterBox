@@ -1,0 +1,280 @@
+<%- include('../components/layout', { title: 'Live Dashboard - MonsterBox 4.0' , page: 'live-dashboard' , config: {
+    theme: 'dark' }, currentCharacter: null, body: ` <div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-play-circle"></i> Live Dashboard</h1>
+            <div class="d-flex gap-2">
+                <span class="badge bg-success fs-6">Live Mode Active</span>
+                <button class="btn btn-outline-secondary" onclick="location.reload()">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Quick Poses Panel -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-person-arms-up"></i> Quick Poses
+                    </h5>
+                    <a href="/setup/poses" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-gear"></i> Manage
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div id="live-poses">
+                        <div class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Loading poses...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Status -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-activity"></i> System Status
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="text-center">
+                                <div class="fs-1 text-success">
+                                    <i class="bi bi-cpu"></i>
+                                </div>
+                                <div class="mt-2">
+                                    <div class="fw-bold">Hardware</div>
+                                    <span class="badge bg-success">Connected</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center">
+                                <div class="fs-1 text-info">
+                                    <i class="bi bi-person-circle"></i>
+                                </div>
+                                <div class="mt-2">
+                                    <div class="fw-bold">Character</div>
+                                    <span class="badge bg-info">
+                                        <% if (currentCharacter) { %>
+                                            Character <%= currentCharacter %>
+                                                <% } else { %>
+                                                    None Selected
+                                                    <% } %>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>Last Pose Executed</span>
+                        <span id="last-pose-time" class="text-muted">Never</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Total Executions</span>
+                        <span id="execution-count" class="badge bg-secondary">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mt-4">
+        <!-- Pose Categories -->
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-grid"></i> Poses by Category
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="pose-categories">
+                        <div class="text-center">
+                            <div class="spinner-border spinner-border-sm" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Loading categories...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Execution Status Modal -->
+    <div class="modal fade" id="executionStatusModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Pose Execution</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="execution-status">
+                        <div class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Executing...</span>
+                            </div>
+                            <p class="mt-3">Executing pose...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Live Dashboard functionality
+        var liveDashboard = {
+            poses: [],
+            executionCount: 0,
+            lastPoseTime: null,
+
+            init: function () {
+                this.loadPoses();
+            },
+
+            loadPoses: function () {
+                var self = this;
+                try {
+                    // For now, show placeholder data
+                    this.poses = [
+                        { id: 1, name: "Neutral Pose", category: "basic" },
+                        { id: 2, name: "Elbow Bend", category: "movement" },
+                        { id: 3, name: "Head Turn", category: "movement" }
+                    ];
+                    this.renderPoses();
+                    this.renderCategories();
+                    this.updateStats();
+                } catch (error) {
+                    console.error('Failed to load poses:', error);
+                    document.getElementById('live-poses').innerHTML =
+                        '<div class="alert alert-danger">Failed to load poses</div>';
+                }
+            },
+
+            renderPoses: function () {
+                var container = document.getElementById('live-poses');
+
+                if (this.poses.length === 0) {
+                    container.innerHTML =
+                        '<div class="text-center text-muted">' +
+                        '<i class="bi bi-plus-circle fs-1"></i>' +
+                        '<p class="mt-2">No poses available</p>' +
+                        '<a href="/setup/poses" class="btn btn-primary">Create Poses</a>' +
+                        '</div>';
+                    return;
+                }
+
+                // Show first 6 poses for quick access
+                var quickPoses = this.poses.slice(0, 6);
+                var posesHtml = quickPoses.map(function (pose) {
+                    return '<div class="d-grid mb-2">' +
+                        '<button class="btn btn-execute" onclick="liveDashboard.executePose(' + pose.id + ')">' +
+                        '<i class="bi bi-play"></i> ' + pose.name +
+                        '</button>' +
+                        '</div>';
+                }).join('');
+
+                container.innerHTML = posesHtml;
+            }
+
+            renderCategories: function () {
+                var container = document.getElementById('pose-categories');
+
+                if (this.poses.length === 0) {
+                    container.innerHTML = '<p class="text-muted">No poses available</p>';
+                    return;
+                }
+
+                // Group poses by category
+                var categories = {};
+                this.poses.forEach(function (pose) {
+                    var category = pose.category || 'uncategorized';
+                    if (!categories[category]) {
+                        categories[category] = [];
+                    }
+                    categories[category].push(pose);
+                });
+
+                var categoriesHtml = Object.keys(categories).map(function (category) {
+                    var categoryPoses = categories[category].map(function (pose) {
+                        return '<div class="d-grid mb-2">' +
+                            '<button class="btn btn-sm btn-outline-primary" onclick="liveDashboard.executePose(' + pose.id + ')">' +
+                            '<i class="bi bi-play"></i> ' + pose.name +
+                            '</button>' +
+                            '</div>';
+                    }).join('');
+
+                    return '<div class="col-md-6 col-lg-4 mb-3">' +
+                        '<div class="card">' +
+                        '<div class="card-header">' +
+                        '<h6 class="card-title mb-0 text-capitalize">' +
+                        '<i class="bi bi-folder"></i> ' + category +
+                        '</h6>' +
+                        '</div>' +
+                        '<div class="card-body">' + categoryPoses + '</div>' +
+                        '</div>' +
+                        '</div>';
+                }).join('');
+
+                container.innerHTML = '<div class="row">' + categoriesHtml + '</div>';
+            },
+
+            executePose: function (poseId) {
+                var self = this;
+                var pose = this.poses.find(function (p) { return p.id === poseId; });
+                if (!pose) return;
+
+                try {
+                    // Update stats
+                    this.executionCount++;
+                    this.lastPoseTime = new Date();
+                    this.updateStats();
+
+                    // Show success message
+                    alert('Pose "' + pose.name + '" executed successfully!');
+
+                } catch (error) {
+                    console.error('Pose execution failed:', error);
+                    alert('Pose execution failed: ' + error.message);
+                }
+            },
+
+            updateStats: function () {
+                var executionCountEl = document.getElementById('execution-count');
+                if (executionCountEl) {
+                    executionCountEl.textContent = this.executionCount;
+                }
+
+                var lastPoseTimeEl = document.getElementById('last-pose-time');
+                if (this.lastPoseTime && lastPoseTimeEl) {
+                    lastPoseTimeEl.textContent = this.lastPoseTime.toLocaleTimeString();
+                }
+            }
+        };
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function () {
+            liveDashboard.init();
+        });
+    </script>
+    ` }) %>

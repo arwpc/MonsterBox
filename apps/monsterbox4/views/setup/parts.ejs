@@ -1,0 +1,524 @@
+<%- include('../components/layout', { title: title || 'Setup Parts - MonsterBox 4.0' , page: page || 'setup-parts' ,
+    config: config || { theme: 'dark' }, currentCharacter: currentCharacter || null, body: `<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-cpu"></i> Setup Parts</h1>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPartModal">
+                <i class="bi bi-plus-circle"></i> Add Part
+            </button>
+        </div>
+    </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Parts List -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-list"></i> Hardware Parts
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="parts-list">
+                        <div class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Loading parts...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Part Types -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-gear"></i> Part Types
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-arrow-repeat"></i> Servo</span>
+                            <span class="badge bg-primary rounded-pill" id="servo-count">0</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-gear-wide"></i> Motor</span>
+                            <span class="badge bg-primary rounded-pill" id="motor-count">0</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-lightbulb"></i> Light</span>
+                            <span class="badge bg-primary rounded-pill" id="light-count">0</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-mic"></i> Microphone</span>
+                            <span class="badge bg-primary rounded-pill" id="microphone-count">0</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-speaker"></i> Speaker</span>
+                            <span class="badge bg-primary rounded-pill" id="speaker-count">0</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-camera-video"></i> Webcam</span>
+                            <span class="badge bg-primary rounded-pill" id="webcam-count">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Part Modal -->
+    <div class="modal fade" id="createPartModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Hardware Part</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="createPartForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="partName" class="form-label">Part Name</label>
+                                    <input type="text" class="form-control" id="partName" name="name" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="partType" class="form-label">Part Type</label>
+                                    <select class="form-select" id="partType" name="type" onchange="onPartTypeChange()"
+                                        required>
+                                        <!-- Options populated by JavaScript -->
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- GPIO Pin (shown for parts that require pins) -->
+                        <div class="row" id="pinGroup" style="display: none;">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="gpioPin" class="form-label">GPIO Pin</label>
+                                    <input type="number" class="form-control" id="gpioPin" name="pin" min="1" max="40">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="partDescription" class="form-label">Description</label>
+                                    <input type="text" class="form-control" id="partDescription" name="description">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Servo-specific options -->
+                        <div id="servoGroup" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="servoType" class="form-label">Servo Type</label>
+                                        <select class="form-select" id="servoType" name="servoType">
+                                            <!-- Options populated by JavaScript -->
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="controllerType" class="form-label">Controller Type</label>
+                                        <select class="form-select" id="controllerType" name="controllerType"
+                                            onchange="onControllerTypeChange()">
+                                            <option value="gpio">Direct GPIO PWM</option>
+                                            <option value="pca9685">PCA9685 PWM Driver</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- PCA9685 Configuration -->
+                        <div id="pca9685Group" style="display: none;">
+                            <div class="card border-primary mb-3">
+                                <div class="card-header bg-primary text-white">
+                                    <i class="bi bi-cpu"></i> PCA9685 Configuration
+                                </div>
+                                <div class="card-body">
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="pca9685Address" class="form-label">I2C Address</label>
+                                            <input type="text" class="form-control" id="pca9685Address"
+                                                name="pca9685Address" value="0x40" pattern="0x[0-9A-Fa-f]{2}">
+                                            <div class="form-text">Default: 0x40</div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="pca9685Frequency" class="form-label">PWM Frequency (Hz)</label>
+                                            <input type="number" class="form-control" id="pca9685Frequency"
+                                                name="pca9685Frequency" value="50" min="40" max="1000">
+                                            <div class="form-text">Servo standard: 50Hz</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Select PCA9685 Channel</label>
+                                        <div id="pca9685Channels">
+                                            <!-- PCA9685 channel layout populated by JavaScript -->
+                                        </div>
+                                        <input type="hidden" id="pca9685Channel" name="pca9685Channel">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Description for non-pin parts -->
+                        <div class="row" id="descriptionGroup">
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <label for="partDescriptionAlt" class="form-label">Description</label>
+                                    <input type="text" class="form-control" id="partDescriptionAlt" name="description">
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="createPart()">Add Part</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Parts management functionality
+        var parts = [];
+        var partTypes = {};
+        var servoTypes = {};
+
+        function initPartsManager() {
+            loadParts();
+        }
+
+        function loadParts() {
+            fetch('/setup/parts/api/parts')
+                .then(function (response) { return response.json(); })
+                .then(function (data) {
+                    if (data.success) {
+                        parts = data.parts;
+                        partTypes = data.partTypes;
+                        servoTypes = data.servoTypes;
+                        renderPartsList();
+                        updatePartCounts();
+                        populatePartTypeSelect();
+                    } else {
+                        console.error('Failed to load parts:', data.error);
+                        document.getElementById('parts-list').innerHTML =
+                            '<div class="alert alert-danger">Failed to load parts: ' + data.error + '</div>';
+                    }
+                })
+                .catch(function (error) {
+                    console.error('Error loading parts:', error);
+                    document.getElementById('parts-list').innerHTML =
+                        '<div class="alert alert-danger">Error loading parts</div>';
+                });
+        }
+
+        function renderPartsList() {
+            var container = document.getElementById('parts-list');
+            if (parts.length === 0) {
+                container.innerHTML = '<div class="text-center text-muted py-4"><i class="bi bi-cpu fs-1"></i><p class="mt-2">No parts configured yet</p><button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPartModal"><i class="bi bi-plus-circle"></i> Add Your First Part</button></div>';
+                return;
+            }
+
+            var html = parts.map(function (part) {
+                var partType = partTypes[part.type] || { icon: '❓', description: 'Unknown type' };
+                var badges = '<span class="badge bg-secondary">' + part.type.replace('_', ' ').toUpperCase() + '</span>';
+
+                if (part.pin) {
+                    badges += ' <span class="badge bg-info">Pin ' + part.pin + '</span>';
+                }
+                if (part.config && part.config.channel !== undefined) {
+                    badges += ' <span class="badge bg-warning">Ch ' + part.config.channel + '</span>';
+                }
+                if (part.config && part.config.controllerType === 'pca9685') {
+                    badges += ' <span class="badge bg-success">PCA9685</span>';
+                }
+
+                return '<div class="card mb-2">' +
+                    '<div class="card-body">' +
+                    '<div class="d-flex justify-content-between align-items-start">' +
+                    '<div class="flex-grow-1">' +
+                    '<div class="d-flex align-items-center mb-1">' +
+                    '<span class="fs-5 me-2">' + partType.icon + '</span>' +
+                    '<h6 class="card-title mb-0">' + part.name + '</h6>' +
+                    '</div>' +
+                    '<div class="mb-2">' + badges + '</div>' +
+                    (part.description ? '<p class="card-text text-muted small mb-0">' + part.description + '</p>' : '') +
+                    '</div>' +
+                    '<div class="btn-group btn-group-sm ms-2">' +
+                    '<button class="btn btn-outline-primary" onclick="editPart(\'' + part.id + '\')" title="Edit">' +
+                    '<i class="bi bi-pencil"></i>' +
+                    '</button>' +
+                    '<button class="btn btn-outline-success" onclick="testPart(\'' + part.id + '\')" title="Test">' +
+                    '<i class="bi bi-play"></i>' +
+                    '</button>' +
+                    '<button class="btn btn-outline-danger" onclick="deletePart(\'' + part.id + '\')" title="Delete">' +
+                    '<i class="bi bi-trash"></i>' +
+                    '</button>' +
+                    '</div>' +
+                    '</div>' +
+                    '</div>' +
+                    '</div>';
+            }).join('');
+
+            container.innerHTML = html;
+        }
+
+        function updatePartCounts() {
+            var counts = {};
+            parts.forEach(function (part) {
+                counts[part.type] = (counts[part.type] || 0) + 1;
+            });
+
+            // Update count badges
+            Object.keys(counts).forEach(function (type) {
+                var element = document.getElementById(type + '-count');
+                if (element) {
+                    element.textContent = counts[type];
+                }
+            });
+        }
+
+        function populatePartTypeSelect() {
+            var select = document.getElementById('partType');
+            if (!select) return;
+
+            select.innerHTML = '<option value="">Select Part Type</option>';
+
+            Object.keys(partTypes).forEach(function (type) {
+                var partType = partTypes[type];
+                var option = document.createElement('option');
+                option.value = type;
+                option.textContent = partType.icon + ' ' + type.replace('_', ' ').toUpperCase() + ' - ' + partType.description;
+                select.appendChild(option);
+            });
+        }
+
+        function onPartTypeChange() {
+            var partType = document.getElementById('partType').value;
+            var pinGroup = document.getElementById('pinGroup');
+            var servoGroup = document.getElementById('servoGroup');
+            var pca9685Group = document.getElementById('pca9685Group');
+            var descriptionGroup = document.getElementById('descriptionGroup');
+
+            // Show/hide pin field based on part type
+            if (partTypes[partType] && partTypes[partType].requiresPin) {
+                pinGroup.style.display = 'block';
+                descriptionGroup.style.display = 'none';
+            } else {
+                pinGroup.style.display = 'none';
+                descriptionGroup.style.display = 'block';
+            }
+
+            // Show servo-specific options
+            if (partType === 'servo') {
+                servoGroup.style.display = 'block';
+                populateServoTypeSelect();
+            } else {
+                servoGroup.style.display = 'none';
+                pca9685Group.style.display = 'none';
+            }
+        }
+
+        function populateServoTypeSelect() {
+            var select = document.getElementById('servoType');
+            if (!select) return;
+
+            select.innerHTML = '<option value="">Select Servo Type</option>';
+
+            Object.keys(servoTypes).forEach(function (type) {
+                var servoType = servoTypes[type];
+                var option = document.createElement('option');
+                option.value = type;
+                option.textContent = type.toUpperCase() + ' - ' + servoType.description;
+                select.appendChild(option);
+            });
+        }
+
+        function onControllerTypeChange() {
+            var controllerType = document.getElementById('controllerType').value;
+            var pca9685Group = document.getElementById('pca9685Group');
+
+            if (controllerType === 'pca9685') {
+                pca9685Group.style.display = 'block';
+                renderPCA9685Channels();
+            } else {
+                pca9685Group.style.display = 'none';
+            }
+        }
+
+        function renderPCA9685Channels() {
+            var container = document.getElementById('pca9685Channels');
+            if (!container) return;
+
+            var html = '<div class="pca9685-board-layout">';
+            html += '<div class="text-center mb-2"><strong>PCA9685 16-Channel PWM Driver</strong></div>';
+            html += '<div class="text-center mb-2 text-muted small">Click a channel to select it</div>';
+            html += '<div class="row g-1">';
+
+            // Render channels 0-15 in a 4x4 grid layout like the physical board
+            for (var i = 0; i < 16; i++) {
+                if (i % 4 === 0) {
+                    html += '<div class="col-3">';
+                }
+
+                html += '<button type="button" class="btn btn-outline-secondary btn-sm w-100 mb-1 pca9685-channel" ';
+                html += 'onclick="selectPCA9685Channel(' + i + ')" id="channel-' + i + '">';
+                html += 'Ch ' + i;
+                html += '</button>';
+
+                if ((i + 1) % 4 === 0) {
+                    html += '</div>';
+                }
+            }
+            html += '</div></div>';
+
+            container.innerHTML = html;
+        }
+
+        function selectPCA9685Channel(channel) {
+            // Clear previous selection
+            document.querySelectorAll('.pca9685-channel').forEach(function (btn) {
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-outline-secondary');
+            });
+
+            // Select new channel
+            var channelBtn = document.getElementById('channel-' + channel);
+            if (channelBtn) {
+                channelBtn.classList.remove('btn-outline-secondary');
+                channelBtn.classList.add('btn-primary');
+            }
+
+            // Set hidden input
+            var hiddenInput = document.getElementById('pca9685Channel');
+            if (hiddenInput) {
+                hiddenInput.value = channel;
+            }
+        }
+
+        // Global functions
+        function createPart() {
+            var formData = new FormData(document.getElementById('createPartForm'));
+            var partData = Object.fromEntries(formData.entries());
+
+            fetch('/setup/parts/api/parts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(partData)
+            })
+                .then(function (response) { return response.json(); })
+                .then(function (data) {
+                    if (data.success) {
+                        bootstrap.Modal.getInstance(document.getElementById('createPartModal')).hide();
+                        document.getElementById('createPartForm').reset();
+                        loadParts(); // Reload parts list
+                        showAlert('success', data.message);
+                    } else {
+                        showAlert('danger', 'Failed to create part: ' + data.error);
+                    }
+                })
+                .catch(function (error) {
+                    console.error('Error creating part:', error);
+                    showAlert('danger', 'Error creating part');
+                });
+        }
+
+        function testPart(partId) {
+            var part = parts.find(function (p) { return p.id === partId; });
+            if (!part) return;
+
+            fetch('/setup/parts/api/parts/' + partId + '/test', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ testParams: { action: 'basic_test' } })
+            })
+                .then(function (response) { return response.json(); })
+                .then(function (data) {
+                    if (data.success) {
+                        showAlert('success', data.message);
+                    } else {
+                        showAlert('danger', 'Test failed: ' + data.error);
+                    }
+                })
+                .catch(function (error) {
+                    console.error('Error testing part:', error);
+                    showAlert('danger', 'Error testing part');
+                });
+        }
+
+        function editPart(partId) {
+            // TODO: Implement edit functionality
+            showAlert('info', 'Edit functionality coming soon!');
+        }
+
+        function deletePart(partId) {
+            var part = parts.find(function (p) { return p.id === partId; });
+            if (!part) return;
+
+            if (confirm('Are you sure you want to delete "' + part.name + '"?')) {
+                fetch('/setup/parts/api/parts/' + partId, {
+                    method: 'DELETE'
+                })
+                    .then(function (response) { return response.json(); })
+                    .then(function (data) {
+                        if (data.success) {
+                            loadParts(); // Reload parts list
+                            showAlert('success', data.message);
+                        } else {
+                            showAlert('danger', 'Failed to delete part: ' + data.error);
+                        }
+                    })
+                    .catch(function (error) {
+                        console.error('Error deleting part:', error);
+                        showAlert('danger', 'Error deleting part');
+                    });
+            }
+        }
+
+        function showAlert(type, message) {
+            // Create alerts container if it doesn't exist
+            var alertsContainer = document.getElementById('alertsContainer');
+            if (!alertsContainer) {
+                alertsContainer = document.createElement('div');
+                alertsContainer.id = 'alertsContainer';
+                alertsContainer.className = 'position-fixed top-0 end-0 p-3';
+                alertsContainer.style.zIndex = '1055';
+                document.body.appendChild(alertsContainer);
+            }
+
+            var alertHtml = '<div class="alert alert-' + type + ' alert-dismissible fade show" role="alert">';
+            alertHtml += message;
+            alertHtml += '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+            alertHtml += '</div>';
+            alertsContainer.innerHTML = alertHtml;
+
+            // Auto-dismiss after 5 seconds
+            setTimeout(function () {
+                var alert = alertsContainer.querySelector('.alert');
+                if (alert) {
+                    var bsAlert = bootstrap.Alert.getInstance(alert);
+                    if (bsAlert) bsAlert.close();
+                }
+            }, 5000);
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function () {
+            initPartsManager();
+        });
+    </script>
+    ` }) %>

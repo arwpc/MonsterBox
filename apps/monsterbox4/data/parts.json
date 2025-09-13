@@ -1,0 +1,164 @@
+[
+  {
+    "id": "1",
+    "name": "Test Servo",
+    "type": "servo",
+    "pin": 18,
+    "description": "Test servo for Halloween",
+    "config": {},
+    "created": "2025-09-13T19:35:33.755Z",
+    "enabled": true
+  },
+  {
+    "id": "3",
+    "name": "Test Servo",
+    "type": "servo",
+    "pin": 12,
+    "description": "Test servo for precise angle control",
+    "config": {
+      "servoType": "standard",
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "minAngle": 0,
+      "maxAngle": 180
+    },
+    "created": "2025-09-13T19:35:51.873Z",
+    "enabled": true
+  },
+  {
+    "id": "4",
+    "name": "Test LED",
+    "type": "led",
+    "pin": 13,
+    "description": "PWM-controlled LED with brightness",
+    "config": {
+      "brightness": 128,
+      "pwmFrequency": 1000,
+      "color": "white"
+    },
+    "created": "2025-09-13T19:35:51.888Z",
+    "enabled": true
+  },
+  {
+    "id": "5",
+    "name": "Test Sensor",
+    "type": "sensor",
+    "pin": 14,
+    "description": "Digital/analog sensor",
+    "config": {
+      "sensorType": "digital",
+      "pullUp": true,
+      "threshold": 512
+    },
+    "created": "2025-09-13T19:35:51.902Z",
+    "enabled": true
+  },
+  {
+    "id": "6",
+    "name": "Head Motor",
+    "type": "motor",
+    "pin": 19,
+    "description": "Main head rotation motor",
+    "config": {},
+    "created": "2025-09-13T19:36:06.701Z",
+    "enabled": true
+  },
+  {
+    "id": "7",
+    "name": "Eye LEDs",
+    "type": "led",
+    "pin": 13,
+    "description": "Spooky red eye illumination",
+    "config": {},
+    "created": "2025-09-13T19:36:16.703Z",
+    "enabled": true
+  },
+  {
+    "id": "8",
+    "name": "Motion Detector",
+    "type": "motion_sensor",
+    "pin": 21,
+    "description": "PIR sensor for detecting trick-or-treaters",
+    "config": {},
+    "created": "2025-09-13T19:36:24.240Z",
+    "enabled": true
+  },
+  {
+    "id": "9",
+    "name": "Spooky Speaker",
+    "type": "speaker",
+    "pin": null,
+    "description": "Audio output for scary sounds and voice",
+    "config": {},
+    "created": "2025-09-13T19:36:32.088Z",
+    "enabled": true
+  },
+  {
+    "id": "10",
+    "name": "Webcam Eyes",
+    "type": "webcam",
+    "pin": null,
+    "description": "Camera for head tracking and recording reactions",
+    "config": {},
+    "created": "2025-09-13T19:36:41.151Z",
+    "enabled": true
+  },
+  {
+    "id": "11",
+    "name": "Test Motor",
+    "type": "motor",
+    "pin": 18,
+    "description": "Test DC motor for movement",
+    "config": {
+      "direction": "forward",
+      "speed": 255,
+      "enablePin": 19
+    },
+    "created": "2025-09-13T19:43:54.113Z",
+    "enabled": true
+  },
+  {
+    "id": "12",
+    "name": "Test Servo",
+    "type": "servo",
+    "pin": 12,
+    "description": "Test servo for precise angle control",
+    "config": {
+      "servoType": "standard",
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "minAngle": 0,
+      "maxAngle": 180
+    },
+    "created": "2025-09-13T19:43:54.134Z",
+    "enabled": true
+  },
+  {
+    "id": "13",
+    "name": "Test LED",
+    "type": "led",
+    "pin": 13,
+    "description": "PWM-controlled LED with brightness",
+    "config": {
+      "brightness": 128,
+      "pwmFrequency": 1000,
+      "color": "white"
+    },
+    "created": "2025-09-13T19:43:54.149Z",
+    "enabled": true
+  },
+  {
+    "id": "14",
+    "name": "Test Sensor",
+    "type": "sensor",
+    "pin": 14,
+    "description": "Digital/analog sensor",
+    "config": {
+      "sensorType": "digital",
+      "pullUp": true,
+      "threshold": 512
+    },
+    "created": "2025-09-13T19:43:54.163Z",
+    "enabled": true
+  }
+]
