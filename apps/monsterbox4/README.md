@@ -328,8 +328,13 @@ curl -s -X POST http://localhost:3000/setup/parts/api/parts/7/test \
 
 Current controller coverage (apps/monsterbox4/services/hardwareService):
 - servo: real hardware via Python wrappers (exec.js → python_wrappers/servo_cli.py)
+- motor: real hardware via Python wrappers (exec.js → python_wrappers/motor_cli.py)
+- light: real hardware via Python wrappers (exec.js → python_wrappers/light_cli.py)
+- led: real hardware via Python wrappers (exec.js → python_wrappers/led_cli.py)
 - pca9685: interface available; currently simulated (can be wired to hardware)
-- motor, linear_actuator, light, led, sensor, motion_sensor, webcam, microphone, speaker, head_tracking: simulated responses today; ready for wiring to wrappers or the Hardware Abstraction Layer under `scripts/hardware/`
+- linear_actuator, sensor, motion_sensor, webcam, microphone, speaker, head_tracking: simulated responses today; ready for wiring to wrappers or the Hardware Abstraction Layer under `scripts/hardware/`
+
+Note: There is no simulation fallback. If a wrapper or hardware dependency is missing, the API returns a descriptive error with raw stderr/stdout to aid diagnosis.
 
 Recommended UI behavior on Setup → Parts:
 - Each part row exposes a compact “Test” drawer with per‑type controls:
