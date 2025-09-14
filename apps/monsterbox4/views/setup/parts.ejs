@@ -282,11 +282,7 @@
                                         <label for="editPartType" class="form-label">Part Type</label>
                                         <select class="form-select" id="editPartType" disabled>
                                             <option value="">Select…</option>
-                                            <% Object.keys(partTypes).forEach(function (key) { %>
-                                                <option value="<%= key %>">
-                                                    <%= key %>
-                                                </option>
-                                                <% }); %>
+
                                         </select>
                                     </div>
                                 </div>
@@ -436,7 +432,7 @@
                         badges += ' <span class="badge bg-success">PCA9685</span>';
                     }
                     if (part.config && part.config.modelId) {
-                        badges += ' <span class="badge bg-secondary">Model ' + part.config.modelId + '</span>';
+                        badges += ' <span class="badge bg-secondary">Model <span data-model-type="' + part.type + '" data-model-id="' + part.config.modelId + '">' + part.config.modelId + '</span></span>';
                     }
 
 
@@ -503,6 +499,29 @@
 
                 container.innerHTML = html;
             }
+            // After rendering, resolve model badges to names
+            (function resolveModelBadges() {
+                var neededTypes = { servo: true, led: true, linear_actuator: true, webcam: true };
+                var maps = {};
+                var promises = Object.keys(neededTypes).map(function (t) {
+                    return fetch('/setup/models/api/' + t)
+                        .then(function (r) { return r.json(); })
+                        .then(function (d) {
+                            maps[t] = {};
+                            (d.models || []).forEach(function (m) { maps[t][String(m.id)] = m.name || ('Model ' + m.id); });
+                        })
+                        .catch(function () { maps[t] = {}; });
+                });
+                Promise.all(promises).then(function () {
+                    document.querySelectorAll('[data-model-type][data-model-id]').forEach(function (el) {
+                        var t = (el.getAttribute('data-model-type') || '').replace(/\-/g, '_');
+                        var id = el.getAttribute('data-model-id');
+                        var name = (maps[t] && maps[t][String(id)]) || ('Model ' + id);
+                        el.textContent = name;
+                    });
+                });
+            })();
+
 
             function updatePartCounts() {
                 var counts = {};

@@ -142,6 +142,7 @@ describe('MonsterBox 4.0 Basic Tests', () => {
             // create a temp character
             const created = await request(BASE_URL)
                 .post('/setup/characters/api/characters')
+                .set('Connection', 'close')
                 .send({ name: 'Temp' })
                 .expect(201);
             const tempId = created.body && created.body.character ? created.body.character.id : null;
@@ -150,22 +151,26 @@ describe('MonsterBox 4.0 Basic Tests', () => {
             // attempt to update to empty name
             await request(BASE_URL)
                 .put('/setup/characters/api/characters/' + tempId)
+                .set('Connection', 'close')
                 .send({ name: '' })
                 .expect(400);
 
             // cleanup
             await request(BASE_URL)
                 .delete('/setup/characters/api/characters/' + tempId)
+                .set('Connection', 'close')
                 .expect(200);
         });
 
         it('should prevent deleting the currently selected character', async () => {
             const cur = await request(BASE_URL)
                 .get('/setup/characters/api/current')
+                .set('Connection', 'close')
                 .expect(200);
             const selectedId = cur.body.selectedCharacter;
             await request(BASE_URL)
                 .delete('/setup/characters/api/characters/' + selectedId)
+                .set('Connection', 'close')
                 .expect(400);
         });
     });

@@ -9,5 +9,26 @@
     },
     "controlsSchema": {},
     "meta": {}
+  },
+  {
+    "id": "1757820399536",
+    "name": "Test LED Model",
+    "description": "tmp",
+    "defaults": {
+      "maxCurrentMa": 20,
+      "forwardVoltageV": 2
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1757820399641",
+    "name": "Tmp LED",
+    "description": "",
+    "defaults": {
+      "maxCurrentMa": 15
+    },
+    "controlsSchema": {},
+    "meta": {}
   }
 ]

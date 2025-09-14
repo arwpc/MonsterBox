@@ -28,6 +28,14 @@ import posesRoutes from './routes/poses/index.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Global safety: do not crash the process on unexpected errors
+process.on('uncaughtException', function (err) {
+    console.error('[FATAL] Uncaught exception:', err && err.stack || err);
+});
+process.on('unhandledRejection', function (reason, p) {
+    console.error('[FATAL] Unhandled rejection:', reason);
+});
+
 const app = express();
 
 // Configuration

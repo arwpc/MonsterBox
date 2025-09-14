@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +9,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
   <link href="/css/monsterbox4.css" rel="stylesheet">
 </head>
+
 <body>
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container-fluid">
@@ -27,7 +29,8 @@
               <li><a class="dropdown-item" href="/setup/poses"><i class="bi bi-person-arms-up"></i> Poses</a></li>
               <li><a class="dropdown-item" href="/setup/characters"><i class="bi bi-people"></i> Characters</a></li>
               <li><a class="dropdown-item" href="/setup/audio"><i class="bi bi-volume-up"></i> Audio</a></li>
-              <li><a class="dropdown-item active" href="/setup/webcam"><i class="bi bi-camera-video"></i> Webcam</a></li>
+              <li><a class="dropdown-item active" href="/setup/webcam"><i class="bi bi-camera-video"></i> Webcam</a>
+              </li>
             </ul>
           </li>
           <li class="nav-item"><a class="nav-link" href="/live"><i class="bi bi-play-circle"></i> Live Mode</a></li>
@@ -40,14 +43,124 @@
   <main class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h1><i class="bi bi-camera-video"></i> Setup Webcam</h1>
-      <span class="badge bg-secondary">Coming soon</span>
+      <span class="badge bg-success">Live Stream</span>
     </div>
-    <div class="alert alert-info">
-      Placeholder page for webcam settings. UI to be implemented.
+
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-header"><i class="bi bi-hdd-network"></i> Select Webcam Part</div>
+          <div class="card-body">
+            <div class="mb-2">
+              <label class="form-label">Webcam Part</label>
+              <select id="webcamPart" class="form-select"></select>
+            </div>
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" id="autoDetect" checked>
+              <label class="form-check-label" for="autoDetect">Autodetect camera</label>
+            </div>
+            <div class="d-grid gap-2">
+              <button id="startStream" class="btn btn-primary">Start Stream</button>
+              <button id="scanDevices" class="btn btn-outline-secondary" type="button">Scan Devices</button>
+            </div>
+            <div id="deviceResults" class="small text-muted mt-2"></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-8">
+        <div class="card mb-3">
+          <div class="card-header"><i class="bi bi-broadcast"></i> MJPEG Stream</div>
+          <div class="card-body text-center" style="background:#000">
+            <img id="webcamStream" alt="Webcam Stream" style="max-width:100%; display:none;" />
+            <div id="noStream" class="text-secondary">Select a webcam and click Start Stream</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><i class="bi bi-lightning"></i> WebRTC (beta)</div>
+          <div class="card-body">
+            <div class="d-grid gap-2 mb-2"><button id="startWebRTC" class="btn btn-success">Start WebRTC</button></div>
+            <video id="webrtcVideo" autoplay playsinline controls style="width:100%; background:#000"></video>
+            <div id="webrtcStatus" class="small text-muted mt-2"></div>
+          </div>
+        </div>
+      </div>
     </div>
   </main>
 
+  <script>
+    (function () {
+      function loadWebcams() {
+        fetch('/setup/parts/api/parts')
+          .then(function (r) { return r.json(); })
+          .then(function (j) {
+            var sel = document.getElementById('webcamPart');
+            sel.innerHTML = '';
+            var webcams = (j.parts || []).filter(function (p) { return p.type === 'webcam'; });
+            if (webcams.length === 0) {
+              var opt = document.createElement('option'); opt.value = ''; opt.textContent = 'No webcam parts found'; sel.appendChild(opt);
+            } else {
+              webcams.forEach(function (p) { var opt = document.createElement('option'); opt.value = p.id; opt.textContent = p.name || ('Webcam #' + p.id); sel.appendChild(opt); });
+            }
+          }).catch(function () { /* ignore */ });
+      }
+      function start() {
+        var id = document.getElementById('webcamPart').value;
+        if (!id) { return; }
+        var img = document.getElementById('webcamStream');
+        var no = document.getElementById('noStream');
+        var auto = document.getElementById('autoDetect').checked;
+        var qs = (auto ? '?auto=1&_ts=' : '?_ts=') + Date.now();
+        img.src = '/setup/webcam/api/parts/' + id + '/stream' + qs;
+        img.style.display = 'block';
+        no.style.display = 'none';
+      }
+      function scan() {
+        var box = document.getElementById('deviceResults');
+        box.textContent = 'Scanning...';
+        fetch('/setup/webcam/api/devices/probe')
+          .then(function (r) { return r.json(); })
+          .then(function (j) {
+            if (!j || !j.results) { box.textContent = 'No devices found'; return; }
+            var lines = j.results.map(function (it) { return (it.ok ? '✅ ' : '❌ ') + (it.name || it.path) + ' [' + it.path + ']' + (it.info ? ' - ' + it.info : ''); });
+            box.textContent = lines.join('\n');
+          })
+          .catch(function () { box.textContent = 'Error scanning devices'; });
+      }
+      document.getElementById('startStream').addEventListener('click', start);
+      document.getElementById('scanDevices').addEventListener('click', scan);
+      async function startWebRTC() {
+        var id = document.getElementById('webcamPart').value;
+        var status = document.getElementById('webrtcStatus');
+        var video = document.getElementById('webrtcVideo');
+        status.textContent = 'Starting WebRTC...';
+        if (!id) { status.textContent = 'Select a webcam part first'; return; }
+        try {
+          var pc = new RTCPeerConnection({ iceServers: [] });
+          pc.ontrack = function (e) { if (e && e.streams && e.streams[0]) { video.srcObject = e.streams[0]; } };
+          var offer = await pc.createOffer({ offerToReceiveVideo: true });
+          await pc.setLocalDescription(offer);
+          var resp = await fetch('/setup/webcam/api/parts/' + id + '/webrtc/offer?auto=1', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sdp: offer.sdp })
+          });
+          if (resp.status === 501) {
+            var j = await resp.json().catch(function () { return {}; });
+            status.textContent = 'Server missing wrtc dependency. On the Pi run: npm install wrtc (in apps/monsterbox4)';
+            return;
+          }
+          var ans = await resp.json();
+          if (!ans || !ans.sdp) { status.textContent = 'Failed to start WebRTC: bad server answer'; return; }
+          await pc.setRemoteDescription({ type: 'answer', sdp: ans.sdp });
+          status.textContent = 'WebRTC connected';
+        } catch (e) {
+          status.textContent = 'WebRTC error: ' + (e && e.message ? e.message : e);
+        }
+      }
+      document.getElementById('startWebRTC').addEventListener('click', function () { startWebRTC(); });
+      loadWebcams();
+    })();
+  </script>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
-</html>
 
+</html>

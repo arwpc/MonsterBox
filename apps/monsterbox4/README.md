@@ -189,6 +189,8 @@ APIs:
 Notes:
 - Servo models auto-seeded from legacy `data/servos.json` on first access
 - UI shows a Model selector in Parts Create/Edit; selecting a model can inject its defaults into the config preview
+- Parts list shows selected Model name as a badge; edit modal merges selected model defaults into the config preview
+
 
     └── basic.test.js       # Basic functionality tests
 ```

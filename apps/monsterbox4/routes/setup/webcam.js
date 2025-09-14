@@ -29,6 +29,15 @@ router.get('/', async (req, res) => {
 // Webcam device controls (per webcam part)
 router.get('/api/parts/:id/controls/list', webcamController.listControls);
 router.put('/api/parts/:id/controls/set', express.json(), webcamController.setControls);
+// Device discovery
+router.get('/api/devices', webcamController.listDevices);
+router.get('/api/devices/probe', webcamController.probeDevices);
+
+// Live MJPEG stream
+router.get('/api/parts/:id/stream', webcamController.streamMJPEG);
+// WebRTC offer/answer (browser offer -> server answer)
+router.post('/api/parts/:id/webrtc/offer', express.json(), webcamController.webrtcOffer);
+
 
 // Webcam Models CRUD
 router.get('/api/models', webcamModelsController.getAllModels);
