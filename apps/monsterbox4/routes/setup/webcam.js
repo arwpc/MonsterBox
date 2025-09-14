@@ -1,9 +1,11 @@
 /**
  * Setup Webcam Routes
- * Routes for webcam configuration interface
+ * Routes for webcam configuration interface + Webcam Models CRUD + Device Controls
  */
 
 import express from 'express';
+import webcamController from '../../controllers/webcamController.js';
+import webcamModelsController from '../../controllers/webcamModelsController.js';
 
 const router = express.Router();
 
@@ -23,5 +25,16 @@ router.get('/', async (req, res) => {
         });
     }
 });
+
+// Webcam device controls (per webcam part)
+router.get('/api/parts/:id/controls/list', webcamController.listControls);
+router.put('/api/parts/:id/controls/set', express.json(), webcamController.setControls);
+
+// Webcam Models CRUD
+router.get('/api/models', webcamModelsController.getAllModels);
+router.get('/api/models/:id', webcamModelsController.getModelById);
+router.post('/api/models', express.json(), webcamModelsController.createModel);
+router.put('/api/models/:id', express.json(), webcamModelsController.updateModel);
+router.delete('/api/models/:id', webcamModelsController.deleteModel);
 
 export default router;

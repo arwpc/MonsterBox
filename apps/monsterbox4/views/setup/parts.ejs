@@ -252,6 +252,70 @@
                     </div>
                 </div>
             </div>
+            <!-- Edit Part Modal -->
+            <div class="modal fade" id="editPartModal" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Edit Hardware Part</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="hidden" id="editPartId" />
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="editPartName" class="form-label">Part Name</label>
+                                        <input type="text" class="form-control" id="editPartName" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="editPartType" class="form-label">Part Type</label>
+                                        <select class="form-select" id="editPartType" disabled>
+                                            <option value="">Select…</option>
+                                            <% Object.keys(partTypes).forEach(function (key) { %>
+                                                <option value="<%= key %>">
+                                                    <%= key %>
+                                                </option>
+                                                <% }); %>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row" id="editPinGroup" style="display: none;">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="editGpioPin" class="form-label">GPIO Pin</label>
+                                        <input type="number" class="form-control" id="editGpioPin" min="1" max="40">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="editPartDescription" class="form-label">Description</label>
+                                        <input type="text" class="form-control" id="editPartDescription">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="editConfigJson" class="form-label">Config (JSON)</label>
+                                <textarea id="editConfigJson" class="form-control" rows="6"
+                                    spellcheck="false"></textarea>
+                                <div class="form-text">Edit advanced settings here (e.g., servoType, PCA9685 options).
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-primary" onclick="saveEditedPart()">Save
+                                Changes</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
         <script>
@@ -618,6 +682,7 @@
                         html += '<div class="col-auto"><button class="btn btn-sm btn-outline-secondary" onclick="sendPartAction(\'' + part.id + '\',\'retract\',{ speed: parseInt(document.getElementById(\'act-speed-' + part.id + '\').value,10)||0, distance: parseInt(document.getElementById(\'act-dist-' + part.id + '\').value,10)||0 },\'' + resultId + '\')">Retract</button></div>';
                         html += '<div class="col-auto"><button class="btn btn-sm btn-outline-danger" onclick="sendPartAction(\'' + part.id + '\',\'stop\',{},\'' + resultId + '\')">Stop</button></div>';
                         html += '</div>';
+                        html += '<div class="text-muted small mt-1">Hint: If only "pin" is set, directionPin = pin and pwmPin = pin + 1.</div>';
                         break;
                     case 'light':
                         html += '<div class="btn-group btn-group-sm" role="group" data-testid="light-controls">';
@@ -639,12 +704,14 @@
                         html += '<button class="btn btn-primary" onclick="sendPartAction(\'' + part.id + '\',\'read\',{},\'' + resultId + '\')">Read</button>';
                         html += '<button class="btn btn-outline-secondary" onclick="startLivePoll(\'' + part.id + '\',\'read\',\'' + resultId + '\')">Start 5s Poll</button>';
                         html += '</div>';
+                        html += '<div class="text-muted small mt-1">Hint: Last value appears below after each read.</div>';
                         break;
                     case 'motion_sensor':
                         html += '<div class="btn-group btn-group-sm" role="group" data-testid="motion-controls">';
                         html += '<button class="btn btn-primary" onclick="sendPartAction(\'' + part.id + '\',\'read\',{},\'' + resultId + '\')">Read</button>';
                         html += '<button class="btn btn-outline-secondary" onclick="startLivePoll(\'' + part.id + '\',\'read\',\'' + resultId + '\')">Start 5s Poll</button>';
                         html += '</div>';
+                        html += '<div class="text-muted small mt-1">Hint: Motion sensors report 1 when motion is detected.</div>';
                         break;
                     case 'microphone':
                         html += '<div class="btn-group btn-group-sm" data-testid="mic-controls">';
@@ -657,8 +724,20 @@
                         html += '</div>';
                         break;
                     case 'webcam':
-                        html += '<div class="btn-group btn-group-sm" data-testid="webcam-controls">';
-                        html += '<button class="btn btn-primary" onclick="sendPartAction(\'' + part.id + '\',\'capture\',{ resolution: \'640x480\' },\'' + resultId + '\')">Capture</button>';
+                        html += '<div class="vstack gap-2" data-testid="webcam-controls">';
+                        html += '  <div class="btn-group btn-group-sm">';
+                        html += '    <button class="btn btn-primary" onclick="sendPartAction(\'' + part.id + '\',\'capture\',{ resolution: \'640x480\' },\'' + resultId + '\')">Capture</button>';
+                        html += '    <button class="btn btn-outline-secondary" onclick="listWebcamControls(\'' + part.id + '\')">List Controls</button>';
+                        html += '  </div>';
+                        html += '  <div class="input-group input-group-sm">';
+                        html += '    <span class="input-group-text">ctrls</span>';
+                        html += '    <input id="wc-ctrls-' + part.id + '" class="form-control" placeholder="brightness=128,contrast=32" />';
+                        html += '    <span class="input-group-text">';
+                        html += '      <input class="form-check-input me-1" type="checkbox" id="wc-persist-' + part.id + '" /> Persist';
+                        html += '    </span>';
+                        html += '    <button class="btn btn-success" onclick="applyWebcamControls(\'' + part.id + '\')">Apply</button>';
+                        html += '  </div>';
+                        html += '  <pre id="wc-ctrls-out-' + part.id + '" class="small mb-0" style="max-height:120px;overflow:auto"></pre>';
                         html += '</div>';
                         break;
                     case 'head_tracking':
@@ -708,8 +787,62 @@
 
 
             function editPart(partId) {
-                // TODO: Implement edit functionality
-                showAlert('info', 'Edit functionality coming soon!');
+                var part = parts.find(function (p) { return p.id === partId; });
+                if (!part) return;
+                // populate modal fields
+                document.getElementById('editPartId').value = part.id;
+                document.getElementById('editPartName').value = part.name || '';
+                document.getElementById('editPartType').value = part.type || '';
+                document.getElementById('editPartType').disabled = true;
+                var pinGroup = document.getElementById('editPinGroup');
+                if (partTypes[part.type] && partTypes[part.type].requiresPin) {
+                    pinGroup.style.display = '';
+                    document.getElementById('editGpioPin').value = part.pin != null ? part.pin : '';
+                } else {
+                    pinGroup.style.display = 'none';
+                    document.getElementById('editGpioPin').value = '';
+                }
+                document.getElementById('editPartDescription').value = part.description || '';
+                document.getElementById('editConfigJson').value = JSON.stringify(part.config || {}, null, 2);
+                var modal = new bootstrap.Modal(document.getElementById('editPartModal'));
+                modal.show();
+            }
+
+            function saveEditedPart() {
+                var id = document.getElementById('editPartId').value;
+                var name = document.getElementById('editPartName').value.trim();
+                var type = document.getElementById('editPartType').value;
+                var pin = document.getElementById('editGpioPin').value;
+                var description = document.getElementById('editPartDescription').value;
+                var configText = document.getElementById('editConfigJson').value;
+                var requiresPin = partTypes[type] && partTypes[type].requiresPin;
+
+                if (!name) { showAlert('danger', 'Name is required'); return; }
+                if (requiresPin && !pin) { showAlert('danger', 'Pin is required for ' + type); return; }
+
+                var config;
+                try { config = configText ? JSON.parse(configText) : {}; }
+                catch (e) { showAlert('danger', 'Config JSON invalid: ' + e.message); return; }
+
+                var payload = { name: name, description: description, config: config };
+                if (requiresPin) payload.pin = parseInt(pin, 10);
+
+                fetch('/setup/parts/api/parts/' + id, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                })
+                    .then(function (resp) { return resp.json(); })
+                    .then(function (data) {
+                        if (data && data.success) {
+                            bootstrap.Modal.getInstance(document.getElementById('editPartModal')).hide();
+                            loadParts();
+                            showAlert('success', data.message || 'Part updated');
+                        } else {
+                            showAlert('danger', 'Failed to update: ' + (data && (data.error || data.message) || 'Unknown error'));
+                        }
+                    })
+                    .catch(function (err) { showAlert('danger', 'Update error: ' + err.message); });
             }
 
             function deletePart(partId) {
@@ -761,6 +894,64 @@
                         if (bsAlert) bsAlert.close();
                     }
                 }, 5000);
+            }
+
+
+            // Webcam controls helpers
+            function listWebcamControls(partId) {
+                var outEl = document.getElementById('wc-ctrls-out-' + partId);
+                if (outEl) outEl.textContent = 'Loading...';
+                fetch('/setup/webcam/api/parts/' + partId + '/controls/list')
+                    .then(function (r) { return r.json(); })
+                    .then(function (d) {
+                        if (d && d.success) {
+                            if (outEl) outEl.textContent = d.rawOutput || JSON.stringify(d.controls || [], null, 2);
+                            showAlert('success', d.message || 'Controls loaded');
+                        } else {
+                            var msg = (d && (d.error || d.message)) || 'Failed to list controls';
+                            if (outEl) outEl.textContent = msg;
+                            showAlert('danger', msg);
+                        }
+                    })
+                    .catch(function (err) {
+                        if (outEl) outEl.textContent = 'Error: ' + err.message;
+                        showAlert('danger', 'Error: ' + err.message);
+                    });
+            }
+
+            function applyWebcamControls(partId) {
+                var inputEl = document.getElementById('wc-ctrls-' + partId);
+                var persistEl = document.getElementById('wc-persist-' + partId);
+                var str = inputEl ? (inputEl.value || '').trim() : '';
+                var persist = !!(persistEl && persistEl.checked);
+                var obj = {};
+                if (str) {
+                    str.split(',').forEach(function (pair) {
+                        var kv = pair.split('=');
+                        if (kv.length >= 2) {
+                            var k = (kv[0] || '').trim();
+                            var v = kv.slice(1).join('=');
+                            v = (v || '').trim();
+                            if (/^-?\d+$/.test(v)) v = parseInt(v, 10);
+                            else if (v === 'true' || v === 'false') v = (v === 'true');
+                            obj[k] = v;
+                        }
+                    });
+                }
+                fetch('/setup/webcam/api/parts/' + partId + '/controls/set', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ controls: obj, persist: persist })
+                })
+                    .then(function (r) { return r.json(); })
+                    .then(function (d) {
+                        if (d && d.success) {
+                            showAlert('success', d.message || 'Controls applied');
+                        } else {
+                            showAlert('danger', (d && (d.error || d.message)) || 'Failed to apply controls');
+                        }
+                    })
+                    .catch(function (err) { showAlert('danger', 'Error: ' + err.message); });
             }
 
             // Initialize when page loads

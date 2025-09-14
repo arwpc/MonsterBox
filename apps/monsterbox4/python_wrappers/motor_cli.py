@@ -10,8 +10,8 @@ import os
 import json
 import subprocess
 
-# Add the scripts directory to Python path for direct import if needed
-SCRIPTS_DIR = os.path.join(os.path.dirname(__file__), '../../scripts')
+# Add the scripts directory to Python path for direct import if needed (repo root)
+SCRIPTS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../scripts'))
 sys.path.insert(0, SCRIPTS_DIR)
 
 

@@ -101,42 +101,42 @@ describe('Parts Test Actions API', () => {
   it('sensor: read', async () => {
     const part = await createPart('sensor');
     const result = await testPart(part);
-    expect(result).to.have.property('success', true);
+    expectHwAware(result);
     expect(result.testResult).to.have.property('action', 'read');
   });
 
   it('motion_sensor: read', async () => {
     const part = await createPart('motion_sensor');
     const result = await testPart(part);
-    expect(result).to.have.property('success', true);
+    expectHwAware(result);
     expect(result.testResult).to.have.property('action', 'read');
   });
 
   it('microphone: getLevel', async () => {
     const part = await createPart('microphone');
     const result = await testPart(part);
-    expect(result).to.have.property('success', true);
+    expectHwAware(result);
     expect(result.testResult).to.have.property('action', 'getLevel');
   });
 
   it('speaker: stop', async () => {
     const part = await createPart('speaker');
     const result = await testPart(part);
-    expect(result).to.have.property('success', true);
+    expectHwAware(result);
     expect(result.testResult).to.have.property('action', 'stop');
   });
 
   it('webcam: capture', async () => {
     const part = await createPart('webcam');
     const result = await testPart(part);
-    expect(result).to.have.property('success', true);
+    expectHwAware(result);
     expect(result.testResult).to.have.property('action', 'capture');
   });
 
   it('head_tracking: getPosition', async () => {
     const part = await createPart('head_tracking');
     const result = await testPart(part);
-    expect(result).to.have.property('success', true);
+    expectHwAware(result);
     expect(result.testResult).to.have.property('action', 'getPosition');
   });
 });

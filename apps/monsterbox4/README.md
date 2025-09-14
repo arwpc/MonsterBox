@@ -324,6 +324,25 @@ Notes:
 npm run test:all
 ```
 
+### Orlok smoke checklist (real hardware)
+
+- Ensure app-config.json points dataPath to `../../data` (legacy Orlok JSON)
+- Export env so tests expect real hardware results:
+  - `MONSTERBOX_HARDWARE_AVAILABLE=true`
+- Quick manual checks via Setup → Parts drawers or curl:
+  - Servo: moveToAngle 10–15°; verify motion and no binding
+  - LED: setBrightness 50%; Blink 2 cycles
+  - Light: toggle on/off
+  - Motor: control cw @ 40–50% for 500–1000ms
+  - Linear actuator: extend/retract small distance; Stop works
+  - Sensor: read shows 0/1; flips when you physically toggle input
+  - Motion sensor: read returns 1 when waving a hand
+  - Webcam: capture still; verify file saved under /tmp/monsterbox_capture_*.jpg
+  - Microphone: getLevel returns >0 when tapping the mic
+  - Speaker: play a short mp3, then stop; set volume
+  - Head tracking: getPosition returns coordinates (face → high confidence)
+
+
 ## � Hardware Part Testing (Per‑Type)
 
 MonsterBox 4.0 provides CRUD for Parts and a unified test endpoint for exercising hardware functionality per part type.
@@ -402,7 +421,11 @@ Current controller coverage (apps/monsterbox4/services/hardwareService):
 - linear_actuator: real hardware via Python wrappers (exec.js → python_wrappers/actuator_cli.py)
 - sensor: real hardware via Python wrappers (exec.js  python_wrappers/sensor_cli.py)
 - motion_sensor: real hardware via Python wrappers (exec.js  python_wrappers/sensor_cli.py)
-- webcam, microphone, speaker, head_tracking: simulated responses today; ready for wiring to wrappers or the Hardware Abstraction Layer under `scripts/hardware/`
+- webcam: capture wired to real hardware (exec.js → python_wrappers/webcam_cli.py)
+- microphone: getLevel wired to real hardware (exec.js → python_wrappers/microphone_cli.py)
+- speaker: play/stop/setVolume wired to real hardware (exec.js → python_wrappers/speaker_cli.py)
+- head_tracking: getPosition wired to real hardware (exec.js → python_wrappers/head_tracking_cli.py)
+
 
 Note: There is no simulation fallback. If a wrapper or hardware dependency is missing, the API returns a descriptive error with raw stderr/stdout to aid diagnosis.
 

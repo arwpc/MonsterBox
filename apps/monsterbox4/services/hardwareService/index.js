@@ -238,21 +238,48 @@ const HARDWARE_CONTROLLERS = {
             if (brightness < 0 || brightness > 100) {
                 throw new Error(`Invalid brightness: ${brightness}%. Must be 0-100%`);
             }
+            const tryDigitalFallback = async () => {
+                try {
+                    const state = brightness > 0 ? 'on' : 'off';
+                    const out2 = await runWrapper('light_cli.py', [String(pin), state, '0']);
+                    const parsed2 = parsePythonJSON(out2);
+                    const success2 = parsed2 ? parsed2.status === 'success' : (typeof out2 === 'string' && out2.indexOf('success') !== -1);
+                    return {
+                        success: success2,
+                        partType: 'led',
+                        pin,
+                        brightness,
+                        rawOutput: out2,
+                        message: (parsed2 && parsed2.message) || (success2
+                            ? `LED on pin ${pin} set to ${brightness}% (digital on/off fallback)`
+                            : 'LED command failed (digital fallback)')
+                    };
+                } catch (e2) {
+                    return { success: false, partType: 'led', pin, error: e2.message };
+                }
+            };
             try {
                 const args = [String(pin), String(brightness)];
                 if (typeof duration === 'number') args.push(String(duration));
                 const out = await runWrapper('led_cli.py', args);
                 const parsed = parsePythonJSON(out);
                 const success = parsed ? parsed.status === 'success' : (typeof out === 'string' && out.indexOf('success') !== -1);
+                if (!success) {
+                    // PWM path failed; try a simple digital on/off as a real-hardware fallback
+                    return await tryDigitalFallback();
+                }
                 return {
                     success,
                     partType: 'led',
                     pin: pin,
                     brightness: brightness,
                     rawOutput: out,
-                    message: parsed && parsed.message ? parsed.message : (success ? `LED on pin ${pin} set to ${brightness}%` : 'LED command failed')
+                    message: parsed && parsed.message ? parsed.message : `LED on pin ${pin} set to ${brightness}%`
                 };
             } catch (error) {
+                // If the primary path throws, attempt the digital fallback
+                const fb = await tryDigitalFallback();
+                if (fb.success) return fb;
                 return { success: false, partType: 'led', pin: pin, error: error.message };
             }
         },
@@ -449,36 +476,89 @@ const HARDWARE_CONTROLLERS = {
     // 📹 Webcam - video capture devices
     webcam: {
         async capture({ deviceId = 0, resolution = '640x480' }) {
-            console.log(`📹 Webcam Capture - Device ${deviceId}: ${resolution}`);
-            return {
-                success: true,
-                partType: 'webcam',
-                deviceId: deviceId,
-                resolution: resolution,
-                filename: `capture_${Date.now()}.jpg`,
-                message: `Webcam ${deviceId} captured image at ${resolution}`
-            };
+            try {
+                const [w, h] = String(resolution).split('x').map(function (v) { return parseInt(v, 10); });
+                const out = await runWrapper('webcam_cli.py', ['capture', String(deviceId), String(w || 640), String(h || 480)]);
+                const parsed = parsePythonJSON(out);
+                const success = parsed ? parsed.status === 'success' : false;
+                return {
+                    success: success,
+                    partType: 'webcam',
+                    deviceId: deviceId,
+                    resolution: resolution,
+                    filename: parsed && parsed.filename,
+                    message: (parsed && parsed.message) || ('Webcam ' + deviceId + ' capture attempted')
+                };
+            } catch (err) {
+                return { success: false, partType: 'webcam', deviceId: deviceId, resolution: resolution, error: String(err.message || err) };
+            }
+        },
+
+        async listControls({ deviceId = 0 }) {
+            try {
+                const out = await runWrapper('webcam_cli.py', ['list_ctrls', String(deviceId)]);
+                const parsed = parsePythonJSON(out);
+                const success = parsed ? parsed.status === 'success' : false;
+                return {
+                    success: success,
+                    partType: 'webcam',
+                    deviceId: deviceId,
+                    controls: parsed && parsed.controls,
+                    rawOutput: parsed && parsed.rawOutput,
+                    message: (parsed && parsed.message) || 'Listed controls'
+                };
+            } catch (err) {
+                return { success: false, partType: 'webcam', deviceId: deviceId, error: String(err.message || err) };
+            }
+        },
+
+        async setControls({ deviceId = 0, controls }) {
+            try {
+                // controls is an object { name: value, ... } -> build name=value pairs
+                var kvPairs = [];
+                Object.keys(controls || {}).forEach(function (name) {
+                    var val = controls[name];
+                    // v4l2-ctl expects booleans as 0/1 and strings need quotes removed
+                    if (typeof val === 'boolean') val = val ? 1 : 0;
+                    kvPairs.push(name + '=' + String(val));
+                });
+                const kv = kvPairs.join(',');
+                const out = await runWrapper('webcam_cli.py', ['set_ctrls', String(deviceId), kv]);
+                const parsed = parsePythonJSON(out);
+                const success = parsed ? parsed.status === 'success' : false;
+                return {
+                    success: success,
+                    partType: 'webcam',
+                    deviceId: deviceId,
+                    applied: controls,
+                    rawOutput: parsed && parsed.rawOutput,
+                    message: (parsed && parsed.message) || 'Controls applied'
+                };
+            } catch (err) {
+                return { success: false, partType: 'webcam', deviceId: deviceId, error: String(err.message || err) };
+            }
         },
 
         async startStream({ deviceId = 0, resolution = '640x480' }) {
-            console.log(`📹 Webcam Stream Start - Device ${deviceId}: ${resolution}`);
+            // TODO: wire to camera_stream.py via an HTTP endpoint; keep simulated for now
+            console.log('📹 Webcam Stream Start - Device ' + deviceId + ': ' + resolution);
             return {
                 success: true,
                 partType: 'webcam',
                 deviceId: deviceId,
                 resolution: resolution,
-                streamUrl: `http://localhost:8080/stream/${deviceId}`,
-                message: `Webcam ${deviceId} streaming at ${resolution}`
+                streamUrl: 'http://localhost:8080/stream/' + deviceId,
+                message: 'Webcam ' + deviceId + ' streaming at ' + resolution
             };
         },
 
         async stopStream({ deviceId = 0 }) {
-            console.log(`📹 Webcam Stream Stop - Device ${deviceId}`);
+            console.log('📹 Webcam Stream Stop - Device ' + deviceId);
             return {
                 success: true,
                 partType: 'webcam',
                 deviceId: deviceId,
-                message: `Webcam ${deviceId} stream stopped`
+                message: 'Webcam ' + deviceId + ' stream stopped'
             };
         }
     },
@@ -486,6 +566,7 @@ const HARDWARE_CONTROLLERS = {
     // 🎤 Microphone - audio input devices
     microphone: {
         async record({ deviceId = 0, duration = 5000, format = 'wav' }) {
+            // TODO: wire real recording path; keep simulated for now
             console.log(`🎤 Microphone Record - Device ${deviceId}: ${duration}ms as ${format}`);
             return {
                 success: true,
@@ -499,59 +580,82 @@ const HARDWARE_CONTROLLERS = {
         },
 
         async getLevel({ deviceId = 0 }) {
-            console.log(`🎤 Microphone Level - Device ${deviceId}`);
-
-            // Simulate audio level
-            const level = Math.random() * 100;
-
-            return {
-                success: true,
-                partType: 'microphone',
-                deviceId: deviceId,
-                level: level,
-                timestamp: new Date().toISOString(),
-                message: `Microphone ${deviceId} level: ${level.toFixed(1)}%`
-            };
+            try {
+                const out = await runWrapper('microphone_cli.py', ['get_level', String(deviceId), '44100', '1', '1']);
+                const parsed = parsePythonJSON(out);
+                const success = parsed ? parsed.status === 'success' : false;
+                const level = parsed && (parsed.level || parsed.audio_level);
+                return {
+                    success,
+                    partType: 'microphone',
+                    deviceId,
+                    level,
+                    timestamp: new Date().toISOString(),
+                    message: (parsed && parsed.message) || `Microphone ${deviceId} level read`
+                };
+            } catch (err) {
+                return { success: false, partType: 'microphone', deviceId, error: String(err.message || err) };
+            }
         }
     },
 
     // 🔊 Speaker - audio output devices
     speaker: {
         async play({ deviceId = 0, filename, volume = 50 }) {
-            console.log(`🔊 Speaker Play - Device ${deviceId}: ${filename} at ${volume}%`);
-            return {
-                success: true,
-                partType: 'speaker',
-                deviceId: deviceId,
-                filename: filename,
-                volume: volume,
-                message: `Speaker ${deviceId} playing ${filename} at ${volume}% volume`
-            };
+            try {
+                const args = ['play', String(filename)];
+                if (typeof volume === 'number') args.push(String(volume));
+                const out = await runWrapper('speaker_cli.py', args);
+                const parsed = parsePythonJSON(out);
+                const success = parsed ? parsed.status === 'success' : false;
+                return {
+                    success,
+                    partType: 'speaker',
+                    deviceId,
+                    filename,
+                    volume,
+                    pid: parsed && parsed.pid,
+                    message: (parsed && parsed.message) || `Speaker ${deviceId} play`
+                };
+            } catch (err) {
+                return { success: false, partType: 'speaker', deviceId, filename, error: String(err.message || err) };
+            }
         },
 
         async setVolume({ deviceId = 0, volume }) {
             if (volume < 0 || volume > 100) {
                 throw new Error(`Invalid volume: ${volume}%. Must be 0-100%`);
             }
-
-            console.log(`🔊 Speaker Volume - Device ${deviceId}: ${volume}%`);
-            return {
-                success: true,
-                partType: 'speaker',
-                deviceId: deviceId,
-                volume: volume,
-                message: `Speaker ${deviceId} volume set to ${volume}%`
-            };
+            try {
+                const out = await runWrapper('speaker_cli.py', ['set_volume', String(volume)]);
+                const parsed = parsePythonJSON(out);
+                const success = parsed ? parsed.status === 'success' : false;
+                return {
+                    success,
+                    partType: 'speaker',
+                    deviceId,
+                    volume,
+                    message: (parsed && parsed.message) || `Speaker ${deviceId} volume set to ${volume}%`
+                };
+            } catch (err) {
+                return { success: false, partType: 'speaker', deviceId, error: String(err.message || err) };
+            }
         },
 
         async stop({ deviceId = 0 }) {
-            console.log(`🔊 Speaker Stop - Device ${deviceId}`);
-            return {
-                success: true,
-                partType: 'speaker',
-                deviceId: deviceId,
-                message: `Speaker ${deviceId} stopped`
-            };
+            try {
+                const out = await runWrapper('speaker_cli.py', ['stop']);
+                const parsed = parsePythonJSON(out);
+                const success = parsed ? parsed.status === 'success' : false;
+                return {
+                    success,
+                    partType: 'speaker',
+                    deviceId,
+                    message: (parsed && parsed.message) || `Speaker ${deviceId} stopped`
+                };
+            } catch (err) {
+                return { success: false, partType: 'speaker', deviceId, error: String(err.message || err) };
+            }
         }
     },
 
@@ -569,23 +673,21 @@ const HARDWARE_CONTROLLERS = {
         },
 
         async getPosition({ cameraId = 0 }) {
-            console.log(`🎯 Head Tracking Position - Camera ${cameraId}`);
-
-            // Simulate head position
-            const position = {
-                x: Math.random() * 640,
-                y: Math.random() * 480,
-                confidence: Math.random()
-            };
-
-            return {
-                success: true,
-                partType: 'head_tracking',
-                cameraId: cameraId,
-                position: position,
-                timestamp: new Date().toISOString(),
-                message: `Head position: (${position.x.toFixed(0)}, ${position.y.toFixed(0)}) confidence: ${(position.confidence * 100).toFixed(1)}%`
-            };
+            try {
+                const out = await runWrapper('head_tracking_cli.py', ['get_position', String(cameraId)]);
+                const parsed = parsePythonJSON(out);
+                const success = parsed ? parsed.status === 'success' : false;
+                return {
+                    success,
+                    partType: 'head_tracking',
+                    cameraId,
+                    position: parsed && parsed.position,
+                    timestamp: new Date().toISOString(),
+                    message: (parsed && parsed.message) || `Head position read`
+                };
+            } catch (err) {
+                return { success: false, partType: 'head_tracking', cameraId, error: String(err.message || err) };
+            }
         },
 
         async stopTracking({ cameraId = 0 }) {

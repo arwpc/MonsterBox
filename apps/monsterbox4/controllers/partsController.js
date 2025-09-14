@@ -103,7 +103,7 @@ export const getPartById = async (req, res) => {
     try {
         const { id } = req.params;
         const parts = await loadParts();
-        const part = parts.find(p => p.id === id);
+        const part = parts.find(p => String(p.id) === String(id));
 
         if (!part) {
             return res.status(404).json({
@@ -197,7 +197,7 @@ export const updatePart = async (req, res) => {
         const updates = req.body;
 
         const parts = await loadParts();
-        const partIndex = parts.findIndex(p => p.id === id);
+        const partIndex = parts.findIndex(p => String(p.id) === String(id));
 
         if (partIndex === -1) {
             return res.status(404).json({
@@ -238,7 +238,7 @@ export const deletePart = async (req, res) => {
     try {
         const { id } = req.params;
         const parts = await loadParts();
-        const partIndex = parts.findIndex(p => p.id === id);
+        const partIndex = parts.findIndex(p => String(p.id) === String(id));
 
         if (partIndex === -1) {
             return res.status(404).json({
@@ -276,7 +276,7 @@ export const testPart = async (req, res) => {
         const { action, params, testParams } = req.body || {};
 
         const parts = await loadParts();
-        const part = parts.find(p => p.id === id);
+        const part = parts.find(p => String(p.id) === String(id));
 
         if (!part) {
             return res.status(404).json({
@@ -304,7 +304,7 @@ export const testPart = async (req, res) => {
         function getDefaultParams(partType) {
             switch (partType) {
                 case 'motor':
-                    return { direction: 'cw', speed: 50, duration: 1000 };
+                    return { direction: 'forward', speed: 50, duration: 1000 };
                 case 'linear_actuator':
                     return { speed: 50, distance: 50 };
                 case 'led':
