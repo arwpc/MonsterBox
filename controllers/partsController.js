@@ -15,7 +15,7 @@ const __dirname = path.dirname(__filename);
 // Part types with their configurations
 const PART_TYPES = {
     motor: { icon: '🔄', description: 'DC motors for movement', requiresPin: true },
-    linear_actuator: { icon: '🦴', description: 'extending/retracting movements', requiresPin: true },
+    linear_actuator: { icon: '🦴', description: 'extending/retracting movements', requiresPin: false },
     light: { icon: '💡', description: 'basic on/off lighting', requiresPin: true },
     led: { icon: '🔆', description: 'PWM-controlled with brightness', requiresPin: true },
     servo: { icon: '🦷', description: 'precise angle control: standard, continuous, feedback', requiresPin: true },
@@ -131,7 +131,7 @@ export const getPartById = async (req, res) => {
  */
 export const createPart = async (req, res) => {
     try {
-        const { name, type, pin, description, config } = req.body;
+        const { name, type, pin, description, config, directionPin, pwmPin, maxExtension, maxRetraction } = req.body;
 
         // Validate part type
         if (!PART_TYPES[type]) {
@@ -150,12 +150,24 @@ export const createPart = async (req, res) => {
             });
         }
 
-        // Validate pin for parts that require it
-        if (PART_TYPES[type].requiresPin && !pin) {
-            return res.status(400).json({
-                success: false,
-                error: `Pin is required for ${type} parts`
-            });
+        // Validate pin requirements
+        if (type === 'linear_actuator') {
+            // Linear actuators need direction and PWM pins
+            if (!directionPin || !pwmPin) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Direction pin and PWM pin are required for linear actuator parts'
+                });
+            }
+        } else if (PART_TYPES[type] && PART_TYPES[type].requiresPin && !pin) {
+            // Other parts need a single pin, except servo using PCA9685
+            const isServoUsingPCA = type === 'servo' && config && (config.controllerType === 'pca9685');
+            if (!isServoUsingPCA) {
+                return res.status(400).json({
+                    success: false,
+                    error: `Pin is required for ${type} parts`
+                });
+            }
         }
 
         const parts = await loadParts();
@@ -169,6 +181,14 @@ export const createPart = async (req, res) => {
             created: new Date().toISOString(),
             enabled: true
         };
+
+        // Add linear actuator specific fields
+        if (type === 'linear_actuator') {
+            newPart.directionPin = parseInt(directionPin, 10);
+            newPart.pwmPin = parseInt(pwmPin, 10);
+            newPart.maxExtension = parseInt(maxExtension, 10) || 15000;
+            newPart.maxRetraction = parseInt(maxRetraction, 10) || 15000;
+        }
 
         parts.push(newPart);
         await saveParts(parts);

@@ -71,5 +71,24 @@
         "PWM"
       ]
     }
+  },
+  {
+    "id": "5",
+    "name": "GoBilda 2000 Series 5-Turn Dual-Mode (Continuous)",
+    "manufacturer": "GoBilda",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutralPulse": 1500,
+      "rotationRangeDeg": 1800,
+      "servoType": "continuous",
+      "controllerType": "pca9685"
+    },
+    "meta": {
+      "notes": "2000-series dual-mode servo configured for Continuous operation. Uses 500-2500us pulse range. Defaults to PCA9685 controller.",
+      "controlType": [
+        "PWM"
+      ]
+    }
   }
 ]

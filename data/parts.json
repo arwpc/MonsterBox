@@ -1,1 +1,51 @@
-[]
+[
+  {
+    "id": "2",
+    "name": "Left Arm of Orlok",
+    "type": "linear_actuator",
+    "pin": null,
+    "description": "extending/retracting movements",
+    "config": {
+      "modelId": "1757818992065"
+    },
+    "created": "2025-09-14T17:43:28.627Z",
+    "enabled": true,
+    "directionPin": 23,
+    "pwmPin": 12,
+    "maxExtension": 15000,
+    "maxRetraction": 15000,
+    "updated": "2025-09-14T18:21:37.377Z"
+  },
+  {
+    "id": "3",
+    "name": "Right Arm of Orlok",
+    "type": "linear_actuator",
+    "pin": null,
+    "description": "extending/retracting movements",
+    "config": {
+      "modelId": "1757818992065"
+    },
+    "created": "2025-09-14T18:22:12.759Z",
+    "enabled": true,
+    "directionPin": 23,
+    "pwmPin": 12,
+    "maxExtension": 15000,
+    "maxRetraction": 15000
+  },
+  {
+    "id": "4",
+    "name": "Head on a Swivel",
+    "type": "servo",
+    "pin": 18,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "modelId": "5",
+      "servoType": "continuous",
+      "controllerType": "pca9685",
+      "channel": 0,
+      "address": 64
+    },
+    "created": "2025-09-14T21:03:39.226Z",
+    "enabled": true
+  }
+]

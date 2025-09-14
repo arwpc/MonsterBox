@@ -13,7 +13,7 @@ const __dirname = path.dirname(__filename);
 // Default configuration
 const DEFAULT_CONFIG = {
     timeoutMs: 8000,
-    pythonPath: 'python3',
+    pythonPath: '/usr/bin/python3',
     scriptsPath: path.resolve(__dirname, '../../../../scripts/hardware'),
     enableLogging: true
 };
@@ -26,15 +26,14 @@ const DEFAULT_CONFIG = {
  */
 export function runPy(args, options = {}) {
     const config = { ...DEFAULT_CONFIG, ...options };
-    
+
     return new Promise((resolve, reject) => {
         if (config.enableLogging) {
             console.log(`🔧 Hardware Command: ${config.pythonPath} ${args.join(' ')}`);
         }
 
-        const process = spawn(config.pythonPath, args, {
-            stdio: ['ignore', 'pipe', 'pipe'],
-            cwd: config.scriptsPath
+        const childProcess = spawn(config.pythonPath, args, {
+            stdio: ['ignore', 'pipe', 'pipe']
         });
 
         let stdout = '';
@@ -42,26 +41,31 @@ export function runPy(args, options = {}) {
 
         // Set up timeout
         const timeout = setTimeout(() => {
-            process.kill('SIGKILL');
+            childProcess.kill('SIGKILL');
             reject(new Error(`Hardware command timed out after ${config.timeoutMs}ms`));
         }, config.timeoutMs);
 
         // Collect output
-        process.stdout.on('data', (data) => {
+        childProcess.stdout.on('data', (data) => {
             stdout += data.toString();
         });
 
-        process.stderr.on('data', (data) => {
+        childProcess.stderr.on('data', (data) => {
             stderr += data.toString();
         });
 
         // Handle process completion
-        process.on('exit', (code) => {
+        childProcess.on('exit', (code) => {
             clearTimeout(timeout);
-            
+
             if (code === 0) {
+                // Success - log stdout as success, stderr as info (not error)
                 if (config.enableLogging && stdout.trim()) {
                     console.log(`✅ Hardware Output: ${stdout.trim()}`);
+                }
+                if (config.enableLogging && stderr.trim()) {
+                    // Log stderr as info for successful processes (e.g., "GPIO initialized successfully")
+                    console.log(`ℹ️ Hardware Info: ${stderr.trim()}`);
                 }
                 resolve(stdout.trim());
             } else {
@@ -73,7 +77,7 @@ export function runPy(args, options = {}) {
             }
         });
 
-        process.on('error', (error) => {
+        childProcess.on('error', (error) => {
             clearTimeout(timeout);
             if (config.enableLogging) {
                 console.error(`❌ Hardware Process Error: ${error.message}`);
@@ -91,7 +95,7 @@ export function runPy(args, options = {}) {
  * @returns {Promise<string>} - Command output
  */
 export function runWrapper(wrapperScript, scriptArgs = [], options = {}) {
-    const wrapperPath = path.join(__dirname, '../../python_wrappers', wrapperScript);
+    const wrapperPath = path.resolve(__dirname, '../../python_wrappers', wrapperScript);
     const args = [wrapperPath, ...scriptArgs];
     return runPy(args, options);
 }
@@ -120,13 +124,13 @@ export function validateArgs(args, minArgs = 1) {
     if (!Array.isArray(args) || args.length < minArgs) {
         throw new Error(`Invalid arguments: expected at least ${minArgs} arguments`);
     }
-    
+
     // Basic sanitization
     for (const arg of args) {
         if (typeof arg !== 'string' && typeof arg !== 'number') {
             throw new Error(`Invalid argument type: ${typeof arg}`);
         }
-        
+
         const argStr = String(arg);
         if (argStr.includes('..') || argStr.includes(';') || argStr.includes('|')) {
             throw new Error(`Unsafe argument detected: ${argStr}`);

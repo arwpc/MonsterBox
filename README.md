@@ -1,6 +1,6 @@
 # MonsterBox 4.0 - Single Node Animatronic Control System
 
-MonsterBox 4.0 is a clean, single-node, single-character application designed to replace the complex hub-and-spoke system. It eliminates all distributed services and WebSocket complexity while preserving 100% of existing Python hardware functionality and introducing the innovative **Poses** feature.
+**MonsterBox 4.0** is now the primary animatronic control system, restructured from the legacy distributed architecture. This clean, single-node application runs directly from the repository root and provides complete hardware control for building, programming, and running interactive animatronic characters like Orlok.
 
 ## 🎯 Key Features
 
@@ -17,10 +17,12 @@ MonsterBox 4.0 is a clean, single-node, single-character application designed to
 - **Bootstrap 5 UI** with dark theme support
 
 ### 🔧 **Hardware Integration**
-- **11 Part types supported**: servo, motor, actuator, light, LED, sensor, microphone, speaker, webcam, head tracking
-- **Thin hardware service layer** wrapping existing Python functionality
-- **Calibration system** with safety limits
-- **Local-only media streaming**
+- **11 Part types supported**: servo, motor, linear_actuator, light, LED, sensor, microphone, speaker, webcam, head_tracking
+- **Models System**: Hardware model definitions with defaults and calibration data
+- **CRUD Operations**: Full Create, Read, Update, Delete for all part types
+- **Inline Hardware Testing**: Test each part directly from the setup interface
+- **Safety Systems**: Calibration enforcement, angle clamping, timeout protection
+- **Real Hardware Control**: Direct integration with Orlok animatronic hardware
 
 ## 🚀 Quick Start
 
@@ -32,8 +34,9 @@ MonsterBox 4.0 is a clean, single-node, single-character application designed to
 ### Installation
 
 ```bash
-# Navigate to MonsterBox 4.0 directory
-cd apps/monsterbox4
+# Clone and navigate to MonsterBox
+git clone https://github.com/arwpc/MonsterBox.git
+cd MonsterBox
 
 # Install dependencies
 npm install
@@ -44,8 +47,34 @@ npm start
 
 The application will be available at:
 - **Dashboard**: http://localhost:3000
-- **Setup**: http://localhost:3000/setup
+- **Setup**: http://localhost:3000/setup  ← **Start here for parts creation**
 - **Live Mode**: http://localhost:3000/live
+
+## 🦴 **Linear Actuator Configuration**
+
+Linear actuators require specific configuration for safe operation:
+
+### **Required Pins:**
+- **Direction Pin** - Controls extend/retract direction (e.g., GPIO 18)
+- **PWM Pin** - Controls speed via PWM signal (e.g., GPIO 13)
+- **Hardware PWM recommended** - GPIO 12, 13, 18, 19 for best performance
+
+### **Safety Limits:**
+- **Max Extension** - Maximum extension time in milliseconds (prevents over-extension)
+- **Max Retraction** - Maximum retraction time in milliseconds (prevents over-retraction)
+- **Default values**: 10,000ms (10 seconds) for both directions
+
+### **Example Configuration:**
+```json
+{
+  "name": "Left Arm of Manipulation",
+  "type": "linear_actuator",
+  "directionPin": 18,
+  "pwmPin": 13,
+  "maxExtension": 15000,
+  "maxRetraction": 15000
+}
+```
 
 
 ## 🧩 Setup Pages

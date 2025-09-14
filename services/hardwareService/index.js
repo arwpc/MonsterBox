@@ -105,14 +105,22 @@ const HARDWARE_CONTROLLERS = {
 
     // 🦴 Linear Actuator - extending/retracting movements (real hardware via Python wrapper)
     linear_actuator: {
-        async extend({ pin, directionPin, pwmPin, speed = 50, distance = 100, duration }) {
+        async extend({ pin, directionPin, pwmPin, speed = 50, distance = 100, duration, maxExtension = 15000, maxRetraction = 15000 }) {
             try {
                 // Prefer explicit pins; else derive from base pin: dir=pin, pwm=pin+1
                 const dirPin = (typeof directionPin === 'number') ? directionPin : (typeof pin === 'number' ? pin : parseInt(pin, 10));
                 const pwm = (typeof pwmPin === 'number') ? pwmPin : (typeof pin === 'number' ? pin + 1 : parseInt(pin, 10) + 1);
                 const dur = typeof duration === 'number' ? duration : 1000; // safe default
 
-                const out = await actuatorService.controlActuator({ directionPin: dirPin, pwmPin: pwm, direction: 'extend', speed, duration: dur });
+                const out = await actuatorService.controlActuator({
+                    directionPin: dirPin,
+                    pwmPin: pwm,
+                    direction: 'extend',
+                    speed,
+                    duration: dur,
+                    maxExtension: maxExtension,
+                    maxRetraction: maxRetraction
+                });
                 // controlActuator returns wrapper output (string). Parse last JSON line if present
                 const parsed = (() => {
                     try {
@@ -142,13 +150,21 @@ const HARDWARE_CONTROLLERS = {
             }
         },
 
-        async retract({ pin, directionPin, pwmPin, speed = 50, distance = 100, duration }) {
+        async retract({ pin, directionPin, pwmPin, speed = 50, distance = 100, duration, maxExtension = 15000, maxRetraction = 15000 }) {
             try {
                 const dirPin = (typeof directionPin === 'number') ? directionPin : (typeof pin === 'number' ? pin : parseInt(pin, 10));
                 const pwm = (typeof pwmPin === 'number') ? pwmPin : (typeof pin === 'number' ? pin + 1 : parseInt(pin, 10) + 1);
                 const dur = typeof duration === 'number' ? duration : 1000;
 
-                const out = await actuatorService.controlActuator({ directionPin: dirPin, pwmPin: pwm, direction: 'retract', speed, duration: dur });
+                const out = await actuatorService.controlActuator({
+                    directionPin: dirPin,
+                    pwmPin: pwm,
+                    direction: 'retract',
+                    speed,
+                    duration: dur,
+                    maxExtension: maxExtension,
+                    maxRetraction: maxRetraction
+                });
                 const parsed = (() => {
                     try {
                         const lines = String(out).trim().split(/\r?\n/).filter(Boolean);
@@ -354,7 +370,19 @@ const HARDWARE_CONTROLLERS = {
         async moveToAngle({ partId, pin, channel, angleDeg, controllerType = 'gpio', address }) {
             try {
                 if (controllerType === 'pca9685') {
-                    return await pca9685Service.moveServoToAngle({ channel, angleDeg, address });
+                    const args = ['move_to_pca', String(channel), String(angleDeg)];
+                    if (address != null) args.push(String(address));
+                    const result = await runWrapper('servo_cli.py', args);
+                    const success = typeof result === 'string' && result.includes('success');
+                    return {
+                        success,
+                        partType: 'servo',
+                        channel,
+                        angleDeg,
+                        controllerType: 'pca9685',
+                        rawOutput: result,
+                        message: success ? `PCA9685 ch${channel} moved to ${angleDeg}°` : `Servo command failed: ${result}`
+                    };
                 } else {
                     const result = await servoService.moveToAngle({ partId, angleDeg });
 
@@ -384,7 +412,20 @@ const HARDWARE_CONTROLLERS = {
         async rotateContinuous({ pin, channel, direction, speed, controllerType = 'gpio', address }) {
             try {
                 if (controllerType === 'pca9685') {
-                    return await pca9685Service.controlContinuousServo({ channel, direction, speed, address });
+                    const args = ['rotate_continuous_pca', String(channel), String(direction), String(speed), '1000'];
+                    if (address != null) args.push(String(address));
+                    const result = await runWrapper('servo_cli.py', args);
+                    const success = typeof result === 'string' && result.includes('success');
+                    return {
+                        success,
+                        partType: 'servo',
+                        channel,
+                        direction,
+                        speed,
+                        controllerType: 'pca9685',
+                        rawOutput: result,
+                        message: success ? `PCA9685 ch${channel} ${direction}` : `Servo command failed: ${result}`
+                    };
                 } else {
                     const result = await servoService.rotateContinuous({ channel: pin, direction, speed });
 
@@ -414,7 +455,18 @@ const HARDWARE_CONTROLLERS = {
         async stop({ pin, channel, controllerType = 'gpio', address }) {
             try {
                 if (controllerType === 'pca9685') {
-                    return await pca9685Service.setPWM({ channel, pulseWidthUs: 0, address });
+                    const args = ['rotate_continuous_pca', String(channel), 'stop', '0', '100'];
+                    if (address != null) args.push(String(address));
+                    const result = await runWrapper('servo_cli.py', args);
+                    const success = typeof result === 'string' && result.includes('success');
+                    return {
+                        success,
+                        partType: 'servo',
+                        channel,
+                        controllerType: 'pca9685',
+                        rawOutput: result,
+                        message: success ? `PCA9685 ch${channel} stopped` : `Servo stop failed: ${result}`
+                    };
                 } else {
                     const result = await servoService.stop({ channel: pin });
 

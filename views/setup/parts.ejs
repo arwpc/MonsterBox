@@ -8,6 +8,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <link href="/css/monsterbox4.css" rel="stylesheet">
+
 </head>
 
 <body>
@@ -184,6 +185,47 @@
                                 </div>
                             </div>
 
+                            <!-- Linear Actuator specific pins -->
+                            <div class="row" id="actuatorPinGroup" style="display: none;">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="directionPin" class="form-label">Direction Pin</label>
+                                        <input type="number" class="form-control" id="directionPin" name="directionPin"
+                                            min="1" max="40" value="18">
+                                        <div class="form-text">GPIO pin for direction control</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="pwmPin" class="form-label">PWM Pin</label>
+                                        <input type="number" class="form-control" id="pwmPin" name="pwmPin" min="1"
+                                            max="40" value="13">
+                                        <div class="form-text">GPIO pin for PWM speed control (12,13,18,19 recommended)
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Linear Actuator safety limits -->
+                            <div class="row" id="actuatorLimitsGroup" style="display: none;">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="maxExtension" class="form-label">Max Extension (ms)</label>
+                                        <input type="number" class="form-control" id="maxExtension" name="maxExtension"
+                                            min="1000" max="30000" value="15000">
+                                        <div class="form-text">Maximum extension time to prevent damage</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="maxRetraction" class="form-label">Max Retraction (ms)</label>
+                                        <input type="number" class="form-control" id="maxRetraction"
+                                            name="maxRetraction" min="1000" max="30000" value="15000">
+                                        <div class="form-text">Maximum retraction time to prevent damage</div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Servo-specific options -->
                             <div id="servoGroup" style="display: none;">
                                 <div class="row">
@@ -260,73 +302,162 @@
                     </div>
                 </div>
             </div>
-            <!-- Edit Part Modal -->
-            <div class="modal fade" id="editPartModal" tabindex="-1">
-                <div class="modal-dialog modal-lg">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Edit Hardware Part</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <!-- Edit Part Modal -->
+        <div class="modal fade" id="editPartModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit Hardware Part</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="editPartId" />
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editPartName" class="form-label">Part Name</label>
+                                    <input type="text" class="form-control" id="editPartName" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editPartType" class="form-label">Part Type</label>
+                                    <select class="form-select" id="editPartType" disabled>
+                                        <option value="">Select…</option>
+
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6" id="editModelGroup" style="display:none;">
+                                <div class="mb-3">
+                                    <label for="editModelSelect" class="form-label">Model</label>
+                                    <select class="form-select" id="editModelSelect">
+                                        <option value="">Select Model (optional)</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
-                        <div class="modal-body">
-                            <input type="hidden" id="editPartId" />
+
+                        <div class="row" id="editPinGroup" style="display: none;">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editGpioPin" class="form-label">GPIO Pin</label>
+                                    <input type="number" class="form-control" id="editGpioPin" min="1" max="40">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editPartDescription" class="form-label">Description</label>
+                                    <input type="text" class="form-control" id="editPartDescription">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Edit Servo-specific options -->
+                        <div id="editServoGroup" style="display: none;">
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label for="editPartName" class="form-label">Part Name</label>
-                                        <input type="text" class="form-control" id="editPartName" required>
+                                        <label for="editServoType" class="form-label">Servo Type</label>
+                                        <select class="form-select" id="editServoType">
+                                            <!-- Options populated by JavaScript -->
+                                        </select>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label for="editPartType" class="form-label">Part Type</label>
-                                        <select class="form-select" id="editPartType" disabled>
-                                            <option value="">Select…</option>
-
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-6" id="editModelGroup" style="display:none;">
-                                    <div class="mb-3">
-                                        <label for="editModelSelect" class="form-label">Model</label>
-                                        <select class="form-select" id="editModelSelect">
-                                            <option value="">Select Model (optional)</option>
+                                        <label for="editControllerType" class="form-label">Controller Type</label>
+                                        <select class="form-select" id="editControllerType"
+                                            onchange="onEditControllerTypeChange()">
+                                            <option value="gpio">Direct GPIO PWM</option>
+                                            <option value="pca9685">PCA9685 PWM Driver</option>
                                         </select>
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
-                            <div class="row" id="editPinGroup" style="display: none;">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="editGpioPin" class="form-label">GPIO Pin</label>
-                                        <input type="number" class="form-control" id="editGpioPin" min="1" max="40">
-                                    </div>
+                        <!-- Edit PCA9685 Configuration -->
+                        <div id="editPca9685Group" style="display: none;">
+                            <div class="card border-primary mb-3">
+                                <div class="card-header bg-primary text-white">
+                                    <i class="bi bi-cpu"></i> PCA9685 Configuration
                                 </div>
-                                <div class="col-md-6">
+                                <div class="card-body">
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="editPca9685Address" class="form-label">I2C Address</label>
+                                            <input type="text" class="form-control" id="editPca9685Address" value="0x40"
+                                                pattern="0x[0-9A-Fa-f]{2}">
+                                            <div class="form-text">Default: 0x40</div>
+                                        </div>
+                                    </div>
                                     <div class="mb-3">
-                                        <label for="editPartDescription" class="form-label">Description</label>
-                                        <input type="text" class="form-control" id="editPartDescription">
+                                        <label class="form-label">Select PCA9685 Channel</label>
+                                        <div id="editPca9685Channels">
+                                            <!-- Channels populated by JavaScript -->
+                                        </div>
+                                        <input type="hidden" id="editPca9685Channel">
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
-                            <div class="mb-3">
-                                <label for="editConfigJson" class="form-label">Config (JSON)</label>
-                                <textarea id="editConfigJson" class="form-control" rows="6"
-                                    spellcheck="false"></textarea>
-                                <div class="form-text">Edit advanced settings here (e.g., servoType, PCA9685 options).
+
+                        <!-- Edit Linear Actuator specific pins -->
+                        <div class="row" id="editActuatorPinGroup" style="display: none;">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editDirectionPin" class="form-label">Direction Pin</label>
+                                    <input type="number" class="form-control" id="editDirectionPin" min="1" max="40">
+                                    <div class="form-text">GPIO pin for direction control</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editPwmPin" class="form-label">PWM Pin</label>
+                                    <input type="number" class="form-control" id="editPwmPin" min="1" max="40">
+                                    <div class="form-text">GPIO pin for PWM speed control</div>
                                 </div>
                             </div>
                         </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                            <button type="button" class="btn btn-primary" onclick="saveEditedPart()">Save
-                                Changes</button>
+
+                        <!-- Edit Linear Actuator safety limits -->
+                        <div class="row" id="editActuatorLimitsGroup" style="display: none;">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editMaxExtension" class="form-label">Max Extension (ms)</label>
+                                    <input type="number" class="form-control" id="editMaxExtension" min="1000"
+                                        max="30000">
+                                    <div class="form-text">Maximum extension time to prevent damage</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editMaxRetraction" class="form-label">Max Retraction (ms)</label>
+                                    <input type="number" class="form-control" id="editMaxRetraction" min="1000"
+                                        max="30000">
+                                    <div class="form-text">Maximum retraction time to prevent damage</div>
+                                </div>
+                            </div>
                         </div>
+
+                        <div class="mb-3">
+                            <label for="editConfigJson" class="form-label">Config (JSON)</label>
+                            <textarea id="editConfigJson" class="form-control" rows="6" spellcheck="false"></textarea>
+                            <div class="form-text">Edit advanced settings here (e.g., servoType, PCA9685 options).
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="saveEditedPart()">Save
+                            Changes</button>
                     </div>
                 </div>
             </div>
+        </div>
 
         </div>
 
@@ -471,7 +602,7 @@
                         (part.description ? '<p class="card-text text-muted small mb-0">' + part.description + '</p>' : '') +
                         '</div>' +
                         '<div class="btn-group btn-group-sm ms-2">' +
-                        '<button class="btn btn-outline-primary" onclick="editPart(\'' + part.id + '\')" title="Edit">' +
+                        '<button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editPartModal" onclick="populateEditModal(\'' + part.id + '\')" title="Edit">' +
                         '<i class="bi bi-pencil"></i>' +
                         '</button>' +
                         '<button class="btn btn-outline-success" onclick="toggleTestDrawer(\'' + part.id + '\')" title="Test" data-testid="open-test-btn" data-part-id="' + part.id + '">' +
@@ -551,6 +682,19 @@
                     option.textContent = partType.icon + ' ' + type.replace('_', ' ').toUpperCase() + ' - ' + partType.description;
                     select.appendChild(option);
                 });
+
+                // Also populate the edit modal dropdown
+                var editSelect = document.getElementById('editPartType');
+                if (editSelect) {
+                    editSelect.innerHTML = '<option value="">Select…</option>';
+                    Object.keys(partTypes).forEach(function (type) {
+                        var partType = partTypes[type];
+                        var option = document.createElement('option');
+                        option.value = type;
+                        option.textContent = partType.icon + ' ' + type.replace('_', ' ').toUpperCase() + ' - ' + partType.description;
+                        editSelect.appendChild(option);
+                    });
+                }
             }
 
             function onPartTypeChange() {
@@ -559,9 +703,11 @@
                 var servoGroup = document.getElementById('servoGroup');
                 var pca9685Group = document.getElementById('pca9685Group');
                 var descriptionGroup = document.getElementById('descriptionGroup');
+                var actuatorPinGroup = document.getElementById('actuatorPinGroup');
+                var actuatorLimitsGroup = document.getElementById('actuatorLimitsGroup');
 
                 // Show/hide pin field based on part type
-                if (partTypes[partType] && partTypes[partType].requiresPin) {
+                if (partTypes[partType] && partTypes[partType].requiresPin && partType !== 'linear_actuator') {
                     pinGroup.style.display = 'block';
                     descriptionGroup.style.display = 'none';
                 } else {
@@ -577,9 +723,62 @@
                     servoGroup.style.display = 'none';
                     pca9685Group.style.display = 'none';
                 }
+
+                // Show linear actuator specific options
+                if (partType === 'linear_actuator') {
+                    actuatorPinGroup.style.display = 'block';
+                    actuatorLimitsGroup.style.display = 'block';
+                    descriptionGroup.style.display = 'none';
+                } else {
+                    actuatorPinGroup.style.display = 'none';
+                    actuatorLimitsGroup.style.display = 'none';
+                }
                 // Model selector for supported types
                 var modelGroup = document.getElementById('modelGroup');
                 var supported = ['servo', 'led', 'linear_actuator', 'webcam'];
+
+                function onEditControllerTypeChange() {
+                    var ct = document.getElementById('editControllerType').value;
+                    var grp = document.getElementById('editPca9685Group');
+                    if (ct === 'pca9685') {
+                        grp.style.display = 'block';
+                        renderEditPCA9685Channels();
+                    } else {
+                        grp.style.display = 'none';
+                    }
+                }
+
+                function renderEditPCA9685Channels() {
+                    var container = document.getElementById('editPca9685Channels');
+                    if (!container) return;
+                    var html = '<div class="pca9685-board-layout">';
+                    html += '<div class="text-center mb-2"><strong>PCA9685 16-Channel PWM Driver</strong></div>';
+                    html += '<div class="text-center mb-2 text-muted small">Click a channel to select it</div>';
+                    html += '<div class="row g-1">';
+                    for (var i = 0; i < 16; i++) {
+                        if (i % 4 === 0) html += '<div class="col-3">';
+                        html += '<button type="button" class="btn btn-outline-secondary btn-sm w-100 mb-1 edit-pca9685-channel" ' +
+                            'onclick="selectEditPCA9685Channel(' + i + ')" id="edit-channel-' + i + '">Ch ' + i + '</button>';
+                        if ((i + 1) % 4 === 0) html += '</div>';
+                    }
+                    html += '</div></div>';
+                    container.innerHTML = html;
+                }
+
+                function selectEditPCA9685Channel(ch) {
+                    document.querySelectorAll('.edit-pca9685-channel').forEach(function (btn) {
+                        btn.classList.remove('btn-primary');
+                        btn.classList.add('btn-outline-secondary');
+                    });
+                    var btn = document.getElementById('edit-channel-' + ch);
+                    if (btn) {
+                        btn.classList.remove('btn-outline-secondary');
+                        btn.classList.add('btn-primary');
+                    }
+                    var hidden = document.getElementById('editPca9685Channel');
+                    if (hidden) hidden.value = ch;
+                }
+
                 if (supported.indexOf(partType) >= 0) {
                     modelGroup.style.display = 'block';
                     var sel = document.getElementById('modelSelect');
@@ -692,13 +891,46 @@
                     type: type,
                     description: formData.get('description') || ''
                 };
-                var pin = formData.get('pin');
-                if (pin) payload.pin = parseInt(pin, 10);
+
+                // Handle linear actuator specific fields
+                if (type === 'linear_actuator') {
+                    var directionPin = formData.get('directionPin');
+                    var pwmPin = formData.get('pwmPin');
+                    var maxExtension = formData.get('maxExtension');
+                    var maxRetraction = formData.get('maxRetraction');
+
+                    if (directionPin) payload.directionPin = parseInt(directionPin, 10);
+                    if (pwmPin) payload.pwmPin = parseInt(pwmPin, 10);
+                    if (maxExtension) payload.maxExtension = parseInt(maxExtension, 10);
+                    if (maxRetraction) payload.maxRetraction = parseInt(maxRetraction, 10);
+                } else {
+                    // Handle regular pin for other part types
+                    var pin = formData.get('pin');
+                    if (pin) payload.pin = parseInt(pin, 10);
+                }
+
                 // Attach selected model if any
                 var modelSel = document.getElementById('modelSelect');
+                var cfg = {};
                 if (modelSel && modelSel.value) {
-                    payload.config = { modelId: modelSel.value };
+                    cfg.modelId = modelSel.value;
                 }
+
+                // Servo-specific config
+                if (type === 'servo') {
+                    var servoType = document.getElementById('servoType').value || 'standard';
+                    var controllerType = document.getElementById('controllerType').value || 'gpio';
+                    cfg.servoType = servoType;
+                    cfg.controllerType = controllerType;
+                    if (controllerType === 'pca9685') {
+                        var ch = document.getElementById('pca9685Channel').value;
+                        var addrStr = document.getElementById('pca9685Address').value || '0x40';
+                        cfg.channel = ch ? parseInt(ch, 10) : 0;
+                        cfg.address = (addrStr && /^0x/i.test(addrStr)) ? parseInt(addrStr, 16) : (parseInt(addrStr, 10) || 0x40);
+                    }
+                }
+
+                if (Object.keys(cfg).length) payload.config = cfg;
 
                 fetch('/setup/parts/api/parts', {
                     method: 'POST',
@@ -752,6 +984,10 @@
                 var type = (part.type || '').replace(/\-/g, '_');
                 switch (type) {
                     case 'servo':
+                        var st = part && part.config && part.config.servoType;
+                        if (st === 'continuous') {
+                            return { action: 'rotateContinuous', params: { direction: 'cw', speed: 50, duration: 1000 } };
+                        }
                         return { action: 'moveToAngle', params: { angleDeg: 15 } };
                     case 'motor':
                         return { action: 'control', params: { direction: 'cw', speed: 50, duration: 1000 } };
@@ -935,7 +1171,7 @@
             }
 
 
-            function editPart(partId) {
+            function populateEditModal(partId) {
                 var part = parts.find(function (p) { return p.id === partId; });
                 if (!part) return;
                 // populate modal fields
@@ -944,13 +1180,69 @@
                 document.getElementById('editPartType').value = part.type || '';
                 document.getElementById('editPartType').disabled = true;
                 var pinGroup = document.getElementById('editPinGroup');
-                if (partTypes[part.type] && partTypes[part.type].requiresPin) {
+                var editActuatorPinGroup = document.getElementById('editActuatorPinGroup');
+                var editActuatorLimitsGroup = document.getElementById('editActuatorLimitsGroup');
+
+                if (part.type === 'linear_actuator') {
+                    // Show linear actuator specific fields
+                    pinGroup.style.display = 'none';
+                    editActuatorPinGroup.style.display = '';
+                    editActuatorLimitsGroup.style.display = '';
+                    document.getElementById('editDirectionPin').value = part.directionPin != null ? part.directionPin : '';
+                    document.getElementById('editPwmPin').value = part.pwmPin != null ? part.pwmPin : '';
+                    document.getElementById('editMaxExtension').value = part.maxExtension != null ? part.maxExtension : 15000;
+                    document.getElementById('editMaxRetraction').value = part.maxRetraction != null ? part.maxRetraction : 15000;
+                } else if (partTypes[part.type] && partTypes[part.type].requiresPin) {
+                    // Show regular pin field for other parts
                     pinGroup.style.display = '';
+                    editActuatorPinGroup.style.display = 'none';
+                    editActuatorLimitsGroup.style.display = 'none';
                     document.getElementById('editGpioPin').value = part.pin != null ? part.pin : '';
                 } else {
+                    // Hide all pin fields
                     pinGroup.style.display = 'none';
+                    editActuatorPinGroup.style.display = 'none';
+                    editActuatorLimitsGroup.style.display = 'none';
                     document.getElementById('editGpioPin').value = '';
                 }
+
+                // Servo-specific edit fields
+                (function () {
+                    var editServoGroup = document.getElementById('editServoGroup');
+                    var editPcaGrp = document.getElementById('editPca9685Group');
+                    if (part.type === 'servo') {
+                        editServoGroup.style.display = '';
+                        // Populate servo type options once
+                        var editServoTypeSel = document.getElementById('editServoType');
+                        if (editServoTypeSel && !editServoTypeSel.dataset.filled) {
+                            editServoTypeSel.innerHTML = '';
+                            Object.keys(servoTypes).forEach(function (k) {
+                                var opt = document.createElement('option');
+                                opt.value = k;
+                                opt.textContent = servoTypes[k].label || k;
+                                editServoTypeSel.appendChild(opt);
+                            });
+                            editServoTypeSel.dataset.filled = '1';
+                        }
+                        var cfg = part.config || {};
+                        document.getElementById('editServoType').value = cfg.servoType || 'standard';
+                        document.getElementById('editControllerType').value = cfg.controllerType || 'gpio';
+                        if ((cfg.controllerType || 'gpio') === 'pca9685') {
+                            editPcaGrp.style.display = '';
+                            renderEditPCA9685Channels();
+                            var addr = (typeof cfg.address === 'number') ? '0x' + cfg.address.toString(16) : (cfg.address || '0x40');
+                            document.getElementById('editPca9685Address').value = addr;
+                            var ch = (typeof cfg.channel === 'number') ? cfg.channel : 0;
+                            selectEditPCA9685Channel(ch);
+                        } else {
+                            editPcaGrp.style.display = 'none';
+                        }
+                    } else {
+                        editServoGroup.style.display = 'none';
+                        editPcaGrp.style.display = 'none';
+                    }
+                })();
+
                 document.getElementById('editPartDescription').value = part.description || '';
                 document.getElementById('editConfigJson').value = JSON.stringify(part.config || {}, null, 2);
                 // Populate model selector if supported
@@ -1004,8 +1296,7 @@
                     editModelGroup.style.display = 'none';
                 }
 
-                var modal = new bootstrap.Modal(document.getElementById('editPartModal'));
-                modal.show();
+                // Bootstrap will handle showing the modal via data-bs-toggle
             }
 
             function saveEditedPart() {
@@ -1018,7 +1309,23 @@
                 var requiresPin = partTypes[type] && partTypes[type].requiresPin;
 
                 if (!name) { showAlert('danger', 'Name is required'); return; }
-                if (requiresPin && !pin) { showAlert('danger', 'Pin is required for ' + type); return; }
+
+                // Handle linear actuator validation
+                if (type === 'linear_actuator') {
+                    var directionPin = document.getElementById('editDirectionPin').value;
+                    var pwmPin = document.getElementById('editPwmPin').value;
+                    if (!directionPin || !pwmPin) {
+                        showAlert('danger', 'Direction pin and PWM pin are required for linear actuator');
+                        return;
+                    }
+                } else if (requiresPin && !pin) {
+                    // Allow servo without GPIO pin when using PCA9685
+                    var editCT = (type === 'servo') ? document.getElementById('editControllerType').value : null;
+                    if (!(type === 'servo' && editCT === 'pca9685')) {
+                        showAlert('danger', 'Pin is required for ' + type);
+                        return;
+                    }
+                }
 
                 var config;
                 try { config = configText ? JSON.parse(configText) : {}; }
@@ -1027,8 +1334,33 @@
                 var editModelSel = document.getElementById('editModelSelect');
                 if (editModelSel && editModelSel.value) { config.modelId = editModelSel.value; }
 
+                // Merge servo-specific fields from edit controls
+                if (type === 'servo') {
+                    try {
+                        var st = document.getElementById('editServoType').value || 'standard';
+                        var ct = document.getElementById('editControllerType').value || 'gpio';
+                        config.servoType = config.servoType || st;
+                        config.controllerType = ct;
+                        if (ct === 'pca9685') {
+                            var addrStr = document.getElementById('editPca9685Address').value || '0x40';
+                            var chVal = document.getElementById('editPca9685Channel').value;
+                            config.address = (/^0x/i.test(addrStr)) ? parseInt(addrStr, 16) : (parseInt(addrStr, 10) || 0x40);
+                            config.channel = chVal ? parseInt(chVal, 10) : (typeof config.channel === 'number' ? config.channel : 0);
+                        }
+                    } catch (e) { /* ignore */ }
+                }
+
                 var payload = { name: name, description: description, config: config };
-                if (requiresPin) payload.pin = parseInt(pin, 10);
+
+                // Add linear actuator specific fields
+                if (type === 'linear_actuator') {
+                    payload.directionPin = parseInt(document.getElementById('editDirectionPin').value, 10);
+                    payload.pwmPin = parseInt(document.getElementById('editPwmPin').value, 10);
+                    payload.maxExtension = parseInt(document.getElementById('editMaxExtension').value, 10) || 15000;
+                    payload.maxRetraction = parseInt(document.getElementById('editMaxRetraction').value, 10) || 15000;
+                } else if (requiresPin) {
+                    payload.pin = parseInt(pin, 10);
+                }
 
                 fetch('/setup/parts/api/parts/' + id, {
                     method: 'PUT',
@@ -1157,16 +1489,19 @@
                     .catch(function (err) { showAlert('danger', 'Error: ' + err.message); });
             }
 
-            // Initialize when page loads
-            document.addEventListener('DOMContentLoaded', function () {
-                initPartsManager();
-            });
         </script>
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/js/monsterbox4.js"></script>
     <script src="/js/character-menu.js"></script>
+
+    <script>
+        // Initialize when page loads - after Bootstrap is loaded
+        document.addEventListener('DOMContentLoaded', function () {
+            initPartsManager();
+        });
+    </script>
 </body>
 
 </html>

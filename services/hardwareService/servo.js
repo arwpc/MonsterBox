@@ -78,10 +78,10 @@ export async function stop({ channel }) {
  */
 export async function getCalibration(partId) {
     try {
-        const calibrationPath = path.resolve(__dirname, '../../../../data/servo_calibrations.json');
+        // Resolve to repo data directory
+        const calibrationPath = path.resolve(__dirname, '../../data/servo_calibrations.json');
         const calibrationData = await fs.readFile(calibrationPath, 'utf8');
         const calibrations = JSON.parse(calibrationData);
-
         return calibrations[String(partId)] || null;
     } catch (error) {
         console.warn(`⚠️ Could not load calibration for part ${partId}:`, error.message);
@@ -158,7 +158,8 @@ export async function moveToAngle({ partId, angleDeg, duration = 1000 }) {
  */
 async function getServoChannel(partId) {
     try {
-        const partsPath = path.resolve(__dirname, '../../../../data/parts.json');
+        // Resolve to repo data directory
+        const partsPath = path.resolve(__dirname, '../../data/parts.json');
         const partsData = await fs.readFile(partsPath, 'utf8');
         const parts = JSON.parse(partsData);
 

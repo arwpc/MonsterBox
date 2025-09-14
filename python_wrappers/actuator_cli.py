@@ -14,8 +14,8 @@ import sys
 import os
 import json
 
-# Add the scripts directory to Python path
-SCRIPTS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../scripts'))
+# Add the ARCHIVE scripts directory to Python path
+SCRIPTS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../ARCHIVE/scripts'))
 sys.path.insert(0, SCRIPTS_DIR)
 
 try:
