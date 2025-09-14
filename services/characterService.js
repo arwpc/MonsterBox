@@ -1,124 +1,104 @@
-const fs = require('fs').promises;
-const path = require('path');
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { readConfig } from './configService.js';
 
-const dataPath = path.join(__dirname, '../data/characters.json');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-const getAllCharacters = async () => {
-    try {
-        const data = await fs.readFile(dataPath, 'utf8');
-        return JSON.parse(data);
-    } catch (error) {
-        if (error.code === 'ENOENT') {
-            return [];
-        }
-        throw error;
+// Resolve characters.json path with optional override from config.dataPath.
+// dataPath is resolved relative to the app root (apps/monsterbox4), not process.cwd().
+async function resolveCharactersPath() {
+  try {
+    const cfg = await readConfig();
+    const appRoot = path.resolve(__dirname, '..');
+    if (cfg && cfg.dataPath) {
+      return path.resolve(appRoot, cfg.dataPath, 'characters.json');
     }
-};
+    return path.resolve(appRoot, 'data', 'characters.json');
+  } catch (e) {
+    const appRoot = path.resolve(__dirname, '..');
+    return path.resolve(appRoot, 'data', 'characters.json');
+  }
+}
 
-const getCharacterById = async (id) => {
-    const characters = await getAllCharacters();
-    return characters.find(character => character.id === parseInt(id));
-};
+function getDefaultCharacters() {
+  return [
+    { id: 1, name: 'Orlok' },
+    { id: 4, name: 'Skulltalker' }
+  ];
+}
 
-const createCharacter = async (characterData) => {
-    const characters = await getAllCharacters();
-    const newCharacter = {
-        id: characters.length > 0 ? Math.max(...characters.map(c => c.id)) + 1 : 1,
-        ...characterData
-    };
-    characters.push(newCharacter);
-    await fs.writeFile(dataPath, JSON.stringify(characters, null, 2));
-    return newCharacter;
-};
+export async function loadCharacters() {
+  try {
+    const file = await resolveCharactersPath();
+    const data = await fs.readFile(file, 'utf8');
+    const characters = JSON.parse(data);
+    if (Array.isArray(characters)) return characters;
+    return getDefaultCharacters();
+  } catch (err) {
+    console.warn('⚠️ Could not load characters:', err.message);
+    return getDefaultCharacters();
+  }
+}
 
-const updateCharacter = async (id, characterData) => {
-    const characters = await getAllCharacters();
-    const index = characters.findIndex(character => character.id === parseInt(id));
-    if (index !== -1) {
-        characters[index] = { ...characters[index], ...characterData, id: parseInt(id) };
-        await fs.writeFile(dataPath, JSON.stringify(characters, null, 2));
-        return characters[index];
+export async function saveCharacters(characters) {
+  const file = await resolveCharactersPath();
+  const json = JSON.stringify(characters, null, 2);
+  // Ensure directory exists
+  await fs.mkdir(path.dirname(file), { recursive: true });
+  await fs.writeFile(file, json, 'utf8');
+}
+
+export async function getCharacterById(id) {
+  const characters = await loadCharacters();
+  return characters.find(function (c) { return c.id === id; }) || null;
+}
+
+export async function createCharacter(data) {
+  const characters = await loadCharacters();
+  var maxId = 0;
+  for (var i = 0; i < characters.length; i++) {
+    if (characters[i].id > maxId) maxId = characters[i].id;
+  }
+  var newChar = {
+    id: maxId + 1,
+    name: data && data.name ? String(data.name) : 'New Character'
+  };
+  characters.push(newChar);
+  await saveCharacters(characters);
+  return newChar;
+}
+
+export async function updateCharacter(id, updates) {
+  const characters = await loadCharacters();
+  for (var i = 0; i < characters.length; i++) {
+    if (characters[i].id === id) {
+      characters[i] = Object.assign({}, characters[i], updates, { id: id });
+      await saveCharacters(characters);
+      return characters[i];
     }
-    throw new Error('Character not found');
-};
+  }
+  return null;
+}
 
-const deleteCharacter = async (id) => {
-    const characters = await getAllCharacters();
-    const filteredCharacters = characters.filter(character => character.id !== parseInt(id));
-    if (filteredCharacters.length === characters.length) {
-        throw new Error('Character not found');
-    }
+export async function deleteCharacter(id) {
+  const characters = await loadCharacters();
+  var idx = -1;
+  for (var i = 0; i < characters.length; i++) {
+    if (characters[i].id === id) { idx = i; break; }
+  }
+  if (idx === -1) return false;
+  characters.splice(idx, 1);
+  await saveCharacters(characters);
+  return true;
+}
 
-    // Remove webcam association before deleting character
-    try {
-        const characterWebcamService = require('./characterWebcamService');
-        await characterWebcamService.removeWebcam(parseInt(id));
-    } catch (webcamError) {
-        console.warn('Error removing webcam association during character deletion:', webcamError);
-    }
-
-    await fs.writeFile(dataPath, JSON.stringify(filteredCharacters, null, 2));
-};
-
-/**
- * Get character with webcam information
- * @param {number} id - Character ID
- * @returns {Object|null} Character with webcam details
- */
-const getCharacterWithWebcam = async (id) => {
-    try {
-        const character = await getCharacterById(id);
-        if (!character) {
-            return null;
-        }
-
-        const characterWebcamService = require('./characterWebcamService');
-        const webcam = await characterWebcamService.getWebcamByCharacter(parseInt(id));
-
-        return {
-            ...character,
-            webcam: webcam,
-            hasWebcam: !!webcam
-        };
-    } catch (error) {
-        console.error('Error getting character with webcam:', error);
-        return null;
-    }
-};
-
-/**
- * Get all characters with webcam information
- * @returns {Array} Array of characters with webcam details
- */
-const getAllCharactersWithWebcams = async () => {
-    try {
-        const characters = await getAllCharacters();
-        const charactersWithWebcams = [];
-
-        for (const character of characters) {
-            const characterWithWebcam = await getCharacterWithWebcam(character.id);
-            if (characterWithWebcam) {
-                charactersWithWebcams.push(characterWithWebcam);
-            }
-        }
-
-        return charactersWithWebcams;
-    } catch (error) {
-        console.error('Error getting all characters with webcams:', error);
-        return [];
-    }
-};
-
-
-
-
-
-module.exports = {
-    getAllCharacters,
-    getCharacterById,
-    createCharacter,
-    updateCharacter,
-    deleteCharacter,
-    getCharacterWithWebcam,
-    getAllCharactersWithWebcams
+export default {
+  loadCharacters,
+  saveCharacters,
+  getCharacterById,
+  createCharacter,
+  updateCharacter,
+  deleteCharacter
 };
