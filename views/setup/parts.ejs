@@ -376,6 +376,21 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Edit Model Selection -->
+                            <div id="editModelGroup" style="display: none;">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="mb-3">
+                                            <label for="editModelSelect" class="form-label">Model</label>
+                                            <select class="form-select" id="editModelSelect">
+                                                <option value="">Select Model...</option>
+                                                <!-- Options populated by JavaScript -->
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Edit PCA9685 Configuration -->
@@ -1339,7 +1354,7 @@
                     try {
                         var st = document.getElementById('editServoType').value || 'standard';
                         var ct = document.getElementById('editControllerType').value || 'gpio';
-                        config.servoType = config.servoType || st;
+                        config.servoType = st;  // Always use the form value
                         config.controllerType = ct;
                         if (ct === 'pca9685') {
                             var addrStr = document.getElementById('editPca9685Address').value || '0x40';

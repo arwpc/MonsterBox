@@ -44,10 +44,11 @@
       "maxPulse": 2500,
       "neutralPulse": 1500,
       "rotationRangeDeg": 900,
-      "servoType": "feedback"
+      "servoType": "feedback",
+      "controllerType": "pca9685"
     },
     "meta": {
-      "notes": "High power with extensive rotation, suitable for animatronics and robotics with multiple operation modes.",
+      "notes": "High power with extensive rotation, suitable for animatronics and robotics with multiple operation modes. Working configuration for Orlok head servo on PCA9685 channel 0.",
       "controlType": [
         "PWM",
         "Digital"
@@ -77,15 +78,34 @@
     "name": "GoBilda 2000 Series 5-Turn Dual-Mode (Continuous)",
     "manufacturer": "GoBilda",
     "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
+      "minPulse": 900,
+      "maxPulse": 2100,
       "neutralPulse": 1500,
-      "rotationRangeDeg": 1800,
+      "rotationRangeDeg": 360,
       "servoType": "continuous",
       "controllerType": "pca9685"
     },
     "meta": {
-      "notes": "2000-series dual-mode servo configured for Continuous operation. Uses 500-2500us pulse range. Defaults to PCA9685 controller.",
+      "notes": "2000-series dual-mode servo configured for Continuous operation. Active range 900-2100µs for motion control, 1500µs neutral. Clockwise rotation with increasing PWM signal. Defaults to PCA9685 controller.",
+      "controlType": [
+        "PWM"
+      ]
+    }
+  },
+  {
+    "id": "6",
+    "name": "GoBilda 2000 Series 5-Turn Dual-Mode (Positional)",
+    "manufacturer": "GoBilda",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutralPulse": 1500,
+      "rotationRangeDeg": 1800,
+      "servoType": "feedback",
+      "controllerType": "pca9685"
+    },
+    "meta": {
+      "notes": "2000-series dual-mode servo configured for Positional/Multi-turn operation. Full range 500-2500µs for 0-1800° (5 turns). PWM sets target position with feedback control. Defaults to PCA9685 controller.",
       "controlType": [
         "PWM"
       ]

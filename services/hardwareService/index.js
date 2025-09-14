@@ -367,10 +367,29 @@ const HARDWARE_CONTROLLERS = {
 
     // 🦷 Servo - precise angle control: standard, continuous, feedback
     servo: {
-        async moveToAngle({ partId, pin, channel, angleDeg, controllerType = 'gpio', address }) {
+        async moveToAngle({ partId, pin, channel, angleDeg, controllerType = 'gpio', address, servoType = 'standard' }) {
             try {
                 if (controllerType === 'pca9685') {
-                    const args = ['move_to_pca', String(channel), String(angleDeg)];
+                    let args, commandType;
+
+                    // Route to appropriate function based on servo type
+                    if (servoType === 'continuous') {
+                        // For continuous servos, convert angle to direction/speed for rotation
+                        // This is a fallback - continuous servos should use rotateContinuous action
+                        const direction = angleDeg > 0 ? 'cw' : 'ccw';
+                        const speed = Math.min(100, Math.abs(angleDeg));
+                        args = ['rotate_continuous_pca', String(channel), direction, String(speed), '1000'];
+                        commandType = 'continuous rotation';
+                    } else if (servoType === 'feedback' || servoType === 'positional') {
+                        // Use multi-turn function for positional servos (supports 0-1800°)
+                        args = ['move_to_pca_multi', String(channel), String(angleDeg)];
+                        commandType = 'multi-turn positioning';
+                    } else {
+                        // Standard servo - use regular PCA9685 function (0-180°)
+                        args = ['move_to_pca', String(channel), String(angleDeg)];
+                        commandType = 'standard positioning';
+                    }
+
                     if (address != null) args.push(String(address));
                     const result = await runWrapper('servo_cli.py', args);
                     const success = typeof result === 'string' && result.includes('success');
@@ -379,9 +398,10 @@ const HARDWARE_CONTROLLERS = {
                         partType: 'servo',
                         channel,
                         angleDeg,
+                        servoType,
                         controllerType: 'pca9685',
                         rawOutput: result,
-                        message: success ? `PCA9685 ch${channel} moved to ${angleDeg}°` : `Servo command failed: ${result}`
+                        message: success ? `PCA9685 ch${channel} ${commandType} to ${angleDeg}°` : `Servo command failed: ${result}`
                     };
                 } else {
                     const result = await servoService.moveToAngle({ partId, angleDeg });
@@ -409,10 +429,12 @@ const HARDWARE_CONTROLLERS = {
             }
         },
 
-        async rotateContinuous({ pin, channel, direction, speed, controllerType = 'gpio', address }) {
+        async rotateContinuous({ pin, channel, direction, speed, controllerType = 'gpio', address, servoType = 'continuous', duration = 1000 }) {
             try {
                 if (controllerType === 'pca9685') {
-                    const args = ['rotate_continuous_pca', String(channel), String(direction), String(speed), '1000'];
+                    // All servo types can use rotate_continuous_pca for continuous rotation
+                    // The function handles the appropriate pulse width ranges internally
+                    const args = ['rotate_continuous_pca', String(channel), String(direction), String(speed), String(duration)];
                     if (address != null) args.push(String(address));
                     const result = await runWrapper('servo_cli.py', args);
                     const success = typeof result === 'string' && result.includes('success');
@@ -422,9 +444,11 @@ const HARDWARE_CONTROLLERS = {
                         channel,
                         direction,
                         speed,
+                        duration,
+                        servoType,
                         controllerType: 'pca9685',
                         rawOutput: result,
-                        message: success ? `PCA9685 ch${channel} ${direction}` : `Servo command failed: ${result}`
+                        message: success ? `PCA9685 ch${channel} ${servoType} servo ${direction} at ${speed}%` : `Servo command failed: ${result}`
                     };
                 } else {
                     const result = await servoService.rotateContinuous({ channel: pin, direction, speed });
@@ -452,9 +476,10 @@ const HARDWARE_CONTROLLERS = {
             }
         },
 
-        async stop({ pin, channel, controllerType = 'gpio', address }) {
+        async stop({ pin, channel, controllerType = 'gpio', address, servoType = 'continuous' }) {
             try {
                 if (controllerType === 'pca9685') {
+                    // Use stop command which sets neutral pulse and optionally turns off PWM
                     const args = ['rotate_continuous_pca', String(channel), 'stop', '0', '100'];
                     if (address != null) args.push(String(address));
                     const result = await runWrapper('servo_cli.py', args);
@@ -463,9 +488,10 @@ const HARDWARE_CONTROLLERS = {
                         success,
                         partType: 'servo',
                         channel,
+                        servoType,
                         controllerType: 'pca9685',
                         rawOutput: result,
-                        message: success ? `PCA9685 ch${channel} stopped` : `Servo stop failed: ${result}`
+                        message: success ? `PCA9685 ch${channel} ${servoType} servo stopped` : `Servo stop failed: ${result}`
                     };
                 } else {
                     const result = await servoService.stop({ channel: pin });
