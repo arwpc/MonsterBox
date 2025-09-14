@@ -3,7 +3,7 @@
   "theme": "dark",
   "selectedCharacter": 1,
   "dataPath": "data",
-  "pythonScriptsPath": "../../scripts/hardware",
+  "pythonScriptsPath": "ARCHIVE/scripts/hardware",
   "enableHardware": true,
   "enableSafetyChecks": true,
   "commandTimeout": 8000,
