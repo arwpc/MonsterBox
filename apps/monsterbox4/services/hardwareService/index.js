@@ -5,10 +5,12 @@
 
 import servoService from './servo.js';
 import pca9685Service from './pca9685.js';
+import actuatorService from './actuator.js';
 import { runWrapper } from './exec.js';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { readConfig } from '../configService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -64,42 +66,110 @@ const HARDWARE_CONTROLLERS = {
         }
     },
 
-    // 🦴 Linear Actuator - extending/retracting movements
+    // 🦴 Linear Actuator - extending/retracting movements (real hardware via Python wrapper)
     linear_actuator: {
-        async extend({ pin, speed = 50, distance = 100 }) {
-            console.log(`🦴 Linear Actuator Extend - Pin ${pin}: ${distance}mm at ${speed}% speed`);
-            return {
-                success: true,
-                partType: 'linear_actuator',
-                pin: pin,
-                action: 'extend',
-                distance: distance,
-                speed: speed,
-                message: `Linear actuator on pin ${pin} extending ${distance}mm`
-            };
+        async extend({ pin, directionPin, pwmPin, speed = 50, distance = 100, duration }) {
+            try {
+                // Prefer explicit pins; else derive from base pin: dir=pin, pwm=pin+1
+                const dirPin = (typeof directionPin === 'number') ? directionPin : (typeof pin === 'number' ? pin : parseInt(pin, 10));
+                const pwm = (typeof pwmPin === 'number') ? pwmPin : (typeof pin === 'number' ? pin + 1 : parseInt(pin, 10) + 1);
+                const dur = typeof duration === 'number' ? duration : 1000; // safe default
+
+                const out = await actuatorService.controlActuator({ directionPin: dirPin, pwmPin: pwm, direction: 'extend', speed, duration: dur });
+                // controlActuator returns wrapper output (string). Parse last JSON line if present
+                const parsed = (() => {
+                    try {
+                        const lines = String(out).trim().split(/\r?\n/).filter(Boolean);
+                        for (let i = lines.length - 1; i >= 0; i--) {
+                            try { return JSON.parse(lines[i]); } catch (e) { /* continue */ }
+                        }
+                        return null;
+                    } catch { return null; }
+                })();
+                const success = parsed ? (parsed.status === 'success' || parsed.success === true) : (typeof out === 'string' && out.indexOf('success') !== -1);
+
+                return {
+                    success,
+                    partType: 'linear_actuator',
+                    pin: pin,
+                    directionPin: dirPin,
+                    pwmPin: pwm,
+                    action: 'extend',
+                    speed: speed,
+                    duration: dur,
+                    rawOutput: out,
+                    message: parsed && parsed.message ? parsed.message : (success ? `Linear actuator (dir=${dirPin}, pwm=${pwm}) extending` : 'Actuator extend failed')
+                };
+            } catch (error) {
+                return { success: false, partType: 'linear_actuator', pin, error: error.message };
+            }
         },
 
-        async retract({ pin, speed = 50, distance = 100 }) {
-            console.log(`🦴 Linear Actuator Retract - Pin ${pin}: ${distance}mm at ${speed}% speed`);
-            return {
-                success: true,
-                partType: 'linear_actuator',
-                pin: pin,
-                action: 'retract',
-                distance: distance,
-                speed: speed,
-                message: `Linear actuator on pin ${pin} retracting ${distance}mm`
-            };
+        async retract({ pin, directionPin, pwmPin, speed = 50, distance = 100, duration }) {
+            try {
+                const dirPin = (typeof directionPin === 'number') ? directionPin : (typeof pin === 'number' ? pin : parseInt(pin, 10));
+                const pwm = (typeof pwmPin === 'number') ? pwmPin : (typeof pin === 'number' ? pin + 1 : parseInt(pin, 10) + 1);
+                const dur = typeof duration === 'number' ? duration : 1000;
+
+                const out = await actuatorService.controlActuator({ directionPin: dirPin, pwmPin: pwm, direction: 'retract', speed, duration: dur });
+                const parsed = (() => {
+                    try {
+                        const lines = String(out).trim().split(/\r?\n/).filter(Boolean);
+                        for (let i = lines.length - 1; i >= 0; i--) {
+                            try { return JSON.parse(lines[i]); } catch (e) { /* continue */ }
+                        }
+                        return null;
+                    } catch { return null; }
+                })();
+                const success = parsed ? (parsed.status === 'success' || parsed.success === true) : (typeof out === 'string' && out.indexOf('success') !== -1);
+
+                return {
+                    success,
+                    partType: 'linear_actuator',
+                    pin: pin,
+                    directionPin: dirPin,
+                    pwmPin: pwm,
+                    action: 'retract',
+                    speed: speed,
+                    duration: dur,
+                    rawOutput: out,
+                    message: parsed && parsed.message ? parsed.message : (success ? `Linear actuator (dir=${dirPin}, pwm=${pwm}) retracting` : 'Actuator retract failed')
+                };
+            } catch (error) {
+                return { success: false, partType: 'linear_actuator', pin, error: error.message };
+            }
         },
 
-        async stop({ pin }) {
-            console.log(`🦴 Linear Actuator Stop - Pin ${pin}`);
-            return {
-                success: true,
-                partType: 'linear_actuator',
-                pin: pin,
-                message: `Linear actuator on pin ${pin} stopped`
-            };
+        async stop({ pin, directionPin, pwmPin }) {
+            try {
+                const dirPin = (typeof directionPin === 'number') ? directionPin : (typeof pin === 'number' ? pin : parseInt(pin, 10));
+                const pwm = (typeof pwmPin === 'number') ? pwmPin : (typeof pin === 'number' ? pin + 1 : parseInt(pin, 10) + 1);
+
+                const out = await actuatorService.stopActuator({ directionPin: dirPin, pwmPin: pwm });
+                const parsed = (() => {
+                    try {
+                        const lines = String(out).trim().split(/\r?\n/).filter(Boolean);
+                        for (let i = lines.length - 1; i >= 0; i--) {
+                            try { return JSON.parse(lines[i]); } catch (e) { /* continue */ }
+                        }
+                        return null;
+                    } catch { return null; }
+                })();
+                const success = parsed ? (parsed.status === 'success' || parsed.success === true) : (typeof out === 'string' && out.indexOf('success') !== -1);
+
+                return {
+                    success,
+                    partType: 'linear_actuator',
+                    pin: pin,
+                    directionPin: dirPin,
+                    pwmPin: pwm,
+                    action: 'stop',
+                    rawOutput: out,
+                    message: parsed && parsed.message ? parsed.message : (success ? `Linear actuator (dir=${dirPin}, pwm=${pwm}) stopped` : 'Actuator stop failed')
+                };
+            } catch (error) {
+                return { success: false, partType: 'linear_actuator', pin, error: error.message };
+            }
         }
     },
 
@@ -217,12 +287,12 @@ const HARDWARE_CONTROLLERS = {
 
     // 🦷 Servo - precise angle control: standard, continuous, feedback
     servo: {
-        async moveToAngle({ pin, channel, angleDeg, controllerType = 'gpio', address }) {
+        async moveToAngle({ partId, pin, channel, angleDeg, controllerType = 'gpio', address }) {
             try {
                 if (controllerType === 'pca9685') {
                     return await pca9685Service.moveServoToAngle({ channel, angleDeg, address });
                 } else {
-                    const result = await servoService.moveToAngle({ partId: pin, angleDeg });
+                    const result = await servoService.moveToAngle({ partId, angleDeg });
 
                     // Convert string result to structured response
                     const success = typeof result === 'string' && result.includes('success');
@@ -309,20 +379,24 @@ const HARDWARE_CONTROLLERS = {
     // 📡 Sensor - digital/analog sensors
     sensor: {
         async read({ pin, sensorType = 'digital' }) {
-            console.log(`📡 Sensor Read - Pin ${pin}: ${sensorType} sensor`);
-
-            // Simulate sensor reading
-            const value = sensorType === 'digital' ? Math.random() > 0.5 : Math.random() * 1024;
-
-            return {
-                success: true,
-                partType: 'sensor',
-                pin: pin,
-                sensorType: sensorType,
-                value: value,
-                timestamp: new Date().toISOString(),
-                message: `Sensor on pin ${pin} read: ${value}`
-            };
+            try {
+                const out = await runWrapper('sensor_cli.py', ['read', String(pin)]);
+                const parsed = parsePythonJSON(out);
+                const success = parsed ? parsed.status === 'success' : false;
+                const value = parsed && typeof parsed.value !== 'undefined' ? parsed.value : undefined;
+                return {
+                    success,
+                    partType: 'sensor',
+                    pin,
+                    sensorType,
+                    value,
+                    rawOutput: out,
+                    timestamp: new Date().toISOString(),
+                    message: parsed && parsed.message ? parsed.message : (success ? `Sensor on pin ${pin} value: ${value}` : 'Sensor read failed')
+                };
+            } catch (error) {
+                return { success: false, partType: 'sensor', pin, error: error.message };
+            }
         },
 
         async calibrate({ pin, minValue, maxValue }) {
@@ -340,19 +414,24 @@ const HARDWARE_CONTROLLERS = {
     // 🔍 Motion Sensor - PIR motion detection
     motion_sensor: {
         async read({ pin }) {
-            console.log(`🔍 Motion Sensor Read - Pin ${pin}`);
-
-            // Simulate motion detection
-            const motionDetected = Math.random() > 0.7;
-
-            return {
-                success: true,
-                partType: 'motion_sensor',
-                pin: pin,
-                motionDetected: motionDetected,
-                timestamp: new Date().toISOString(),
-                message: `Motion sensor on pin ${pin}: ${motionDetected ? 'Motion detected!' : 'No motion'}`
-            };
+            try {
+                const out = await runWrapper('sensor_cli.py', ['read', String(pin)]);
+                const parsed = parsePythonJSON(out);
+                const success = parsed ? parsed.status === 'success' : false;
+                const value = parsed && typeof parsed.value !== 'undefined' ? parsed.value : undefined;
+                const motionDetected = value === 1;
+                return {
+                    success,
+                    partType: 'motion_sensor',
+                    pin,
+                    motionDetected,
+                    rawOutput: out,
+                    timestamp: new Date().toISOString(),
+                    message: parsed && parsed.message ? parsed.message : (success ? `Motion: ${motionDetected ? 'detected' : 'none'}` : 'Motion read failed')
+                };
+            } catch (error) {
+                return { success: false, partType: 'motion_sensor', pin, error: error.message };
+            }
         },
 
         async setSensitivity({ pin, sensitivity }) {
@@ -530,12 +609,15 @@ const HARDWARE_CONTROLLERS = {
  */
 export async function controlPart(partId, action, params = {}) {
     try {
-        // Load part configuration
-        const partsPath = path.resolve(__dirname, '../../data/parts.json');
+        // Load part configuration from configured dataPath
+        const cfg = await readConfig();
+        const appRoot = path.resolve(__dirname, '../..');
+        const dataDir = cfg && cfg.dataPath ? cfg.dataPath : '../data';
+        const partsPath = path.resolve(appRoot, dataDir, 'parts.json');
         const partsData = await fs.readFile(partsPath, 'utf8');
         const parts = JSON.parse(partsData);
 
-        const part = parts.find(p => p.id === partId);
+        const part = parts.find(p => String(p.id) === String(partId));
         if (!part) {
             throw new Error(`Part ${partId} not found`);
         }
@@ -550,11 +632,41 @@ export async function controlPart(partId, action, params = {}) {
             throw new Error(`Action '${action}' not supported for part type: ${part.type}`);
         }
 
-        // Merge part configuration with action parameters
+        // Normalize legacy part fields and merge with action parameters
+        const pinFromPart = (part.pin != null)
+            ? part.pin
+            : (part.gpioPin != null
+                ? (typeof part.gpioPin === 'string' ? parseInt(part.gpioPin, 10) : part.gpioPin)
+                : undefined);
+
+        const normalized = Object.assign({}, part.config || {});
+
+        if (part.type === 'servo') {
+            if (part.usePCA9685 === true || part.controllerType === 'pca9685') {
+                normalized.controllerType = 'pca9685';
+                if (part.channel != null) normalized.channel = part.channel;
+                const addrRaw = part.pca9685Settings && part.pca9685Settings.address;
+                if (addrRaw != null) {
+                    normalized.address = (typeof addrRaw === 'string' && addrRaw.startsWith('0x')) ? parseInt(addrRaw, 16) : addrRaw;
+                }
+            }
+        }
+        if (part.type === 'linear_actuator') {
+            if (part.directionPin != null) normalized.directionPin = Number(part.directionPin);
+            if (part.pwmPin != null) normalized.pwmPin = Number(part.pwmPin);
+            if (part.maxExtension != null) normalized.maxExtension = Number(part.maxExtension);
+            if (part.maxRetraction != null) normalized.maxRetraction = Number(part.maxRetraction);
+        }
+        if ((part.type === 'light' || part.type === 'led' || part.type === 'sensor' || part.type === 'motion_sensor') && pinFromPart == null) {
+            // Ensure a pin is present if possible
+            if (part.gpioPin != null) normalized.pin = (typeof part.gpioPin === 'string' ? parseInt(part.gpioPin, 10) : part.gpioPin);
+        }
+
         const actionParams = {
             ...params,
-            pin: part.pin,
-            ...part.config
+            partId: part.id,
+            pin: pinFromPart,
+            ...normalized
         };
 
         const result = await actionFunction(actionParams);

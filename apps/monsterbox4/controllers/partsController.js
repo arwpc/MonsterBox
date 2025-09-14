@@ -7,6 +7,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import hardwareService from '../services/hardwareService/index.js';
+import { readConfig } from '../services/configService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -33,15 +34,18 @@ const SERVO_TYPES = {
     feedback: { description: 'Feedback servo with position sensing', pulseRange: [500, 2500] }
 };
 
-// Get parts data file path
-const getPartsFilePath = () => {
-    return path.resolve(__dirname, '../data/parts.json');
+// Get parts data file path (honor app-config.dataPath)
+const getPartsFilePath = async () => {
+    const cfg = await readConfig();
+    const appRoot = path.resolve(__dirname, '..');
+    const dataDir = cfg && cfg.dataPath ? cfg.dataPath : '../data';
+    return path.resolve(appRoot, dataDir, 'parts.json');
 };
 
 // Load parts from file
 const loadParts = async () => {
     try {
-        const filePath = getPartsFilePath();
+        const filePath = await getPartsFilePath();
         const data = await fs.readFile(filePath, 'utf8');
         return JSON.parse(data);
     } catch (error) {
@@ -55,7 +59,7 @@ const loadParts = async () => {
 
 // Save parts to file
 const saveParts = async (parts) => {
-    const filePath = getPartsFilePath();
+    const filePath = await getPartsFilePath();
 
     // Ensure data directory exists
     const dataDir = path.dirname(filePath);

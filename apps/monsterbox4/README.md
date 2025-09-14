@@ -44,7 +44,7 @@ npm start
 
 The application will be available at:
 - **Dashboard**: http://localhost:3000
-- **Setup**: http://localStarting to integrate real part functionality
+- **Setup**: http://localhost:3000/setup
 - **Live Mode**: http://localhost:3000/live
 
 
@@ -240,7 +240,7 @@ Poses use calibration data from `data/servo_calibrations.json` to ensure safe op
 - **Angle clamping** to calibrated min/max ranges
 - **Pulse width validation**
 - **Timeout protection** on hardware commands
-- **Graceful fallback** to simulation mode
+- **Fail-fast error policy** with descriptive messages (no simulation fallback)
 
 ## 🌐 API Reference
 
@@ -298,6 +298,28 @@ npm run test:ui
 # Headed UI tests (visible browser)
 npm run test:ui-headed
 
+```
+
+### Running tests against real hardware (Orlok)
+
+- Tests adapt to hardware presence using `MONSTERBOX_HARDWARE_AVAILABLE`.
+- On Orlok (full hardware installed), set the env var so tests expect success:
+
+````bash
+# Terminal 1 (server)
+cd apps/monsterbox4 && npm start
+
+# Terminal 2 (tests expecting real hardware)
+MONSTERBOX_HARDWARE_AVAILABLE=true npm run test:unit
+````
+
+Notes:
+- The app reads legacy hardware settings (GPIO, PCA9685) from the repository `data/` folder via `config/app-config.json` → `dataPath` (default points to `../../data`).
+- The legacy "Jason" (JSON) files for Orlok are used as-is; pins/channels/addresses map automatically.
+- Without hardware, the same tests expect structured failure but still pass.
+```bash
+
+
 # Everything (unit + UI)
 npm run test:all
 ```
@@ -326,13 +348,61 @@ curl -s -X POST http://localhost:3000/setup/parts/api/parts/7/test \
   -d '{"action":"setBrightness","params":{"brightness":50}}' | jq
 ````
 
+Example: test a motor by running forward at 40% for 1s
+
+````bash
+curl -s -X POST http://localhost:3000/setup/parts/api/parts/8/test \
+  -H 'Content-Type: application/json' \
+  -d '{"action":"control","params":{"direction":"forward","speed":40,"duration":1000}}' | jq
+````
+
+Example: test a linear actuator by extending for ~1s
+
+````bash
+curl -s -X POST http://localhost:3000/setup/parts/api/parts/103/test \
+  -H 'Content-Type: application/json' \
+  -d '{"action":"extend","params":{"speed":50,"duration":1000}}' | jq
+````
+
+Note: If your part config includes `directionPin`/`pwmPin`, those are used; otherwise the service derives `directionPin = pin` and `pwmPin = pin + 1`.
+
+
+Example: test a light by toggling briefly
+
+````bash
+curl -s -X POST http://localhost:3000/setup/parts/api/parts/9/test \
+  -H 'Content-Type: application/json' \
+  -d '{"action":"toggle","params":{}}' | jq
+````
+
+### No‑Fallback Policy and Error Behavior
+
+This app does not simulate non‑functional parts. If a wrapper or dependency is missing, requests fail with clear, descriptive errors. Typical API response shape on failure:
+
+````json
+{
+  "success": false,
+  "error": "Hardware command failed",
+  "message": "servo_control not available (lgpio or deps missing)",
+  "rawOutput": "{\"status\":\"error\",\"message\":\"...\"}"
+}
+````
+
+Actionable steps:
+- Check the `message` and `rawOutput` for root cause
+- Ensure Python deps are installed: see `scripts/requirements.txt`
+- Verify permissions for GPIO/I2C and that the correct pins are wired
+
 Current controller coverage (apps/monsterbox4/services/hardwareService):
 - servo: real hardware via Python wrappers (exec.js → python_wrappers/servo_cli.py)
 - motor: real hardware via Python wrappers (exec.js → python_wrappers/motor_cli.py)
 - light: real hardware via Python wrappers (exec.js → python_wrappers/light_cli.py)
 - led: real hardware via Python wrappers (exec.js → python_wrappers/led_cli.py)
 - pca9685: interface available; currently simulated (can be wired to hardware)
-- linear_actuator, sensor, motion_sensor, webcam, microphone, speaker, head_tracking: simulated responses today; ready for wiring to wrappers or the Hardware Abstraction Layer under `scripts/hardware/`
+- linear_actuator: real hardware via Python wrappers (exec.js → python_wrappers/actuator_cli.py)
+- sensor: real hardware via Python wrappers (exec.js  python_wrappers/sensor_cli.py)
+- motion_sensor: real hardware via Python wrappers (exec.js  python_wrappers/sensor_cli.py)
+- webcam, microphone, speaker, head_tracking: simulated responses today; ready for wiring to wrappers or the Hardware Abstraction Layer under `scripts/hardware/`
 
 Note: There is no simulation fallback. If a wrapper or hardware dependency is missing, the API returns a descriptive error with raw stderr/stdout to aid diagnosis.
 
@@ -407,7 +477,7 @@ MonsterBox 4.0 is designed to run alongside the legacy system initially:
 - **Calibration enforcement** on all movements
 - **Safe angle clamping** prevents hardware damage
 - **Timeout protection** prevents runaway commands
-- **Graceful degradation** with simulation mode
+- **Fail-fast, no-fallback policy** with clear, descriptive errors
 
 ### Developer Experience
 - **Clean code structure** with clear separation of concerns
@@ -432,8 +502,9 @@ MIT License - see LICENSE file for details
 For issues and questions:
 1. Check the logs in the browser console
 2. Review hardware connections and calibration
-3. Test in simulation mode first
-4. Create an issue with detailed error information
+3. Inspect API responses for `message` and `rawOutput` fields (Python stderr/stdout)
+4. Verify Python dependencies (scripts/requirements.txt) and permissions (e.g., lgpio)
+5. Create an issue with detailed error information
 
 ---
 
