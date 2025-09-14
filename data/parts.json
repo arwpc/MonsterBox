@@ -45,14 +45,18 @@
     "sensorType": "motion"
   },
   {
-    "id": 12,
+    "id": "12",
     "name": "Coffin door",
     "type": "linear-actuator",
     "characterId": 2,
     "directionPin": 5,
     "pwmPin": 13,
     "maxExtension": 20000,
-    "maxRetraction": 20000
+    "maxRetraction": 20000,
+    "config": {
+      "modelId": "1757818992065"
+    },
+    "updated": "2025-09-14T03:03:37.593Z"
   },
   {
     "id": 13,
@@ -62,11 +66,15 @@
     "gpioPin": "16"
   },
   {
-    "id": 14,
+    "id": "14",
     "name": "Head Light",
     "type": "led",
     "characterId": 3,
-    "gpioPin": 17
+    "gpioPin": 17,
+    "config": {
+      "modelId": "1757818914956"
+    },
+    "updated": "2025-09-14T03:02:22.623Z"
   },
   {
     "id": 15,
@@ -104,7 +112,7 @@
     }
   },
   {
-    "id": 29,
+    "id": "29",
     "name": "Orlok Head Servo",
     "type": "servo",
     "characterId": 1,
@@ -130,7 +138,11 @@
       "PWM",
       "Digital"
     ],
-    "customSettings": null
+    "customSettings": null,
+    "config": {
+      "modelId": "1"
+    },
+    "updated": "2025-09-14T03:02:55.360Z"
   },
   {
     "id": 30,

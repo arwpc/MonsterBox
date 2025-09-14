@@ -59,6 +59,8 @@ The application will be available at:
 - Webcam: http://localhost:3000/setup/webcam
 - Super Powers: http://localhost:3000/setup/super-powers
 - System: http://localhost:3000/setup/system
+- Models: http://localhost:3000/setup/models
+
 
 ## 👥 Characters Management
 
@@ -169,6 +171,25 @@ apps/monsterbox4/
 ├── python_wrappers/         # Python CLI wrappers
 │   └── servo_cli.py        # Servo control wrapper
 └── tests/                   # Test suite
+
+## 🧰 Models System (Per Part Type)
+
+- Supported types: servo, led, linear_actuator, webcam
+- Each Part may reference a Model via `config.modelId`
+- Merge order when executing actions: model defaults < part config < explicit params
+- Manage at Setup → Models (CRUD + bulk apply to parts)
+
+APIs:
+- GET /setup/models/api/:type → list models
+- GET /setup/models/api/:type/:id → get model
+- POST /setup/models/api/:type { name, description?, defaults? } → create
+- PUT /setup/models/api/:type/:id { name?, description?, defaults? } → update
+- DELETE /setup/models/api/:type/:id → delete
+
+Notes:
+- Servo models auto-seeded from legacy `data/servos.json` on first access
+- UI shows a Model selector in Parts Create/Edit; selecting a model can inject its defaults into the config preview
+
     └── basic.test.js       # Basic functionality tests
 ```
 

@@ -157,6 +157,14 @@
                                         </select>
                                     </div>
                                 </div>
+                                <div class="col-md-6" id="modelGroup" style="display:none;">
+                                    <div class="mb-3">
+                                        <label for="modelSelect" class="form-label">Model</label>
+                                        <select class="form-select" id="modelSelect">
+                                            <option value="">Select Model (optional)</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- GPIO Pin (shown for parts that require pins) -->
@@ -282,6 +290,14 @@
                                         </select>
                                     </div>
                                 </div>
+                                <div class="col-md-6" id="editModelGroup" style="display:none;">
+                                    <div class="mb-3">
+                                        <label for="editModelSelect" class="form-label">Model</label>
+                                        <select class="form-select" id="editModelSelect">
+                                            <option value="">Select Model (optional)</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="row" id="editPinGroup" style="display: none;">
@@ -343,10 +359,57 @@
                             console.error('Failed to load parts:', data.error);
                             document.getElementById('parts-list').innerHTML =
                                 '<div class="alert alert-danger">Failed to load parts: ' + data.error + '</div>';
+                            var modelCapableTypes = { servo: true, led: true, linear_actuator: true, webcam: true };
+
+                            function loadModelsIntoSelect(type, selectId, selectedId) {
+                                var sel = document.getElementById(selectId);
+                                if (!sel) return;
+                                sel.innerHTML = '<option value="">Select Model (optional)</option>';
+                                if (!modelCapableTypes[type]) return;
+                                fetch('/setup/models/api/' + encodeURIComponent(type))
+                                    .then(function (r) { return r.json(); })
+                                    .then(function (d) {
+                                        if (d && d.success && Array.isArray(d.models)) {
+                                            d.models.forEach(function (m) {
+                                                var opt = document.createElement('option');
+                                                opt.value = m.id;
+                                                opt.textContent = m.name || ('Model ' + m.id);
+                                                if (selectedId && String(selectedId) === String(m.id)) opt.selected = true;
+                                                sel.appendChild(opt);
+                                            });
+                                        }
+                                    })
+                                    .catch(function () { /* ignore */ });
+                            }
+
                         }
                     })
                     .catch(function (error) {
                         console.error('Error loading parts:', error);
+                        var modelCapableTypes = { servo: true, led: true, linear_actuator: true, webcam: true };
+
+                        function loadModelsIntoSelect(type, selectId, selectedId) {
+                            var sel = document.getElementById(selectId);
+                            if (!sel) return;
+                            sel.innerHTML = '<option value="">Select Model (optional)</option>';
+                            if (!modelCapableTypes[type]) return;
+                            fetch('/setup/models/api/' + encodeURIComponent(type))
+                                .then(function (r) { return r.json(); })
+                                .then(function (d) {
+                                    if (d && d.success && Array.isArray(d.models)) {
+                                        d.models.forEach(function (m) {
+                                            var opt = document.createElement('option');
+                                            opt.value = m.id;
+                                            opt.textContent = m.name || ('Model ' + m.id);
+                                            if (selectedId && String(selectedId) === String(m.id)) opt.selected = true;
+                                            sel.appendChild(opt);
+                                        });
+                                    }
+                                })
+                                .catch(function () { /* ignore */ });
+                        }
+
+
                         document.getElementById('parts-list').innerHTML =
                             '<div class="alert alert-danger">Error loading parts</div>';
                     });
@@ -371,6 +434,33 @@
                     }
                     if (part.config && part.config.controllerType === 'pca9685') {
                         badges += ' <span class="badge bg-success">PCA9685</span>';
+                    }
+                    if (part.config && part.config.modelId) {
+                        badges += ' <span class="badge bg-secondary">Model ' + part.config.modelId + '</span>';
+                    }
+
+
+                    var modelCapableTypes = { servo: true, led: true, linear_actuator: true, webcam: true };
+
+                    function loadModelsIntoSelect(type, selectId, selectedId) {
+                        var sel = document.getElementById(selectId);
+                        if (!sel) return;
+                        sel.innerHTML = '<option value="">Select Model (optional)</option>';
+                        if (!modelCapableTypes[type]) return;
+                        fetch('/setup/models/api/' + encodeURIComponent(type))
+                            .then(function (r) { return r.json(); })
+                            .then(function (d) {
+                                if (d && d.success && Array.isArray(d.models)) {
+                                    d.models.forEach(function (m) {
+                                        var opt = document.createElement('option');
+                                        opt.value = m.id;
+                                        opt.textContent = m.name || ('Model ' + m.id);
+                                        if (selectedId && String(selectedId) === String(m.id)) opt.selected = true;
+                                        sel.appendChild(opt);
+                                    });
+                                }
+                            })
+                            .catch(function () { /* ignore */ });
                     }
 
                     return '<div class="card mb-2" data-testid="part-card" data-part-id="' + part.id + '">' +
@@ -468,6 +558,32 @@
                     servoGroup.style.display = 'none';
                     pca9685Group.style.display = 'none';
                 }
+                // Model selector for supported types
+                var modelGroup = document.getElementById('modelGroup');
+                var supported = ['servo', 'led', 'linear_actuator', 'webcam'];
+                if (supported.indexOf(partType) >= 0) {
+                    modelGroup.style.display = 'block';
+                    var sel = document.getElementById('modelSelect');
+                    if (sel) {
+                        sel.innerHTML = '<option value="">Select Model (optional)</option>';
+                        fetch('/setup/models/api/' + encodeURIComponent(partType))
+                            .then(function (r) { return r.json(); })
+                            .then(function (d) {
+                                if (d && d.success && Array.isArray(d.models)) {
+                                    d.models.forEach(function (m) {
+                                        var opt = document.createElement('option');
+                                        opt.value = m.id;
+                                        opt.textContent = m.name || ('Model ' + m.id);
+                                        sel.appendChild(opt);
+                                    });
+                                }
+                            })
+                            .catch(function () { /* ignore */ });
+                    }
+                } else {
+                    modelGroup.style.display = 'none';
+                }
+
             }
 
             function populateServoTypeSelect() {
@@ -549,13 +665,26 @@
 
             // Global functions
             function createPart() {
-                var formData = new FormData(document.getElementById('createPartForm'));
-                var partData = Object.fromEntries(formData.entries());
+                var form = document.getElementById('createPartForm');
+                var formData = new FormData(form);
+                var type = formData.get('type');
+                var payload = {
+                    name: formData.get('name'),
+                    type: type,
+                    description: formData.get('description') || ''
+                };
+                var pin = formData.get('pin');
+                if (pin) payload.pin = parseInt(pin, 10);
+                // Attach selected model if any
+                var modelSel = document.getElementById('modelSelect');
+                if (modelSel && modelSel.value) {
+                    payload.config = { modelId: modelSel.value };
+                }
 
                 fetch('/setup/parts/api/parts', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(partData)
+                    body: JSON.stringify(payload)
                 })
                     .then(function (response) { return response.json(); })
                     .then(function (data) {
@@ -601,7 +730,7 @@
             }
 
             function getDefaultActionPayload(part) {
-                var type = part.type;
+                var type = (part.type || '').replace(/\-/g, '_');
                 switch (type) {
                     case 'servo':
                         return { action: 'moveToAngle', params: { angleDeg: 15 } };
@@ -649,7 +778,8 @@
                 var resultId = 'test-result-' + part.id;
                 if (!container) return;
                 var html = '';
-                switch (part.type) {
+                var t = (part.type || '').replace(/\-/g, '_');
+                switch (t) {
                     case 'servo':
                         html += '<div class="row g-2 align-items-center" data-testid="servo-controls">';
                         html += '<div class="col-auto">Angle:</div>';
@@ -804,6 +934,57 @@
                 }
                 document.getElementById('editPartDescription').value = part.description || '';
                 document.getElementById('editConfigJson').value = JSON.stringify(part.config || {}, null, 2);
+                // Populate model selector if supported
+                var editModelGroup = document.getElementById('editModelGroup');
+                var supported = ['servo', 'led', 'linear_actuator', 'webcam'];
+                if (supported.indexOf(part.type) >= 0) {
+                    editModelGroup.style.display = '';
+                    var sel = document.getElementById('editModelSelect');
+                    if (sel) {
+                        sel.innerHTML = '<option value=\"\">Select Model (optional)</option>';
+                        fetch('/setup/models/api/' + encodeURIComponent(part.type))
+                            .then(function (r) { return r.json(); })
+                            .then(function (d) {
+                                if (d && d.success && Array.isArray(d.models)) {
+                                    d.models.forEach(function (m) {
+                                        var opt = document.createElement('option');
+                                        opt.value = m.id;
+                                        opt.textContent = m.name || ('Model ' + m.id);
+                                        sel.appendChild(opt);
+                                    });
+                                    var curModelId = (part.config && part.config.modelId) ? String(part.config.modelId) : '';
+                                    if (curModelId) sel.value = curModelId;
+                                }
+                            })
+                            .catch(function () { /* ignore */ });
+
+                        // When model selection changes, merge model defaults into config preview
+                        (function () {
+                            var sel = document.getElementById('editModelSelect');
+                            if (!sel) return;
+                            sel.onchange = function () {
+                                var modelId = sel.value;
+                                if (!modelId) return; // no selection
+                                var type = (part.type || '').replace(/\-/g, '_');
+                                fetch('/setup/models/api/' + encodeURIComponent(type) + '/' + encodeURIComponent(modelId))
+                                    .then(function (r) { return r.json(); })
+                                    .then(function (d) {
+                                        if (!d || !d.success || !d.model) return;
+                                        var defaults = d.model.defaults || {};
+                                        var txt = document.getElementById('editConfigJson').value || '{}';
+                                        var cfg; try { cfg = JSON.parse(txt); } catch (e) { cfg = {}; }
+                                        Object.keys(defaults).forEach(function (k) { if (typeof cfg[k] === 'undefined') cfg[k] = defaults[k]; });
+                                        cfg.modelId = modelId;
+                                        document.getElementById('editConfigJson').value = JSON.stringify(cfg, null, 2);
+                                    })
+                                    .catch(function () { /* ignore */ });
+                            };
+                        })();
+                    }
+                } else {
+                    editModelGroup.style.display = 'none';
+                }
+
                 var modal = new bootstrap.Modal(document.getElementById('editPartModal'));
                 modal.show();
             }
@@ -823,6 +1004,9 @@
                 var config;
                 try { config = configText ? JSON.parse(configText) : {}; }
                 catch (e) { showAlert('danger', 'Config JSON invalid: ' + e.message); return; }
+                // Merge selected model into config
+                var editModelSel = document.getElementById('editModelSelect');
+                if (editModelSel && editModelSel.value) { config.modelId = editModelSel.value; }
 
                 var payload = { name: name, description: description, config: config };
                 if (requiresPin) payload.pin = parseInt(pin, 10);

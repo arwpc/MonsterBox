@@ -24,6 +24,43 @@ function parsePythonJSON(out) {
     return null;
 }
 
+async function getDataDir() {
+    const cfg = await readConfig();
+    const appRoot = path.resolve(__dirname, '../..');
+    return path.resolve(appRoot, cfg && cfg.dataPath ? cfg.dataPath : '../data');
+}
+
+function typeToModelsFile(type) {
+    var t = (type || '').replace(/\-/g, '_');
+    switch (t) {
+        case 'servo': return 'servo_models.json';
+        case 'led': return 'led_models.json';
+        case 'linear_actuator': return 'linear_actuator_models.json';
+        case 'webcam': return 'webcam_models.json';
+        default: return null;
+    }
+}
+
+async function getModelDefaultsForPart(part) {
+    try {
+        const modelId = part && part.config && part.config.modelId;
+        if (!modelId) return {};
+        const fname = typeToModelsFile(part.type);
+        if (!fname) return {};
+        const dataDir = await getDataDir();
+        const filePath = path.resolve(dataDir, fname);
+        const raw = await fs.readFile(filePath, 'utf8');
+        const models = JSON.parse(raw);
+        const model = Array.isArray(models) ? models.find(m => String(m.id) === String(modelId)) : null;
+        if (model && model.defaults && typeof model.defaults === 'object') {
+            return Object.assign({}, model.defaults);
+        }
+        return {};
+    } catch (e) {
+        return {};
+    }
+}
+
 // Hardware control functions for each part type
 const HARDWARE_CONTROLLERS = {
     // 🔄 Motor - DC motors for movement
@@ -724,7 +761,9 @@ export async function controlPart(partId, action, params = {}) {
             throw new Error(`Part ${partId} not found`);
         }
 
-        const controller = HARDWARE_CONTROLLERS[part.type];
+        // Normalize type to underscore style for controller lookup
+        const type = (part.type || '').replace(/\-/g, '_');
+        const controller = HARDWARE_CONTROLLERS[type];
         if (!controller) {
             throw new Error(`No controller found for part type: ${part.type}`);
         }
@@ -743,7 +782,7 @@ export async function controlPart(partId, action, params = {}) {
 
         const normalized = Object.assign({}, part.config || {});
 
-        if (part.type === 'servo') {
+        if (type === 'servo') {
             if (part.usePCA9685 === true || part.controllerType === 'pca9685') {
                 normalized.controllerType = 'pca9685';
                 if (part.channel != null) normalized.channel = part.channel;
@@ -753,23 +792,24 @@ export async function controlPart(partId, action, params = {}) {
                 }
             }
         }
-        if (part.type === 'linear_actuator') {
+        if (type === 'linear_actuator') {
             if (part.directionPin != null) normalized.directionPin = Number(part.directionPin);
             if (part.pwmPin != null) normalized.pwmPin = Number(part.pwmPin);
             if (part.maxExtension != null) normalized.maxExtension = Number(part.maxExtension);
             if (part.maxRetraction != null) normalized.maxRetraction = Number(part.maxRetraction);
         }
-        if ((part.type === 'light' || part.type === 'led' || part.type === 'sensor' || part.type === 'motion_sensor') && pinFromPart == null) {
+        if ((type === 'light' || type === 'led' || type === 'sensor' || type === 'motion_sensor') && pinFromPart == null) {
             // Ensure a pin is present if possible
             if (part.gpioPin != null) normalized.pin = (typeof part.gpioPin === 'string' ? parseInt(part.gpioPin, 10) : part.gpioPin);
         }
 
-        const actionParams = {
-            ...params,
+        // Merge order: model defaults < part config < explicit params
+        const modelDefaults = await getModelDefaultsForPart(part);
+
+        const actionParams = Object.assign({}, modelDefaults, normalized, params, {
             partId: part.id,
-            pin: pinFromPart,
-            ...normalized
-        };
+            pin: pinFromPart
+        });
 
         const result = await actionFunction(actionParams);
 
@@ -797,7 +837,8 @@ export async function controlPart(partId, action, params = {}) {
  * @returns {Array<string>} - Available actions
  */
 export function getAvailableActions(partType) {
-    const controller = HARDWARE_CONTROLLERS[partType];
+    const key = (partType || '').replace(/\-/g, '_');
+    const controller = HARDWARE_CONTROLLERS[key];
     if (!controller) {
         return [];
     }

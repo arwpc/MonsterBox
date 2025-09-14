@@ -1,0 +1,13 @@
+[
+  {
+    "id": "1757818914956",
+    "name": "5mm White LED",
+    "description": "Standard 5mm LED",
+    "defaults": {
+      "maxCurrentMa": 20,
+      "forwardVoltageV": 2
+    },
+    "controlsSchema": {},
+    "meta": {}
+  }
+]
