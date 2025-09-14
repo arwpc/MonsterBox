@@ -26,7 +26,8 @@ async function createServoViaAPI(request, name) {
 test.describe('Setup → Parts: per-type testing (servo)', () => {
   test('clicking Test on a servo shows success feedback', async ({ page, request }) => {
     const uniqueName = `UI Servo ${Date.now()}`;
-    await createServoViaAPI(request, uniqueName);
+    const part = await createServoViaAPI(request, uniqueName);
+    const partId = part.id;
 
     await page.goto(`${BASE_URL}/setup/parts`);
 
@@ -34,17 +35,22 @@ test.describe('Setup → Parts: per-type testing (servo)', () => {
     await expect(page.locator('#parts-list')).toBeVisible();
     await expect(page.locator('#parts-list')).toContainText(uniqueName);
 
-    // Locate the card containing our servo and click its Test button
-    const card = page.locator('.card:has-text("' + uniqueName + '")').first();
-    await expect(card).toBeVisible();
-    await card.locator('button[title="Test"]').click();
+    // Target the specific part's Test button by id
+    const openBtn = page.locator('[data-testid="open-test-btn"][data-part-id="' + partId + '"]');
+    await expect(openBtn).toBeVisible();
+    await openBtn.click();
+    await expect(page.locator('#test-drawer-' + partId)).toBeVisible();
 
-    // Expect a success alert to appear
+    // Run the Quick Test from the drawer
+    const quickBtn = page.locator('#test-drawer-' + partId + ' [data-testid="quick-test-btn"]');
+    await expect(quickBtn).toBeVisible();
+    await quickBtn.click();
+
+    // Expect a feedback alert to appear (success preferred, but accept danger when hardware not present)
     const alert = page.locator('#alertsContainer .alert');
     await expect(alert).toBeVisible();
     await expect(alert).toHaveClass(/alert-success|alert-danger/);
-    // Prefer success, but tolerate either; assert the API responded
-    await expect(alert).toContainText(/Test/);
+    await expect(alert).toContainText(/Test|Action/);
   });
 });
 

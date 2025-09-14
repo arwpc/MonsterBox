@@ -11,27 +11,26 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
-  
+  // Prefer console output that clearly completes; still generate HTML locally
+  reporter: process.env.CI ? 'line' : [['list'], ['html']],
+
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
 
+  // ARM64 default: run WebKit by default. Firefox optional, Chromium disabled.
   projects: [
-    {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
-    },
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
     {
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
     },
+    // Uncomment to enable locally if supported
+    // {
+    //   name: 'firefox',
+    //   use: { ...devices['Desktop Firefox'] },
+    // },
   ],
 
   webServer: {

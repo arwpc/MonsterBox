@@ -5,6 +5,7 @@
 
 import servoService from './servo.js';
 import pca9685Service from './pca9685.js';
+import { runWrapper } from './exec.js';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -12,31 +13,54 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+function parsePythonJSON(out) {
+    if (!out) return null;
+    const lines = String(out).trim().split(/\r?\n/).filter(Boolean);
+    for (let i = lines.length - 1; i >= 0; i--) {
+        try { return JSON.parse(lines[i]); } catch (e) { /* continue */ }
+    }
+    return null;
+}
+
 // Hardware control functions for each part type
 const HARDWARE_CONTROLLERS = {
     // 🔄 Motor - DC motors for movement
     motor: {
-        async control({ pin, direction, speed = 50, duration = 1000 }) {
-            console.log(`🔄 Motor Control - Pin ${pin}: ${direction} at ${speed}% for ${duration}ms`);
-            return {
-                success: true,
-                partType: 'motor',
-                pin: pin,
-                direction: direction,
-                speed: speed,
-                duration: duration,
-                message: `Motor on pin ${pin} ${direction} at ${speed}% speed`
-            };
+        async control({ pin, direction = 'forward', speed = 50, duration = 1000 }) {
+            try {
+                const out = await runWrapper('motor_cli.py', [String(direction), String(speed), String(duration), String(pin)]);
+                const parsed = parsePythonJSON(out);
+                const success = parsed ? parsed.status === 'success' : (typeof out === 'string' && out.indexOf('success') !== -1);
+                return {
+                    success,
+                    partType: 'motor',
+                    pin: pin,
+                    direction: direction,
+                    speed: speed,
+                    duration: duration,
+                    rawOutput: out,
+                    message: parsed && parsed.message ? parsed.message : (success ? `Motor on pin ${pin} ${direction} at ${speed}%` : 'Motor command failed')
+                };
+            } catch (error) {
+                return { success: false, partType: 'motor', pin: pin, error: error.message };
+            }
         },
 
         async stop({ pin }) {
-            console.log(`🔄 Motor Stop - Pin ${pin}`);
-            return {
-                success: true,
-                partType: 'motor',
-                pin: pin,
-                message: `Motor on pin ${pin} stopped`
-            };
+            try {
+                const out = await runWrapper('motor_cli.py', ['stop', '0', '100', String(pin)]);
+                const parsed = parsePythonJSON(out);
+                const success = parsed ? parsed.status === 'success' : (typeof out === 'string' && out.indexOf('success') !== -1);
+                return {
+                    success,
+                    partType: 'motor',
+                    pin: pin,
+                    rawOutput: out,
+                    message: parsed && parsed.message ? parsed.message : (success ? `Motor on pin ${pin} stopped` : 'Motor stop failed')
+                };
+            } catch (error) {
+                return { success: false, partType: 'motor', pin: pin, error: error.message };
+            }
         }
     },
 
@@ -81,56 +105,86 @@ const HARDWARE_CONTROLLERS = {
 
     // 💡 Light - basic on/off lighting
     light: {
-        async turnOn({ pin, brightness = 100 }) {
-            console.log(`💡 Light On - Pin ${pin}: ${brightness}% brightness`);
-            return {
-                success: true,
-                partType: 'light',
-                pin: pin,
-                state: 'on',
-                brightness: brightness,
-                message: `Light on pin ${pin} turned on at ${brightness}%`
-            };
+        async turnOn({ pin, brightness = 100, duration = 0 }) {
+            try {
+                const out = await runWrapper('light_cli.py', [String(pin), 'on', String(duration || 0)]);
+                const parsed = parsePythonJSON(out);
+                const success = parsed ? parsed.status === 'success' : (typeof out === 'string' && out.indexOf('success') !== -1);
+                return {
+                    success,
+                    partType: 'light',
+                    pin: pin,
+                    state: 'on',
+                    brightness: brightness,
+                    rawOutput: out,
+                    message: parsed && parsed.message ? parsed.message : (success ? `Light on pin ${pin} turned on` : 'Light on failed')
+                };
+            } catch (error) {
+                return { success: false, partType: 'light', pin: pin, error: error.message };
+            }
         },
 
         async turnOff({ pin }) {
-            console.log(`💡 Light Off - Pin ${pin}`);
-            return {
-                success: true,
-                partType: 'light',
-                pin: pin,
-                state: 'off',
-                message: `Light on pin ${pin} turned off`
-            };
+            try {
+                const out = await runWrapper('light_cli.py', [String(pin), 'off']);
+                const parsed = parsePythonJSON(out);
+                const success = parsed ? parsed.status === 'success' : (typeof out === 'string' && out.indexOf('success') !== -1);
+                return {
+                    success,
+                    partType: 'light',
+                    pin: pin,
+                    state: 'off',
+                    rawOutput: out,
+                    message: parsed && parsed.message ? parsed.message : (success ? `Light on pin ${pin} turned off` : 'Light off failed')
+                };
+            } catch (error) {
+                return { success: false, partType: 'light', pin: pin, error: error.message };
+            }
         },
 
         async toggle({ pin }) {
-            console.log(`💡 Light Toggle - Pin ${pin}`);
-            return {
-                success: true,
-                partType: 'light',
-                pin: pin,
-                action: 'toggle',
-                message: `Light on pin ${pin} toggled`
-            };
+            try {
+                // Simple toggle: pulse on for 250ms
+                const out = await runWrapper('light_cli.py', [String(pin), 'on', '250']);
+                const parsed = parsePythonJSON(out);
+                const success = parsed ? parsed.status === 'success' : (typeof out === 'string' && out.indexOf('success') !== -1);
+                return {
+                    success,
+                    partType: 'light',
+                    pin: pin,
+                    action: 'toggle',
+                    rawOutput: out,
+                    message: parsed && parsed.message ? parsed.message : (success ? `Light on pin ${pin} toggled` : 'Light toggle failed')
+                };
+            } catch (error) {
+                return { success: false, partType: 'light', pin: pin, error: error.message };
+            }
         }
     },
 
     // 🔆 LED - PWM-controlled with brightness
     led: {
-        async setBrightness({ pin, brightness }) {
+        async setBrightness({ pin, brightness, duration }) {
             if (brightness < 0 || brightness > 100) {
                 throw new Error(`Invalid brightness: ${brightness}%. Must be 0-100%`);
             }
-
-            console.log(`🔆 LED Brightness - Pin ${pin}: ${brightness}%`);
-            return {
-                success: true,
-                partType: 'led',
-                pin: pin,
-                brightness: brightness,
-                message: `LED on pin ${pin} set to ${brightness}% brightness`
-            };
+            try {
+                const args = [String(pin), String(brightness)];
+                if (typeof duration === 'number') args.push(String(duration));
+                const out = await runWrapper('led_cli.py', args);
+                const parsed = parsePythonJSON(out);
+                const success = parsed ? parsed.status === 'success' : (typeof out === 'string' && out.indexOf('success') !== -1);
+                return {
+                    success,
+                    partType: 'led',
+                    pin: pin,
+                    brightness: brightness,
+                    rawOutput: out,
+                    message: parsed && parsed.message ? parsed.message : (success ? `LED on pin ${pin} set to ${brightness}%` : 'LED command failed')
+                };
+            } catch (error) {
+                return { success: false, partType: 'led', pin: pin, error: error.message };
+            }
         },
 
         async fade({ pin, fromBrightness, toBrightness, duration = 1000 }) {

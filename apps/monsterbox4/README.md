@@ -44,7 +44,7 @@ npm start
 
 The application will be available at:
 - **Dashboard**: http://localhost:3000
-- **Setup**: http://localhost:3000/setup
+- **Setup**: http://localStarting to integrate real part functionality
 - **Live Mode**: http://localhost:3000/live
 
 

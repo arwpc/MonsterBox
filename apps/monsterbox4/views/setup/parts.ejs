@@ -309,7 +309,7 @@
                         badges += ' <span class="badge bg-success">PCA9685</span>';
                     }
 
-                    return '<div class="card mb-2">' +
+                    return '<div class="card mb-2" data-testid="part-card" data-part-id="' + part.id + '">' +
                         '<div class="card-body">' +
                         '<div class="d-flex justify-content-between align-items-start">' +
                         '<div class="flex-grow-1">' +
@@ -324,13 +324,24 @@
                         '<button class="btn btn-outline-primary" onclick="editPart(\'' + part.id + '\')" title="Edit">' +
                         '<i class="bi bi-pencil"></i>' +
                         '</button>' +
-                        '<button class="btn btn-outline-success" onclick="testPart(\'' + part.id + '\')" title="Test">' +
+                        '<button class="btn btn-outline-success" onclick="toggleTestDrawer(\'' + part.id + '\')" title="Test" data-testid="open-test-btn" data-part-id="' + part.id + '">' +
                         '<i class="bi bi-play"></i>' +
                         '</button>' +
                         '<button class="btn btn-outline-danger" onclick="deletePart(\'' + part.id + '\')" title="Delete">' +
                         '<i class="bi bi-trash"></i>' +
                         '</button>' +
                         '</div>' +
+                        '</div>' +
+                        // Test drawer area
+                        '<div id="test-drawer-' + part.id + '" class="mt-3 border rounded p-2" style="display:none;" data-testid="test-drawer">' +
+                        '<div class="d-flex justify-content-between align-items-center mb-2">' +
+                        '<strong>Test Controls</strong>' +
+                        '<button class="btn btn-sm btn-outline-secondary" onclick="testPart(\'' + part.id + '\')" title="Quick Test" data-testid="quick-test-btn">' +
+                        '<i class="bi bi-lightning"></i> Quick Test' +
+                        '</button>' +
+                        '</div>' +
+                        '<div id="test-controls-' + part.id + '"></div>' +
+                        '<div id="test-result-' + part.id + '" class="small text-muted mt-2"></div>' +
                         '</div>' +
                         '</div>' +
                         '</div>';
@@ -554,6 +565,147 @@
                         return { action: '', params: {} };
                 }
             }
+
+            // Per-type Test Drawer logic
+            function toggleTestDrawer(partId) {
+                var drawer = document.getElementById('test-drawer-' + partId);
+                if (!drawer) return;
+                var part = parts.find(function (p) { return p.id === partId; });
+                if (!part) return;
+                if (drawer.style.display === 'none') {
+                    drawer.style.display = 'block';
+                    renderTestControls(part);
+                } else {
+                    drawer.style.display = 'none';
+                }
+            }
+
+            function renderTestControls(part) {
+                var container = document.getElementById('test-controls-' + part.id);
+                var resultId = 'test-result-' + part.id;
+                if (!container) return;
+                var html = '';
+                switch (part.type) {
+                    case 'servo':
+                        html += '<div class="row g-2 align-items-center" data-testid="servo-controls">';
+                        html += '<div class="col-auto">Angle:</div>';
+                        html += '<div class="col"><input type="range" min="-90" max="90" value="15" class="form-range" oninput="document.getElementById(\'servo-angle-' + part.id + '\').value=this.value"/></div>';
+                        html += '<div class="col-auto"><input id="servo-angle-' + part.id + '" type="number" class="form-control form-control-sm" style="width:80px" value="15"/></div>';
+                        html += '<div class="col-auto"><button class="btn btn-sm btn-primary" onclick="sendPartAction(\'' + part.id + '\',\'moveToAngle\',{ angleDeg: parseInt(document.getElementById(\'servo-angle-' + part.id + '\').value,10)||0 },\'' + resultId + '\')">Move</button></div>';
+                        html += '<div class="col-auto"><button class="btn btn-sm btn-outline-secondary" onclick="sendPartAction(\'' + part.id + '\',\'rotateContinuous\',{ direction: \'cw\', speed: 50 },\'' + resultId + '\')">CW</button></div>';
+                        html += '<div class="col-auto"><button class="btn btn-sm btn-outline-secondary" onclick="sendPartAction(\'' + part.id + '\',\'rotateContinuous\',{ direction: \'ccw\', speed: 50 },\'' + resultId + '\')">CCW</button></div>';
+                        html += '<div class="col-auto"><button class="btn btn-sm btn-outline-danger" onclick="sendPartAction(\'' + part.id + '\',\'stop\',{},\'' + resultId + '\')">Stop</button></div>';
+                        html += '</div>';
+                        break;
+                    case 'motor':
+                        html += '<div class="row g-2 align-items-center" data-testid="motor-controls">';
+                        html += '<div class="col-auto">Dir:</div>';
+                        html += '<div class="col-auto"><select id="motor-dir-' + part.id + '" class="form-select form-select-sm"><option value="cw">CW</option><option value="ccw">CCW</option></select></div>';
+                        html += '<div class="col-auto">Speed:</div>';
+                        html += '<div class="col-auto"><input id="motor-speed-' + part.id + '" type="number" class="form-control form-control-sm" style="width:80px" value="50" min="0" max="100"/></div>';
+                        html += '<div class="col-auto">ms:</div>';
+                        html += '<div class="col-auto"><input id="motor-dur-' + part.id + '" type="number" class="form-control form-control-sm" style="width:90px" value="500"/></div>';
+                        html += '<div class="col-auto"><button class="btn btn-sm btn-primary" onclick="sendPartAction(\'' + part.id + '\',\'control\',{ direction: document.getElementById(\'motor-dir-' + part.id + '\').value, speed: parseInt(document.getElementById(\'motor-speed-' + part.id + '\').value,10)||0, duration: parseInt(document.getElementById(\'motor-dur-' + part.id + '\').value,10)||0 },\'' + resultId + '\')">Run</button></div>';
+                        html += '</div>';
+                        break;
+                    case 'linear_actuator':
+                        html += '<div class="row g-2 align-items-center" data-testid="actuator-controls">';
+                        html += '<div class="col-auto">Speed:</div>';
+                        html += '<div class="col-auto"><input id="act-speed-' + part.id + '" type="number" class="form-control form-control-sm" style="width:80px" value="50" min="0" max="100"/></div>';
+                        html += '<div class="col-auto">Dist:</div>';
+                        html += '<div class="col-auto"><input id="act-dist-' + part.id + '" type="number" class="form-control form-control-sm" style="width:80px" value="50"/></div>';
+                        html += '<div class="col-auto"><button class="btn btn-sm btn-primary" onclick="sendPartAction(\'' + part.id + '\',\'extend\',{ speed: parseInt(document.getElementById(\'act-speed-' + part.id + '\').value,10)||0, distance: parseInt(document.getElementById(\'act-dist-' + part.id + '\').value,10)||0 },\'' + resultId + '\')">Extend</button></div>';
+                        html += '<div class="col-auto"><button class="btn btn-sm btn-outline-secondary" onclick="sendPartAction(\'' + part.id + '\',\'retract\',{ speed: parseInt(document.getElementById(\'act-speed-' + part.id + '\').value,10)||0, distance: parseInt(document.getElementById(\'act-dist-' + part.id + '\').value,10)||0 },\'' + resultId + '\')">Retract</button></div>';
+                        html += '<div class="col-auto"><button class="btn btn-sm btn-outline-danger" onclick="sendPartAction(\'' + part.id + '\',\'stop\',{},\'' + resultId + '\')">Stop</button></div>';
+                        html += '</div>';
+                        break;
+                    case 'light':
+                        html += '<div class="btn-group btn-group-sm" role="group" data-testid="light-controls">';
+                        html += '<button class="btn btn-success" onclick="sendPartAction(\'' + part.id + '\',\'turnOn\',{},\'' + resultId + '\')">On</button>';
+                        html += '<button class="btn btn-secondary" onclick="sendPartAction(\'' + part.id + '\',\'turnOff\',{},\'' + resultId + '\')">Off</button>';
+                        html += '<button class="btn btn-outline-primary" onclick="sendPartAction(\'' + part.id + '\',\'toggle\',{},\'' + resultId + '\')">Toggle</button>';
+                        html += '</div>';
+                        break;
+                    case 'led':
+                        html += '<div class="row g-2 align-items-center" data-testid="led-controls">';
+                        html += '<div class="col-auto">Brightness:</div>';
+                        html += '<div class="col-auto"><input id="led-bright-' + part.id + '" type="number" class="form-control form-control-sm" style="width:80px" value="50" min="0" max="100"/></div>';
+                        html += '<div class="col-auto"><button class="btn btn-sm btn-primary" onclick="sendPartAction(\'' + part.id + '\',\'setBrightness\',{ brightness: parseInt(document.getElementById(\'led-bright-' + part.id + '\').value,10)||0 },\'' + resultId + '\')">Set</button></div>';
+                        html += '<div class="col-auto"><button class="btn btn-sm btn-outline-secondary" onclick="sendPartAction(\'' + part.id + '\',\'blink\',{ brightness: 100, cycles: 2 },\'' + resultId + '\')">Blink</button></div>';
+                        html += '</div>';
+                        break;
+                    case 'sensor':
+                        html += '<div class="btn-group btn-group-sm" role="group" data-testid="sensor-controls">';
+                        html += '<button class="btn btn-primary" onclick="sendPartAction(\'' + part.id + '\',\'read\',{},\'' + resultId + '\')">Read</button>';
+                        html += '<button class="btn btn-outline-secondary" onclick="startLivePoll(\'' + part.id + '\',\'read\',\'' + resultId + '\')">Start 5s Poll</button>';
+                        html += '</div>';
+                        break;
+                    case 'motion_sensor':
+                        html += '<div class="btn-group btn-group-sm" role="group" data-testid="motion-controls">';
+                        html += '<button class="btn btn-primary" onclick="sendPartAction(\'' + part.id + '\',\'read\',{},\'' + resultId + '\')">Read</button>';
+                        html += '<button class="btn btn-outline-secondary" onclick="startLivePoll(\'' + part.id + '\',\'read\',\'' + resultId + '\')">Start 5s Poll</button>';
+                        html += '</div>';
+                        break;
+                    case 'microphone':
+                        html += '<div class="btn-group btn-group-sm" data-testid="mic-controls">';
+                        html += '<button class="btn btn-primary" onclick="sendPartAction(\'' + part.id + '\',\'getLevel\',{},\'' + resultId + '\')">Get Level</button>';
+                        html += '</div>';
+                        break;
+                    case 'speaker':
+                        html += '<div class="btn-group btn-group-sm" data-testid="speaker-controls">';
+                        html += '<button class="btn btn-secondary" onclick="sendPartAction(\'' + part.id + '\',\'stop\',{},\'' + resultId + '\')">Stop</button>';
+                        html += '</div>';
+                        break;
+                    case 'webcam':
+                        html += '<div class="btn-group btn-group-sm" data-testid="webcam-controls">';
+                        html += '<button class="btn btn-primary" onclick="sendPartAction(\'' + part.id + '\',\'capture\',{ resolution: \'640x480\' },\'' + resultId + '\')">Capture</button>';
+                        html += '</div>';
+                        break;
+                    case 'head_tracking':
+                        html += '<div class="btn-group btn-group-sm" data-testid="ht-controls">';
+                        html += '<button class="btn btn-primary" onclick="sendPartAction(\'' + part.id + '\',\'getPosition\',{},\'' + resultId + '\')">Get Position</button>';
+                        html += '</div>';
+                        break;
+                    default:
+                        html += '<div class="text-muted">No controls available</div>';
+                }
+                container.innerHTML = html;
+            }
+
+            function sendPartAction(partId, action, params, resultId, silent) {
+                var payload = { action: action, params: params || {} };
+                var resultEl = document.getElementById(resultId);
+                fetch('/setup/parts/api/parts/' + partId + '/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                })
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        if (resultEl) {
+                            var txt = (data && data.message) ? data.message : JSON.stringify(data);
+                            resultEl.textContent = txt;
+                        }
+                        if (!silent) {
+                            if (data && data.success) showAlert('success', data.message || 'Action succeeded');
+                            else showAlert('danger', (data && (data.error || data.message)) || 'Action failed');
+                        }
+                    })
+                    .catch(function (err) {
+                        if (resultEl) resultEl.textContent = 'Error: ' + err.message;
+                        if (!silent) showAlert('danger', 'Error: ' + err.message);
+                    });
+            }
+
+            function startLivePoll(partId, action, resultId) {
+                var total = 5000, interval = 1000, elapsed = 0;
+                var handle = setInterval(function () {
+                    sendPartAction(partId, action, {}, resultId, true);
+                    elapsed += interval;
+                    if (elapsed >= total) clearInterval(handle);
+                }, interval);
+            }
+
 
             function editPart(partId) {
                 // TODO: Implement edit functionality
