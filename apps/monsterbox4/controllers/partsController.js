@@ -262,11 +262,14 @@ export const deletePart = async (req, res) => {
 
 /**
  * Test part functionality
+ * Accepts either:
+ *  - { action, params } (preferred)
+ *  - { testParams } for backward compatibility
  */
 export const testPart = async (req, res) => {
     try {
         const { id } = req.params;
-        const { testParams } = req.body;
+        const { action, params, testParams } = req.body || {};
 
         const parts = await loadParts();
         const part = parts.find(p => p.id === id);
@@ -278,8 +281,48 @@ export const testPart = async (req, res) => {
             });
         }
 
-        // Get available actions for this part type
-        const availableActions = hardwareService.getAvailableActions(part.type);
+        // Determine available actions and defaults per type
+        const availableActions = hardwareService.getAvailableActions(part.type) || [];
+        const DEFAULT_TEST_ACTIONS = {
+            motor: 'control',
+            linear_actuator: 'extend',
+            light: 'toggle',
+            led: 'setBrightness',
+            servo: 'moveToAngle',
+            sensor: 'read',
+            motion_sensor: 'read',
+            webcam: 'capture',
+            microphone: 'getLevel',
+            speaker: 'stop',
+            head_tracking: 'getPosition'
+        };
+
+        function getDefaultParams(partType) {
+            switch (partType) {
+                case 'motor':
+                    return { direction: 'cw', speed: 50, duration: 1000 };
+                case 'linear_actuator':
+                    return { speed: 50, distance: 50 };
+                case 'led':
+                    return { brightness: 50 };
+                case 'servo':
+                    return { angleDeg: 15 };
+                case 'sensor':
+                case 'motion_sensor':
+                    return {};
+                case 'webcam':
+                    return { resolution: '640x480' };
+                case 'microphone':
+                    return {};
+                case 'speaker':
+                    return { filename: 'sample.wav', volume: 50 };
+                case 'head_tracking':
+                    return {};
+                case 'light':
+                default:
+                    return {};
+            }
+        }
 
         if (availableActions.length === 0) {
             return res.json({
@@ -295,25 +338,36 @@ export const testPart = async (req, res) => {
             });
         }
 
-        // Use the first available action as a basic test
-        const testAction = availableActions[0];
-        const actionParams = testParams || {};
+        // Choose action: explicit > default per type
+        const chosenAction = action || DEFAULT_TEST_ACTIONS[part.type] || availableActions[0];
 
-        console.log(`🧪 Testing ${part.type} part: ${part.name} with action: ${testAction}`);
+        // Validate action
+        if (!availableActions.includes(chosenAction)) {
+            return res.status(400).json({
+                success: false,
+                error: `Action '${chosenAction}' not supported for part type: ${part.type}`,
+                availableActions
+            });
+        }
+
+        // Choose params: explicit > legacy testParams > sensible defaults per type
+        const actionParams = params || testParams || getDefaultParams(part.type);
+
+        console.log(`🧪 Testing ${part.type} part: ${part.name} with action: ${chosenAction}`);
 
         // Perform hardware test
-        const testResult = await hardwareService.controlPart(id, testAction, actionParams);
+        const testResult = await hardwareService.controlPart(id, chosenAction, actionParams);
 
         res.json({
-            success: testResult.success,
+            success: !!testResult.success,
             message: testResult.success ?
-                `✅ Test completed for ${part.name}: ${testResult.message}` :
-                `❌ Test failed for ${part.name}: ${testResult.error}`,
+                `✅ Test completed for ${part.name}: ${testResult.message || chosenAction}` :
+                `❌ Test failed for ${part.name}: ${testResult.error || 'Unknown error'}`,
             testResult: {
                 partId: id,
                 partName: part.name,
                 partType: part.type,
-                action: testAction,
+                action: chosenAction,
                 testParams: actionParams,
                 result: testResult.success ? 'HARDWARE_SUCCESS' : 'HARDWARE_ERROR',
                 details: testResult,

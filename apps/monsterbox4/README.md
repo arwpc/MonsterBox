@@ -302,7 +302,87 @@ npm run test:ui-headed
 npm run test:all
 ```
 
-## 🔄 Migration from Legacy MonsterBox
+## � Hardware Part Testing (Per‑Type)
+
+MonsterBox 4.0 provides CRUD for Parts and a unified test endpoint for exercising hardware functionality per part type.
+
+- Endpoint: `POST /setup/parts/api/parts/:id/test`
+- Pass an explicit `action` and optional `params` for per‑type testing; if omitted, a sensible default action is chosen
+- Actions are routed through the Hardware Service and, where available, call Python wrappers for real hardware
+
+Example: test a servo by moving to a small angle
+
+````bash
+curl -s -X POST http://localhost:3000/setup/parts/api/parts/19/test \
+  -H 'Content-Type: application/json' \
+  -d '{"action":"moveToAngle","params":{"angleDeg":15}}' | jq
+````
+
+Example: test an LED by setting brightness
+
+````bash
+curl -s -X POST http://localhost:3000/setup/parts/api/parts/7/test \
+  -H 'Content-Type: application/json' \
+  -d '{"action":"setBrightness","params":{"brightness":50}}' | jq
+````
+
+Current controller coverage (apps/monsterbox4/services/hardwareService):
+- servo: real hardware via Python wrappers (exec.js → python_wrappers/servo_cli.py)
+- pca9685: interface available; currently simulated (can be wired to hardware)
+- motor, linear_actuator, light, led, sensor, motion_sensor, webcam, microphone, speaker, head_tracking: simulated responses today; ready for wiring to wrappers or the Hardware Abstraction Layer under `scripts/hardware/`
+
+Recommended UI behavior on Setup → Parts:
+- Each part row exposes a compact “Test” drawer with per‑type controls:
+  - Servo: angle slider; rotate cw/ccw; stop
+  - Motor: direction, speed, duration
+  - Linear actuator: extend/retract with speed/distance
+  - Light: on/off/toggle
+  - LED: brightness slider; blink; fade
+  - Sensor: on‑demand Read; Calibrate (min/max)
+  - Motion sensor: Read (motion detected true/false)
+  - Microphone: record N ms; get level
+  - Speaker: play file; set volume; stop
+  - Webcam: capture still; start/stop local stream
+  - Head tracking: start/stop; get position
+- POST the selected `action` + `params` to `/setup/parts/api/parts/:id/test` and show structured results
+- For Sensor/Motion Sensor “live read”, poll the test endpoint every 0.5–1s for a short window and display values
+
+Implementation note: You can reuse the existing Python Hardware Abstraction Layer in `scripts/hardware/…` by adding thin CLIs under `apps/monsterbox4/python_wrappers/` and calling them via `exec.runWrapper()` (similar to servo). This keeps the single‑node design (no websockets) while leveraging proven code.
+
+---
+
+## 🗺️ Remaining Work & Next Steps
+
+- Live Mode → Quick Poses execution
+  - Replace alert() with POST `/poses/:id/execute`; show spinner/status + error banner
+  - Add unit tests and a Playwright smoke test for a successful execution
+- Scenes MVP
+  - Implement scene model and CRUD, scene editor UI, and playback that sequences poses via poseEngine
+  - Add unit tests and a Playwright test to create + run a simple scene
+- Parts per‑type Test UI
+  - Add drawers/modals with controls per part type (see above), wire to `/setup/parts/api/parts/:id/test`
+  - Add polling UI for Sensor/Motion Sensor “read”
+  - Add unit tests for each action route and Playwright checks for one action per type
+- Hardware wiring beyond servo
+  - Implement Python wrappers (or call HAL) for motor, linear_actuator, light, led, sensor, motion_sensor, microphone, speaker, webcam, head_tracking
+  - Keep result shape consistent with current controller responses
+- Calibration
+  - Wire Calibration page to read/update `data/servo_calibrations.json` through an API with validation and tests
+- CI/CD
+  - GitHub Actions: install deps; run unit tests; install Playwright browsers (webkit; optionally firefox); run UI tests headless; upload Playwright report on failure
+- Dependency hygiene
+  - Review Dependabot alerts; apply safe upgrades; re‑run tests
+- Deployment
+  - Add systemd/PM2 service, healthcheck route, and smoke scripts
+  - Document ARM64 constraints (no Chromium), use WebKit/Firefox
+- Optional: Playwright on Firefox in CI and a UI consistency sweep for dark theme
+
+Constraints to honor
+- ES5 syntax in client scripts
+- Single‑node, no websockets required for the main app
+- ARM64 environment (no Chrome/Chromium)
+
+## �🔄 Migration from Legacy MonsterBox
 
 MonsterBox 4.0 is designed to run alongside the legacy system initially:
 

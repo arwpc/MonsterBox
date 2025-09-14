@@ -503,23 +503,56 @@
                 var part = parts.find(function (p) { return p.id === partId; });
                 if (!part) return;
 
+                var payload = getDefaultActionPayload(part);
+
                 fetch('/setup/parts/api/parts/' + partId + '/test', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ testParams: { action: 'basic_test' } })
+                    body: JSON.stringify(payload)
                 })
                     .then(function (response) { return response.json(); })
                     .then(function (data) {
-                        if (data.success) {
-                            showAlert('success', data.message);
+                        if (data && data.success) {
+                            showAlert('success', data.message || 'Test succeeded');
                         } else {
-                            showAlert('danger', 'Test failed: ' + data.error);
+                            var msg = (data && (data.error || data.message)) || 'Test failed';
+                            showAlert('danger', msg);
                         }
                     })
                     .catch(function (error) {
                         console.error('Error testing part:', error);
                         showAlert('danger', 'Error testing part');
                     });
+            }
+
+            function getDefaultActionPayload(part) {
+                var type = part.type;
+                switch (type) {
+                    case 'servo':
+                        return { action: 'moveToAngle', params: { angleDeg: 15 } };
+                    case 'motor':
+                        return { action: 'control', params: { direction: 'cw', speed: 50, duration: 1000 } };
+                    case 'linear_actuator':
+                        return { action: 'extend', params: { speed: 50, distance: 50 } };
+                    case 'light':
+                        return { action: 'toggle', params: {} };
+                    case 'led':
+                        return { action: 'setBrightness', params: { brightness: 50 } };
+                    case 'sensor':
+                        return { action: 'read', params: {} };
+                    case 'motion_sensor':
+                        return { action: 'read', params: {} };
+                    case 'microphone':
+                        return { action: 'getLevel', params: {} };
+                    case 'speaker':
+                        return { action: 'stop', params: {} };
+                    case 'webcam':
+                        return { action: 'capture', params: { resolution: '640x480' } };
+                    case 'head_tracking':
+                        return { action: 'getPosition', params: {} };
+                    default:
+                        return { action: '', params: {} };
+                }
             }
 
             function editPart(partId) {
