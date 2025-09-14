@@ -55,10 +55,16 @@ def pca9685_init(i2c_address=PCA9685_DEFAULT_ADDRESS):
         # Set sleep mode to allow prescale change
         bus.write_byte_data(i2c_address, PCA9685_MODE1, 0x10)
         
-        # Set prescale for 50Hz PWM frequency
-        prescale = 25  # For 50Hz on 25MHz oscillator
-        bus.write_byte_data(i2c_address, PCA9685_PRESCALE, prescale)
-        
+        # Set prescale for 50Hz PWM frequency (correct calc)
+        # prescale = round(osc_clock / (4096 * freq)) - 1  with osc_clock=25MHz
+        desired_freq_hz = 50
+        prescale_val = int(round(25000000.0 / (4096.0 * desired_freq_hz)) - 1)
+        if prescale_val < 3:
+            prescale_val = 3
+        if prescale_val > 255:
+            prescale_val = 255
+        bus.write_byte_data(i2c_address, PCA9685_PRESCALE, prescale_val)
+
         # Wake up
         mode1 = bus.read_byte_data(i2c_address, PCA9685_MODE1)
         mode1 = (mode1 & ~0x10) | 0x20  # Wake up and use internal oscillator

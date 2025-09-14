@@ -329,14 +329,6 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="col-md-6" id="editModelGroup" style="display:none;">
-                                <div class="mb-3">
-                                    <label for="editModelSelect" class="form-label">Model</label>
-                                    <select class="form-select" id="editModelSelect">
-                                        <option value="">Select Model (optional)</option>
-                                    </select>
-                                </div>
-                            </div>
                         </div>
 
                         <div class="row" id="editPinGroup" style="display: none;">
@@ -407,6 +399,13 @@
                                                 pattern="0x[0-9A-Fa-f]{2}">
                                             <div class="form-text">Default: 0x40</div>
                                         </div>
+                                        <div class="col-md-6">
+                                            <label for="editPca9685Frequency" class="form-label">PWM Frequency
+                                                (Hz)</label>
+                                            <input type="number" class="form-control" id="editPca9685Frequency"
+                                                value="50" min="40" max="1000">
+                                            <div class="form-text">Servo standard: 50Hz</div>
+                                        </div>
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label">Select PCA9685 Channel</label>
@@ -467,6 +466,16 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <div id="editTestBtns" class="btn-group" role="group" style="display:none;">
+                            <button type="button" class="btn btn-outline-secondary"
+                                onclick="testStopFromEdit()">Stop</button>
+                            <button type="button" class="btn btn-outline-success"
+                                onclick="testMoveAngleFromEdit(0)">0°</button>
+                            <button type="button" class="btn btn-outline-success"
+                                onclick="testMoveAngleFromEdit(90)">90°</button>
+                            <button type="button" class="btn btn-outline-success"
+                                onclick="testMoveAngleFromEdit(180)">180°</button>
+                        </div>
                         <button type="button" class="btn btn-primary" onclick="saveEditedPart()">Save
                             Changes</button>
                     </div>
@@ -940,8 +949,10 @@
                     if (controllerType === 'pca9685') {
                         var ch = document.getElementById('pca9685Channel').value;
                         var addrStr = document.getElementById('pca9685Address').value || '0x40';
+                        var freq = document.getElementById('pca9685Frequency').value;
                         cfg.channel = ch ? parseInt(ch, 10) : 0;
                         cfg.address = (addrStr && /^0x/i.test(addrStr)) ? parseInt(addrStr, 16) : (parseInt(addrStr, 10) || 0x40);
+                        if (freq) cfg.pca9685Frequency = parseInt(freq, 10);
                     }
                 }
 
@@ -1180,6 +1191,8 @@
                 var total = 5000, interval = 1000, elapsed = 0;
                 var handle = setInterval(function () {
                     sendPartAction(partId, action, {}, resultId, true);
+
+
                     elapsed += interval;
                     if (elapsed >= total) clearInterval(handle);
                 }, interval);
@@ -1197,6 +1210,8 @@
                 var pinGroup = document.getElementById('editPinGroup');
                 var editActuatorPinGroup = document.getElementById('editActuatorPinGroup');
                 var editActuatorLimitsGroup = document.getElementById('editActuatorLimitsGroup');
+                var testBtns = document.getElementById('editTestBtns');
+                if (testBtns) testBtns.style.display = (part.type === 'servo') ? '' : 'none';
 
                 if (part.type === 'linear_actuator') {
                     // Show linear actuator specific fields
@@ -1207,6 +1222,8 @@
                     document.getElementById('editPwmPin').value = part.pwmPin != null ? part.pwmPin : '';
                     document.getElementById('editMaxExtension').value = part.maxExtension != null ? part.maxExtension : 15000;
                     document.getElementById('editMaxRetraction').value = part.maxRetraction != null ? part.maxRetraction : 15000;
+
+
                 } else if (partTypes[part.type] && partTypes[part.type].requiresPin) {
                     // Show regular pin field for other parts
                     pinGroup.style.display = '';
@@ -1247,6 +1264,7 @@
                             renderEditPCA9685Channels();
                             var addr = (typeof cfg.address === 'number') ? '0x' + cfg.address.toString(16) : (cfg.address || '0x40');
                             document.getElementById('editPca9685Address').value = addr;
+                            document.getElementById('editPca9685Frequency').value = (cfg.pca9685Frequency != null ? cfg.pca9685Frequency : 50);
                             var ch = (typeof cfg.channel === 'number') ? cfg.channel : 0;
                             selectEditPCA9685Channel(ch);
                         } else {
@@ -1314,6 +1332,69 @@
                 // Bootstrap will handle showing the modal via data-bs-toggle
             }
 
+            function testMoveFromEdit() {
+                try {
+                    var partId = document.getElementById('editPartId').value;
+                    if (!partId) return;
+                    var part = parts.find(function (p) { return p.id === partId; });
+                    if (!part) return;
+                    var stSel = document.getElementById('editServoType');
+                    var st = stSel && stSel.value ? stSel.value : ((part.config && part.config.servoType) || 'standard');
+                    st = String(st || '').toLowerCase();
+                    if (part.type !== 'servo') {
+                        showAlert('warning', 'Test Move is only available for servo parts');
+                        return;
+                    }
+                    if (st === 'continuous') {
+                        // Short gentle CW spin then auto-stop by hardware logic
+                        sendPartAction(partId, 'rotateContinuous', { direction: 'cw', speed: 25, duration: 800 }, null);
+                    } else {
+                        // Positional or standard: move to 90 deg
+                        sendPartAction(partId, 'moveToAngle', { angleDeg: 90 }, null);
+
+
+                    }
+                } catch (e) {
+                    console.error('testMoveFromEdit error:', e);
+                    showAlert('danger', 'Error issuing test move: ' + e.message);
+                }
+            }
+            function testMoveAngleFromEdit(angle) {
+                try {
+                    var partId = document.getElementById('editPartId').value;
+                    if (!partId) return;
+                    var part = parts.find(function (p) { return p.id === partId; });
+                    if (!part) return;
+                    if (part.type !== 'servo') { showAlert('warning', 'Servo-only test'); return; }
+                    var stSel = document.getElementById('editServoType');
+                    var st = stSel && stSel.value ? stSel.value : ((part.config && part.config.servoType) || 'standard');
+                    st = String(st || '').toLowerCase();
+                    if (st === 'continuous') {
+                        if (angle === 0) { sendPartAction(partId, 'stop', {}, null); }
+                        else if (angle === 90) { sendPartAction(partId, 'rotateContinuous', { direction: 'cw', speed: 35, duration: 800 }, null); }
+                        else if (angle === 180) { sendPartAction(partId, 'rotateContinuous', { direction: 'ccw', speed: 35, duration: 800 }, null); }
+                        else { sendPartAction(partId, 'stop', {}, null); }
+                    } else {
+                        sendPartAction(partId, 'moveToAngle', { angleDeg: angle }, null);
+                    }
+                } catch (e) {
+                    console.error('testMoveAngleFromEdit error:', e);
+                }
+            }
+
+            function testStopFromEdit() {
+                try {
+                    var partId = document.getElementById('editPartId').value;
+                    if (!partId) return;
+                    var part = parts.find(function (p) { return p.id === partId; });
+                    if (!part) return;
+                    sendPartAction(partId, 'stop', {}, null);
+                } catch (e) {
+                    console.error('testStopFromEdit error:', e);
+                }
+            }
+
+
             function saveEditedPart() {
                 var id = document.getElementById('editPartId').value;
                 var name = document.getElementById('editPartName').value.trim();
@@ -1347,6 +1428,8 @@
                 catch (e) { showAlert('danger', 'Config JSON invalid: ' + e.message); return; }
                 // Merge selected model into config
                 var editModelSel = document.getElementById('editModelSelect');
+
+
                 if (editModelSel && editModelSel.value) { config.modelId = editModelSel.value; }
 
                 // Merge servo-specific fields from edit controls
@@ -1359,8 +1442,10 @@
                         if (ct === 'pca9685') {
                             var addrStr = document.getElementById('editPca9685Address').value || '0x40';
                             var chVal = document.getElementById('editPca9685Channel').value;
+                            var freqVal = document.getElementById('editPca9685Frequency').value;
                             config.address = (/^0x/i.test(addrStr)) ? parseInt(addrStr, 16) : (parseInt(addrStr, 10) || 0x40);
                             config.channel = chVal ? parseInt(chVal, 10) : (typeof config.channel === 'number' ? config.channel : 0);
+                            if (freqVal) config.pca9685Frequency = parseInt(freqVal, 10);
                         }
                     } catch (e) { /* ignore */ }
                 }
@@ -1502,6 +1587,53 @@
                         }
                     })
                     .catch(function (err) { showAlert('danger', 'Error: ' + err.message); });
+            }
+
+
+            // Hoisted to global scope so Edit modal can use these handlers
+            function onEditControllerTypeChange() {
+                var ct = document.getElementById('editControllerType').value;
+                var grp = document.getElementById('editPca9685Group');
+                if (ct === 'pca9685') {
+                    if (grp) grp.style.display = 'block';
+                    renderEditPCA9685Channels();
+                } else {
+                    if (grp) grp.style.display = 'none';
+                }
+            }
+
+            function renderEditPCA9685Channels() {
+                var container = document.getElementById('editPca9685Channels');
+                if (!container) return;
+                var html = '<div class="pca9685-board-layout">';
+                html += '<div class="text-center mb-2"><strong>PCA9685 16-Channel PWM Driver</strong></div>';
+                html += '<div class="text-center mb-2 text-muted small">Click a channel to select it</div>';
+                html += '<div class="row g-1">';
+                for (var i = 0; i < 16; i++) {
+                    if (i % 4 === 0) html += '<div class="col-3">';
+                    html += '<button type="button" class="btn btn-outline-secondary btn-sm w-100 mb-1 edit-pca9685-channel" ' +
+                        'onclick="selectEditPCA9685Channel(' + i + ')" id="edit-channel-' + i + '">Ch ' + i + '</button>';
+                    if ((i + 1) % 4 === 0) html += '</div>';
+                }
+                html += '</div></div>';
+                container.innerHTML = html;
+            }
+
+            function selectEditPCA9685Channel(ch) {
+                var btns = document.querySelectorAll('.edit-pca9685-channel');
+                if (btns && btns.forEach) {
+                    btns.forEach(function (btn) {
+                        btn.classList.remove('btn-primary');
+                        btn.classList.add('btn-outline-secondary');
+                    });
+                }
+                var btn = document.getElementById('edit-channel-' + ch);
+                if (btn) {
+                    btn.classList.remove('btn-outline-secondary');
+                    btn.classList.add('btn-primary');
+                }
+                var hidden = document.getElementById('editPca9685Channel');
+                if (hidden) hidden.value = ch;
             }
 
         </script>

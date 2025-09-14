@@ -31,5 +31,56 @@
     "pwmPin": 12,
     "maxExtension": 15000,
     "maxRetraction": 15000
+  },
+  {
+    "id": "4",
+    "name": "Head on a Swivel",
+    "type": "servo",
+    "pin": null,
+    "description": "Type: Servo Servo Type: choose “feedback” (for angles) or “continuous” (for rotation) Controller Type: PCA9685 PCA9685: Address=0x40, Frequency=50, Channel=0 (click Ch 0) Model: GoBilda 2000 Series Dual‑Mode (New Spec) Description: optional Pin: leave empty",
+    "config": {
+      "modelId": "3",
+      "servoType": "continuous",
+      "controllerType": "pca9685",
+      "channel": 0,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-14T22:48:54.499Z",
+    "enabled": true,
+    "updated": "2025-09-14T23:07:31.859Z"
+  },
+  {
+    "id": "5",
+    "name": "Elbow of Orlok",
+    "type": "servo",
+    "pin": 18,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "modelId": "2",
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "channel": 4,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-14T23:11:04.444Z",
+    "enabled": true
+  },
+  {
+    "id": "6",
+    "name": "Forearm of Orlok",
+    "type": "servo",
+    "pin": 18,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "channel": 5,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-14T23:11:56.004Z",
+    "enabled": true
   }
 ]

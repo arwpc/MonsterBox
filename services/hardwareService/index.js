@@ -369,19 +369,25 @@ const HARDWARE_CONTROLLERS = {
     servo: {
         async moveToAngle({ partId, pin, channel, angleDeg, controllerType = 'gpio', address, servoType = 'standard' }) {
             try {
+                // Normalize servoType to robustly route commands
+                const st = String(servoType || '').toLowerCase();
+                const normType = (st === 'cont' || st === 'cr') ? 'continuous'
+                    : (st === 'positional' || st === 'position' || st === 'multi' || st === 'multi_turn' || st === 'multi-turn') ? 'feedback'
+                        : (st || 'standard');
+
                 if (controllerType === 'pca9685') {
                     let args, commandType;
 
-                    // Route to appropriate function based on servo type
-                    if (servoType === 'continuous') {
+                    // Route to appropriate function based on normalized servo type
+                    if (normType === 'continuous') {
                         // For continuous servos, convert angle to direction/speed for rotation
                         // This is a fallback - continuous servos should use rotateContinuous action
                         const direction = angleDeg > 0 ? 'cw' : 'ccw';
                         const speed = Math.min(100, Math.abs(angleDeg));
                         args = ['rotate_continuous_pca', String(channel), direction, String(speed), '1000'];
                         commandType = 'continuous rotation';
-                    } else if (servoType === 'feedback' || servoType === 'positional') {
-                        // Use multi-turn function for positional servos (supports 0-1800°)
+                    } else if (normType === 'feedback') {
+                        // Use multi-turn function for positional/feedback servos (supports 0-1800°)
                         args = ['move_to_pca_multi', String(channel), String(angleDeg)];
                         commandType = 'multi-turn positioning';
                     } else {
@@ -391,6 +397,11 @@ const HARDWARE_CONTROLLERS = {
                     }
 
                     if (address != null) args.push(String(address));
+
+                    // Helpful debug
+                    console.log(`🦷 Servo route: type=${servoType} (norm=${normType}), ctl=pca9685, ch=${channel}, addr=${address != null ? address : '0x40'}, angle=${angleDeg}`);
+                    console.log(`🧭 Python call => servo_cli.py ${args.join(' ')}`);
+
                     const result = await runWrapper('servo_cli.py', args);
                     const success = typeof result === 'string' && result.includes('success');
                     return {
@@ -398,7 +409,7 @@ const HARDWARE_CONTROLLERS = {
                         partType: 'servo',
                         channel,
                         angleDeg,
-                        servoType,
+                        servoType: normType,
                         controllerType: 'pca9685',
                         rawOutput: result,
                         message: success ? `PCA9685 ch${channel} ${commandType} to ${angleDeg}°` : `Servo command failed: ${result}`

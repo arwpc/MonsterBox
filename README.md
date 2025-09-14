@@ -77,6 +77,52 @@ Linear actuators require specific configuration for safe operation:
 ```
 
 
+
+## 🧭 Servo (GoBilda 2000 Dual‑Mode) Quick Setup & Testing
+
+This app includes a unified GoBilda model that supports both continuous and positional (multi‑turn) modes.
+
+- Model: GoBilda 2000 Series Dual‑Mode (New Spec) — id "3"
+- Defaults: controllerType=pca9685, neutralPulse=1500, continuous 900–2100µs, positional 500–2500µs mapping to 0–1800°
+
+### Configure the Head Servo (Orlok)
+1) Setup → Parts → Create → type=servo
+2) Select Model: "GoBilda 2000 Series Dual‑Mode (New Spec)"
+3) Controller: PCA9685
+   - I2C Address: 0x40
+   - Channel: 0
+   - PWM Frequency: 50 Hz
+4) Choose servoType based on how you want to test/use it:
+   - feedback → Move To Angle (0–1800°) via move_to_pca_multi
+   - continuous → Rotate CW/CCW/Stop via rotate_continuous_pca
+
+### Inline Testing (UI)
+- On the part card, click the ▶ Test button to open the drawer:
+  - Servo controls: Move, CW, CCW, Stop
+- In the Edit modal footer (pencil icon → Edit), use quick presets:
+  - Stop, 0°, 90°, 180°
+  - Note: When servoType=continuous, 0°=Stop, 90°=gentle CW, 180°=gentle CCW for ~0.8s
+
+### CLI Smoke (PCA9685 @ 0x40, ch 0)
+````bash
+# Positional/multi‑turn (feedback):
+python3 python_wrappers/servo_cli.py move_to_pca_multi 0 90 0x40
+python3 python_wrappers/servo_cli.py move_to_pca_multi 0 450 0x40
+python3 python_wrappers/servo_cli.py move_to_pca_multi 0 900 0x40
+
+# Continuous rotation:
+python3 python_wrappers/servo_cli.py rotate_continuous_pca 0 cw 20 1000 0x40
+python3 python_wrappers/servo_cli.py rotate_continuous_pca 0 ccw 30 1000 0x40
+````
+
+### Routing Debug
+When you trigger a movement, the server logs the routed call, for example:
+- "🧭 Python call => servo_cli.py move_to_pca_multi 0 90 0x40"
+- "🧭 Python call => servo_cli.py rotate_continuous_pca 0 cw 20 1000 0x40"
+
+### About Positional Feedback
+The GoBilda dual‑mode servo internally closes the loop in positional mode (500–2500µs ↔ 0–1800°). If you want to observe actual position in real time (analog feedback pin), add an ADC (e.g., ADS1115/ADS1015) and we can expose a `readPosition` action. For now, scenes can rely on commanded angles with clamping and timeouts.
+
 ## 🧩 Setup Pages
 
 - Setup Hub: http://localhost:3000/setup

@@ -37,21 +37,22 @@
   },
   {
     "id": "3",
-    "name": "GoBilda Stingray 2 Servo",
+    "name": "GoBilda 2000 Series Dual-Mode (New Spec)",
     "manufacturer": "GoBilda",
     "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
+      "servoType": "continuous",
+      "controllerType": "pca9685",
       "neutralPulse": 1500,
-      "rotationRangeDeg": 900,
-      "servoType": "feedback",
-      "controllerType": "pca9685"
+      "minPulse": 900,
+      "maxPulse": 2100,
+      "positionalMinPulse": 500,
+      "positionalMaxPulse": 2500,
+      "rotationRangeDeg": 1800
     },
     "meta": {
-      "notes": "High power with extensive rotation, suitable for animatronics and robotics with multiple operation modes. Working configuration for Orlok head servo on PCA9685 channel 0.",
+      "notes": "New unified model for GoBilda 2000 series 5-turn dual-mode servo. Default mode: Continuous (900–2100µs active, 1500µs neutral, CW with increasing PWM). Positional/Feedback mode supported (500–2500µs maps to 0–1800°). Specs: 64g, 300:1, 25T spline, 4.8–7.4V, 0.17–0.25s/60°, 17.2–25.2 kg·cm, stall 2–3A, deadband 4µs, 5-turn max in positional mode.",
       "controlType": [
-        "PWM",
-        "Digital"
+        "PWM"
       ]
     }
   },
@@ -68,44 +69,6 @@
     },
     "meta": {
       "notes": "Continuous rotation micro servo. Use pulse width 700-1500µs for CW rotation (faster as pulse decreases), 1500µs to stop, and 1500-2300µs for CCW rotation (faster as pulse increases).",
-      "controlType": [
-        "PWM"
-      ]
-    }
-  },
-  {
-    "id": "5",
-    "name": "GoBilda 2000 Series 5-Turn Dual-Mode (Continuous)",
-    "manufacturer": "GoBilda",
-    "defaults": {
-      "minPulse": 900,
-      "maxPulse": 2100,
-      "neutralPulse": 1500,
-      "rotationRangeDeg": 360,
-      "servoType": "continuous",
-      "controllerType": "pca9685"
-    },
-    "meta": {
-      "notes": "2000-series dual-mode servo configured for Continuous operation. Active range 900-2100µs for motion control, 1500µs neutral. Clockwise rotation with increasing PWM signal. Defaults to PCA9685 controller.",
-      "controlType": [
-        "PWM"
-      ]
-    }
-  },
-  {
-    "id": "6",
-    "name": "GoBilda 2000 Series 5-Turn Dual-Mode (Positional)",
-    "manufacturer": "GoBilda",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutralPulse": 1500,
-      "rotationRangeDeg": 1800,
-      "servoType": "feedback",
-      "controllerType": "pca9685"
-    },
-    "meta": {
-      "notes": "2000-series dual-mode servo configured for Positional/Multi-turn operation. Full range 500-2500µs for 0-1800° (5 turns). PWM sets target position with feedback control. Defaults to PCA9685 controller.",
       "controlType": [
         "PWM"
       ]
