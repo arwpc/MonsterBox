@@ -37,7 +37,8 @@ router.get('/api/devices/probe', webcamController.probeDevices);
 router.get('/api/parts/:id/stream', webcamController.streamMJPEG);
 // WebRTC offer/answer (browser offer -> server answer)
 router.post('/api/parts/:id/webrtc/offer', express.json(), webcamController.webrtcOffer);
-
+// WebRTC health
+router.get('/api/webrtc/health', webcamController.webrtcHealth);
 
 // Webcam Models CRUD
 router.get('/api/models', webcamModelsController.getAllModels);

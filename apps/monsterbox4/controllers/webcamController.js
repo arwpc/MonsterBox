@@ -239,11 +239,18 @@ function _startFFmpegRaw(devicePath, width, height, fps) {
   const args = ['-hide_banner', '-loglevel', 'error', '-f', 'video4linux2', '-i', devicePath, '-vf', `scale=${width}:${height}`, '-pix_fmt', 'yuv420p', '-r', String(fps || 15), '-f', 'rawvideo', '-'];
   return spawn('ffmpeg', args, { stdio: ['ignore', 'pipe', 'pipe'] });
 }
+function _startFFmpegAudio(sampleRate, channels, alsaDevice) {
+  const rate = sampleRate || 48000;
+  const ch = channels || 1;
+  const dev = alsaDevice || 'default';
+  const args = ['-hide_banner', '-loglevel', 'error', '-f', 'alsa', '-i', dev, '-ac', String(ch), '-ar', String(rate), '-f', 's16le', '-'];
+  return spawn('ffmpeg', args, { stdio: ['ignore', 'pipe', 'pipe'] });
+}
 export const webrtcOffer = async (req, res) => {
   try {
     const wrtc = await _ensureWrtc();
     if (!wrtc) return res.status(501).json({ success: false, error: 'WebRTC server dependency (wrtc) not installed', install: 'cd apps/monsterbox4 && npm install wrtc' });
-    const { id } = req.params; const { sdp } = req.body || {}; if (!sdp) return res.status(400).json({ success: false, error: 'Missing SDP offer' });
+    const { id } = req.params; const { sdp, includeAudio } = req.body || {}; if (!sdp) return res.status(400).json({ success: false, error: 'Missing SDP offer' });
     const parts = await loadParts(); const part = parts.find(p => String(p.id) === String(id));
     if (!part) return res.status(404).json({ success: false, error: 'Part not found' });
     if (part.type !== 'webcam') return res.status(400).json({ success: false, error: 'Part is not a webcam' });
@@ -252,18 +259,77 @@ export const webrtcOffer = async (req, res) => {
     if (!devicePath) { var n = parseInt(deviceId, 10); if (!isNaN(n)) devicePath = '/dev/video' + String(n); }
     var auto = (String(req.query.auto || '').toLowerCase() === '1' || String(req.query.auto || '') === 'true');
     if (!devicePath || auto) { const autoPath = await chooseFirstWorkingDevice(1500); if (autoPath) devicePath = autoPath; else if (!devicePath) return res.status(404).json({ success: false, error: 'No working video device found' }); }
+
+    // Quick ffmpeg presence check
+    let ffmpegOk = true;
+    try { const v = spawn('ffmpeg', ['-version']); v.on('error', function () { ffmpegOk = false; }); } catch (e) { ffmpegOk = false; }
+
     const pc = new wrtc.RTCPeerConnection({});
-    const source = new wrtc.nonstandard.RTCVideoSource(); const track = source.createTrack(); pc.addTrack(track);
-    pc.onconnectionstatechange = function () { if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected' || pc.connectionState === 'closed') { try { track.stop(); } catch (_) { } const sess = _webrtcSessions.get(pc); if (sess && sess.proc) { try { sess.proc.kill('SIGTERM'); } catch (_) { } } _webrtcSessions.delete(pc); } };
-    await pc.setRemoteDescription({ type: 'offer', sdp }); const answer = await pc.createAnswer(); await pc.setLocalDescription(answer);
+
+    // Video track
+    const vSource = new wrtc.nonstandard.RTCVideoSource(); const vTrack = vSource.createTrack(); pc.addTrack(vTrack);
+
+    // Optional audio
+    let aProc = null; let aTrack = null; let aBuf = Buffer.alloc(0);
+    const wantAudio = (String(req.query.includeAudio || '') === '1' || String(req.query.includeAudio || '') === 'true' || !!includeAudio);
+    if (wantAudio) {
+      const aSource = new wrtc.nonstandard.RTCAudioSource();
+      aTrack = aSource.createTrack();
+      pc.addTrack(aTrack);
+      const sampleRate = 48000, channels = 1, bytesPerSample = 2;
+      aProc = _startFFmpegAudio(sampleRate, channels);
+      aProc.stdout.on('data', function (chunk) {
+        try {
+          aBuf = Buffer.concat([aBuf, chunk]);
+          const frameSamples = sampleRate / 100; // 10ms frames (480)
+          const frameBytes = frameSamples * channels * bytesPerSample;
+          while (aBuf.length >= frameBytes) {
+            const frame = aBuf.subarray(0, frameBytes); aBuf = aBuf.subarray(frameBytes);
+            const samples = new Int16Array(frame.buffer, frame.byteOffset, frameBytes / 2);
+            try { aSource.onData({ samples: samples, sampleRate: sampleRate, channelCount: channels, bitsPerSample: 16 }); } catch (_) { }
+          }
+        } catch (_) { }
+      });
+      aProc.on('close', function () { try { aTrack && aTrack.stop(); } catch (_) { } });
+    }
+
+    pc.onconnectionstatechange = function () {
+      if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected' || pc.connectionState === 'closed') {
+        try { vTrack.stop(); } catch (_) { }
+        try { aTrack && aTrack.stop(); } catch (_) { }
+        const sess = _webrtcSessions.get(pc); if (sess && sess.vProc) { try { sess.vProc.kill('SIGTERM'); } catch (_) { } }
+        if (aProc) {
+          try { aProc.kill('SIGTERM'); } catch (_) { }
+        }
+        _webrtcSessions.delete(pc);
+      }
+    };
+
+    await pc.setRemoteDescription({ type: 'offer', sdp });
+    const answer = await pc.createAnswer(); await pc.setLocalDescription(answer);
+
+    // Start video pump
     const width = 640, height = 480, fps = 15; const frameSize = Math.floor(width * height * 1.5);
-    const proc = _startFFmpegRaw(devicePath, width, height, fps); let buffer = Buffer.alloc(0);
-    proc.stdout.on('data', function (chunk) { buffer = Buffer.concat([buffer, chunk]); while (buffer.length >= frameSize) { const frameData = buffer.subarray(0, frameSize); buffer = buffer.subarray(frameSize); try { source.onFrame({ width: width, height: height, data: frameData }); } catch (_) { } } });
-    proc.stderr.on('data', function () { }); proc.on('close', function () { try { track.stop(); } catch (_) { } });
-    _webrtcSessions.set(pc, { proc, track });
-    res.json({ success: true, sdp: pc.localDescription.sdp });
+    const vProc = _startFFmpegRaw(devicePath, width, height, fps); let vBuf = Buffer.alloc(0);
+    vProc.stdout.on('data', function (chunk) { vBuf = Buffer.concat([vBuf, chunk]); while (vBuf.length >= frameSize) { const frameData = vBuf.subarray(0, frameSize); vBuf = vBuf.subarray(frameSize); try { vSource.onFrame({ width: width, height: height, data: frameData }); } catch (_) { } } });
+    vProc.stderr.on('data', function (d) { /* keep quiet, UI will retry */ });
+    vProc.on('close', function () { try { vTrack.stop(); } catch (_) { } });
+    _webrtcSessions.set(pc, { vProc, vTrack, aProc, aTrack });
+
+    res.json({ success: true, sdp: pc.localDescription.sdp, ffmpeg: ffmpegOk ? 'ok' : 'missing' });
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 };
 
-export default { listControls, setControls, streamMJPEG, listDevices, probeDevices, webrtcOffer };
+export const webrtcHealth = async (req, res) => {
+  try {
+    const wrtc = await _ensureWrtc();
+    let ffmpegOk = true;
+    try { const v = spawn('ffmpeg', ['-version']); v.on('error', function () { ffmpegOk = false; }); } catch (e) { ffmpegOk = false; }
+    res.json({ success: true, wrtc: !!wrtc, ffmpeg: ffmpegOk });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+};
+
+export default { listControls, setControls, streamMJPEG, listDevices, probeDevices, webrtcOffer, webrtcHealth };
 

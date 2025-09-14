@@ -449,5 +449,17 @@
         "sound_id": "13"
       }
     ]
+  },
+  {
+    "id": 18,
+    "name": "Test Scene",
+    "steps": [],
+    "created": "2025-09-14T04:55:02.005Z"
+  },
+  {
+    "id": 19,
+    "name": "Test Scene",
+    "steps": [],
+    "created": "2025-09-14T04:56:03.713Z"
   }
 ]

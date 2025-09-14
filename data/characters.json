@@ -27,7 +27,8 @@
       "ai_characters": [],
       "default_character": null
     },
-    "elevenLabsAgentId": "orlok"
+    "elevenLabsAgentId": "orlok",
+    "name": "Orlok"
   },
   {
     "id": 2,

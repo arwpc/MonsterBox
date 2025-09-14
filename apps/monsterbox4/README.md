@@ -62,7 +62,103 @@ The application will be available at:
 - Models: http://localhost:3000/setup/models
 
 
-## 👥 Characters Management
+## Status Snapshot (Current)
+
+- Global stability: crash guards; tests pass reliably on CI-like environment
+- Models system: implemented across servo, led, linear_actuator, webcam with CRUD and push-defaults
+- Parts CRUD: end-to-end working with inline per-type tests (drawers present in UI)
+- Webcam:
+  - MJPEG live stream + device scan/probe + autodetect
+  - WebRTC (beta) with health check and optional audio pipeline
+  - Include Audio toggle in Setup → Webcam; server uses ALSA "default"
+- Live Mode: Quick Poses wired to POST /poses/:id/execute with spinner/status
+- Scenes: MVP implemented (create/list/delete/playback sequencing poses)
+- Orlok hardware smoke: servos/sensors/actuator/speaker verified previously; webcam stream via MJPEG with V4L2 camera; WebRTC requires `wrtc` installed on Pi
+
+
+## 📹 Webcam Streaming (MJPEG + WebRTC)
+
+This app provides two streaming paths you can use from Setup → Webcam:
+- MJPEG: simplest, widely compatible (<img> element)
+- WebRTC (beta): lower latency; requires `wrtc` server module
+
+### System dependencies (Raspberry Pi)
+
+```bash
+# Core tools for webcam and building wrtc
+sudo apt-get update
+sudo apt-get install -y ffmpeg v4l-utils build-essential python3 make g++ libnss3
+```
+
+### Node dependency for WebRTC (server)
+
+```bash
+cd apps/monsterbox4
+npm install wrtc
+```
+
+If `wrtc` is missing, the WebRTC endpoint returns 501 with an install hint.
+
+### UI usage (Setup → Webcam)
+
+1) Create a webcam Part (Setup → Parts → Create → type=webcam)
+   - Leave config empty to auto-detect, or set `config.devicePath` (e.g., "/dev/video0")
+2) Go to Setup → Webcam
+3) Click "Scan Devices" to see which /dev/videoN nodes are usable
+4) Select your webcam part, keep "Autodetect camera" checked, and:
+   - Click "Start Stream" for MJPEG
+   - Or click "Start WebRTC" for WebRTC (beta)
+
+Notes
+- MJPEG endpoint: `/setup/webcam/api/parts/:id/stream?auto=1`
+- Device APIs: `/setup/webcam/api/devices`, `/setup/webcam/api/devices/probe`
+- WebRTC offer endpoint (server answers): `POST /setup/webcam/api/parts/:id/webrtc/offer?auto=1`
+- WebRTC health: `GET /setup/webcam/api/webrtc/health` returns `{ success, wrtc, ffmpeg }`
+- Audio: check "Include audio" in UI or pass `includeAudio=1` (ALSA `default` device used)
+- Pi Camera Module via libcamera may not expose /dev/video0; a UVC USB webcam is recommended for MJPEG/V4L2. If you prefer libcamera-native streaming, we can add an alternate path.
+
+### Curl smoke checks
+
+```bash
+# List device nodes
+curl -s http://localhost:3000/setup/webcam/api/devices | jq
+
+# Probe each node with ffmpeg (✅ ok / ❌ fail + reason)
+
+## 🎬 Scenes (MVP)
+
+- UI: Scenes page at http://localhost:3000/scenes
+  - Create a scene by name
+  - List existing scenes
+  - Play a scene (sequences poses with optional delays)
+  - Delete a scene
+- Data is stored in `data/scenes.json` (path resolved via config `dataPath`)
+
+APIs:
+- `GET /scenes/api` → list scenes
+- `POST /scenes/api { name, steps: [] }` → create
+- `PUT /scenes/api/:id { name?, steps? }` → update
+- `DELETE /scenes/api/:id` → delete
+- `POST /scenes/api/:id/play` → play scene now (blocking until finished)
+
+Example create + play:
+````bash
+curl -s -X POST http://localhost:3000/scenes/api \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Quick Test","steps":[{"poseId":1,"delayMs":250}]}' | jq
+
+curl -s -X POST http://localhost:3000/scenes/api/1/play | jq
+````
+
+curl -s http://localhost:3000/setup/webcam/api/devices/probe | jq
+
+# Try MJPEG stream in browser
+http://localhost:3000/setup/webcam/api/parts/42/stream?auto=1
+```
+
+
+
+## �👥 Characters Management
 
 MonsterBox 4.0 lets you manage multiple characters and pick which one is active. The active character is used throughout the app for parts and poses.
 
@@ -320,6 +416,26 @@ npm run test:ui
 
 # Headed UI tests (visible browser)
 npm run test:ui-headed
+```
+
+### Overnight unattended prompt (copy/paste)
+
+````bash
+# Terminal 1: start the server
+cd apps/monsterbox4 && npm start
+
+# Terminal 2: verify health + run tests
+cd apps/monsterbox4
+# Quick WebRTC health
+curl -s http://localhost:3000/setup/webcam/api/webrtc/health | jq
+# Unit/integration tests (Mocha)
+npm run test:unit
+# API scenes tests (Mocha, optional if not included in unit set)
+npx mocha tests/scenes-api.test.js --timeout 15000
+# UI smoke tests (Playwright)
+npm run test:ui
+````
+npm run test:ui-headed
 
 ```
 
@@ -474,19 +590,14 @@ Implementation note: You can reuse the existing Python Hardware Abstraction Laye
 
 ## 🗺️ Remaining Work & Next Steps
 
-- Live Mode → Quick Poses execution
-  - Replace alert() with POST `/poses/:id/execute`; show spinner/status + error banner
-  - Add unit tests and a Playwright smoke test for a successful execution
-- Scenes MVP
-  - Implement scene model and CRUD, scene editor UI, and playback that sequences poses via poseEngine
-  - Add unit tests and a Playwright test to create + run a simple scene
-- Parts per‑type Test UI
-  - Add drawers/modals with controls per part type (see above), wire to `/setup/parts/api/parts/:id/test`
-  - Add polling UI for Sensor/Motion Sensor “read”
-  - Add unit tests for each action route and Playwright checks for one action per type
-- Hardware wiring beyond servo
-  - Implement Python wrappers (or call HAL) for motor, linear_actuator, light, led, sensor, motion_sensor, microphone, speaker, webcam, head_tracking
-  - Keep result shape consistent with current controller responses
+- WebRTC (beta)
+  - Add microphone device selector UI (ALSA hw:x,y) and pass to server
+  - Optional: expose bitrate/framerate controls
+  - Optional: libcamera-native path for Pi Camera Modules
+- Scenes
+  - Add step editor UI (add/remove steps, choose pose, per-step delay)
+  - Non-blocking background playback + Stop action
+  - Optional: loop/tempo controls and timeline preview
 - Calibration
   - Wire Calibration page to read/update `data/servo_calibrations.json` through an API with validation and tests
 - CI/CD
@@ -496,7 +607,6 @@ Implementation note: You can reuse the existing Python Hardware Abstraction Laye
 - Deployment
   - Add systemd/PM2 service, healthcheck route, and smoke scripts
   - Document ARM64 constraints (no Chromium), use WebKit/Firefox
-- Optional: Playwright on Firefox in CI and a UI consistency sweep for dark theme
 
 Constraints to honor
 - ES5 syntax in client scripts

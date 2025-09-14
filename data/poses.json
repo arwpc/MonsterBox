@@ -306,6 +306,81 @@
       "concurrent": false,
       "notes": "Generated from elbow template",
       "created": "2025-09-14T04:03:34.487Z"
+    },
+    {
+      "id": 18,
+      "name": "elbow - Half Bend",
+      "description": "Half Bend pose created from elbow template",
+      "parts": [
+        {
+          "partId": 30,
+          "type": "servo",
+          "target": {
+            "angleDeg": 45
+          }
+        }
+      ],
+      "category": "elbow",
+      "concurrent": false,
+      "notes": "Generated from elbow template",
+      "created": "2025-09-14T04:40:24.583Z"
+    },
+    {
+      "id": 19,
+      "name": "elbow - Half Bend",
+      "description": "Half Bend pose created from elbow template",
+      "parts": [
+        {
+          "partId": 30,
+          "type": "servo",
+          "target": {
+            "angleDeg": 45
+          }
+        }
+      ],
+      "category": "elbow",
+      "concurrent": false,
+      "notes": "Generated from elbow template",
+      "created": "2025-09-14T04:41:03.747Z"
+    },
+    {
+      "id": 20,
+      "name": "elbow - Half Bend",
+      "description": "Half Bend pose created from elbow template",
+      "parts": [
+        {
+          "partId": 30,
+          "type": "servo",
+          "target": {
+            "angleDeg": 45
+          }
+        }
+      ],
+      "category": "elbow",
+      "concurrent": false,
+      "notes": "Generated from elbow template",
+      "created": "2025-09-14T04:57:59.570Z"
+    },
+    {
+      "id": 21,
+      "name": "head - Look Forward",
+      "description": "Look Forward pose created from head template",
+      "parts": [
+        {
+          "partId": 29,
+          "type": "servo",
+          "target": {
+            "continuous": {
+              "direction": "stop",
+              "durationMs": 100
+            }
+          }
+        }
+      ],
+      "category": "head",
+      "concurrent": false,
+      "notes": "Generated from head template",
+      "created": "2025-09-14T14:28:45.927Z"
     }
   ],
   "templates": {
