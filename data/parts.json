@@ -82,5 +82,15 @@
     },
     "created": "2025-09-14T23:11:56.004Z",
     "enabled": true
+  },
+  {
+    "id": "7",
+    "name": "Orlok's Gaze",
+    "type": "webcam",
+    "pin": null,
+    "description": "video capture devices",
+    "config": {},
+    "created": "2025-09-14T23:14:12.881Z",
+    "enabled": true
   }
 ]

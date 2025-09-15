@@ -5,11 +5,7 @@
         "ms-vscode-remote.remote-ssh-edit",
         "ms-python.python",
         "ms-vscode.vscode-json",
-        "bradlc.vscode-tailwindcss",
-        "esbenp.prettier-vscode",
         "ms-vscode.live-server",
-        "ms-vscode.vscode-chrome-debug",
-        "formulahendry.auto-rename-tag",
-        "christian-kohler.path-intellisense"
+        "ms-vscode.vscode-chrome-debug"
     ]
 }

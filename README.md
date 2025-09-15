@@ -144,53 +144,47 @@ The GoBilda dual‑mode servo internally closes the loop in positional mode (500
 - Parts CRUD: end-to-end working with inline per-type tests (drawers present in UI)
 - Webcam:
   - MJPEG live stream + device scan/probe + autodetect
-  - WebRTC (beta) with health check and optional audio pipeline
-  - Include Audio toggle in Setup → Webcam; server uses ALSA "default"
+  - MJPEG-only streaming (WebRTC completely removed)
 - Live Mode: Quick Poses wired to POST /poses/:id/execute with spinner/status
 - Scenes: MVP implemented (create/list/delete/playback sequencing poses)
-- Orlok hardware smoke: servos/sensors/actuator/speaker verified previously; webcam stream via MJPEG with V4L2 camera; WebRTC requires `wrtc` installed on Pi
+- Orlok hardware smoke: servos/sensors/actuator/speaker verified previously; webcam stream via MJPEG with V4L2 camera
 
 
-## 📹 Webcam Streaming (MJPEG + WebRTC)
+## 📹 Webcam Streaming (MJPEG-only)
 
-This app provides two streaming paths you can use from Setup → Webcam:
-- MJPEG: simplest, widely compatible (<img> element)
-- WebRTC (beta): lower latency; requires `wrtc` server module
+MonsterBox 4.0 webcam uses MJPEG-only streaming for optimal performance and simplicity.
 
-### System dependencies (Raspberry Pi)
+### Raspberry Pi camera quick-check
 
 ```bash
-# Core tools for webcam and building wrtc
-sudo apt-get update
-sudo apt-get install -y ffmpeg v4l-utils build-essential python3 make g++ libnss3
+# Capture a single frame from /dev/video0
+ffmpeg -hide_banner -loglevel error -f video4linux2 -i /dev/video0 -frames:v 1 /tmp/test_frame.jpg
+
+# Verify the file exists and is a JPEG with size > 0 bytes
+file /tmp/test_frame.jpg
+ls -lh /tmp/test_frame.jpg
 ```
 
-### Node dependency for WebRTC (server)
+If /dev/video0 is busy, identify the process and stop it:
 
 ```bash
-cd apps/monsterbox4
-npm install wrtc
+lsof /dev/video0 || fuser -v /dev/video0
 ```
-
-If `wrtc` is missing, the WebRTC endpoint returns 501 with an install hint.
 
 ### UI usage (Setup → Webcam)
 
 1) Create a webcam Part (Setup → Parts → Create → type=webcam)
    - Leave config empty to auto-detect, or set `config.devicePath` (e.g., "/dev/video0")
 2) Go to Setup → Webcam
-3) Click "Scan Devices" to see which /dev/videoN nodes are usable
-4) Select your webcam part, keep "Autodetect camera" checked, and:
-   - Click "Start Stream" for MJPEG
-   - Or click "Start WebRTC" for WebRTC (beta)
+3) Click "Scan Devices" to probe /dev/videoN
+4) Select your webcam part, keep "Autodetect camera" checked, and click "Start Stream"
+   - The <img id="webcamStream"> becomes visible and should render frames
 
-Notes
-- MJPEG endpoint: `/setup/webcam/api/parts/:id/stream?auto=1`
-- Device APIs: `/setup/webcam/api/devices`, `/setup/webcam/api/devices/probe`
-- WebRTC offer endpoint (server answers): `POST /setup/webcam/api/parts/:id/webrtc/offer?auto=1`
-- WebRTC health: `GET /setup/webcam/api/webrtc/health` returns `{ success, wrtc, ffmpeg }`
-- Audio: check "Include audio" in UI or pass `includeAudio=1` (ALSA `default` device used)
-- Pi Camera Module via libcamera may not expose /dev/video0; a UVC USB webcam is recommended for MJPEG/V4L2. If you prefer libcamera-native streaming, we can add an alternate path.
+### API endpoints
+
+- List devices: `GET /setup/webcam/api/devices`
+- Probe devices: `GET /setup/webcam/api/devices/probe?timeoutMs=2000`
+- MJPEG stream: `GET /setup/webcam/api/parts/:id/stream?auto=1`
 
 ### Curl smoke checks
 
@@ -199,6 +193,34 @@ Notes
 curl -s http://localhost:3000/setup/webcam/api/devices | jq
 
 # Probe each node with ffmpeg (✅ ok / ❌ fail + reason)
+curl -s http://localhost:3000/setup/webcam/api/devices/probe | jq
+
+# Start MJPEG stream (expect multipart/x-mixed-replace and sustained bytes)
+curl -sD - http://localhost:3000/setup/webcam/api/parts/7/stream?auto=1 | head
+```
+
+### End-to-End Test on Raspberry Pi (Firefox headless)
+
+Requirements: 64-bit OS (arm64/aarch64). Playwright’s Firefox/WebKit are not available on 32-bit.
+
+```bash
+# Install Playwright (Firefox only)
+npm install -D @playwright/test
+npx playwright install firefox
+# Install missing system libs (may require sudo)
+sudo npx playwright install-deps firefox
+
+# Run only the webcam test (single worker recommended on Pi)
+npx playwright test --project=firefox test/e2e/webcam-mjpeg.spec.js --reporter=line --workers=1
+```
+
+The test navigates to /setup/webcam, selects the first webcam part, clicks Start Stream, and asserts that the <img> has naturalWidth/Height > 0.
+
+### Risks and gotchas
+- Only one process can hold /dev/video0. Stop other captures (kill by PID if needed).
+- If you’re on 32-bit OS, Playwright’s Firefox won’t install. Use arm64 OS.
+- If the stream request is 200/pending with incoming chunks but the image looks black, wait longer (20–30s) and ensure ffmpeg can open the device.
+- Client JS uses ES5 syntax; no sockets for parts; Bootstrap modals use data attributes only.
 
 ## 🎬 Scenes (MVP)
 
@@ -499,12 +521,12 @@ npm run test:ui-headed
 # Terminal 1: start the server
 cd apps/monsterbox4 && npm start
 
-# Terminal 2: verify health + run tests
+# Terminal 2: verify + run tests
 cd apps/monsterbox4
-# Quick WebRTC health
-curl -s http://localhost:3000/setup/webcam/api/webrtc/health | jq
 # Unit/integration tests (Mocha)
 npm run test:unit
+# Optional: quick MJPEG endpoint header check
+curl -sD - http://localhost:3000/setup/webcam/api/parts/7/stream?auto=1 | head
 # API scenes tests (Mocha, optional if not included in unit set)
 npx mocha tests/scenes-api.test.js --timeout 15000
 # UI smoke tests (Playwright)
@@ -665,10 +687,6 @@ Implementation note: You can reuse the existing Python Hardware Abstraction Laye
 
 ## 🗺️ Remaining Work & Next Steps
 
-- WebRTC (beta)
-  - Add microphone device selector UI (ALSA hw:x,y) and pass to server
-  - Optional: expose bitrate/framerate controls
-  - Optional: libcamera-native path for Pi Camera Modules
 - Scenes
   - Add step editor UI (add/remove steps, choose pose, per-step delay)
   - Non-blocking background playback + Stop action

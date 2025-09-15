@@ -6,7 +6,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
-  testDir: './tests/ui',
+  testDir: './test',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
@@ -16,21 +16,17 @@ export default defineConfig({
 
   use: {
     baseURL: 'http://localhost:3000',
+    headless: true,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
 
-  // ARM64 default: run WebKit by default. Firefox optional, Chromium disabled.
+  // Run Firefox only on the Pi (headless by default)
   projects: [
     {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
+      name: 'firefox',
+      use: { ...devices['Desktop Firefox'] },
     },
-    // Uncomment to enable locally if supported
-    // {
-    //   name: 'firefox',
-    //   use: { ...devices['Desktop Firefox'] },
-    // },
   ],
 
   webServer: {

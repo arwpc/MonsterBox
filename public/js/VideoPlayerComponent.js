@@ -1,6 +1,6 @@
 /**
  * Video Player Component for MonsterBox
- * Provides a complete video player interface with WebRTC streaming capabilities
+ * Provides a complete video player interface with MJPEG streaming capabilities
  */
 
 import StreamClient from './StreamClient.js';
@@ -12,19 +12,19 @@ class VideoPlayerComponent {
         this.autoStart = options.autoStart || false;
         this.showControls = options.showControls !== false;
         this.showStats = options.showStats || false;
-        
+
         // Components
         this.streamClient = null;
         this.videoElement = null;
         this.controlsElement = null;
         this.statsElement = null;
-        
+
         // State
         this.isPlaying = false;
         this.isFullscreen = false;
         this.volume = 1.0;
         this.muted = false;
-        
+
         // Initialize
         this.initialize();
     }
@@ -35,7 +35,7 @@ class VideoPlayerComponent {
     initialize() {
         this.createPlayerHTML();
         this.setupEventListeners();
-        
+
         if (this.characterId && this.autoStart) {
             this.startStream();
         }
@@ -70,12 +70,12 @@ class VideoPlayerComponent {
                 ${this.showStats ? this.createStatsHTML() : ''}
             </div>
         `;
-        
+
         // Get references
         this.videoElement = this.container.querySelector('.video-element');
         this.controlsElement = this.container.querySelector('.video-controls');
         this.statsElement = this.container.querySelector('.stats-panel');
-        
+
         // Apply styles
         this.applyStyles();
     }
@@ -323,7 +323,7 @@ class VideoPlayerComponent {
                 opacity: 0.7;
             }
         `;
-        
+
         document.head.appendChild(style);
     }
 
@@ -336,43 +336,43 @@ class VideoPlayerComponent {
         if (playPauseBtn) {
             playPauseBtn.addEventListener('click', () => this.togglePlayPause());
         }
-        
+
         // Stop button
         const stopBtn = this.container.querySelector('.stop-btn');
         if (stopBtn) {
             stopBtn.addEventListener('click', () => this.stopStream());
         }
-        
+
         // Volume controls
         const volumeBtn = this.container.querySelector('.volume-btn');
         const volumeSlider = this.container.querySelector('.volume-slider');
-        
+
         if (volumeBtn) {
             volumeBtn.addEventListener('click', () => this.toggleMute());
         }
-        
+
         if (volumeSlider) {
             volumeSlider.addEventListener('input', (e) => this.setVolume(e.target.value));
         }
-        
+
         // Fullscreen button
         const fullscreenBtn = this.container.querySelector('.fullscreen-btn');
         if (fullscreenBtn) {
             fullscreenBtn.addEventListener('click', () => this.toggleFullscreen());
         }
-        
+
         // Retry button
         const retryBtn = this.container.querySelector('.retry-button');
         if (retryBtn) {
             retryBtn.addEventListener('click', () => this.startStream());
         }
-        
+
         // Stats panel
         const statsClose = this.container.querySelector('.stats-close');
         if (statsClose) {
             statsClose.addEventListener('click', () => this.hideStats());
         }
-        
+
         // Quality button (toggle stats for now)
         const qualityBtn = this.container.querySelector('.quality-btn');
         if (qualityBtn) {
@@ -388,21 +388,21 @@ class VideoPlayerComponent {
             this.showError('No character ID specified');
             return false;
         }
-        
+
         this.showLoading(true);
         this.hideError();
-        
+
         // Create stream client if not exists
         if (!this.streamClient) {
             this.streamClient = new StreamClient({
                 characterId: this.characterId,
                 autoReconnect: true
             });
-            
+
             // Setup stream client event listeners
             this.setupStreamClientEvents();
         }
-        
+
         try {
             const success = await this.streamClient.connect(this.videoElement);
             if (success) {
@@ -426,7 +426,7 @@ class VideoPlayerComponent {
         if (this.streamClient) {
             this.streamClient.disconnect();
         }
-        
+
         this.isPlaying = false;
         this.updatePlayPauseButton();
         this.updateConnectionStatus('Disconnected', false);
@@ -452,25 +452,25 @@ class VideoPlayerComponent {
             this.updateConnectionStatus('Connected', true);
             this.showLoading(false);
         });
-        
+
         this.streamClient.on('disconnected', (data) => {
             console.log('Stream disconnected:', data);
             this.updateConnectionStatus('Disconnected', false);
             this.isPlaying = false;
             this.updatePlayPauseButton();
         });
-        
+
         this.streamClient.on('reconnecting', (data) => {
             console.log('Stream reconnecting:', data);
             this.updateConnectionStatus(`Reconnecting (${data.attempt}/${data.maxAttempts})`, false);
         });
-        
+
         this.streamClient.on('connectionFailed', (data) => {
             console.error('Stream connection failed:', data);
             this.showError('Connection failed: ' + data.error);
             this.updateConnectionStatus('Failed', false);
         });
-        
+
         this.streamClient.on('stats', (stats) => {
             this.updateStats(stats);
         });
@@ -482,7 +482,7 @@ class VideoPlayerComponent {
     updateConnectionStatus(text, connected) {
         const statusText = this.container.querySelector('.status-text');
         const statusIndicator = this.container.querySelector('.status-indicator');
-        
+
         if (statusText) statusText.textContent = text;
         if (statusIndicator) {
             statusIndicator.classList.toggle('connected', connected);
@@ -505,7 +505,7 @@ class VideoPlayerComponent {
     showError(message) {
         const errorElement = this.container.querySelector('.error-message');
         const errorText = this.container.querySelector('.error-text');
-        
+
         if (errorElement && errorText) {
             errorText.textContent = message;
             errorElement.style.display = 'block';
@@ -528,7 +528,7 @@ class VideoPlayerComponent {
     updatePlayPauseButton() {
         const playIcon = this.container.querySelector('.play-icon');
         const pauseIcon = this.container.querySelector('.pause-icon');
-        
+
         if (playIcon && pauseIcon) {
             playIcon.style.display = this.isPlaying ? 'none' : 'inline';
             pauseIcon.style.display = this.isPlaying ? 'inline' : 'none';
@@ -543,7 +543,7 @@ class VideoPlayerComponent {
         if (this.videoElement) {
             this.videoElement.muted = this.muted;
         }
-        
+
         const volumeBtn = this.container.querySelector('.volume-btn');
         if (volumeBtn) {
             volumeBtn.textContent = this.muted ? '🔇' : '🔊';
@@ -600,12 +600,12 @@ class VideoPlayerComponent {
      */
     updateStats(stats) {
         if (!this.statsElement) return;
-        
+
         const updateStat = (name, value) => {
             const element = this.statsElement.querySelector(`[data-stat="${name}"]`);
             if (element) element.textContent = value;
         };
-        
+
         updateStat('connection', stats.isConnected ? 'Connected' : 'Disconnected');
         updateStat('duration', this.formatDuration(stats.sessionDuration));
         updateStat('quality', stats.connectionType || 'MJPEG');
@@ -627,17 +627,17 @@ class VideoPlayerComponent {
      */
     setCharacter(characterId) {
         const wasPlaying = this.isPlaying;
-        
+
         if (wasPlaying) {
             this.stopStream();
         }
-        
+
         this.characterId = characterId;
-        
+
         if (this.streamClient) {
             this.streamClient.characterId = characterId;
         }
-        
+
         if (wasPlaying) {
             this.startStream();
         }
@@ -650,7 +650,7 @@ class VideoPlayerComponent {
         if (this.streamClient) {
             this.streamClient.disconnect();
         }
-        
+
         this.container.innerHTML = '';
     }
 }

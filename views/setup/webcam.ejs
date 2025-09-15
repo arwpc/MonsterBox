@@ -75,18 +75,6 @@
             <div id="noStream" class="text-secondary">Select a webcam and click Start Stream</div>
           </div>
         </div>
-        <div class="card">
-          <div class="card-header"><i class="bi bi-lightning"></i> WebRTC (beta)</div>
-          <div class="card-body">
-            <div class="form-check mb-2">
-              <input class="form-check-input" type="checkbox" id="includeAudio">
-              <label class="form-check-label" for="includeAudio">Include audio (beta)</label>
-            </div>
-            <div class="d-grid gap-2 mb-2"><button id="startWebRTC" class="btn btn-success">Start WebRTC</button></div>
-            <video id="webrtcVideo" autoplay playsinline controls style="width:100%; background:#000"></video>
-            <div id="webrtcStatus" class="small text-muted mt-2"></div>
-          </div>
-        </div>
       </div>
     </div>
   </main>
@@ -132,46 +120,6 @@
       }
       document.getElementById('startStream').addEventListener('click', start);
       document.getElementById('scanDevices').addEventListener('click', scan);
-      async function startWebRTC() {
-        var id = document.getElementById('webcamPart').value;
-        var status = document.getElementById('webrtcStatus');
-        var video = document.getElementById('webrtcVideo');
-        var includeAudio = document.getElementById('includeAudio').checked;
-        status.textContent = 'Starting WebRTC' + (includeAudio ? ' (with audio)...' : '...');
-        if (!id) { status.textContent = 'Select a webcam part first'; return; }
-        var tries = 0; var delay = 300;
-        async function attempt() {
-          tries++;
-          try {
-            var pc = new RTCPeerConnection({ iceServers: [] });
-            pc.ontrack = function (e) { if (e && e.streams && e.streams[0]) { video.srcObject = e.streams[0]; } };
-            var offer = await pc.createOffer({ offerToReceiveVideo: true, offerToReceiveAudio: includeAudio });
-            await pc.setLocalDescription(offer);
-            var resp = await fetch('/setup/webcam/api/parts/' + id + '/webrtc/offer?auto=1&includeAudio=' + (includeAudio ? '1' : '0'), {
-              method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sdp: offer.sdp, includeAudio: includeAudio })
-            });
-            if (resp.status === 501) {
-              var j = await resp.json().catch(function () { return {}; });
-              status.textContent = 'Server missing wrtc dependency. On the Pi run: npm install wrtc (in apps/monsterbox4)';
-              return;
-            }
-            var ans = await resp.json();
-            if (!ans || !ans.sdp) { throw new Error('bad server answer'); }
-            await pc.setRemoteDescription({ type: 'answer', sdp: ans.sdp });
-            status.textContent = 'WebRTC connected' + (includeAudio ? ' (audio on)' : '');
-          } catch (e) {
-            if (tries < 3) {
-              status.textContent = 'WebRTC failed (try ' + tries + '): ' + (e && e.message ? e.message : e) + '. Retrying...';
-              await new Promise(function (r) { setTimeout(r, delay); });
-              delay = delay * 2;
-              return attempt();
-            }
-            status.textContent = 'WebRTC error: ' + (e && e.message ? e.message : e);
-          }
-        }
-        return attempt();
-      }
-      document.getElementById('startWebRTC').addEventListener('click', function () { startWebRTC(); });
       loadWebcams();
     })();
   </script>

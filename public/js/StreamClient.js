@@ -1,16 +1,12 @@
 /**
- * WebRTC Stream Client for MonsterBox
- * Handles client-side WebRTC streaming with automatic recovery and stats monitoring
+ * MJPEG Stream Client for MonsterBox
+ * Handles client-side MJPEG streaming with automatic recovery and stats monitoring
  */
-
-// Import webrtc-adapter for cross-browser compatibility
-// Note: Using script tag instead of ES6 import for webrtc-adapter
-// The adapter will be available globally as 'adapter'
 
 class StreamClient extends EventEmitter {
     constructor(options = {}) {
         super();
-        
+
         // Configuration
         this.characterId = options.characterId;
         this.streamUrl = options.streamUrl;
@@ -18,20 +14,17 @@ class StreamClient extends EventEmitter {
         this.reconnectDelay = options.reconnectDelay || 3000;
         this.maxReconnectAttempts = options.maxReconnectAttempts || 10;
         this.statsInterval = options.statsInterval || 5000;
-        
+
         // State management
         this.isConnected = false;
         this.isConnecting = false;
         this.reconnectAttempts = 0;
         this.connectionId = null;
         this.startTime = null;
-        
-        // WebRTC components
-        this.peerConnection = null;
-        this.localStream = null;
-        this.remoteStream = null;
-        this.dataChannel = null;
-        
+
+        // MJPEG streaming components
+        this.streamImage = null;
+
         // Statistics
         this.stats = {
             bytesReceived: 0,
@@ -42,35 +35,14 @@ class StreamClient extends EventEmitter {
             currentRoundTripTime: 0,
             availableIncomingBitrate: 0
         };
-        
+
         // Timers
         this.reconnectTimer = null;
         this.statsTimer = null;
         this.heartbeatTimer = null;
-        
-        // Initialize
-        this.initializeWebRTC();
-    }
 
-    /**
-     * Initialize WebRTC configuration
-     */
-    initializeWebRTC() {
-        // ICE servers configuration
-        this.iceServers = [
-            { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' }
-        ];
-        
-        // WebRTC configuration
-        this.rtcConfiguration = {
-            iceServers: this.iceServers,
-            iceCandidatePoolSize: 10,
-            bundlePolicy: 'max-bundle',
-            rtcpMuxPolicy: 'require'
-        };
-        
-        console.log('StreamClient initialized with adapter:', adapter.browserDetails);
+        // Initialize
+        console.log('MJPEG StreamClient initialized');
     }
 
     /**
@@ -83,46 +55,45 @@ class StreamClient extends EventEmitter {
             console.warn('Already connecting or connected');
             return false;
         }
-        
+
         this.isConnecting = true;
         this.videoElement = videoElement;
         this.startTime = new Date();
-        
+
         try {
-            // For now, use MJPEG fallback since full WebRTC requires signaling server
-            // This provides immediate functionality while WebRTC infrastructure is built
+            // Connect using MJPEG streaming
             await this.connectMJPEG();
-            
+
             this.isConnected = true;
             this.isConnecting = false;
             this.reconnectAttempts = 0;
-            
+
             this.startStatsMonitoring();
             this.startHeartbeat();
-            
+
             this.emit('connected', {
                 connectionId: this.connectionId,
                 characterId: this.characterId
             });
-            
+
             return true;
-            
+
         } catch (error) {
             console.error('Connection failed:', error);
             this.isConnecting = false;
-            
+
             if (this.autoReconnect && this.reconnectAttempts < this.maxReconnectAttempts) {
                 this.scheduleReconnect();
             } else {
                 this.emit('connectionFailed', { error: error.message });
             }
-            
+
             return false;
         }
     }
 
     /**
-     * Connect using MJPEG stream (fallback method)
+     * Connect using MJPEG stream
      */
     async connectMJPEG() {
         return new Promise((resolve, reject) => {
@@ -130,16 +101,16 @@ class StreamClient extends EventEmitter {
                 reject(new Error('No video element provided'));
                 return;
             }
-            
+
             // Generate connection ID
             this.connectionId = `mjpeg_${this.characterId}_${Date.now()}`;
-            
+
             // Create image element for MJPEG stream
             const img = document.createElement('img');
             img.style.width = '100%';
             img.style.height = '100%';
             img.style.objectFit = 'contain';
-            
+
             // Set up stream URL with cache busting and protocol detection
             const streamUrl = window.protocolUtils ?
                 window.protocolUtils.getStreamingUrl(this.characterId, 'mjpeg') :
@@ -150,16 +121,16 @@ class StreamClient extends EventEmitter {
                 this.videoElement.style.display = 'none';
                 this.videoElement.parentNode.insertBefore(img, this.videoElement);
                 this.streamImage = img;
-                
+
                 console.log(`MJPEG stream connected for character ${this.characterId}`);
                 resolve();
             };
-            
+
             img.onerror = (error) => {
                 console.error('MJPEG stream failed:', error);
                 reject(new Error('Failed to load MJPEG stream'));
             };
-            
+
             img.src = streamUrl;
         });
     }
@@ -170,46 +141,42 @@ class StreamClient extends EventEmitter {
     disconnect() {
         this.isConnected = false;
         this.isConnecting = false;
-        
+
         // Clear timers
         if (this.reconnectTimer) {
             clearTimeout(this.reconnectTimer);
             this.reconnectTimer = null;
         }
-        
+
         if (this.statsTimer) {
             clearInterval(this.statsTimer);
             this.statsTimer = null;
         }
-        
+
         if (this.heartbeatTimer) {
             clearInterval(this.heartbeatTimer);
             this.heartbeatTimer = null;
         }
-        
+
         // Clean up MJPEG stream
         if (this.streamImage) {
             this.streamImage.remove();
             this.streamImage = null;
         }
-        
+
         // Show video element again
         if (this.videoElement) {
             this.videoElement.style.display = 'block';
         }
-        
-        // Clean up WebRTC (for future implementation)
-        if (this.peerConnection) {
-            this.peerConnection.close();
-            this.peerConnection = null;
-        }
-        
+
+
+
         this.emit('disconnected', {
             connectionId: this.connectionId,
             characterId: this.characterId,
             sessionDuration: this.startTime ? new Date() - this.startTime : 0
         });
-        
+
         console.log(`Stream disconnected for character ${this.characterId}`);
     }
 
@@ -220,18 +187,18 @@ class StreamClient extends EventEmitter {
         if (this.reconnectTimer) {
             clearTimeout(this.reconnectTimer);
         }
-        
+
         this.reconnectAttempts++;
         const delay = this.reconnectDelay * Math.pow(1.5, this.reconnectAttempts - 1); // Exponential backoff
-        
+
         console.log(`Scheduling reconnect attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${delay}ms`);
-        
+
         this.reconnectTimer = setTimeout(() => {
             if (this.videoElement) {
                 this.connect(this.videoElement);
             }
         }, delay);
-        
+
         this.emit('reconnecting', {
             attempt: this.reconnectAttempts,
             maxAttempts: this.maxReconnectAttempts,
@@ -246,7 +213,7 @@ class StreamClient extends EventEmitter {
         if (this.statsTimer) {
             clearInterval(this.statsTimer);
         }
-        
+
         this.statsTimer = setInterval(() => {
             this.updateStats();
         }, this.statsInterval);
@@ -259,7 +226,7 @@ class StreamClient extends EventEmitter {
         // For MJPEG, we'll track basic metrics
         const now = new Date();
         const sessionDuration = this.startTime ? now - this.startTime : 0;
-        
+
         const currentStats = {
             connectionId: this.connectionId,
             characterId: this.characterId,
@@ -269,7 +236,7 @@ class StreamClient extends EventEmitter {
             connectionType: 'mjpeg',
             timestamp: now
         };
-        
+
         this.emit('stats', currentStats);
     }
 
@@ -280,7 +247,7 @@ class StreamClient extends EventEmitter {
         if (this.heartbeatTimer) {
             clearInterval(this.heartbeatTimer);
         }
-        
+
         this.heartbeatTimer = setInterval(() => {
             if (this.isConnected) {
                 // Check if stream is still alive
@@ -296,7 +263,7 @@ class StreamClient extends EventEmitter {
         try {
             const response = await fetch(`/api/streaming/health/${this.characterId}`);
             const health = await response.json();
-            
+
             if (!health.success || !health.health.streamActive) {
                 console.warn('Stream health check failed, attempting reconnect');
                 this.disconnect();
@@ -338,20 +305,20 @@ class EventEmitter {
     constructor() {
         this.events = {};
     }
-    
+
     on(event, listener) {
         if (!this.events[event]) {
             this.events[event] = [];
         }
         this.events[event].push(listener);
     }
-    
+
     emit(event, data) {
         if (this.events[event]) {
             this.events[event].forEach(listener => listener(data));
         }
     }
-    
+
     off(event, listener) {
         if (this.events[event]) {
             this.events[event] = this.events[event].filter(l => l !== listener);
