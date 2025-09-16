@@ -84,6 +84,29 @@ Linear actuators require specific configuration for safe operation:
 }
 ```
 
+### **🎚️ Linear Actuator Calibration**
+
+**NEW**: Complete calibration system for defining min/max endpoints:
+
+- **Access**: Click the **Calibrate** button (🎚️) next to any linear actuator in Setup → Parts
+- **Simple Controls**: Jog extend/retract with adjustable speed and duration
+- **Position Saving**: Save min (fully retracted) and max (fully extended) positions
+- **Visual Status**: Green checkmarks show which positions are calibrated
+- **Safety Features**: Emergency stop button and movement duration limits
+
+**Calibration Process:**
+1. Navigate to `http://localhost:3000/setup/parts`
+2. Find your linear actuator and click the **Calibrate** button
+3. Use jog controls to move actuator to minimum position → Save Min
+4. Use jog controls to move actuator to maximum position → Save Max
+5. Calibration data is stored in `data/linear_actuator_calibrations.json`
+
+**API Endpoints:**
+- `GET /setup/calibration/linear_actuator/:id` - Calibration page
+- `POST /setup/calibration/api/linear_actuator/:id/jog` - Jog controls
+- `POST /setup/calibration/api/linear_actuator/:id/save-position` - Save positions
+- `GET /setup/calibration/api/linear_actuator/:id/status` - Get calibration status
+
 
 
 ## 🧭 Servo (GoBilda 2000 Dual‑Mode) Quick Setup & Testing

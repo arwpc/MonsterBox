@@ -1,1 +1,36 @@
-{}
+{
+  "2": {
+    "part_id": "2",
+    "part_name": "Left Arm of Orlok",
+    "calibrated_date": "2025-09-16T22:08:18.103Z",
+    "positions": {
+      "min": {
+        "description": "Fully retracted position",
+        "calibrated": true,
+        "calibrated_date": "2025-09-16T22:08:18.103Z"
+      },
+      "max": {
+        "description": "Fully extended position",
+        "calibrated": true,
+        "calibrated_date": "2025-09-16T22:07:53.890Z"
+      }
+    }
+  },
+  "3": {
+    "part_id": "3",
+    "part_name": "Right Arm of Orlok",
+    "calibrated_date": "2025-09-16T22:12:58.944Z",
+    "positions": {
+      "min": {
+        "description": "Fully retracted position",
+        "calibrated": true,
+        "calibrated_date": "2025-09-16T22:12:58.944Z"
+      },
+      "max": {
+        "description": "Fully extended position",
+        "calibrated": true,
+        "calibrated_date": "2025-09-16T22:12:43.272Z"
+      }
+    }
+  }
+}

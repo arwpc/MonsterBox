@@ -43,7 +43,7 @@ const getPartsFilePath = async () => {
 };
 
 // Load parts from file
-const loadParts = async () => {
+export const loadParts = async () => {
     try {
         const filePath = await getPartsFilePath();
         const data = await fs.readFile(filePath, 'utf8');

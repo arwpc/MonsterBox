@@ -10,8 +10,8 @@
     },
     "created": "2025-09-14T17:43:28.627Z",
     "enabled": true,
-    "directionPin": 23,
-    "pwmPin": 12,
+    "directionPin": 18,
+    "pwmPin": 13,
     "maxExtension": 15000,
     "maxRetraction": 15000,
     "updated": "2025-09-14T18:21:37.377Z"

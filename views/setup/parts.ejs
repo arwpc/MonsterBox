@@ -629,6 +629,10 @@
                         '<button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editPartModal" onclick="populateEditModal(\'' + part.id + '\')" title="Edit">' +
                         '<i class="bi bi-pencil"></i>' +
                         '</button>' +
+                        (part.type === 'linear_actuator' ?
+                            '<button class="btn btn-outline-warning" onclick="window.location.href=\'/setup/calibration/linear_actuator/' + part.id + '\'" title="Calibrate">' +
+                            '<i class="bi bi-sliders"></i>' +
+                            '</button>' : '') +
                         '<button class="btn btn-outline-success" onclick="toggleTestDrawer(\'' + part.id + '\')" title="Test" data-testid="open-test-btn" data-part-id="' + part.id + '">' +
                         '<i class="bi bi-play"></i>' +
                         '</button>' +
