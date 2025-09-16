@@ -6,6 +6,7 @@
 import express from 'express';
 import webcamController from '../../controllers/webcamController.js';
 import webcamModelsController from '../../controllers/webcamModelsController.js';
+import * as motionTrackingController from '../../controllers/motionTrackingController.js';
 
 const router = express.Router();
 
@@ -43,5 +44,17 @@ router.get('/api/models/:id', webcamModelsController.getModelById);
 router.post('/api/models', express.json(), webcamModelsController.createModel);
 router.put('/api/models/:id', express.json(), webcamModelsController.updateModel);
 router.delete('/api/models/:id', webcamModelsController.deleteModel);
+
+// Motion Tracking API
+router.post('/api/motion-tracking/start', express.json(), motionTrackingController.startMotionTracking);
+router.post('/api/motion-tracking/stop', express.json(), motionTrackingController.stopMotionTracking);
+router.post('/api/motion-tracking/params', express.json(), motionTrackingController.updateMotionTrackingParams);
+router.get('/api/motion-tracking/status', motionTrackingController.getMotionTrackingStatus);
+router.get('/api/motion-tracking/head-tracking-requirements', motionTrackingController.checkHeadTrackingRequirements);
+// Head Tracking API
+router.post('/api/motion-tracking/head-tracking/enable', express.json(), motionTrackingController.enableHeadTracking);
+router.post('/api/motion-tracking/head-tracking/disable', express.json(), motionTrackingController.disableHeadTracking);
+router.get('/api/motion-tracking/head-tracking/status', motionTrackingController.getHeadTrackingStatus);
+
 
 export default router;

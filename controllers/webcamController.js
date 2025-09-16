@@ -1,9 +1,13 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { spawn } from 'child_process';
+// child_process no longer needed - using mjpg-streamer service only
 import hardwareService from '../services/hardwareService/index.js';
 import { readConfig } from '../services/configService.js';
+
+// mjpg-streamer service configuration
+const MJPG_STREAMER_URL = 'http://localhost:8090';
+const MJPG_STREAM_ENDPOINT = `${MJPG_STREAMER_URL}/?action=stream`;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -197,6 +201,21 @@ export const setControls = async (req, res) => {
   }
 };
 
+// Health check for mjpg-streamer service
+async function checkMjpgStreamerHealth() {
+  try {
+    const response = await fetch(MJPG_STREAMER_URL, {
+      method: 'GET',
+      signal: AbortSignal.timeout(5000)
+    });
+    // mjpg-streamer is running if we get any response (even 400/500)
+    return response.status !== 0;
+  } catch (error) {
+    console.warn('mjpg-streamer health check failed:', error.message);
+    return false;
+  }
+}
+
 export const streamMJPEG = async (req, res) => {
   try {
     const { id } = req.params;
@@ -205,65 +224,109 @@ export const streamMJPEG = async (req, res) => {
     if (!part) return res.status(404).json({ success: false, error: 'Part not found' });
     if (part.type !== 'webcam') return res.status(400).json({ success: false, error: 'Part is not a webcam' });
 
-    // Determine device path
+    // Check if mjpg-streamer service is available
+    const isHealthy = await checkMjpgStreamerHealth();
+    if (!isHealthy) {
+      return res.status(503).json({
+        success: false,
+        error: 'mjpg-streamer service is not available. Please check if the service is running.'
+      });
+    }
+
+    // Determine device path for tracking purposes
     var deviceId = (part.config && (part.config.deviceId || part.config.cameraId)) != null ? (part.config.deviceId || part.config.cameraId) : 0;
     var devicePath = (part.config && part.config.devicePath) ? String(part.config.devicePath) : null;
     if (!devicePath) {
       var n = parseInt(deviceId, 10);
       if (!isNaN(n)) devicePath = '/dev/video' + String(n);
     }
-    // Optional auto-detect: pick the first working /dev/video* if requested or missing
-    var auto = (String(req.query.auto || '').toLowerCase() === '1' || String(req.query.auto || '').toLowerCase() === 'true');
-    if (!devicePath || auto) {
-      const autoPath = await chooseFirstWorkingDevice(1500);
-      if (autoPath) {
-        devicePath = autoPath;
-      } else if (!devicePath) {
-        return res.status(404).json({ success: false, error: 'No working video device found' });
-      }
+    // Default to /dev/video0 if still not determined
+    if (!devicePath) {
+      devicePath = '/dev/video0';
     }
 
-    // Write MJPEG headers
-    res.writeHead(200, {
-      'Cache-Control': 'no-cache, no-store, must-revalidate',
-      'Pragma': 'no-cache',
-      'Connection': 'close',
-      'Content-Type': 'multipart/x-mixed-replace; boundary=frame'
-    });
+    // Set MJPEG headers for proxying
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Connection', 'close');
+    res.setHeader('Content-Type', 'multipart/x-mixed-replace; boundary=--myboundary');
 
-    // Spawn ffmpeg to produce multipart MJPEG stream on stdout
-    // Note: -f mpjpeg makes ffmpeg write proper multipart boundaries
-    const ffArgs = ['-hide_banner', '-loglevel', 'error', '-f', 'video4linux2', '-i', devicePath, '-f', 'mpjpeg', '-q:v', '7', '-r', '15', '-'];
-    const proc = spawn('ffmpeg', ffArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
-    try { _activeVideoUse.set(devicePath, { kind: 'mjpeg', pid: proc.pid, startedAt: Date.now() }); } catch (_) { }
+    // Proxy the stream from mjpg-streamer
+    try {
+      const streamResponse = await fetch(MJPG_STREAM_ENDPOINT, {
+        signal: AbortSignal.timeout(30000) // 30 second timeout
+      });
 
-    let closed = false;
-    const closeAll = function () {
-      if (closed) return; closed = true;
-      try { proc.kill('SIGTERM'); } catch (e) { /* ignore */ }
-      try { res.end(); } catch (e) { /* ignore */ }
-      try { _activeVideoUse.delete(devicePath); } catch (_) { }
-    };
-
-    proc.stdout.on('data', function (chunk) {
-      try { res.write(chunk); } catch (e) { closeAll(); }
-    });
-    proc.stderr.on('data', function (data) {
-      // Surface initial error if ffmpeg cannot open device
-      const msg = data.toString();
-      if (msg && msg.toLowerCase().indexOf('no such file or directory') !== -1) {
-        // Send a friendly error frame once, then close
-        try {
-          res.write(`--frame\r\nContent-Type: text/plain\r\n\r\nWebcam device not found: ${devicePath}\r\n`);
-        } catch (_) { }
-        closeAll();
+      if (!streamResponse.ok) {
+        throw new Error(`mjpg-streamer returned ${streamResponse.status}: ${streamResponse.statusText}`);
       }
-    });
-    proc.on('error', function () { closeAll(); });
-    proc.on('close', function () { closeAll(); });
 
+      // Forward the content type from mjpg-streamer
+      const contentType = streamResponse.headers.get('content-type');
+      if (contentType) {
+        res.setHeader('Content-Type', contentType);
+      }
 
-    req.on('close', function () { closeAll(); });
+      // Track active stream usage
+      try {
+        _activeVideoUse.set(devicePath, {
+          kind: 'mjpeg-proxy',
+          pid: process.pid,
+          startedAt: Date.now(),
+          service: 'mjpg-streamer'
+        });
+      } catch (_) { }
+
+      // Handle cleanup on request close
+      let closed = false;
+      const cleanup = () => {
+        if (closed) return;
+        closed = true;
+        try { _activeVideoUse.delete(devicePath); } catch (_) { }
+        try { res.end(); } catch (_) { }
+      };
+
+      req.on('close', cleanup);
+      req.on('aborted', cleanup);
+
+      // Pipe the stream response to client
+      streamResponse.body.pipeTo(new WritableStream({
+        write(chunk) {
+          if (!closed && !res.destroyed) {
+            try {
+              res.write(chunk);
+            } catch (e) {
+              cleanup();
+            }
+          }
+        },
+        close() {
+          cleanup();
+        },
+        abort() {
+          cleanup();
+        }
+      })).catch((error) => {
+        console.error('Stream piping error:', error);
+        cleanup();
+      });
+
+    } catch (fetchError) {
+      console.error('mjpg-streamer fetch error:', fetchError);
+
+      if (!res.headersSent) {
+        return res.status(502).json({
+          success: false,
+          error: `Failed to connect to mjpg-streamer: ${fetchError.message}. Please ensure mjpg-streamer service is running.`
+        });
+      } else {
+        // Send error frame in MJPEG format
+        try {
+          res.write(`--myboundary\r\nContent-Type: text/plain\r\n\r\nStream error: ${fetchError.message}\r\n`);
+        } catch (_) { }
+        try { res.end(); } catch (_) { }
+      }
+    }
   } catch (err) {
     if (!res.headersSent) {
       res.status(500).json({ success: false, error: err.message });

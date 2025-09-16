@@ -129,12 +129,39 @@ async function loadConfig() {
     }
 }
 
+// Health check for mjpg-streamer service
+async function checkMjpgStreamerHealth() {
+    try {
+        // Try GET request to root path - mjpg-streamer responds to this
+        const response = await fetch('http://localhost:8090/', {
+            method: 'GET',
+            signal: AbortSignal.timeout(3000)
+        });
+        // mjpg-streamer is running if we get any response (even 400/500)
+        return response.status !== 0;
+    } catch (error) {
+        // Connection refused means service is not running
+        return false;
+    }
+}
+
 // Start server
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, '0.0.0.0', async () => {
     console.log(`🎭 MonsterBox 4.0 server running on port ${PORT}`);
     console.log(`📱 Dashboard: http://localhost:${PORT}`);
     console.log(`⚙️  Setup: http://localhost:${PORT}/setup`);
     console.log(`🎬 Live Mode: http://localhost:${PORT}/live`);
+
+    // Check mjpg-streamer service availability
+    console.log(`📹 Checking mjpg-streamer service...`);
+    const mjpgHealthy = await checkMjpgStreamerHealth();
+    if (mjpgHealthy) {
+        console.log(`✅ mjpg-streamer service is running on port 8090`);
+        console.log(`🎥 Webcam streaming: http://localhost:8090/?action=stream`);
+    } else {
+        console.log(`⚠️  mjpg-streamer service not detected on port 8090`);
+        console.log(`   To enable webcam streaming, run: sudo systemctl start mjpg-streamer`);
+    }
 });
 
 export default app;
